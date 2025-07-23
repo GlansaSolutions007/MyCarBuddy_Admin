@@ -1,0 +1,211 @@
+import { useEffect, useState } from "react";
+import DataTable from "react-data-table-component";
+import { Icon } from "@iconify/react";
+import Swal from "sweetalert2";
+import useFormError from "../hook/useFormError";
+import FormError from "./FormError";
+import axios from "axios";
+
+const SkillLayer = () => {
+  const [skills, setSkills] = useState([]);
+  const [formData, setFormData] = useState({
+    SkillID: "",
+    SkillName: "",
+    Description: "",
+    IsActive: true,
+  });
+  const { errors, validate, clearError } = useFormError();
+  const API_BASE = `${import.meta.env.VITE_APIURL}Skills`;
+  const token = localStorage.getItem("token");
+  const userId = localStorage.getItem("userId");
+
+  useEffect(() => {
+    fetchSkill();
+  }, []);
+
+  const fetchSkill = () => {
+    try {
+      axios.get(API_BASE).then((res) => {
+        setSkills(res.data);
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    clearError(name);
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const validationErrors = validate(formData, ["SkillID"]);
+    if (Object.keys(validationErrors).length > 0) return;
+
+    try {
+      let res;
+      if (formData.SkillID) {
+          const payload = {
+              ...formData,
+              ModifiedBy: userId,
+            };
+        res = axios.put(`${API_BASE}/${formData.SkillID}`, formData,{
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      } else {
+        const { SkillID, ...rest } = formData;
+         const payload = {
+              ...rest,
+              CreatedBy: userId, 
+            };
+        res = axios.post(API_BASE, payload, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+      }
+      if(res.status === 200){
+        Swal.fire({
+          title: "Success",
+          text: `Skill ${formData.SkillID ? "updated" : "added"} successfully`,
+          icon: "success",
+        });
+      }
+
+      fetchSkill();
+      setFormData({ SkillID: "", SkillName: "", IsActive: true , Description: ""});
+
+    } catch (error) {
+      console.log(error);
+      Swal.fire({
+        title: "Error",
+        text: "Something went wrong",
+        icon: "error",
+      })
+    }
+  };
+
+  const handleEdit = (skill) => {
+    setFormData(skill);
+  };
+
+  const columns = [
+    {
+      name: "S.No",
+      selector: (_, index) => index + 1,
+      width: "80px",
+    },
+    {
+      name: "Skill Name",
+      selector: (row) => row.SkillName,
+      sortable: true,
+    },
+    {
+      name: "Status",
+      selector: (row) =>
+        row.IsActive ? (
+          <span className="badge bg-success">Active</span>
+        ) : (
+          <span className="badge bg-danger">Inactive</span>
+        ),
+    },
+    {
+      name: "Actions",
+      cell: (row) => (
+        <div className="d-flex">
+          <button
+            onClick={() => handleEdit(row)}
+            className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+          >
+            <Icon icon="lucide:edit" />
+          </button>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div className="row gy-4 mt-2">
+      <div className="col-lg-4">
+        <div className="card h-100 p-0">
+          <div className="card-body p-24">
+            <form onSubmit={handleSubmit} className="form" noValidate>
+              <div className="mb-10">
+                <label className="text-sm fw-semibold text-primary-light mb-8">
+                  Skill Name <span className="text-danger">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="SkillName"
+                  className={`form-control ${errors.SkillName ? "is-invalid" : ""}`}
+                  placeholder="Enter skill name"
+                  value={formData.SkillName}
+                  onChange={handleChange}
+                />
+                <FormError error={errors.SkillName} />
+              </div>
+              {/* Description */}
+              <div className="mb-10">
+                <label className="text-sm fw-semibold text-primary-light mb-8">
+                  Description
+                </label>
+                <textarea
+                  name="Description"
+                  className="form-control"
+                  placeholder="Enter description"
+                  value={formData.Description}
+                  onChange={handleChange}
+                ></textarea>
+              </div>
+              <div className="mb-10">
+                <label className="text-sm fw-semibold text-primary-light mb-8">
+                  Status
+                </label>
+                <select
+                  name="IsActive"
+                  className="form-select form-control"
+                  value={formData.IsActive ? "true" : "false"}
+                  onChange={(e) =>
+                    setFormData({ ...formData, IsActive: e.target.value === "true" })
+                  }
+                >
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
+                </select>
+              </div>
+              <button className="btn btn-primary-600 radius-8 px-14 py-6 text-sm" type="submit">
+                {formData.SkillID ? "Update Skill" : "Add Skill"}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div className="col-lg-8">
+        <div className="card overflow-hidden">
+          <div className="card-body">
+            <DataTable
+              columns={columns}
+              data={skills}
+              pagination
+              highlightOnHover
+              responsive
+              striped
+              persistTableHead
+              noDataComponent="No skills found"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SkillLayer;
