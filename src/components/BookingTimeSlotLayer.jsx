@@ -6,17 +6,20 @@ import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
 import useFormError from "../hook/useFormError";
 import FormError from "./FormError";
+import { Button } from "bootstrap";
 
 const BookingTimeSlotLayer = () => {
   const [formData, setFormData] = useState({
-    TimeSlotID: "",
+    TsID: "",
     StartTime: "",
     EndTime: "",
-    IsActive: true,
+    Status: true,
   });
+
   const [timeSlots, setTimeSlots] = useState([]);
   const { errors, validate } = useFormError();
-  const API_BASE = `${import.meta.env.VITE_APIURL}BookingTimeSlot`; // Replace with your actual endpoint
+  // const API_BASE = `${import.meta.env.VITE_APIURL}BookingTimeSlot`; // Replace with your actual endpoint
+  const API_BASE = `${import.meta.env.VITE_APIURL}TimeSlot`;
 
   const token = localStorage.getItem("token");
 
@@ -30,54 +33,129 @@ const BookingTimeSlotLayer = () => {
   };
 
   const fetchTimeSlots = async () => {
-    // Replace this with actual API call
-    setTimeSlots([
-      { TimeSlotID: 1, StartTime: "10:00", EndTime: "12:00", IsActive: true },
-      { TimeSlotID: 2, StartTime: "14:00", EndTime: "16:00", IsActive: false },
-    ]);
+    try {
+      const response = await axios.get(`${API_BASE}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setTimeSlots(
+        response.data.map((slot) => ({
+          ...slot,
+          TsID: slot.TsID, // standardize to TsID
+          StartTime: slot.startTime || slot.StartTime,
+          EndTime: slot.endTime || slot.EndTime,
+          Status: slot.status ?? slot.Status,
+        }))
+      );
+      console.log("Fetched Time Slots:", response.data);
+    } catch (err) {
+      console.error("Error fetching timeslots:", err);
+      Swal.fire("Error", "Failed to fetch time slots", "error");
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationErrors = validate(formData, ["StartTime", "EndTime"]);
+
+    // const validationErrors = validate(formData, ["id", "Status"]);
+    const validationErrors = validate(formData, [
+      "TsID",
+      "Status",
+      "StartTime",
+      "EndTime",
+    ]);
+
+    console.log("Validation Errors:", validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
 
+    const isEdit = !!formData.TsID;
+
+    const addSeconds = (timeStr) =>
+      timeStr?.length === 5 ? timeStr + ":00" : timeStr;
+
+    const payload = {
+      startTime: addSeconds(formData.StartTime),
+      endTime: addSeconds(formData.EndTime),
+      status: formData.Status,
+    };
+    console.log("Payload:", payload);
     try {
-      // Dummy handling — replace with actual POST/PUT
-      const isEdit = !!formData.TimeSlotID;
       if (isEdit) {
-        const updated = timeSlots.map((slot) =>
-          slot.TimeSlotID === formData.TimeSlotID ? formData : slot
-        );
-        setTimeSlots(updated);
+        // Find the correct TsID field from formData
+        payload.TsID = formData.TsID; // Ensure TsID is included in the payload
+        await axios.put(`${API_BASE}`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        console.log("Updated Payload:", payload);
+        Swal.fire("Updated", "Time slot updated successfully", "success");
       } else {
-        const newSlot = {
-          ...formData,
-          TimeSlotID: Math.floor(Math.random() * 1000 + 100), // Random ID for dummy
-        };
-        setTimeSlots([...timeSlots, newSlot]);
+        await axios.post(`${API_BASE}`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        Swal.fire("Created", "Time slot added successfully", "success");
       }
 
-      Swal.fire({
-        title: "Success",
-        text: `Time Slot ${isEdit ? "updated" : "added"} successfully`,
-        icon: "success",
+      setFormData({
+        TsID: "",
+        StartTime: "",
+        EndTime: "",
+        Status: true,
       });
 
-      setFormData({ TimeSlotID: "", StartTime: "", EndTime: "", IsActive: true });
-    } catch (error) {
-      Swal.fire("Error", "Something went wrong", "error");
+      fetchTimeSlots();
+    } catch (err) {
+      console.error("POST/PUT Error:", err.response?.data || err.message);
+      console.log("Validation Errors:", err.response?.data?.errors);
+
+      Swal.fire(
+        "Error",
+        err.response?.data?.title || "Failed to save time slot",
+        "error"
+      );
+    }
+  };
+
+  const handleDelete = async (TsID) => {
+    if (!TsID) {
+      Swal.fire("Error", "Invalid TimeSlot ID", "error");
+      return;
+    }
+
+    const confirm = await Swal.fire({
+      title: "Delete?",
+      text: "Are you sure you want to delete this time slot?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete it!",
+    });
+
+    if (confirm.isConfirmed) {
+      try {
+        await axios.delete(`${API_BASE}/${TsID}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        console.log("Deleted Time Slot ID:", TsID);
+        Swal.fire("Deleted!", "Time slot deleted", "success");
+        fetchTimeSlots();
+      } catch (err) {
+        console.error(err);
+        Swal.fire("Error", "Failed to delete time slot", "error");
+      }
     }
   };
 
   const handleEdit = (slot) => {
-    setFormData(slot);
+    setFormData({
+      TsID: slot.TsID,
+      StartTime: slot.StartTime || "",
+      EndTime: slot.EndTime || "",
+      Status: slot.Status,
+    });
   };
 
   const columns = [
     {
       name: "S.No",
-      selector: (_, index) => index + 1,
+      selector: (row) => row.TsID,
       width: "80px",
     },
     {
@@ -91,7 +169,7 @@ const BookingTimeSlotLayer = () => {
     {
       name: "Status",
       selector: (row) =>
-        row.IsActive ? (
+        row.Status ? (
           <span className="badge bg-success">Active</span>
         ) : (
           <span className="badge bg-danger">Inactive</span>
@@ -100,12 +178,20 @@ const BookingTimeSlotLayer = () => {
     {
       name: "Actions",
       cell: (row) => (
-        <Link
-          onClick={() => handleEdit(row)}
-          className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-        >
-          <Icon icon="lucide:edit" />
-        </Link>
+        <div className="d-flex gap-2">
+          <Link
+            onClick={() => handleEdit(row)}
+            className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+          >
+            <Icon icon="lucide:edit" />
+          </Link>
+          {/* <Link
+            onClick={() => handleDelete(row.TsID)}
+            className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
+          >
+            <Icon icon="lucide:trash-2" />
+          </Link> */}
+        </div>
       ),
     },
   ];
@@ -123,7 +209,9 @@ const BookingTimeSlotLayer = () => {
                 <input
                   type="time"
                   name="StartTime"
-                  className={`form-control ${errors.StartTime ? "is-invalid" : ""}`}
+                  className={`form-control ${
+                    errors.StartTime ? "is-invalid" : ""
+                  }`}
                   value={formData.StartTime}
                   onChange={handleChange}
                 />
@@ -137,7 +225,9 @@ const BookingTimeSlotLayer = () => {
                 <input
                   type="time"
                   name="EndTime"
-                  className={`form-control ${errors.EndTime ? "is-invalid" : ""}`}
+                  className={`form-control ${
+                    errors.EndTime ? "is-invalid" : ""
+                  }`}
                   value={formData.EndTime}
                   onChange={handleChange}
                 />
@@ -149,10 +239,15 @@ const BookingTimeSlotLayer = () => {
                   Status
                 </label>
                 <select
-                  name="IsActive"
+                  name="Status"
                   className="form-select"
-                  value={formData.IsActive ? "true" : "false"}
-                  onChange={(e) => setFormData({ ...formData, IsActive: e.target.value === "true" })}
+                  value={formData.Status ? "true" : "false"}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      Status: e.target.value === "true",
+                    })
+                  }
                 >
                   <option value="true">Active</option>
                   <option value="false">Inactive</option>
@@ -162,8 +257,9 @@ const BookingTimeSlotLayer = () => {
               <button
                 type="submit"
                 className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
+                variant="primary"
               >
-                {formData.TimeSlotID ? "Update Time Slot" : "Add Time Slot"}
+                {formData.TsID ? "Update Time Slot" : "Add Time Slot"}
               </button>
             </form>
           </div>
