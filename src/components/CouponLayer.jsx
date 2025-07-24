@@ -5,16 +5,16 @@ import Swal from "sweetalert2";
 import { Link } from "react-router-dom";
 import axios from "axios";
 
-const API_BASE = import.meta.env.VITE_APIURL;
+const API_BASE = "https://api.mycarsbuddy.com/api/Coupons";
 
 const CouponsPage = () => {
   const [coupons, setCoupons] = useState([]);
   const [formData, setFormData] = useState({
+    CouponID: null,
     CouponCode: "",
     Description: "",
     DiscountType: "percentage",
     DiscountValue: "",
-    MinBookingAmount: "",
     StartDate: "",
     ExpiryDate: "",
     UsageLimit: "",
@@ -22,77 +22,79 @@ const CouponsPage = () => {
   });
   const [editIndex, setEditIndex] = useState(null);
 
+  const fetchCoupons = async () => {
+    try {
+      const res = await axios.get(API_BASE);
+      const formatted = res.data.map((item) => ({
+        CouponID: item.CouponID,
+        CouponCode: item.Code,
+        Description: item.Description,
+        DiscountType: item.DiscountType,
+        DiscountValue: item.DiscountValue,
+        StartDate: item.ValidFrom?.substring(0, 10),
+        ExpiryDate: item.ValidTill?.substring(0, 10),
+        UsageLimit: item.MaxUsagePerUser,
+        UsedCount: item.UsedCount || 0,
+        IsActive: !!item.IsActive,
+      }));
+      setCoupons(formatted);
+    } catch (err) {
+      console.error("Fetch failed", err);
+    }
+  };
+
   useEffect(() => {
-    setCoupons([
-      {
-        CouponCode: "NEW50",
-        Description: "50% off for first time users",
-        DiscountType: "percentage",
-        DiscountValue: 50,
-        MinBookingAmount: 500,
-        StartDate: "2025-07-01",
-        ExpiryDate: "2025-07-31",
-        UsageLimit: 100,
-        UsedCount: 10,
-        IsActive: true,
-      },
-      {
-        CouponCode: "SAVE200",
-        Description: "Flat ₹200 off on bookings above ₹1000",
-        DiscountType: "amount",
-        DiscountValue: 200,
-        MinBookingAmount: 1000,
-        StartDate: "2025-07-10",
-        ExpiryDate: "2025-08-10",
-        UsageLimit: 50,
-        UsedCount: 5,
-        IsActive: false,
-      },
-    ]);
+    fetchCoupons();
   }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editIndex !== null) {
-      const updated = [...coupons];
-      updated[editIndex] = { ...formData, UsedCount: coupons[editIndex].UsedCount || 0 };
-      setCoupons(updated);
-    } else {
-      setCoupons([...coupons, { ...formData, UsedCount: 0 }]);
+
+    const payload = {
+      code: formData.CouponCode,
+      description: formData.Description,
+      discountType: formData.DiscountType,
+      discountValue: Number(formData.DiscountValue),
+      validFrom: formData.StartDate,
+      validTill: formData.ExpiryDate,
+      maxUsagePerUser: Number(formData.UsageLimit),
+      isActive: formData.IsActive,
+      ...(editIndex !== null
+        ? { couponID: formData.CouponID, modifiedBy: 1 }
+        : { createdBy: 1 }),
+    };
+
+    try {
+      if (editIndex !== null) {
+        await axios.put(API_BASE, payload);
+        Swal.fire("Updated!", "Coupon updated successfully.", "success");
+      } else {
+        await axios.post(API_BASE, payload);
+        Swal.fire("Created!", "Coupon created successfully.", "success");
+      }
+
+      setFormData({
+        CouponID: null,
+        CouponCode: "",
+        Description: "",
+        DiscountType: "percentage",
+        DiscountValue: "",
+        StartDate: "",
+        ExpiryDate: "",
+        UsageLimit: "",
+        IsActive: true,
+      });
+      setEditIndex(null);
+      fetchCoupons();
+    } catch (err) {
+      Swal.fire("Error", "Operation failed!", "error");
+      console.error(err);
     }
-    setFormData({
-      CouponCode: "",
-      Description: "",
-      DiscountType: "percentage",
-      DiscountValue: "",
-      MinBookingAmount: "",
-      StartDate: "",
-      ExpiryDate: "",
-      UsageLimit: "",
-      IsActive: true,
-    });
-    setEditIndex(null);
   };
 
   const handleEdit = (coupon, index) => {
     setFormData(coupon);
     setEditIndex(index);
-  };
-
-  const handleDelete = (index) => {
-    Swal.fire({
-      title: "Are you sure?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Yes, delete it!",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        const updated = [...coupons];
-        updated.splice(index, 1);
-        setCoupons(updated);
-        Swal.fire("Deleted!", "Coupon deleted.", "success");
-      }
-    });
   };
 
   const columns = [
@@ -105,39 +107,23 @@ const CouponsPage = () => {
           ? `${row.DiscountValue}%`
           : `₹${row.DiscountValue}`,
     },
-    { name: "Min Amount", selector: (row) => `₹${row.MinBookingAmount}` },
     { name: "Expiry", selector: (row) => row.ExpiryDate },
+    { name: "Max Usage", selector: (row) => row.UsageLimit },
     {
       name: "Active",
-      cell: (row, index) => (
-        <input
-          type="checkbox"
-          checked={row.IsActive}
-          onChange={() => {
-            const updated = [...coupons];
-            updated[index].IsActive = !updated[index].IsActive;
-            setCoupons(updated);
-          }}
-        />
-      ),
+      selector: (row) => (row.IsActive ? "Active" : "Inactive"),
+      sortable: true,
     },
     {
       name: "Actions",
       cell: (row, index) => (
         <div className="d-flex gap-2">
-         
-            <Link
-                    onClick={() => handleEdit(row)}
-                    className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                  >
-                    <Icon icon="lucide:edit" />
-            </Link>
-            <Link 
-                    onClick={() => handleDelete(index)}
-                    className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                  >
-                    <Icon icon="mingcute:delete-2-line" />
-            </Link>
+          <Link
+            onClick={() => handleEdit(row, index)}
+            className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+          >
+            <Icon icon="lucide:edit" />
+          </Link>
         </div>
       ),
     },
@@ -147,53 +133,73 @@ const CouponsPage = () => {
     <div className="row gy-4 mt-2">
       <div className="col-lg-4">
         <div className="card p-3">
-          {/* <h5>{editIndex !== null ? "Edit Coupon" : "Add Coupon"}</h5> */}
           <form onSubmit={handleSubmit}>
             {[
               ["CouponCode", "Coupon Code"],
               ["Description", "Description"],
               ["DiscountValue", "Discount Value"],
-              ["MinBookingAmount", "Min Booking Amount"],
               ["StartDate", "Start Date", "date"],
               ["ExpiryDate", "Expiry Date", "date"],
               ["UsageLimit", "Usage Limit"],
             ].map(([name, label, type = "text"]) => (
               <div className="mb-3" key={name}>
-                <label className="text-sm fw-semibold text-primary-light mb-8 d-block">{label}</label>
+                <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
+                  {label}
+                </label>
                 <input
                   type={type}
                   className="form-control"
                   name={name}
                   value={formData[name]}
-                  onChange={(e) => setFormData({ ...formData, [name]: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, [name]: e.target.value })
+                  }
                   required
                 />
               </div>
             ))}
 
+            {/* Discount Type Dropdown */}
             <div className="mb-3">
-              <label className="text-sm fw-semibold text-primary-light mb-8 d-block">Discount Type</label>
+              <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
+                Discount Type
+              </label>
               <select
                 className="form-select"
                 value={formData.DiscountType}
-                onChange={(e) => setFormData({ ...formData, DiscountType: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, DiscountType: e.target.value })
+                }
               >
                 <option value="percentage">Percentage (%)</option>
                 <option value="amount">Fixed Amount (₹)</option>
               </select>
             </div>
 
-            {/* <div className="mb-3 form-check">
-              <input
-                type="checkbox"
-                className="form-check-input"
-                checked={formData.IsActive}
-                onChange={(e) => setFormData({ ...formData, IsActive: e.target.checked })}
-              />
-              <label className="form-check-label">Active</label>
-            </div> */}
+            {/* ✅ Status Dropdown */}
+            <div className="mb-3">
+              <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
+                Status
+              </label>
+              <select
+                className="form-select"
+                value={formData.IsActive ? "true" : "false"}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    IsActive: e.target.value === "true",
+                  })
+                }
+              >
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+            </div>
 
-            <button  className="btn btn-primary-600 radius-8 px-14 py-6 text-sm" type="submit">
+            <button
+              className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
+              type="submit"
+            >
               {editIndex !== null ? "Update" : "Add"} Coupon
             </button>
           </form>
