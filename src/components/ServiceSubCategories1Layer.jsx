@@ -72,7 +72,7 @@ const thumbnailInputRef = useRef(null);
           Authorization: `Bearer ${token}`,
         },
       })
-      setCategories(res.data.data);
+      setCategories(res.data);
     } catch (error) {
       console.error("Failed to load categories", error);
     }
@@ -168,10 +168,16 @@ const thumbnailInputRef = useRef(null);
       ThumbnailImage1: row.ThumbnailImage || "",
     });
     if (row.IconImage) {
-      setIconPreview(`${import.meta.env.VITE_APIURL_IMAGE}CategoryIcon/${row.IconImage}`);
+      setIconPreview(`${import.meta.env.VITE_APIURL_IMAGE}${row.IconImage}`);
+    }
+    else{
+      setIconPreview("");
     }
     if (row.ThumbnailImage) {
-      setThumbnailPreview(`${import.meta.env.VITE_APIURL_IMAGE}CategoryThumbnail/${row.ThumbnailImage}`);
+      setThumbnailPreview(`${import.meta.env.VITE_APIURL_IMAGE}${row.ThumbnailImage}`);
+    }
+    else{
+      setThumbnailPreview("");
     }
   };
 

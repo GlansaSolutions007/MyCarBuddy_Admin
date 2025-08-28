@@ -13,7 +13,7 @@ const VehicleModelLayer = () => {
     ModelID: "",
     BrandID: "",
     ModelName: "",
-    VehicleType: "",
+    // VehicleType: "",
     FuelTypeID: "",
     VehicleImages1: null,
     IsActive: true,

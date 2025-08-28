@@ -17,6 +17,8 @@ const CouponsPage = () => {
     DiscountValue: "",
     StartDate: "",
     ExpiryDate: "",
+    MaxDisAmount: "0",
+    MinBookingAmount: "0",
     UsageLimit: "",
     IsActive: true,
   });
@@ -36,6 +38,8 @@ const CouponsPage = () => {
         UsageLimit: item.MaxUsagePerUser,
         UsedCount: item.UsedCount || 0,
         IsActive: !!item.IsActive,
+        MaxDisAmount: item.MaxDisAmount,
+        MinBookingAmount: item.MinBookingAmount,
       }));
       setCoupons(formatted);
     } catch (err) {
@@ -59,6 +63,8 @@ const CouponsPage = () => {
       validTill: formData.ExpiryDate,
       maxUsagePerUser: Number(formData.UsageLimit),
       isActive: formData.IsActive,
+      MaxDisAmount: Number(formData.MaxDisAmount),
+      MinBookingAmount: Number(formData.MinBookingAmount),
       ...(editIndex !== null
         ? { couponID: formData.CouponID, modifiedBy: 1 }
         : { createdBy: 1 }),
@@ -78,6 +84,8 @@ const CouponsPage = () => {
         CouponCode: "",
         Description: "",
         DiscountType: "percentage",
+        MaxDisAmount: "0",
+        MinBookingAmount: "0",
         DiscountValue: "",
         StartDate: "",
         ExpiryDate: "",
@@ -93,6 +101,7 @@ const CouponsPage = () => {
   };
 
   const handleEdit = (coupon, index) => {
+    console.log(coupon);
     setFormData(coupon);
     setEditIndex(index);
   };
@@ -134,10 +143,29 @@ const CouponsPage = () => {
       <div className="col-lg-4">
         <div className="card p-3">
           <form onSubmit={handleSubmit}>
+
+             <div className="mb-3">
+              <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
+                Discount Type
+              </label>
+              <select
+                className="form-select"
+                value={formData.DiscountType}
+                onChange={(e) =>
+                  setFormData({ ...formData, DiscountType: e.target.value })
+                }
+              >
+                <option value="percentage">Percentage (%)</option>
+                <option value="amount">Fixed Amount (₹)</option>
+              </select>
+            </div>
+
             {[
               ["CouponCode", "Coupon Code"],
               ["Description", "Description"],
               ["DiscountValue", "Discount Value"],
+              ["MaxDisAmount", "Max Discount Amount"],
+              ["MinBookingAmount", "Min Order Value"],
               ["StartDate", "Start Date", "date"],
               ["ExpiryDate", "Expiry Date", "date"],
               ["UsageLimit", "Usage Limit"],
@@ -160,21 +188,7 @@ const CouponsPage = () => {
             ))}
 
             {/* Discount Type Dropdown */}
-            <div className="mb-3">
-              <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
-                Discount Type
-              </label>
-              <select
-                className="form-select"
-                value={formData.DiscountType}
-                onChange={(e) =>
-                  setFormData({ ...formData, DiscountType: e.target.value })
-                }
-              >
-                <option value="percentage">Percentage (%)</option>
-                <option value="amount">Fixed Amount (₹)</option>
-              </select>
-            </div>
+           
 
             {/* ✅ Status Dropdown */}
             <div className="mb-3">

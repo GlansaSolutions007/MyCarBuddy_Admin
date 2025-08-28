@@ -21,34 +21,20 @@ const CustomerLayer = () => {
   // }, []);
 
   useEffect(() => {
-  // Mock Data
-  const mockData = [
-    {
-      CustID: 101,
-      FullName: "Nagaraju K",
-      PhoneNumber: "9876543210",
-      // AlternateNumber: "9123456789",
-      Email: "nagaraju@example.com",
-      ProfileImage: "profile101.jpg",
-      StateID: 2,
-      CityID: 5,
-      IsActive: true,
-      Status: 1,
-    },
-  ];
-  setCustomers(mockData);
+
+  fetchCustomers();
 }, []);
 
   // Fetch dealers, distributors, states, and cities start
     const fetchCustomers = async () => {
         try {
-            const res = await axios.get(`${API_BASE}Customers`, {
+            const res = await axios.get(`${API_BASE}Customer`, {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             }
         });
-            setCustomers(res.data);
+            setCustomers(res.data.data);
         } catch (error) {
             console.error("Failed to load dealers", error);
         }
@@ -107,10 +93,10 @@ const CustomerLayer = () => {
     },
   ];
 
-  const filteredCustomers = customers.filter((customers) =>
-    customers.FullName?.toLowerCase().includes(searchText.toLowerCase())
-  || customers.Email?.toLowerCase().includes(searchText.toLowerCase())
-  || customers.PhoneNumber?.toLowerCase().includes(searchText.toLowerCase())
+  const filteredCustomers = customers.filter((customer) =>
+    customer.FullName?.toLowerCase().includes(searchText.toLowerCase())
+  || customer.Email?.toLowerCase().includes(searchText.toLowerCase())
+  || customer.PhoneNumber?.toLowerCase().includes(searchText.toLowerCase())
 
   );
 

@@ -61,7 +61,7 @@ const ServicePlanPriceListLayer = () => {
     // { name: "S.No", selector: (_, index) => index + 1, width: "80px" },
     { name: "Package ID", selector: (row) => row.PlanPriceID },
 
-    // { name: "Plan ID", selector: (row) => row.PlanId },
+    { name: "Plan Name", selector: (row) => row.PackageName },
     { name: "Brand", selector: (row) => row.BrandName },
     { name: "Model", selector: (row) => row.ModelName },
     { name: "Fuel Type", selector: (row) => row.FuelTypeName },
@@ -70,23 +70,23 @@ const ServicePlanPriceListLayer = () => {
       name: "Price",
       selector: (row) => `₹${row.Serv_Off_Price?.toFixed(2)}`,
     },
-    {
-      name: "Duration",
-      selector: (row) => `${row.EstimatedDurationMinutes} mins`,
-    },
-    {
-      name: "Image",
-      cell: (row) =>
-        row.ImageURL ? (
-          <img
-            src={`${IMAGE_BASE}${row.ImageURL.replace(/\s/g, "%20")}`}
-            alt="plan"
-            style={{ width: 60, height: 40, objectFit: "cover", borderRadius: 4 }}
-          />
-        ) : (
-          "No Image"
-        ),
-    },
+    // {
+    //   name: "Duration",
+    //   selector: (row) => `${row.EstimatedDurationMinutes} mins`,
+    // },
+    // {
+    //   name: "Image",
+    //   cell: (row) =>
+    //     row.ImageURL ? (
+    //       <img
+    //         src={`${IMAGE_BASE}${row.ImageURL.replace(/\s/g, "%20")}`}
+    //         alt="plan"
+    //         style={{ width: 60, height: 40, objectFit: "cover", borderRadius: 4 }}
+    //       />
+    //     ) : (
+    //       "No Image"
+    //     ),
+    // },
     {
       name: "Status",
       selector: (row) =>

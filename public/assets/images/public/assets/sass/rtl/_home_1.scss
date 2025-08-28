@@ -1,0 +1,110 @@
+.counter-checklist-wrap:after {
+    background: linear-gradient(-90deg, #E8092E -1.06%, rgba(232, 9, 46, 0) 100%);
+}
+.about1-shape-img {
+    right: 82px;
+    left: auto;
+    .about1-shape-img-2 {
+        margin-right: -35px;
+        margin-left: 0;
+    }
+    @include xxl {
+        right: 42px;
+    }
+}
+
+.slider__marquee {
+    direction: ltr;
+    margin-bottom: -0.1em;
+}
+
+.portfolio-shape-img {
+    left: 66px;
+    right: auto;
+    .about1-shape-img-2 {
+        margin-right: -35px;
+        margin-left: 0;
+    }
+    @include xxl {
+        left: 42px;
+    }
+}
+
+.appointment-area-1 {
+    .appointment-thumb-1 {
+        left: 0;
+        right: auto;
+        img {
+            border-radius: 0 5px 5px 0;
+        }
+    }
+}
+
+.pricing-shape-img1 {
+    right: 53px;
+    left: auto;
+    .about1-shape-img-2 {
+        margin-right: -35px;
+        margin-left: 0;
+    }
+    @include xxl {
+        right: 42px;
+    }
+}
+
+.testi-slider-1 .slick-dots {
+    left: 74px;
+    right: auto;
+}
+
+.process-card-wrap {
+    position: relative;
+    &:after {
+        left: -210px;
+        right: auto;
+        transform: rotate(-6deg) rotateY(180deg);
+    }
+    &:nth-child(2) {
+        &:after {
+            left: -175px;
+            right: auto;
+            transform: rotate(-5deg) rotateY(180deg);
+        }
+    }
+    @include ml {
+        &:after {
+            transform: rotate(-9deg) rotateY(180deg);
+            left: -180px;
+        }
+        &:nth-child(2):after {
+            left: -145px;
+            transform: rotate(-4deg) rotateY(180deg);
+        }
+    }
+    @include lg {
+        &:after {
+            left: -155px;
+            transform: rotate(-12deg) rotateY(180deg);
+        }
+        &:nth-child(2):after {
+            left: -117px;
+            transform: rotate(0deg) rotateY(180deg);
+        }
+    }
+}
+
+.accordion-card {
+    .accordion-button {
+        padding: 12px 30px 12px 65px;
+        text-align: start;
+        &:after {
+            left: 17px;
+            right: auto;
+        }
+    }
+}
+@include xs {
+    .accordion-card .accordion-button {
+        padding: 15px 30px 15px 65px;
+    }
+}

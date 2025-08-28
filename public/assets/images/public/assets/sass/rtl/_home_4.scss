@@ -1,0 +1,17 @@
+.hero-4 {
+    &:after {
+        background: linear-gradient(-90deg, #171717 0.03%, rgba(23, 23, 23, 0.00) 99.95%);
+    }
+    .shape1 {
+    	left: 0;
+        right: auto;
+    }
+    .shape2 {
+    	left: 0;
+    	right: auto;
+    }
+    .shape3 {
+    	left: 90px;
+        right: auto;
+    }
+}

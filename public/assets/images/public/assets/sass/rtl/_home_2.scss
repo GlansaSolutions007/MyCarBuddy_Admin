@@ -1,0 +1,49 @@
+.hero-2 {
+    &:after {
+        background: linear-gradient(-90deg, #171717 0.03%, rgba(23, 23, 23, 0.00) 99.95%);
+    }
+    .hero-shape2-1 {
+        left: 0;
+    }
+}
+.about-thumb2 {
+    .about-img-1 {
+        padding-right: 237px;
+        padding-left: 0;
+    }
+    .about-counter-wrap {
+        right: 20px;
+        left: auto;
+    }
+    .about-year-wrap2 {
+        left: 50px;
+        right: auto;
+    }
+}
+@include ml {
+    .about-thumb2 .about-counter-wrap {
+        right: 0;
+    }
+    .about-thumb2 .about-img-1 {
+        padding-right: 217px;
+    }
+}
+@include vxs {
+    .about-thumb2 .about-img-1 {
+        padding-right: 0;
+    }
+}
+.cta2-bg-thumb {
+    transform: rotateY(180deg);
+    left: 0;
+    right: auto;
+}
+.testimonial-area-2 .testimonial-thumb-2 {
+    right: 0;
+    left: auto;
+}
+.testiomonial-wrap-2 .quote-icon {
+    right: auto;
+    left: 55px;
+    transform: rotateY(180deg);
+}

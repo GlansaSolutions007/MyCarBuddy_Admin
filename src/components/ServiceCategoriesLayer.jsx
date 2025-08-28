@@ -32,6 +32,7 @@ const ServiceCategoriesLayer = () => {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [rawThumbnailFile, setRawThumbnailFile] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const { errors, validate } = useFormError();
   const API_BASE = `${import.meta.env.VITE_APIURL}Category`;
@@ -82,7 +83,7 @@ const thumbnailInputRef = useRef(null);
           Authorization: `Bearer ${token}`,
         },
       });
-      setCategories(res.data.data);
+      setCategories(res.data);
     } catch (error) {
       console.error("Failed to load categories", error);
     }
@@ -108,6 +109,7 @@ const thumbnailInputRef = useRef(null);
       };
 
       let res;
+      setIsLoading(true);
       if (formData.CategoryID) {
         form.append("ModifiedBy", UserId);
         res = await axios.put(`${API_BASE}/UpdateCategory`, form, { headers });
@@ -129,9 +131,11 @@ const thumbnailInputRef = useRef(null);
       setThumbnailFile(null);
       setThumbnailPreview("");
       fetchCategories();
+      setIsLoading(false);
      if (iconInputRef.current) iconInputRef.current.value = "";
       if (thumbnailInputRef.current) thumbnailInputRef.current.value = "";
     } catch (error) {
+      setIsLoading(false);
       Swal.fire("Error", error.response?.data?.message || "Save failed", "error");
     }
   };
@@ -266,8 +270,8 @@ const thumbnailInputRef = useRef(null);
                   </select>
                 </div>
 
-                <button type="submit" className="btn btn-primary-600 radius-8 px-14 py-6 text-sm">
-                  {formData.CategoryID ? "Update Category" : "Add Category"}
+                <button type="submit" className="btn btn-primary-600 radius-8 px-14 py-6 text-sm" disabled={isLoading}>
+                  {isLoading ? "Loading..." : formData.CategoryID ? "Update Category" : "Add Category"}
                 </button>
               </form>
             </div>

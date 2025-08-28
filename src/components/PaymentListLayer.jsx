@@ -4,173 +4,188 @@ import axios from "axios";
 import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+
 const PaymentsListLayer = () => {
-   const [payments, setPayments] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [refresh, setRefresh] = useState(false);
+  const [searchText, setSearchText] = useState("");
   const API_BASE = import.meta.env.VITE_APIURL;
   const token = localStorage.getItem("token");
-
 
   useEffect(() => {
     fetchPayments();
   }, []);
-const fetchPayments = () => {
-  const dummyData = [
-    {
-      PaymentID: 1,
-      BookingID: "BK1001",
-      AmountPaid: 1499.0,
-      PaymentMode: "UPI",
-      TransactionID: "TXN123456",
-      PaymentDate: "2025-07-17T10:30:00",
-      IsRefunded: false,
-    },
-    {
-      PaymentID: 2,
-      BookingID: "BK1002",
-      AmountPaid: 999.0,
-      PaymentMode: "Cash",
-      TransactionID: "TXN987654",
-      PaymentDate: "2025-07-16T14:15:00",
-      IsRefunded: true,
-    },
-    {
-      PaymentID: 3,
-      BookingID: "BK1003",
-      AmountPaid: 1200.0,
-      PaymentMode: "Card",
-      TransactionID: "TXN135790",
-      PaymentDate: "2025-07-15T09:00:00",
-      IsRefunded: false,
-    },
-  ];
 
-  setPayments(dummyData);
-};
+  const fetchPayments = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}Payments`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setPayments(res.data); // your API returns array directly
+    } catch (error) {
+      console.error("Error fetching payments", error);
+    }
+  };
 
-//   const fetchPayments = async () => {
-//     try {
-//       const res = await axios.get(`${API_BASE}Payments`, {
-//         headers: { Authorization: `Bearer ${token}` },
-//       });
-//       setPayments(res.data.jsonResult); // assuming your API returns data in jsonResult
-//     } catch (error) {
-//       console.error("Error fetching payments", error);
-//     }
-//   };
+  const handleRefund = (paymentId) => {
+    const confirmed = window.confirm("Are you sure you want to refund this payment?");
+    if (!confirmed) return;
 
-const columns = [
-    { name: "S.No", selector: (_, index) => index + 1, width: "80px" },
-    { name: "Booking ID", selector: (row) => row.BookingID },
+    const updatedPayments = payments.map((p) =>
+      p.PaymentID === paymentId ? { ...p, IsRefunded: true } : p
+    );
+    setPayments(updatedPayments);
+
+    // Optionally call refund API
+    // axios.post(`${API_BASE}Payments/Refund/${paymentId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+  };
+
+  const columns = [
+    { name: "S.No", selector: (_, index) => index + 1, width: "70px" },
+    { name: "Booking ID", selector: (row) => (
+      <Link to={`/view-booking/${row.BookingID}`} className="text-primary">
+        {row.BookingTrackID}
+      </Link>
+    ) },
+    { name: "Invoice No", selector: (row) => row.InvoiceNumber },
     { name: "Amount Paid", selector: (row) => `₹${row.AmountPaid}` },
-    { name: "Payment Mode", selector: (row) => row.PaymentMode },
     { name: "Transaction ID", selector: (row) => row.TransactionID },
     {
       name: "Payment Date",
-      selector: (row) => new Date(row.PaymentDate).toLocaleString(),
+      selector: (row) => {
+        if (!row.PaymentDate) return "";
+        const date = new Date(row.PaymentDate);
+        return `${String(date.getDate()).padStart(2, "0")}/${String(
+          date.getMonth() + 1
+        ).padStart(2, "0")}/${date.getFullYear()}`;
+      },
     },
-    {
-      name: "Refunded",
-      selector: (row) =>
-        row.IsRefunded ? (
-          <span className="badge bg-danger">Yes</span>
-        ) : (
-          <span className="badge bg-success">No</span>
-        ),
-    },
+    // {
+    //   name: "Refunded",
+    //   selector: (row) =>
+    //     row.IsRefunded ? (
+    //       <span className="badge bg-danger">Yes</span>
+    //     ) : (
+    //       <span className="badge bg-success">No</span>
+    //     ),
+    // },
     {
       name: "Actions",
       cell: (row) => (
         <div className="d-flex gap-2">
-            <Link 
-            to={`/edit-payment/${row.PaymentID}`}
-            className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-            title="Edit"
-          >
-            <Icon icon="lucide:edit" />
-          </Link>
-          {/* view */}
-          <Link
-            to={`/view-payment/${row.PaymentID}`}   
-            className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-            title="View"
-          >
-            <Icon icon="lucide:eye" />
-          </Link>
-          {/* invoice */}
-          <Link
-            to={`/invoice-preview/${row.PaymentID}`}
-            className="w-32-px h-32-px bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center"
-            title="Invoice"
-          >
-            <Icon icon="tabler:invoice" />
-          </Link>
-          {/* refund */}
-           {!row.IsRefunded && (
-          <Link 
-            // to={`/refund/${row.PaymentID}`}
-             onClick={() => handleRefund(row.PaymentID)}
-            className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
-            title="Refund"
-          > 
-            <Icon icon="tabler:currency-rupee" />
-          </Link>
- )}
-          {/* <button
-            className="btn btn-sm btn-info"
-            title="View JSON"
-            onClick={() => handleView(row)}
-          >
-            <Icon icon="mdi:eye-outline" />
-          </button> */}
-         
-            {/* <button
-              className="btn btn-sm btn-warning"
+    
+          {/* Invoice - open PDF */}
+          {row.FolderPath && (
+            <a
+              href={row.FolderPath}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-32-px h-32-px bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center"
+              title="Invoice"
+            >
+              <Icon icon="tabler:invoice" />
+            </a>
+          )}
+
+          {/* Refund */}
+          {!row.IsRefunded && (
+            <button
+              onClick={() => handleRefund(row.PaymentID)}
+              className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
               title="Refund"
-             
             >
               <Icon icon="tabler:currency-rupee" />
             </button>
-          */}
+          )}
         </div>
       ),
     },
   ];
 
+  // const filteredPayments = payments.filter((payment) => {
+  //   const search = searchText.toLowerCase();
+  //   return (
+  //     payment.BookingTrackID.toLowerCase().includes(search) ||
+  //     payment.InvoiceNumber.toLowerCase().includes(search) ||
+  //     payment.AmountPaid.toString().includes(search) ||
+  //     payment.PaymentMode.toLowerCase().includes(search) ||
+  //     payment.TransactionID.toLowerCase().includes(search) ||
+  //     payment.PaymentDate.toLowerCase().includes(search) ||
+  //     payment.IsRefunded.toString().includes(search)
+  //   );
+  // });
 
-  const handleView = (payment) => {
-  setSelectedPayment(payment);
-  setViewModalOpen(true);
+
+    const filteredPayments = payments.filter((payment) => {
+    const matchesSearch =
+      // payment.CustFullName?.toLowerCase().includes(searchText.toLowerCase()) ||
+      // payment.CustPhoneNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
+      payment.PaymentMode?.toLowerCase().includes(searchText.toLowerCase()) ||
+      payment.InvoiceNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
+      payment.BookingTrackID?.toLowerCase().includes(searchText.toLowerCase());
+
+    // const bookingDate = new Date(booking.BookingDate);
+    // const matchesDate =
+    //   (!startDate || bookingDate >= new Date(startDate)) &&
+    //   (!endDate || bookingDate <= new Date(endDate));
+
+    return matchesSearch;
+  });
+
+  // Export to Excel
+const exportToExcel = () => {
+  if (!payments.length) return;
+  const worksheet = XLSX.utils.json_to_sheet(payments);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Payments");
+  XLSX.writeFile(workbook, "Payments_Report.xlsx");
 };
 
-const handleRefund = (paymentId) => {
-  const confirmed = window.confirm("Are you sure you want to refund this payment?");
-  if (!confirmed) return;
+// Export to PDF
+const exportToPDF = () => {
+  if (!payments.length) return;
+  const doc = new jsPDF();
+  doc.text("Payments Report", 14, 10);
 
-  const updatedPayments = payments.map((p) =>
-    p.PaymentID === paymentId ? { ...p, IsRefunded: true } : p
-  );
-  setPayments(updatedPayments);
+  // Prepare columns and rows
+  const tableColumn = [
+    "Payment ID",
+    "Booking ID",
+    "Invoice No",
+    "Amount Paid",
+    "Payment Mode",
+    "Transaction ID",
+    "Payment Date",
+    "Refunded",
+  ];
 
-  // optionally trigger an API call here
-  // axios.post(`${API_BASE}/refund/${paymentId}`)
+  const tableRows = payments.map((p) => [
+    p.PaymentID,
+    p.BookingTrackID || p.BookingID,
+    p.InvoiceNumber,
+    `₹${p.AmountPaid}`,
+    p.PaymentMode,
+    p.TransactionID,
+    new Date(p.PaymentDate).toLocaleString(),
+    p.IsRefunded ? "Yes" : "No",
+  ]);
+
+  autoTable(doc, {
+    head: [tableColumn],
+    body: tableRows,
+    startY: 20,
+    styles: { fontSize: 8 },
+  });
+
+  doc.save("Payments_Report.pdf");
 };
 
-
-  const [searchText, setSearchText] = useState("");
-const filteredPayments = payments.filter((payment) => {
-  const search = searchText.toLowerCase();
   return (
-    payment.PaymentID.toString().toLowerCase().includes(search) ||
-    payment.BookingID.toLowerCase().includes(search) ||
-    payment.PaymentMode.toLowerCase().includes(search) ||
-    payment.TransactionID.toLowerCase().includes(search)
-  );
-});
-  return (
-   <div className="row gy-4">
+    <div className="row gy-4">
       <div className="col-12">
         <div className="card overflow-hidden p-3">
           <div className="card-header d-flex justify-content-between align-items-center">
@@ -183,11 +198,22 @@ const filteredPayments = payments.filter((payment) => {
                 onChange={(e) => setSearchText(e.target.value)}
               />
             </form>
+
+            <div className="d-flex gap-2">
+              <button className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center" onClick={exportToExcel}>
+                <Icon icon="mdi:microsoft-excel" /> 
+              </button>
+              <button className="w-32-px h-32-px  bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center" onClick={exportToPDF}>
+                <Icon icon="mdi:file-pdf-box" /> 
+              </button>
+            </div>
           </div>
           <DataTable
             columns={columns}
             data={filteredPayments}
             pagination
+            paginationPerPage={10} // default rows per page
+            paginationRowsPerPageOptions={[10, 25, 50, 100, filteredPayments.length]} // last option shows all
             highlightOnHover
             responsive
             striped
@@ -197,32 +223,37 @@ const filteredPayments = payments.filter((payment) => {
         </div>
       </div>
 
+      {/* View Modal */}
       {viewModalOpen && selectedPayment && (
-  <div className="modal fade show d-block" style={{ background: "#00000080" }}>
-    <div className="modal-dialog">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h5 className="modal-title">Payment Details</h5>
-          <button
-            className="btn-close"
-            onClick={() => setViewModalOpen(false)}
-          />
+        <div className="modal fade show d-block" style={{ background: "#00000080" }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Payment Details</h5>
+                <button className="btn-close" onClick={() => setViewModalOpen(false)} />
+              </div>
+              <div className="modal-body">
+                <p><strong>Payment ID:</strong> {selectedPayment.PaymentID}</p>
+                <p><strong>Booking ID:</strong> {selectedPayment.BookingID}</p>
+                <p><strong>Invoice No:</strong> {selectedPayment.InvoiceNumber}</p>
+                <p><strong>Amount:</strong> ₹{selectedPayment.AmountPaid}</p>
+                <p><strong>Mode:</strong> {selectedPayment.PaymentMode}</p>
+                <p><strong>Transaction:</strong> {selectedPayment.TransactionID}</p>
+                <p><strong>Date:</strong> {new Date(selectedPayment.PaymentDate).toLocaleString()}</p>
+                <p><strong>Refunded:</strong> {selectedPayment.IsRefunded ? "Yes" : "No"}</p>
+                {selectedPayment.FolderPath && (
+                  <p>
+                    <a href={selectedPayment.FolderPath} target="_blank" rel="noopener noreferrer">
+                      View Invoice PDF
+                    </a>
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="modal-body">
-          <p><strong>Payment ID:</strong> {selectedPayment.PaymentID}</p>
-          <p><strong>Booking ID:</strong> {selectedPayment.BookingID}</p>
-          <p><strong>Amount:</strong> ₹{selectedPayment.AmountPaid}</p>
-          <p><strong>Mode:</strong> {selectedPayment.PaymentMode}</p>
-          <p><strong>Transaction:</strong> {selectedPayment.TransactionID}</p>
-          <p><strong>Date:</strong> {new Date(selectedPayment.PaymentDate).toLocaleString()}</p>
-          <p><strong>Refunded:</strong> {selectedPayment.IsRefunded ? "Yes" : "No"}</p>
-        </div>
-      </div>
+      )}
     </div>
-  </div>
-)}
-
-      </div>
   );
 };
 

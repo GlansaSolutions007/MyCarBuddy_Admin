@@ -15494,7 +15494,10 @@ td.fc-header-center {
   border-block-end: 1px solid var(--neutral-200);
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  /* justify-content: flex-start; */
+  justify-content: center;
+  /* background: #116d6e; */
+  background: #fff;
 }
 
 .sidebar-logo img {
@@ -15803,4 +15806,7 @@ div:where(.swal2-container) h2:where(.swal2-title){
 }
 .login-bg .card{
   background-color: #ffffffb0 !important;
+}
+html[data-theme="dark"] .sidebar-logo {
+  background: #273142;
 }

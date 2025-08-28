@@ -23,6 +23,7 @@ const CityLayer = () => {
    const [formData, setFormData] = useState({
         CityID: "",
         CityName: "",
+        Pincode:"",
         IsActive: true,
         StateID: "",
       });
@@ -72,6 +73,7 @@ const CityLayer = () => {
          await axios.put(API_CITIES, {
                         CityName: formData.CityName,
                         IsActive: formData.IsActive,
+                        Pincode: formData.Pincode,
                         StateID: formData.StateID,
                         CityID: formData.CityID,
                     }, {
@@ -85,6 +87,7 @@ const CityLayer = () => {
             await axios.post(API_CITIES, {
                         CityName: formData.CityName,
                         StateID: formData.StateID,
+                        Pincode: formData.Pincode,
                         IsActive: formData.IsActive,
                     }, {
             headers: {
@@ -94,7 +97,9 @@ const CityLayer = () => {
           });
         }
 
-      setFormData({ CityID: "", CityName: "", IsActive: true, StateID: "" });
+      Swal.fire("Success", `City ${formData.CityID ? "updated" : "added"} successfully`, "success");
+
+      setFormData({ CityID: "", CityName: "", Pincode: "", IsActive: true, StateID: "" });
       fetchCities();
     } catch (error) {
       console.error("Add failed", error);
@@ -149,6 +154,11 @@ const CityLayer = () => {
       selector: (row) => row.CityName,
       sortable: true,
     },
+    {
+      name: "Pincode",
+      selector: (row) => row.Pincode,
+      sortable: true,
+    },
     
     {
       name: "Status",
@@ -193,26 +203,27 @@ const CityLayer = () => {
               <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
                 Select State <span className='text-danger'>*</span>
               </label>
-              {/* <select
-                name="StateID"
-                // className="form-select form-control"
-                className={`form-select select2 form-control${errors.StateName ? "is-invalid" : ""}`}
-                value={formData.StateID}
-                onChange={handleChange}
-              >
-                <option value="">-- Select State --</option>
-                {states.map((state) => (
-                  <option key={state.StateID} value={state.StateID}>
-                    {state.StateName}
-                  </option>
-                ))}
-              </select> */}
               <Select
                       name="StateID"
-                      options={states.map((state) => ({
+                      options={states
+                        .sort((a, b) => (b.IsActive === a.IsActive ? 0 : b.IsActive ? 1 : -1))
+                         .map((state) => ({
                         value: state.StateID,
-                        label: state.StateName,
+                        label: (
+                          <span>
+                            {state.StateName}{" "}
+                            <span style={{ color: state.IsActive ? "green" : "red" }}>
+                              ({state.IsActive ? "Active" : "Inactive"})
+                            </span>
+                          </span>
+                        ),
+                        name: state.StateName,
+                        status: state.IsActive,
                       }))}
+                      //   .map((state) => ({
+                      //   value: state.StateID,
+                      //   label: state.StateName,
+                      // }))}
                       value={states.find((s) => s.StateID === formData.StateID) ? {
                         value: formData.StateID,
                         label: states.find((s) => s.StateID === formData.StateID)?.StateName,
@@ -240,6 +251,22 @@ const CityLayer = () => {
                 onChange={handleChange}
               />
               <FormError error={errors.CityName} />
+            </div>
+
+             <div className="mb-20">
+              <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
+                Pincode <span className='text-danger'>*</span>
+              </label>
+              <input
+                type="text"
+                name="Pincode"
+                // className="form-control"
+                className={`form-control ${errors.Pincode ? "is-invalid" : ""}`}
+                placeholder="Enter pincode"
+                value={formData.Pincode}
+                onChange={handleChange}
+              />
+              <FormError error={errors.Pincode} />
             </div>
             <div className='mb-20'>
               <label

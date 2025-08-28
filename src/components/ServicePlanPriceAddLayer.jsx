@@ -26,7 +26,6 @@ const [formData, setFormData] = useState({
   Description: "",
   Serv_Reg_Price: "",
   Serv_Off_Price: "",
-  EstimatedDurationMinutes: "",
   ImageURL: null,
   IsActive: true,
 });
@@ -35,6 +34,7 @@ const [formData, setFormData] = useState({
   const [fuelTypes, setFuelTypes] = useState([]);
   const [plans, setPlans] = useState([]);
   const [imagePreview, setImagePreview] = useState("");
+  const userId = localStorage.getItem("userId");
 
   useEffect(() => {
     setPageTitle(isEditing ? "Edit Plan Price" : "Add Plan Price");
@@ -73,12 +73,22 @@ const [formData, setFormData] = useState({
 
   const fetchPlanPrice = async () => {
     try {
-      const res = await axios.get(`${API_BASE}PlanPackagePrice?planpackagepriceid=${PlanPackagePriceID}`, {
+      const res = await axios.get(`${API_BASE}PlanPackagePrice/planpackagepriceid?planpackagepriceid=${PlanPackagePriceID}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = res.data.data;
+      const data = res.data[0];
       console.log("data", data);
-      setFormData(data);
+      setFormData({
+        PlanPriceID: data.PlanPriceID,
+        BrandID: data.BrandID,
+        ModelID: data.ModelID,
+        FuelTypeID: data.FuelTypeID,
+        PackageID: data.PackageID,
+        Serv_Reg_Price: data.Serv_Reg_Price,
+        Serv_Off_Price: data.Serv_Off_Price,
+        ImageURL: data.ImageURL,
+        IsActive: data.IsActive,
+      });
       if (data.ImageURL) {
         setImagePreview(`${import.meta.env.VITE_APIURL_IMAGE}${data.ImageURL}`);
       }
@@ -102,7 +112,6 @@ const [formData, setFormData] = useState({
 
  const handleSelectChange = (selected, field) => {
   const value = selected ? selected.value : "";
-
   setFormData((prev) => ({
     ...prev,
     [field]: value,
@@ -116,15 +125,39 @@ const [formData, setFormData] = useState({
     const modelsForBrand = models.filter((m) => m.BrandID === value);
     setFilteredModels(modelsForBrand);
   }
+
+   if (field === "PackageID") {
+    const selectedPlan = plans.find((p) => p.PackageID === parseInt(value));
+    if (selectedPlan) {
+      const includePrices = selectedPlan.IncludePrices
+        ?.split(",")
+        .map((p) => parseFloat(p.trim())) || [];
+
+      const totalPrice = includePrices.reduce((acc, val) => acc + val, 0);
+
+      setFormData((prev) => ({
+        ...prev,
+        PackageID: parseInt(value),
+        Serv_Reg_Price: totalPrice.toFixed(2),
+        Description: selectedPlan.PackageName,
+        IsActive: selectedPlan.IsActive,
+        CategoryID: selectedPlan.CategoryID,
+        SubCategoryID: selectedPlan.SubCategoryID,
+      }));
+    }
+  }
 };
 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationErrors = validate(formData, ["IsActive"]);
+    const validationErrors = validate(formData, ["IsActive" , "ImageURL"]);
     console.log(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
-
+if (parseFloat(formData.Serv_Off_Price) > parseFloat(formData.Serv_Reg_Price)) {
+  Swal.fire("Validation Error", "Offer Price should be less than or equal to Regular Price.", "warning");
+  return;
+}
     setIsSubmitting(true);
     try {
       const payload = new FormData();
@@ -138,21 +171,47 @@ const [formData, setFormData] = useState({
       };
 
       if (isEditing) {
+        payload.append("ModifiedBy", userId);
         await axios.put(`${API_BASE}PlanPackagePrice/UpdatePlanPackagePrice`, payload, { headers });
       } else {
         
         await axios.post(`${API_BASE}PlanPackagePrice/AddPlanPackagePrice`, payload, { headers });
       }
 
-      Swal.fire("Success", `Plan Price ${isEditing ? "updated" : "added"} successfully!`, "success");
-      navigate("/service-plan-prices");
+      
+            Swal.fire({
+              title: "Success",
+              text: `Package price ${isEditing ? "updated" : "added"} successfully!`,
+              icon: "success",
+              confirmButtonText: "OK",
+            }).then((result) => {
+              if (result.isConfirmed) {
+                 navigate("/service-plan-prices");
+              }
+            });
+     
     } catch (error) {
       console.error("Submit failed", error);
-      Swal.fire("Error", "Failed to save plan price", "error");
+      Swal.fire("Error", error.response.data.error || "Failed to submit", "error");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+//   const formattedModels = rawModels.map((model) => ({
+//   ...model,
+//   FuelTypeIDs: model.FuelTypeIDs
+//     ? model.FuelTypeIDs.split(',').map((id) => parseInt(id.trim()))
+//     : [],
+// }));
+// setFilteredModels(formattedModels);
+
+const getFuelTypesByModel = () => {
+  const selectedModel = models.find((m) => m.ModelID === formData.ModelID);
+  if (!selectedModel) return [];
+
+  return fuelTypes.filter((f) => selectedModel.FuelTypeID?.includes(f.FuelTypeID));
+};
 
   return (
     <div className='card h-100 p-0 radius-12 overflow-hidden mt-3'>
@@ -161,58 +220,138 @@ const [formData, setFormData] = useState({
     <div className="col-md-6">
             <label className='form-label text-sm fw-semibold text-primary-light mb-8'>Brand</label>
             <Select
-                options={brands
-                .filter((b) => b.IsActive)
-                .map((b) => ({ value: b.BrandID, label: b.BrandName }))}
-                value={
-                brands.find((b) => b.BrandID === formData.BrandID) && {
-                    value: formData.BrandID,
-                    label: brands.find((b) => b.BrandID === formData.BrandID)?.BrandName,
-                }
-                }
-                onChange={(selected) => handleSelectChange(selected, "BrandID")}
-                className="basic-single"
-                classNamePrefix="react-select"
-            />
+  options={brands.map((b) => ({
+    value: b.BrandID,
+    label: (
+      <span>
+        {b.BrandName}{" "}
+        <span style={{ color: b.IsActive ? "green" : "red" }}>
+          ({b.IsActive ? "Active" : "Inactive"})
+        </span>
+      </span>
+    ),
+  }))}
+  value={
+    formData.BrandID
+      ? {
+          value: formData.BrandID,
+          label: (
+            <span>
+              {brands.find((b) => b.BrandID === formData.BrandID)?.BrandName}{" "}
+              <span
+                style={{
+                  color: brands.find((b) => b.BrandID === formData.BrandID)?.IsActive
+                    ? "green"
+                    : "red",
+                }}
+              >
+                (
+                {brands.find((b) => b.BrandID === formData.BrandID)?.IsActive
+                  ? "Active"
+                  : "Inactive"}
+                )
+              </span>
+            </span>
+          ),
+        }
+      : null
+  }
+  onChange={(selected) => handleSelectChange(selected, "BrandID")}
+  className="basic-single"
+  classNamePrefix="react-select"
+/>
+
             <FormError error={errors.BrandID} />
             </div>
 
             <div className="col-md-6">
             <label className='form-label text-sm fw-semibold text-primary-light mb-8'>Model</label>
-            <Select
-                options={filteredModels
-                .filter((m) => m.IsActive)
-                .map((m) => ({ value: m.ModelID, label: m.ModelName }))}
-                value={
-                filteredModels.find((m) => m.ModelID === formData.ModelID) && {
-                    value: formData.ModelID,
-                    label: filteredModels.find((m) => m.ModelID === formData.ModelID)?.ModelName,
-                }
-                }
-                onChange={(selected) => handleSelectChange(selected, "ModelID")}
-                className="basic-single"
-                classNamePrefix="react-select"
-                isDisabled={!formData.BrandID}
-            />
+           <Select
+  options={filteredModels.map((m) => ({
+    value: m.ModelID,
+    label: (
+      <span>
+        {m.ModelName}{" "}
+        <span style={{ color: m.IsActive ? "green" : "red" }}>
+          ({m.IsActive ? "Active" : "Inactive"})
+        </span>
+      </span>
+    ),
+  }))}
+  value={
+    formData.ModelID
+      ? {
+          value: formData.ModelID,
+          label: (
+            <span>
+              {filteredModels.find((m) => m.ModelID === formData.ModelID)?.ModelName}{" "}
+              <span
+                style={{
+                  color: filteredModels.find((m) => m.ModelID === formData.ModelID)
+                    ?.IsActive
+                    ? "green"
+                    : "red",
+                }}
+              >
+                (
+                {filteredModels.find((m) => m.ModelID === formData.ModelID)?.IsActive
+                  ? "Active"
+                  : "Inactive"}
+                )
+              </span>
+            </span>
+          ),
+        }
+      : null
+  }
+  onChange={(selected) => handleSelectChange(selected, "ModelID")}
+  className="basic-single"
+  classNamePrefix="react-select"
+  isDisabled={!formData.BrandID}
+/>
+
             <FormError error={errors.ModelID} />
             </div>
 
             <div className="col-md-6">
             <label className='form-label text-sm fw-semibold text-primary-light mb-8'>Fuel Type</label>
-            <Select
-                options={fuelTypes
-                .filter((f) => f.IsActive)
-                .map((f) => ({ value: f.FuelTypeID, label: f.FuelTypeName }))}
-                value={
-                fuelTypes.find((f) => f.FuelTypeID === formData.FuelTypeID) && {
-                    value: formData.FuelTypeID,
-                    label: fuelTypes.find((f) => f.FuelTypeID === formData.FuelTypeID)?.FuelTypeName,
+          <Select
+                options={fuelTypes.map((f) => ({
+                  value: f.FuelTypeID,
+                  label:  (
+                    <span>
+                      {f.FuelTypeName}{" "}
+                      <span style={{ color: f.IsActive ? "green" : "red" }}>
+                        ({f.IsActive ? "Active" : "Inactive"})
+                      </span>
+                    </span>
+                  ),
+                }))}
+
+                value={fuelTypes
+                  .map((f) => ({
+                    value: f.FuelTypeID,
+                    label: (
+                      <span>
+                        {f.FuelTypeName}{" "}
+                        <span style={{ color: f.IsActive ? "green" : "red" }}>
+                          ({f.IsActive ? "Active" : "Inactive"})
+                        </span>
+                      </span>
+                    ),
+                  }))
+                  .find((option) => option.value === formData.FuelTypeID)}
+                onChange={(selectedOption) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    FuelTypeID: selectedOption ? selectedOption.value : "",
+                  }))
                 }
-                }
-                onChange={(selected) => handleSelectChange(selected, "FuelTypeID")}
-                className={` basic-single ${errors.FuelTypeID ? "is-invalid" : ""}`}
                 classNamePrefix="react-select"
-            />
+                className={errors.FuelTypeID ? "is-invalid" : ""}
+              />
+
+
             <FormError error={errors.FuelTypeID} />
             </div>
 
@@ -220,10 +359,10 @@ const [formData, setFormData] = useState({
           <div className="col-md-6">
             <label className='form-label text-sm fw-semibold text-primary-light mb-8'>Service Plan</label>
             <Select
-              options={plans.filter((p) => p.isActive).map((p) => ({ value: p.packageID, label: p.packageName }))}
-              value={plans.find((p) => p.packageID === formData.PackageID) && {
+              options={plans.filter((p) => p.IsActive).map((p) => ({ value: p.PackageID, label: p.PackageName }))}
+              value={plans.find((p) => p.PackageID === formData.PackageID) && {
                 value: formData.PackageID,
-                label: plans.find((p) => p.packageID === formData.PackageID)?.packageName,
+                label: plans.find((p) => p.PackageID === formData.PackageID)?.PackageName,
               }}
               className="basic-single"
                         classNamePrefix="react-select"
@@ -232,7 +371,7 @@ const [formData, setFormData] = useState({
             <FormError error={errors.packageID} />
           </div>
 
-          <div className="col-md-12">
+          {/* <div className="col-md-12">
             <label className='form-label text-sm fw-semibold text-primary-light mb-8'>Description</label>
             <textarea
               name="Description"
@@ -241,7 +380,7 @@ const [formData, setFormData] = useState({
               onChange={handleChange}
             />
             <FormError error={errors.Description} />
-          </div>
+          </div> */}
 
          <div className="col-md-6">
   <label className='form-label text-sm fw-semibold text-primary-light mb-8'>Regular Price</label>
@@ -268,19 +407,9 @@ const [formData, setFormData] = useState({
 </div>
 
 
-          <div className="col-md-6">
-            <label className='form-label text-sm fw-semibold text-primary-light mb-8'>Estimated Duration (Minutes)</label>
-            <input
-              type="number"
-              name="EstimatedDurationMinutes"
-              className="form-control"
-              value={formData.EstimatedDurationMinutes}
-              onChange={handleChange}
-            />
-            <FormError error={errors.EstimatedDurationMinutes} />
-          </div>
+        
 
-          <div className="col-md-6">
+          {/* <div className="col-md-6">
             <label className='form-label text-sm fw-semibold text-primary-light mb-8'>Upload Image</label>
             <input
               type="file"
@@ -301,7 +430,7 @@ const [formData, setFormData] = useState({
               )
             )}
             <FormError error={errors.ImageURL} />
-          </div>
+          </div> */}
 
           <div className="col-md-6">
             <label className='form-label text-sm fw-semibold text-primary-light mb-8'>Status</label>

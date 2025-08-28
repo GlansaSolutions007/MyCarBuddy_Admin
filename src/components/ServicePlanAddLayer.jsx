@@ -32,10 +32,12 @@ const [formData, setFormData] = useState({
   SubCategoryID: "",
   IncludeID: [],
   IncludePrices: "",
-  TotalPrice:0.00,
+  Total_Offer_Price:0.00,
+  Default_Price:0.00,
   IsActive: true,
   PackageImage: null,
   BannerImages: [],
+  EstimatedDurationMinutes: 0
 });
 
   useEffect(() => {
@@ -54,7 +56,7 @@ const [formData, setFormData] = useState({
       const res = await axios.get(`${API_BASE}Category`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setCategories(res.data.data);
+      setCategories(res.data);
     } catch (error) {
       console.error("Failed to load categories", error);
     }
@@ -94,17 +96,14 @@ const fetchPlanPackage = async () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    const includeIdArray = res.data.includeID
-      ? res.data.includeID.split(",").map((id) => parseInt(id))
+    const includeIdArray = res.data[0].IncludeID
+      ? res.data[0].IncludeID.split(",").map((id) => parseInt(id))
       : [];
 
-   const bannerURLs = res.data.bannerImage
-  ? res.data.bannerImage.split(",").map((imgPath) => `${API_IMAGE}${imgPath.trim()}`)
+   const bannerURLs = res.data[0].BannerImage
+  ? res.data[0].BannerImage.split(",").map((imgPath) => `${API_IMAGE}${imgPath.trim()}`)
   : [];
 
-    //  console.log("includeIdArray", res.data.bannerImage);
-
-    // 👇 Convert banner URLs to File objects
     const bannerFiles = await Promise.all(
       bannerURLs.map((url, index) =>
         urlToFile(url, `banner_${index}.${url.split(".").pop()}`)
@@ -112,27 +111,31 @@ const fetchPlanPackage = async () => {
     );
 
       let packageImageFile = null;
-        if (res.data.packageImage) {
-          const packageImageUrl = `${API_IMAGE}${res.data.packageImage}`;
-          const ext = res.data.packageImage.split(".").pop().split("?")[0];
+        if (res.data[0].PackageImage) {
+          const packageImageUrl = `${API_IMAGE}${res.data[0].PackageImage}`;
+          const ext = res.data[0].PackageImage.split(".").pop().split("?")[0];
           packageImageFile = await urlToFile(packageImageUrl, `package.${ext}`);
         }
 
 
      setFormData({
-      PackageID: res.data.packageID,
-      PackageName: res.data.packageName,
-      CategoryID: res.data.categoryID,
-      SubCategoryID: res.data.subCategoryID,
+      PackageID: res.data[0].PackageID,
+      PackageName: res.data[0].PackageName,
+      CategoryID: res.data[0].CategoryID,
+      SubCategoryID: res.data[0].SubCategoryID,
       IncludeID: includeIdArray,
-      IncludePrices: res.data.includePrices,
-      TotalPrice: res.data.totalPrice,
-      IsActive: res.data.isActive,
-      PackageImage: packageImageFile, // ✅ binary file
-      BannerImages: bannerFiles,      // ✅ binary files
+      IncludePrices: res.data[0].IncludePrices,
+      Total_Offer_Price:res.data[0].Total_Offer_Price,
+      Default_Price:res.data[0].Default_Price,
+      IsActive: res.data[0].IsActive,
+      PackageImage: packageImageFile, 
+      BannerImages: bannerFiles,
+      EstimatedDurationMinutes: res.data[0].EstimatedDurationMinutes    
     });
 
-    setPackageImagePreview(res.data.packageImage ? `${API_IMAGE}${res.data.packageImage}` : null);
+    console.log("Fetched Plan Package:", res.data);
+
+    setPackageImagePreview(res.data[0].PackageImage ? `${API_IMAGE}${res.data[0].PackageImage}` : null);
     setBannerPreviews(bannerURLs);
    
     setSelectedIncludes(includeIdArray);
@@ -207,14 +210,22 @@ const handleIncludeChange = (id) => {
     payload.append("CategoryID", formData.CategoryID);
     payload.append("SubCategoryID", formData.SubCategoryID);
     // payload.append("IncludePrices", formData.IncludePrices);
-    payload.append("TotalPrice", formData.TotalPrice);
+    payload.append("Default_Price", formData.Default_Price);
+    payload.append("TotalPrice", formData.Total_Offer_Price);
     payload.append("IsActive", formData.IsActive);
     payload.append("PackageImage", formData.PackageImage);
     payload.append("IncludeID", formData.IncludeID.join(","));
     formData.BannerImages.forEach((file) => payload.append("BannerImages", file));
+    payload.append("EstimatedDurationMinutes", formData.EstimatedDurationMinutes);
+   
     
     if(isEditing){
       payload.append("PackageID", formData.PackageID);
+      payload.append("ModifiedBy", '0');
+      
+    }
+    else{
+      payload.append("CreatedBy", '0');
     }
 
     const endpoint = isEditing
@@ -255,6 +266,7 @@ const filteredSubCategories = subCategories.filter(
 const activeCategories = categories.filter((c) => c.IsActive);
 
 const filteredIncludes = includes
+  .filter((inc) => inc.CategoryID === formData.CategoryID) 
   .filter((inc) => inc.IsActive) // Only active includes
   .filter((inc) =>
     inc.IncludeName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -278,79 +290,136 @@ const filteredIncludes = includes
             </div>
 
             <div className='col-sm-6 mt-2'>
-              <label className='form-label text-sm fw-semibold text-primary-light mb-8'>Category <span className='text-danger-600'>*</span></label>
-              <Select
-                  name='CategoryID'
-                  options={activeCategories.map((c) => ({
-                    value: c.CategoryID,
-                    label: c.CategoryName,
-                  }))}
-                  value={
-                    formData.CategoryID
-                      ? {
-                          value: formData.CategoryID,
-                          label: activeCategories.find(
-                            (c) => c.CategoryID === formData.CategoryID
-                          )?.CategoryName,
-                        }
-                      : null
-                  }
-                  onChange={(selected) =>
-                    handleChange({ target: { name: "CategoryID", value: selected?.value || "" } })
-                  }
-                  classNamePrefix="react-select"
-                  placeholder="-- Select Category --"
-                />
-
-              <FormError error={errors.CategoryID} />
-            </div>
-
-            <div className='col-sm-6 mt-2'>
-                <label className='form-label text-sm fw-semibold text-primary-light mb-8'>
-                  Sub Category <span className='text-danger-600'>*</span>
-                </label>
-                <Select
-                    name='SubCategoryID'
-                    options={filteredSubCategories.map((c) => ({
-                      value: c.SubCategoryID,
-                      label: c.SubCategoryName,
-                    }))}
+              <div className='mb-10'>
+                  <label className='form-label text-sm fw-semibold text-primary-light mb-8'>
+                    Category <span className='text-danger-600'>*</span>
+                  </label>
+                  <Select
+                    name='CategoryID'
+                    options={categories
+                      .sort((a, b) => (b.IsActive === a.IsActive ? 0 : b.IsActive ? 1 : -1)) // Sort active first
+                      .map((c) => ({
+                        value: c.CategoryID,
+                        label: (
+                          <span>
+                            {c.CategoryName}{" "}
+                            <span style={{ color: c.IsActive ? "green" : "red" }}>
+                              ({c.IsActive ? "Active" : "Inactive"})
+                            </span>
+                          </span>
+                        ),
+                        name: c.CategoryName,
+                        status: c.IsActive,
+                      }))}
                     value={
-                      formData.SubCategoryID
+                      formData.CategoryID
                         ? {
-                            value: formData.SubCategoryID,
-                            label: filteredSubCategories.find(
-                              (c) => c.SubCategoryID === formData.SubCategoryID
-                            )?.SubCategoryName,
+                            value: formData.CategoryID,
+                            label: (
+                              <span>
+                                {
+                                  categories.find((c) => c.CategoryID === formData.CategoryID)
+                                    ?.CategoryName
+                                }{" "}
+                                <span
+                                  style={{
+                                    color: categories.find(
+                                      (c) => c.CategoryID === formData.CategoryID
+                                    )?.IsActive
+                                      ? "green"
+                                      : "red",
+                                  }}
+                                >
+                                  (
+                                  {categories.find(
+                                    (c) => c.CategoryID === formData.CategoryID
+                                  )?.IsActive
+                                    ? "Active"
+                                    : "Inactive"}
+                                  )
+                                </span>
+                              </span>
+                            ),
                           }
                         : null
                     }
                     onChange={(selected) =>
-                      handleChange({ target: { name: "SubCategoryID", value: selected?.value || "" } })
+                      handleChange({
+                        target: { name: "CategoryID", value: selected?.value || "" },
+                      })
                     }
                     classNamePrefix="react-select"
-                    placeholder="-- Select Subcategory --"
-                    isDisabled={!formData.CategoryID}
                   />
+                  <FormError error={errors.CategoryID} />
+                </div>
 
-                <FormError error={errors.SubCategoryID} />
-              </div>
-
-
-            <div className='col-sm-6 mt-2 d-none'>
-              <label className='form-label text-sm fw-semibold text-primary-light mb-8'>Price <span className='text-danger-600'>*</span></label>
-              <input
-                type='text'
-                name='TotalPrice'
-                className='form-control radius-8'
-                value={formData.TotalPrice }
-                onChange={handleChange}
-                placeholder='Enter Price'
-              />
-              <FormError error={errors.TotalPrice } />
             </div>
 
             <div className='col-sm-6 mt-2'>
+                 <div className='mb-10'>
+            <label className='form-label text-sm fw-semibold text-primary-light mb-8'>
+              Sub Category <span className='text-danger-600'>*</span>
+            </label>
+            <Select
+              name='SubCategoryID'
+              options={filteredSubCategories
+                .sort((a, b) => (b.IsActive === a.IsActive ? 0 : b.IsActive ? 1 : -1)) // Sort: active first
+                .map((c) => ({
+                  value: c.SubCategoryID,
+                  label: (
+                    <span>
+                      {c.SubCategoryName}{" "}
+                      <span style={{ color: c.IsActive ? "green" : "red" }}>
+                        ({c.IsActive ? "Active" : "Inactive"})
+                      </span>
+                    </span>
+                  ),
+                }))}
+              value={
+                formData.SubCategoryID
+                  ? {
+                      value: formData.SubCategoryID,
+                      label: (
+                        <span>
+                          {
+                            subCategories.find(
+                              (c) => c.SubCategoryID === formData.SubCategoryID
+                            )?.SubCategoryName
+                          }{" "}
+                          <span
+                            style={{
+                              color: subCategories.find(
+                                (c) => c.SubCategoryID === formData.SubCategoryID
+                              )?.IsActive
+                                ? "green"
+                                : "red",
+                            }}
+                          >
+                            (
+                            {subCategories.find(
+                              (c) => c.SubCategoryID === formData.SubCategoryID
+                            )?.IsActive
+                              ? "Active"
+                              : "Inactive"}
+                            )
+                          </span>
+                        </span>
+                      ),
+                    }
+                  : null
+              }
+              onChange={(selected) =>
+                handleChange({
+                  target: { name: "SubCategoryID", value: selected?.value || "" },
+                })
+              }
+              classNamePrefix="react-select"
+            />
+            <FormError error={errors.SubCategoryID} />
+          </div>
+              </div>
+
+               <div className='col-sm-6 mt-2'>
               <label className='form-label text-sm fw-semibold text-primary-light mb-8'>Status</label>
               <select
                 name='IsActive'
@@ -362,6 +431,47 @@ const filteredIncludes = includes
                 <option value='false'>Inactive</option>
               </select>
             </div>
+
+              <div className="col-md-6">
+            <label className='form-label text-sm fw-semibold text-primary-light mb-8'>Estimated Duration (Minutes)</label>
+            <input
+              type="number"
+              name="EstimatedDurationMinutes"
+              className="form-control"
+              value={formData.EstimatedDurationMinutes}
+              onChange={handleChange}
+              min="60"
+            />
+            <FormError error={errors.EstimatedDurationMinutes} />
+          </div>
+
+
+              <div className="col-md-6">
+  <label className='form-label text-sm fw-semibold text-primary-light mb-8'>Regular Price</label>
+  <input
+    type="number"
+    name="Default_Price"
+    className="form-control"
+    value={formData.Default_Price}
+    onChange={handleChange}
+  />
+  <FormError error={errors.Default_Price} />
+</div>
+
+<div className="col-md-6">
+  <label className='form-label text-sm fw-semibold text-primary-light mb-8'>Offer Price</label>
+  <input
+    type="number"
+    name="Total_Offer_Price"
+    className="form-control"
+    value={formData.Total_Offer_Price}
+    onChange={handleChange}
+  />
+  <FormError error={errors.Total_Offer_Price} />
+</div>
+<div className="col-md-6">  </div>
+
+           
 
             <div className='col-sm-6 mt-2'>
           <label className='form-label fw-semibold text-primary-light'>Package Image</label>

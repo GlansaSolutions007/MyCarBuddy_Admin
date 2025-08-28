@@ -15,69 +15,46 @@ const LeaveListLayer = () => {
 
   useEffect(() => {
     fetchLeaves();
-    fetchTechnicians();
+    // fetchTechnicians();
   }, []);
 
   const fetchLeaves = async () => {
-    // const res = await axios.get(`${import.meta.env.VITE_APIURL}TechnicianLeave`, {
-    //   headers: { Authorization: `Bearer ${token}` },
-    // });
-    const res = [
-      {
-        "TechnicianID": 1,
-        "TechnicianName": "John Doe",
-        "LeaveFrom": "2023-05-01",
-        "LeaveTo": "2023-05-05",
-        "Reason": "Personal",
-        "Status": "Pending",
-        "LeaveID": 1
-    },
-    {
-        "TechnicianID": 1,
-        "TechnicianName": "John Doe",
-        "LeaveFrom": "2023-05-01",
-        "LeaveTo": "2023-05-05",
-        "Reason": "Personal",
-        "Status": "Approved",
-        "LeaveID": 2
-    },
-    {
-        "TechnicianID": 1,
-        "TechnicianName": "John Doe",
-        "LeaveFrom": "2023-05-01",
-        "LeaveTo": "2023-05-05",
-        "Reason": "Personal",
-        "Status": "Rejected",
-        "LeaveID": 3
-    }
-    
-  ]
-    setLeaves(res);
+    const res = await axios.get(`${import.meta.env.VITE_APIURL}LeaveRequest`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setLeaves(res.data);
   };
 
   const fetchTechnicians = async () => {
     const res = await axios.get(`${import.meta.env.VITE_APIURL}Technician`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    setTechnicians(res.data.data);
+    setTechnicians(res.data);
   };
 
   const filteredLeaves = leaves.filter((leave) => {
-    const matchTech = !filterTechnicianID || leave.TechnicianID === filterTechnicianID;
-    const matchStatus = !filterStatus || leave.Status === filterStatus;
-    return matchTech && matchStatus;
+    return (
+      (!filterTechnicianID || leave.TechID === filterTechnicianID) &&
+      (!filterStatus || leave.Status === filterStatus)
+    );
   });
 
   const columns = [
     { name: "Technician", selector: row => row.TechnicianName },
-    { name: "From", selector: row => row.LeaveFrom },
-    { name: "To", selector: row => row.LeaveTo },
-    { name: "Reason", selector: row => row.Reason },
-    { name: "Status", selector: row => row.Status },
+    { name: "From", selector: row => row.FromDate },
+    { name: "To", selector: row => row.ToDate },
+    { name: "Reason", selector: row => row.LeaveReason },
+    { name: "Status", selector: row => (
+      <>
+        {row.Status === 0 && <span className="badge bg-warning">Pending</span>}
+        {row.Status === 1 && <span className="badge bg-success">Approved</span>}
+        {row.Status === 2 && <span className="badge bg-danger">Rejected</span>}
+      </>
+    )},
     {
       name: "Actions",
       cell: (row) => (
-        <Link to={`/leave-edit/${row.LeaveID}`} className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center">
+        <Link to={`/leave-edit/${row.LeaveId}`} className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center">
           <Icon icon="lucide:edit" />
         </Link>
       )
@@ -91,16 +68,16 @@ const LeaveListLayer = () => {
           <select className="form-select" value={filterTechnicianID} onChange={(e) => setFilterTechnicianID(e.target.value)}>
             <option value="">All Technicians</option>
             {technicians.map(tech => (
-              <option key={tech.TechnicianID} value={tech.TechnicianID}>{tech.FullName}</option>
+              <option key={tech.TechID} value={tech.TechID}>{tech.FullName}</option>
             ))}
           </select>
         </div>
         <div className="col-md-6">
           <select className="form-select" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
             <option value="">All Status</option>
-            <option value="Pending">Pending</option>
-            <option value="Approved">Approved</option>
-            <option value="Rejected">Rejected</option>
+            <option value="0">Pending</option>
+            <option value="1">Approved</option>
+            <option value="2">Rejected</option>
           </select>
         </div>
       </div>

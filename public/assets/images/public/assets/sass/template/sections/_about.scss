@@ -1,0 +1,266 @@
+/*----------------------------------------------
+    # About Area 1
+----------------------------------------------*/
+.about1-shape-img {
+  opacity: 0.2;
+  left: 120px;
+  .about1-shape-img-2 {
+    margin-left: -35px;
+    margin-bottom: -120px;
+  }
+  @include xxl {
+    left: 42px;
+  }
+}
+.about-thumb1 {
+  position: relative;
+  padding-left: 180px;
+  padding-bottom: 240px;
+  display: inline-block;
+  height: 100%;
+  .about-img-1 {
+    border-radius: 5px;
+    position: relative;
+    z-index: 1;
+    padding: 30px 0 0 30px;
+    &:after {
+      content: "";
+      position: absolute;
+      inset: 0px 90px 94px 0px;
+      background: $theme-color;
+      opacity: 0.2;
+      z-index: -1;
+      border-radius: 5px;
+    }
+    img {
+      border: 7px solid $white-color;
+      border-radius: 5px;
+    }
+  }
+  .about-img-2 {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    padding-right: 30px;
+    padding-bottom: 30px;
+    &:after {
+      content: "";
+      position: absolute;
+      inset: 104px 0px 0px 115px;
+      background: $theme-color;
+      opacity: 0.2;
+      z-index: -1;
+      border-radius: 5px;
+    }
+    img {
+      border-radius: 5px;
+    }
+  }
+  @include xs {
+    .about-img-1:after {
+      inset: 0px 30px 64px 0px;
+    }
+  }
+  @include vxs {
+    padding-left: 60px;
+    padding-bottom: 200px;
+  }
+}
+.about-year-wrap {
+  position: relative;
+  display: inline-block;
+  margin: 7px;
+  width: 183px;
+  &:after {
+    content: "";
+    position: absolute;
+    inset: -7px;
+    //! background: url(../img/bg/about_counter-border1-1.png);
+    background-size: 100% 100%;
+  }
+  .about-year-mask-wrap {
+    mask-size: 100% 100%;
+    background: $title-color;
+    text-align: center;
+    padding: 30px 19px 60px;
+  }
+  .about-year-wrap-title {
+    font-weight: 900;
+    color: $white-color;
+    margin-top: 7px;
+    margin-bottom: -2px;
+  }
+  .about-year-wrap-text {
+    font-weight: 400;
+    font-family: $title-font;
+    font-size: 18px;
+    color: $white-color;
+    margin-bottom: -0.55em;
+  }
+}
+
+/* About Area 2 ---------------------------------- */
+.about-area-2 {
+  padding-bottom: calc(8px + 111px);
+  @include md {
+    padding-bottom: calc(8px + 111px);
+  }
+  @include ml {
+    padding-bottom: 120px;
+  }
+}
+.about-thumb2 {
+  position: relative;
+  display: inline-block;
+  .about-img-1 {
+    padding-left: 237px;
+    border-radius: 5px;
+    img {
+      border-radius: 5px;
+    }
+  }
+  .about-img-2 {
+    border-radius: 5px;
+    margin-top: 12px;
+    img {
+      border-radius: 5px;
+    }
+  }
+  .about-counter-wrap {
+    background: $theme-color;
+    border-radius: 5px;
+    padding: 30px;
+    display: inline-block;
+    position: absolute;
+    top: 0;
+    left: 20px;
+    .about-counter {
+      font-size: 50px;
+      font-weight: 900;
+      color: $white-color;
+      margin-bottom: -3px;
+      margin-top: 11px;
+    }
+    .about-counter-text {
+      color: $white-color;
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: -0.3em;
+    }
+  }
+  .about-year-wrap2 {
+    background: $white-color;
+    box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.07);
+    padding: 15px 28px 25px;
+    text-align: center;
+    display: inline-block;
+    border-radius: 5px;
+    position: absolute;
+    right: 50px;
+    bottom: 62px;
+    .about-year-grid-wrap {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      align-items: center;
+      .icon {
+        height: 55px;
+        width: 55px;
+        line-height: 55px;
+        border-radius: 50%;
+        background: $theme-color;
+      }
+      .about-counter {
+        font-size: 50px;
+        font-weight: 900;
+        margin-bottom: -0.4em;
+        margin-top: -0.3em;
+      }
+    }
+    .about-year-text {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: -0.3em;
+      margin-top: 12px;
+    }
+  }
+}
+.about-counter-grid {
+  display: flex;
+  gap: 10px;
+  padding: 30px 20px;
+  background: $white-color;
+}
+.about-feature-wrap {
+  background: $white-color;
+  border-radius: 5px;
+  padding: 35px 30px;
+  display: flex;
+  gap: 20px;
+  &.style-shadow {
+    box-shadow: 0px 0px 60px 0px rgba(0, 0, 0, 0.05);
+  }
+  &:not(:last-child) {
+    margin-bottom: 20px;
+  }
+  .icon {
+    flex: none;
+    img {
+      transition: 0.4s;
+    }
+  }
+  .about-feature-title {
+    font-size: 26px;
+    font-weight: 900;
+    margin-bottom: 3px;
+    margin-top: -0.3em;
+  }
+  .about-feature-text {
+    margin-bottom: -0.5em;
+    font-size: 18px;
+    font-weight: 400;
+    font-family: $title-font;
+  }
+  &:hover {
+    .icon {
+      img {
+        transform: rotateY(180deg);
+      }
+    }
+  }
+}
+@include ml {
+  .about-thumb2 .about-counter-wrap {
+    left: 0;
+  }
+  .about-thumb2 .about-img-1 {
+    padding-left: 217px;
+    img {
+      min-height: 316px;
+      object-fit: cover;
+    }
+  }
+}
+@include xs {
+  .about-feature-wrap {
+    flex-wrap: wrap;
+  }
+}
+@include vxs {
+  .about-thumb2 .about-img-1 {
+    padding-left: 0;
+  }
+  .about-thumb2 .about-year-wrap2,
+  .about-thumb2 .about-counter-wrap {
+    position: initial;
+    animation: none;
+    margin-top: 12px;
+    display: block;
+  }
+  .about-thumb2 .about-year-wrap2 .about-year-grid-wrap {
+    justify-content: start;
+  }
+  .about-thumb2 .about-year-wrap2 .about-year-text {
+    text-align: left;
+  }
+}

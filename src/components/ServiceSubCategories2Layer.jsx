@@ -69,7 +69,7 @@ const ServiceSubCategories2Layer = () => {
           Authorization: `Bearer ${token}`,
         },
       })
-      setCategories(res.data.data);
+      setCategories(res.data);
     } catch (error) {
       console.error("Failed to load categories", error);
     }

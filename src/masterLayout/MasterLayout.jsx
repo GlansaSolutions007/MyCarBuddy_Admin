@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import ThemeToggleButton from "../helper/ThemeToggleButton";
 import { useNavigate } from "react-router-dom";
+import { requestPermission, onMessageListener } from "../components/firebase";
 
 
 const MasterLayout = ({ children }) => {
@@ -112,6 +113,7 @@ const MasterLayout = ({ children }) => {
     children: [
       { title: "Customers", to: "/customers", color: "text-primary-600" },
       { title: "Bookings", to: "/bookings", color: "text-warning-main" },
+      { title: "Payments", to: "/payments", color: "text-info-main" , roles: ["Admin"] },
     ],
   },
   {
@@ -165,27 +167,21 @@ const MasterLayout = ({ children }) => {
     children: [
       { title: "Categories", to: "/service-category", color: "text-primary-600" },
       { title: "Sub Categories 1", to: "/service-subcategory1", color: "text-warning-main" },
-      { title: "Sub Categories 2", to: "/service-subcategory2", color: "text-info-main" },
+      // { title: "Sub Categories 2", to: "/service-subcategory2", color: "text-info-main" },
       { title: "Skill", to: "/skills", color: "text-info-main" },
       { title: "Includes", to: "/service-includes", color: "text-info-main" },
       { title: "Packages", to: "/service-plans", color: "text-info-main" },
       { title: "Packages Price", to: "/service-plan-prices", color: "text-info-main" },
     ],
   },
-   {
-    title: "Payments",
-    icon: "hugeicons:invoice-03",
-    roles: ["Admin", "Distributor", "Dealer"],
-    children: [
-      { title: "Payments", to: "/payments", color: "text-primary-600" },
-      // { title: "Sub Categories 1", to: "/service-subcategory1", color: "text-warning-main" },
-      // { title: "Sub Categories 2", to: "/service-subcategory2", color: "text-info-main" },
-      // { title: "Includes", to: "/service-includes", color: "text-info-main" },
-      // { title: "Packages", to: "/service-plans", color: "text-info-main" },
-      // { title: "Packages Price", to: "/service-plan-prices", color: "text-info-main" },
-
-    ],
-  },
+  //  {
+  //   title: "Payments",
+  //   icon: "hugeicons:invoice-03",
+  //   roles: ["Admin", "Distributor", "Dealer"],
+  //   children: [
+  //     { title: "Payments", to: "/payments", color: "text-primary-600" },
+  //   ],
+  // },
   {
     title : "Time Slots",
     icon : "ion:time-outline",
@@ -215,18 +211,19 @@ const MasterLayout = ({ children }) => {
     icon: "material-symbols:settings-outline-rounded",
     roles: ["Admin"],
     children: [
-      { title: "Users", to: "/users", color: "text-primary-600" },
-      { title: "Roles", to: "/roles", color: "text-warning-main" },
-      { title: "Permissions", to: "/permissions", color: "text-info-main" },
+      { title: "Reasons", to: "/reason", color: "text-primary-600" },
+      { title: "Notification Templates", to: "/notification-templates", color: "text-warning-main" },
+      { title: "SEO", to: "/seo", color: "text-info-main" },
+      // { title: "Permissions", to: "/permissions", color: "text-info-main" },
     ],
 
   },
   {
-    title: "Logout",
-    icon: "material-symbols:logout-rounded",
-    roles: ["Admin"],
+    title: "Blog",
+    icon: "material-symbols:article-outline",
+    roles: ["Admin" ,"DigitalManager"],
     children: [
-      { title: "Logout", to: "/logout", color: "text-primary-600" },
+      { title: "Blog", to: "/blog", color: "text-primary-600" },
     ],
   }
 ];
@@ -253,19 +250,19 @@ const MasterLayout = ({ children }) => {
           <Icon icon='radix-icons:cross-2' />
         </button>
         <div>
-          <Link to='/' className='sidebar-logo'>
+          <Link to='/dashboard' className='sidebar-logo'>
             <img
-              src='/assets/images/logo.png'
+              src='/assets/images/MyCarBuddy-Logo1.png'
               alt='site logo'
               className='light-logo'
             />
             <img
-              src='/assets/images/logo-light.png'
+              src='/assets/images/MyCarBuddy-Logo1.png'
               alt='site logo'
               className='dark-logo'
             />
             <img
-              src='/assets/images/logo-icon.png'
+              src='/assets/images/MyCarBuddy-Logo1.png'
               alt='site logo'
               className='logo-icon'
             />
@@ -324,265 +321,6 @@ const MasterLayout = ({ children }) => {
 </ul>
 
 
-          {/* <ul className='sidebar-menu' id='sidebar-menu'>
-
-             <li>
-              <NavLink
-                to='/dashboard'
-                className={(navData) => (navData.isActive ? "active-page" : "")}
-              >
-                <Icon icon='solar:home-smile-angle-outline' className='menu-icon' />
-                <span>Dashboard</span>
-              </NavLink>
-            </li>
-             <li className='dropdown'>
-              <Link to='#'>
-                <Icon
-                  icon='flowbite:users-group-outline'
-                  className='menu-icon'
-                />
-                <span>Customer Details</span>
-              </Link>
-              <ul className='sidebar-submenu'>
-                <li>
-                  <NavLink
-                    to='/customers'
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <i className='ri-circle-fill circle-icon text-primary-600 w-auto' />{" "}
-                    Customers
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink
-                    to='/bookings'
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <i className='ri-circle-fill circle-icon text-warning-main w-auto' />
-                    Bookings
-                  </NavLink>
-                </li>
-{/* 
-                <li>
-                  <NavLink
-                    to='/customer-vehicles'
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <i className='ri-circle-fill circle-icon text-info-main w-auto' />
-                    Vehicles
-                  </NavLink>
-                </li> 
-
-
-              </ul>
-            </li>
-
-            <li className='dropdown'>
-              <Link to='#'>
-               <Icon
-                  icon='material-symbols:map-outline'
-                  className='menu-icon'
-                />
-                <span>Regions</span>
-              </Link>
-              <ul className='sidebar-submenu'>
-                <li>
-                  <NavLink
-                    to='/states'
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <i className='ri-circle-fill circle-icon text-primary-600 w-auto' />{" "}
-                    States
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink
-                    to='/cities'
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <i className='ri-circle-fill circle-icon text-warning-main w-auto' />
-                    Cities
-                  </NavLink>
-                </li>
-
-
-              </ul>
-            </li>
-
-            <li className='dropdown'>
-              <Link to='#'>
-                <Icon
-                  icon='flowbite:users-group-outline'
-                  className='menu-icon'
-                /><span>Performers</span>
-              </Link>
-              <ul className='sidebar-submenu'>
-                <li>
-                  <NavLink
-                    to='/distributors'
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <i className='ri-circle-fill circle-icon text-primary-600 w-auto' />{" "}
-                    Distributors
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink
-                    to='/dealers'
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <i className='ri-circle-fill circle-icon text-warning-main w-auto' />
-                    Dealers
-                  </NavLink>
-                </li>
-
-                <li>
-                  <NavLink
-                    to='/technicians'
-                    className={({ isActive, location }) => {
-                      return window.location.pathname.startsWith("/technicians") ? "active-page" : "";
-                    }}
-                  >
-                    <i className='ri-circle-fill circle-icon text-info-main w-auto' />
-                    Technicians
-                  </NavLink>
-                </li>
-
-
-              </ul>
-            </li>
-
-
-            <li className='dropdown'>
-              <Link to='#'>
-                <Icon icon='hugeicons:car-03' className='menu-icon' />
-                <span>Vehicle</span>
-              </Link>
-              <ul className='sidebar-submenu'>
-                <li>
-                  <NavLink
-                    to='/vehicle-brand'
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <i className='ri-circle-fill circle-icon text-primary-600 w-auto' />{" "}
-                    Brand
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink
-                    to='/vehicle-model'
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <i className='ri-circle-fill circle-icon text-warning-main w-auto' />
-                    Model
-                  </NavLink>
-                </li>
-
-                <li>
-                  <NavLink
-                    to='/vehicle-fuel'
-                    className={({ isActive, location }) => {
-                      return window.location.pathname.startsWith("/technicians") ? "active-page" : "";
-                    }}
-                  >
-                    <i className='ri-circle-fill circle-icon text-info-main w-auto' />
-                    Fuel
-                  </NavLink>
-                </li>
-
-
-              </ul>
-            </li>
-
-
-             <li className='dropdown'>
-              <Link to='#'>
-                <Icon icon='hugeicons:invoice-03' className='menu-icon' />
-                <span>Services</span>
-              </Link>
-              <ul className='sidebar-submenu'>
-                <li>
-                  <NavLink
-                    to='/service-category'
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <i className='ri-circle-fill circle-icon text-primary-600 w-auto' />{" "}
-                    Categories
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink
-                    to='/service-subcategory1'
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <i className='ri-circle-fill circle-icon text-warning-main w-auto' />
-                    Sub Categories 1
-                  </NavLink>
-                </li>
-
-                <li>
-                  <NavLink
-                    to='/service-subcategory2'
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <i className='ri-circle-fill circle-icon text-info-main w-auto' />
-                    Sub Categories 2
-                  </NavLink>
-                </li>
-
-                <li>
-                  <NavLink
-                    to='/service-includes'
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <i className='ri-circle-fill circle-icon text-info-main w-auto' />
-                    Includes
-                  </NavLink>
-                </li>
-
-                <li>
-                  <NavLink
-                    to='/service-plans'
-                    className={(navData) =>
-                      navData.isActive ? "active-page" : ""
-                    }
-                  >
-                    <i className='ri-circle-fill circle-icon text-info-main w-auto' />
-                    Plans
-                  </NavLink>
-                </li>
-
-
-              </ul>
-            </li>
-           
-          </ul> */}
         </div>
       </aside>
 
@@ -617,17 +355,18 @@ const MasterLayout = ({ children }) => {
                 >
                   <Icon icon='heroicons:bars-3-solid' className='icon' />
                 </button>
-                <form className='navbar-search'>
+                {/* <form className='navbar-search'>
                   <input type='text' name='search' placeholder='Search' />
                   <Icon icon='ion:search-outline' className='icon' />
-                </form>
+                </form> */}
               </div>
             </div>
-            <div className='col-auto'>
+            <div className='col-auto '>
               <div className='d-flex flex-wrap align-items-center gap-3'>
                 {/* ThemeToggleButton */}
                 <ThemeToggleButton />
-                <div className='dropdown d-none d-sm-inline-block'>
+                <div className='dropdown d-none '> 
+                  {/* d-sm-inline-block */}
                   <button
                     className='has-indicator w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center'
                     type='button'
@@ -639,7 +378,7 @@ const MasterLayout = ({ children }) => {
                       className='w-24 h-24 object-fit-cover rounded-circle'
                     />
                   </button>
-                  <div className='dropdown-menu to-top dropdown-menu-sm'>
+                  <div className='dropdown-menu to-top dropdown-menu-sm d-none'>
                     <div className='py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2'>
                       <div>
                         <h6 className='text-lg text-primary-light fw-semibold mb-0'>
@@ -1003,10 +742,10 @@ const MasterLayout = ({ children }) => {
                     <div className='py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2'>
                       <div>
                         <h6 className='text-lg text-primary-light fw-semibold mb-2'>
-                          Nag Raaz
+                          {localStorage.getItem("name")}
                         </h6>
                         <span className='text-secondary-light fw-medium text-sm'>
-                          Admin
+                          {localStorage.getItem("role")}
                         </span>
                       </div>
                       <button type='button' className='hover-text-danger'>

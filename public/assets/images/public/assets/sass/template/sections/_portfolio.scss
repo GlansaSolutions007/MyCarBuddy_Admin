@@ -1,0 +1,244 @@
+/* Portfolio 1 ---------------------------------- */
+.portfolio-shape-img {
+  opacity: 0.2;
+  right: 66px;
+  top: 199px;
+  transform: rotateY(180deg);
+  .about1-shape-img-2 {
+    margin-left: -35px;
+    margin-bottom: -120px;
+  }
+  @include xxl {
+    right: 42px;
+    top: 140px;
+  }
+}
+.portfolio-tab-1 {
+  .filter-menu-active {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    justify-content: center;
+    .btn {
+      &.active {
+        color: $white-color;
+        &:after,
+        &:before {
+          height: 410px;
+          width: 410px;
+        }
+      }
+    }
+  }
+  @include sm {
+    .filter-menu-active {
+      gap: 20px;
+    }
+  }
+}
+.portfolio-card {
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+  .portfolio-card-thumb {
+    position: relative;
+    border-radius: 5px;
+    img {
+      border-radius: 5px;
+      width: 100%;
+    }
+  }
+  .portfolio-card-details {
+    position: absolute;
+    z-index: 1;
+    bottom: -100px;
+    left: 0;
+    right: 0;
+    background: $smoke-color;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 0;
+    padding: 40px;
+    flex-wrap: wrap;
+    transition: 0.4s;
+    opacity: 0;
+    gap: 30px;
+    &_subtitle {
+      color: $title-color;
+      font-size: 18px;
+      font-weight: 400;
+      font-family: $title-font;
+      margin-top: -0.3em;
+      margin-bottom: 10px;
+      display: block;
+    }
+    &_title {
+      font-weight: 900;
+      font-size: 26px;
+      margin-bottom: -0.4em;
+      a {
+        color: $title-color;
+        &:hover {
+          color: $theme-color;
+        }
+      }
+    }
+    .icon-btn {
+      --btn-size: 60px;
+      background: $theme-color;
+      border-radius: 50%;
+      color: $white-color;
+      flex: none;
+      &:hover {
+        background: $title-color;
+      }
+    }
+  }
+  &:hover {
+    .portfolio-card-details {
+      bottom: 0;
+      opacity: 1;
+    }
+  }
+}
+
+/* Portfolio 2 ---------------------------------- */
+.portfolio-slider1 {
+  .slick-center {
+    .portfolio-card.style2 {
+      .portfolio-card-details {
+        opacity: 1;
+        bottom: 0;
+      }
+    }
+  }
+}
+.portfolio-card.style2 {
+  .portfolio-card-details {
+    opacity: 0;
+    background: transparent;
+    justify-content: start;
+    gap: 30px 95px;
+    align-items: flex-end;
+  }
+  .portfolio-card-details_title {
+    background: $white-color;
+    border-radius: 5px;
+    padding: 5px 20px;
+    margin-bottom: 7px;
+  }
+  .portfolio-card-details_subtitle {
+    background: $white-color;
+    display: inline-block;
+    margin: 0;
+    padding: 3px 22px;
+    border-radius: 5px;
+  }
+  .icon-btn {
+    --btn-size: 135px;
+    margin-bottom: 30px;
+    font-size: 30px;
+    transform: rotate(-45deg);
+  }
+}
+.swiper-slide-active {
+  .portfolio-card-details {
+    bottom: 0;
+    opacity: 1 !important;
+  }
+}
+@media (max-width: 1700px) {
+  .portfolio-card.style2 .portfolio-card-details {
+    gap: 30px;
+    justify-content: space-between;
+  }
+  .portfolio-card.style2 .icon-btn {
+    --btn-size: 120px;
+    margin-bottom: 0;
+    font-size: 24px;
+  }
+}
+@include md {
+  .portfolio-slider1 {
+    padding: 0 15px;
+  }
+  .portfolio-card.style2 .portfolio-card-details {
+    bottom: 0;
+    opacity: 1;
+  }
+}
+@include xs {
+  .portfolio-card.style2 .portfolio-card-details {
+    padding: 30px;
+  }
+  .portfolio-card.style2 .icon-btn {
+    --btn-size: 80px;
+    margin-bottom: 0;
+    font-size: 20px;
+  }
+  .portfolio-card .portfolio-card-thumb img {
+    min-height: 500px;
+    object-fit: cover;
+  }
+  .portfolio-card .portfolio-card-details_title {
+    font-size: 24px;
+  }
+}
+@include vxs {
+  .portfolio-card .portfolio-card-thumb img {
+    min-height: 400px;
+  }
+}
+
+.portfolio-thumb {
+  position: relative;
+  overflow: hidden;
+  img {
+    border-radius: 20px;
+    width: 100%;
+  }
+  .icon-btn {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -30%);
+    background: $white-color;
+    border-radius: 50%;
+    color: $theme-color;
+    height: 50px;
+    width: 50px;
+    line-height: 50px;
+    opacity: 0;
+    z-index: 1;
+  }
+  &:after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    border-radius: 20px;
+    background: linear-gradient(
+      125.07deg,
+      rgba(255, 255, 255, 0.2) 0%,
+      rgba(255, 255, 255, 0.1) 100%
+    );
+    z-index: 0;
+    opacity: 0;
+    transition: 0.4s;
+    backdrop-filter: blur(20px);
+  }
+  &:hover {
+    .icon-btn {
+      opacity: 1;
+    }
+    &:after {
+      opacity: 1;
+    }
+    .icon-btn {
+      transform: translate(-50%, -50%);
+    }
+  }
+}

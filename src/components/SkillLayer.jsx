@@ -24,13 +24,14 @@ const SkillLayer = () => {
   }, []);
 
   const fetchSkill = () => {
-    try {
-      axios.get(API_BASE).then((res) => {
-        setSkills(res.data);
-      });
-    } catch (error) {
-      console.log(error);
-    }
+    const res = axios.get(API_BASE, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    res.then((res) => {
+      setSkills(res.data);
+    })
   };
 
   const handleChange = (e) => {
@@ -51,7 +52,7 @@ const SkillLayer = () => {
               ...formData,
               ModifiedBy: userId,
             };
-        res = axios.put(`${API_BASE}/${formData.SkillID}`, formData,{
+        res = axios.put(API_BASE, formData,{
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
@@ -71,13 +72,11 @@ const SkillLayer = () => {
         });
 
       }
-      if(res.status === 200){
-        Swal.fire({
+       Swal.fire({
           title: "Success",
           text: `Skill ${formData.SkillID ? "updated" : "added"} successfully`,
           icon: "success",
         });
-      }
 
       fetchSkill();
       setFormData({ SkillID: "", SkillName: "", IsActive: true , Description: ""});

@@ -1,0 +1,8 @@
+.single-feature-wrap {
+    padding: 30px 25px 26px 18px;
+}
+.single-feature-wrap:after {
+    right: 0;
+    left: auto;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 70px 100%);
+}

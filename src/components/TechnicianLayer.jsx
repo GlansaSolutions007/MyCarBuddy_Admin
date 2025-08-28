@@ -12,19 +12,22 @@ const TechnicianLayer = () => {
   const [cities, setCities] = useState([]);
   const token = localStorage.getItem('token');
   const [searchText, setSearchText] = useState("");
+  const role = localStorage.getItem('role');
+  const userId = localStorage.getItem('userId');
+  
 
 
 
   useEffect(() => {
     fechTechnicians();
-    fetchDealers();
-    fetchDistributors();
+    // fetchDealers();
+    // fetchDistributors();
 
   }, []);
 
   const fechTechnicians = async () => {
     try {
-      const res = await axios.get(`${API_BASE}TechniciansDetails`, {
+      const res = await axios.get(`${API_BASE}TechniciansDetails?role=${role}&userId=${userId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       setTechnicians(res.data.jsonResult);
@@ -33,42 +36,42 @@ const TechnicianLayer = () => {
     }
   };
 
-  const fetchDealers = async () => {
-    try {
-      const res = await axios.get(`${API_BASE}Dealers`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      setDealers(res.data);
-    } catch (error) {
-      console.error("Failed to load dealers", error);
-    }
-  };
+  // const fetchDealers = async () => {
+  //   try {
+  //     const res = await axios.get(`${API_BASE}Dealers`, {
+  //       headers: { 'Authorization': `Bearer ${token}` }
+  //     });
+  //     setDealers(res.data);
+  //   } catch (error) {
+  //     console.error("Failed to load dealers", error);
+  //   }
+  // };
 
-  const fetchDistributors = async () => {
-    try {
-      const res = await axios.get(`${API_BASE}Distributors`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      setDistributors(res.data);
-    } catch (error) {
-      console.error("Failed to load distributors", error);
-    }
-  };
+  // const fetchDistributors = async () => {
+  //   try {
+  //     const res = await axios.get(`${API_BASE}Distributors`, {
+  //       headers: { 'Authorization': `Bearer ${token}` }
+  //     });
+  //     setDistributors(res.data);
+  //   } catch (error) {
+  //     console.error("Failed to load distributors", error);
+  //   }
+  // };
 
 
   const columns = [
     { name: "Tech ID", selector: (row) => row.TechID },
-    { name: "Full Name", selector: (row) => row.FullName },
+    { name: "Full Name", selector: (row) => row.TechnicianName },
     { name: "Email", selector: (row) => row.Email },
     { name: "Phone", selector: (row) => row.PhoneNumber },
-    {
-      name: "State",
-      selector: (row) => row.StateName,
-    },
-    {
-      name: "City",
-      selector: (row) => row.CityName,
-    },
+    // {
+    //   name: "State",
+    //   selector: (row) => row.StateName,
+    // },
+    // {
+    //   name: "City",
+    //   selector: (row) => row.CityName,
+    // },
     {
       name: "Status",
       selector: (row) => row.IsActive ? <span className="badge bg-success">Active</span> : <span className="badge bg-secondary">Inactive</span>,
@@ -91,11 +94,11 @@ const TechnicianLayer = () => {
   ];
 
   const filteredTechnicians = technicians.filter((t) =>
-    t.FullName?.toLowerCase().includes(searchText.toLowerCase()) ||
-    t.Email?.toLowerCase().includes(searchText.toLowerCase()) ||
-    t.PhoneNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
-    states.find((s) => s.StateID === t.StateID)?.StateName?.toLowerCase().includes(searchText.toLowerCase()) ||
-    cities.find((c) => c.CityID === t.CityID)?.CityName?.toLowerCase().includes(searchText.toLowerCase())
+    t.TechnicianName?.toLowerCase().includes(searchText.toLowerCase()) 
+    // t.Email?.toLowerCase().includes(searchText.toLowerCase()) ||
+    // t.PhoneNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
+    // states.find((s) => s.StateID === t.StateID)?.StateName?.toLowerCase().includes(searchText.toLowerCase()) ||
+    // cities.find((c) => c.CityID === t.CityID)?.CityName?.toLowerCase().includes(searchText.toLowerCase())
   );
 
   return (

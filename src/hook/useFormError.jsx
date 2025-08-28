@@ -36,8 +36,8 @@ const useFormError = () => {
       ) {
         err[key] = `${label} is required`;
       } else {
-        if (key === "FullName" && !/^[a-zA-Z\s]+$/.test(value)) {
-          err.FullName = "Name can contain only letters and spaces";
+        if ((key === "FullName" || key == 'StateName' || key == 'CityName') && !/^[a-zA-Z\s]+$/.test(value)) {
+          err[key] = "Name can contain only letters and spaces";
         }
 
         if (key.toLowerCase() === "email" && !/\S+@\S+\.\S+/.test(value)) {

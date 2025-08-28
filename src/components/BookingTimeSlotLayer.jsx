@@ -6,7 +6,6 @@ import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
 import useFormError from "../hook/useFormError";
 import FormError from "./FormError";
-import { Button } from "bootstrap";
 
 const BookingTimeSlotLayer = () => {
   const [formData, setFormData] = useState({
@@ -18,9 +17,7 @@ const BookingTimeSlotLayer = () => {
 
   const [timeSlots, setTimeSlots] = useState([]);
   const { errors, validate } = useFormError();
-  // const API_BASE = `${import.meta.env.VITE_APIURL}BookingTimeSlot`; // Replace with your actual endpoint
   const API_BASE = `${import.meta.env.VITE_APIURL}TimeSlot`;
-
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -37,26 +34,65 @@ const BookingTimeSlotLayer = () => {
       const response = await axios.get(`${API_BASE}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
       setTimeSlots(
         response.data.map((slot) => ({
           ...slot,
-          TsID: slot.TsID, // standardize to TsID
+          TsID: slot.TsID,
           StartTime: slot.startTime || slot.StartTime,
           EndTime: slot.endTime || slot.EndTime,
           Status: slot.status ?? slot.Status,
         }))
       );
-      console.log("Fetched Time Slots:", response.data);
     } catch (err) {
       console.error("Error fetching timeslots:", err);
       Swal.fire("Error", "Failed to fetch time slots", "error");
     }
   };
 
+  // 🔁 Validation: Ensure 1-hour minimum and no overlapping
+  const isTimeConflict = (newStart, newEnd, existingSlots, editingID = null) => {
+    const toMinutes = (timeStr) => {
+      const [h, m] = timeStr.split(":").map(Number);
+      return h * 60 + m;
+    };
+
+    const newStartMin = toMinutes(newStart);
+    const newEndMin = toMinutes(newEnd);
+
+    // Check minimum 1 hour duration
+    if (newEndMin - newStartMin < 60) {
+      return { error: true, message: "Minimum slot duration should be 1 hour" };
+    }
+
+    // Check overlap with existing slots (skip same ID while editing)
+    for (const slot of existingSlots) {
+      // alert(slot.TsID);
+      // alert(editingID);
+      if (editingID && String(slot.TsID) === String(editingID)) continue;
+
+      const existingStart = toMinutes(slot.StartTime);
+      const existingEnd = toMinutes(slot.EndTime);
+
+      const isOverlap =
+        (newStartMin >= existingStart && newStartMin < existingEnd) ||
+        (newEndMin > existingStart && newEndMin <= existingEnd) ||
+        (newStartMin <= existingStart && newEndMin >= existingEnd);
+
+      if (isOverlap) {
+        return {
+          error: true,
+          message: `Conflicts with existing slot ${slot.StartTime} to ${slot.EndTime}`,
+        };
+      }
+    }
+
+    return { error: false };
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // const validationErrors = validate(formData, ["id", "Status"]);
     const validationErrors = validate(formData, [
       "TsID",
       "Status",
@@ -64,10 +100,22 @@ const BookingTimeSlotLayer = () => {
       "EndTime",
     ]);
 
-    console.log("Validation Errors:", validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
 
     const isEdit = !!formData.TsID;
+
+    // Conflict check
+    const conflictCheck = isTimeConflict(
+      formData.StartTime,
+      formData.EndTime,
+      timeSlots,
+      formData.TsID
+    );
+
+    if (conflictCheck.error) {
+      Swal.fire("Error", conflictCheck.message, "warning");
+      return;
+    }
 
     const addSeconds = (timeStr) =>
       timeStr?.length === 5 ? timeStr + ":00" : timeStr;
@@ -77,15 +125,13 @@ const BookingTimeSlotLayer = () => {
       endTime: addSeconds(formData.EndTime),
       status: formData.Status,
     };
-    console.log("Payload:", payload);
+
     try {
       if (isEdit) {
-        // Find the correct TsID field from formData
-        payload.TsID = formData.TsID; // Ensure TsID is included in the payload
+        payload.TsID = formData.TsID;
         await axios.put(`${API_BASE}`, payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        console.log("Updated Payload:", payload);
         Swal.fire("Updated", "Time slot updated successfully", "success");
       } else {
         await axios.post(`${API_BASE}`, payload, {
@@ -104,8 +150,6 @@ const BookingTimeSlotLayer = () => {
       fetchTimeSlots();
     } catch (err) {
       console.error("POST/PUT Error:", err.response?.data || err.message);
-      console.log("Validation Errors:", err.response?.data?.errors);
-
       Swal.fire(
         "Error",
         err.response?.data?.title || "Failed to save time slot",
@@ -133,11 +177,9 @@ const BookingTimeSlotLayer = () => {
         await axios.delete(`${API_BASE}/${TsID}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        console.log("Deleted Time Slot ID:", TsID);
         Swal.fire("Deleted!", "Time slot deleted", "success");
         fetchTimeSlots();
       } catch (err) {
-        console.error(err);
         Swal.fire("Error", "Failed to delete time slot", "error");
       }
     }
@@ -185,12 +227,12 @@ const BookingTimeSlotLayer = () => {
           >
             <Icon icon="lucide:edit" />
           </Link>
-          {/* <Link
+          <Link
             onClick={() => handleDelete(row.TsID)}
             className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
           >
-            <Icon icon="lucide:trash-2" />
-          </Link> */}
+            <Icon icon="lucide:trash" />
+          </Link>
         </div>
       ),
     },
@@ -257,7 +299,6 @@ const BookingTimeSlotLayer = () => {
               <button
                 type="submit"
                 className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
-                variant="primary"
               >
                 {formData.TsID ? "Update Time Slot" : "Add Time Slot"}
               </button>

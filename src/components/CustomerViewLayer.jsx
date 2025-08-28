@@ -1,16 +1,20 @@
 import { Icon } from "@iconify/react";
-import { useState , useEffect } from "react";
+import { useState , useEffect  } from "react";
 import Accordion from 'react-bootstrap/Accordion';
 import axios from "axios";
-import { Link } from "react-router-dom";
+import { Link , useParams } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_APIURL;
+const API_IMAGE = import.meta.env.VITE_APIURL_IMAGE;
 
 const CustomerViewLayer = () => {
   const [profile, setProfile] = useState({});
+  const { CustomerID } = useParams();
   const [addresses , setAddresses] = useState([]);
-  // const [bookings, setBookings] = useState([]);
-  // const [vehicles, setVehicles] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+const [showModal, setShowModal] = useState(false);
 
   const token = localStorage.getItem("token");
 
@@ -21,91 +25,83 @@ const CustomerViewLayer = () => {
   useEffect(() => {
     fetchAddresses();
     fetchProfile();
-    // fetchBookings();
-    // fetchVehicles();
+    fetchBookings();
+    fetchMYCars();
   }, []);
 
 
 
   const fetchProfile = async () => {
     try {
-      const res = await axios.get(`${API_BASE}Profile`, {
+      const res = await axios.get(`${API_BASE}Customer/Id?Id=${CustomerID}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      setProfile(res.data.data);
+      setProfile(res.data[0] || {});
+      console.log("Profile data:", res.data[0]);
     } catch (error) {
       console.error("Error fetching profile:", error);
     }
   }
   const fetchAddresses = async () => {
     try {
-      const res = await axios.get(`${API_BASE}Address`, {
+      const res = await axios.get(`${API_BASE}CustomerAddresses/custid?custid=${CustomerID || ''}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      setAddresses(res.data.data);
+      setAddresses(res.data);
     } catch (error) {
       console.error("Error fetching addresses:", error);
     }
   };
 
-  // Dummy Data
-  const bookings = [
-  {
-    id: 1,
-    service: 'Interior Cleaning',
-    date: '2025-07-12',
-    status: 'Completed',
-    price: 999,
-    notes: 'Paid via UPI',
-    logs: [
-      { status: 'Created', time: '2025-07-10 10:00 AM' },
-      { status: 'Started', time: '2025-07-12 09:00 AM' },
-      { status: 'Completed', time: '2025-07-12 10:30 AM' },
-    ],
-    images: [
-      'https://via.placeholder.com/120x80?text=Before',
-      'https://via.placeholder.com/120x80?text=After',
-    ],
-    tracking: {
-      started: '8:00 AM',
-      reached: '8:30 AM',
-      serviceStart: '9:00 AM',
-      serviceEnd: '10:30 AM',
-      lat: '17.3850',
-      lng: '78.4867',
-    },
-  },
-  {
-    id: 2,
-    service: 'Interior Cleaning',
-    date: '2025-07-12',
-    status: 'Completed',
-    price: 999,
-    notes: 'Paid via UPI',
-    logs: [
-      { status: 'Created', time: '2025-07-10 10:00 AM' },
-      { status: 'Started', time: '2025-07-12 09:00 AM' },
-      { status: 'Completed', time: '2025-07-12 10:30 AM' },
-    ],
-    images: [
-      'https://via.placeholder.com/120x80?text=Before',
-      'https://via.placeholder.com/120x80?text=After',
-    ],
-    tracking: {
-      started: '8:00 AM',
-      reached: '8:30 AM',
-      serviceStart: '9:00 AM',
-      serviceEnd: '10:30 AM',
-      lat: '17.3850',
-      lng: '78.4867',
-    },
-  },
-  // More bookings here...
-];
+  
+   const fetchBookings = async () => {
+  // try {
+  //   const res = await axios.get(`${API_BASE}Bookings/${CustomerID}`,{
+  //     headers: {
+  //       Authorization: `Bearer ${token}`,
+  //     },
+  //   });
+  //   const data = res.data;
+  //   setBookings(data);
+  // } catch (err) {
+  //   console.error("Error fetching bookings:", err);
+  // }
+
+  try {
+      axios
+        .get(`${API_BASE}Bookings/${CustomerID}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+       .then((res) => {
+          let raw = res.data;
+          setBookings(raw);
+        })
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+    }
+};
+
+    const fetchMYCars = async () => {
+    try {
+        const response = await axios.get(`${API_BASE}CustomerVehicles/CustId?CustId=${CustomerID}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }); 
+          setVehicles(response.data);
+    } catch (error) {
+      console.error("Error fetching cars:", error);
+        // alert("Failed to load cars. Please try again later.");
+    }
+    };
+
 
 
 
@@ -114,20 +110,7 @@ const CustomerViewLayer = () => {
     { id: 2, amount: "₹2500", method: "Credit Card", date: "2025-06-10" },
   ];
 
-  const vehicles = [
-    {
-      id: 1,
-      model: "Hyundai i20",
-      number: "TS09AB1234",
-      image: "/assets/images/Desktop-1.png",
-    },
-    {
-      id: 2,
-      model: "Honda City",
-      number: "TS10XY4567",
-      image: "/assets/images/sign-car.png",
-    },
-  ];
+  
 
  
 
@@ -144,13 +127,13 @@ const CustomerViewLayer = () => {
           <div className='pb-24 ms-16 mb-24 me-16 '>
             <div className='text-center border border-top-0 border-start-0 border-end-0'>
               <img
-                src='/assets/images/user-grid/user-grid-img14.png'
-                alt='WowDash React Vite'
+                 src={profile.ProfileImage ? `${API_IMAGE}${profile.ProfileImage}` : '/assets/images/user-grid/user-grid-img14.png'}
+                alt='Profile Image'
                 className='border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover'
               />
-              <h6 className='mb-0 mt-16'>Jacob Jones</h6>
+              <h6 className='mb-0 mt-16'>{profile.FullName}</h6>
               <span className='text-secondary-light mb-16'>
-                ifrandom@gmail.com
+                {profile.Email}
               </span>
             </div>
             <div className='mt-24'>
@@ -161,7 +144,7 @@ const CustomerViewLayer = () => {
                     Full Name
                   </span>
                   <span className='w-70 text-secondary-light fw-medium'>
-                    : Will Jonto
+                    : {profile.FullName}
                   </span>
                 </li>
                 <li className='d-flex align-items-center gap-1 mb-12'>
@@ -170,7 +153,7 @@ const CustomerViewLayer = () => {
                     Email
                   </span>
                   <span className='w-70 text-secondary-light fw-medium'>
-                    : willjontoax@gmail.com
+                    : {profile.Email}
                   </span>
                 </li>
                 <li className='d-flex align-items-center gap-1 mb-12'>
@@ -179,46 +162,19 @@ const CustomerViewLayer = () => {
                     Phone Number
                   </span>
                   <span className='w-70 text-secondary-light fw-medium'>
-                    : (1) 2536 2561 2365
+                    : {profile.PhoneNumber || "N/A"}
                   </span>
                 </li>
                 <li className='d-flex align-items-center gap-1 mb-12'>
                   <span className='w-30 text-md fw-semibold text-primary-light'>
                     {" "}
-                    Department
+                    AlternateNumber
                   </span>
                   <span className='w-70 text-secondary-light fw-medium'>
-                    : Design
+                    : {profile.AlternateNumber || "N/A"}
                   </span>
                 </li>
-                <li className='d-flex align-items-center gap-1 mb-12'>
-                  <span className='w-30 text-md fw-semibold text-primary-light'>
-                    {" "}
-                    Designation
-                  </span>
-                  <span className='w-70 text-secondary-light fw-medium'>
-                    : UI UX Designer
-                  </span>
-                </li>
-                <li className='d-flex align-items-center gap-1 mb-12'>
-                  <span className='w-30 text-md fw-semibold text-primary-light'>
-                    {" "}
-                    Languages
-                  </span>
-                  <span className='w-70 text-secondary-light fw-medium'>
-                    : English
-                  </span>
-                </li>
-                <li className='d-flex align-items-center gap-1'>
-                  <span className='w-30 text-md fw-semibold text-primary-light'>
-                    {" "}
-                    Bio
-                  </span>
-                  <span className='w-70 text-secondary-light fw-medium'>
-                    : Lorem Ipsum&nbsp;is simply dummy text of the printing and
-                    typesetting industry.
-                  </span>
-                </li>
+
               </ul>
             </div>
           </div>
@@ -240,66 +196,99 @@ const CustomerViewLayer = () => {
               {/* Bookings Tab */}
               <div className='tab-pane fade show active' id='booking'>
                  <Accordion  className="styled-booking-accordion"> {/*//defaultActiveKey="0" */}
-            {bookings.map((item, idx) => (
-                <Accordion.Item eventKey={idx.toString()} key={item.BookingID} className="mb-3 shadow-sm rounded-3 border border-light">
-                <Accordion.Header>
-                    <div className="d-flex flex-column w-100">
-                    <div className="d-flex justify-content-between align-items-center w-100">
-                        <div className="d-flex align-items-center gap-3">
-                        <Icon icon="mdi:calendar-check" className="text-primary fs-4" />
-                        <div>
-                            <h6 className="mb-0 text-dark fw-bold">{item.service}</h6>
-                            <small className="text-muted">Scheduled: {item.date}</small>
-                        </div>
-                        </div>
-                        <span className={`badge px-3 py-1 rounded-pill ${item.status === 'Completed' ? 'bg-success' : 'bg-warning text-dark'}`}>
-                        {item.status}
-                        </span>
-                    </div>
-                    </div>
-                </Accordion.Header>
+                  {bookings.map((item, idx) => (
+  <Accordion.Item
+    eventKey={idx.toString()}
+    key={item.BookingID}
+    className="mb-3 shadow-sm rounded-3 border border-light"
+  >
+    <Accordion.Header>
+      <div className="d-flex flex-column w-100">
+        <div className="d-flex justify-content-between align-items-center w-100">
+          <div className="d-flex align-items-center gap-3">
+            <Icon icon="mdi:calendar-check" className="text-primary fs-4" />
+            <div>
+              <h6 className="mb-0 text-dark fw-bold">
+                Booking #{item.BookingTrackID}
+              </h6>
+              <small className="text-muted">
+                Scheduled: {new Date(item.BookingDate).toLocaleDateString()} ({item.TimeSlot})
+              </small>
+            </div>
+          </div>
+          <span
+            className={`badge px-3 py-1 rounded-pill ${
+              item.BookingStatus === "Completed"
+                ? "bg-success"
+                : item.BookingStatus === "Confirmed"
+                ? "bg-primary"
+                : "bg-warning text-dark"
+            }`}
+          >
+            {item.BookingStatus}
+          </span>
+        </div>
+      </div>
+    </Accordion.Header>
 
-                <Accordion.Body className="bg-white">
-                    {/* Booking Details */}
-                    <div className="mb-4">
-                    <h6 className="text-primary fw-bold mb-3">📋 Booking Details</h6>
-                    <div className="row g-3">
-                        <div className="col-md-6"><strong>Service:</strong> {item.service}</div>
-                        <div className="col-md-6"><strong>Price:</strong> ₹{item.price}</div>
-                        <div className="col-md-6"><strong>OTP:</strong> {item.otp}</div>
-                        <div className="col-md-6"><strong>Notes:</strong> {item.notes || "No additional notes"}</div>
-                    </div>
-                    </div>
+    <Accordion.Body className="bg-white">
+      {/* Booking Details */}
+      <div className="mb-4">
+        <h6 className="text-primary fw-bold mb-3">📋 Booking Details</h6>
+        <div className="row g-3">
+          <div className="col-md-6"><strong>Customer Name:</strong> {item.CustomerName}</div>
+          <div className="col-md-6"><strong>Phone Number:</strong> {item.PhoneNumber}</div>
+          <div className="col-md-6"><strong>Vehicle No:</strong> {item.VehicleNumber}</div>
+          <div className="col-md-6"><strong>Brand:</strong> {item.BrandName}</div>
+          <div className="col-md-6"><strong>Model:</strong> {item.ModelName}</div>
+          <div className="col-md-6"><strong>Fuel Type:</strong> {item.FuelTypeName}</div>
+          <div className="col-md-6"><strong>Total Price:</strong> ₹{item.TotalPrice}</div>
+        </div>
+      </div>
 
-                    {/* Tracking Section */}
-                    <div className="mb-4">
-                    <h6 className="text-success fw-bold mb-3">📍 Tracking Info</h6>
-                    <div className="row g-3">
-                        <div className="col-md-6"><strong>Journey Started:</strong> {item.tracking?.journey || "N/A"}</div>
-                        <div className="col-md-6"><strong>Reached:</strong> {item.tracking?.reached || "N/A"}</div>
-                        <div className="col-md-6"><strong>Service Started:</strong> {item.tracking?.started || "N/A"}</div>
-                        <div className="col-md-6"><strong>Service Ended:</strong> {item.tracking?.ended || "N/A"}</div>
-                    </div>
-                    </div>
+      {/* Packages Section */}
+      <div className="mb-4">
+        <h6 className="text-warning fw-bold mb-3">📦 Packages</h6>
+        {item.Packages.map((pkg) => (
+          <div key={pkg.PackageID} className="mb-3 p-3 border rounded">
+            <strong>{pkg.PackageName}</strong> <span className="text-muted">({pkg.EstimatedDurationMinutes} mins)</span>
+            <div className="mt-2">
+              {/* <strong>Category:</strong> {pkg.Category.CategoryName} */}
+              {pkg.Category.SubCategories.map((sub) => (
+                <div key={sub.SubCategoryID} className="ms-3 mt-2">
+                  {/* <strong>SubCategory:</strong> {sub.SubCategoryName} */}
+                  <ul className="mb-0">
+                    {sub.Includes.map((inc) => (
+                      <li key={inc.IncludeID}>{inc.IncludeName}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
 
-                    {/* Location Map */}
-                    <div>
-                    <h6 className="text-info fw-bold mb-3">🗺️ Location</h6>
-                    <div className="rounded overflow-hidden border" style={{ height: "250px" }}>
-                        <iframe
-                        title={`map-${item.BookingID}`}
-                        width="100%"
-                        height="100%"
-                        frameBorder="0"
-                        src={`https://maps.google.com/maps?q=${item.tracking?.lat || 17.3850},${item.tracking?.lng || 78.4867}&z=15&output=embed`}
-                        allowFullScreen
-                        loading="lazy"
-                        ></iframe>
-                    </div>
-                    </div>
-                </Accordion.Body>
-                </Accordion.Item>
-            ))}
+      {/* Map Section */}
+      <div>
+        <h6 className="text-info fw-bold mb-3">🗺️ Location</h6>
+        <div className="rounded overflow-hidden border" style={{ height: "250px" }}>
+          <iframe
+            title={`map-${item.BookingID}`}
+            width="100%"
+            height="100%"
+            frameBorder="0"
+            src={`https://maps.google.com/maps?q=${item.latitude || 17.3850},${item.Longitude || 78.4867}&z=15&output=embed`}
+            allowFullScreen
+            loading="lazy"
+          ></iframe>
+        </div>
+      </div>
+    </Accordion.Body>
+  </Accordion.Item>
+))}
+
+
             </Accordion>
               </div>
 
@@ -322,17 +311,34 @@ const CustomerViewLayer = () => {
               {/* Vehicles Tab */}
               <div className='tab-pane fade' id='vehicle'>
                 <div className='row'>
-                  {vehicles.map((car) => (
-                    <div className='col-md-6 mb-3' key={car.id}>
-                      <div className='card'>
-                        <img src={car.image} className='card-img-top' alt='vehicle' />
-                        <div className='card-body'>
-                          <h5 className='card-title'>{car.model}</h5>
-                          <p className='card-text'><strong>Number:</strong> {car.number}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                {vehicles.map((car) => {
+                  return (
+                            <div className="col-md-4 mb-3" key={car.VehicleID}>
+                              <div className="border rounded shadow-sm h-100 p-3 d-flex flex-column">
+                                <div className="row">
+                                    <div className="col-md-6 text-center mb-3"> 
+                                        <img src={`${API_IMAGE}${car.VehicleImage}`} alt={car.modelName} className="mb-3 rounded w-100"  />
+                                    </div>
+                                    <div className="col-md-6">
+                                        <div className="text-muted small mb-2"><b>Model : </b>{car.ModelName}</div>
+                                        <div className="text-muted small mb-2"><b>FuelType : </b>{car.FuelTypeName}</div>
+                                     <div className="text-end">
+                                            <button
+                                              className="btn btn-sm btn-outline-primary"
+                                              onClick={() => {
+                                                setSelectedVehicle(car);
+                                                setShowModal(true);
+                                              }}
+                                            >
+                                              <i className="bi bi-eye"></i> View
+                                            </button>
+                                          </div>
+                                    </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                })}
                 </div>
               </div>
 
@@ -340,12 +346,23 @@ const CustomerViewLayer = () => {
               <div className='tab-pane fade' id='address'>
                 <div className='row'>
                   {addresses.map((address) => (
-                    <div className='col-md-6 mb-3' key={address.id}>
+                    <div className='col-md-6 mb-3' key={address.AddressID}>
                       <div className='card'>
                         <div className='card-body'>
-                          <h5 className='card-title'>{address.name}</h5>
-                          <p className='card-text'><strong>Address:</strong> {address.address}</p>
-                          <p className='card-text'><strong>Phone:</strong> {address.phone}</p>
+                          <p className='card-text'><strong>State:</strong>{address.StateName}</p>
+                          <p className='card-text'><strong>City:</strong> {address.CityName}</p>
+                          <p className='card-text'><strong>Address:</strong> {address.AddressLine1}</p>
+                           <div className="text-end">
+                            <button
+                                              className="btn btn-sm btn-outline-primary"
+                                              onClick={() => {
+                                                setSelectedAddress(address);
+                                                setShowModal(true);
+                                              }}
+                                            >
+                                              <i className="bi bi-eye"></i> View
+                                            </button>
+                            </div>
                         </div>
                       </div>
                     </div>
@@ -357,6 +374,43 @@ const CustomerViewLayer = () => {
           </div>
         </div>
       </div>
+
+      {showModal && selectedVehicle && (
+  <div className="modal show fade d-block" tabIndex="-1">
+    <div className="modal-dialog modal-lg" style={{zIndex: 9999}}>
+      <div className="modal-content">
+        <div className="modal-header">
+          <h5 className="modal-title">Vehicle Details</h5>
+          <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
+        </div>
+        <div className="modal-body row">
+          <div className="col-md-4 text-center">
+            <img
+              src={`${API_IMAGE}${selectedVehicle.VehicleImage}`}
+              alt="Vehicle"
+              className="img-fluid rounded mb-3"
+            />
+            <div><strong>Brand:</strong> {selectedVehicle.BrandName}</div>
+            <div><strong>Model:</strong> {selectedVehicle.ModelName}</div>
+            <div><strong>Fuel:</strong> {selectedVehicle.FuelTypeName}</div>
+            <div><strong>Transmission:</strong> {selectedVehicle.TransmissionType}</div>
+          </div>
+          <div className="col-md-8">
+            <ul className="list-group">
+              <li className="list-group-item"><strong>Vehicle Number:</strong> {selectedVehicle.VehicleNumber}</li>
+              <li className="list-group-item"><strong>Year Of Purchase:</strong> {selectedVehicle.YearOfPurchase}</li>
+              <li className="list-group-item"><strong>Engine Type:</strong> {selectedVehicle.EngineType}</li>
+              <li className="list-group-item"><strong>Kilometers Driven:</strong> {selectedVehicle.KilometersDriven}</li>
+              <li className="list-group-item"><strong>Created Date:</strong> {new Date(selectedVehicle.CreatedDate).toLocaleString()}</li>
+              <li className="list-group-item"><strong>Status:</strong> {selectedVehicle.IsActive ? "Active" : "Inactive"}</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div className="modal-backdrop fade show"></div>
+  </div>
+)}
     </div>
   );
 };

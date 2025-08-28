@@ -5200,10 +5200,6 @@ const useReactApexChart = () => {
       name: "series1",
       data: [48, 35, 50, 32, 48, 40, 55, 50, 60],
     },
-    {
-      name: "series2",
-      data: [12, 20, 15, 26, 22, 30, 25, 35, 25],
-    },
   ];
 
   let userOverviewDonutChartOptionsTwo = {

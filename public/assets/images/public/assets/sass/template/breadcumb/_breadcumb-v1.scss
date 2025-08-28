@@ -1,0 +1,118 @@
+.breadcumb-menu {
+    max-width: 100%;
+    padding: 0;
+    list-style-type: none;
+    position: relative;
+    margin: 35px 0 -0.4em;
+
+    li {
+        display: inline-block;
+        padding-right: 11px;
+        list-style: none;
+        position: relative;
+
+        &:after {
+            content: "\f105";
+            position: relative;
+            margin-left: 16px;
+            font-size: 14px;
+            font-weight: 700;
+            font-family: $icon-font;
+            color: $white-color;
+        }
+
+        &:last-child {
+            padding-right: 0;
+            margin-right: 0;
+
+            &:after {
+                display: none;
+            }
+        }
+    }
+
+    li,
+    a,
+    span {
+        white-space: normal;
+        color: inherit;
+        word-break: break-word;
+        font-weight: 400;
+        font-size: 18px;
+        font-family: $title-font;
+        color: $white-color;
+    }
+
+    a:hover {
+        color: $theme-color;
+    }
+}
+
+.breadcumb-title {
+    color: $white-color;
+    margin: -0.15em 0 -0.2em 0;
+    line-height: 1;
+    font-size: 30px;
+    font-weight: 700;
+    font-family: $title-font;
+    z-index: 1;
+    position: relative;
+    justify-content: end;
+}
+
+.breadcumb-wrapper {
+    position: relative;
+    padding: 120px 0 155px;
+    background: $title-color;
+    overflow: hidden;
+    z-index: auto;
+
+    .breadcumb-content {
+        position: absolute;
+        bottom: 25px; 
+        left: 0;
+        right: 0;
+        z-index: 2;
+        padding: 0 45px;
+
+        @include md {
+            text-align: center;
+        }
+    }
+
+    .breadcumb-thumb {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+    }
+}
+
+@include lg {
+    .breadcumb-wrapper {
+        padding: 262px 0 120px;
+    }
+}
+
+@include md {
+    .breadcumb-wrapper {
+        text-align: center;
+        padding: 242px 0 100px;
+    }
+}
+
+@include xs {
+    .breadcumb-title {
+        font-size: 40px;
+    }
+
+    .breadcumb-menu {
+        text-align: end;
+        margin: 22px 0 -0.45em 0;
+    }
+
+    .breadcumb-menu li,
+    .breadcumb-menu a,
+    .breadcumb-menu span {
+        font-size: 14px;
+    }
+}

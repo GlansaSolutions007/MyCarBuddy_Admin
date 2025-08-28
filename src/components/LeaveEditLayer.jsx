@@ -4,7 +4,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 
 const TechnicianLeaveEdit = () => {
-  const { id } = useParams();
+  const { LeaveID } = useParams();
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
@@ -13,18 +13,9 @@ const TechnicianLeaveEdit = () => {
 
   useEffect(() => {
     // Uncomment below line for actual API
-    // fetchLeave();
+    fetchLeave();
 
     // Dummy fallback data
-    const dummyLeave = {
-      LeaveID: id,
-      TechnicianID: "T123",
-      TechnicianName: "John Doe",
-      LeaveFrom: "2025-07-20",
-      LeaveTo: "2025-07-23",
-      Reason: "Personal Work",
-      Status: "Pending",
-    };
 
     const dummyBookings = [
       {
@@ -39,17 +30,16 @@ const TechnicianLeaveEdit = () => {
       },
     ];
 
-    setLeave(dummyLeave);
     setBookings(dummyBookings);
   }, []);
 
   const fetchLeave = async () => {
-    const res = await axios.get(`${import.meta.env.VITE_APIURL}TechnicianLeave/${id}`, {
+    const res = await axios.get(`${import.meta.env.VITE_APIURL}LeaveRequest/leaveid?leaveid=${LeaveID}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    const data = res.data.data;
+    const data = res.data[0];
     setLeave(data);
-    fetchIncomingBookings(data.TechnicianID, data.LeaveFrom, data.LeaveTo);
+    // fetchIncomingBookings(data.TechnicianID, data.LeaveFrom, data.LeaveTo);
   };
 
   const fetchIncomingBookings = async (techId, fromDate, toDate) => {
@@ -60,27 +50,37 @@ const TechnicianLeaveEdit = () => {
   };
 
   const handleUpdateStatus = async (status) => {
-    // Dummy alert without API
-    Swal.fire("Success", `Leave ${status.toLowerCase()} successfully (dummy)`, "success");
-    navigate("/technician-leave");
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    showDenyButton: false,
+    showCancelButton: true,
+    confirmButtonText: "Yes",
+  });
 
-    // Uncomment for actual update call
-    /*
-    const res = await axios.put(`${import.meta.env.VITE_APIURL}TechnicianLeave/UpdateStatus`, {
-      LeaveID: id,
-      Status: status,
-    }, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  if (result.isConfirmed) {
+    try {
+      const res = await axios.put(
+        `${import.meta.env.VITE_APIURL}LeaveRequest?leaveId=${LeaveID}&status=${status}`,
+        {}, // empty body
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-    if (res.data.status) {
-      Swal.fire("Success", `Leave ${status.toLowerCase()} successfully`, "success");
-      navigate("/technician-leave");
-    } else {
-      Swal.fire("Error", res.data.message || "Update failed", "error");
+      await Swal.fire({
+        title: res.data.message || "Leave updated successfully",
+        confirmButtonText: "OK",
+      });
+
+      navigate("/leave-list");
+
+    } catch (error) {
+      console.error("Error updating leave status:", error);
+      Swal.fire("Error", "Something went wrong while updating leave status.", "error");
     }
-    */
-  };
+  }
+};
+
 
   if (!leave) return <div className="container mt-4">Loading...</div>;
 
@@ -89,18 +89,20 @@ const TechnicianLeaveEdit = () => {
 
       <div className="card p-3 mb-3">
         <p><strong>Technician:</strong> {leave.TechnicianName}</p>
-        <p><strong>From:</strong> {leave.LeaveFrom}</p>
-        <p><strong>To:</strong> {leave.LeaveTo}</p>
-        <p><strong>Reason:</strong> {leave.Reason}</p>
-        <p><strong>Status:</strong> {leave.Status}</p>
+        <p><strong>From:</strong> {leave.FromDate}</p>
+        <p><strong>To:</strong> {leave.ToDate}</p>
+        <p><strong>Reason:</strong> {leave.LeaveReason}</p>
+        <p><strong>Status:</strong> {leave.Status == 0 || leave.Status == null ? "Pending" : (
+          leave.Status == 1 ? "Approved" : "Rejected"
+        )}</p>
 
         <div className="mt-3">
-          {leave.Status === "Pending" && (
+          {/* {leave.Status === "Pending" && ( */}
             <>
-              <button className="btn btn-success me-2" onClick={() => handleUpdateStatus("Approved")}>Approve</button>
-              <button className="btn btn-danger" onClick={() => handleUpdateStatus("Rejected")}>Reject</button>
+              <button className="btn btn-success px-3 py-2 me-3" onClick={() => handleUpdateStatus("1")}>Approve</button>
+              <button className="btn btn-danger px-3 py-2" onClick={() => handleUpdateStatus("2")}>Reject</button>
             </>
-          )}
+ 
         </div>
       </div>
 

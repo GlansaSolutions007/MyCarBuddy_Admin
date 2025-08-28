@@ -37,7 +37,7 @@ const [formData, setFormData] = useState({
   ConfirmPassword: "",
   AddressLine1: "",
   AddressLine2: "",
-  StateID: [],
+  StateID: "",
   CityID: "",
   Pincode: "",
   ProfileImageFile: null,
@@ -71,7 +71,7 @@ const [formData, setFormData] = useState({
       },
     });
 
-    const data = res.data.data;
+    const data = res.data.data[0];
     console.log("Fetched Technician:", data);
 
     // Update image preview from backend image
@@ -82,8 +82,9 @@ const [formData, setFormData] = useState({
     setFormData((prev) => ({
       ...prev,
       TechID: data.TechID ?? "",
+      DistributorID: data.DistributorID ?? "",
       DealerID: data.DealerID ?? '',
-      FullName: data.FullName ?? "",
+      FullName: data.TechnicianName ?? "",
       PhoneNumber: data.PhoneNumber ?? "",
       Email: data.Email ?? "",
       PasswordHash: data.PasswordHash ?? "",
@@ -139,6 +140,7 @@ const [formData, setFormData] = useState({
     setCities(res.data);
   };
 const fetchDealers = async (distributorId = null) => {
+
   try {
     const res = await axios.get(`${API_BASE}Dealer`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -147,7 +149,7 @@ const fetchDealers = async (distributorId = null) => {
     let dealerList = res.data;
 
     if (distributorId) {
-      dealerList = dealerList.filter((dealer) => dealer.DistributorID === distributorId);
+      dealerList = dealerList.filter((dealer) => dealer.DistributorID === Number(distributorId));
     }
 
     setDealers(dealerList);

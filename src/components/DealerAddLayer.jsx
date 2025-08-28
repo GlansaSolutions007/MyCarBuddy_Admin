@@ -14,6 +14,8 @@ const DealerAddLayer = ({ setPageTitle }) => {
   const isEditing = Boolean(DealerID);
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+  const userId = localStorage.getItem("userId");
 
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
@@ -54,7 +56,7 @@ const DealerAddLayer = ({ setPageTitle }) => {
           Authorization: `Bearer ${token}`,
         },
       });
-      setFormData({ ...res.data, ConfirmPassword: res.data.PasswordHash });
+      setFormData({ ...res.data[0], ConfirmPassword: res.data[0].PasswordHash });
     } catch (err) {
       console.error("Failed to fetch technician", err);
     }
@@ -74,7 +76,15 @@ const DealerAddLayer = ({ setPageTitle }) => {
         'Authorization': `Bearer ${token}`
       } 
     });
-    setDistributors(res.data);
+    if(role === "Admin"){
+      setDistributors(res.data);
+    }
+    else{
+        const filteredDistributors = res.data.filter((distributor) => distributor.DistributorID === Number(userId) );
+        console.log(filteredDistributors,userId);
+        setDistributors(filteredDistributors);
+    }
+    
   };
 
   const fetchCities = async () => {
@@ -111,6 +121,9 @@ const DealerAddLayer = ({ setPageTitle }) => {
 
       if (isEditing) {
         const { ConfirmPassword, ...payload } = formData;
+        if(role === "Distributor"){
+          payload.DistributorID = Number(userId);
+        }
         await axios.put(`${API_BASE}Dealer`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -119,6 +132,9 @@ const DealerAddLayer = ({ setPageTitle }) => {
         });
       } else {
         const { ConfirmPassword,DealerID, ...payload } = formData;
+        if(role === "Distributor"){
+          payload.DistributorID = Number(userId);
+        }
         await axios.post(`${API_BASE}Dealer`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -193,7 +209,28 @@ const DealerAddLayer = ({ setPageTitle }) => {
               <label className='form-label text-sm fw-semibold text-primary-light mb-8'>Distributor <span className='text-danger-600'>*</span></label>
               <Select
                 name='DistributorID'
-                options={distributors.filter((d) => d.IsActive).map((d) => ({ value: d.DistributorID, label: d.FullName }))}
+                options={distributors.map((d) => ({
+                  value: d.DistributorID,
+                  // label: `${d.FullName} (${d.IsActive ? 'Active' : 'Inactive'})`,
+                  label: (
+                     <span>
+                      {d.FullName} 
+                      <span
+                                  style={{
+                                    color: d.IsActive
+                                      ? "green"
+                                      : "red",
+                                  }}
+                                >
+                                  (
+                                  {d.IsActive
+                                    ? "Active"
+                                    : "Inactive"}
+                                  )
+                                </span>
+                     </span>
+                  ),
+                }))}
                 value={
                   formData.DistributorID
                     ? {

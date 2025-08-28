@@ -64,15 +64,15 @@ const ServicePlanListLayer = () => {
     },
     {
       name: "Plan Name",
-      selector: (row) => row.packageName,
+      selector: (row) => row.PackageName,
     },
     {
       name: "Category",
-      selector: (row) => row.categoryName,
+      selector: (row) => row.CategoryName,
     },
     {
       name: "SubCategory1",
-      selector: (row) => row.subCategoryName,
+      selector: (row) => row.SubCategoryName,
     },
     // {
     //   name: "SubCategory2",
@@ -85,7 +85,7 @@ const ServicePlanListLayer = () => {
     {
       name: "Status",
       selector: (row) =>
-        row.isActive ? (
+        row.IsActive ? (
           <span className="badge bg-success">Active</span>
         ) : (
           <span className="badge bg-danger">Inactive</span>
@@ -96,7 +96,7 @@ const ServicePlanListLayer = () => {
       cell: (row) => (
         <div>
           <Link
-            to={`/edit-service-package/${row.packageID}`}
+            to={`/edit-service-package/${row.PackageID}`}
           className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
           >
             <Icon icon="lucide:edit" />

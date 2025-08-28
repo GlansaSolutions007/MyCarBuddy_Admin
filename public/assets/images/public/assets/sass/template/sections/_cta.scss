@@ -1,0 +1,114 @@
+/* CTA Area 1 ---------------------------------- */
+.cta-area-1 {
+    position: relative;
+    margin-bottom: -148px;
+    .cta1-bg-thumb {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        overflow: hidden;
+        width: 83.75%;
+        border-radius: 5px 0 0 5px;
+        &:after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: $theme-color;
+            mix-blend-mode: multiply;
+        }
+        img {
+            height: 100%;
+            width: 100%;
+            object-fit: cover;
+        }
+    }
+    .cta-wrap1 {
+        padding: 80px 0 67px 80px;
+    }
+}
+@media (max-width: 1700px) {
+    .cta-area-1 .cta1-bg-thumb {
+        width: 100%;
+        border-radius: 0;
+    }
+    .cta-area-1 .cta-wrap1 {
+        padding-left: 0;
+    }
+}
+@include xxl {
+    .cta-area-1 .cta1-bg-thumb {
+        width: 94.8%;
+        border-radius: 5px 0 0 5px;
+    }
+    .cta-area-1 .cta-wrap1 {
+        padding-left: 80px;
+    }
+}
+@include ml {
+    .cta-area-1 .cta1-bg-thumb {
+        width: 100%;
+    }
+}
+@include xl {
+    .cta-area-1 .cta1-bg-thumb {
+        width: 100%;
+        border-radius: 0;
+    }
+    .cta-area-1 .cta-wrap1 {
+        padding-left: 0px;
+    }
+}
+@include sm {
+    .cta-area-1 .cta-wrap1 {
+        text-align: center;
+    }
+}
+
+/* CTA Area 2 ---------------------------------- */
+.cta-wrap2 {
+    padding: 74px 80px 80px;
+    border-radius: 5px;
+    position: relative;
+    margin-top: -175px;
+    overflow: hidden;
+    .cta2-bg-thumb {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+    }
+}
+@include ml {
+    .cta-wrap2 .cta2-bg-thumb {
+        width: 470px;
+    }
+}
+@include xl {
+    .cta-wrap2 {
+        padding: 54px 60px 60px;
+    }
+}
+@include lg {
+    .cta-wrap2 {
+        padding: 44px 50px 50px;
+        .cta2-bg-thumb {
+            width: 390px;
+        }
+    }
+}
+@include md {
+    .cta-wrap2 {
+        text-align: center;
+        padding: 44px 30px 50px;
+        .cta2-bg-thumb {
+            display: none;
+        }
+    }
+}
+@include vxs {
+    .cta-wrap2 {
+        .newsletter-form.style2 .btn {
+            width: 100%;
+        }
+    }
+}

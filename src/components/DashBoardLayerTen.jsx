@@ -17,19 +17,19 @@ const DashBoardLayerTen = () => {
       <IncomeVsExpense />
 
       {/* UsersChart */}
-      <UsersChart />
+      {/* <UsersChart /> */}
 
       {/* TopSuppliers */}
-      <TopSuppliers />
+      {/* <TopSuppliers /> */}
 
       {/* TopCustomer */}
       <TopCustomer />
 
       {/* OverallReport */}
-      <OverallReport />
+      {/* <OverallReport /> */}
 
       {/* PurchaseAndSales */}
-      <PurchaseAndSales />
+      {/* <PurchaseAndSales /> */}
 
       {/* RecentTransactions */}
       <RecentTransactions />

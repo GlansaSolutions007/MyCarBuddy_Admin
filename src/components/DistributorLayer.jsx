@@ -482,10 +482,20 @@ const DistributorLayer = () => {
                           </label>
                           <Select
                               name="StateID"
-                              options={states.map((s) => ({
-                                value: s.StateID,
-                                label: s.StateName,
-                              }))}
+                              options={states.sort((a, b) => (b.IsActive === a.IsActive ? 0 : b.IsActive ? 1 : -1))
+                                  .map((state) => ({
+                                  value: state.StateID,
+                                  label: (
+                                    <span>
+                                      {state.StateName}{" "}
+                                      <span style={{ color: state.IsActive ? "green" : "red" }}>
+                                        ({state.IsActive ? "Active" : "Inactive"})
+                                      </span>
+                                    </span>
+                                  ),
+                                  name: state.StateName,
+                                  status: state.IsActive,
+                                }))}
                               value={
                                 formData.StateID
                                   ? {
@@ -543,7 +553,7 @@ const DistributorLayer = () => {
                     <div className="row mb-10">
                         <div className="col-6">
                         <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
-                            Address <span className="text-danger-600">*</span>
+                            Address 
                         </label>
                         <input
                             type="text"

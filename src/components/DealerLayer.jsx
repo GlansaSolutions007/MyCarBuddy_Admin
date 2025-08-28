@@ -16,6 +16,8 @@ const DealerLayer = () => {
   const [cities, setCities] = useState([]);
 
   const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
+  const userId = localStorage.getItem('userId');
   const [searchText, setSearchText] = useState("");
 
   useEffect(() => {
@@ -27,17 +29,18 @@ const DealerLayer = () => {
 
   // Fetch dealers, distributors, states, and cities start
     const fetchDealers = async () => {
-        try {
-            const res = await axios.get(`${API_BASE}Dealer`, {
+      const url = role === 'Admin' ? `${API_BASE}Dealer` : `${API_BASE}Dealer?role=${role}&DistributorID=${userId}`;
+      try {
+            const res = await axios.get(`${url}`, {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             }
         });
             setDealers(res.data);
-        } catch (error) {
+      } catch (error) {
             console.error("Failed to load dealers", error);
-        }
+      }
     };
   const fetchDistributors = async () => {
       try {

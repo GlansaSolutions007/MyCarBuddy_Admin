@@ -1,0 +1,76 @@
+/****contact page*****/
+.contact-info {
+    background: $white-color;
+    border-bottom: 1px solid $theme-color;
+    border-radius: 5px;
+    padding: 30px;
+    box-shadow: 0px 4.4px 20px -1px rgba(19, 16, 34, 0.05);
+    &_icon {
+        height: 65px;
+        width: 65px;
+        line-height: 65px;
+        background: $theme-color;
+        font-size: 30px;
+        color: $white-color;
+        text-align: center;
+        border-radius: 5px;
+        margin-bottom: 30px;
+    }
+    .contact-info_title {
+        font-size: 26px;
+        font-weight: 900;
+        font-family: $title-font;
+        color: $title-color;
+        display: block;
+        margin-top: -0.3em;
+        margin-bottom: 10px;
+    }
+    .contact-info_text {
+        font-size: 18px;
+        font-weight: 400;
+        font-family: $title-font;
+        color: $title-color;
+        margin-bottom: 3px;
+        a {
+            font-size: 18px;
+            font-weight: 400;
+            font-family: $title-font;
+            color: $title-color;
+            &:hover {
+                color: $theme-color;
+            }
+        }
+        &:last-child {
+            margin-bottom: -0.4em;
+        }
+    }
+}
+.map-sec {
+    line-height: 0;
+    filter: grayscale(1);
+    iframe {
+        width: 100%;
+        height: 600px;
+        @include md {
+            height: 400px;
+        }
+    }
+}
+.contact-form-area {
+    border-radius: 20px;
+    margin-top: -300px;
+    position: relative;
+    z-index: 1;
+    .contact-form-thumb {
+        border-radius: 20px 0 0 20px;
+        overflow: hidden;
+        height: 100%;
+        img {
+            height: 100%;
+            object-fit: cover;
+        }
+    }
+    .contact-form-wrap {
+        padding: 80px 80px 80px 60px;
+    }
+}

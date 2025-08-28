@@ -1,0 +1,218 @@
+/*Footer 1***************/
+.footer-wrapper {
+    background-color: $title-color;
+}
+.footer-top-1 {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    padding: 90px 75px;
+    border-radius: 5px;
+    margin-bottom: -115px;
+    position: relative;
+    z-index: 3;
+    gap: 40px;
+    .call-media-wrap .icon {
+        background: rgba($color: #ffffff, $alpha: 0.3);
+    }
+    @include md {
+        padding: 60px 55px;
+        justify-content: center;
+    }
+    @include sm {
+        padding: 40px 30px;
+    }
+} 
+.widget-area {
+    padding: 80px 0 30px;
+}
+.copyright-wrap {
+    padding: 28px 0;
+    background: transparent;
+    border-top: 1px solid #232323;
+}
+.copyright-text {
+    margin: 0;
+    color: $white-color;
+    font-weight: 400;
+    font-size: 18px;
+    font-family: $title-font;
+    a {
+        color: $white-color;
+        &:hover {
+            color: $theme-color;
+        }
+    }
+}
+.footer-links {
+    display: flex;
+    gap: 15px 30px;
+    flex-wrap: wrap;
+    justify-content: center;
+    a {
+        font-size: 18px;
+        font-weight: 400;
+        font-family: $title-font;
+        color: $white-color;
+        &:hover {
+            color: $theme-color;
+        }
+    }
+}
+/*Footer 1***************/
+.footer-layout1 {
+    position: relative;
+    padding-top: 115px;
+    .footer-widget {
+        --body-color: #ffffff;
+    }
+    .newsletter-form .form-group input {
+        color: $white-color;
+    }
+}
+
+/*Footer 2***************/
+.footer-layout2 {
+    padding-top: 80px;
+    --body-color: rgba(255, 255, 255, 0.7);
+    .footer-top-2 {
+        background: $gray-color;
+        padding: 60px;
+        gap: 30px;
+        border-radius: 5px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        .footer-logo {
+            flex: none;
+        }
+        .footer-top-title {
+            font-size: 26px;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: -0.3em;
+            max-width: 265px;
+        }
+        .newsletter-form {
+            min-width: 400px;
+            .form-group input {
+                color: $white-color;
+            }
+        }
+    } 
+}
+@include md {
+    .footer-layout2 .footer-top-2 {
+        flex-wrap: wrap;
+        text-align: center;
+        justify-content: center;
+        .footer-logo {
+            width: 100%;
+        }
+        .footer-top-title {
+            max-width: none;
+            margin-bottom: 10px;
+            margin-top: 10px;
+        }
+    }
+}
+@include xs {
+    .footer-layout2 .footer-top-2 .newsletter-form {
+        min-width: auto;
+    }
+    .footer-layout2 .footer-top-2 {
+        padding: 40px;
+    }
+    .footer-layout2 .footer-top-2 .footer-top-title {
+        font-size: 22px;
+    }
+}
+@include vxs {
+    .footer-layout2 .footer-top-2 {
+        padding: 30px;
+    }
+}
+
+/*Footer 3***************/
+.footer-layout3 {
+    position: relative;
+    padding-top: 20px;
+    .footer-widget {
+        --body-color: #ffffff;
+    }
+    .newsletter-form .form-group input {
+        color: $white-color;
+    }
+}
+
+/*Footer 4***************/
+.footer-top-3 {
+    background: $theme-color;
+    padding: 60px;
+    gap: 30px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: -85px;
+    z-index: 1;
+    position: relative;
+    .footer-logo {
+        flex: none;
+    }
+    .footer-top-title {
+        font-size: 26px;
+        font-weight: 900;
+        line-height: 1;
+        margin-bottom: -0.3em;
+        max-width: 265px;
+    }
+    .newsletter-form {
+        min-width: 400px;
+        .form-group input {
+            color: $white-color;
+            border: 1px solid rgba(255, 255, 255, 1);
+            border-right: 0;
+            &::placeholder {
+                color: $white-color;
+            }
+        }
+    }
+} 
+
+@include md {
+    .footer-top-3 {
+        flex-wrap: wrap;
+        text-align: center;
+        justify-content: center;
+        .footer-logo {
+            width: 100%;
+        }
+        .footer-top-title {
+            max-width: none;
+            margin-bottom: 10px;
+            margin-top: 10px;
+        }
+    }
+}
+@include xs {
+    .footer-top-3 .newsletter-form {
+        min-width: auto;
+    }
+    .footer-top-3 {
+        padding: 40px;
+    }
+    .footer-top-3 .footer-top-title {
+        font-size: 22px;
+    }
+}
+@include vxs {
+    .footer-top-3 {
+        padding: 30px;
+    }
+}
+.footer-layout4 {
+    --body-color: rgba(255, 255, 255, 0.7);    
+    padding-top: 85px;
+}

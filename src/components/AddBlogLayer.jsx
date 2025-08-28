@@ -85,7 +85,7 @@ const AddBlogLayer = () => {
 
   return (
     <div className='row gy-4'>
-      <div className='col-lg-8'>
+      <div className='col-lg-12'>
         <div className='card mt-24'>
           <div className='card-header border-bottom'>
             <h6 className='text-xl mb-0'>Add New Post</h6>
@@ -106,7 +106,7 @@ const AddBlogLayer = () => {
                   placeholder='Enter Post Title'
                 />
               </div>
-              <div>
+              {/* <div>
                 <label className='form-label fw-bold text-neutral-900'>
                   Post Category:{" "}
                 </label>
@@ -116,7 +116,7 @@ const AddBlogLayer = () => {
                   <option value=''>Course</option>
                   <option value=''>Fashion</option>
                 </select>
-              </div>
+              </div> */}
               <div>
                 <label className='form-label fw-bold text-neutral-900'>
                   Post Description
@@ -135,11 +135,8 @@ const AddBlogLayer = () => {
                         <button className='ql-underline'></button>
                         <button className='ql-strike'></button>
                       </span>
-                      <span className='ql-formats'>
-                        <select className='ql-color'></select>
-                        <select className='ql-background'></select>
-                      </span>
-                      <span className='ql-formats'>
+
+                      {/* <span className='ql-formats'>
                         <button className='ql-script' value='sub'></button>
                         <button className='ql-script' value='super'></button>
                       </span>
@@ -148,23 +145,23 @@ const AddBlogLayer = () => {
                         <button className='ql-header' value='2'></button>
                         <button className='ql-blockquote'></button>
                         <button className='ql-code-block'></button>
-                      </span>
-                      <span className='ql-formats'>
+                      </span> */}
+                      {/* <span className='ql-formats'>
                         <button className='ql-list' value='ordered'></button>
                         <button className='ql-list' value='bullet'></button>
                         <button className='ql-indent' value='-1'></button>
                         <button className='ql-indent' value='+1'></button>
-                      </span>
-                      <span className='ql-formats'>
+                      </span> */}
+                      {/* <span className='ql-formats'>
                         <button className='ql-direction' value='rtl'></button>
                         <select className='ql-align'></select>
-                      </span>
-                      <span className='ql-formats'>
+                      </span> */}
+                      {/* <span className='ql-formats'>
                         <button className='ql-link'></button>
                         <button className='ql-image'></button>
                         <button className='ql-video'></button>
                         <button className='ql-formula'></button>
-                      </span>
+                      </span> */}
                       <span className='ql-formats'>
                         <button className='ql-clean'></button>
                       </span>
@@ -229,7 +226,7 @@ const AddBlogLayer = () => {
                   )}
                 </div>
               </div>
-              <button type='submit' className='btn btn-primary-600 radius-8'>
+              <button type='submit' className='btn btn-primary-600 radius-8 btn-sm' style={{width:'10%'}}>
                 Submit
               </button>
             </form>
@@ -237,207 +234,7 @@ const AddBlogLayer = () => {
         </div>
       </div>
       {/* Sidebar Start */}
-      <div className='col-lg-4'>
-        <div className='d-flex flex-column gap-24'>
-          {/* Latest Blog */}
-          <div className='card'>
-            <div className='card-header border-bottom'>
-              <h6 className='text-xl mb-0'>Latest Posts</h6>
-            </div>
-            <div className='card-body d-flex flex-column gap-24 p-24'>
-              <div className='d-flex flex-wrap'>
-                <Link
-                  to='/blog-details'
-                  className='blog__thumb w-100 radius-12 overflow-hidden'
-                >
-                  <img
-                    src='assets/images/blog/blog1.png'
-                    alt='WowDash React Vite'
-                    className='w-100 h-100 object-fit-cover'
-                  />
-                </Link>
-                <div className='blog__content'>
-                  <h6 className='mb-8'>
-                    <Link
-                      to='/blog-details'
-                      className='text-line-2 text-hover-primary-600 text-md transition-2'
-                    >
-                      How to hire a right business executive for your company
-                    </Link>
-                  </h6>
-                  <p className='text-line-2 text-sm text-neutral-500 mb-0'>
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                    Omnis dolores explicabo corrupti, fuga necessitatibus fugiat
-                    adipisci quidem eveniet enim minus.
-                  </p>
-                </div>
-              </div>
-              <div className='d-flex flex-wrap'>
-                <Link
-                  to='/blog-details'
-                  className='blog__thumb w-100 radius-12 overflow-hidden'
-                >
-                  <img
-                    src='assets/images/blog/blog2.png'
-                    alt='WowDash React Vite'
-                    className='w-100 h-100 object-fit-cover'
-                  />
-                </Link>
-                <div className='blog__content'>
-                  <h6 className='mb-8'>
-                    <Link
-                      to='/blog-details'
-                      className='text-line-2 text-hover-primary-600 text-md transition-2'
-                    >
-                      The Gig Economy: Adapting to a Flexible Workforce
-                    </Link>
-                  </h6>
-                  <p className='text-line-2 text-sm text-neutral-500 mb-0'>
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                    Omnis dolores explicabo corrupti, fuga necessitatibus fugiat
-                    adipisci quidem eveniet enim minus.
-                  </p>
-                </div>
-              </div>
-              <div className='d-flex flex-wrap'>
-                <Link
-                  to='/blog-details'
-                  className='blog__thumb w-100 radius-12 overflow-hidden'
-                >
-                  <img
-                    src='assets/images/blog/blog3.png'
-                    alt='WowDash React Vite'
-                    className='w-100 h-100 object-fit-cover'
-                  />
-                </Link>
-                <div className='blog__content'>
-                  <h6 className='mb-8'>
-                    <Link
-                      to='/blog-details'
-                      className='text-line-2 text-hover-primary-600 text-md transition-2'
-                    >
-                      The Future of Remote Work: Strategies for Success
-                    </Link>
-                  </h6>
-                  <p className='text-line-2 text-sm text-neutral-500 mb-0'>
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                    Omnis dolores explicabo corrupti, fuga necessitatibus fugiat
-                    adipisci quidem eveniet enim minus.
-                  </p>
-                </div>
-              </div>
-              <div className='d-flex flex-wrap'>
-                <Link
-                  to='/blog-details'
-                  className='blog__thumb w-100 radius-12 overflow-hidden'
-                >
-                  <img
-                    src='assets/images/blog/blog4.png'
-                    alt='WowDash React Vite'
-                    className='w-100 h-100 object-fit-cover'
-                  />
-                </Link>
-                <div className='blog__content'>
-                  <h6 className='mb-8'>
-                    <Link
-                      to='/blog-details'
-                      className='text-line-2 text-hover-primary-600 text-md transition-2'
-                    >
-                      Lorem ipsum dolor sit amet consectetur adipisicing.
-                    </Link>
-                  </h6>
-                  <p className='text-line-2 text-sm text-neutral-500 mb-0'>
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                    Omnis dolores explicabo corrupti, fuga necessitatibus fugiat
-                    adipisci quidem eveniet enim minus.
-                  </p>
-                </div>
-              </div>
-              <div className='d-flex flex-wrap'>
-                <Link
-                  to='/blog-details'
-                  className='blog__thumb w-100 radius-12 overflow-hidden'
-                >
-                  <img
-                    src='assets/images/blog/blog5.png'
-                    alt='WowDash React Vite'
-                    className='w-100 h-100 object-fit-cover'
-                  />
-                </Link>
-                <div className='blog__content'>
-                  <h6 className='mb-8'>
-                    <Link
-                      to='/blog-details'
-                      className='text-line-2 text-hover-primary-600 text-md transition-2'
-                    >
-                      How to hire a right business executive for your company
-                    </Link>
-                  </h6>
-                  <p className='text-line-2 text-sm text-neutral-500 mb-0'>
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                    Omnis dolores explicabo corrupti, fuga necessitatibus fugiat
-                    adipisci quidem eveniet enim minus.
-                  </p>
-                </div>
-              </div>
-              <div className='d-flex flex-wrap'>
-                <Link
-                  to='/blog-details'
-                  className='blog__thumb w-100 radius-12 overflow-hidden'
-                >
-                  <img
-                    src='assets/images/blog/blog6.png'
-                    alt='WowDash React Vite'
-                    className='w-100 h-100 object-fit-cover'
-                  />
-                </Link>
-                <div className='blog__content'>
-                  <h6 className='mb-8'>
-                    <Link
-                      to='/blog-details'
-                      className='text-line-2 text-hover-primary-600 text-md transition-2'
-                    >
-                      The Gig Economy: Adapting to a Flexible Workforce
-                    </Link>
-                  </h6>
-                  <p className='text-line-2 text-sm text-neutral-500 mb-0'>
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                    Omnis dolores explicabo corrupti, fuga necessitatibus fugiat
-                    adipisci quidem eveniet enim minus.
-                  </p>
-                </div>
-              </div>
-              <div className='d-flex flex-wrap'>
-                <Link
-                  to='/blog-details'
-                  className='blog__thumb w-100 radius-12 overflow-hidden'
-                >
-                  <img
-                    src='assets/images/blog/blog7.png'
-                    alt='WowDash React Vite'
-                    className='w-100 h-100 object-fit-cover'
-                  />
-                </Link>
-                <div className='blog__content'>
-                  <h6 className='mb-8'>
-                    <Link
-                      to='/blog-details'
-                      className='text-line-2 text-hover-primary-600 text-md transition-2'
-                    >
-                      The Future of Remote Work: Strategies for Success
-                    </Link>
-                  </h6>
-                  <p className='text-line-2 text-sm text-neutral-500 mb-0'>
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                    Omnis dolores explicabo corrupti, fuga necessitatibus fugiat
-                    adipisci quidem eveniet enim minus.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+     
     </div>
   );
 };

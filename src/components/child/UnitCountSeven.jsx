@@ -1,4 +1,17 @@
+import React , { useEffect, useState } from "react";
+import axios from "axios";
+
+const API_BASE = import.meta.env.VITE_APIURL;
+
 const UnitCountSeven = () => {
+  const [data, setData] = useState([]);
+
+  useEffect(() => {
+    axios
+      .get(`${API_BASE}Dashboard`)
+      .then((res) => setData(res.data[0]))
+      .catch((err) => console.log(err));
+  }, []);
   return (
     <div className='col-12'>
       {/* Welcome and Today's Task */}
@@ -7,13 +20,13 @@ const UnitCountSeven = () => {
               <div className="card-body dashboard-first-section radius-8">
               <div className="position-absolute">
                 <div className=" text-2xl font-semibold text-primary-foreground">
-                  Welcome Prantik!
+                  Welcome {localStorage.getItem("name")}!
                 </div>
                 <div className="card col-md-6">
                   <div className=" py-2 px-3 ">
                     <div className="flex-1">
                       <div className="text-xs font-semibold text-primary-foreground/80">Today's Task</div>
-                      <div className="text-lg font-semibold text-primary-foreground">123</div>
+                      <div className="text-lg font-semibold text-primary-foreground">{data.TodayBookings || 0}</div>
                     </div>
                   </div>
                 </div>
@@ -68,7 +81,7 @@ const UnitCountSeven = () => {
                     <span className='mb-2 fw-medium text-secondary-light text-md'>
                       Total Booking
                     </span>
-                    <h6 className='fw-semibold mb-1'>$35,000</h6>
+                    <h6 className='fw-semibold mb-1'>{data.TotalBookings || 0}</h6>
                   </div>
                   <span className='w-44-px h-44-px radius-8 d-inline-flex justify-content-center align-items-center text-2xl mb-12 bg-lilac-200 text-lilac-600'>
                     <i className='ri-handbag-fill' />
@@ -89,7 +102,7 @@ const UnitCountSeven = () => {
                     <span className='mb-2 fw-medium text-secondary-light text-md'>
                       Upcoming Booking
                     </span>
-                    <h6 className='fw-semibold mb-1'>$30,000</h6>
+                    <h6 className='fw-semibold mb-1'>{data.UpcomingBookings || 0}</h6>
                   </div>
                   <span className='w-44-px h-44-px radius-8 d-inline-flex justify-content-center align-items-center text-2xl mb-12 bg-success-200 text-success-600'>
                     <i className='ri-shopping-cart-fill' />
@@ -110,7 +123,7 @@ const UnitCountSeven = () => {
                     <span className='mb-2 fw-medium text-secondary-light text-md'>
                       Active Booking
                     </span>
-                    <h6 className='fw-semibold mb-1'>$7,000</h6>
+                    <h6 className='fw-semibold mb-1'>{data.ActiveBookings || 0}</h6>
                   </div>
                   <span className='w-44-px h-44-px radius-8 d-inline-flex justify-content-center align-items-center text-2xl mb-12 bg-warning-focus text-warning-600'>
                     <i className='ri-shopping-cart-fill' />
