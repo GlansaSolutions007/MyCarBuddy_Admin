@@ -138,6 +138,7 @@ import ReasonPage from "./pages/ReasonPage";
 import PolicyPage from "./pages/PolicyPage";
 import SeoPage from "./pages/SeoPage";
 import SeoAddPage from "./pages/SeoAddPage";
+import RolePage from "./pages/RolePage";
 
 
 
@@ -217,6 +218,11 @@ function App() {
           <Route exact path='/seo' element={<SeoPage />} />
           <Route exact path='/add-seo' element={<SeoAddPage />} />
           <Route exact path='/edit-seo/:seoid' element={<SeoAddPage />} />
+          <Route exact path="/blog" element={<BlogPage />} />
+          <Route exact path="/blog-details/:BlogID" element={<BlogDetailsPage />} />
+          <Route exact path="/add-blog" element={<AddBlogPage />} />
+          <Route exact path="/edit-blog/:BlogID" element={<AddBlogPage />} />
+          <Route exact path="/roles" element={<RolePage />} />
         </Route>
 
 

@@ -5,11 +5,15 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import ThemeToggleButton from "../helper/ThemeToggleButton";
 import { useNavigate } from "react-router-dom";
 import { requestPermission, onMessageListener } from "../components/firebase";
+import { notificationService } from "../services/notificationService";
+import { toast, ToastContainer } from "react-toastify";
 
 
 const MasterLayout = ({ children }) => {
   let [sidebarActive, seSidebarActive] = useState(false);
   let [mobileMenu, setMobileMenu] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation(); // Hook to get the current route
   const role = localStorage.getItem("role");
 
@@ -81,6 +85,73 @@ const MasterLayout = ({ children }) => {
       });
     };
   }, [location.pathname]);
+
+  // Firebase notification setup
+  useEffect(() => {
+    const setupFirebaseNotifications = async () => {
+      try {
+        // Request notification permission
+        const token = await requestPermission();
+        if (token) {
+          console.log("FCM Token obtained:", token);
+          // Store token or send to backend for registration
+          localStorage.setItem("fcmToken", token);
+          
+          // Send token to backend for registration (optional)
+          try {
+            const userToken = localStorage.getItem("token");
+            await fetch(`${import.meta.env.VITE_APIURL}/api/Notifications/RegisterToken`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${userToken}`
+              },
+              body: JSON.stringify({ fcmToken: token })
+            });
+          } catch (error) {
+            console.log("Token registration with backend failed:", error);
+          }
+        }
+
+        // Listen for incoming messages
+        onMessageListener().then((payload) => {
+          console.log("Message received:", payload);
+          
+          // Add notification to state
+          const newNotification = {
+            id: Date.now(),
+            title: payload.notification?.title || "New Notification",
+            message: payload.notification?.body || "You have a new notification",
+            timestamp: new Date().toISOString(),
+            read: false,
+            type: payload.data?.type || 'general'
+          };
+          
+          setNotifications(prev => [newNotification, ...prev]);
+          setUnreadCount(prev => prev + 1);
+          
+          // Show toast notification
+          notificationService.showToastNotification(
+            newNotification.title,
+            newNotification.message,
+            'info'
+          );
+          
+          // Show browser notification
+          if (Notification.permission === "granted") {
+            new Notification(newNotification.title, {
+              body: newNotification.message,
+              icon: "/assets/images/MyCarBuddy-Logo1.png"
+            });
+          }
+        });
+      } catch (error) {
+        console.error("Firebase notification setup failed:", error);
+      }
+    };
+
+    setupFirebaseNotifications();
+  }, []);
 
   let sidebarControl = () => {
     seSidebarActive(!sidebarActive);
@@ -214,7 +285,7 @@ const MasterLayout = ({ children }) => {
       { title: "Reasons", to: "/reason", color: "text-primary-600" },
       { title: "Notification Templates", to: "/notification-templates", color: "text-warning-main" },
       { title: "SEO", to: "/seo", color: "text-info-main" },
-      // { title: "Permissions", to: "/permissions", color: "text-info-main" },
+      { title: "Role", to: "/roles", color: "text-info-main" },
     ],
 
   },
@@ -586,6 +657,9 @@ const MasterLayout = ({ children }) => {
                       icon='iconoir:bell'
                       className='text-primary-light text-xl'
                     />
+                    {unreadCount > 0 && (
+                      <span className='notification-badge'>{unreadCount}</span>
+                    )}
                   </button>
                   <div className='dropdown-menu to-top dropdown-menu-lg p-0'>
                     <div className='m-16 py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2'>
@@ -594,133 +668,62 @@ const MasterLayout = ({ children }) => {
                           Notifications
                         </h6>
                       </div>
-                      <span className='text-primary-600 fw-semibold text-lg w-40-px h-40-px rounded-circle bg-base d-flex justify-content-center align-items-center'>
-                        05
-                      </span>
+                      {unreadCount > 0 && (
+                        <span className='text-primary-600 fw-semibold text-lg w-40-px h-40-px rounded-circle bg-base d-flex justify-content-center align-items-center'>
+                          {unreadCount}
+                        </span>
+                      )}
                     </div>
                     <div className='max-h-400-px overflow-y-auto scroll-sm pe-4'>
-                      <Link
-                        to='#'
-                        className='px-24 py-12 d-flex align-items-start gap-3 mb-2 justify-content-between'
-                      >
-                        <div className='text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3'>
-                          <span className='w-44-px h-44-px bg-success-subtle text-success-main rounded-circle d-flex justify-content-center align-items-center flex-shrink-0'>
-                            <Icon
-                              icon='bitcoin-icons:verify-outline'
-                              className='icon text-xxl'
-                            />
-                          </span>
-                          <div>
-                            <h6 className='text-md fw-semibold mb-4'>
-                              Congratulations
-                            </h6>
-                            <p className='mb-0 text-sm text-secondary-light text-w-200-px'>
-                              Your profile has been Verified. Your profile has
-                              been Verified
-                            </p>
-                          </div>
+                      {notifications.length === 0 ? (
+                        <div className='px-24 py-12 text-center'>
+                          <p className='text-secondary-light mb-0'>No notifications</p>
                         </div>
-                        <span className='text-sm text-secondary-light flex-shrink-0'>
-                          23 Mins ago
-                        </span>
-                      </Link>
-                      <Link
-                        to='#'
-                        className='px-24 py-12 d-flex align-items-start gap-3 mb-2 justify-content-between bg-neutral-50'
-                      >
-                        <div className='text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3'>
-                          <span className='w-44-px h-44-px bg-success-subtle text-success-main rounded-circle d-flex justify-content-center align-items-center flex-shrink-0'>
-                            <img
-                              src='/assets/images/notification/profile-1.png'
-                              alt='MYCarBuddy'
-                            />
-                          </span>
-                          <div>
-                            <h6 className='text-md fw-semibold mb-4'>
-                              Ronald Richards
-                            </h6>
-                            <p className='mb-0 text-sm text-secondary-light text-w-200-px'>
-                              You can stitch between artboards
-                            </p>
-                          </div>
-                        </div>
-                        <span className='text-sm text-secondary-light flex-shrink-0'>
-                          23 Mins ago
-                        </span>
-                      </Link>
-                      <Link
-                        to='#'
-                        className='px-24 py-12 d-flex align-items-start gap-3 mb-2 justify-content-between'
-                      >
-                        <div className='text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3'>
-                          <span className='w-44-px h-44-px bg-info-subtle text-info-main rounded-circle d-flex justify-content-center align-items-center flex-shrink-0'>
-                            AM
-                          </span>
-                          <div>
-                            <h6 className='text-md fw-semibold mb-4'>
-                              Arlene McCoy
-                            </h6>
-                            <p className='mb-0 text-sm text-secondary-light text-w-200-px'>
-                              Invite you to prototyping
-                            </p>
-                          </div>
-                        </div>
-                        <span className='text-sm text-secondary-light flex-shrink-0'>
-                          23 Mins ago
-                        </span>
-                      </Link>
-                      <Link
-                        to='#'
-                        className='px-24 py-12 d-flex align-items-start gap-3 mb-2 justify-content-between bg-neutral-50'
-                      >
-                        <div className='text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3'>
-                          <span className='w-44-px h-44-px bg-success-subtle text-success-main rounded-circle d-flex justify-content-center align-items-center flex-shrink-0'>
-                            <img
-                              src='/assets/images/notification/profile-2.png'
-                              alt='MYCarBuddy'
-                            />
-                          </span>
-                          <div>
-                            <h6 className='text-md fw-semibold mb-4'>
-                              Annette Black
-                            </h6>
-                            <p className='mb-0 text-sm text-secondary-light text-w-200-px'>
-                              Invite you to prototyping
-                            </p>
-                          </div>
-                        </div>
-                        <span className='text-sm text-secondary-light flex-shrink-0'>
-                          23 Mins ago
-                        </span>
-                      </Link>
-                      <Link
-                        to='#'
-                        className='px-24 py-12 d-flex align-items-start gap-3 mb-2 justify-content-between'
-                      >
-                        <div className='text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3'>
-                          <span className='w-44-px h-44-px bg-info-subtle text-info-main rounded-circle d-flex justify-content-center align-items-center flex-shrink-0'>
-                            DR
-                          </span>
-                          <div>
-                            <h6 className='text-md fw-semibold mb-4'>
-                              Darlene Robertson
-                            </h6>
-                            <p className='mb-0 text-sm text-secondary-light text-w-200-px'>
-                              Invite you to prototyping
-                            </p>
-                          </div>
-                        </div>
-                        <span className='text-sm text-secondary-light flex-shrink-0'>
-                          23 Mins ago
-                        </span>
-                      </Link>
+                      ) : (
+                        notifications.map((notification) => (
+                          <Link
+                            key={notification.id}
+                            to='#'
+                            className={`px-24 py-12 d-flex align-items-start gap-3 mb-2 justify-content-between ${!notification.read ? 'bg-neutral-50' : ''}`}
+                            onClick={() => {
+                              // Mark as read
+                              setNotifications(prev => 
+                                prev.map(n => 
+                                  n.id === notification.id ? {...n, read: true} : n
+                                )
+                              );
+                              setUnreadCount(prev => Math.max(0, prev - 1));
+                            }}
+                          >
+                            <div className='text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3'>
+                              <span className='w-44-px h-44-px bg-success-subtle text-success-main rounded-circle d-flex justify-content-center align-items-center flex-shrink-0'>
+                                <Icon
+                                  icon='bitcoin-icons:verify-outline'
+                                  className='icon text-xxl'
+                                />
+                              </span>
+                              <div>
+                                <h6 className='text-md fw-semibold mb-4'>
+                                  {notification.title}
+                                </h6>
+                                <p className='mb-0 text-sm text-secondary-light text-w-200-px'>
+                                  {notification.message}
+                                </p>
+                              </div>
+                            </div>
+                            <span className='text-sm text-secondary-light flex-shrink-0'>
+                              {new Date(notification.timestamp).toLocaleTimeString()}
+                            </span>
+                          </Link>
+                        ))
+                      )}
                     </div>
                     <div className='text-center py-12 px-16'>
                       <Link
-                        to='#'
+                        to='/notification-alert'
                         className='text-primary-600 fw-semibold text-md'
                       >
-                        See All Notification
+                        See All Notifications
                       </Link>
                     </div>
                   </div>
@@ -827,6 +830,19 @@ const MasterLayout = ({ children }) => {
           </div>
         </footer>
       </main>
+      
+      {/* Toast notifications container */}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </section>
   );
 };

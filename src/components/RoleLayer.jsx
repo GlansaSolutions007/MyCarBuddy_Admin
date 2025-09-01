@@ -9,19 +9,20 @@ import FormError from "./FormError"; // form errors
 
 const RoleLayer = () => {
     const [formData, setFormData] = useState({
-      StateID: "",
-      StateName: "",
+      RoleID: "",
+      RoleName: "",
+      // Description: "",
       IsActive: true,
     });
-  const [states, setStates] = useState([]);
+  const [roles, setRoles] = useState([]);
   const { errors, validate, clearError } = useFormError();
   const [apiError, setApiError] = useState("");
-  const API_BASE = `${import.meta.env.VITE_APIURL}State`; 
+  const API_BASE = `${import.meta.env.VITE_APIURL}Roles`; 
 
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    fetchStates();
+    fetchRoles();
   }, []);
 
   /**
@@ -35,23 +36,23 @@ const RoleLayer = () => {
   };
 
   /**
-   * Fetches the list of states from the API.
+   * Fetches the list of roles from the API.
    * Updates the state with the fetched data.
    */
-  const fetchStates = async () => {
+  const fetchRoles = async () => {
     try {
-      // Make a GET request to the State endpoint
+      // Make a GET request to the Role endpoint
       const res = await axios.get(API_BASE, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         } 
       });
-      // Update the state with the fetched states data
-      setStates(res.data);
+      // Update the state with the fetched roles data
+      setRoles(res.data);
     } catch (error) {
       // Log an error message if the request fails
-      console.error("Failed to load states", error);
+      console.error("Failed to load roles", error);
     }
   };
 
@@ -59,15 +60,15 @@ const RoleLayer = () => {
    * Handles a submit event for the form.
    * Validates the form data using the validate function.
    * If the form data is valid, makes a PUT or POST request to the API
-   * to create or update a state.
-   * If the request is successful, fetches the list of states from the API.
+   * to create or update a role.
+   * If the request is successful, fetches the list of roles from the API.
    * If the request fails, logs an error message.
    * @param {object} e - The event object.
    */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setApiError("");
-    const validationErrors = validate(formData, ["StateID" ,"IsActive"]);
+    const validationErrors = validate(formData, ["RoleID" ,"IsActive"]);
     console.log(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
 
@@ -78,17 +79,17 @@ const RoleLayer = () => {
         'Authorization': `Bearer ${localStorage.getItem('token')}`,
       };
 
-      if (formData.StateID) {
-        // Update existing state
+      if (formData.RoleID) {
+        // Update existing role
         res = await axios.put(API_BASE, {
-          StateName: formData.StateName,
+          name: formData.RoleName,
           IsActive: formData.IsActive,
-          StateID: formData.StateID,
+          id: formData.RoleID,
         }, { headers });
       } else {
-        // Add new state
+        // Add new role
         res = await axios.post(API_BASE, {
-          StateName: formData.StateName,
+          name: formData.RoleName,
           IsActive: formData.IsActive,
         }, { headers });
       }
@@ -97,7 +98,7 @@ const RoleLayer = () => {
         if (data.status) {
           Swal.fire({
             title: 'Success',
-            text: 'State added successfully',
+            text: 'Role added successfully',
             icon: 'success',
             customClass: {
               container: 'my-swal-container', // for the wrapper
@@ -110,7 +111,7 @@ const RoleLayer = () => {
         } else {
           Swal.fire({
             title: 'Error',
-            text: res.data.message || 'Failed to add state',
+            text: res.data.message || 'Failed to add role',
             icon: 'error',
             customClass: {
               container: 'my-swal-container', // for the wrapper
@@ -122,14 +123,14 @@ const RoleLayer = () => {
         }
 
       // Reset the form data
-      setFormData({ StateID: "", StateName: "", IsActive: true });
-      // Fetch the list of states from the API
-      fetchStates();
+      setFormData({ RoleID: "", RoleName: "", Description: "", IsActive: true });
+      // Fetch the list of roles from the API
+      fetchRoles();
     } catch (error) {
       // Log an error message if the request fails
       Swal.fire({
             title: 'Error',
-            text: error.response.data.message || 'Failed to add state',
+            text: error.response?.data?.message || 'Failed to add role',
             icon: 'error',
             customClass: {
               container: 'my-swal-container', // for the wrapper
@@ -161,9 +162,9 @@ const RoleLayer = () => {
 
   if (result.isConfirmed) {
     try {
-      await axios.delete(`${API_BASE}/`, { data: { StateID: id } });
-      Swal.fire('Deleted!', 'The state has been deleted.', 'success');
-      fetchStates();
+      await axios.delete(`${API_BASE}/`, { data: { RoleID: id } });
+      Swal.fire('Deleted!', 'The role has been deleted.', 'success');
+      fetchRoles();
     } catch (error) {
       console.error("Delete failed", error);
       Swal.fire('Error!', 'Something went wrong.', 'error');
@@ -171,8 +172,12 @@ const RoleLayer = () => {
   }
 };
 
-  const handleEdit = (state) => {
-    setFormData(state);
+  const handleEdit = (role) => {
+    setFormData({
+      RoleID: role.id,
+      RoleName: role.name,
+      IsActive: role.IsActive,
+    });
   }; 
 
   const columns = [
@@ -182,13 +187,13 @@ const RoleLayer = () => {
       width: "80px",
     },
     {
-      name: "State Name",
-      selector: (row) => row.StateName,
+      name: "Role Name",
+      selector: (row) => row.name,
       sortable: true,
     },
     {
       name: "Status",
-      selector: (row) => row.IsActive ? <span className="badge bg-success">Actve</span> : <span className="badge bg-danger">InActve</span>,
+      selector: (row) => row.IsActive ? <span className="badge bg-success">Active</span> : <span className="badge bg-danger">Inactive</span>,
     },
     {
       name: "Actions",
@@ -201,7 +206,7 @@ const RoleLayer = () => {
                   <Icon icon='lucide:edit' />
             </Link>
             {/* <Link
-                  onClick={() => handleDelete(row.StateID , row.StateName)}
+                  onClick={() => handleDelete(row.RoleID , row.RoleName)}
                   className='w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
                 >
                   <Icon icon='mingcute:delete-2-line' />
@@ -219,24 +224,25 @@ const RoleLayer = () => {
             <form onSubmit={handleSubmit} className='form' noValidate>
               <div className='mb-10'>
                 <label
-                  htmlFor='format'
+                  htmlFor='roleName'
                   className='text-sm fw-semibold text-primary-light mb-8'
                 >
-                  State Name <span className='text-danger'>*</span>
+                  Role Name <span className='text-danger'>*</span>
                 </label>
                 <input
                       type="text"
-                      name="StateName"
-                      className={`form-control ${errors.StateName ? "is-invalid" : ""}`}
-                      placeholder="Enter state name"
-                      value={formData.StateName}
+                      name="RoleName"
+                      className={`form-control ${errors.RoleName ? "is-invalid" : ""}`}
+                      placeholder="Enter role name"
+                      value={formData.RoleName}
                       onChange={handleChange}
                       />
-                <FormError error={errors.StateName} />
+                <FormError error={errors.RoleName} />
               </div>
+
               <div className='mb-20'>
                 <label
-                  htmlFor='format'
+                  htmlFor='status'
                   className='text-sm fw-semibold text-primary-light mb-8'
                 >
                   Status
@@ -248,11 +254,11 @@ const RoleLayer = () => {
                   onChange={(e) => setFormData({ ...formData, IsActive: e.target.value === "true" })}
                 >
                   <option value="true">Active</option>
-                  <option value="false">InActive</option>
+                  <option value="false">Inactive</option>
                 </select>
               </div>
-              <button  type="submit" className="btn btn-primary-600 radius-8 px-14 py-6 text-sm">
-                  {formData.StateID ? "Update State" : "Add State"}
+              <button  type="submit" className="btn btn-primary-600 radius-8 px-14 py-6 text-sm" onClick={handleSubmit}>
+                  {formData.RoleID ? "Update Role" : "Add Role"}
               </button>
             </form>
           </div>
@@ -262,13 +268,13 @@ const RoleLayer = () => {
         <div className='chat-main card overflow-hidden'>
             <DataTable
                 columns={columns}
-                data={states}
+                data={roles}
                 pagination
                 highlightOnHover
                 responsive
                 striped
                 persistTableHead
-                noDataComponent="No states available"
+                noDataComponent="No roles available"
             />
         </div>
       </div>

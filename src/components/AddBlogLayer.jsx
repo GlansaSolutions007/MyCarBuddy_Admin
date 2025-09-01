@@ -1,15 +1,25 @@
 import { useEffect, useRef, useState } from "react";
 import hljs from "highlight.js";
 import ReactQuill from "react-quill-new";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import Swal from "sweetalert2";
+
+const API_BASE = import.meta.env.VITE_APIURL;
 
 const AddBlogLayer = () => {
   const [imagePreview, setImagePreview] = useState(null);
+  const [postTitle, setPostTitle] = useState("");
+  const [postCategory, setPostCategory] = useState("");
+  const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
-      const src = URL.createObjectURL(e.target.files[0]);
+      const file = e.target.files[0];
+      const src = URL.createObjectURL(file);
       setImagePreview(src);
+      setThumbnailFile(file);
     }
   };
 
@@ -42,6 +52,50 @@ const AddBlogLayer = () => {
   const handleSave = () => {
     const editorContent = quillRef.current.getEditor().root.innerHTML;
     console.log("Editor content:", editorContent);
+  };
+
+  const navigate = useNavigate();
+  const token = localStorage.getItem("token");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("PostTitle", postTitle);
+      formData.append("PostCategory", postCategory);
+      formData.append("PostDescription", value);
+      
+      if (thumbnailFile) {
+        formData.append("Thumbnai1", thumbnailFile);
+      }
+
+      const response = await axios.post(`${API_BASE}Blogs/InsertBlog`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data.success) {
+        Swal.fire("Success", "Blog added successfully!", "success");
+        // Reset form
+        setPostTitle("");
+        setPostCategory("");
+        setValue("");
+        setImagePreview(null);
+        setThumbnailFile(null);
+        navigate("/blogs");
+      } else {
+        Swal.fire("Error", response.data.message || "Failed to add blog", "error");
+      }
+    } catch (error) {
+      console.error("Error adding blog:", error);
+      Swal.fire("Error", "An error occurred while adding the blog", "error");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Quill editor modules with syntax highlighting (only load if highlight.js is ready)
@@ -91,7 +145,7 @@ const AddBlogLayer = () => {
             <h6 className='text-xl mb-0'>Add New Post</h6>
           </div>
           <div className='card-body p-24'>
-            <form action='#' className='d-flex flex-column gap-20'>
+            <form onSubmit={handleSubmit} className='d-flex flex-column gap-20'>
               <div>
                 <label
                   className='form-label fw-bold text-neutral-900'
@@ -104,6 +158,9 @@ const AddBlogLayer = () => {
                   className='form-control border border-neutral-200 radius-8'
                   id='title'
                   placeholder='Enter Post Title'
+                  value={postTitle}
+                  onChange={(e) => setPostTitle(e.target.value)}
+                  required
                 />
               </div>
               {/* <div>
@@ -226,8 +283,14 @@ const AddBlogLayer = () => {
                   )}
                 </div>
               </div>
-              <button type='submit' className='btn btn-primary-600 radius-8 btn-sm' style={{width:'10%'}}>
-                Submit
+              
+              <button 
+                type='submit' 
+                className='btn btn-primary-600 radius-8 btn-sm' 
+                style={{width:'10%'}}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Submitting...' : 'Submit'}
               </button>
             </form>
           </div>
