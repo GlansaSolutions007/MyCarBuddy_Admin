@@ -1,11 +1,15 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { useState, useEffect } from "react";
+import axios from "axios";
+import Swal from "sweetalert2";
 
 const ViewProfileLayer = () => {
+  const baseURL = import.meta.env.VITE_APIURL;
   const [formData, setFormData] = useState({
     AdminID: 2, // fixed ID for now
     FullName: "",
     PasswordHash: "",
+    confirmPassword: "",
     ProfileImage1: "",
   });
   const [imagePreview, setImagePreview] = useState(
@@ -17,12 +21,13 @@ const ViewProfileLayer = () => {
   useEffect(() => {
     const fetchAdmin = async () => {
       try {
-        const res = await fetch(`/api/Auth/adminid?adminid=${formData.AdminID}`);
-        const data = await res.json();
+        const res = await axios.get(`${baseURL}Auth/adminid?adminid=${formData.AdminID}`);
+        const data = res.data[0];
 
         setFormData({
           AdminID: data.AdminID,
           FullName: data.FullName,
+          Email: data.Email,
           PasswordHash: "", // don’t pre-fill password
           ProfileImage1: data.ProfileImage1,
         });
@@ -60,29 +65,52 @@ const ViewProfileLayer = () => {
 
   // Save / Update Admin
   const handleSave = async () => {
-    try {
-      const payload = new FormData();
-      payload.append("AdminID", formData.AdminID);
-      payload.append("FullName", formData.FullName);
-      payload.append("PasswordHash", formData.PasswordHash);
-      if (file) {
-        payload.append("ProfileImage1", file);
+      if (formData.PasswordHash !== formData.confirmPassword) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Passwords do not match!",
+        });
+        return;
       }
 
-      const res = await fetch("/api/Auth/update-admin", {
-        method: "POST",
-        body: payload,
-      });
+      try {
+        const payload = new FormData();
+        payload.append("AdminID", formData.AdminID);
+        payload.append("FullName", formData.FullName);
+        payload.append("PasswordHash", formData.PasswordHash);
+        if (file) {
+          payload.append("ProfileImage1", file);
+        }
 
-      const result = await res.json();
-      if (res.ok) {
-        alert("Profile updated successfully!");
-      } else {
-        alert(result.message || "Update failed!");
+        const res = await axios.post(`${baseURL}Auth/update-admin`, payload, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        const result = res.data;
+        if (res.status === 200) {
+          Swal.fire({
+            icon: "success",
+            title: "Success",
+            text: "Profile updated successfully!",
+          });
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: result.message || "Update failed!",
+          });
+        }
+      } catch (err) {
+        console.error("Update error:", err);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Update failed!",
+        });
       }
-    } catch (err) {
-      console.error("Update error:", err);
-    }
   };
 
   return (
@@ -150,6 +178,24 @@ const ViewProfileLayer = () => {
                       </div>
                     </div>
 
+                    <div className="col-sm-6 mt-2">
+                      <div className="mb-20">
+                        <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+                          Email <span className="text-danger-600">*</span>
+                        </label>
+                        <input
+                          type="email"
+                          className="form-control radius-8"
+                          name="Email"
+                          value={formData.Email}
+                          onChange={handleChange}
+                          placeholder="Enter email"
+                          readOnly
+                        />
+                      </div>
+
+                    </div>
+
                     <div className="col-sm-6">
                       <div className="mb-20">
                         <label className="form-label fw-semibold text-primary-light text-sm mb-8">
@@ -162,6 +208,22 @@ const ViewProfileLayer = () => {
                           value={formData.PasswordHash}
                           onChange={handleChange}
                           placeholder="Enter password"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="col-sm-6">
+                      <div className="mb-20">
+                        <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+                          Confirm Password
+                        </label>
+                        <input
+                          type="password"
+                          className="form-control radius-8"
+                          name="confirmPassword"
+                          value={formData.confirmPassword}
+                          onChange={handleChange}
+                          placeholder="Confirm password"
                         />
                       </div>
                     </div>

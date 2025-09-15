@@ -27,6 +27,12 @@ const BookingLayer = () => {
     fetchBookings();
   }, []);
 
+  // 15 sec call to fetch bookings
+  useEffect(() => {
+    const interval = setInterval(fetchBookings, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
   const fetchBookings = async () => {
     try {
       const res = await axios.get(`${API_BASE}Bookings`, {
@@ -106,7 +112,7 @@ const BookingLayer = () => {
   };
 
   const columns = [
-    { name: "S.No", selector: (_, index) => index + 1, width: "80px" },
+    { name: "S.No", selector: (row) => (row.BookingID) },
     { name: "BookingID", selector: (row) => (
        <Link to={`/view-booking/${row.BookingID}`} className="text-primary">
               {row.BookingTrackID}
@@ -136,7 +142,7 @@ const BookingLayer = () => {
         </>
       ),
     },
-    { name: "Address", selector: (row) => row.FullAddress },
+    // { name: "Address", selector: (row) => row.FullAddress },
     {
       name: "Technician",
       selector: (row) => (
@@ -183,7 +189,7 @@ const BookingLayer = () => {
             >
               <Icon icon="lucide:eye" />
             </Link>
-            {isFutureOrToday && (row.BookingStatus.toLowerCase() !== "cancelled" && row.BookingStatus.toLowerCase() !== "completed" && row.BookingStatus.toLowerCase() !== 'confirmed') && (
+            {isFutureOrToday && (row.BookingStatus.toLowerCase() == "pending" ) && (
               <Link
                 onClick={() => handleAssignClick(row.BookingID)}
                 className="w-32-px h-32-px bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center"

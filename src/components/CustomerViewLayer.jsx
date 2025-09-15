@@ -98,7 +98,6 @@ const [showModal, setShowModal] = useState(false);
           setVehicles(response.data);
     } catch (error) {
       console.error("Error fetching cars:", error);
-        // alert("Failed to load cars. Please try again later.");
     }
     };
 

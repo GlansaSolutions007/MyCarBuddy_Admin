@@ -10,6 +10,23 @@ import Select from "react-select";
 const API_BASE = import.meta.env.VITE_APIURL;
 const API_IMAGE = import.meta.env.VITE_APIURL_IMAGE;
 
+// Helper function to convert 24-hour time to 12-hour AM/PM format
+const formatTime = (timeStr) => {
+  if (!timeStr) return "";
+  const [hour, minute] = timeStr.split(':').map(Number);
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
+};
+
+// Helper function to format timeslot string (e.g., "10:00 - 12:00" -> "10:00 AM - 12:00 PM")
+const formatTimeSlot = (timeSlotStr) => {
+  if (!timeSlotStr) return "";
+  const parts = timeSlotStr.split(' - ');
+  if (parts.length !== 2) return timeSlotStr;
+  return `${formatTime(parts[0])} - ${formatTime(parts[1])}`;
+};
+
 const BookingViewLayer = () => {
   const [imagePreview, setImagePreview] = useState(
     "/assets/images/user-grid/user-grid-img13.png"
@@ -21,6 +38,8 @@ const BookingViewLayer = () => {
   const [reason, setReason] = useState("");
    const [selectedTechnician, setSelectedTechnician] = useState(null);
      const [technicians, setTechnicians] = useState([]);
+  const [timeSlots, setTimeSlots] = useState([]);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
   const token = localStorage.getItem("token");
 
   const { bookingId } = useParams();
@@ -57,9 +76,29 @@ const BookingViewLayer = () => {
     }
   };
 
+  const fetchTimeSlots = async () => {
+    try {
+      const response = await axios.get(`${API_BASE}TimeSlot`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setTimeSlots(
+        response.data.map((slot) => ({
+          ...slot,
+          TsID: slot.TsID,
+          StartTime: slot.startTime || slot.StartTime,
+          EndTime: slot.endTime || slot.EndTime,
+          IsActive: slot.IsActive ?? slot.Status ?? slot.status,
+        }))
+      );
+    } catch (err) {
+      console.error("Error fetching time slots:", err);
+    }
+  };
+
   useEffect(() => {
   fetchTechnicians();
     fetchBookingData();
+    fetchTimeSlots();
   }, [bookingId]);
 
 
@@ -72,21 +111,48 @@ const BookingViewLayer = () => {
 
    // Reschedule API
  const handleReschedule = async () => {
-    if (!newDate) return alert("Please select a new date.");
-    const confirmed = window.confirm(`Are you sure you want to reschedule to ${newDate}?`);
-    if (!confirmed) return;
+    if (!newDate) {
+      Swal.fire("Error", "Please select a new date.", "error");
+      return;
+    }
+    if (!selectedTimeSlot) {
+      Swal.fire("Error", "Please select a time slot.", "error");
+      return;
+    }
+
+    const result = await Swal.fire({
+      title: "Confirm Reschedule",
+      text: `Are you sure you want to reschedule to ${newDate} at ${formatTimeSlot(selectedTimeSlot)}?`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, reschedule it!"
+    });
+
+    if (!result.isConfirmed) return;
 
     try {
-      await axios.post(`${API_BASE}Bookings/Reschedule`, {
-       BookingID: bookingId,
-        Reason: reason,
-        OldDate: bookingData.BookingDate,
-        NewDate: newDate,
+      await axios.post(`${API_BASE}Reschedules`, {
+       bookingID: bookingId,
+        reason: reason,
+        oldSchedule: bookingData.BookingDate,
+        newSchedule: newDate,
+        timeSlot: selectedTimeSlot,
+        requestedBy: 1,
+        Status: ''
       }, { headers: { Authorization: `Bearer ${token}` } });
-      alert("Booking rescheduled successfully!");
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: "Booking rescheduled successfully!",
+      });
       setShowReschedule(false);
+      setNewDate("");
+      setSelectedTimeSlot("");
+      setReason("");
     } catch (error) {
-      alert("Failed to reschedule booking.");
+      Swal.fire("Error", "Failed to reschedule booking.", "error");
       console.error(error);
     }
   };
@@ -121,18 +187,18 @@ const BookingViewLayer = () => {
           fetchBookingData();
         } else {
           Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: "Failed to assign technician",
+           icon: "success",
+            title: "Success",
+            text: "Technician assigned successfully",
           });
         }
       } catch (error) {
         console.error("Failed to assign technician", error);
         if (error.response) {
           Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: error.response.data.message || "Failed to assign technician",
+           icon: "success",
+            title: "Success",
+            text: "Technician assigned successfully",
           });
         }
       }
@@ -140,8 +206,17 @@ const BookingViewLayer = () => {
 
   // Cancel API
   const handleCancel = async () => {
-    const confirmed = window.confirm("Are you sure you want to cancel this booking?");
-    if (!confirmed) return;
+    const result = await Swal.fire({
+      title: "Cancel Booking",
+      text: "Are you sure you want to cancel this booking?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, cancel it!"
+    });
+
+    if (!result.isConfirmed) return;
 
     try {
       await axios.post(`${API_BASE}Bookings/Cancel`, {
@@ -149,9 +224,9 @@ const BookingViewLayer = () => {
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      alert("Booking cancelled successfully!");
+      Swal.fire("Cancelled!", "Booking has been cancelled successfully.", "success");
     } catch (error) {
-      alert("Failed to cancel booking.");
+      Swal.fire("Error", "Failed to cancel booking.", "error");
       console.error(error);
     }
   };
@@ -245,7 +320,7 @@ const BookingViewLayer = () => {
                      GST
                   </span>
                   <span className='w-70 text-secondary-light fw-medium'>
-                    : ₹{Number(bookingData.CouponAmount).toFixed(2)}
+                    : ₹{Number(bookingData.GSTAmount).toFixed(2)}
                   </span>
                 </li>
                 {bookingData.CouponAmount ? (
@@ -313,26 +388,28 @@ const BookingViewLayer = () => {
               </ul>
 
                {/* Reschedule & Cancel Buttons */}
-                <div className="d-flex gap-2 mt-3">
-                  <button
-                    className="btn btn-warning btn-sm"
-                    onClick={() => setShowReschedule(!showReschedule)}
-                  >
-                    Reschedule
-                  </button>
-                  <button
-                    className="btn btn-info btn-sm"
-                    onClick={() => handleAssignClick(bookingId)}
-                  >
-                    Reassign
-                  </button>
-                  {/* <button
-                    className="btn btn-danger btn-sm"
-                    onClick={handleCancel}
-                  >
-                    Cancel
-                  </button> */}
-                </div>
+               {bookingData && !["Completed", "Cancelled", "Refunded"].includes(bookingData.BookingStatus) && (
+                 <div className="d-flex gap-2 mt-3">
+                   <button
+                     className="btn btn-warning btn-sm"
+                     onClick={() => setShowReschedule(!showReschedule)}
+                   >
+                     Reschedule
+                   </button>
+                   <button
+                     className="btn btn-info btn-sm"
+                     onClick={() => handleAssignClick(bookingId)}
+                   >
+                     Reassign
+                   </button>
+                   {/* <button
+                     className="btn btn-danger btn-sm"
+                     onClick={handleCancel}
+                   >
+                     Cancel
+                   </button> */}
+                 </div>
+               )}
 
                 {/* Reschedule Date Picker */}
                 {showReschedule && (
@@ -344,6 +421,27 @@ const BookingViewLayer = () => {
                       value={newDate}
                       onChange={(e) => setNewDate(e.target.value)}
                     />
+                    <label className="form-label mt-2">Time Slots :</label>
+                   <select
+                     className="form-select mb-2"
+                     value={selectedTimeSlot}
+                     onChange={(e) => setSelectedTimeSlot(e.target.value)}
+                   >
+                     <option value="">Select a time slot</option>
+                     {timeSlots
+                       .filter((slot) => slot.IsActive)
+                       .sort((a, b) => {
+                         // Sort by start time in ascending order (morning to evening)
+                         const [aHour, aMinute] = a.StartTime.split(':').map(Number);
+                         const [bHour, bMinute] = b.StartTime.split(':').map(Number);
+                         return aHour * 60 + aMinute - (bHour * 60 + bMinute);
+                       })
+                       .map((slot) => (
+                         <option key={slot.TsID} value={`${slot.StartTime} - ${slot.EndTime}`}>
+                           {formatTime(slot.StartTime)} - {formatTime(slot.EndTime)}
+                         </option>
+                       ))}
+                   </select>
                     <label className="form-label mt-2">RescheduleReason</label>
                     <textarea
                       className="form-control"
@@ -405,7 +503,7 @@ const BookingViewLayer = () => {
                                   Booking #{bookingData.BookingTrackID}
                                 </h6>
                                 <small className="text-muted">
-                                  Scheduled: {bookingData.BookingDate} ({bookingData.TimeSlot})
+                                  Scheduled: {bookingData.BookingDate} ({(bookingData.TimeSlot)})
                                 </small>
                               </div>
                             </div>

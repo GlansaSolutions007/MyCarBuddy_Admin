@@ -67,8 +67,6 @@ const BookingTimeSlotLayer = () => {
 
     // Check overlap with existing slots (skip same ID while editing)
     for (const slot of existingSlots) {
-      // alert(slot.TsID);
-      // alert(editingID);
       if (editingID && String(slot.TsID) === String(editingID)) continue;
 
       const existingStart = toMinutes(slot.StartTime);

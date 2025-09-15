@@ -3,6 +3,7 @@ import DataTable from "react-data-table-component";
 import axios from "axios";
 import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
+import Swal from "sweetalert2";
 
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -31,17 +32,48 @@ const PaymentsListLayer = () => {
     }
   };
 
-  const handleRefund = (paymentId) => {
-    const confirmed = window.confirm("Are you sure you want to refund this payment?");
-    if (!confirmed) return;
+  const handleRefund = async (row) => {
+    const { value: refundAmount } = await Swal.fire({
+      title: 'Enter Refund Amount',
+      input: 'number',
+      inputLabel: `Refund Amount (Max: ₹${row.AmountPaid})`,
+      inputValue: row.AmountPaid,
+      inputValidator: (value) => {
+        if (!value || value <= 0) {
+          return 'Please enter a valid amount!';
+        }
+        if (parseFloat(value) > row.AmountPaid) {
+          return 'Refund amount cannot exceed the paid amount!';
+        }
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Refund',
+      cancelButtonText: 'Cancel'
+    });
 
-    const updatedPayments = payments.map((p) =>
-      p.PaymentID === paymentId ? { ...p, IsRefunded: true } : p
-    );
-    setPayments(updatedPayments);
+    if (!refundAmount) return;
 
-    // Optionally call refund API
-    // axios.post(`${API_BASE}Payments/Refund/${paymentId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+    try {
+      const res = await axios.post(`${API_BASE}Refund/Refund`, {
+        paymentId: row.TransactionID,
+        amount: parseFloat(refundAmount)
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.data.success) {
+        const updatedPayments = payments.map((p) =>
+          p.PaymentID === row.PaymentID ? { ...p, IsRefunded: true } : p
+        );
+        setPayments(updatedPayments);
+        Swal.fire('Success', 'Refund processed successfully!', 'success');
+      } else {
+        Swal.fire('Error', res.data.message || 'Failed to process refund.', 'error');
+      }
+    } catch (error) {
+      Swal.fire('Error', 'Failed to process refund.', 'error');
+      console.error('Refund error:', error);
+    }
   };
 
   const columns = [
@@ -94,7 +126,7 @@ const PaymentsListLayer = () => {
           {/* Refund */}
           {!row.IsRefunded && (
             <button
-              onClick={() => handleRefund(row.PaymentID)}
+              onClick={() => handleRefund(row)}
               className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
               title="Refund"
             >

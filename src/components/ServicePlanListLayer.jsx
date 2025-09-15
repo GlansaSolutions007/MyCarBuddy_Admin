@@ -7,12 +7,17 @@ import Swal from "sweetalert2";
 
 const ServicePlanListLayer = () => {
   const [plans, setPlans] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [filteredPlans, setFilteredPlans] = useState([]);
   const API_BASE = `${import.meta.env.VITE_APIURL}PlanPackage`;
+  const CATEGORY_API = `${import.meta.env.VITE_APIURL}Category`;
   const token = localStorage.getItem("token");
   const [searchText, setSearchText] = useState("");
 
   useEffect(() => {
     fetchPlans();
+    fetchCategories();
   }, []);
 
   const fetchPlans = async () => {
@@ -27,6 +32,32 @@ const ServicePlanListLayer = () => {
       console.error("Failed to load service plans", error);
     }
   };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await axios.get(CATEGORY_API, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setCategories(res.data);
+    } catch (error) {
+      console.error("Failed to load categories", error);
+    }
+  };
+
+  useEffect(() => {
+    let filtered = plans;
+    if (searchText) {
+      filtered = filtered.filter((plan) =>
+        plan.PackageName.toLowerCase().includes(searchText.toLowerCase())
+      );
+    }
+    if (selectedCategory) {
+      filtered = filtered.filter((plan) => plan.CategoryName === selectedCategory);
+    }
+    setFilteredPlans(filtered);
+  }, [plans, searchText, selectedCategory]);
 
   const handleDelete = async (id, name) => {
     const result = await Swal.fire({
@@ -115,28 +146,36 @@ const ServicePlanListLayer = () => {
   return (
     <div className="row gy-4">
           <div className="col-12">
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5></h5>
-             
+            {/* <div className="d-flex justify-content-between align-items-center mb-3">
+              <h5>Service Plans</h5>
             </div>
-    
+     */}
             <div className="chat-main card overflow-hidden p-3">
               <div className='card-header border-bottom bg-base pt-0 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between'>
                 <div className='d-flex align-items-center flex-wrap gap-3'>
-    
-    
-                  {/* <form className='navbar-search'>
+                  <form className='navbar-search d-flex align-items-center gap-2'>
                     <input
                       type='text'
-                      className='bg-base  w-auto form-control '
+                      className='bg-base w-auto form-control'
                       name='search'
                       value={searchText}
-                      // onChange={(e) => setSearchText(e.target.value)}
-                      placeholder='Search'
+                      onChange={(e) => setSearchText(e.target.value)}
+                      placeholder='Search by Plan Name'
                     />
                     <Icon icon='ion:search-outline' className='icon' />
-                  </form> */}
-    
+                  </form>
+                  <select
+                    className="form-select  w-auto form-control"
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                  >
+                    <option value="">All Categories</option>
+                    {categories.map((cat) => (
+                      <option key={cat.CategoryID} value={cat.CategoryName}>
+                        {cat.CategoryName}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <Link
                   to={"/add-service-package"}
@@ -151,7 +190,7 @@ const ServicePlanListLayer = () => {
               </div>
                <DataTable
                 columns={columns}
-                data={plans}
+                data={filteredPlans}
                 pagination
                 highlightOnHover
                 responsive
@@ -162,7 +201,6 @@ const ServicePlanListLayer = () => {
             </div>
           </div>
     
-
     </div>
   );
 };

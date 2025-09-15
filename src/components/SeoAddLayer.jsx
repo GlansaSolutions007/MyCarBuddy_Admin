@@ -11,6 +11,7 @@ import FormError from "../components/FormError";
 
 const SeoAddLayer = () => {
   const API_BASE = `${import.meta.env.VITE_APIURL}Seometa`;
+  const PACKAGE_API_BASE = `${import.meta.env.VITE_APIURL}PlanPackage`;
   const { errors, validate, clearAllErrors } = useFormError();
   const token = localStorage.getItem("token");
   const { seoid } = useParams(); // seoid will come from route like /seo-edit/:seoid
@@ -28,6 +29,12 @@ const navigate = useNavigate();
     pageSpeedScore: null
   });
 
+  const [keywordsArray, setKeywordsArray] = useState([]);
+  const [newKeyword, setNewKeyword] = useState("");
+  const [bulkKeywords, setBulkKeywords] = useState("");
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [packages, setPackages] = useState([]);
+
   const [factorScores, setFactorScores] = useState({
     title: 0,
     description: 0,
@@ -44,6 +51,22 @@ const navigate = useNavigate();
     return "bg-danger"; // red
   };
 
+  // Fetch packages data
+  const fetchPackages = async () => {
+    try {
+      const res = await axios.get(`${PACKAGE_API_BASE}/GetPlanPackagesDetails`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setPackages(res.data);
+    } catch (error) {
+      console.error("Failed to load packages", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchPackages();
+  }, []);
+
   useEffect(() => {
   if (seoid) {
     axios.get(`${API_BASE}/seo_id?seoid=${seoid}`, {
@@ -51,17 +74,20 @@ const navigate = useNavigate();
     })
     .then((res) => {
       if (res.data) {
+        const keywordsStr = res.data[0].seo_keywords || "";
+        const keywordsArr = keywordsStr.split(",").map(k => k.trim()).filter(k => k);
         setSeoData({
           seo_id: res.data[0].seo_id || null,
           page_slug: res.data[0].page_slug || "",
           seo_title: res.data[0].seo_title || "",
           seo_description: res.data[0].seo_description || "",
-          seo_keywords: res.data[0].seo_keywords || "",
+          seo_keywords: keywordsStr,
           content: res.data[0].content || "",
           seo_score: res.data[0].seo_score || 0,
           readability_score: res.data[0].readability_score || 0,
           pageSpeedScore: res.data[0].pageSpeedScore || null
         });
+        setKeywordsArray(keywordsArr);
       }
     })
     .catch((err) => {
@@ -77,6 +103,75 @@ const navigate = useNavigate();
   // Handle input change
   const handleChange = (e) => {
     setSeoData({ ...seoData, [e.target.name]: e.target.value });
+  };
+
+  // Handle Select change
+  const handleSelectChange = (selectedOption, fieldName) => {
+    setSeoData({ ...seoData, [fieldName]: selectedOption ? selectedOption.value : "" });
+  };
+
+  // Get all page options (static + packages)
+  const getPageOptions = () => [
+    { value: "home", label: "Home" },
+    { value: "services", label: "Services" },
+    { value: "about", label: "About Us" },
+    { value: "contact", label: "Contact Us" },
+    { value: "blog", label: "Blog" },
+    ...packages.map((pkg) => ({
+      value: pkg.PackageName.toLowerCase().replace(/\s+/g, '-'),
+      label: pkg.PackageName
+    }))
+  ];
+
+  // Add keyword
+  const addKeyword = () => {
+    const trimmed = newKeyword.trim();
+    if (trimmed && !keywordsArray.includes(trimmed)) {
+      setKeywordsArray([...keywordsArray, trimmed]);
+      setNewKeyword("");
+    }
+  };
+
+  // Add bulk keywords
+  const addBulkKeywords = () => {
+    if (!bulkKeywords.trim()) return;
+
+    // Split by commas, newlines, or other common separators
+    const newKeywords = bulkKeywords
+      .split(/[,;\n\r]/)
+      .map(k => k.trim())
+      .filter(k => k && !keywordsArray.includes(k));
+
+    if (newKeywords.length > 0) {
+      setKeywordsArray([...keywordsArray, ...newKeywords]);
+      setBulkKeywords("");
+      Swal.fire({
+        title: 'Success',
+        text: `Added ${newKeywords.length} new keyword(s)`,
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false
+      });
+    } else {
+      Swal.fire({
+        title: 'Info',
+        text: 'No new keywords to add or all keywords already exist',
+        icon: 'info'
+      });
+    }
+  };
+
+  // Remove keyword
+  const removeKeyword = (index) => {
+    setKeywordsArray(keywordsArray.filter((_, i) => i !== index));
+  };
+
+  // Handle Enter key for adding keyword
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addKeyword();
+    }
   };
 
   // Helper to count syllables roughly
@@ -99,9 +194,14 @@ const navigate = useNavigate();
     return fleschKincaid({ word: words, sentence: sentences, syllable: syllables });
   };
 
+  // Update seo_keywords when keywordsArray changes
+  useEffect(() => {
+    setSeoData(prev => ({ ...prev, seo_keywords: keywordsArray.join(", ") }));
+  }, [keywordsArray]);
+
   // SEO Analysis
   useEffect(() => {
-    const keywords = seoData.seo_keywords.split(",").map(k => k.trim()).filter(k => k);
+    const keywords = keywordsArray;
     let totalScore = 0;
     let factors = {};
 
@@ -121,7 +221,10 @@ const navigate = useNavigate();
 
     // Keywords
     let keywordScore = 0;
-    if (keywords.length >= 1 && keywords.some(k => seoData.content.includes(k))) keywordScore = 20;
+    if (keywords.length >= 1) {
+      keywordScore = 10; // Base score for having keywords
+      if (keywords.some(k => seoData.content.includes(k))) keywordScore = 20; // Full score when keywords are in content
+    }
     factors.keywords = keywordScore;
     totalScore += keywordScore;
 
@@ -142,7 +245,7 @@ const navigate = useNavigate();
     setSeoData(prev => ({ ...prev, seo_score: totalScore, readability_score: readabilityScore }));
     setFactorScores(factors);
 
-  }, [seoData.seo_title, seoData.seo_description, seoData.seo_keywords, seoData.content]);
+  }, [seoData.seo_title, seoData.seo_description, keywordsArray, seoData.content]);
 
 const [loading, setLoading] = useState(false);
   const handleSubmit = async (e) => {
@@ -218,14 +321,20 @@ const [loading, setLoading] = useState(false);
 
         <div className="mb-3">
             <label className="form-label">SEO page <span className="text-danger">*</span></label>
-            <select className="form-select" name="page_slug" value={seoData.page_slug} onChange={handleChange}>
-              <option value="">Select page</option>
-                <option value="home">Home</option>
-                <option value="services">Services</option>
-                <option value="about">About Us</option>
-                <option value="contact">Contact Us</option>
-                <option value="blog">Blog</option>
-            </select>
+            <Select
+              options={getPageOptions()}
+              value={
+                seoData.page_slug
+                  ? getPageOptions().find(option => option.value === seoData.page_slug)
+                  : null
+              }
+              onChange={(selectedOption) => handleSelectChange(selectedOption, "page_slug")}
+              className="basic-single"
+              classNamePrefix="react-select"
+              placeholder="Select page"
+              isSearchable={true}
+              isClearable={true}
+            />
              <FormError error={errors.Email} /> 
         </div>
 
@@ -269,15 +378,56 @@ const [loading, setLoading] = useState(false);
       </div>
 
       <div className="mb-3">
-        <label className="form-label">Focus Keywords (comma separated) <span className="text-danger">*</span></label>
-        <input
-          type="text"
-          className="form-control"
-          name="seo_keywords"
-          value={seoData.seo_keywords}
-          onChange={handleChange}
-          placeholder="e.g., car service, maintenance"
-        />
+        <label className="form-label">Focus Keywords <span className="text-danger">*</span></label>
+        {!isBulkMode ? (
+          <>
+            <div className="d-flex gap-2 mb-2">
+              <input
+                type="text"
+                className="form-control"
+                value={newKeyword}
+                onChange={(e) => setNewKeyword(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Type a keyword and press Enter or click +"
+              />
+              <button type="button" className="btn btn-outline-primary py-2" onClick={addKeyword}>+</button>
+            </div>
+            <div className="d-flex flex-wrap gap-2">
+              {keywordsArray.map((keyword, index) => (
+                <span key={index} className="badge bg-primary d-flex align-items-center gap-1">
+                  {keyword}
+                  <button
+                    type="button"
+                    className="btn-close btn-close-white"
+                    style={{ fontSize: "10px" }}
+                    onClick={() => removeKeyword(index)}
+                    aria-label="Remove keyword"
+                  ></button>
+                </span>
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            <textarea
+              className="form-control mb-2"
+              rows={5}
+              value={bulkKeywords}
+              onChange={(e) => setBulkKeywords(e.target.value)}
+              placeholder="Paste multiple keywords separated by commas, semicolons, or new lines"
+            />
+            <button type="button" className="btn btn-outline-primary py-2 mb-2" onClick={addBulkKeywords}>
+              Add Keywords
+            </button>
+          </>
+        )}
+        <button
+          type="button"
+          className="btn btn-link text-primary p-0"
+          onClick={() => setIsBulkMode(!isBulkMode)}
+        >
+          {isBulkMode ? "Switch to Single Keyword Mode" : "Switch to Bulk Add Mode"}
+        </button>
         <div className={`progress mt-1`} style={{ height: "8px" }}>
           <div
             className={`progress-bar ${getColor(factorScores.keywords * 5)}`}

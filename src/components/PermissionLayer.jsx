@@ -7,22 +7,22 @@ import Swal from 'sweetalert2';
 import useFormError from "../hook/useFormError"; // form errors
 import FormError from "./FormError"; // form errors
 
-const RoleLayer = () => {
+const PermissionLayer = () => {
     const [formData, setFormData] = useState({
-      RoleID: "",
-      RoleName: "",
-      // Description: "",
+      PermissionID: "",
+      page: "",
+      name: "",
       IsActive: true,
     });
-  const [roles, setRoles] = useState([]);
+  const [permissions, setPermissions] = useState([]);
   const { errors, validate, clearError } = useFormError();
   const [apiError, setApiError] = useState("");
-  const API_BASE = `${import.meta.env.VITE_APIURL}Roles`; 
+  const API_BASE = `${import.meta.env.VITE_APIURL}Permission`;
 
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    fetchRoles();
+    fetchPermissions();
   }, []);
 
   /**
@@ -36,23 +36,23 @@ const RoleLayer = () => {
   };
 
   /**
-   * Fetches the list of roles from the API.
+   * Fetches the list of permissions from the API.
    * Updates the state with the fetched data.
    */
-  const fetchRoles = async () => {
+  const fetchPermissions = async () => {
     try {
-      // Make a GET request to the Role endpoint
+      // Make a GET request to the Permission endpoint
       const res = await axios.get(API_BASE, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        } 
+        }
       });
-      // Update the state with the fetched roles data
-      setRoles(res.data);
+      // Update the state with the fetched permissions data
+      setPermissions(res.data);
     } catch (error) {
       // Log an error message if the request fails
-      console.error("Failed to load roles", error);
+      console.error("Failed to load permissions", error);
     }
   };
 
@@ -60,15 +60,15 @@ const RoleLayer = () => {
    * Handles a submit event for the form.
    * Validates the form data using the validate function.
    * If the form data is valid, makes a PUT or POST request to the API
-   * to create or update a role.
-   * If the request is successful, fetches the list of roles from the API.
+   * to create or update a permission.
+   * If the request is successful, fetches the list of permissions from the API.
    * If the request fails, logs an error message.
    * @param {object} e - The event object.
    */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setApiError("");
-    const validationErrors = validate(formData, ["RoleID" ,"IsActive"]);
+    const validationErrors = validate(formData, ["PermissionID" ,"IsActive"]);
     console.log(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
 
@@ -79,17 +79,19 @@ const RoleLayer = () => {
         'Authorization': `Bearer ${localStorage.getItem('token')}`,
       };
 
-      if (formData.RoleID) {
-        // Update existing role
+      if (formData.PermissionID) {
+        // Update existing permission
         res = await axios.put(API_BASE, {
-          name: formData.RoleName,
+          page: formData.page,
+          name: formData.name,
           IsActive: formData.IsActive,
-          id: formData.RoleID,
+          id: formData.PermissionID,
         }, { headers });
       } else {
-        // Add new role
+        // Add new permission
         res = await axios.post(API_BASE, {
-          name: formData.RoleName,
+          page: formData.page,
+          name: formData.name,
           IsActive: formData.IsActive,
         }, { headers });
       }
@@ -98,7 +100,7 @@ const RoleLayer = () => {
         if (data.status) {
           Swal.fire({
             title: 'Success',
-            text: 'Role added successfully',
+            text: 'Permission added successfully',
             icon: 'success',
             customClass: {
               container: 'my-swal-container', // for the wrapper
@@ -107,11 +109,10 @@ const RoleLayer = () => {
               cancelButton: 'my-cancel-btn',
             }
           });
-        // Show success message
         } else {
           Swal.fire({
             title: 'Error',
-            text: res.data.message || 'Failed to add role',
+            text: res.data.message || 'Failed to add permission',
             icon: 'error',
             customClass: {
               container: 'my-swal-container', // for the wrapper
@@ -123,14 +124,14 @@ const RoleLayer = () => {
         }
 
       // Reset the form data
-      setFormData({ RoleID: "", RoleName: "", Description: "", IsActive: true });
-      // Fetch the list of roles from the API
-      fetchRoles();
+      setFormData({ PermissionID: "", page: "", name: "", IsActive: true });
+      // Fetch the list of permissions from the API
+      fetchPermissions();
     } catch (error) {
       // Log an error message if the request fails
       Swal.fire({
             title: 'Error',
-            text: error.response?.data?.message || 'Failed to add role',
+            text: error.response?.data?.message || 'Failed to add permission',
             icon: 'error',
             customClass: {
               container: 'my-swal-container', // for the wrapper
@@ -162,9 +163,13 @@ const RoleLayer = () => {
 
   if (result.isConfirmed) {
     try {
-      await axios.delete(`${API_BASE}/`, { data: { RoleID: id } });
-      Swal.fire('Deleted!', 'The role has been deleted.', 'success');
-      fetchRoles();
+      await axios.delete(`${API_BASE}/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      Swal.fire('Deleted!', 'The permission has been deleted.', 'success');
+      fetchPermissions();
     } catch (error) {
       console.error("Delete failed", error);
       Swal.fire('Error!', 'Something went wrong.', 'error');
@@ -172,13 +177,14 @@ const RoleLayer = () => {
   }
 };
 
-  const handleEdit = (role) => {
+  const handleEdit = (permission) => {
     setFormData({
-      RoleID: role.id,
-      RoleName: role.name,
-      IsActive: role.IsActive,
+      PermissionID: permission.id,
+      page: permission.page,
+      name: permission.name,
+      IsActive: permission.IsActive,
     });
-  }; 
+  };
 
   const columns = [
     {
@@ -187,7 +193,12 @@ const RoleLayer = () => {
       width: "80px",
     },
     {
-      name: "Role Name",
+      name: "Page",
+      selector: (row) => row.page,
+      sortable: true,
+    },
+    {
+      name: "Name",
       selector: (row) => row.name,
       sortable: true,
     },
@@ -205,19 +216,12 @@ const RoleLayer = () => {
                 >
                   <Icon icon='lucide:edit' />
             </Link>
-          {/* permission add*/}
-          <Link
-                  to={`/role-permission/${row.id}`}
-                  className='w-32-px h-32-px me-8 bg-primary-focus text-primary-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='lucide:key' />
-            </Link>
-            {/* <Link
-                  onClick={() => handleDelete(row.RoleID , row.RoleName)}
+            <Link
+                  onClick={() => handleDelete(row.id , row.name)}
                   className='w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
                 >
                   <Icon icon='mingcute:delete-2-line' />
-            </Link> */}
+            </Link>
         </div>
       ),
     },
@@ -231,20 +235,38 @@ const RoleLayer = () => {
             <form onSubmit={handleSubmit} className='form' noValidate>
               <div className='mb-10'>
                 <label
-                  htmlFor='roleName'
+                  htmlFor='page'
                   className='text-sm fw-semibold text-primary-light mb-8'
                 >
-                  Role Name <span className='text-danger'>*</span>
+                  Page <span className='text-danger'>*</span>
                 </label>
                 <input
                       type="text"
-                      name="RoleName"
-                      className={`form-control ${errors.RoleName ? "is-invalid" : ""}`}
-                      placeholder="Enter role name"
-                      value={formData.RoleName}
+                      name="page"
+                      className={`form-control ${errors.page ? "is-invalid" : ""}`}
+                      placeholder="Enter page"
+                      value={formData.page}
                       onChange={handleChange}
                       />
-                <FormError error={errors.RoleName} />
+                <FormError error={errors.page} />
+              </div>
+
+              <div className='mb-10'>
+                <label
+                  htmlFor='name'
+                  className='text-sm fw-semibold text-primary-light mb-8'
+                >
+                  Name <span className='text-danger'>*</span>
+                </label>
+                <input
+                      type="text"
+                      name="name"
+                      className={`form-control ${errors.name ? "is-invalid" : ""}`}
+                      placeholder="Enter name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      />
+                <FormError error={errors.name} />
               </div>
 
               <div className='mb-20'>
@@ -265,7 +287,7 @@ const RoleLayer = () => {
                 </select>
               </div>
               <button  type="submit" className="btn btn-primary-600 radius-8 px-14 py-6 text-sm" onClick={handleSubmit}>
-                  {formData.RoleID ? "Update Role" : "Add Role"}
+                  {formData.PermissionID ? "Update Permission" : "Add Permission"}
               </button>
             </form>
           </div>
@@ -275,13 +297,13 @@ const RoleLayer = () => {
         <div className='chat-main card overflow-hidden'>
             <DataTable
                 columns={columns}
-                data={roles}
+                data={permissions}
                 pagination
                 highlightOnHover
                 responsive
                 striped
                 persistTableHead
-                noDataComponent="No roles available"
+                noDataComponent="No permissions available"
             />
         </div>
       </div>
@@ -289,4 +311,4 @@ const RoleLayer = () => {
   );
 };
 
-export default RoleLayer;
+export default PermissionLayer;

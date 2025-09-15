@@ -1,6 +1,6 @@
 import MasterLayout from "../masterLayout/MasterLayout";
 import Breadcrumb from "../components/Breadcrumb";
-import NotificationLayer from "../components/NotificationLayer";
+import NotificationSendLayer from "../components/NotificationSendLayer";
 
 const NotificationPage = () => {
   return (
@@ -8,10 +8,10 @@ const NotificationPage = () => {
       {/* MasterLayout */}
       <MasterLayout>
         {/* Breadcrumb */}
-        <Breadcrumb title='Settings - Notification' />
+        <Breadcrumb title='Notification' />
 
-        {/* NotificationLayer */}
-        <NotificationLayer />
+        {/* NotificationSendLayer */}
+        <NotificationSendLayer />
       </MasterLayout>
     </>
   );

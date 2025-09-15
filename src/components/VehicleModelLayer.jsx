@@ -185,9 +185,11 @@ const handleEdit = (row) => {
         },
   ];
 
-  const filteredModel = model.filter((item) =>
-    search.trim() === "" ? true : item.ModelName.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredModel = model.filter((item) => {
+    const matchesSearch = search.trim() === "" || item.ModelName.toLowerCase().includes(search.toLowerCase());
+    const matchesBrand = filterBrandID === "" || item.BrandID == filterBrandID;
+    return matchesSearch && matchesBrand;
+  });
 
   return (
     <div className='row gy-4 mt-2'>
@@ -325,10 +327,10 @@ const handleEdit = (row) => {
                                       }
                                     : { value: "", label: "All Brands" }
                                 }
-                                onChange={(selectedOption) => setFilterStateID(selectedOption?.value || "")}
+                                onChange={(selectedOption) => setFilterBrandID(selectedOption?.value || "")}
                                 className="basic-single"
                                 classNamePrefix="react-select"
-                                placeholder="Filter by State"
+                                placeholder="Filter by Brand"
                               />
                         </div>
                         <div className="col-md-6 mb-2">

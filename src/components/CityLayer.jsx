@@ -17,6 +17,7 @@ const CityLayer = () => {
     const [states, setStates] = useState([]);
     const [filterStateID, setFilterStateID] = useState("");
     const [filterStatus, setFilterStatus] = useState("");
+    const [searchTerm, setSearchTerm] = useState("");
     const { errors, validate, clearError } = useFormError();
     const [apiError, setApiError] = useState("");
 
@@ -190,7 +191,10 @@ const CityLayer = () => {
         filterStatus === "" ||
         (filterStatus === "true" && city.IsActive) ||
         (filterStatus === "false" && !city.IsActive);
-    return matchesState && matchesStatus;
+    const matchesSearch =
+      searchTerm === "" ||
+      city.CityName.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesState && matchesStatus && matchesSearch;
     });
 
   return (

@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { requestPermission, onMessageListener } from "../components/firebase";
 import { notificationService } from "../services/notificationService";
 import { toast, ToastContainer } from "react-toastify";
+import axios from "axios";
+// import CrytoJS from "crypto-js";
 
 
 const MasterLayout = ({ children }) => {
@@ -15,7 +17,50 @@ const MasterLayout = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation(); // Hook to get the current route
-  const role = localStorage.getItem("role");
+  const role = localStorage.getItem("name");
+  const userId = localStorage.getItem("userId");
+
+  // Dynamic menu states
+  const [userPermissions, setUserPermissions] = useState([]);
+  const [allPermissions, setAllPermissions] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [menuLoading, setMenuLoading] = useState(true);
+  const token = localStorage.getItem("token");
+  const API_BASE = import.meta.env.VITE_APIURL;
+  const roleId = localStorage.getItem("roleId");
+
+  // Permission mappings for menu items
+  const permissionMappings = {
+    "Dashboard": { name: "dashboard_view", page: "Dashboard" },
+    "Customers": { name: "customer_view", page: "Customer" },
+    "Bookings": { name: "booking_view", page: "Booking" },
+    "Payments": { name: "payment_view", page: "Payment" },
+    "States": { name: "state_view", page: "State" },
+    "Cities": { name: "city_view", page: "City" },
+    "Distributors": { name: "distributor_view", page: "Distributor" },
+    "Dealers": { name: "dealer_view", page: "Dealer" },
+    "Technicians": { name: "technician_view", page: "Technician" },
+    "Employees": { name: "employee_view", page: "Employee" },
+    "Vehicle Brand": { name: "vehicle_brand_view", page: "VehicleBrand" },
+    "Vehicle Model": { name: "vehicle_model_view", page: "VehicleModel" },
+    "Vehicle Fuel": { name: "vehicle_fuel_view", page: "VehicleFuel" },
+    "Service Categories": { name: "service_category_view", page: "ServiceCategory" },
+    "Service Sub Categories": { name: "service_subcategory_view", page: "ServiceSubCategory" },
+    "Skills": { name: "skill_view", page: "Skill" },
+    "Service Includes": { name: "service_includes_view", page: "ServiceIncludes" },
+    "Service Plans": { name: "service_plan_view", page: "ServicePlan" },
+    "Service Plan Prices": { name: "service_plan_price_view", page: "ServicePlanPrice" },
+    "Time Slots": { name: "time_slot_view", page: "TimeSlot" },
+    "Coupons": { name: "coupon_view", page: "Coupon" },
+    "Leaves": { name: "leave_view", page: "Leave" },
+    "Reasons": { name: "reason_view", page: "Reason" },
+    "Notification Templates": { name: "notification_template_view", page: "NotificationTemplate" },
+    "Notifications": { name: "notification_view", page: "Notification" },
+    "SEO": { name: "seo_view", page: "SEO" },
+    "Roles": { name: "role_view", page: "Role" },
+    "Permission Pages": { name: "permission_page_view", page: "PermissionPage" },
+    "Blog": { name: "blog_view", page: "Blog" }
+  };
 
   useEffect(() => {
     const handleDropdownClick = (event) => {
@@ -86,6 +131,74 @@ const MasterLayout = ({ children }) => {
     };
   }, [location.pathname]);
 
+  // Fetch user permissions on component mount
+  useEffect(() => {
+    const fetchUserPermissions = async () => {
+      if (!roleId || !token) {
+        console.log("No roleId or token found, skipping permission fetch");
+        setMenuLoading(false);
+        return;
+      }
+
+      try {
+        const response = await axios.get(`${API_BASE}rolehaspermissions?role_id=${roleId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.data && response.data.success) {
+          const permissions = response.data.data || [];
+          setUserPermissions(permissions);
+          console.log("User permissions loaded:", permissions);
+        } else {
+          console.log("No permissions found for this role");
+          setUserPermissions([]);
+        }
+      } catch (error) {
+        console.error("Error fetching user permissions:", error);
+        setUserPermissions([]);
+      } finally {
+        setMenuLoading(false);
+      }
+    };
+
+    fetchUserPermissions();
+  }, [roleId, token, API_BASE]);
+
+  // Helper function to check if user has permission for a menu item
+  const hasPermission = (permissionName, pageName) => {
+    if (!userPermissions || userPermissions.length === 0) return false;
+
+    return userPermissions.some(permission =>
+      permission.name === permissionName && permission.page === pageName
+    );
+  };
+
+  // Helper function to check if user has permission for a menu section
+  const hasMenuPermission = (menuItem) => {
+
+    // If no permissions are loaded yet, show loading
+    if (menuLoading) return true;
+
+    // For Admin users, show all menus
+    if (role === "Admin") return true;
+
+    // For non-admin users, check permissions
+    if (!userPermissions || userPermissions.length === 0) {
+      return false; // Hide menus if no permissions are loaded
+    }
+
+    // Check if user has any permission that matches this menu item
+    const mapping = permissionMappings[menuItem.title];
+    if (mapping) {
+      return hasPermission(mapping.name, mapping.page);
+    }
+
+    // Hide menu if no permission mapping found
+    return false;
+  };
+
   // Firebase notification setup
   useEffect(() => {
     const setupFirebaseNotifications = async () => {
@@ -96,17 +209,22 @@ const MasterLayout = ({ children }) => {
           console.log("FCM Token obtained:", token);
           // Store token or send to backend for registration
           localStorage.setItem("fcmToken", token);
-          
+
           // Send token to backend for registration (optional)
           try {
             const userToken = localStorage.getItem("token");
-            await fetch(`${import.meta.env.VITE_APIURL}/api/Notifications/RegisterToken`, {
+            await fetch(`https://api.mycarsbuddy.com/api/Push/register`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${userToken}`
               },
-              body: JSON.stringify({ fcmToken: token })
+              body: JSON.stringify({
+                userId: userId,
+                userRole: role,
+                fcmToken: token,
+                platform: 'web'
+              })
             });
           } catch (error) {
             console.log("Token registration with backend failed:", error);
@@ -116,7 +234,7 @@ const MasterLayout = ({ children }) => {
         // Listen for incoming messages
         onMessageListener().then((payload) => {
           console.log("Message received:", payload);
-          
+
           // Add notification to state
           const newNotification = {
             id: Date.now(),
@@ -126,22 +244,22 @@ const MasterLayout = ({ children }) => {
             read: false,
             type: payload.data?.type || 'general'
           };
-          
+
           setNotifications(prev => [newNotification, ...prev]);
           setUnreadCount(prev => prev + 1);
-          
+
           // Show toast notification
           notificationService.showToastNotification(
             newNotification.title,
             newNotification.message,
             'info'
           );
-          
+
           // Show browser notification
           if (Notification.permission === "granted") {
             new Notification(newNotification.title, {
               body: newNotification.message,
-              icon: "/assets/images/MyCarBuddy-Logo1.png"
+              icon: "/assets/images/MyCarBuddy-Logo1.webp"
             });
           }
         });
@@ -175,22 +293,22 @@ const MasterLayout = ({ children }) => {
     title: "Dashboard",
     icon: "solar:home-smile-angle-outline",
     to: "/dashboard",
-    roles: ["Admin", "Distributor", "Dealer"], // All roles
+    // roles: ["Admin", "Distributor", "Dealer"], // All roles
   },
   {
     title: "Customer Details",
     icon: "flowbite:users-group-outline",
-    roles: ["Admin", "Distributor", "Dealer"],
+    // roles: ["Admin", "Distributor", "Dealer"],
     children: [
       { title: "Customers", to: "/customers", color: "text-primary-600" },
       { title: "Bookings", to: "/bookings", color: "text-warning-main" },
-      { title: "Payments", to: "/payments", color: "text-info-main" , roles: ["Admin"] },
+      { title: "Payments", to: "/payments", color: "text-info-main" },
     ],
   },
   {
     title: "Regions",
     icon: "material-symbols:map-outline",
-    roles: ["Admin"],
+    // roles: ["Admin"],
     children: [
       { title: "States", to: "/states", color: "text-primary-600" },
       { title: "Cities", to: "/cities", color: "text-warning-main" },
@@ -199,32 +317,38 @@ const MasterLayout = ({ children }) => {
   {
     title: "Performers",
     icon: "flowbite:users-group-outline",
-    roles: ["Admin" ,"Distributor"], // who can see this section
+    // roles: ["Admin" ,"Distributor"], // who can see this section
     children: [
       {
         title: "Distributors",
         to: "/distributors",
         color: "text-primary-600",
-        roles: ["Admin"], // who can see this page
+        // roles: ["Admin"], 
       },
       {
         title: "Dealers",
         to: "/dealers",
         color: "text-warning-main",
-        roles: ["Admin", "Distributor"], // allow multiple roles
+        // roles: ["Admin", "Distributor"], // allow multiple roles
       },
       {
         title: "Technicians",
         to: "/technicians",
         color: "text-info-main",
-        roles: ["Admin", "Distributor", "Dealer"],
+        // roles: ["Admin", "Distributor", "Dealer"],
+      },
+      {
+        title: "Employees",
+        to: "/employees",
+        color: "text-info-main",
+        // roles: ["Admin"],
       },
     ],
   },
   {
     title: "Vehicle",
     icon: "hugeicons:car-03",
-    roles: ["Admin"],
+    // roles: ["Admin"],
     children: [
       { title: "Brand", to: "/vehicle-brand", color: "text-primary-600" },
       { title: "Model", to: "/vehicle-model", color: "text-warning-main" },
@@ -234,7 +358,7 @@ const MasterLayout = ({ children }) => {
   {
     title: "Services",
     icon: "hugeicons:invoice-03",
-    roles: ["Admin"],
+    // roles: ["Admin"],
     children: [
       { title: "Categories", to: "/service-category", color: "text-primary-600" },
       { title: "Sub Categories 1", to: "/service-subcategory1", color: "text-warning-main" },
@@ -256,7 +380,7 @@ const MasterLayout = ({ children }) => {
   {
     title : "Time Slots",
     icon : "ion:time-outline",
-    roles: ["Admin"],
+    // roles: ["Admin"],
     children: [
       { title: "Time Slots", to: "/booking-time-slot", color: "text-primary-600" },
     ],
@@ -264,7 +388,7 @@ const MasterLayout = ({ children }) => {
   {
     title: "Coupons",
     icon: "ion:card-outline",
-    roles: ["Admin"],
+    // roles: ["Admin"],
     children: [
       { title: "Coupons", to: "/coupons", color: "text-primary-600" },
     ],
@@ -272,7 +396,7 @@ const MasterLayout = ({ children }) => {
   {
     title: "Leave Management",
     icon: "ion:document-text-outline",
-    roles: ["Admin"],
+    // roles: ["Admin"],
     children: [
       { title: "Leaves", to: "/leave-list", color: "text-primary-600" },
     ],
@@ -280,19 +404,21 @@ const MasterLayout = ({ children }) => {
   {
     title: "Settings",
     icon: "material-symbols:settings-outline-rounded",
-    roles: ["Admin"],
+    // roles: ["Admin"],
     children: [
       { title: "Reasons", to: "/reason", color: "text-primary-600" },
       { title: "Notification Templates", to: "/notification-templates", color: "text-warning-main" },
+      { title: "Notifications", to: "/notifications", color: "text-info-main" },
       { title: "SEO", to: "/seo", color: "text-info-main" },
       { title: "Role", to: "/roles", color: "text-info-main" },
+      { title: "Permission Pages", to: "/permission-pages", color: "text-info-main" },
     ],
 
   },
   {
     title: "Blog",
     icon: "material-symbols:article-outline",
-    roles: ["Admin" ,"DigitalManager"],
+    // roles: ["Admin" ,"DigitalManager"],
     children: [
       { title: "Blog", to: "/blog", color: "text-primary-600" },
     ],
@@ -323,17 +449,17 @@ const MasterLayout = ({ children }) => {
         <div>
           <Link to='/dashboard' className='sidebar-logo'>
             <img
-              src='/assets/images/MyCarBuddy-Logo1.png'
+              src='/assets/images/MyCarBuddy-Logo1.webp'
               alt='site logo'
               className='light-logo'
             />
             <img
-              src='/assets/images/MyCarBuddy-Logo1.png'
+              src='/assets/images/MyCarBuddy-Logo1.webp'
               alt='site logo'
               className='dark-logo'
             />
             <img
-              src='/assets/images/MyCarBuddy-Logo1.png'
+              src='/assets/images/MyCarBuddy-Logo1.webp'
               alt='site logo'
               className='logo-icon'
             />
@@ -341,12 +467,25 @@ const MasterLayout = ({ children }) => {
         </div>
         <div className='sidebar-menu-area'>
 <ul className="sidebar-menu" id="sidebar-menu">
-  {SIDEBAR_MENU.filter(item => item.roles.includes(role)).map((item, idx) => {
+  {SIDEBAR_MENU.filter(item => hasMenuPermission(item)).map((item, idx) => {
     const hasChildren = Array.isArray(item.children);
     const visibleChildren = hasChildren
-      ? item.children.filter(child =>
-          (child.roles ? child.roles.includes(role) : true)
-        )
+      ? item.children.filter(child => {
+          // Check if child has permission or fallback to role-based
+          if (menuLoading) return true;
+          if (!userPermissions || userPermissions.length === 0) {
+            return child.roles ? child.roles.includes(role) : true;
+          }
+
+          // Check permission for child menu item
+          const childMapping = permissionMappings[child.title];
+          if (childMapping) {
+            return hasPermission(childMapping.name, childMapping.page);
+          }
+
+          // Fallback to role-based
+          return child.roles ? child.roles.includes(role) : true;
+        })
       : [];
 
     if (hasChildren && visibleChildren.length === 0) return null;

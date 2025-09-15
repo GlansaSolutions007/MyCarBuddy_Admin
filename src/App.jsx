@@ -126,6 +126,7 @@ import ServicePlanListPage from "./pages/ServicePlanListPage";
 import ServicePlanAddPage from "./pages/ServicePlanAddPage";
 import ServicePlanPriceListPage from "./pages/ServicePlanPriceListPage";
 import ServicePlanPriceAddPage from "./pages/ServicePlanPriceAddPage";
+import ServicePlanPriceEditPage from "./pages/ServicePlanPriceEditPage";
 import PaymentListPage from "./pages/PaymentListPage";
 import InvoicePreviewPage from "./pages/InvoicePreviewPage";
 import BookingTimeSlotPage from "./pages/BookingTimeSlotPage";
@@ -139,7 +140,10 @@ import PolicyPage from "./pages/PolicyPage";
 import SeoPage from "./pages/SeoPage";
 import SeoAddPage from "./pages/SeoAddPage";
 import RolePage from "./pages/RolePage";
-
+import RolePermissionPage from "./pages/RolePermissionPage";
+import PermissionPage from "./pages/PermissionPage";
+import EmployeePage from "./pages/EmployeePage";
+import EmployeeAddPage from "./pages/EmployeeAddPage";
 
 
 
@@ -196,7 +200,7 @@ function App() {
 
           <Route exact path='/service-plan-prices' element={<ServicePlanPriceListPage />} />
           <Route exact path='/add-service-plan-price' element={<ServicePlanPriceAddPage />} />
-          <Route exact path='/edit-service-plan-price/:PlanPackagePriceID' element={<ServicePlanPriceAddPage />} />
+          <Route exact path='/edit-service-plan-price/:PlanPackagePriceID' element={<ServicePlanPriceEditPage />} />
 
           <Route path="/view-booking/:bookingId" element={<BookingViewPage />} />
           {/* <Route path="/booking/assign-technician/:bookingId" element={<AssignTechnician />} /> */}
@@ -223,6 +227,13 @@ function App() {
           <Route exact path="/add-blog" element={<AddBlogPage />} />
           <Route exact path="/edit-blog/:BlogID" element={<AddBlogPage />} />
           <Route exact path="/roles" element={<RolePage />} />
+          <Route exact path="/permission-pages" element={<PermissionPage />} />
+          <Route exact path="/view-profile" element={<ViewProfilePage />} />
+          <Route exact path="/role-permission/:roleId" element={<RolePermissionPage />} />
+          <Route exact path="/employees" element={<EmployeePage />} />
+          <Route exact path="/add-employee" element={<EmployeeAddPage />} />
+          <Route exact path="/edit-employee/:EmployeeID" element={<EmployeeAddPage />} />
+          <Route exact path="/notifications" element={<NotificationPage />} />
         </Route>
 
 

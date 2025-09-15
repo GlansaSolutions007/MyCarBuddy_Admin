@@ -30,6 +30,9 @@ const IncludesLayer = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [skills , setSkills] = useState([]);
   const [selectedSkills, setSelectedSkills] = useState([]);
+  const [searchText, setSearchText] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [filteredIncludes, setFilteredIncludes] = useState([]);
 
   useEffect(() => {
     fetchIncludes();
@@ -38,6 +41,22 @@ const IncludesLayer = () => {
     fetchSkills();
   }, []);
 
+  useEffect(() => {
+    let filtered = includes;
+
+    if (selectedCategory && selectedCategory.value !== null) {
+      filtered = filtered.filter(inc => inc.CategoryID === selectedCategory.value);
+    }
+
+    if (searchText.trim() !== "") {
+      filtered = filtered.filter(inc =>
+        inc.IncludeName.toLowerCase().includes(searchText.toLowerCase())
+      );
+    }
+
+    setFilteredIncludes(filtered);
+  }, [includes, selectedCategory, searchText]);
+
   const fetchIncludes = async () => {
     try {
       const res = await axios.get(API_BASE, {
@@ -45,7 +64,9 @@ const IncludesLayer = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      setIncludes(res.data.data);
+      // Sort latest added on top (assuming CreatedDate or IncludeID can be used)
+      const sortedIncludes = res.data.data.sort((a, b) => b.IncludeID - a.IncludeID);
+      setIncludes(sortedIncludes);
     } catch (error) {
       console.error("Failed to load includes", error);
     }
@@ -402,10 +423,57 @@ const IncludesLayer = () => {
         </div>
       </div>
       <div className="col-xxl-8 col-lg-8">
+        <div className="card mb-24">
+          <div className="card-body p-24">
+            <div className="row gy-4">
+              <div className="col-md-6">
+                <label className="form-label text-sm fw-semibold text-primary-light mb-8">
+                  Search Includes
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Search by include name"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label text-sm fw-semibold text-primary-light mb-8">
+                  Filter by Category
+                </label>
+                <Select
+                  value={selectedCategory}
+                  onChange={setSelectedCategory}
+                  options={[
+                    { value: null, label: "All Categories" },
+                    ...categories
+                      .sort((a, b) => (b.IsActive === a.IsActive ? 0 : b.IsActive ? 1 : -1))
+                      .map((c) => ({
+                        value: c.CategoryID,
+                        label: (
+                          <span>
+                            {c.CategoryName}{" "}
+                            <span style={{ color: c.IsActive ? "green" : "red" }}>
+                              ({c.IsActive ? "Active" : "Inactive"})
+                            </span>
+                          </span>
+                        ),
+                        name: c.CategoryName,
+                        status: c.IsActive,
+                      }))
+                  ]}
+                  classNamePrefix="react-select"
+                  isClearable
+                />
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="chat-main card overflow-hidden">
           <DataTable
             columns={columns}
-            data={includes}
+            data={filteredIncludes}
             pagination
             highlightOnHover
             responsive
