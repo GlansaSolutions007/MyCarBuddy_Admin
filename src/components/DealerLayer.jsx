@@ -136,6 +136,7 @@ const DealerLayer = () => {
     },
   ];
 
+
   const filteredDealers = dealers.filter((dealers) =>
     dealers.name?.toLowerCase().includes(searchText.toLowerCase())
   || dealers.email?.toLowerCase().includes(searchText.toLowerCase())

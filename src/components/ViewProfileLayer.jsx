@@ -2,9 +2,13 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
+import { Link, useNavigate } from "react-router-dom";
 
 const ViewProfileLayer = () => {
   const baseURL = import.meta.env.VITE_APIURL;
+  const API_IMAGE = import.meta.env.VITE_APIURL_IMAGE;
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     AdminID: 2, // fixed ID for now
     FullName: "",
@@ -12,8 +16,9 @@ const ViewProfileLayer = () => {
     confirmPassword: "",
     ProfileImage1: "",
   });
+
   const [imagePreview, setImagePreview] = useState(
-    "assets/images/user-grid/user-grid-img13.png"
+    "/assets/images/user-grid/user-grid-img13.png" // default placeholder
   );
   const [file, setFile] = useState(null);
 
@@ -21,7 +26,9 @@ const ViewProfileLayer = () => {
   useEffect(() => {
     const fetchAdmin = async () => {
       try {
-        const res = await axios.get(`${baseURL}Auth/adminid?adminid=${formData.AdminID}`);
+        const res = await axios.get(
+          `${baseURL}Auth/adminid?adminid=${formData.AdminID}`
+        );
         const data = res.data[0];
 
         setFormData({
@@ -29,11 +36,12 @@ const ViewProfileLayer = () => {
           FullName: data.FullName,
           Email: data.Email,
           PasswordHash: "", // don’t pre-fill password
-          ProfileImage1: data.ProfileImage1,
+          ProfileImage1: data.ProfileImage,
         });
 
-        if (data.ProfileImage1) {
-          setImagePreview(data.ProfileImage1);
+        // show old image if available
+        if (data.ProfileImage) {
+          setImagePreview(`${API_IMAGE}${data.ProfileImage}`);
         }
       } catch (err) {
         console.error("Error fetching admin:", err);
@@ -57,6 +65,7 @@ const ViewProfileLayer = () => {
       setFile(input.target.files[0]);
       const reader = new FileReader();
       reader.onload = (e) => {
+        // Show preview of newly uploaded image
         setImagePreview(e.target.result);
       };
       reader.readAsDataURL(input.target.files[0]);
@@ -65,52 +74,54 @@ const ViewProfileLayer = () => {
 
   // Save / Update Admin
   const handleSave = async () => {
-      if (formData.PasswordHash !== formData.confirmPassword) {
+    if (formData.PasswordHash !== formData.confirmPassword) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Passwords do not match!",
+      });
+      return;
+    }
+
+    try {
+      const payload = new FormData();
+      payload.append("AdminID", formData.AdminID);
+      payload.append("FullName", formData.FullName);
+      payload.append("PasswordHash", formData.PasswordHash);
+      if (file) {
+        payload.append("ProfileImage1", file);
+      }
+
+      const res = await axios.put(`${baseURL}Auth/update-admin`, payload, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      const result = res.data;
+      if (res.status === 200) {
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: "Profile updated successfully!",
+        }).then(() => {
+          navigate("/dashboard"); // redirect after success
+        });
+      } else {
         Swal.fire({
           icon: "error",
           title: "Error",
-          text: "Passwords do not match!",
-        });
-        return;
-      }
-
-      try {
-        const payload = new FormData();
-        payload.append("AdminID", formData.AdminID);
-        payload.append("FullName", formData.FullName);
-        payload.append("PasswordHash", formData.PasswordHash);
-        if (file) {
-          payload.append("ProfileImage1", file);
-        }
-
-        const res = await axios.post(`${baseURL}Auth/update-admin`, payload, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-
-        const result = res.data;
-        if (res.status === 200) {
-          Swal.fire({
-            icon: "success",
-            title: "Success",
-            text: "Profile updated successfully!",
-          });
-        } else {
-          Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: result.message || "Update failed!",
-          });
-        }
-      } catch (err) {
-        console.error("Update error:", err);
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "Update failed!",
+          text: result.message || "Update failed!",
         });
       }
+    } catch (err) {
+      console.error("Update error:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Update failed!",
+      });
+    }
   };
 
   return (
@@ -193,7 +204,6 @@ const ViewProfileLayer = () => {
                           readOnly
                         />
                       </div>
-
                     </div>
 
                     <div className="col-sm-6">
@@ -230,12 +240,13 @@ const ViewProfileLayer = () => {
                   </div>
 
                   <div className="d-flex align-items-center justify-content-center gap-3">
-                    <button
+                    <Link
+                      to="/dashboard"
                       type="button"
                       className="border border-danger-600 bg-hover-danger-200 text-danger-600 text-md px-56 py-11 radius-8"
                     >
                       Cancel
-                    </button>
+                    </Link>
                     <button
                       type="button"
                       onClick={handleSave}
