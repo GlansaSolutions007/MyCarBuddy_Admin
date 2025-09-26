@@ -147,7 +147,7 @@ import EmployeeAddPage from "./pages/EmployeeAddPage";
 
 import Contacts from "./pages/Contacts"
 import DealerServiceP from "./pages/DealerServicePrice";
-
+import BookingAssignDealer from "./pages/BookingAssignDealer"
 
 
 function App() {
@@ -236,6 +236,7 @@ function App() {
           <Route exact path="/add-employee" element={<EmployeeAddPage />} />
           <Route exact path="/edit-employee/:EmployeeID" element={<EmployeeAddPage />} />
           <Route exact path="/notifications" element={<NotificationPage />} />
+          <Route exact path="/booking-dealer-assign/:bookingId" element={<BookingAssignDealer />} />
         </Route>
 
 
