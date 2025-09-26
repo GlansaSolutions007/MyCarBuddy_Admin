@@ -12,6 +12,7 @@ import FormError from "../components/FormError";
 const SeoAddLayer = () => {
   const API_BASE = `${import.meta.env.VITE_APIURL}Seometa`;
   const PACKAGE_API_BASE = `${import.meta.env.VITE_APIURL}PlanPackage`;
+  const CATEGORY_API_BASE = `${import.meta.env.VITE_APIURL}Category`;
   const { errors, validate, clearAllErrors } = useFormError();
   const token = localStorage.getItem("token");
   const { seoid } = useParams(); // seoid will come from route like /seo-edit/:seoid
@@ -34,6 +35,7 @@ const navigate = useNavigate();
   const [bulkKeywords, setBulkKeywords] = useState("");
   const [isBulkMode, setIsBulkMode] = useState(false);
   const [packages, setPackages] = useState([]);
+  const [category, setCategory] = useState([]);
 
   const [factorScores, setFactorScores] = useState({
     title: 0,
@@ -66,6 +68,23 @@ const navigate = useNavigate();
   useEffect(() => {
     fetchPackages();
   }, []);
+
+
+  const fetchCategory = async () => {
+    try {
+      const res = await axios.get(`${CATEGORY_API_BASE}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCategory(res.data);
+    } catch (error) {
+      console.error("Failed to load packages", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategory();
+  }, []);
+
 
   useEffect(() => {
   if (seoid) {
@@ -120,6 +139,10 @@ const navigate = useNavigate();
     ...packages.map((pkg) => ({
       value: pkg.PackageName.toLowerCase().replace(/\s+/g, '-'),
       label: pkg.PackageName
+    })),
+    ...category.map((ctg) => ({
+      value: ctg.CategoryName.toLowerCase().replace(/\s+/g, '-'),
+      label: ctg.CategoryName
     }))
   ];
 

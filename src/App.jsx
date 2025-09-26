@@ -145,6 +145,8 @@ import PermissionPage from "./pages/PermissionPage";
 import EmployeePage from "./pages/EmployeePage";
 import EmployeeAddPage from "./pages/EmployeeAddPage";
 
+import Contacts from "./pages/Contacts"
+import DealerServiceP from "./pages/DealerServicePrice";
 
 
 
@@ -258,6 +260,10 @@ function App() {
           element={<NotificationAlertPage />}
         />
 
+        <Route exact path="/contacts" element={<Contacts />} />
+
+
+        <Route exact path="/DealerServicePrice" element={<DealerServiceP />} />
 
         
       </Routes>

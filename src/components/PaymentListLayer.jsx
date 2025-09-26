@@ -229,14 +229,12 @@ const exportToPDF = () => {
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
               />
+              <Icon icon='ion:search-outline' className='icon' />
             </form>
 
             <div className="d-flex gap-2">
               <button className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center" onClick={exportToExcel}>
                 <Icon icon="mdi:microsoft-excel" /> 
-              </button>
-              <button className="w-32-px h-32-px  bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center" onClick={exportToPDF}>
-                <Icon icon="mdi:file-pdf-box" /> 
               </button>
             </div>
           </div>
