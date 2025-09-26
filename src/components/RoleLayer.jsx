@@ -224,7 +224,7 @@ const RoleLayer = () => {
   ];
 
   return (
-    <div className='row gy-4 mt-2'>
+    <div className='row gy-4 mt-2 rounded-3'>
       <div className='col-xxl-4 col-lg-4 '>
         <div className='card h-100 p-0'>
           <div className='card-body p-24'>

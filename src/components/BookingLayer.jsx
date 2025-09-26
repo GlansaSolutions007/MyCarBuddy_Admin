@@ -112,12 +112,15 @@ const BookingLayer = () => {
   };
 
   const columns = [
-    { name: "S.No", selector: (row) => (row.BookingID) },
-    { name: "BookingID", selector: (row) => (
-       <Link to={`/view-booking/${row.BookingID}`} className="text-primary">
-              {row.BookingTrackID}
-            </Link>
-    ) },
+    { name: "S.No", selector: (row) => row.BookingID },
+    {
+      name: "BookingID",
+      selector: (row) => (
+        <Link to={`/view-booking/${row.BookingID}`} className="text-primary">
+          {row.BookingTrackID}
+        </Link>
+      ),
+    },
     {
       name: "Booking Date",
       selector: (row) => {
@@ -189,15 +192,16 @@ const BookingLayer = () => {
             >
               <Icon icon="lucide:eye" />
             </Link>
-            {isFutureOrToday && (row.BookingStatus.toLowerCase() == "pending" ) && (
-              <Link
-                onClick={() => handleAssignClick(row.BookingID)}
-                className="w-32-px h-32-px bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                title="Assign"
-              >
-                <Icon icon="mdi:account-cog-outline" />
-              </Link>
-            )}
+            {isFutureOrToday &&
+              row.BookingStatus.toLowerCase() == "pending" && (
+                <Link
+                  onClick={() => handleAssignClick(row.BookingID)}
+                  className="w-32-px h-32-px bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                  title="Assign"
+                >
+                  <Icon icon="mdi:account-cog-outline" />
+                </Link>
+              )}
           </div>
         );
       },
@@ -208,9 +212,13 @@ const BookingLayer = () => {
   const filteredBookings = bookings.filter((booking) => {
     const matchesSearch =
       booking.CustFullName?.toLowerCase().includes(searchText.toLowerCase()) ||
-      booking.CustPhoneNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
+      booking.CustPhoneNumber?.toLowerCase().includes(
+        searchText.toLowerCase()
+      ) ||
       booking.TechFullName?.toLowerCase().includes(searchText.toLowerCase()) ||
-      booking.TechPhoneNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
+      booking.TechPhoneNumber?.toLowerCase().includes(
+        searchText.toLowerCase()
+      ) ||
       booking.BookingTrackID?.toLowerCase().includes(searchText.toLowerCase());
 
     const bookingDate = new Date(booking.BookingDate);
@@ -280,14 +288,14 @@ const BookingLayer = () => {
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
               />
+              <Icon icon='ion:search-outline' className='icon' />
             </form>
             <div className="d-flex gap-2">
-              <button className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center" onClick={exportToExcel}>
-              <Icon icon="mdi:microsoft-excel" width="20" height="20" />
-
-              </button>
-              <button className="w-32-px h-32-px  bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center" onClick={exportToPDF}>
-               <Icon icon="mdi:file-pdf-box" width="20" height="20" />
+              <button
+                className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                onClick={exportToExcel}
+              >
+                <Icon icon="mdi:microsoft-excel" width="20" height="20" />
               </button>
             </div>
           </div>
@@ -295,8 +303,14 @@ const BookingLayer = () => {
             columns={columns}
             data={filteredBookings}
             pagination
-             paginationPerPage={10} // default rows per page
-            paginationRowsPerPageOptions={[10, 25, 50, 100, filteredBookings.length]} // last option shows all
+            paginationPerPage={10} // default rows per page
+            paginationRowsPerPageOptions={[
+              10,
+              25,
+              50,
+              100,
+              filteredBookings.length,
+            ]} // last option shows all
             highlightOnHover
             responsive
             striped

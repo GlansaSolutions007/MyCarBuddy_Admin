@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link } from "react-router-dom";
-import { useParams } from "react-router-dom";
-import Swal from 'sweetalert2';
+import { useNavigate, useParams } from "react-router-dom";
+import Swal from "sweetalert2";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
@@ -15,21 +13,24 @@ const RolePermissionLayer = () => {
   const [loading, setLoading] = useState(true);
   const token = localStorage.getItem("token");
 
+  const navigate = useNavigate();
+
   useEffect(() => {
-    fetchPermissions();
-    fetchRolePermissions();
+    loadData();
   }, [roleId]);
 
-  const fetchPermissions = async () => {
+  // Load both permissions and role permissions
+  const loadData = async () => {
     try {
-      const res = await axios.get(`${API_BASE}Permission`, {
+      // Always load permissions first
+      const permissionsRes = await axios.get(`${API_BASE}Permission`, {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
 
-      const permissions = res.data;
+      const permissions = permissionsRes.data;
       setAllPermissions(permissions);
 
       // Group permissions by page
@@ -37,69 +38,103 @@ const RolePermissionLayer = () => {
         if (!acc[perm.page]) {
           acc[perm.page] = {
             page: perm.page,
-            permissions: {}
+            permissions: {},
           };
         }
-        // Extract permission type from name (e.g., "customer_add" -> "add")
-        const permType = perm.name.split('_')[1] || perm.name;
+        const permType = perm.name.split("_")[1] || perm.name;
         acc[perm.page].permissions[permType] = perm;
         return acc;
       }, {});
-
       setGroupedPermissions(grouped);
+
+      // Try to fetch role permissions separately
+      try {
+        const rolePermsRes = await axios.get(
+          `${API_BASE}rolehaspermissions/id?roleId=${roleId}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const rolePermissions = rolePermsRes.data;
+
+        // Preselect role permissions
+        const selectedMap = {};
+        rolePermissions.forEach((rp) => {
+          const perm = permissions.find((p) => p.id === rp.permission_id);
+          if (perm) {
+            const permType = perm.name.split("_")[1] || perm.name;
+            selectedMap[`${perm.page}_${permType}`] = rp.permission_id;
+          }
+        });
+        setSelectedPermissions(selectedMap);
+      } catch {
+        console.warn(
+          "⚠️ Role permissions failed, showing only all permissions"
+        );
+        // Don’t block UI here, just leave all checkboxes unselected
+      }
     } catch (error) {
       console.error("Failed to load permissions", error);
-      Swal.fire('Error', 'Failed to load permissions', 'error');
-    }
-  };
-
-  const fetchRolePermissions = async () => {
-    try {
-      // Assuming there's an API to get current role permissions
-      // For now, we'll initialize as empty
-      setSelectedPermissions({});
-    } catch (error) {
-      console.error("Failed to load role permissions", error);
+      Swal.fire("Error", "Failed to load permissions", "error");
     } finally {
       setLoading(false);
     }
   };
 
+  // Handle checkbox toggle
   const handlePermissionChange = (page, permType, permissionId, checked) => {
-    setSelectedPermissions(prev => ({
+    setSelectedPermissions((prev) => ({
       ...prev,
-      [`${page}_${permType}`]: checked ? permissionId : null
+      [`${page}_${permType}`]: checked ? permissionId : null,
     }));
   };
 
+  // Save updated permissions
   const handleSubmit = async () => {
     try {
-      const permissionIds = Object.values(selectedPermissions).filter(id => id !== null);
+      const permissionIds = Object.values(selectedPermissions).filter(
+        (id) => id !== null
+      );
 
       if (permissionIds.length === 0) {
-        Swal.fire('Warning', 'Please select at least one permission', 'warning');
+        Swal.fire(
+          "Warning",
+          "Please select at least one permission",
+          "warning"
+        );
         return;
       }
 
-      // Call rolehaspermissions API for each selected permission
-      const promises = permissionIds.map(permissionId =>
-        axios.post(`${API_BASE}rolehaspermissions`, {
-          permission_id: permissionId,
-          role_id: roleId
-        }, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        })
+      await Promise.all(
+        permissionIds.map((permissionId) =>
+          axios.post(
+            `${API_BASE}rolehaspermissions`,
+            {
+              permission_id: permissionId,
+              role_id: roleId,
+            },
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          )
+        )
       );
 
-      await Promise.all(promises);
-
-      Swal.fire('Success', 'Permissions updated successfully', 'success');
+      Swal.fire("Success", "Permissions updated successfully", "success").then(
+        () => {
+          navigate("/roles");
+        }
+      );
     } catch (error) {
       console.error("Failed to update permissions", error);
-      Swal.fire('Error', 'Failed to update permissions', 'error');
+      Swal.fire("Error", "Failed to update permissions", "error");
     }
   };
 
@@ -109,12 +144,9 @@ const RolePermissionLayer = () => {
 
   return (
     <div className="container py-4">
-      <div className="card shadow-sm rounded-3 border-0">
-        <div className="card-header bg-primary text-white">
-          <h5 className="card-title mb-0">Role Permissions</h5>
-        </div>
+      <div className="card shadow-sm border-0">
         <div className="card-body p-4">
-          <div className="table-responsive">
+          <div className="table-responsive rounded-3">
             <table className="table table-hover align-middle text-center">
               <thead className="table-light">
                 <tr>
@@ -128,41 +160,56 @@ const RolePermissionLayer = () => {
               <tbody>
                 {Object.values(groupedPermissions).map((pageData, index) => (
                   <tr key={index} className="align-middle">
-                    <td className="fw-bold text-start text-center">{pageData.page}</td>
-                    {['view', 'add', 'edit', 'delete'].map(permType => (
-                      <td key={permType}>
-                        <div className='form-switch switch-primary d-flex justify-content-center'>
-                          <input
-                            className='form-check-input'
-                            type='checkbox'
-                            role='switch'
-                            checked={selectedPermissions[`${pageData.page}_${permType}`] ? true : false}
-                            onChange={(e) => {
-                              const permission = pageData.permissions[permType];
-                              if (permission) {
-                                handlePermissionChange(
-                                  pageData.page,
-                                  permType,
-                                  e.target.checked ? permission.id : null,
-                                  e.target.checked
-                                );
+                    <td className="fw-bold text-center">{pageData.page}</td>
+                    {["view", "add", "edit", "delete"].map((permType) => {
+                      const permission = pageData.permissions[permType];
+                      return (
+                        <td key={permType}>
+                          <div className="form-switch d-flex justify-content-center">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              checked={
+                                selectedPermissions[
+                                  `${pageData.page}_${permType}`
+                                ]
+                                  ? true
+                                  : false
                               }
-                            }}
-                          />
-                        </div>
-                      </td>
-                    ))}
+                              onChange={(e) => {
+                                if (permission) {
+                                  handlePermissionChange(
+                                    pageData.page,
+                                    permType,
+                                    permission.id,
+                                    e.target.checked
+                                  );
+                                }
+                              }}
+                              disabled={!permission} // disable if no such permission exists
+                            />
+                          </div>
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <div className="d-flex justify-content-center mt-4">
+          <div className="d-flex justify-content-center gap-3 mb-12">
             <button
               className="btn btn-primary px-5 py-2"
               onClick={handleSubmit}
             >
               Save Permissions
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary px-5 py-2"
+              onClick={() => navigate("/roles")}
+            >
+              Cancel
             </button>
           </div>
         </div>
@@ -170,4 +217,5 @@ const RolePermissionLayer = () => {
     </div>
   );
 };
+
 export default RolePermissionLayer;
