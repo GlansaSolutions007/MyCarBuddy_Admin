@@ -2,7 +2,7 @@ import MasterLayout from "../masterLayout/MasterLayout";
 import Breadcrumb from "../components/Breadcrumb";
 import BookingDealerAssign from "../components/BookingDealerAssign";
 
-const CityPage = () => {
+const BookingAssignPage = () => {
   return (
     <>
       {/* MasterLayout */}
@@ -17,4 +17,4 @@ const CityPage = () => {
   );
 };
 
-export default CityPage;
+export default BookingAssignPage;
