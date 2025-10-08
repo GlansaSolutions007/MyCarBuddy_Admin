@@ -18,6 +18,10 @@ const BookingLayer = () => {
   const [selectedTechnician, setSelectedTechnician] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [status, setStatus] = useState("all");
+  const [showFilters, setShowFilters] = useState(false);
 
   const API_BASE = import.meta.env.VITE_APIURL;
   const token = localStorage.getItem("token");
@@ -209,7 +213,7 @@ const BookingLayer = () => {
     },
   ];
 
-  // Filter by search + date range
+  // Filter by search + date range + other filters
   const filteredBookings = bookings.filter((booking) => {
     const matchesSearch =
       booking.CustFullName?.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -227,7 +231,13 @@ const BookingLayer = () => {
       (!startDate || bookingDate >= new Date(startDate)) &&
       (!endDate || bookingDate <= new Date(endDate));
 
-    return matchesSearch && matchesDate;
+    const price = booking.TotalPrice + booking.GSTAmount - booking.CouponAmount;
+    const matchesPrice = (!minPrice || price >= parseFloat(minPrice)) &&
+                         (!maxPrice || price <= parseFloat(maxPrice));
+
+    const matchesStatus = status === 'all' || booking.BookingStatus.toLowerCase() === status.toLowerCase();
+
+    return matchesSearch && matchesDate && matchesPrice && matchesStatus;
   });
 
   // Export to Excel
@@ -266,39 +276,92 @@ const BookingLayer = () => {
     <div className="row gy-4">
       <div className="col-12">
         <div className="card overflow-hidden p-3">
-          <div className="card-header d-flex justify-content-between align-items-center gap-2 flex-wrap">
-            <div className="d-flex gap-2">
-              <input
-                type="date"
-                className="form-control"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-              <input
-                type="date"
-                className="form-control"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
+          <div className="card-header">
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <form className="navbar-search">
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Search"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                />
+                <Icon icon='ion:search-outline' className='icon' />
+              </form>
+              <div className="d-flex gap-2">
+                <button
+                  className="btn btn-outline-primary radius-8 px-14 py-6 text-sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                >
+                  <Icon icon="tabler:filter" /> Filters
+                </button>
+                <button
+                  className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                  onClick={exportToExcel}
+                >
+                  <Icon icon="mdi:microsoft-excel" width="20" height="20" />
+                </button>
+              </div>
             </div>
-            <form className="navbar-search">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-              />
-              <Icon icon='ion:search-outline' className='icon' />
-            </form>
-            <div className="d-flex gap-2">
-              <button
-                className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                onClick={exportToExcel}
-              >
-                <Icon icon="mdi:microsoft-excel" width="20" height="20" />
-              </button>
-            </div>
+            {showFilters && (
+              <div className="d-flex gap-2 flex-wrap align-items-center">
+                <input
+                  type="date"
+                  className="form-control"
+                  placeholder="Start Date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  style={{ width: '160px' }}
+                />
+                <input
+                  type="date"
+                  className="form-control"
+                  placeholder="End Date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  style={{ width: '160px' }}
+                />
+                <input
+                  type="number"
+                  className="form-control"
+                  placeholder="Min Price"
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                  style={{ width: '160px' }}
+                />
+                <input
+                  type="number"
+                  className="form-control"
+                  placeholder="Max Price"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                  style={{ width: '160px' }}
+                />
+                <select
+                  className="form-select"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  style={{ width: '160px' }}
+                >
+                  <option value="all">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+                <button
+                  className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
+                  onClick={() => {
+                    setStartDate("");
+                    setEndDate("");
+                    setMinPrice("");
+                    setMaxPrice("");
+                    setStatus("all");
+                  }}
+                >
+                  Clear Filters
+                </button>
+              </div>
+            )}
           </div>
           <DataTable
             columns={columns}
