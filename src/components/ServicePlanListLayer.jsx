@@ -38,7 +38,7 @@ const ServicePlanListLayer = () => {
       const res = await axios.get(CATEGORY_API, {
         headers: {
           Authorization: `Bearer ${token}`,
-        }, 
+        },
       });
       setCategories(res.data);
     } catch (error) {

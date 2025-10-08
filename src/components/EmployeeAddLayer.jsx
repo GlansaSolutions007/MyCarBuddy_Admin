@@ -17,10 +17,13 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
   const token = localStorage.getItem("token");
 
   const [roles, setRoles] = useState([]);
+  const [dealers, setDealers] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
   const { errors, validate, clearAllErrors } = useFormError();
   const [imagePreviewUrl, setImagePreviewUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [supervisorRoleId, setSupervisorRoleId] = useState(null);
+  const [cities, setCities] = useState([]);
 
   const [formData, setFormData] = useState({
     Id: 0,
@@ -31,36 +34,78 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
     ConfirmPassword: "",
     RoleId: 0,
     RoleName: "",
+    DealerIds: [],
+    DealerNames: [],
     CreatedBy: 1,
     Status: true,
     ProfileImage1: null,
+    City: "",
   });
 
   useEffect(() => {
     setPageTitle(isEditing ? "Edit Employee" : "Add Employee");
     fetchRoles();
+    fetchCities();
+  }, [EmployeeID, isEditing, setPageTitle]);
 
-    if (isEditing) {
+  useEffect(() => {
+    if (isEditing && roles.length > 0) {
       fetchEmployee();
     }
-  }, []);
+  }, [isEditing, roles]);
+
+  useEffect(() => {
+    if (formData.RoleId === supervisorRoleId && supervisorRoleId !== null) {
+      fetchDealers();
+    } else {
+      setDealers([]);
+      setFormData((prev) => ({
+        ...prev,
+        DealerIds: [],
+        DealerNames: [],
+      }));
+    }
+  }, [formData.RoleId, supervisorRoleId]);
 
   const fetchEmployee = async () => {
     try {
       const res = await axios.get(`${API_BASE}Employee/Id?Id=${EmployeeID}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
       const employee = res.data[0];
-      setFormData({
-        ...employee,
-        ConfirmPassword: employee.Password || "",
-        ProfileImage1: employee.ProfileImage || "",
+
+      setFormData((prev) => {
+        const currentRole = roles.find((role) => role.id === employee.RoleId);
+        if (currentRole && currentRole.name === "Supervisor") {
+          setSupervisorRoleId(currentRole.id);
+        }
+
+        const employeeDealerIds = Array.isArray(employee.DealerIds)
+          ? employee.DealerIds
+          : employee.DealerIds
+          ? employee.DealerIds.split(",").map(Number)
+          : [];
+        const employeeDealerNames = Array.isArray(employee.DealerNames)
+          ? employee.DealerNames
+          : employee.DealerNames
+          ? employee.DealerNames.split(",")
+          : [];
+
+        const updatedFormData = {
+          ...prev,
+          ...employee,
+          ConfirmPassword: employee.Password || "",
+          ProfileImage1: employee.ProfileImage || null,
+          DealerIds: employeeDealerIds,
+          DealerNames: employeeDealerNames,
+          City: employee.City || "",
+        };
+
+        if (employee.ProfileImage) {
+          setImagePreviewUrl(employee.ProfileImage);
+        }
+        return updatedFormData;
       });
-      if (employee.ProfileImage) {
-        setImagePreviewUrl(employee.ProfileImage);
-      }
     } catch (err) {
       console.error("Failed to fetch employee", err);
       Swal.fire("Error", "Failed to fetch employee details", "error");
@@ -73,8 +118,49 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setRoles(res.data);
+      const supervisorRole = res.data.find(
+        (role) => role.name === "Supervisor"
+      );
+      if (supervisorRole) {
+        setSupervisorRoleId(supervisorRole.id);
+      } else {
+        setSupervisorRoleId(null);
+      }
     } catch (err) {
       console.error("Failed to fetch roles", err);
+    }
+  };
+
+  const fetchDealers = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}Dealer`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const formattedDealers = res.data.map((dealer, index) => ({
+        value: dealer.DealerID,
+        label: `${index + 1}. ${dealer.FullName}`,
+        rawData: dealer,
+      }));
+
+      setDealers(formattedDealers);
+    } catch (error) {
+      console.error("Failed to load dealers", error);
+      Swal.fire("Error", "Failed to load dealers", "error");
+    }
+  };
+
+  const fetchCities = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}City`);
+      const formattedCities = res.data.map((city) => ({
+        value: city.CityID,
+        label: city.CityName,
+      }));
+      setCities(formattedCities);
+    } catch (error) {
+      console.error("Failed to load cities", error);
+      Swal.fire("Error", "Failed to load cities", "error");
     }
   };
 
@@ -92,6 +178,8 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
       ...prev,
       RoleId: selectedOption ? selectedOption.value : 0,
       RoleName: selectedOption ? selectedOption.label : "",
+      DealerIds: [],
+      DealerNames: [],
     }));
     clearAllErrors();
   };
@@ -104,15 +192,9 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
         return;
       }
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreviewUrl(reader.result);
-      };
+      reader.onloadend = () => setImagePreviewUrl(reader.result);
       reader.readAsDataURL(file);
-
-      setFormData((prev) => ({
-        ...prev,
-        ProfileImage1: file,
-      }));
+      setFormData((prev) => ({ ...prev, ProfileImage1: file }));
     }
   };
 
@@ -121,13 +203,26 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
     setIsSubmitting(true);
 
     try {
-      const validationErrors = validate(formData, [
+      const validationFieldsToExclude = [
         "Id",
         "ModifiedBy",
         "ModifiedDate",
-      ]);
-      console.log(validationErrors);
-      if (Object.keys(validationErrors).length > 0) {
+        "ProfileImage1",
+        "DealerNames",
+        "RoleName",
+      ];
+      let currentErrors = validate(formData, validationFieldsToExclude);
+
+      if (
+        formData.RoleId === supervisorRoleId &&
+        formData.DealerIds.length === 0
+      ) {
+        currentErrors.DealerIds =
+          "At least one dealer is required for Supervisor role.";
+      }
+
+      if (Object.keys(currentErrors).length > 0) {
+        errors.setErrors(currentErrors);
         setIsSubmitting(false);
         return;
       }
@@ -140,22 +235,17 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
       }
 
       const formDataToSend = new FormData();
-      formDataToSend.append("Id", formData.Id);
-      formDataToSend.append("Name", formData.Name);
-      formDataToSend.append("Email", formData.Email);
-      formDataToSend.append("PhoneNumber", formData.PhoneNumber);
-      formDataToSend.append("Password", formData.Password);
-      formDataToSend.append("RoleId", formData.RoleId);
-      formDataToSend.append("RoleName", formData.RoleName);
-      formDataToSend.append("CreatedBy", formData.CreatedBy);
-      formDataToSend.append("Status", formData.Status);
-      if (formData.ProfileImage1) {
-        formDataToSend.append("ProfileImage1", formData.ProfileImage1);
-      }
-
-      if (isEditing) {
-        formDataToSend.append("Id", formData.Id);
-      }
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === "ProfileImage1") {
+          if (value instanceof File) {
+            formDataToSend.append(key, value);
+          }
+        } else if (key === "DealerIds") {
+          value.forEach((id) => formDataToSend.append("DealerIds", id));
+        } else if (value !== null) {
+          formDataToSend.append(key, value);
+        }
+      });
 
       let res;
       if (isEditing) {
@@ -174,22 +264,6 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
         });
       }
 
-      // if (res.data.status || res.data.success) {
-      //   Swal.fire({
-      //     icon: "success",
-      //     title: "Success",
-      //     text: isEditing
-      //       ? "Employee updated successfully"
-      //       : "Employee added successfully",
-      //   });
-      //   navigate("/employees");
-      // } else {
-      //     Swal.fire({
-      //       icon: "error",
-      //       title: "Error",
-      //       text: res.data.message || "Operation failed"
-      //     })
-      // }
       if (res.status === 200 || res.status === 201) {
         Swal.fire({
           icon: "success",
@@ -203,7 +277,7 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
         Swal.fire({
           icon: "error",
           title: "Error",
-          text: res.data?.message || "Failed to save employee",
+          text: res.data?.message || "Operation failed",
         });
       }
     } catch (error) {
@@ -256,7 +330,8 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                         >
                           <Icon
                             icon="lucide:user"
-                            size={48}
+                            width="48"
+                            height="48"
                             className="text-muted"
                           />
                         </div>
@@ -333,6 +408,30 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                   <FormError error={errors.PhoneNumber} />
                 </div>
 
+                {/* City */}
+                <div className="col-sm-6 mt-2">
+                  <label className="form-label text-sm fw-semibold text-primary-light mb-8">
+                    City <span className="text-danger-600">*</span>
+                  </label>
+                  <Select
+                    value={cities.find(
+                      (option) => option.label === formData.City
+                    )}
+                    onChange={(selectedOption) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        City: selectedOption ? selectedOption.label : "",
+                      }))
+                    }
+                    options={cities}
+                    placeholder="Select City"
+                    classNamePrefix="react-select"
+                    className={errors.City ? "is-invalid" : ""}
+                    isClearable
+                  />
+                  <FormError error={errors.City} />
+                </div>
+
                 {/* Role */}
                 <div className="col-sm-6 mt-2">
                   <label className="form-label text-sm fw-semibold text-primary-light mb-8">
@@ -345,12 +444,54 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                     onChange={handleRoleChange}
                     options={roleOptions}
                     placeholder="Select role"
-                    className={errors.RoleId ? "is-invalid" : ""}
                     classNamePrefix="react-select"
                     isClearable
+                    className={errors.RoleId ? "is-invalid" : ""}
                   />
                   <FormError error={errors.RoleId} />
                 </div>
+
+                {/* Dealer Multi-Select */}
+                {formData.RoleId === supervisorRoleId && (
+                  <div className="col-sm-6 mt-2">
+                    <label className="form-label text-sm fw-semibold text-primary-light mb-8">
+                      Dealer(s) <span className="text-danger-600">*</span>
+                    </label>
+                    <Select
+                      value={dealers
+                        .map((d) => ({
+                          ...d,
+                          label: d.label.split(". ")[1],
+                        }))
+                        .filter((d) => formData.DealerIds.includes(d.value))}
+                      onChange={(selectedOptions) => {
+                        const selectedDealerIds = selectedOptions
+                          ? selectedOptions.map((option) => option.value)
+                          : [];
+                        const selectedDealerNames = selectedOptions
+                          ? selectedOptions.map((option) => option.label)
+                          : [];
+
+                        setFormData((prev) => ({
+                          ...prev,
+                          DealerIds: selectedDealerIds,
+                          DealerNames: selectedDealerNames,
+                        }));
+                        clearAllErrors();
+                      }}
+                      options={dealers.map((d) => ({
+                        ...d,
+                        label: d.label.split(". ")[1],
+                      }))}
+                      placeholder="Select Dealer(s)"
+                      classNamePrefix="react-select"
+                      className={errors.DealerIds ? "is-invalid" : ""}
+                      isMulti
+                      closeMenuOnSelect={false}
+                    />
+                    <FormError error={errors.DealerIds} />
+                  </div>
+                )}
 
                 {/* Password */}
                 <div className="col-sm-6 mt-2">
@@ -428,7 +569,6 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                   </select>
                 </div>
               </div>
-
               {/* Action Buttons */}
               <div className="d-flex justify-content-center gap-3 mt-24">
                 <button
@@ -436,6 +576,11 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                   className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
                   disabled={isSubmitting}
                 >
+                  {isSubmitting
+                    ? "Saving..."
+                    : isEditing
+                    ? "Update Employee"
+                    : "Save Employee"}
                   {isSubmitting
                     ? "Saving..."
                     : isEditing
@@ -459,3 +604,4 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
 };
 
 export default EmployeeAddLayer;
+

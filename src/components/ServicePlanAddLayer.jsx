@@ -41,7 +41,7 @@ const [formData, setFormData] = useState({
 });
 
   useEffect(() => {
-    setPageTitle(isEditing ? "Edit - Service Plan" : "");
+    setPageTitle(isEditing ? "Edit - Service Plan" : "Add - Service Plan");
     fetchCategories();
     fetchSubCategories();
     fetchIncludes();
@@ -607,4 +607,3 @@ const filteredIncludes = includes
 };
 
 export default ServicePlanAddLayer;
-

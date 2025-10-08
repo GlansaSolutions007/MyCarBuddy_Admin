@@ -199,11 +199,10 @@ const BookingLayer = () => {
             {isFutureOrToday &&
               row.BookingStatus.toLowerCase() == "pending" && (
                 <Link
-                to={`/booking-dealer-assign/${row.BookingID}`}
+                  onClick={() => handleAssignClick(row.BookingID)}
                   className="w-32-px h-32-px bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center"
                   title="Assign"
                 >
-                  {/* onClick={() => handleAssignClick(row.BookingID)} */}
                   <Icon icon="mdi:account-cog-outline" />
                 </Link>
               )}
