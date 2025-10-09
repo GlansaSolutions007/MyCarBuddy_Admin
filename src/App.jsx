@@ -147,6 +147,7 @@ import EmployeeAddPage from "./pages/EmployeeAddPage";
 
 import Contacts from "./pages/Contacts"
 import DealerServiceP from "./pages/DealerServicePrice";
+import TicketsPage from "./pages/TicketsPage";
 
 
 
@@ -209,6 +210,9 @@ function App() {
 
           <Route exact path='/payments' element={<PaymentListPage />} />
           <Route exact path='/invoice-preview/:PaymentID' element={<InvoicePreviewPage />} />
+
+          <Route exact path='/tickets' element={<TicketsPage />} />
+
 
           <Route exact path='/booking-time-slot' element={<BookingTimeSlotPage />} />
 

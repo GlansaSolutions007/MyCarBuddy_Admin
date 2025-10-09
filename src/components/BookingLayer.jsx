@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import DataTable from "react-data-table-component";
 import { Link } from "react-router-dom";
@@ -6,7 +6,7 @@ import Select from "react-select";
 import axios from "axios";
 import Swal from "sweetalert2";
 import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
+// import jsPDF from "jspdf";
 import "jspdf-autotable";
 
 const BookingLayer = () => {
@@ -248,28 +248,28 @@ const BookingLayer = () => {
   };
 
   // Export to PDF
-  const exportToPDF = () => {
-    const doc = new jsPDF();
-    doc.text("Bookings Report", 14, 10);
-    const tableColumn = [
-      "BookingID",
-      "Booking Date",
-      "Customer Name",
-      "Phone",
-      "Price",
-      "Status",
-    ];
-    const tableRows = filteredBookings.map((row) => [
-      row.BookingTrackID,
-      new Date(row.BookingDate).toLocaleDateString(),
-      row.CustFullName,
-      row.CustPhoneNumber,
-      `₹${row.TotalPrice + row.GSTAmount - row.CouponAmount}`,
-      row.BookingStatus,
-    ]);
-    doc.autoTable(tableColumn, tableRows, { startY: 20 });
-    doc.save("Bookings_Report.pdf");
-  };
+  // const exportToPDF = () => {
+  //   const doc = new jsPDF();
+  //   doc.text("Bookings Report", 14, 10);
+  //   const tableColumn = [
+  //     "BookingID",
+  //     "Booking Date",
+  //     "Customer Name",
+  //     "Phone",
+  //     "Price",
+  //     "Status",
+  //   ];
+  //   const tableRows = filteredBookings.map((row) => [
+  //     row.BookingTrackID,
+  //     new Date(row.BookingDate).toLocaleDateString(),
+  //     row.CustFullName,
+  //     row.CustPhoneNumber,
+  //     `₹${row.TotalPrice + row.GSTAmount - row.CouponAmount}`,
+  //     row.BookingStatus,
+  //   ]);
+  //   doc.autoTable(tableColumn, tableRows, { startY: 20 });
+  //   doc.save("Bookings_Report.pdf");
+  // };
 
   return (
     <div className="row gy-4">

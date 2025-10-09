@@ -343,6 +343,7 @@ const MasterLayout = ({ children }) => {
         { title: "Customers", to: "/customers", color: "text-primary-600" },
         { title: "Bookings", to: "/bookings", color: "text-warning-main" },
         { title: "Payments", to: "/payments", color: "text-info-main" },
+        { title: "Tickets", to: "/tickets", color: "text-info-danger" },
       ],
     },
     {
