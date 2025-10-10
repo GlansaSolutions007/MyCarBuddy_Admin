@@ -148,6 +148,7 @@ import EmployeeAddPage from "./pages/EmployeeAddPage";
 import Contacts from "./pages/Contacts"
 import DealerServiceP from "./pages/DealerServicePrice";
 import TicketsPage from "./pages/TicketsPage";
+import TicketsAddPage from "./pages/TicketsAddPage"
 
 
 
@@ -268,6 +269,10 @@ function App() {
 
 
         <Route exact path="/DealerServicePrice" element={<DealerServiceP />} />
+
+        <Route exact path='/add-tickets' element={<TicketsAddPage />} />
+
+        <Route exact path='/edit-tickets/:TicketID' element={<TicketsAddPage />} />
 
         
       </Routes>

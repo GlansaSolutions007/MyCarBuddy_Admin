@@ -6,8 +6,6 @@ import Select from "react-select";
 import axios from "axios";
 import Swal from "sweetalert2";
 import * as XLSX from "xlsx";
-// import jsPDF from "jspdf";
-import "jspdf-autotable";
 
 const BookingLayer = () => {
   const [bookings, setBookings] = useState([]);
@@ -16,6 +14,7 @@ const BookingLayer = () => {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [selectedTechnician, setSelectedTechnician] = useState(null);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [minPrice, setMinPrice] = useState("");
@@ -31,7 +30,6 @@ const BookingLayer = () => {
     fetchBookings();
   }, []);
 
-  // 15 sec call to fetch bookings
   useEffect(() => {
     const interval = setInterval(fetchBookings, 15000);
     return () => clearInterval(interval);
@@ -42,11 +40,9 @@ const BookingLayer = () => {
       const res = await axios.get(`${API_BASE}Bookings`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       const sortedBookings = res.data.sort(
         (a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate)
       );
-
       setBookings(sortedBookings);
     } catch (err) {
       console.error("Error fetching bookings", err);
@@ -72,16 +68,34 @@ const BookingLayer = () => {
   const handleAssignClick = (booking) => {
     setSelectedBooking(booking);
     setSelectedTechnician(null);
+
+    const slots = booking.TimeSlot?.split(",").map((s) => s.trim()) || [];
+    if (slots.length === 1) {
+      setSelectedTimeSlot({ value: slots[0], label: slots[0] });
+    } else {
+      setSelectedTimeSlot(null);
+    }
+
     setAssignModalOpen(true);
   };
 
   const handleAssignConfirm = async () => {
+    if (!selectedTechnician || !selectedTimeSlot) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Please select both technician and time slot",
+      });
+      return;
+    }
+
     try {
       const res = await axios.put(
         `${API_BASE}Bookings/assign-technician`,
         {
           TechID: selectedTechnician.value,
-          BookingID: selectedBooking,
+          BookingID: selectedBooking.BookingID,
+          AssingedTimeSlot: selectedTimeSlot.value,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -115,8 +129,15 @@ const BookingLayer = () => {
     }
   };
 
+  const getTimeSlotOptions = () => {
+    if (!selectedBooking || !selectedBooking.TimeSlot) return [];
+    return selectedBooking.TimeSlot.split(",").map((slot) => ({
+      value: slot.trim(),
+      label: slot.trim(),
+    }));
+  };
+
   const columns = [
-    { name: "S.No", selector: (row) => row.BookingID },
     {
       name: "BookingID",
       selector: (row) => (
@@ -136,6 +157,10 @@ const BookingLayer = () => {
       },
     },
     {
+      name: "TimeSlot",
+      selector: (row) => row.TimeSlot,
+    },
+    {
       name: "BookingPrice",
       selector: (row) =>
         `₹${row.TotalPrice + row.GSTAmount - row.CouponAmount}`,
@@ -149,7 +174,6 @@ const BookingLayer = () => {
         </>
       ),
     },
-    // { name: "Address", selector: (row) => row.FullAddress },
     {
       name: "Technician",
       selector: (row) => (
@@ -196,33 +220,27 @@ const BookingLayer = () => {
             >
               <Icon icon="lucide:eye" />
             </Link>
-            {isFutureOrToday &&
-              row.BookingStatus.toLowerCase() == "pending" && (
-                <Link
-                  onClick={() => handleAssignClick(row.BookingID)}
-                  className="w-32-px h-32-px bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                  title="Assign"
-                >
-                  <Icon icon="mdi:account-cog-outline" />
-                </Link>
-              )}
+            {isFutureOrToday && row.BookingStatus.toLowerCase() === "pending" && (
+              <Link
+                onClick={() => handleAssignClick(row)}
+                className="w-32-px h-32-px bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                title="Assign"
+              >
+                <Icon icon="mdi:account-cog-outline" />
+              </Link>
+            )}
           </div>
         );
       },
     },
   ];
 
-  // Filter by search + date range + other filters
   const filteredBookings = bookings.filter((booking) => {
     const matchesSearch =
       booking.CustFullName?.toLowerCase().includes(searchText.toLowerCase()) ||
-      booking.CustPhoneNumber?.toLowerCase().includes(
-        searchText.toLowerCase()
-      ) ||
+      booking.CustPhoneNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
       booking.TechFullName?.toLowerCase().includes(searchText.toLowerCase()) ||
-      booking.TechPhoneNumber?.toLowerCase().includes(
-        searchText.toLowerCase()
-      ) ||
+      booking.TechPhoneNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
       booking.BookingTrackID?.toLowerCase().includes(searchText.toLowerCase());
 
     const bookingDate = new Date(booking.BookingDate);
@@ -231,15 +249,16 @@ const BookingLayer = () => {
       (!endDate || bookingDate <= new Date(endDate));
 
     const price = booking.TotalPrice + booking.GSTAmount - booking.CouponAmount;
-    const matchesPrice = (!minPrice || price >= parseFloat(minPrice)) &&
-                         (!maxPrice || price <= parseFloat(maxPrice));
+    const matchesPrice =
+      (!minPrice || price >= parseFloat(minPrice)) &&
+      (!maxPrice || price <= parseFloat(maxPrice));
 
-    const matchesStatus = status === 'all' || booking.BookingStatus.toLowerCase() === status.toLowerCase();
+    const matchesStatus =
+      status === "all" || booking.BookingStatus.toLowerCase() === status.toLowerCase();
 
     return matchesSearch && matchesDate && matchesPrice && matchesStatus;
   });
 
-  // Export to Excel
   const exportToExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(filteredBookings);
     const workbook = XLSX.utils.book_new();
@@ -247,29 +266,18 @@ const BookingLayer = () => {
     XLSX.writeFile(workbook, "Bookings_Report.xlsx");
   };
 
-  // Export to PDF
-  // const exportToPDF = () => {
-  //   const doc = new jsPDF();
-  //   doc.text("Bookings Report", 14, 10);
-  //   const tableColumn = [
-  //     "BookingID",
-  //     "Booking Date",
-  //     "Customer Name",
-  //     "Phone",
-  //     "Price",
-  //     "Status",
-  //   ];
-  //   const tableRows = filteredBookings.map((row) => [
-  //     row.BookingTrackID,
-  //     new Date(row.BookingDate).toLocaleDateString(),
-  //     row.CustFullName,
-  //     row.CustPhoneNumber,
-  //     `₹${row.TotalPrice + row.GSTAmount - row.CouponAmount}`,
-  //     row.BookingStatus,
-  //   ]);
-  //   doc.autoTable(tableColumn, tableRows, { startY: 20 });
-  //   doc.save("Bookings_Report.pdf");
-  // };
+  // Custom styles for react-select to make single slot look consistent
+  const singleSlotStyle = {
+    control: (base) => ({
+      ...base,
+      backgroundColor: "#f5f5f5",
+      cursor: "not-allowed",
+    }),
+    singleValue: (base) => ({
+      ...base,
+      color: "#495057",
+    }),
+  };
 
   return (
     <div className="row gy-4">
@@ -285,7 +293,7 @@ const BookingLayer = () => {
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
                 />
-                <Icon icon='ion:search-outline' className='icon' />
+                <Icon icon="ion:search-outline" className="icon" />
               </form>
               <div className="d-flex gap-2">
                 <button
@@ -307,18 +315,16 @@ const BookingLayer = () => {
                 <input
                   type="date"
                   className="form-control"
-                  placeholder="Start Date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  style={{ width: '160px' }}
+                  style={{ width: "160px" }}
                 />
                 <input
                   type="date"
                   className="form-control"
-                  placeholder="End Date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  style={{ width: '160px' }}
+                  style={{ width: "160px" }}
                 />
                 <input
                   type="number"
@@ -326,7 +332,7 @@ const BookingLayer = () => {
                   placeholder="Min Price"
                   value={minPrice}
                   onChange={(e) => setMinPrice(e.target.value)}
-                  style={{ width: '160px' }}
+                  style={{ width: "160px" }}
                 />
                 <input
                   type="number"
@@ -334,13 +340,13 @@ const BookingLayer = () => {
                   placeholder="Max Price"
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(e.target.value)}
-                  style={{ width: '160px' }}
+                  style={{ width: "160px" }}
                 />
                 <select
                   className="form-select"
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
-                  style={{ width: '160px' }}
+                  style={{ width: "160px" }}
                 >
                   <option value="all">All Status</option>
                   <option value="pending">Pending</option>
@@ -366,14 +372,8 @@ const BookingLayer = () => {
             columns={columns}
             data={filteredBookings}
             pagination
-            paginationPerPage={10} // default rows per page
-            paginationRowsPerPageOptions={[
-              10,
-              25,
-              50,
-              100,
-              filteredBookings.length,
-            ]} // last option shows all
+            paginationPerPage={10}
+            paginationRowsPerPageOptions={[10, 25, 50, 100, filteredBookings.length]}
             highlightOnHover
             responsive
             striped
@@ -385,10 +385,7 @@ const BookingLayer = () => {
 
       {/* Assign Technician Modal */}
       {assignModalOpen && (
-        <div
-          className="modal fade show d-block"
-          style={{ background: "#00000080" }}
-        >
+        <div className="modal fade show d-block" style={{ background: "#00000080" }}>
           <div className="modal-dialog modal-sm modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -398,6 +395,22 @@ const BookingLayer = () => {
                   className="btn-close"
                   onClick={() => setAssignModalOpen(false)}
                 />
+              </div>
+              <div className="modal-body">
+                {selectedBooking?.TimeSlot?.split(",").length === 1 ? (
+                  <Select
+                    value={selectedTimeSlot}
+                    isDisabled
+                    styles={singleSlotStyle}
+                  />
+                ) : (
+                  <Select
+                    options={getTimeSlotOptions()}
+                    value={selectedTimeSlot}
+                    onChange={(val) => setSelectedTimeSlot(val)}
+                    placeholder="Select TimeSlot"
+                  />
+                )}
               </div>
               <div className="modal-body">
                 <Select
@@ -417,7 +430,7 @@ const BookingLayer = () => {
                 <button
                   className="btn btn-primary"
                   onClick={handleAssignConfirm}
-                  disabled={!selectedTechnician}
+                  disabled={!selectedTechnician || !selectedTimeSlot}
                 >
                   Assign
                 </button>

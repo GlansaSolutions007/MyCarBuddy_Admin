@@ -358,7 +358,7 @@ const MasterLayout = ({ children }) => {
     {
       title: "Performers",
       icon: "flowbite:users-group-outline",
-      roles: ["Admin" ,"Distributor"], // who can see this section
+      roles: ["Admin", "Distributor"], // who can see this section
       children: [
         {
           title: "Distributors",
@@ -461,7 +461,7 @@ const MasterLayout = ({ children }) => {
     {
       title: "Blog",
       icon: "material-symbols:article-outline",
-      roles: ["Admin" ,"DigitalManager"],
+      roles: ["Admin", "DigitalManager"],
       children: [{ title: "Blog", to: "/blog", color: "text-primary-600" }],
     },
     {
@@ -475,7 +475,11 @@ const MasterLayout = ({ children }) => {
       title: "Dealer Service Price",
       icon: "material-symbols:request-quote-outline",
       children: [
-        { title: "Dealer Service Price", to: "/DealerServicePrice", color: "text-primary-600" },
+        {
+          title: "Dealer Service Price",
+          to: "/DealerServicePrice",
+          color: "text-primary-600",
+        },
       ],
     },
     {
@@ -502,6 +506,12 @@ const MasterLayout = ({ children }) => {
           color: "text-info-main",
         },
       ],
+    },
+    {
+      title: "Go To Website",
+      icon: "mdi:earth",
+      to: "https://mycarbuddy.in/",
+      color: "text-primary-600",
     },
   ];
 
