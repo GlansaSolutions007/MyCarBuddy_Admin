@@ -149,6 +149,7 @@ import Contacts from "./pages/Contacts"
 import DealerServiceP from "./pages/DealerServicePrice";
 import TicketsPage from "./pages/TicketsPage";
 import TicketsAddPage from "./pages/TicketsAddPage"
+import TodaysBookingPage from "./pages/TodaysBookingPage";
 
 
 
@@ -214,6 +215,7 @@ function App() {
 
           <Route exact path='/tickets' element={<TicketsPage />} />
 
+          <Route exact path='/today-booking' element={<TodaysBookingPage />} />
 
           <Route exact path='/booking-time-slot' element={<BookingTimeSlotPage />} />
 
