@@ -17,20 +17,26 @@ const TodayBookingsLayer = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [startDate, endDate]);
 
   const fetchData = async () => {
-    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    let fromDate = startDate;
+    let toDate = endDate;
+    if (!fromDate || !toDate) {
+      const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+      fromDate = today;
+      toDate = today;
+    }
     try {
       const res = await axios.get(
-        `${API_BASE}Reports?fromDate=${today}&toDate=${today}`,
+        `${API_BASE}Reports?fromDate=${fromDate}&toDate=${toDate}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
       setData(res.data.bookings || []);
     } catch (err) {
-      console.error("Error fetching today's bookings:", err);
+      console.error("Error fetching bookings:", err);
     }
   };
 
@@ -43,7 +49,7 @@ const TodayBookingsLayer = () => {
     {
       name: "Tech ID",
       selector: (row) => (
-        <Link to={`/view-technician/${row.techID}`} className="text-primary">
+        <Link to={`/view-technician/${row.techID}?from=today`} className="text-primary">
           {row.techID}
         </Link>
       ),
@@ -69,7 +75,7 @@ const TodayBookingsLayer = () => {
       cell: (row) => (
         <div className="d-flex gap-2 align-items-center">
           <Link
-            to={`/view-technician/${row.techID}`}
+            to={`/view-technician/${row.techID}?from=today`}
             className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
             title="View Technician"
           >
@@ -89,12 +95,7 @@ const TodayBookingsLayer = () => {
       item.dealerName?.toLowerCase().includes(searchText.toLowerCase()) ||
       item.techID?.toString().includes(searchText);
 
-    const itemDate = new Date(); // Since it's today's data, assume current date
-    const matchesDate =
-      (!startDate || itemDate >= new Date(startDate)) &&
-      (!endDate || itemDate <= new Date(endDate));
-
-    return matchesSearch && matchesDate;
+    return matchesSearch;
   });
 
   const exportToExcel = () => {

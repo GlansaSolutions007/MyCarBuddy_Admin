@@ -58,7 +58,7 @@ const TodaysBookings = () => {
                   data.filter(item => item.techID !== 0).map((item, index) => (
                     <tr key={item.techID || index}>
                       <td>
-                        <Link to={`/view-technician/${item.techID}`}>
+                        <Link to={`/view-technician/${item.techID}?from=today`}>
                           <span className="text-primary-500">{item.techID}</span>
                         </Link>
                       </td>

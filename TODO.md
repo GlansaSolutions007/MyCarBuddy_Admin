@@ -1,3 +1,6 @@
-# TODO for Todays Bookings Table Implementation
+# TODO for TechnicianViewLayer Filter Buttons
 
-- [x] Update src/components/child/todaysBookings.jsx with the table component including API fetch, header with "Todays Bookings" title and "View All" link, and table with headings S. No, Technician ID, Technician Name, Booking Count.
+- [x] Add filterMode state defaulting to 'today'.
+- [x] Create filteredBookings logic to filter based on BookingDate for 'today' mode.
+- [x] Add "Today Bookings" and "All Bookings" toggle buttons above the Accordion.
+- [x] Update no-data message based on filter mode.
