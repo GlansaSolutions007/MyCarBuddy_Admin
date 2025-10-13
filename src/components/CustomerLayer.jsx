@@ -15,35 +15,26 @@ const CustomerLayer = () => {
   const token = localStorage.getItem('token');
   const [searchText, setSearchText] = useState("");
 
-  // useEffect(() => {
-  //   fetchCustomers();
-
-  // }, []);
-
   useEffect(() => {
+    fetchCustomers();
+  }, []);
 
-  fetchCustomers();
-}, []);
-
-  // Fetch dealers, distributors, states, and cities start
-    const fetchCustomers = async () => {
-        try {
-            const res = await axios.get(`${API_BASE}Customer`, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
-            setCustomers(res.data.data);
-        } catch (error) {
-            console.error("Failed to load dealers", error);
+  // Fetch customers
+  const fetchCustomers = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}Customer`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
-    };
+      });
+      setCustomers(res.data.data);
+    } catch (error) {
+      console.error("Failed to load customers", error);
+    }
+  };
 
-// Fetch dealers, distributors, states, and cities end
-
-
-
+  // Table columns
   const columns = [
     {
       name: "S.No",
@@ -62,61 +53,54 @@ const CustomerLayer = () => {
       name: "Phone",
       selector: (row) => row.PhoneNumber,
     },
-    // {
-    //   name: "State",
-    //   selector: (row) => states.find((s) => s.StateID === row.StateID)?.StateName || "",
-    // },
-    // {
-    //   name: "City",
-    //   selector: (row) => cities.find((c) => c.CityID === row.CityID)?.CityName || "",
-    // },
     {
       name: "Status",
-      selector: (row) =>
-        row.IsActive ? (
-          <span className="badge bg-success">Active</span>
-        ) : (
-          <span className="badge bg-secondary">Inactive</span>
-        ),
+      selector: (row) => {
+        if (row.IsDelete === 1) {
+          return <span className="badge bg-danger">Inactive</span>;
+        } else if (row.IsActive) {
+          return <span className="badge bg-success">Active</span>;
+        } else {
+          return <span className="badge bg-secondary">Inactive</span>;
+        }
+      },
     },
     {
       name: "Actions",
       cell: (row) => (
         <>
-        <Link to={`/view-customer/${row.CustID}`}
-                        className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                        >
-                            <Icon icon='lucide:eye' />
-        </Link>
+          <Link
+            to={`/view-customer/${row.CustID}`}
+            className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
+          >
+            <Icon icon='lucide:eye' />
+          </Link>
         </>
       ),
     },
   ];
 
+  // Search filter
   const filteredCustomers = customers.filter((customer) =>
-    customer.FullName?.toLowerCase().includes(searchText.toLowerCase())
-  || customer.Email?.toLowerCase().includes(searchText.toLowerCase())
-  || customer.PhoneNumber?.toLowerCase().includes(searchText.toLowerCase())
-
+    customer.FullName?.toLowerCase().includes(searchText.toLowerCase()) ||
+    customer.Email?.toLowerCase().includes(searchText.toLowerCase()) ||
+    customer.PhoneNumber?.toLowerCase().includes(searchText.toLowerCase())
   );
 
   return (
     <div className="row gy-4">
       <div className="col-12">
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <h5></h5>
-         
+          <h5>Customer List</h5>
         </div>
 
         <div className="chat-main card overflow-hidden p-3">
           <div className='card-header border-bottom bg-base pt-0 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between'>
             <div className='d-flex align-items-center flex-wrap gap-3'>
-
-
               <form className='navbar-search'>
                 <input
                   type='text'
-                  className='bg-base  w-auto form-control '
+                  className='bg-base w-auto form-control'
                   name='search'
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
@@ -124,11 +108,9 @@ const CustomerLayer = () => {
                 />
                 <Icon icon='ion:search-outline' className='icon' />
               </form>
-
             </div>
-            {/* <button className="btn btn-primary-600 radius-8 px-14 py-6 text-sm" onClick={() => { resetForm(); clearAllErrors();  setShowModal(true); }}>
-                Add Distributor
-            </button> */}
+
+            {/* Uncomment if Add Customer button needed */}
             {/* <Link
               to='/add-customer'
               className='btn btn-primary-600 radius-8 px-14 py-6 text-sm'
@@ -140,6 +122,7 @@ const CustomerLayer = () => {
               Add Customer
             </Link> */}
           </div>
+
           <DataTable
             columns={columns}
             data={filteredCustomers}
@@ -152,8 +135,6 @@ const CustomerLayer = () => {
           />
         </div>
       </div>
-
-
     </div>
   );
 };
