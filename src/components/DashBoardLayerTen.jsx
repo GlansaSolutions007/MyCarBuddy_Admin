@@ -6,7 +6,6 @@ import TopCustomer from "./child/TopCustomer";
 import OverallReport from "./child/OverallReport";
 import PurchaseAndSales from "./child/PurchaseAndSales";
 import RecentTransactions from "./child/RecentTransactions";
-import TodaysBookings from "./child/TodaysBookings";
 
 const DashBoardLayerTen = () => {
   return (
@@ -16,9 +15,6 @@ const DashBoardLayerTen = () => {
 
       {/* IncomeVsExpense */}
       <IncomeVsExpense />
-
-      {/* today bookings */}
-      < TodaysBookings />
 
       {/* UsersChart */}
       {/* <UsersChart /> */}
