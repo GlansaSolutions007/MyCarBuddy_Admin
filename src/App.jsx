@@ -95,6 +95,7 @@ import ComingSoonPage from "./pages/ComingSoonPage";
 import AccessDeniedPage from "./pages/AccessDeniedPage";
 import MaintenancePage from "./pages/MaintenancePage";
 import BlankPagePage from "./pages/BlankPagePage";
+import TodaysBookingPage from "./pages/TodaysBookingPage";
 
 
 
@@ -241,6 +242,7 @@ function App() {
           <Route exact path="/add-employee" element={<EmployeeAddPage />} />
           <Route exact path="/edit-employee/:EmployeeID" element={<EmployeeAddPage />} />
           <Route exact path="/notifications" element={<NotificationPage />} />
+          <Route exact path='/todays-booking' element={<TodaysBookingPage />} />
         </Route>
 
 

@@ -90,7 +90,10 @@ const PaymentsListLayer = () => {
       </Link>
     ) },
     { name: "Invoice No", selector: (row) => row.InvoiceNumber },
-    { name: "Amount Paid", selector: (row) => `₹${row.AmountPaid}` },
+    { name: "Total Amount", selector: (row) => `₹${row.AmountPaid}` },
+    { name: "Payment Status", selector: (row) => (row.PaymentStatus?.toLowerCase() === "success" ? "Paid" : "Pending"),
+ },
+    { name: "Payment Mode", selector: (row) => row.PaymentMode },
     { name: "Transaction ID", selector: (row) => row.TransactionID },
     {
       name: "Payment Date",
@@ -102,13 +105,14 @@ const PaymentsListLayer = () => {
         ).padStart(2, "0")}/${date.getFullYear()}`;
       },
     },
+    { name: "Refund Amount", selector: (row) => row.RefundAmount ? `₹${row.RefundAmount}` : 0 },
     {
       name: "Refund Status",
       selector: (row) =>
         row.IsRefunded ? (
           <span className="badge bg-danger">Refunded</span>
         ) : (
-          <span className="badge bg-success">No Refund</span>
+          <span className="badge bg-success">Not Refund</span>
         ),
     },
     // {

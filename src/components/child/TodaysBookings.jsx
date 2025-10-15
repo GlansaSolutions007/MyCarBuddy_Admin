@@ -35,7 +35,7 @@ const TodaysBookings = () => {
           <div className="d-flex align-items-center flex-wrap gap-2 justify-content-between">
             <h6 className="mb-2 fw-bold text-lg mb-0">Todays Booking</h6>
             <Link
-              to="/today-booking"
+              to="/todays-booking"
               className="text-primary-600 hover-text-primary d-flex align-items-center gap-1"
             >
               View All
@@ -48,9 +48,10 @@ const TodaysBookings = () => {
             <table className="table bordered-table mb-0">
               <thead>
                 <tr>
-                  <th scope="col">Tech ID</th>
+                  <th scope="col">ID</th>
                   <th scope="col">Tech Name</th>
                   <th scope="col">Count</th>
+                  <th scope="col"></th>
                 </tr>
               </thead>
               <tbody>
@@ -58,15 +59,18 @@ const TodaysBookings = () => {
                   data.filter(item => item.techID !== 0).map((item, index) => (
                     <tr key={item.techID || index}>
                       <td>
-                        <Link to={`/view-technician/${item.techID}?from=today`}>
-                          <span className="text-primary-500">{item.techID}</span>
-                        </Link>
+                        <span className="text-secondary-light">{item.techID}</span>
                       </td>
                       <td>
                         <span className="text-secondary-light">{item.techFullName}</span>
                       </td>
                       <td>
                         <span className="text-secondary-light">{item.bookingCount}</span>
+                      </td>
+                      <td>
+                        <Link to={`/view-technician/${item.techID}?from=today`}>
+                          <span className="text-primary-500">View</span>
+                        </Link>
                       </td>
                     </tr>
                   ))

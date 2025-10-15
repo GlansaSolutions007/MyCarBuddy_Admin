@@ -139,11 +139,7 @@ const BookingLayer = () => {
 
   const columns = [
     {
-<<<<<<< HEAD
-      name: "Booking ID",
-=======
       name: "Booking id",
->>>>>>> 62efc5b073d85084e24712ee2425fa89b72a5bbd
       selector: (row) => (
         <Link to={`/view-booking/${row.BookingID}`} className="text-primary">
           {row.BookingTrackID}
