@@ -139,7 +139,11 @@ const BookingLayer = () => {
 
   const columns = [
     {
+<<<<<<< HEAD
       name: "Booking ID",
+=======
+      name: "Booking id",
+>>>>>>> 62efc5b073d85084e24712ee2425fa89b72a5bbd
       selector: (row) => (
         <Link to={`/view-booking/${row.BookingID}`} className="text-primary">
           {row.BookingTrackID}
@@ -148,7 +152,7 @@ const BookingLayer = () => {
       width: "150px",
     },
     {
-      name: "Booking Date",
+      name: "Booking date",
       selector: (row) => {
         if (!row.BookingDate) return "";
         const date = new Date(row.BookingDate);
@@ -159,18 +163,18 @@ const BookingLayer = () => {
       width: "120px",
     },
     {
-      name: "TimeSlot",
+      name: "Time slot",
       selector: (row) => row.TimeSlot,
       width: "160px",
     },
     {
-      name: "BookingPrice",
+      name: "Booking price",
       selector: (row) =>
         `₹${row.TotalPrice + row.GSTAmount - row.CouponAmount}`,
       width: "120px",
     },
     {
-      name: "Customer Name",
+      name: "Customer name",
       selector: (row) => (
         <>
           <span className="fw-bold">{row.CustFullName}</span> <br />
