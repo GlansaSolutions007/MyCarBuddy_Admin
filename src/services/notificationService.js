@@ -1,4 +1,5 @@
 import { toast } from 'react-toastify';
+import axios from 'axios';
 
 // Notification types for different events
 export const NOTIFICATION_TYPES = {
@@ -42,41 +43,36 @@ class NotificationService {
   // Get user notifications
   async getUserNotifications(userId) {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${this.baseUrl}/api/Notifications/GetUserNotifications/${userId}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch notifications');
-      }
-
-      return await response.json();
+      // userId is now already decrypted from HeaderOne
+      const roleFromStorage = localStorage.getItem('role');
+      const userRole = roleFromStorage ? roleFromStorage.toLowerCase() : 'customer';
+      const url = `${this.baseUrl}Bookings/notifications?userId=${userId}&userRole=${userRole}`;
+      console.log('Notification API URL:', url);
+      console.log('Using decrypted userId:', userId);
+      const response = await axios.get(url);
+      console.log('Notification API Raw Response:', response.data);
+      const payload = response?.data;
+      // Normalize: backend may return an array or an object with { success, data }
+      if (Array.isArray(payload)) return payload;
+      if (payload && Array.isArray(payload.data)) return payload.data;
+      return [];
     } catch (error) {
       console.error('Error fetching notifications:', error);
+      console.error('Error details:', error.response?.data || error.message);
       throw error;
     }
   }
 
   // Mark notification as read
-  async markAsRead(notificationId) {
+  async markAsRead(notificationId, userId) {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${this.baseUrl}/api/Notifications/MarkAsRead/${notificationId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      // userId is now already decrypted from HeaderOne
+      const roleFromStorage = localStorage.getItem('role');
+      const userRole = roleFromStorage ? roleFromStorage.toLowerCase() : 'customer';
+      const response = await axios.put(`${this.baseUrl}Bookings/notifications/${notificationId}/read`, null, {
+        params: { userId: userId, userRole: userRole },
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to mark notification as read');
-      }
-
-      return await response.json();
+      return response.data;
     } catch (error) {
       console.error('Error marking notification as read:', error);
       throw error;

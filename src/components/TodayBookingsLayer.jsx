@@ -107,7 +107,7 @@ const TodayBookingsLayer = () => {
 
   return (
     <div className="row gy-4">
-      <div className="col-12">
+      <div className="col-12 col-xxl-4">
         <div className="card overflow-hidden p-3">
           <div className="card-header">
             <div className="d-flex justify-content-between align-items-center mb-2">

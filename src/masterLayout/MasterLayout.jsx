@@ -312,6 +312,33 @@ const MasterLayout = ({ children }) => {
     setupFirebaseNotifications();
   }, []);
 
+  // Load existing notifications for this user from API
+  useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        if (!userId) return;
+        const results = await notificationService.getUserNotifications(userId);
+        const normalized = (results || []).map((n) => ({
+          id: n.id || n.notificationId || n.Id || n.NotificationId || Date.now(),
+          title: n.title || n.Title || 'Notification',
+          message: n.message || n.Message || '',
+          timestamp: n.timestamp || n.Timestamp || n.createdAt || n.CreatedAt || new Date().toISOString(),
+          read: Boolean(n.read ?? n.isRead ?? n.IsRead ?? false),
+          type: n.type || n.Type || 'general'
+        }));
+        setNotifications((prev) => {
+          // Prepend API notifications, keep any existing real-time ones
+          const rtOnly = prev.filter((p) => String(p.id).length > 12); // keep local Date.now ids
+          return [...normalized, ...rtOnly];
+        });
+        setUnreadCount(normalized.filter((n) => !n.read).length);
+      } catch (err) {
+        console.error('Failed to load notifications:', err);
+      }
+    };
+    loadNotifications();
+  }, [userId]);
+
   let sidebarControl = () => {
     seSidebarActive(!sidebarActive);
   };
@@ -931,6 +958,10 @@ const MasterLayout = ({ children }) => {
                                 )
                               );
                               setUnreadCount((prev) => Math.max(0, prev - 1));
+                              // Persist read state
+                              try {
+                                notificationService.markAsRead(notification.id, userId);
+                              } catch (_) {}
                             }}
                           >
                             <div className="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
@@ -959,12 +990,26 @@ const MasterLayout = ({ children }) => {
                       )}
                     </div>
                     <div className="text-center py-12 px-16">
-                      <Link
-                        to="/notification-alert"
-                        className="text-primary-600 fw-semibold text-md"
+                      <button
+                        onClick={async () => {
+                          try {
+                            // Mark all unread notifications as read
+                            const unreadNotifications = notifications.filter(n => !n.read);
+                            for (const notification of unreadNotifications) {
+                              await notificationService.markAsRead(notification.id, userId);
+                            }
+                            // Update local state
+                            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                            setUnreadCount(0);
+                          } catch (error) {
+                            console.error('Error clearing notifications:', error);
+                          }
+                        }}
+                        className="text-primary-600 fw-semibold text-md border-0 bg-transparent"
+                        disabled={unreadCount === 0}
                       >
-                        See All Notifications
-                      </Link>
+                        Clear All
+                      </button>
                     </div>
                   </div>
                 </div>
