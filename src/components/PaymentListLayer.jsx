@@ -102,6 +102,15 @@ const PaymentsListLayer = () => {
         ).padStart(2, "0")}/${date.getFullYear()}`;
       },
     },
+    {
+      name: "Refund Status",
+      selector: (row) =>
+        row.IsRefunded ? (
+          <span className="badge bg-danger">Refunded</span>
+        ) : (
+          <span className="badge bg-success">No Refund</span>
+        ),
+    },
     // {
     //   name: "Refunded",
     //   selector: (row) =>

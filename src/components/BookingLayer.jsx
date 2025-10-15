@@ -139,12 +139,13 @@ const BookingLayer = () => {
 
   const columns = [
     {
-      name: "BookingID",
+      name: "Booking ID",
       selector: (row) => (
         <Link to={`/view-booking/${row.BookingID}`} className="text-primary">
           {row.BookingTrackID}
         </Link>
       ),
+      width: "150px",
     },
     {
       name: "Booking Date",
@@ -155,15 +156,18 @@ const BookingLayer = () => {
           date.getMonth() + 1
         ).padStart(2, "0")}/${date.getFullYear()}`;
       },
+      width: "120px",
     },
     {
       name: "TimeSlot",
       selector: (row) => row.TimeSlot,
+      width: "160px",
     },
     {
       name: "BookingPrice",
       selector: (row) =>
         `₹${row.TotalPrice + row.GSTAmount - row.CouponAmount}`,
+      width: "120px",
     },
     {
       name: "Customer Name",
@@ -173,6 +177,7 @@ const BookingLayer = () => {
           {row.CustPhoneNumber || ""}
         </>
       ),
+      width: "150px",
     },
     {
       name: "Technician",
@@ -185,9 +190,10 @@ const BookingLayer = () => {
           {row.TechPhoneNumber || ""}
         </>
       ),
+      width: "150px",
     },
     {
-      name: "Status",
+      name: "Booking Status",
       selector: (row) => (
         <span
           className={`badge ${
@@ -201,6 +207,31 @@ const BookingLayer = () => {
           {row.BookingStatus}
         </span>
       ),
+      width: "120px",
+    },
+    {
+      name: "Payment Status",
+      selector: (row) => {
+        const paymentStatus = row.PaymentStatus || "Pending";
+        let displayText = paymentStatus;
+        if (paymentStatus.toLowerCase() === "success") {
+          displayText = "Paid";
+        }
+        return (
+          <span
+            className={`badge ${
+              displayText.toLowerCase() === "paid"
+                ? "bg-success"
+                : displayText.toLowerCase() === "pending"
+                ? "bg-warning"
+                : "bg-danger"
+            }`}
+          >
+            {displayText}
+          </span>
+        );
+      },
+      width: "120px",
     },
     {
       name: "Actions",
@@ -232,6 +263,7 @@ const BookingLayer = () => {
           </div>
         );
       },
+      width: "100px",
     },
   ];
 
