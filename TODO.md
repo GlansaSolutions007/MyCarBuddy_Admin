@@ -1,6 +1,7 @@
-# TODO for TechnicianViewLayer Filter Buttons
+# TODO: Implement Refund Popup Modifications in PaymentListLayer.jsx
 
-- [x] Add filterMode state defaulting to 'today'.
-- [x] Create filteredBookings logic to filter based on BookingDate for 'today' mode.
-- [x] Add "Today Bookings" and "All Bookings" toggle buttons above the Accordion.
-- [x] Update no-data message based on filter mode.
+- [ ] Update refund button condition to show only if remaining amount > 0
+- [ ] Modify handleRefund function to calculate remaining amount
+- [ ] Add logic to show notification if full amount is refunded
+- [ ] Update Swal popup to pre-fill with remaining amount and validate accordingly
+- [ ] Update payment state after successful refund

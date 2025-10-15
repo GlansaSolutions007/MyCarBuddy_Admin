@@ -7,7 +7,7 @@ import Swal from "sweetalert2";
 
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 
 const PaymentsListLayer = () => {
   const [payments, setPayments] = useState([]);
@@ -39,17 +39,26 @@ const PaymentsListLayer = () => {
   };
 
   const handleRefund = async (row) => {
+    const refundedAmount = row.RefundAmount || 0;
+    const remaining = row.AmountPaid - refundedAmount;
+
+    if (remaining <= 0) {
+      Swal.fire('Notification', 'Your full amount is refunded.', 'info');
+      return;
+    }
+
     const { value: refundAmount } = await Swal.fire({
       title: 'Enter Refund Amount',
       input: 'number',
-      inputLabel: `Refund Amount (Max: ₹${row.AmountPaid})`,
-      inputValue: row.AmountPaid,
+      inputLabel: `Refund Amount (Max: ₹${remaining})`,
+      inputValue: remaining,
       inputValidator: (value) => {
-        if (!value || value <= 0) {
-          return 'Please enter a valid amount!';
+        const num = parseFloat(value);
+        if (isNaN(num) || num <= 0) {
+          return 'Please enter a valid positive amount!';
         }
-        if (parseFloat(value) > row.AmountPaid) {
-          return 'Refund amount cannot exceed the paid amount!';
+        if (num > remaining) {
+          return 'Refund amount cannot exceed the remaining amount!';
         }
       },
       showCancelButton: true,
@@ -61,6 +70,7 @@ const PaymentsListLayer = () => {
 
     try {
       const res = await axios.post(`${API_BASE}Refund/Refund`, {
+        bookingId : row.BookingID,
         paymentId: row.TransactionID,
         amount: parseFloat(refundAmount)
       }, {
@@ -68,8 +78,10 @@ const PaymentsListLayer = () => {
       });
 
       if (res.data.success) {
+        const newRefundAmount = refundedAmount + parseFloat(refundAmount);
+        const isFullyRefunded = newRefundAmount >= row.AmountPaid;
         const updatedPayments = payments.map((p) =>
-          p.PaymentID === row.PaymentID ? { ...p, IsRefunded: true } : p
+          p.PaymentID === row.PaymentID ? { ...p, RefundAmount: newRefundAmount, IsRefunded: isFullyRefunded } : p
         );
         setPayments(updatedPayments);
         Swal.fire('Success', 'Refund processed successfully!', 'success');
@@ -83,18 +95,18 @@ const PaymentsListLayer = () => {
   };
 
   const columns = [
-    { name: "S.No", selector: (_, index) => index + 1, width: "70px" },
+    { name: "S.No", selector: (_, index) => index + 1, width: "60px" },
     { name: "Booking ID", selector: (row) => (
       <Link to={`/view-booking/${row.BookingID}`} className="text-primary">
         {row.BookingTrackID}
       </Link>
-    ) },
-    { name: "Invoice No", selector: (row) => row.InvoiceNumber },
+    ), width: "150px" },
+    { name: "Invoice No", selector: (row) => (row.InvoiceNumber), width: "150px" },
     { name: "Total Amount", selector: (row) => `₹${row.AmountPaid}` },
     { name: "Payment Status", selector: (row) => (row.PaymentStatus?.toLowerCase() === "success" ? "Paid" : "Pending"),
  },
     { name: "Payment Mode", selector: (row) => row.PaymentMode },
-    { name: "Transaction ID", selector: (row) => row.TransactionID },
+    { name: "Transaction ID", selector: (row) => (row.TransactionID), width: "180px" },
     {
       name: "Payment Date",
       selector: (row) => {
@@ -107,12 +119,12 @@ const PaymentsListLayer = () => {
     },
     { name: "Refund Amount", selector: (row) => row.RefundAmount ? `₹${row.RefundAmount}` : 0 },
     {
-      name: "Refund Status",
+      name: "Refund Initialization",
       selector: (row) =>
         row.IsRefunded ? (
-          <span className="badge bg-danger">Refunded</span>
+          <span className="badge bg-danger">Raised</span>
         ) : (
-          <span className="badge bg-success">Not Refund</span>
+          <span className="badge bg-success">Not Raised</span>
         ),
     },
     // {

@@ -230,6 +230,47 @@ const BookingViewLayer = () => {
     }
   };
 
+  const handleRefund = async (payment) => {
+    const { value: refundAmount } = await Swal.fire({
+      title: 'Enter Refund Amount',
+      input: 'number',
+      inputLabel: `Refund Amount (Max: ₹${payment.AmountPaid})`,
+      inputValue: payment.AmountPaid,
+      inputValidator: (value) => {
+        if (!value || value <= 0) {
+          return 'Please enter a valid amount!';
+        }
+        if (parseFloat(value) > payment.AmountPaid) {
+          return 'Refund amount cannot exceed the paid amount!';
+        }
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Refund',
+      cancelButtonText: 'Cancel'
+    });
+
+    if (!refundAmount) return;
+
+    try {
+      const res = await axios.post(`${API_BASE}Refund/Refund`, {
+        paymentId: payment.TransactionID,
+        amount: parseFloat(refundAmount)
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.data.success) {
+        Swal.fire('Success', 'Refund processed successfully!', 'success');
+        fetchBookingData(); // Refresh data
+      } else {
+        Swal.fire('Error', res.data.message || 'Failed to process refund.', 'error');
+      }
+    } catch (error) {
+      Swal.fire('Error', 'Failed to process refund.', 'error');
+      console.error('Refund error:', error);
+    }
+  };
+
 
   // Filtered technicians for the reassign dropdown
   const filteredTechnicians = technicians.filter(tech => {
@@ -389,7 +430,35 @@ const BookingViewLayer = () => {
                     </li>
                   )}
 
+
+
                 </ul>
+
+                {/* Invoice and Refund buttons */}
+                {bookingData.Payments && bookingData.Payments[0] && (bookingData.Payments[0].FolderPath || bookingData.Payments[0].IsRefunded) && (
+                  <div className="d-flex gap-2 mt-3">
+                    {bookingData.Payments[0].FolderPath && (
+                      <a
+                        href={bookingData.Payments[0].FolderPath}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-warning btn-sm"
+                        title="Invoice"
+                      >
+                        Invoice
+                      </a>
+                    )}
+                    {bookingData.Payments[0].IsRefunded && (
+                      <button
+                        onClick={() => handleRefund(bookingData.Payments[0])}
+                        className="btn btn-danger btn-sm"
+                        title="Refund"
+                      >
+                        Refund
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {/* Reschedule & Cancel Buttons */}
                 {bookingData && !["Completed", "Cancelled", "Refunded"].includes(bookingData.BookingStatus) && (
