@@ -139,7 +139,7 @@ const BookingLayer = () => {
 
   const columns = [
     {
-      name: "BookingID",
+      name: "Booking id",
       selector: (row) => (
         <Link to={`/view-booking/${row.BookingID}`} className="text-primary">
           {row.BookingTrackID}
@@ -147,7 +147,7 @@ const BookingLayer = () => {
       ),
     },
     {
-      name: "Booking Date",
+      name: "Booking date",
       selector: (row) => {
         if (!row.BookingDate) return "";
         const date = new Date(row.BookingDate);
@@ -157,16 +157,16 @@ const BookingLayer = () => {
       },
     },
     {
-      name: "TimeSlot",
+      name: "Time slot",
       selector: (row) => row.TimeSlot,
     },
     {
-      name: "BookingPrice",
+      name: "Booking price",
       selector: (row) =>
         `₹${row.TotalPrice + row.GSTAmount - row.CouponAmount}`,
     },
     {
-      name: "Customer Name",
+      name: "Customer name",
       selector: (row) => (
         <>
           <span className="fw-bold">{row.CustFullName}</span> <br />

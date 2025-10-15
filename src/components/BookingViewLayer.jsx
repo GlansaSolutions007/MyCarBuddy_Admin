@@ -36,8 +36,8 @@ const BookingViewLayer = () => {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [newDate, setNewDate] = useState("");
   const [reason, setReason] = useState("");
-   const [selectedTechnician, setSelectedTechnician] = useState(null);
-     const [technicians, setTechnicians] = useState([]);
+  const [selectedTechnician, setSelectedTechnician] = useState(null);
+  const [technicians, setTechnicians] = useState([]);
   const [timeSlots, setTimeSlots] = useState([]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
   const token = localStorage.getItem("token");
@@ -45,8 +45,7 @@ const BookingViewLayer = () => {
   const { bookingId } = useParams();
 
 
-      const fetchBookingData = async () => {
-
+  const fetchBookingData = async () => {
     try {
       const res = await axios.get(`${API_BASE}Bookings/BookingId?Id=${bookingId}`, {
         headers: {
@@ -96,7 +95,7 @@ const BookingViewLayer = () => {
   };
 
   useEffect(() => {
-  fetchTechnicians();
+    fetchTechnicians();
     fetchBookingData();
     fetchTimeSlots();
   }, [bookingId]);
@@ -109,8 +108,8 @@ const BookingViewLayer = () => {
     { id: 2, amount: "₹2500", method: "Credit Card", date: "2025-06-10" },
   ];
 
-   // Reschedule API
- const handleReschedule = async () => {
+  // Reschedule API
+  const handleReschedule = async () => {
     if (!newDate) {
       Swal.fire("Error", "Please select a new date.", "error");
       return;
@@ -134,7 +133,7 @@ const BookingViewLayer = () => {
 
     try {
       await axios.post(`${API_BASE}Reschedules`, {
-       bookingID: bookingId,
+        bookingID: bookingId,
         reason: reason,
         oldSchedule: bookingData.BookingDate,
         newSchedule: newDate,
@@ -157,52 +156,52 @@ const BookingViewLayer = () => {
     }
   };
 
-    // Reassign Technician
+  // Reassign Technician
   const handleAssignClick = (booking) => {
     setAssignModalOpen(true);
   };
 
-    const handleAssignConfirm = async () => {
-      console.log(selectedTechnician);
-      try {
-        const res = await axios.put(
-          `${API_BASE}Bookings/assign-technician`,
-          {
-            TechID: selectedTechnician.value,
-            BookingID: bookingId,
-          },
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-  
-        if (res.data.success) {
-          Swal.fire({
-            icon: "success",
-            title: "Success",
-            text: res.data.message || "Technician assigned successfully",
-          });
-          setSelectedTechnician(null);
-          setAssignModalOpen(false);
-          fetchBookingData();
-        } else {
-          Swal.fire({
-           icon: "success",
-            title: "Success",
-            text: "Technician assigned successfully",
-          });
+  const handleAssignConfirm = async () => {
+    console.log(selectedTechnician);
+    try {
+      const res = await axios.put(
+        `${API_BASE}Bookings/assign-technician`,
+        {
+          TechID: selectedTechnician.value,
+          BookingID: bookingId,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
         }
-      } catch (error) {
-        console.error("Failed to assign technician", error);
-        if (error.response) {
-          Swal.fire({
-           icon: "success",
-            title: "Success",
-            text: "Technician assigned successfully",
-          });
-        }
+      );
+
+      if (res.data.success) {
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: res.data.message || "Technician assigned successfully",
+        });
+        setSelectedTechnician(null);
+        setAssignModalOpen(false);
+        fetchBookingData();
+      } else {
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: "Technician assigned successfully",
+        });
       }
-    };
+    } catch (error) {
+      console.error("Failed to assign technician", error);
+      if (error.response) {
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: "Technician assigned successfully",
+        });
+      }
+    }
+  };
 
   // Cancel API
   const handleCancel = async () => {
@@ -232,6 +231,11 @@ const BookingViewLayer = () => {
   };
 
 
+  // Filtered technicians for the reassign dropdown
+  const filteredTechnicians = technicians.filter(tech => {
+    return bookingData && bookingData.TechID ? tech.value !== bookingData.TechID : true;
+  });
+
   return (
     <div className='row gy-4 mt-3'>
       {/* Left Profile Card */}
@@ -242,42 +246,42 @@ const BookingViewLayer = () => {
             alt='Main Background'
             className='w-100 object-fit-cover'
           /> */}
-            {bookingData ? (
-          <div className='pb-24 ms-16 mb-24 me-16  '>
-            <div className='text-center border border-top-0 border-start-0 border-end-0'>
-              {bookingData.ProfileImage ? (
-                <img
-                  src={`${API_IMAGE}${bookingData.ProfileImage}`}
-                  alt='WowDash React Vite'
-                  className='border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover'
-                />
-              ): (
-                <img
-                  src='/assets/images/user-grid/user-grid-img14.png'
-                  alt='WowDash React Vite'
-                  className='border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover'
-                />
-              )}
-              {/* <img
+          {bookingData ? (
+            <div className='pb-24 ms-16 mb-24 me-16  '>
+              <div className='text-center border border-top-0 border-start-0 border-end-0'>
+                {bookingData.ProfileImage ? (
+                  <img
+                    src={`${API_IMAGE}${bookingData.ProfileImage}`}
+                    alt='WowDash React Vite'
+                    className='border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover'
+                  />
+                ) : (
+                  <img
+                    src='/assets/images/user-grid/user-grid-img14.png'
+                    alt='WowDash React Vite'
+                    className='border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover'
+                  />
+                )}
+                {/* <img
                 src='/assets/images/user-grid/user-grid-img14.png'
                 alt='WowDash React Vite'
                 className='border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover'
               /> */}
-              <h6 className='mb-0 mt-16'> {bookingData.CustomerName || "N/A"}</h6>
+                <h6 className='mb-0 mt-16'> {bookingData.CustomerName || "N/A"}</h6>
 
-            </div>
-            <div className='mt-24'>
-              <h6 className='text-xl mb-16'>Personal Info</h6>
-              <ul>
-                <li className='d-flex align-items-center gap-1 mb-12'>
-                  <span className='w-30 text-md fw-semibold text-primary-light'>
-                    Full Name
-                  </span>
-                  <span className='w-70 text-secondary-light fw-medium'>
-                    : {bookingData.CustomerName || "N/A"}
-                  </span>
-                </li>
-                {/* <li className='d-flex align-items-center gap-1 mb-12'>
+              </div>
+              <div className='mt-24'>
+                <h6 className='text-xl mb-16'>Personal Info</h6>
+                <ul>
+                  <li className='d-flex align-items-center gap-1 mb-12'>
+                    <span className='w-30 text-md fw-semibold text-primary-light'>
+                      Full Name
+                    </span>
+                    <span className='w-70 text-secondary-light fw-medium'>
+                      : {bookingData.CustomerName || "N/A"}
+                    </span>
+                  </li>
+                  {/* <li className='d-flex align-items-center gap-1 mb-12'>
                   <span className='w-30 text-md fw-semibold text-primary-light'>
                     {" "}
                     Email
@@ -286,44 +290,44 @@ const BookingViewLayer = () => {
                     : {bookingData.CustomerEmail}
                   </span>
                 </li> */}
-                <li className='d-flex align-items-center gap-1 mb-12'>
-                  <span className='w-30 text-md fw-semibold text-primary-light'>
-                    {" "}
-                    Phone Number
-                  </span>
-                  <span className='w-70 text-secondary-light fw-medium'>
-                    : {bookingData.PhoneNumber}
-                  </span>
-                </li>
-              
-                <li className='d-flex align-items-center gap-1 mb-12'>
-                  <span className='w-30 text-md fw-semibold text-primary-light'>
-                    {" "}
-                    Vehicle
-                  </span>
-                  <span className='w-70 text-secondary-light fw-medium'>
-                    : {bookingData.VehicleNumber}
-                  </span>
-                </li>
-                <li className='d-flex align-items-center gap-1 mb-12'>
-                  <span className='w-30 text-md fw-semibold text-primary-light'>
-                    {" "}
-                     Price
-                  </span>
-                  <span className='w-70 text-secondary-light fw-medium'>
-                    : ₹{Number(bookingData.TotalPrice).toFixed(2)}
-                  </span>
-                </li>
-                 <li className='d-flex align-items-center gap-1 mb-12'>
-                  <span className='w-30 text-md fw-semibold text-primary-light'>
-                    {" "}
-                     GST
-                  </span>
-                  <span className='w-70 text-secondary-light fw-medium'>
-                    : ₹{Number(bookingData.GSTAmount).toFixed(2)}
-                  </span>
-                </li>
-                {bookingData.CouponAmount ? (
+                  <li className='d-flex align-items-center gap-1 mb-12'>
+                    <span className='w-30 text-md fw-semibold text-primary-light'>
+                      {" "}
+                      Phone Number
+                    </span>
+                    <span className='w-70 text-secondary-light fw-medium'>
+                      : {bookingData.PhoneNumber}
+                    </span>
+                  </li>
+
+                  <li className='d-flex align-items-center gap-1 mb-12'>
+                    <span className='w-30 text-md fw-semibold text-primary-light'>
+                      {" "}
+                      Vehicle
+                    </span>
+                    <span className='w-70 text-secondary-light fw-medium'>
+                      : {bookingData.VehicleNumber}
+                    </span>
+                  </li>
+                  <li className='d-flex align-items-center gap-1 mb-12'>
+                    <span className='w-30 text-md fw-semibold text-primary-light'>
+                      {" "}
+                      Price
+                    </span>
+                    <span className='w-70 text-secondary-light fw-medium'>
+                      : ₹{Number(bookingData.TotalPrice).toFixed(2)}
+                    </span>
+                  </li>
+                  <li className='d-flex align-items-center gap-1 mb-12'>
+                    <span className='w-30 text-md fw-semibold text-primary-light'>
+                      {" "}
+                      GST
+                    </span>
+                    <span className='w-70 text-secondary-light fw-medium'>
+                      : ₹{Number(bookingData.GSTAmount).toFixed(2)}
+                    </span>
+                  </li>
+                  {bookingData.CouponAmount ? (
                     <li className='d-flex align-items-center gap-1 mb-12'>
                       <span className='w-30 text-md fw-semibold text-primary-light'>
                         Coupon
@@ -334,82 +338,82 @@ const BookingViewLayer = () => {
                     </li>
                   ) : null}
 
-                   <li className='d-flex align-items-center gap-1 mb-12'>
+                  <li className='d-flex align-items-center gap-1 mb-12'>
+                    <span className='w-30 text-md fw-semibold text-primary-light'>
+                      Total Amount
+                    </span>
+                    <span className='w-70 text-secondary-light fw-medium'>
+                      : ₹{Number(bookingData.TotalPrice + bookingData.GSTAmount - bookingData.CouponAmount).toFixed(2)}
+                    </span>
+                  </li>
+
+                  {bookingData.TechID ? (
+                    <>
+                      <li className='d-flex align-items-center gap-1 mb-12'>
+                        <span className='w-30 text-md fw-semibold text-primary-light'>
+                          {" "}
+                          Technician
+                        </span>
+                        <span className='w-70 text-secondary-light fw-medium'>
+                          : {bookingData.TechID}
+                        </span>
+                      </li>
+                      <li className='d-flex align-items-center gap-1 mb-12'>
+                        <span className='w-30 text-md fw-semibold text-primary-light'>
+                          {" "}
+                          Technician Name
+                        </span>
+                        <span className='w-70 text-secondary-light fw-medium'>
+                          : {bookingData.TechFullName}
+                        </span>
+                      </li>
+                      <li className='d-flex align-items-center gap-1 mb-12'>
+                        <span className='w-30 text-md fw-semibold text-primary-light'>
+                          {" "}
+                          Technician Number
+                        </span>
+                        <span className='w-70 text-secondary-light fw-medium'>
+                          : {bookingData.TechPhoneNumber}
+                        </span>
+                      </li>
+                    </>
+                  ) : (
+                    <li className='d-flex align-items-center gap-1 mb-12'>
                       <span className='w-30 text-md fw-semibold text-primary-light'>
-                        Total Amount
+                        {" "}
+                        Technician
                       </span>
                       <span className='w-70 text-secondary-light fw-medium'>
-                        : ₹{Number(bookingData.TotalPrice + bookingData.GSTAmount - bookingData.CouponAmount).toFixed(2)}
+                        : N/A
                       </span>
                     </li>
+                  )}
 
-                {bookingData.TechID ? (
-                 <>
-                  <li className='d-flex align-items-center gap-1 mb-12'>
-                    <span className='w-30 text-md fw-semibold text-primary-light'>
-                      {" "}
-                      Technician
-                    </span>
-                    <span className='w-70 text-secondary-light fw-medium'>
-                      : {bookingData.TechID}
-                    </span>
-                  </li>
-                  <li className='d-flex align-items-center gap-1 mb-12'>
-                    <span className='w-30 text-md fw-semibold text-primary-light'>
-                      {" "}
-                      Technician Name
-                    </span>
-                    <span className='w-70 text-secondary-light fw-medium'>
-                      : {bookingData.TechFullName}
-                    </span>
-                  </li>
-                  <li className='d-flex align-items-center gap-1 mb-12'>
-                    <span className='w-30 text-md fw-semibold text-primary-light'>
-                      {" "}
-                      Technician Number
-                    </span>
-                    <span className='w-70 text-secondary-light fw-medium'>
-                      : {bookingData.TechPhoneNumber}
-                    </span>
-                  </li> 
-                 </>
-                ) : (
-                  <li className='d-flex align-items-center gap-1 mb-12'>
-                    <span className='w-30 text-md fw-semibold text-primary-light'>
-                      {" "}
-                      Technician
-                    </span>
-                    <span className='w-70 text-secondary-light fw-medium'>
-                      : N/A
-                    </span>
-                  </li>
-                )}
+                </ul>
 
-              </ul>
-
-               {/* Reschedule & Cancel Buttons */}
-               {bookingData && !["Completed", "Cancelled", "Refunded"].includes(bookingData.BookingStatus) && (
-                 <div className="d-flex gap-2 mt-3">
-                   <button
-                     className="btn btn-warning btn-sm"
-                     onClick={() => setShowReschedule(!showReschedule)}
-                   >
-                     Reschedule
-                   </button>
-                   <button
-                     className="btn btn-info btn-sm"
-                     onClick={() => handleAssignClick(bookingId)}
-                   >
-                     Reassign
-                   </button>
-                   {/* <button
+                {/* Reschedule & Cancel Buttons */}
+                {bookingData && !["Completed", "Cancelled", "Refunded"].includes(bookingData.BookingStatus) && (
+                  <div className="d-flex gap-2 mt-3">
+                    <button
+                      className="btn btn-warning btn-sm"
+                      onClick={() => setShowReschedule(!showReschedule)}
+                    >
+                      Reschedule
+                    </button>
+                    <button
+                      className="btn btn-info btn-sm"
+                      onClick={() => handleAssignClick(bookingId)}
+                    >
+                      Reassign
+                    </button>
+                    {/* <button
                      className="btn btn-danger btn-sm"
                      onClick={handleCancel}
                    >
                      Cancel
                    </button> */}
-                 </div>
-               )}
+                  </div>
+                )}
 
                 {/* Reschedule Date Picker */}
                 {showReschedule && (
@@ -422,26 +426,26 @@ const BookingViewLayer = () => {
                       onChange={(e) => setNewDate(e.target.value)}
                     />
                     <label className="form-label mt-2">Time Slots :</label>
-                   <select
-                     className="form-select mb-2"
-                     value={selectedTimeSlot}
-                     onChange={(e) => setSelectedTimeSlot(e.target.value)}
-                   >
-                     <option value="">Select a time slot</option>
-                     {timeSlots
-                       .filter((slot) => slot.IsActive)
-                       .sort((a, b) => {
-                         // Sort by start time in ascending order (morning to evening)
-                         const [aHour, aMinute] = a.StartTime.split(':').map(Number);
-                         const [bHour, bMinute] = b.StartTime.split(':').map(Number);
-                         return aHour * 60 + aMinute - (bHour * 60 + bMinute);
-                       })
-                       .map((slot) => (
-                         <option key={slot.TsID} value={`${slot.StartTime} - ${slot.EndTime}`}>
-                           {formatTime(slot.StartTime)} - {formatTime(slot.EndTime)}
-                         </option>
-                       ))}
-                   </select>
+                    <select
+                      className="form-select mb-2"
+                      value={selectedTimeSlot}
+                      onChange={(e) => setSelectedTimeSlot(e.target.value)}
+                    >
+                      <option value="">Select a time slot</option>
+                      {timeSlots
+                        .filter((slot) => slot.IsActive)
+                        .sort((a, b) => {
+                          // Sort by start time in ascending order (morning to evening)
+                          const [aHour, aMinute] = a.StartTime.split(':').map(Number);
+                          const [bHour, bMinute] = b.StartTime.split(':').map(Number);
+                          return aHour * 60 + aMinute - (bHour * 60 + bMinute);
+                        })
+                        .map((slot) => (
+                          <option key={slot.TsID} value={`${slot.StartTime} - ${slot.EndTime}`}>
+                            {formatTime(slot.StartTime)} - {formatTime(slot.EndTime)}
+                          </option>
+                        ))}
+                    </select>
                     <label className="form-label mt-2">RescheduleReason</label>
                     <textarea
                       className="form-control"
@@ -459,20 +463,20 @@ const BookingViewLayer = () => {
                 )}
 
 
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className='pb-24 ms-16 mb-24 me-16  '>
-            <div className='text-center border border-top-0 border-start-0 border-end-0'>
-              <img
-                src='/assets/images/user-grid/user-grid-img14.png'
-                alt='WowDash React Vite'
-                className='border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover'
-              />
-              <h6 className='mb-0 mt-16'> N/A</h6>
+          ) : (
+            <div className='pb-24 ms-16 mb-24 me-16  '>
+              <div className='text-center border border-top-0 border-start-0 border-end-0'>
+                <img
+                  src='/assets/images/user-grid/user-grid-img14.png'
+                  alt='WowDash React Vite'
+                  className='border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover'
+                />
+                <h6 className='mb-0 mt-16'> N/A</h6>
+              </div>
             </div>
-          </div>
-        )}
+          )}
         </div>
       </div>
 
@@ -489,85 +493,85 @@ const BookingViewLayer = () => {
             <div className='tab-content'>
               {/* Bookings Tab */}
               <div className='tab-pane fade show active' id='booking'>
-                 <Accordion defaultActiveKey="0"   className="styled-booking-accordion"> {/*//defaultActiveKey="0" */}
-           {bookingData ? (
-                  <Accordion defaultActiveKey="0" className="styled-booking-accordion">
-                    <Accordion.Item eventKey="0" key={bookingData.BookingID} className="mb-3 shadow-sm rounded-3 border border-light">
-                      <Accordion.Header>
-                        <div className="d-flex flex-column w-100">
-                          <div className="d-flex justify-content-between align-items-center w-100">
-                            <div className="d-flex align-items-center gap-3">
-                              <Icon icon="mdi:calendar-check" className="text-primary fs-4" />
-                              <div>
-                                <h6 className="mb-0 text-dark fw-bold">
-                                  Booking #{bookingData.BookingTrackID}
-                                </h6>
-                                <small className="text-muted">
-                                  Scheduled: {bookingData.BookingDate} ({(bookingData.TimeSlot)})
-                                </small>
+                <Accordion defaultActiveKey="0" className="styled-booking-accordion"> {/*//defaultActiveKey="0" */}
+                  {bookingData ? (
+                    <Accordion defaultActiveKey="0" className="styled-booking-accordion">
+                      <Accordion.Item eventKey="0" key={bookingData.BookingID} className="mb-3 shadow-sm rounded-3 border border-light">
+                        <Accordion.Header>
+                          <div className="d-flex flex-column w-100">
+                            <div className="d-flex justify-content-between align-items-center w-100">
+                              <div className="d-flex align-items-center gap-3">
+                                <Icon icon="mdi:calendar-check" className="text-primary fs-4" />
+                                <div>
+                                  <h6 className="mb-0 text-dark fw-bold">
+                                    Booking #{bookingData.BookingTrackID}
+                                  </h6>
+                                  <small className="text-muted">
+                                    Scheduled: {bookingData.BookingDate} ({(bookingData.TimeSlot)})
+                                  </small>
+                                </div>
                               </div>
+                              <span className={`badge px-3 py-1 rounded-pill ${
+                                bookingData.BookingStatus === "Completed"
+                                  ? "bg-success"
+                                  : bookingData.BookingStatus === "Confirmed"
+                                    ? "bg-primary"
+                                    : "bg-warning text-dark"
+                                }`}>
+                                {bookingData.BookingStatus}
+                              </span>
                             </div>
-                            <span className={`badge px-3 py-1 rounded-pill ${
-                              bookingData.BookingStatus === "Completed"
-                                ? "bg-success"
-                                : bookingData.BookingStatus === "Confirmed"
-                                ? "bg-primary"
-                                : "bg-warning text-dark"
-                            }`}>
-                              {bookingData.BookingStatus}
-                            </span>
                           </div>
-                        </div>
-                      </Accordion.Header>
+                        </Accordion.Header>
 
-                      <Accordion.Body className="bg-white">
-                        {/* Booking Details */}
-                      
+                        <Accordion.Body className="bg-white">
+                          {/* Booking Details */}
 
-                        {/* Packages */}
-                        <div className="mb-4">
-                          <h6 className="text-success fw-bold mb-3">📦 Packages</h6>
-                          <div className="row">
-                                  {bookingData?.Packages?.map((pkg) => (
-                                    <div key={pkg.PackageID} className="col-md-6 mb-3">
-                                      <div className="d-flex align-items-center">
-                                        <div className="flex-grow-1">
-                                          <div className="fw-semibold">{pkg.PackageName}</div>
-                                          <div className="text-muted small">{pkg.EstimatedDurationMinutes} mins</div>
-                                          <div className="text-muted small">
-                                            {pkg.Category?.SubCategories?.[0]?.Includes?.map((inc) => (
-                                              <li key={inc.IncludeID}>{inc.IncludeName}</li>
-                                            ))}
-                                          </div>
-                                        </div>
+
+                          {/* Packages */}
+                          <div className="mb-4">
+                            <h6 className="text-success fw-bold mb-3">📦 Packages</h6>
+                            <div className="row">
+                              {bookingData?.Packages?.map((pkg) => (
+                                <div key={pkg.PackageID} className="col-md-6 mb-3">
+                                  <div className="d-flex align-items-center">
+                                    <div className="flex-grow-1">
+                                      <div className="fw-semibold">{pkg.PackageName}</div>
+                                      <div className="text-muted small">{pkg.EstimatedDurationMinutes} mins</div>
+                                      <div className="text-muted small">
+                                        {pkg.Category?.SubCategories?.[0]?.Includes?.map((inc) => (
+                                          <li key={inc.IncludeID}>{inc.IncludeName}</li>
+                                        ))}
                                       </div>
                                     </div>
-                                  ))}
+                                  </div>
                                 </div>
-                        </div>
-
-                        {/* Static Location Map */}
-                        <div>
-                          <h6 className="text-info fw-bold mb-3">🗺️ Location</h6>
-                          <div className="rounded overflow-hidden border" style={{ height: "250px" }}>
-                            <iframe
-                              title={`map-${bookingData.BookingID}`}
-                              width="100%"
-                              height="100%"
-                              frameBorder="0"
-                               src={`https://maps.google.com/maps?q=${bookingData.Latitude},${bookingData.Longitude}&z=15&output=embed`}
-                              allowFullScreen
-                              loading="lazy"
-                            ></iframe>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      </Accordion.Body>
-                    </Accordion.Item>
-                  </Accordion>
-                ) : (
-                  <p>Loading booking details...</p>
-                )}
-            </Accordion>
+
+                          {/* Static Location Map */}
+                          <div>
+                            <h6 className="text-info fw-bold mb-3">🗺️ Location</h6>
+                            <div className="rounded overflow-hidden border" style={{ height: "250px" }}>
+                              <iframe
+                                title={`map-${bookingData.BookingID}`}
+                                width="100%"
+                                height="100%"
+                                frameBorder="0"
+                                src={`https://maps.google.com/maps?q=${bookingData.Latitude},${bookingData.Longitude}&z=15&output=embed`}
+                                allowFullScreen
+                                loading="lazy"
+                              ></iframe>
+                            </div>
+                          </div>
+                        </Accordion.Body>
+                      </Accordion.Item>
+                    </Accordion>
+                  ) : (
+                    <p>Loading booking details...</p>
+                  )}
+                </Accordion>
               </div>
 
               {/* Payments Tab */}
@@ -590,48 +594,48 @@ const BookingViewLayer = () => {
           </div>
         </div>
       </div>
-       {assignModalOpen && (
-              <div
-                className="modal fade show d-block"
-                style={{ background: "#00000080" }}
-              >
-                <div className="modal-dialog modal-sm modal-dialog-centered">
-                  <div className="modal-content">
-                    <div className="modal-header">
-                      <h6 className="modal-title">Assign Technician</h6>
-                      <button
-                        type="button"
-                        className="btn-close"
-                        onClick={() => setAssignModalOpen(false)}
-                      />
-                    </div>
-                    <div className="modal-body">
-                      <Select
-                        options={technicians}
-                        value={selectedTechnician}
-                        onChange={(val) => setSelectedTechnician(val)}
-                        placeholder="Select Technician"
-                      />
-                    </div>
-                    <div className="modal-footer">
-                      <button
-                        className="btn btn-secondary"
-                        onClick={() => setAssignModalOpen(false)}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        className="btn btn-primary"
-                        onClick={handleAssignConfirm}
-                        disabled={!selectedTechnician}
-                      >
-                        Assign
-                      </button>
-                    </div>
-                  </div>
-                </div>
+      {assignModalOpen && (
+        <div
+          className="modal fade show d-block"
+          style={{ background: "#00000080" }}
+        >
+          <div className="modal-dialog modal-sm modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h6 className="modal-title">Assign Technician</h6>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setAssignModalOpen(false)}
+                />
               </div>
-            )}
+              <div className="modal-body">
+                <Select
+                  options={filteredTechnicians} // Use filtered technicians here
+                  value={selectedTechnician}
+                  onChange={(val) => setSelectedTechnician(val)}
+                  placeholder="Select Technician"
+                />
+              </div>
+              <div className="modal-footer">
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setAssignModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleAssignConfirm}
+                  disabled={!selectedTechnician}
+                >
+                  Assign
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
