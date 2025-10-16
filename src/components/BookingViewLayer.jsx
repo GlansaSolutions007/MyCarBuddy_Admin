@@ -423,6 +423,7 @@ const BookingViewLayer = () => {
                       type="date"
                       className="form-control mb-2"
                       value={newDate}
+                      min={new Date().toISOString().split('T')[0]}
                       onChange={(e) => setNewDate(e.target.value)}
                     />
                     <label className="form-label mt-2">Time Slots :</label>

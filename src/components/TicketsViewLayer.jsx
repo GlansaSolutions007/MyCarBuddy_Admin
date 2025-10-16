@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
@@ -123,10 +123,7 @@ const TicketsViewLayer = () => {
       name: "Status",
       cell: (row) => {
         const currentStatus =
-          statusOptions.find(
-            (s) =>
-              s.label.toLowerCase() === row.StatusName?.toLowerCase()
-          ) || statusOptions[0];
+          statusOptions.find((s) => s.value === row.Status) || statusOptions[0];
 
         return (
           <div style={{ display: "flex", justifyContent: "center" }}>
