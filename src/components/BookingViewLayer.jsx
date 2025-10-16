@@ -10,20 +10,42 @@ import Select from "react-select";
 const API_BASE = import.meta.env.VITE_APIURL;
 const API_IMAGE = import.meta.env.VITE_APIURL_IMAGE;
 
-// Helper function to convert 24-hour time to 12-hour AM/PM format
+// Helper function to convert various time formats into 12-hour AM/PM format
 const formatTime = (timeStr) => {
   if (!timeStr) return "";
-  const [hour, minute] = timeStr.split(':').map(Number);
-  const period = hour >= 12 ? 'PM' : 'AM';
-  const hour12 = hour % 12 || 12;
+  const raw = timeStr.toString().trim();
+
+  // If already includes AM/PM, try to normalize spacing and return as-is
+  if (/\b(AM|PM)\b/i.test(raw)) {
+    // Normalize to uppercase AM/PM and ensure HH:MM exists
+    const match = raw.match(/^(\d{1,2})(?::(\d{1,2}))?\s*(AM|PM)$/i);
+    if (match) {
+      const hour = parseInt(match[1], 10);
+      const minute = match[2] ? parseInt(match[2], 10) : 0;
+      const period = match[3].toUpperCase();
+      const hh = (hour % 12) || 12;
+      const mm = minute.toString().padStart(2, '0');
+      return `${hh}:${mm} ${period}`;
+    }
+    return raw.replace(/am/i, 'AM').replace(/pm/i, 'PM');
+  }
+
+  // Extract HH and MM from formats like HH:MM or HH:MM:SS or even just HH
+  const match = raw.match(/^(\d{1,2})(?::(\d{1,2}))?(?::\d{1,2})?/);
+  if (!match) return raw;
+  const hour24 = parseInt(match[1], 10);
+  const minute = match[2] ? parseInt(match[2], 10) : 0;
+  if (Number.isNaN(hour24) || Number.isNaN(minute)) return raw;
+  const period = hour24 >= 12 ? 'PM' : 'AM';
+  const hour12 = (hour24 % 12) || 12;
   return `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
 };
 
-// Helper function to format timeslot string (e.g., "10:00 - 12:00" -> "10:00 AM - 12:00 PM")
+// Helper function to format timeslot string with flexible dash and spacing
 const formatTimeSlot = (timeSlotStr) => {
   if (!timeSlotStr) return "";
-  const parts = timeSlotStr.split(' - ');
-  if (parts.length !== 2) return timeSlotStr;
+  const parts = timeSlotStr.toString().split(/\s*-\s*/);
+  if (parts.length !== 2) return formatTime(timeSlotStr);
   return `${formatTime(parts[0])} - ${formatTime(parts[1])}`;
 };
 
@@ -40,6 +62,7 @@ const BookingViewLayer = () => {
   const [technicians, setTechnicians] = useState([]);
   const [timeSlots, setTimeSlots] = useState([]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
+  const [selectedReassignTimeSlot, setSelectedReassignTimeSlot] = useState(null);
   const token = localStorage.getItem("token");
 
   const { bookingId } = useParams();
@@ -92,6 +115,14 @@ const BookingViewLayer = () => {
     } catch (err) {
       console.error("Error fetching time slots:", err);
     }
+  };
+
+  // Build options based on booking's selected time slot(s)
+  const getSelectedTimeSlotOptions = () => {
+    if (!bookingData || !bookingData.TimeSlot) return [];
+    const raw = bookingData.TimeSlot.toString();
+    const parts = raw.split(',').map((p) => p.trim()).filter(Boolean);
+    return parts.map((p) => ({ value: p, label: p.includes(' - ') ? formatTimeSlot(p) : p }));
   };
 
   useEffect(() => {
@@ -158,17 +189,25 @@ const BookingViewLayer = () => {
 
   // Reassign Technician
   const handleAssignClick = (booking) => {
+    // Preselect first available selected time slot from booking data
+    if (bookingData && bookingData.TimeSlot) {
+      const options = getSelectedTimeSlotOptions();
+      if (options.length > 0) {
+        setSelectedReassignTimeSlot(options[0]);
+      }
+    }
     setAssignModalOpen(true);
   };
 
   const handleAssignConfirm = async () => {
-    console.log(selectedTechnician);
+    if (!selectedTechnician) return;
     try {
       const res = await axios.put(
         `${API_BASE}Bookings/assign-technician`,
         {
           TechID: selectedTechnician.value,
           BookingID: bookingId,
+          TimeSlot: selectedReassignTimeSlot ? selectedReassignTimeSlot.value : bookingData?.TimeSlot,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -182,6 +221,7 @@ const BookingViewLayer = () => {
           text: res.data.message || "Technician assigned successfully",
         });
         setSelectedTechnician(null);
+        setSelectedReassignTimeSlot(null);
         setAssignModalOpen(false);
         fetchBookingData();
       } else {
@@ -475,7 +515,7 @@ const BookingViewLayer = () => {
                   </div>
                 )}
 
-                {/* Reschedule & Cancel Buttons */}
+                {/* Reschedule & Reassign Buttons */}
                 {bookingData && !["Completed", "Cancelled", "Refunded"].includes(bookingData.BookingStatus) && (
                   <div className="d-flex gap-2 mt-3">
                     <button
@@ -484,18 +524,14 @@ const BookingViewLayer = () => {
                     >
                       Reschedule
                     </button>
-                    <button
-                      className="btn btn-info btn-sm"
-                      onClick={() => handleAssignClick(bookingId)}
-                    >
-                      Reassign
-                    </button>
-                    {/* <button
-                     className="btn btn-danger btn-sm"
-                     onClick={handleCancel}
-                   >
-                     Cancel
-                   </button> */}
+                    {bookingData.TechID && (
+                      <button
+                        className="btn btn-info btn-sm"
+                        onClick={() => handleAssignClick(bookingId)}
+                      >
+                        Reassign
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -507,7 +543,6 @@ const BookingViewLayer = () => {
                       type="date"
                       className="form-control mb-2"
                       value={newDate}
-                      min={new Date().toISOString().split('T')[0]}
                       onChange={(e) => setNewDate(e.target.value)}
                     />
                     <label className="form-label mt-2">Time Slots :</label>
@@ -695,12 +730,25 @@ const BookingViewLayer = () => {
                 />
               </div>
               <div className="modal-body">
-                <Select
-                  options={filteredTechnicians} // Use filtered technicians here
-                  value={selectedTechnician}
-                  onChange={(val) => setSelectedTechnician(val)}
-                  placeholder="Select Technician"
-                />
+                <div className="mb-3">
+                  <label className="form-label">Time Slot</label>
+                  <Select
+                    options={getSelectedTimeSlotOptions()}
+                    value={selectedReassignTimeSlot}
+                    onChange={(val) => setSelectedReassignTimeSlot(val)}
+                    placeholder="Select Time Slot"
+                    isDisabled={getSelectedTimeSlotOptions().length <= 1}
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Technician</label>
+                  <Select
+                    options={filteredTechnicians}
+                    value={selectedTechnician}
+                    onChange={(val) => setSelectedTechnician(val)}
+                    placeholder="Select Technician"
+                  />
+                </div>
               </div>
               <div className="modal-footer">
                 <button
