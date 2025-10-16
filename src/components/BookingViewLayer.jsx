@@ -230,6 +230,62 @@ const BookingViewLayer = () => {
     }
   };
 
+  const handleRefund = async (payment) => {
+    // Calculate AmountPaid from bookingData (TotalPrice + GSTAmount - CouponAmount)
+    const amountPaid = bookingData.TotalPrice + bookingData.GSTAmount - (bookingData.CouponAmount || 0);
+    const refundedAmount = parseFloat(payment.RefundAmount) || 0;
+    const remaining = amountPaid - refundedAmount;
+
+    if (remaining <= 0) {
+      Swal.fire('Notification', 'Your full amount is refunded.', 'info');
+      return;
+    }
+
+    const { value: refundAmount } = await Swal.fire({
+      title: 'Enter Refund Amount',
+      input: 'number',
+      inputLabel: `Refund Amount (Max: ₹${remaining})`,
+      inputValue: remaining,
+      inputAttributes: {
+        min: 0,
+        max: remaining,
+      },
+      inputValidator: (value) => {
+        const num = parseFloat(value);
+        if (isNaN(num) || num <= 0) {
+          return 'Please enter a valid positive amount!';
+        }
+        if (num > remaining) {
+          return 'Refund amount cannot exceed the remaining amount!';
+        }
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Refund',
+      cancelButtonText: 'Cancel'
+    });
+
+    if (!refundAmount) return;
+
+    try {
+      const res = await axios.post(`${API_BASE}Refund/Refund`, {
+        paymentId: payment.TransactionID,
+        amount: parseFloat(refundAmount)
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.data.success) {
+        Swal.fire('Success', 'Refund processed successfully!', 'success');
+        fetchBookingData(); // Refresh data
+      } else {
+        Swal.fire('Error', res.data.message || 'Failed to process refund.', 'error');
+      }
+    } catch (error) {
+      Swal.fire('Error', 'Failed to process refund.', 'error');
+      console.error('Refund error:', error);
+    }
+  };
+
 
   // Filtered technicians for the reassign dropdown
   const filteredTechnicians = technicians.filter(tech => {
@@ -389,7 +445,35 @@ const BookingViewLayer = () => {
                     </li>
                   )}
 
+
+
                 </ul>
+
+                {/* Invoice and Refund buttons */}
+                {bookingData.Payments && bookingData.Payments[0] && (bookingData.Payments[0].FolderPath || bookingData.Payments[0].IsRefunded) && (
+                  <div className="d-flex gap-2 mt-3">
+                    {bookingData.Payments[0].FolderPath && (
+                      <a
+                        href={bookingData.Payments[0].FolderPath}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-warning btn-sm"
+                        title="Invoice"
+                      >
+                        Invoice
+                      </a>
+                    )}
+                    {bookingData.Payments[0].IsRefunded && (
+                      <button
+                        onClick={() => handleRefund(bookingData.Payments[0])}
+                        className="btn btn-danger btn-sm"
+                        title="Refund"
+                      >
+                        Refund
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {/* Reschedule & Cancel Buttons */}
                 {bookingData && !["Completed", "Cancelled", "Refunded"].includes(bookingData.BookingStatus) && (
