@@ -166,7 +166,7 @@ const BookingLayer = () => {
     {
       name: "Booking price",
       selector: (row) =>
-        `₹${row.TotalPrice + row.GSTAmount - row.CouponAmount}`,
+        `₹${(row.TotalPrice + row.GSTAmount - row.CouponAmount).toFixed(2)}`,
       width: "120px",
     },
     {
