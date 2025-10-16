@@ -39,8 +39,8 @@ const PaymentsListLayer = () => {
   };
 
   const handleRefund = async (row) => {
-    const refundedAmount = row.RefundAmount || 0;
-    const remaining = row.AmountPaid - refundedAmount;
+    const refundedAmount = parseFloat(row.RefundAmount) || 0;
+    const remaining = parseFloat(row.AmountPaid) - refundedAmount;
 
     if (remaining <= 0) {
       Swal.fire('Notification', 'Your full amount is refunded.', 'info');
@@ -52,6 +52,10 @@ const PaymentsListLayer = () => {
       input: 'number',
       inputLabel: `Refund Amount (Max: ₹${remaining})`,
       inputValue: remaining,
+      inputAttributes: {
+        min: 0,
+        max: remaining,
+      },
       inputValidator: (value) => {
         const num = parseFloat(value);
         if (isNaN(num) || num <= 0) {

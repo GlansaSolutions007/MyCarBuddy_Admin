@@ -231,17 +231,32 @@ const BookingViewLayer = () => {
   };
 
   const handleRefund = async (payment) => {
+    // Calculate AmountPaid from bookingData (TotalPrice + GSTAmount - CouponAmount)
+    const amountPaid = bookingData.TotalPrice + bookingData.GSTAmount - (bookingData.CouponAmount || 0);
+    const refundedAmount = parseFloat(payment.RefundAmount) || 0;
+    const remaining = amountPaid - refundedAmount;
+
+    if (remaining <= 0) {
+      Swal.fire('Notification', 'Your full amount is refunded.', 'info');
+      return;
+    }
+
     const { value: refundAmount } = await Swal.fire({
       title: 'Enter Refund Amount',
       input: 'number',
-      inputLabel: `Refund Amount (Max: ₹${payment.AmountPaid})`,
-      inputValue: payment.AmountPaid,
+      inputLabel: `Refund Amount (Max: ₹${remaining})`,
+      inputValue: remaining,
+      inputAttributes: {
+        min: 0,
+        max: remaining,
+      },
       inputValidator: (value) => {
-        if (!value || value <= 0) {
-          return 'Please enter a valid amount!';
+        const num = parseFloat(value);
+        if (isNaN(num) || num <= 0) {
+          return 'Please enter a valid positive amount!';
         }
-        if (parseFloat(value) > payment.AmountPaid) {
-          return 'Refund amount cannot exceed the paid amount!';
+        if (num > remaining) {
+          return 'Refund amount cannot exceed the remaining amount!';
         }
       },
       showCancelButton: true,
