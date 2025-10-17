@@ -150,6 +150,7 @@ import Contacts from "./pages/Contacts"
 import DealerServiceP from "./pages/DealerServicePrice";
 import TicketsPage from "./pages/TicketsPage";
 import TicketsAddPage from "./pages/TicketsAddPage"
+import RefundPage from "./pages/RefundPage";
 
 
 
@@ -275,6 +276,9 @@ function App() {
         <Route exact path='/add-tickets' element={<TicketsAddPage />} />
 
         <Route exact path='/edit-tickets/:TicketID' element={<TicketsAddPage />} />
+
+
+        <Route exact path='/refunds' element={<RefundPage />} />
 
         
       </Routes>
