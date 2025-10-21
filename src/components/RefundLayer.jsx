@@ -64,7 +64,7 @@ const RefundLayer = () => {
     },
     {
       name: "Refund Amount",
-      selector: (row) => `₹${row.RefundAmount.toFixed(2)}`,
+      selector: (row) => `₹${(row.RefundAmount ?? 0).toFixed(2)}`,
     },
     {
       name: "Customer Name",
@@ -78,7 +78,7 @@ const RefundLayer = () => {
     {
       name: "Refund Status",
       selector: (row) => (
-        <span className="fw-bold">{row.RefundStatus}</span>
+        <span className="fw-bold">{row.RefundStatus ?? "N/A"}</span>
       ),
     },
     {
@@ -91,10 +91,10 @@ const RefundLayer = () => {
         return (
           <span
             className={`badge ${displayText.toLowerCase() === "paid"
-                ? "bg-success"
-                : displayText.toLowerCase() === "pending"
-                  ? "bg-warning"
-                  : "bg-danger"
+              ? "bg-success"
+              : displayText.toLowerCase() === "pending"
+                ? "bg-warning"
+                : "bg-danger"
               }`}
           >
             {displayText}

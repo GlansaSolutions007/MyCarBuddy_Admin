@@ -53,7 +53,7 @@ const BookingViewLayer = () => {
   const [imagePreview, setImagePreview] = useState(
     "/assets/images/user-grid/user-grid-img13.png"
   );
-  const [bookingData , setBookingData] = useState(null);
+  const [bookingData, setBookingData] = useState(null);
   const [showReschedule, setShowReschedule] = useState(false);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [newDate, setNewDate] = useState("");
@@ -271,16 +271,17 @@ const BookingViewLayer = () => {
   };
 
   const handleRefund = async (payment) => {
-    // Calculate AmountPaid from bookingData (TotalPrice + GSTAmount - CouponAmount)
+    // Calculate total amount paid
     const amountPaid = bookingData.TotalPrice + bookingData.GSTAmount - (bookingData.CouponAmount || 0);
     const refundedAmount = parseFloat(payment.RefundAmount) || 0;
     const remaining = amountPaid - refundedAmount;
 
     if (remaining <= 0) {
-      Swal.fire('Notification', 'Your full amount is refunded.', 'info');
+      Swal.fire('Notification', 'Your full amount has already been refunded.', 'info');
       return;
     }
 
+    // Ask user for refund amount
     const { value: refundAmount } = await Swal.fire({
       title: 'Enter Refund Amount',
       input: 'number',
@@ -289,6 +290,7 @@ const BookingViewLayer = () => {
       inputAttributes: {
         min: 0,
         max: remaining,
+        step: '0.01'
       },
       inputValidator: (value) => {
         const num = parseFloat(value);
@@ -308,23 +310,25 @@ const BookingViewLayer = () => {
 
     try {
       const res = await axios.post(`${API_BASE}Refund/Refund`, {
-        paymentId: payment.TransactionID,
-        amount: parseFloat(refundAmount)
+        amount: parseFloat(refundAmount),
+        bookingId: bookingData.BookingID,     
+        // paymentId: payment.TransactionID      
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
       if (res.data.success) {
         Swal.fire('Success', 'Refund processed successfully!', 'success');
-        fetchBookingData(); // Refresh data
+        fetchBookingData(); // Refresh data after refund
       } else {
         Swal.fire('Error', res.data.message || 'Failed to process refund.', 'error');
       }
     } catch (error) {
-      Swal.fire('Error', 'Failed to process refund.', 'error');
       console.error('Refund error:', error);
+      Swal.fire('Error', 'Failed to process refund.', 'error');
     }
   };
+
 
 
   // Filtered technicians for the reassign dropdown
@@ -631,12 +635,11 @@ const BookingViewLayer = () => {
                                   </small>
                                 </div>
                               </div>
-                              <span className={`badge px-3 py-1 rounded-pill ${
-                                bookingData.BookingStatus === "Completed"
-                                  ? "bg-success"
-                                  : bookingData.BookingStatus === "Confirmed"
-                                    ? "bg-primary"
-                                    : "bg-warning text-dark"
+                              <span className={`badge px-3 py-1 rounded-pill ${bookingData.BookingStatus === "Completed"
+                                ? "bg-success"
+                                : bookingData.BookingStatus === "Confirmed"
+                                  ? "bg-primary"
+                                  : "bg-warning text-dark"
                                 }`}>
                                 {bookingData.BookingStatus}
                               </span>
