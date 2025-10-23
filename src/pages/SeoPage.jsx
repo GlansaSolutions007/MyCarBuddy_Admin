@@ -8,7 +8,7 @@ const SeoPage = () => {
       {/* MasterLayout */}
       <MasterLayout>
         {/* Breadcrumb */}
-        <Breadcrumb title='Seo' />
+        <Breadcrumb title='SEO' />
 
         {/* BookingTimeSlotLayer */}
         <SeoListLayer />

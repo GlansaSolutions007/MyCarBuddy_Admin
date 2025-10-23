@@ -3,10 +3,6 @@ import axios from "axios";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
-import Swal from 'sweetalert2';
-import Select from 'react-select';
-import useFormError from "../hook/useFormError"; // form errors
-import FormError from "./FormError"; // form errors
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
@@ -91,7 +87,7 @@ const CustomerLayer = () => {
     <div className="row gy-4">
       <div className="col-12">
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <h5>Customer List</h5>
+          <h5></h5>
         </div>
 
         <div className="chat-main card overflow-hidden p-3">

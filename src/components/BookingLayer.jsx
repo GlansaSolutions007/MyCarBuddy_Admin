@@ -314,6 +314,9 @@ const BookingLayer = () => {
   return (
     <div className="row gy-4">
       <div className="col-12">
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h5></h5>
+        </div>
         <div className="card overflow-hidden p-3">
           <div className="card-header">
             <div className="d-flex justify-content-between align-items-center mb-2">

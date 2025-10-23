@@ -151,6 +151,9 @@ import DealerServiceP from "./pages/DealerServicePrice";
 import TicketsPage from "./pages/TicketsPage";
 import TicketsAddPage from "./pages/TicketsAddPage"
 import RefundPage from "./pages/RefundPage";
+import TelecalerAssigningPage from "./pages/TelecalerAssignBookingPage";
+import TelecalerTicketsPage from "./pages/TelecalerTicketsPage";
+import TelecalerBookingPage from "./pages/TelecalerBookingPage";
 
 
 
@@ -279,6 +282,12 @@ function App() {
 
 
         <Route exact path='/refunds' element={<RefundPage />} />
+
+        <Route exact path='/telecaler-Assign-bookings' element={<TelecalerAssigningPage />} />
+
+        <Route exact path='/telecaler-bookings' element={<TelecalerBookingPage />} />
+
+        <Route exact path='/telecaler-tickets' element={<TelecalerTicketsPage />} />
 
         
       </Routes>

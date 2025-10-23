@@ -44,13 +44,15 @@ const LeaveListLayer = () => {
     { name: "From", selector: row => row.FromDate },
     { name: "To", selector: row => row.ToDate },
     { name: "Reason", selector: row => row.LeaveReason },
-    { name: "Status", selector: row => (
-      <>
-        {row.Status === 0 && <span className="badge bg-warning">Pending</span>}
-        {row.Status === 1 && <span className="badge bg-success">Approved</span>}
-        {row.Status === 2 && <span className="badge bg-danger">Rejected</span>}
-      </>
-    )},
+    {
+      name: "Status", selector: row => (
+        <>
+          {row.Status === 0 && <span className="badge bg-warning">Pending</span>}
+          {row.Status === 1 && <span className="badge bg-success">Approved</span>}
+          {row.Status === 2 && <span className="badge bg-danger">Rejected</span>}
+        </>
+      )
+    },
     {
       name: "Actions",
       cell: (row) => (
@@ -63,6 +65,9 @@ const LeaveListLayer = () => {
 
   return (
     <div className="container mt-4">
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h5></h5>
+      </div>
       <div className="row mb-3">
         <div className="col-md-6">
           <select className="form-select" value={filterTechnicianID} onChange={(e) => setFilterTechnicianID(e.target.value)}>

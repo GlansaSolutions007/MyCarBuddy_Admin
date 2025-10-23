@@ -415,6 +415,15 @@ const MasterLayout = ({ children }) => {
       ],
     },
     {
+      title: "Telecaler Assigning",
+      icon: "hugeicons:user-check-02",
+      roles: ["Admin"],
+      children: [
+        { title: "Telecaler Bookings", to: "/telecaler-bookings", color: "text-warning-main" },
+        { title: "Telecaler Tickets", to: "/telecaler-tickets", color: "text-info-main" },
+      ],
+    },
+    {
       title: "Vehicle",
       icon: "hugeicons:car-03",
       roles: ["Admin"],
@@ -551,8 +560,8 @@ const MasterLayout = ({ children }) => {
           sidebarActive
             ? "sidebar active "
             : mobileMenu
-            ? "sidebar sidebar-open"
-            : "sidebar"
+              ? "sidebar sidebar-open"
+              : "sidebar"
         }
       >
         <button
@@ -588,24 +597,24 @@ const MasterLayout = ({ children }) => {
                 const hasChildren = Array.isArray(item.children);
                 const visibleChildren = hasChildren
                   ? item.children.filter((child) => {
-                      // Check if child has permission or fallback to role-based
-                      if (menuLoading) return true;
-                      if (!userPermissions || userPermissions.length === 0) {
-                        return child.roles ? child.roles.includes(role) : true;
-                      }
-
-                      // Check permission for child menu item
-                      const childMapping = permissionMappings[child.title];
-                      if (childMapping) {
-                        return hasPermission(
-                          childMapping.name,
-                          childMapping.page
-                        );
-                      }
-
-                      // Fallback to role-based
+                    // Check if child has permission or fallback to role-based
+                    if (menuLoading) return true;
+                    if (!userPermissions || userPermissions.length === 0) {
                       return child.roles ? child.roles.includes(role) : true;
-                    })
+                    }
+
+                    // Check permission for child menu item
+                    const childMapping = permissionMappings[child.title];
+                    if (childMapping) {
+                      return hasPermission(
+                        childMapping.name,
+                        childMapping.page
+                      );
+                    }
+
+                    // Fallback to role-based
+                    return child.roles ? child.roles.includes(role) : true;
+                  })
                   : [];
 
                 if (hasChildren && visibleChildren.length === 0) return null;
@@ -913,15 +922,14 @@ const MasterLayout = ({ children }) => {
                     type="button"
                     data-bs-toggle="dropdown"
                   >
-                    <Icon
-                      icon="iconoir:bell"
-                      className="text-primary-light text-xl"
-                    />
+                    <Icon icon="iconoir:bell" className="text-primary-light text-l" />
                     {unreadCount > 0 && (
                       <span className="notification-badge">{unreadCount}</span>
                     )}
                   </button>
-                  <div className="dropdown-menu to-top dropdown-menu-lg p-0">
+
+                  <div className="dropdown-menu to-top  p-0" style={{width: "520px"}} > {/*dropdown-menu-lg*/}
+                    {/* Header */}
                     <div className="m-16 py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2">
                       <div>
                         <h6 className="text-lg text-primary-light fw-semibold mb-0">
@@ -934,76 +942,67 @@ const MasterLayout = ({ children }) => {
                         </span>
                       )}
                     </div>
+
+                    {/* Notification List */}
                     <div className="max-h-400-px overflow-y-auto scroll-sm pe-4">
                       {notifications.length === 0 ? (
                         <div className="px-24 py-12 text-center">
-                          <p className="text-secondary-light mb-0">
-                            No notifications
-                          </p>
+                          <p className="text-secondary-light mb-0">No notifications</p>
                         </div>
                       ) : (
                         notifications.map((notification) => (
                           <Link
                             key={notification.id}
                             to="#"
-                            className={`px-24 py-12 d-flex align-items-start gap-3 mb-2 justify-content-between ${
-                              !notification.read ? "bg-neutral-50" : ""
-                            }`}
+                            className={`px-24 py-12 d-flex align-items-start gap-3 mb-2 ${!notification.read ? "bg-neutral-50" : ""
+                              }`}
                             onClick={() => {
                               // Mark as read
                               setNotifications((prev) =>
                                 prev.map((n) =>
-                                  n.id === notification.id
-                                    ? { ...n, read: true }
-                                    : n
+                                  n.id === notification.id ? { ...n, read: true } : n
                                 )
                               );
                               setUnreadCount((prev) => Math.max(0, prev - 1));
-                              // Persist read state
                               try {
                                 notificationService.markAsRead(notification.id, userId);
-                              } catch (_) {}
+                              } catch (_) { }
                             }}
                           >
-                            <div className="text-black hover-bg-transparent hover-text-primary d-flex align-items-center gap-3">
-                              <span className="w-44-px h-44-px bg-success-subtle text-success-main rounded-circle d-flex justify-content-center align-items-center flex-shrink-0">
-                                <Icon
-                                  icon="bitcoin-icons:verify-outline"
-                                  className="icon text-xxl"
-                                />
-                              </span>
+                            <div className="text-black hover-bg-transparent hover-text-primary d-flex align-items-start gap-3">
                               <div>
                                 <h6 className="text-md fw-semibold mb-4">
                                   {notification.title}
                                 </h6>
-                                <p className="mb-0 text-sm text-secondary-light text-w-200-px">
+                                <p className="mb-2 text-sm text-secondary-light">
                                   {notification.message}
+                                </p>
+                                <p className="text-xs text-secondary mb-0">
+                                  {new Date(notification.timestamp).toLocaleString(undefined, {
+                                    dateStyle: "medium",
+                                    timeStyle: "short",
+                                  })}
                                 </p>
                               </div>
                             </div>
-                            <span className="text-sm text-secondary-light flex-shrink-0">
-                              {new Date(
-                                notification.timestamp
-                              ).toLocaleTimeString()}
-                            </span>
                           </Link>
                         ))
                       )}
                     </div>
+
+                    {/* Clear All Button */}
                     <div className="text-center py-12 px-16">
                       <button
                         onClick={async () => {
                           try {
-                            // Mark all unread notifications as read
-                            const unreadNotifications = notifications.filter(n => !n.read);
+                            const unreadNotifications = notifications.filter((n) => !n.read);
                             for (const notification of unreadNotifications) {
                               await notificationService.markAsRead(notification.id, userId);
                             }
-                            // Update local state
-                            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                            setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
                             setUnreadCount(0);
                           } catch (error) {
-                            console.error('Error clearing notifications:', error);
+                            console.error("Error clearing notifications:", error);
                           }
                         }}
                         className="text-primary-600 fw-semibold text-md border-0 bg-transparent"

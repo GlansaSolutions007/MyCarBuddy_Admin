@@ -146,10 +146,9 @@ const ServicePlanListLayer = () => {
   return (
     <div className="row gy-4">
           <div className="col-12">
-            {/* <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5>Service Plans</h5>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h5></h5>
             </div>
-     */}
             <div className="chat-main card overflow-hidden p-3">
               <div className='card-header border-bottom bg-base pt-0 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between'>
                 <div className='d-flex align-items-center flex-wrap gap-3'>

@@ -1,20 +1,20 @@
 import MasterLayout from "../masterLayout/MasterLayout";
 import Breadcrumb from "../components/Breadcrumb";
-import SeoAddLayer from "../components/SeoAddLayer";
+import TelecalerTickets from "../components/TelecalerTicketLayer";
 
-const SeoAddPage = () => {
+const BookingViewPage = () => {
   return (
     <>
       {/* MasterLayout */}
       <MasterLayout>
         {/* Breadcrumb */}
-        <Breadcrumb title='SEO Add' />
+        <Breadcrumb title='Telecaler Tickets' />
 
-        {/* BookingTimeSlotLayer */}
-        <SeoAddLayer />
+        {/* BookingViewLayer */}
+        <TelecalerTickets />
       </MasterLayout>
     </>
   );
 };
 
-export default SeoAddPage;
+export default BookingViewPage;
