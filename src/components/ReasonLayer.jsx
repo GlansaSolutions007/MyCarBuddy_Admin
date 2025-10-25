@@ -145,11 +145,16 @@ export default function ReasonLayer() {
                 className="form-select"
               >
                 <option value="Cancel">Cancel</option>
-                <option value="ServiceComplaint">ServiceComplaint</option>
+                <option value="ServiceComplaint">Service Complaint</option>
                 <option value="Refund">Refund</option>
                 <option value="OverTime">OverTime</option>
                 <option value="OverTime">Rating</option>
-
+                {/* <option value="TicketReasons">TicketReasons</option> */}
+                <option value="Booking">Booking</option>
+                <option value="Payment">Payment</option>
+                <option value="Service">Service</option>
+                <option value="App">App</option>
+                <option value="Other ">Other </option>
               </select>
               <FormError error={errors.ReasonType} />
             </div>

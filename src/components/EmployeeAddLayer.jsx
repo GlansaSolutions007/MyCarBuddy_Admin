@@ -24,6 +24,12 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [supervisorRoleId, setSupervisorRoleId] = useState(null);
   const [cities, setCities] = useState([]);
+  const [departments, setDepartments] = useState([]);
+
+  if (departments.length > 0) {
+    console.log("Departments loaded in EmployeeAddLayer:", departments);
+  }
+
 
   const [formData, setFormData] = useState({
     Id: 0,
@@ -40,12 +46,14 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
     Status: true,
     ProfileImage1: null,
     City: "",
+    Department: "",
   });
 
   useEffect(() => {
     setPageTitle(isEditing ? "Edit Employee" : "Add Employee");
     fetchRoles();
     fetchCities();
+    fetchDepartments();
   }, [EmployeeID, isEditing, setPageTitle]);
 
   useEffect(() => {
@@ -83,13 +91,13 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
         const employeeDealerIds = Array.isArray(employee.DealerIds)
           ? employee.DealerIds
           : employee.DealerIds
-          ? employee.DealerIds.split(",").map(Number)
-          : [];
+            ? employee.DealerIds.split(",").map(Number)
+            : [];
         const employeeDealerNames = Array.isArray(employee.DealerNames)
           ? employee.DealerNames
           : employee.DealerNames
-          ? employee.DealerNames.split(",")
-          : [];
+            ? employee.DealerNames.split(",")
+            : [];
 
         const updatedFormData = {
           ...prev,
@@ -130,6 +138,20 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
       console.error("Failed to fetch roles", err);
     }
   };
+
+  useEffect(() => {
+    // Set default "Employee" role if adding a new employee
+    if (!isEditing && roles.length > 0) {
+      const defaultRole = roles.find((role) => role.name === "Employee");
+      if (defaultRole) {
+        setFormData((prev) => ({
+          ...prev,
+          RoleId: defaultRole.id,
+          RoleName: defaultRole.name,
+        }));
+      }
+    }
+  }, [roles, isEditing]);
 
   const fetchDealers = async () => {
     try {
@@ -297,6 +319,27 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
     label: role.name,
   }));
 
+  const fetchDepartments = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}Departments`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const apiData = res.data?.data || [];
+      // Format it for react-select
+      const formattedData = apiData
+        .filter((dept) => dept.IsActive) // only show active ones
+        .map((dept) => ({
+          value: dept.DeptId, // store DeptId internally
+          label: dept.DepartmentName, // show only DepartmentName
+        }));
+
+      setDepartments(formattedData);
+    } catch (error) {
+      console.error("Failed to load departments", error);
+    }
+  };
+
   return (
     <div className="row">
       <div className="col-12">
@@ -361,9 +404,8 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                   </label>
                   <input
                     type="text"
-                    className={`form-control radius-8 ${
-                      errors.Name ? "is-invalid" : ""
-                    }`}
+                    className={`form-control radius-8 ${errors.Name ? "is-invalid" : ""
+                      }`}
                     name="Name"
                     value={formData.Name}
                     onChange={handleChange}
@@ -379,9 +421,8 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                   </label>
                   <input
                     type="email"
-                    className={`form-control radius-8 ${
-                      errors.Email ? "is-invalid" : ""
-                    }`}
+                    className={`form-control radius-8 ${errors.Email ? "is-invalid" : ""
+                      }`}
                     name="Email"
                     value={formData.Email}
                     onChange={handleChange}
@@ -397,9 +438,8 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                   </label>
                   <input
                     type="tel"
-                    className={`form-control radius-8 ${
-                      errors.PhoneNumber ? "is-invalid" : ""
-                    }`}
+                    className={`form-control radius-8 ${errors.PhoneNumber ? "is-invalid" : ""
+                      }`}
                     name="PhoneNumber"
                     value={formData.PhoneNumber}
                     onChange={handleChange}
@@ -430,6 +470,30 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                     isClearable
                   />
                   <FormError error={errors.City} />
+                </div>
+
+                {/* Department */}
+                <div className="col-sm-6 mt-2">
+                  <label className="form-label text-sm fw-semibold text-primary-light mb-8">
+                    Department <span className="text-danger-600">*</span>
+                  </label>
+                  <Select
+                    value={departments.find(
+                      (option) => option.value === formData.Department
+                    )}
+                    onChange={(selectedOption) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        Department: selectedOption ? selectedOption.value : "",
+                      }))
+                    }
+                    options={departments}
+                    placeholder="Select Department"
+                    classNamePrefix="react-select"
+                    className={errors.Department ? "is-invalid" : ""}
+                    isClearable
+                  />
+                  <FormError error={errors.Department} />
                 </div>
 
                 {/* Role */}
@@ -499,13 +563,12 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                     {isEditing ? "New Password" : "Password"}{" "}
                     <span className="text-danger-600">*</span>
                   </label>
-                  <div className="input-group">
+
+                  <div className="position-relative">
                     <input
                       type={showPassword ? "text" : "password"}
-                      className={`form-control radius-8 ${
-                        errors.Password ? "is-invalid" : ""
-                      }`}
                       name="Password"
+                      className={`form-control radius-8 ${errors.Password ? "is-invalid" : ""}`}
                       value={formData.Password}
                       onChange={handleChange}
                       placeholder={
@@ -514,18 +577,14 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                           : "Enter password"
                       }
                     />
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary d-flex align-items-center justify-content-center p-0"
-                      onClick={() => setShowPassword(!showPassword)}
-                      style={{ height: "100%", width: "45px" }}
-                    >
-                      <Icon
-                        icon={showPassword ? "lucide:eye-off" : "lucide:eye"}
-                        width="20"
-                        height="31"
-                      />
-                    </button>
+
+                    <Icon
+                      icon={showPassword ? "mdi:eye-off-outline" : "mdi:eye-outline"}
+                      className="position-absolute end-0 top-50 translate-middle-y me-16 cursor-pointer text-primary-light"
+                      width="22"
+                      height="22"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                    />
                   </div>
                   <FormError error={errors.Password} />
                 </div>
@@ -537,9 +596,8 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                   </label>
                   <input
                     type="password"
-                    className={`form-control radius-8 ${
-                      errors.ConfirmPassword ? "is-invalid" : ""
-                    }`}
+                    className={`form-control radius-8 ${errors.ConfirmPassword ? "is-invalid" : ""
+                      }`}
                     name="ConfirmPassword"
                     value={formData.ConfirmPassword}
                     onChange={handleChange}
@@ -579,13 +637,8 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                   {isSubmitting
                     ? "Saving..."
                     : isEditing
-                    ? "Update Employee"
-                    : "Save Employee"}
-                  {isSubmitting
-                    ? "Saving..."
-                    : isEditing
-                    ? "Update Employee"
-                    : "Save Employee"}
+                      ? "Update Employee"
+                      : "Save Employee"}
                 </button>
                 <button
                   type="button"

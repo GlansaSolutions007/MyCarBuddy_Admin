@@ -5,10 +5,10 @@ import ReactApexChart from "react-apexcharts";
 
 const TelecalerBookingLayer = () => {
   const graphValues = [
-    { value: 90, id: 1, name: "Naveen Singh", color: "#4f46e5", img: "https://i.pravatar.cc/100?img=1" },
+    { value: 90, id: 1, name: "Naveen Singh", color: "#10b981", img: "https://i.pravatar.cc/100?img=1" },
     { value: 45, id: 2, name: "Aditya Soni", color: "#10b981", img: "https://i.pravatar.cc/100?img=2" },
-    { value: 85, id: 3, name: "Mahendra", color: "#f97316", img: "https://i.pravatar.cc/100?img=3" },
-    { value: 75, id: 4, name: "Christopher John", color: "#ef4444", img: "https://i.pravatar.cc/100?img=4" },
+    { value: 85, id: 3, name: "Mahendra", color: "#10b981", img: "https://i.pravatar.cc/100?img=3" },
+    { value: 75, id: 4, name: "Christopher John", color: "#10b981", img: "https://i.pravatar.cc/100?img=4" },
   ];
 
   // 🔹 Helper to truncate long names

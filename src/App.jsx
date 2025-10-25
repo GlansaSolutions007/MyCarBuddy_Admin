@@ -154,6 +154,7 @@ import RefundPage from "./pages/RefundPage";
 import TelecalerAssigningPage from "./pages/TelecalerAssignBookingPage";
 import TelecalerTicketsPage from "./pages/TelecalerTicketsPage";
 import TelecalerBookingPage from "./pages/TelecalerBookingPage";
+import DepartmentsPage from "./pages/DepartmentsPage";
 
 
 
@@ -289,7 +290,9 @@ function App() {
 
         <Route exact path='/telecaler-tickets' element={<TelecalerTicketsPage />} />
 
+        <Route exact path='/departments' element={<DepartmentsPage />} />
         
+
       </Routes>
     </BrowserRouter>
   );

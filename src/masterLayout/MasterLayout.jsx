@@ -375,6 +375,14 @@ const MasterLayout = ({ children }) => {
       ],
     },
     {
+      title: "Departments",
+      icon: "mdi:office-building",
+      roles: ["Admin"],
+      children: [
+        { title: "Departments", to: "/departments", color: "text-primary-600" },
+      ],
+    },
+    {
       title: "Regions",
       icon: "material-symbols:map-outline",
       roles: ["Admin"],
