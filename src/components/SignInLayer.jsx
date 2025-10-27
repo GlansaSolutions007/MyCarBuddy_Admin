@@ -39,7 +39,6 @@ const SignInLayer = () => {
       localStorage.setItem("token", data.token);
       localStorage.setItem("userId", 1);
       localStorage.setItem("role", data.role);
-      localStorage.setItem("role", data.role);
       localStorage.setItem("roleId", data.roleID);
 
       localStorage.setItem("name", data.name);

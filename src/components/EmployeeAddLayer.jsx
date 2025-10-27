@@ -241,6 +241,10 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
         "ProfileImage1",
         "DealerNames",
         "RoleName",
+        "Designation_Id",
+        "Reporting_To",
+        "ReportingTo",
+        "DesignationName"
       ];
       let currentErrors = validate(formData, validationFieldsToExclude);
 
@@ -253,6 +257,7 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
       }
 
       if (Object.keys(currentErrors).length > 0) {
+        console.log("Validation Errors:", currentErrors);
         errors.setErrors(currentErrors);
         setIsSubmitting(false);
         return;

@@ -179,7 +179,7 @@ const MasterLayout = ({ children }) => {
 
       try {
         const response = await axios.get(
-          `${API_BASE}rolehaspermissions?role_id=${roleId}`,
+          `${API_BASE}rolehaspermissions/id?roleId=${roleId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
