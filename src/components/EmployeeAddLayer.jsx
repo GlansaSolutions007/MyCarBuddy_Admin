@@ -26,10 +26,8 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
   const [cities, setCities] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [employees, setEmployees] = useState([]);
-
-  if (departments.length > 0) {
-    console.log("Departments loaded in EmployeeAddLayer:", departments);
-  }
+  const [designations, setDesignations] = useState([]);
+  const [allDesignations, setAllDesignations] = useState([]);
 
 
   const [formData, setFormData] = useState({
@@ -49,6 +47,7 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
     City: "",
     DeptId: "",
     ReportingTo: "",
+    DesignationName: "",
   });
 
   useEffect(() => {
@@ -57,7 +56,14 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
     fetchCities();
     fetchDepartments();
     fetchEmployees();
+    fetchDesignations();
   }, [EmployeeID, isEditing, setPageTitle]);
+
+
+  if (designations.length > 0) {
+    console.log("Designations :", designations);
+  }
+
 
   useEffect(() => {
     if (isEditing && roles.length > 0) {
@@ -361,6 +367,52 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
     }
   };
 
+  // ------------------ Fetch Designations ------------------
+  const fetchDesignations = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}Designations`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const apiData = res.data?.data || [];
+
+      // Store both complete and formatted lists
+      setAllDesignations(apiData);
+
+      // Initially, show all (or none if you prefer)
+      const formattedDesignations =
+        apiData.map((item) => ({
+          value: item.Id,
+          label: item.Designation_name,
+          deptId: item.DeptId,
+        })) || [];
+
+      setDesignations(formattedDesignations);
+    } catch (error) {
+      console.error("Failed to load designations", error);
+    }
+  };
+
+  useEffect(() => {
+    if (formData.DeptId && allDesignations.length > 0) {
+      const filtered = allDesignations
+        .filter((d) => d.DeptId === formData.DeptId)
+        .map((d) => ({
+          value: d.Id,
+          label: d.Designation_name,
+        }));
+      setDesignations(filtered);
+    } else {
+      setDesignations([]);
+    }
+
+    // Reset selected designation when department changes
+    setFormData((prev) => ({
+      ...prev,
+      DesignationName: "",
+    }));
+  }, [formData.DeptId, allDesignations]);
+
   return (
     <div className="row">
       <div className="col-12">
@@ -515,6 +567,30 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                     isClearable
                   />
                   <FormError error={errors.DeptId} />
+                </div>
+
+                {/* Designations */}
+                <div className="col-sm-6 mt-2">
+                  <label className="form-label text-sm fw-semibold text-primary-light mb-8">
+                    Designation <span className="text-danger-600">*</span>
+                  </label>
+                  <Select
+                    value={designations.find(
+                      (option) => option.value === formData.DesignationName
+                    )}
+                    onChange={(selectedOption) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        DesignationName: selectedOption ? selectedOption.value : "",
+                      }))
+                    }
+                    options={designations}
+                    placeholder="Select Designation"
+                    classNamePrefix="react-select"
+                    className={errors.DesignationName ? "is-invalid" : ""}
+                    isClearable
+                  />
+                  <FormError error={errors.DesignationName} />
                 </div>
 
                 {/* Role */}
