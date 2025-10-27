@@ -25,6 +25,7 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
   const [supervisorRoleId, setSupervisorRoleId] = useState(null);
   const [cities, setCities] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [employees, setEmployees] = useState([]);
 
   if (departments.length > 0) {
     console.log("Departments loaded in EmployeeAddLayer:", departments);
@@ -47,6 +48,7 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
     ProfileImage1: null,
     City: "",
     DeptId: "",
+    ReportingTo: "",
   });
 
   useEffect(() => {
@@ -54,6 +56,7 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
     fetchRoles();
     fetchCities();
     fetchDepartments();
+    fetchEmployees();
   }, [EmployeeID, isEditing, setPageTitle]);
 
   useEffect(() => {
@@ -340,6 +343,24 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
     }
   };
 
+  const fetchEmployees = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}Employee`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const formattedEmployees = res.data.map((emp) => ({
+        value: emp.Id,
+        label: emp.Name,
+      }));
+
+      setEmployees(formattedEmployees);
+    } catch (error) {
+      console.error("Failed to load employees", error);
+      Swal.fire("Error", "Failed to load employees", "error");
+    }
+  };
+
   return (
     <div className="row">
       <div className="col-12">
@@ -513,6 +534,28 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                     className={errors.RoleId ? "is-invalid" : ""}
                   />
                   <FormError error={errors.RoleId} />
+                </div>
+
+                {/* Reporting To */}
+                <div className="col-sm-6 mt-2">
+                  <label className="form-label text-sm fw-semibold text-primary-light mb-8">
+                    Reporting To <span className="text-danger-600">*</span>
+                  </label>
+                  <Select
+                    value={employees.find((option) => option.value === formData.ReportingTo)}
+                    onChange={(selectedOption) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        ReportingTo: selectedOption ? selectedOption.value : "",
+                      }))
+                    }
+                    options={employees}
+                    placeholder="Select Reporting Person"
+                    classNamePrefix="react-select"
+                    className={errors.ReportingTo ? "is-invalid" : ""}
+                    isClearable
+                  />
+                  <FormError error={errors.ReportingTo} />
                 </div>
 
                 {/* Dealer Multi-Select */}

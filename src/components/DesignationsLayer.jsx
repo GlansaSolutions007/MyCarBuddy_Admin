@@ -14,22 +14,23 @@ const DesignationLayer = () => {
     departmentId: "",
     isHead: false,
     level: "",
-    isActive: true,
   });
 
   const [departments, setDepartments] = useState([]);
   const [designations, setDesignations] = useState([]);
   const { errors, validate } = useFormError();
+
   const API_BASE_DESIGNATIONS = `${import.meta.env.VITE_APIURL}Designations`;
   const API_BASE_DEPARTMENTS = `${import.meta.env.VITE_APIURL}Departments`;
   const token = localStorage.getItem("token");
-  const username = localStorage.getItem("username") || "Admin";
 
+  // ------------------ Load Data ------------------
   useEffect(() => {
     fetchDepartments();
     fetchDesignations();
   }, []);
 
+  // ------------------ Handle Input ------------------
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -38,6 +39,7 @@ const DesignationLayer = () => {
     }));
   };
 
+  // ------------------ Fetch Departments ------------------
   const fetchDepartments = async () => {
     try {
       const res = await axios.get(API_BASE_DEPARTMENTS, {
@@ -48,14 +50,15 @@ const DesignationLayer = () => {
       const formattedData = apiData.map((dept) => ({
         id: dept.id || dept.DeptId,
         departmentName: dept.departmentName || dept.DepartmentName,
-        isActive: dept.isActive || dept.IsActive,
       }));
+
       setDepartments(formattedData);
     } catch (error) {
       console.error("Failed to load departments", error);
     }
   };
 
+  // ------------------ Fetch Designations ------------------
   const fetchDesignations = async () => {
     try {
       const res = await axios.get(API_BASE_DESIGNATIONS, {
@@ -63,21 +66,29 @@ const DesignationLayer = () => {
       });
 
       const apiData = res.data?.data || [];
-      const formattedData = apiData.map((designation) => ({
-        id: designation.id || designation.DesignationId,
-        designationName: designation.designationName || designation.DesignationName,
-        departmentId: designation.departmentId || designation.DepartmentId,
-        departmentName: designation.departmentName || designation.DepartmentName,
-        isHead: designation.isHead || designation.IsHead,
-        level: designation.level || designation.Level,
-        isActive: designation.isActive || designation.IsActive,
+      const formattedData = apiData.map((d) => ({
+        id: d.Id,
+        departmentId: d.DeptId,
+        designationName: d.Designation_name,
+        departmentName: d.DepartmentName,
+        level: d.Level,
+        // ✅ FIX: Handle all possible truthy forms of "is head"
+        isHead:
+          d.Is_Head === 1 ||
+          d.Is_Head === "1" ||
+          d.is_Head === 1 ||
+          d.is_Head === "1" ||
+          d.IsHead === true ||
+          d.isHead === true,
       }));
+
       setDesignations(formattedData);
     } catch (error) {
       console.error("Failed to load designations", error);
     }
   };
 
+  // ------------------ Submit Form ------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -86,35 +97,26 @@ const DesignationLayer = () => {
 
     try {
       const headers = { Authorization: `Bearer ${token}` };
+
+      const payload = {
+        deptId: parseInt(formData.departmentId),
+        designation_name: formData.designationName,
+        level: parseInt(formData.level),
+        is_Head: formData.isHead ? 1 : 0,
+      };
+
       let res;
 
       if (formData.id) {
+        // ✅ Update
         res = await axios.put(
           API_BASE_DESIGNATIONS,
-          {
-            designationId: formData.id,
-            designationName: formData.designationName,
-            departmentId: formData.departmentId,
-            isHead: formData.isHead,
-            level: formData.level,
-            modifiedBy: username,
-            isActive: formData.isActive,
-          },
+          { ...payload, id: parseInt(formData.id) },
           { headers }
         );
       } else {
-        res = await axios.post(
-          API_BASE_DESIGNATIONS,
-          {
-            designationName: formData.designationName,
-            departmentId: formData.departmentId,
-            isHead: formData.isHead,
-            level: formData.level,
-            createdBy: username,
-            isActive: formData.isActive,
-          },
-          { headers }
-        );
+        // ✅ Add
+        res = await axios.post(API_BASE_DESIGNATIONS, payload, { headers });
       }
 
       if (res.data.status || res.status === 200) {
@@ -131,7 +133,6 @@ const DesignationLayer = () => {
           departmentId: "",
           isHead: false,
           level: "",
-          isActive: true,
         });
         fetchDesignations();
       } else {
@@ -153,6 +154,7 @@ const DesignationLayer = () => {
     }
   };
 
+  // ------------------ Edit Designation ------------------
   const handleEdit = (designation) => {
     setFormData({
       id: designation.id,
@@ -160,10 +162,10 @@ const DesignationLayer = () => {
       departmentId: designation.departmentId,
       isHead: designation.isHead,
       level: designation.level,
-      isActive: designation.isActive,
     });
   };
 
+  // ------------------ Table Columns ------------------
   const columns = [
     { name: "S.No", selector: (_, i) => i + 1, width: "80px" },
     {
@@ -173,20 +175,23 @@ const DesignationLayer = () => {
     },
     {
       name: "Department Name",
-      selector: (row) => {
-        const department = departments.find(
-          (dept) => dept.id === row.departmentId
-        );
-        return department ? department.departmentName : "N/A";
-      },
+      selector: (row) => row.departmentName || "N/A",
       sortable: true,
     },
     {
       name: "Is Head",
       cell: (row) => (
-        <input type="checkbox" checked={row.isHead} readOnly disabled />
+        <div className="text-center">
+          <input
+            type="checkbox"
+            checked={!!row.isHead}
+            readOnly
+            disabled
+            className="form-check-input cursor-pointer"
+          />
+        </div>
       ),
-      sortable: true,
+      width: "100px",
     },
     {
       name: "Level",
@@ -202,15 +207,6 @@ const DesignationLayer = () => {
       sortable: true,
     },
     {
-      name: "Status",
-      selector: (row) =>
-        row.isActive ? (
-          <span className="badge bg-success">Active</span>
-        ) : (
-          <span className="badge bg-danger">Inactive</span>
-        ),
-    },
-    {
       name: "Actions",
       cell: (row) => (
         <Link
@@ -223,13 +219,14 @@ const DesignationLayer = () => {
     },
   ];
 
+  // ------------------ Render ------------------
   return (
     <div className="row gy-4 mt-2">
+      {/* ---------- Form Section ---------- */}
       <div className="col-xxl-4 col-lg-4">
         <div className="card h-100 p-0">
           <div className="card-body p-24">
             <form onSubmit={handleSubmit} noValidate>
-
               {/* Department Dropdown */}
               <div className="mb-10">
                 <label className="text-sm fw-semibold text-primary-light mb-8">
@@ -237,7 +234,9 @@ const DesignationLayer = () => {
                 </label>
                 <select
                   name="departmentId"
-                  className={`form-select ${errors.departmentId ? "is-invalid" : ""}`}
+                  className={`form-select ${
+                    errors.departmentId ? "is-invalid" : ""
+                  }`}
                   value={formData.departmentId}
                   onChange={handleChange}
                 >
@@ -259,7 +258,9 @@ const DesignationLayer = () => {
                 <input
                   type="text"
                   name="designationName"
-                  className={`form-control ${errors.designationName ? "is-invalid" : ""}`}
+                  className={`form-control ${
+                    errors.designationName ? "is-invalid" : ""
+                  }`}
                   placeholder="Enter designation name"
                   value={formData.designationName}
                   onChange={handleChange}
@@ -278,7 +279,7 @@ const DesignationLayer = () => {
                   onChange={handleChange}
                 />
                 <label
-                  className="form-check-label text-sm fw-semibold text-primary-light flex items-center gap-1 cursor-pointer ms-4"
+                  className="form-check-label text-sm fw-semibold text-primary-light cursor-pointer ms-4"
                   htmlFor="isHeadCheckbox"
                 >
                   Is Head of Department
@@ -305,22 +306,6 @@ const DesignationLayer = () => {
                 <FormError error={errors.level} />
               </div>
 
-              {/* Status */}
-              <div className="mb-20">
-                <label className="text-sm fw-semibold text-primary-light mb-8">
-                  Status
-                </label>
-                <select
-                  name="isActive"
-                  className="form-select form-control"
-                  value={formData.isActive ? "true" : "false"}
-                  onChange={handleChange}
-                >
-                  <option value="true">Active</option>
-                  <option value="false">Inactive</option>
-                </select>
-              </div>
-
               <button
                 type="submit"
                 className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
@@ -332,6 +317,7 @@ const DesignationLayer = () => {
         </div>
       </div>
 
+      {/* ---------- Table Section ---------- */}
       <div className="col-xxl-8 col-lg-8">
         <div className="chat-main card overflow-hidden">
           <DataTable
