@@ -11,7 +11,7 @@ const UnitCountSeven = () => {
   useEffect(() => {
     fetchDashboard();
     fetchRefunds();
-  })
+  },[]);
 
   const fetchDashboard = async () => {
     const token = localStorage.getItem("token");

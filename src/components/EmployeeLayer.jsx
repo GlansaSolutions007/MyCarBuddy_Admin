@@ -175,6 +175,16 @@ const EmployeeLayer = () => {
           <span className="badge bg-secondary">Inactive</span>
         ),
     },
+    {
+      name: "Actions",
+      cell: (row) => (
+        <div>
+          <Link to={`/edit-employee/${row.Id}`} className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'>
+            <Icon icon='lucide:edit' />
+          </Link>
+        </div>
+      ),
+    },
   ];
 
   return (
