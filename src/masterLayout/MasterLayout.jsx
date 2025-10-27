@@ -380,6 +380,7 @@ const MasterLayout = ({ children }) => {
       roles: ["Admin"],
       children: [
         { title: "Departments", to: "/departments", color: "text-primary-600" },
+        { title: "Designations", to: "/designations", color: "text-warning-main" },
       ],
     },
     {

@@ -46,7 +46,7 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
     Status: true,
     ProfileImage1: null,
     City: "",
-    Department: "",
+    DeptId: "",
   });
 
   useEffect(() => {
@@ -479,21 +479,21 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                   </label>
                   <Select
                     value={departments.find(
-                      (option) => option.value === formData.Department
+                      (option) => option.value === formData.DeptId
                     )}
                     onChange={(selectedOption) =>
                       setFormData((prev) => ({
                         ...prev,
-                        Department: selectedOption ? selectedOption.value : "",
+                        DeptId: selectedOption ? selectedOption.value : "",
                       }))
                     }
                     options={departments}
                     placeholder="Select Department"
                     classNamePrefix="react-select"
-                    className={errors.Department ? "is-invalid" : ""}
+                    className={errors.DeptId ? "is-invalid" : ""}
                     isClearable
                   />
-                  <FormError error={errors.Department} />
+                  <FormError error={errors.DeptId} />
                 </div>
 
                 {/* Role */}
