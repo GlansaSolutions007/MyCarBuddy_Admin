@@ -236,9 +236,6 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
         "DealerNames",
         "RoleName",
         "Designation_Id",
-        // "Reporting_To",
-        // "ReportingTo",
-        // "DesignationName"
       ];
       let currentErrors = validate(formData, validationFieldsToExclude);
 
@@ -354,17 +351,32 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const formattedEmployees = res.data.map((emp) => ({
-        value: emp.Id,
-        label: emp.Name,
-      }));
-
-      setEmployees(formattedEmployees);
+      // Store all fields, not just value/label
+      setEmployees(res.data);
     } catch (error) {
       console.error("Failed to load employees", error);
       Swal.fire("Error", "Failed to load employees", "error");
     }
   };
+
+  // Filter employees who are heads in the selected department
+  const getDepartmentHeads = () => {
+  if (!formData.DeptId) return [];
+
+  return employees
+    .filter((emp) => {
+      // Ensure both department and head flag match correctly
+      return (
+        emp.DeptId === formData.DeptId &&
+        emp.Is_Head != null &&                     // not null or undefined
+        (Number(emp.Is_Head) === 1 || emp.Is_Head === true) // only heads
+      );
+    })
+    .map((emp) => ({
+      value: emp.Id,
+      label: emp.Name,
+    }));
+};
 
   // ------------------ Fetch Designations ------------------
   const fetchDesignations = async () => {
@@ -566,6 +578,37 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                     isClearable
                   />
                   <FormError error={errors.DeptId} />
+                </div>
+
+                {/* Department Head */}
+                <div className="col-sm-6 mt-2">
+                  <label className="form-label text-sm fw-semibold text-primary-light mb-8">
+                    Department Head <span className="text-danger-600">*</span>
+                  </label>
+                  <Select
+                    value={getDepartmentHeads().find(
+                      (option) => option.value === formData.Reporting_To
+                    )}
+                    onChange={(selectedOption) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        Reporting_To: selectedOption ? selectedOption.value : "",
+                      }))
+                    }
+                    options={getDepartmentHeads()}
+                    placeholder={
+                      formData.DeptId
+                        ? getDepartmentHeads().length > 0
+                          ? "Select Department Head"
+                          : "No Head found for this department"
+                        : "Select a Department first"
+                    }
+                    classNamePrefix="react-select"
+                    className={errors.Reporting_To ? "is-invalid" : ""}
+                    isDisabled={!formData.DeptId || getDepartmentHeads().length === 0}
+                    isClearable
+                  />
+                  <FormError error={errors.Reporting_To} />
                 </div>
 
                 {/* Designations */}

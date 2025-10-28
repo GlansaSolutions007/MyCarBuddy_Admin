@@ -19,15 +19,56 @@ const TicketsAddLayer = ({ setPageTitle }) => {
 
   const [customerList, setCustomerList] = useState([]);
   const [bookingList, setBookingList] = useState([]);
+  const [reasons, setReasons] = useState([]);
+  const [reasonTypes, setReasonTypes] = useState([]);
 
   const [formData, setFormData] = useState({
     custID: "",
     bookingID: "",
     description: "",
-    status: "", // Added status field
+    status: "",
+    reasonID: "",
+    reasonType: "",
   });
 
-  // 🔹 Handle Input Change
+  // 🔹 Fetch reasons from AfterServiceLeads
+  useEffect(() => {
+    const fetchReasons = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}AfterServiceLeads`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (Array.isArray(res.data)) {
+          const formattedReasons = res.data.map((r) => ({
+            value: r.ID,
+            label: r.Reason,
+          }));
+
+          // Extract unique ReasonTypes
+          const uniqueTypes = [
+            ...new Set(res.data.map((r) => r.ReasonType).filter(Boolean)),
+          ].map((type) => ({
+            value: type,
+            label: type,
+          }));
+
+          setReasons(formattedReasons);
+          setReasonTypes(uniqueTypes);
+        } else {
+          setReasons([]);
+          setReasonTypes([]);
+        }
+      } catch (err) {
+        console.error("Failed to load reasons", err);
+        Swal.fire("Error", "Unable to load reasons", "error");
+      }
+    };
+
+    fetchReasons();
+  }, [token]);
+
+  // 🔹 Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -35,10 +76,6 @@ const TicketsAddLayer = ({ setPageTitle }) => {
       [name]: value,
     }));
   };
-
-  if (formData.length > 0) {
-    console.log(formData.status);
-  }
 
   // 🔹 Fetch Customers
   useEffect(() => {
@@ -86,7 +123,7 @@ const TicketsAddLayer = ({ setPageTitle }) => {
     }
   };
 
-  // 🔹 Handle Submit (Add / Update)
+  // 🔹 Handle form submit (Add / Update)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -98,7 +135,9 @@ const TicketsAddLayer = ({ setPageTitle }) => {
         custID: Number(formData.custID),
         bookingID: Number(formData.bookingID),
         description: formData.description,
-        status: Number(formData.status), // 👈 Include status
+        status: Number(formData.status),
+        reasonID: Number(formData.reasonID),
+        reasonType: formData.reasonType,
       };
 
       if (isEditing) {
@@ -128,7 +167,7 @@ const TicketsAddLayer = ({ setPageTitle }) => {
     <div className="card h-100 p-0 radius-12 overflow-hidden mt-3">
       <div className="card-body p-20">
         <form className="row g-3" onSubmit={handleSubmit}>
-          {/* 🔹 Customer Name (Searchable) */}
+          {/* 🔹 Customer Name */}
           <div className="col-md-6 mt-2">
             <label className="form-label text-sm fw-semibold text-primary-light mb-8">
               Customer Name <span className="text-danger-600">*</span>
@@ -166,7 +205,7 @@ const TicketsAddLayer = ({ setPageTitle }) => {
             <FormError error={errors.CustomerName} />
           </div>
 
-          {/* 🔹 Booking Track ID (Dynamic) */}
+          {/* 🔹 Booking Track ID */}
           <div className="col-md-6 mt-2">
             <label className="form-label text-sm fw-semibold text-primary-light mb-8">
               Booking Track ID <span className="text-danger-600">*</span>
@@ -206,26 +245,65 @@ const TicketsAddLayer = ({ setPageTitle }) => {
             <FormError error={errors.BookingTrackID} />
           </div>
 
-          {/* 🔹 Status (Static options) */}
-          {/* <div className="col-md-6 mt-2">
+          {/* 🔹 Reason Dropdown */}
+          <div className="col-md-6 mt-2">
             <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-              Status <span className="text-danger-600">*</span>
+              Reason <span className="text-danger-600">*</span>
             </label>
-            <select
-              name="status"
-              className="form-select"
-              value={formData.status}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Select status</option>
-              <option value="0">Pending</option>
-              <option value="1">Under Review</option>
-              <option value="2">Resolved</option>
-              <option value="3">Cancelled</option>
-            </select>
-            <FormError error={errors.Status} />
-          </div> */}
+            <Select
+              name="reasonID"
+              options={reasons}
+              placeholder={
+                reasons.length ? "Select a reason" : "No reasons available"
+              }
+              value={
+                formData.reasonID
+                  ? reasons.find((r) => r.value === formData.reasonID)
+                  : null
+              }
+              onChange={(selected) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  reasonID: selected?.value || "",
+                }))
+              }
+              isSearchable
+              classNamePrefix="react-select"
+            />
+            <FormError error={errors.Reason} />
+          </div>
+
+          {/* 🔹 Reason Type Dropdown */}
+          <div className="col-md-6 mt-2">
+            <label className="form-label text-sm fw-semibold text-primary-light mb-8">
+              Reason Type <span className="text-danger-600">*</span>
+            </label>
+            <Select
+              name="reasonType"
+              options={reasonTypes}
+              placeholder={
+                reasonTypes.length
+                  ? "Select a reason type"
+                  : "No types available"
+              }
+              value={
+                formData.reasonType
+                  ? reasonTypes.find(
+                      (t) => t.value === formData.reasonType
+                    ) || null
+                  : null
+              }
+              onChange={(selected) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  reasonType: selected?.value || "",
+                }))
+              }
+              isSearchable
+              classNamePrefix="react-select"
+            />
+            <FormError error={errors.ReasonType} />
+          </div>
 
           {/* 🔹 Description */}
           <div className="col-12 mt-2">
