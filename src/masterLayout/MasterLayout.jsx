@@ -15,74 +15,81 @@ const MasterLayout = ({ children }) => {
   let [mobileMenu, setMobileMenu] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [userPermissions, setUserPermissions] = useState([]);
+  const [menuLoading, setMenuLoading] = useState(true);
   const location = useLocation(); // Hook to get the current route
   const role = localStorage.getItem("role");
   const userId = localStorage.getItem("userId");
-
-  // Dynamic menu states
-  const [userPermissions, setUserPermissions] = useState([]);
-  const [allPermissions, setAllPermissions] = useState([]);
-  const [roles, setRoles] = useState([]);
-  const [menuLoading, setMenuLoading] = useState(true);
+  const roleId = localStorage.getItem("roleId");
+  
   const token = localStorage.getItem("token");
   const API_BASE = import.meta.env.VITE_APIURL;
   const API_IMAGE = import.meta.env.VITE_APIURL_IMAGE;
-  const roleId = localStorage.getItem("roleId");
   const navigate = useNavigate();
   const [userImage, setUserImage] = useState("");
 
+  // Fetch user permissions from API
+  useEffect(() => {
+    const fetchUserPermissions = async () => {
+      try {
+        if (!userId || !token) return;
+        const response = await axios.get(`${API_BASE}rolehaspermissions/id?roleId=${roleId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (response.data && Array.isArray(response.data)) {
+          setUserPermissions(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching user permissions:", error);
+      } finally {
+        setMenuLoading(false);
+      }
+    };
+
+    fetchUserPermissions();
+  }, [userId, token, API_BASE]);
+
+  // Helper function to check if user has a specific permission
+  const hasPermission = (permissionName, page) => {
+    if (!userPermissions || userPermissions.length === 0) return false;
+    return userPermissions.some(perm => perm.name === permissionName && perm.page.toLowerCase() === page.toLowerCase());
+  };
+
+  // Helper function to check if user has permission for a menu item
+  const hasMenuPermission = (item) => {
+    if (menuLoading) return true;
+
+    // If item has children, show it if any child is visible
+    if (item.children && item.children.length > 0) {
+      return item.children.some(child => {
+        if (child.roles && child.roles.includes(role)) return true;
+        if (role === "Admin") return true;
+        if (child.permission && child.page) {
+          return hasPermission(child.permission, child.page);
+        }
+        return false;
+      });
+    }
+
+    // For items without children, check permission
+    if (item.roles && item.roles.includes(role)) return true;
+    if (role === "Admin") return true;
+    if (!userPermissions || userPermissions.length === 0) {
+      return false;
+    }
+    if (item.permission && item.page) {
+      return hasPermission(item.permission, item.page);
+    }
+    return true; // Show if no permission defined
+  };
+
+
+
   // console.log(userImage);x`
 
-  // Permission mappings for menu items
-  const permissionMappings = {
-    Dashboard: { name: "dashboard_view", page: "Dashboard" },
-    Customers: { name: "customer_view", page: "Customer" },
-    Bookings: { name: "booking_view", page: "Booking" },
-    Payments: { name: "payment_view", page: "Payment" },
-    States: { name: "state_view", page: "State" },
-    Cities: { name: "city_view", page: "City" },
-    Distributors: { name: "distributor_view", page: "Distributor" },
-    Dealers: { name: "dealer_view", page: "Dealer" },
-    Technicians: { name: "technician_view", page: "Technician" },
-    Employees: { name: "employee_view", page: "Employee" },
-    "Vehicle Brand": { name: "vehicle_brand_view", page: "VehicleBrand" },
-    "Vehicle Model": { name: "vehicle_model_view", page: "VehicleModel" },
-    "Vehicle Fuel": { name: "vehicle_fuel_view", page: "VehicleFuel" },
-    "Service Categories": {
-      name: "service_category_view",
-      page: "ServiceCategory",
-    },
-    "Service Sub Categories": {
-      name: "service_subcategory_view",
-      page: "ServiceSubCategory",
-    },
-    Skills: { name: "skill_view", page: "Skill" },
-    "Service Includes": {
-      name: "service_includes_view",
-      page: "ServiceIncludes",
-    },
-    "Service Plans": { name: "service_plan_view", page: "ServicePlan" },
-    "Service Plan Prices": {
-      name: "service_plan_price_view",
-      page: "ServicePlanPrice",
-    },
-    "Time Slots": { name: "time_slot_view", page: "TimeSlot" },
-    Coupons: { name: "coupon_view", page: "Coupon" },
-    Leaves: { name: "leave_view", page: "Leave" },
-    Reasons: { name: "reason_view", page: "Reason" },
-    "Notification Templates": {
-      name: "notification_template_view",
-      page: "NotificationTemplate",
-    },
-    Notifications: { name: "notification_view", page: "Notification" },
-    SEO: { name: "seo_view", page: "SEO" },
-    Roles: { name: "role_view", page: "Role" },
-    "Permission Pages": {
-      name: "permission_page_view",
-      page: "PermissionPage",
-    },
-    Blog: { name: "blog_view", page: "Blog" },
-  };
+
 
   useEffect(() => {
     const fetchProfileImage = async () => {
@@ -168,76 +175,9 @@ const MasterLayout = ({ children }) => {
     };
   }, [location.pathname]);
 
-  // Fetch user permissions on component mount
-  useEffect(() => {
-    const fetchUserPermissions = async () => {
-      if (!roleId || !token) {
-        console.log("No roleId or token found, skipping permission fetch");
-        setMenuLoading(false);
-        return;
-      }
 
-      try {
-        const response = await axios.get(
-          `${API_BASE}rolehaspermissions/id?roleId=${roleId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
 
-        if (response.data && response.data.success) {
-          const permissions = response.data.data || [];
-          setUserPermissions(permissions);
-          console.log("User permissions loaded:", permissions);
-        } else {
-          console.log("No permissions found for this role");
-          setUserPermissions([]);
-        }
-      } catch (error) {
-        console.error("Error fetching user permissions:", error);
-        setUserPermissions([]);
-      } finally {
-        setMenuLoading(false);
-      }
-    };
 
-    fetchUserPermissions();
-  }, [roleId, token, API_BASE]);
-
-  // Helper function to check if user has permission for a menu item
-  const hasPermission = (permissionName, pageName) => {
-    if (!userPermissions || userPermissions.length === 0) return false;
-
-    return userPermissions.some(
-      (permission) =>
-        permission.name === permissionName && permission.page === pageName
-    );
-  };
-
-  // Helper function to check if user has permission for a menu section
-  const hasMenuPermission = (menuItem) => {
-    // If no permissions are loaded yet, show loading
-    if (menuLoading) return true;
-
-    // For Admin users, show all menus
-    if (role === "Admin") return true;
-
-    // For non-admin users, check permissions
-    if (!userPermissions || userPermissions.length === 0) {
-      return false; // Hide menus if no permissions are loaded
-    }
-
-    // Check if user has any permission that matches this menu item
-    const mapping = permissionMappings[menuItem.title];
-    if (mapping) {
-      return hasPermission(mapping.name, mapping.page);
-    }
-
-    // Hide menu if no permission mapping found
-    return false;
-  };
 
   // Firebase notification setup
   useEffect(() => {
@@ -360,118 +300,121 @@ const MasterLayout = ({ children }) => {
       title: "Dashboard",
       icon: "solar:home-smile-angle-outline",
       to: "/dashboard",
-      roles: ["Admin", "Distributor", "Dealer"], // All roles
     },
     {
       title: "Customer Details",
       icon: "flowbite:users-group-outline",
-      roles: ["Admin", "Distributor", "Dealer"],
       children: [
-        { title: "Customers", to: "/customers", color: "text-primary-600" },
-        { title: "Bookings", to: "/bookings", color: "text-warning-main" },
-        { title: "Refunds", to: "/refunds", color: "text-black" },
-        { title: "Payments", to: "/payments", color: "text-info-main" },
-        { title: "Tickets", to: "/tickets", color: "text-info-danger" },
+        { title: "Customers", to: "/customers", color: "text-primary-600", permission: "customer_view", page: "Customers" },
+        { title: "Bookings", to: "/bookings", color: "text-warning-main", permission: "booking_view", page: "Bookings" },
+        { title: "Refunds", to: "/refunds", color: "text-black", permission: "refund_view", page: "Refunds" },
+        { title: "Payments", to: "/payments", color: "text-info-main", permission: "payment_view", page: "Payments" },
+        { title: "Tickets", to: "/tickets", color: "text-info-danger", permission: "ticket_view", page: "Tickets" },
       ],
     },
     {
       title: "Departments",
       icon: "mdi:office-building",
-      roles: ["Admin"],
       children: [
-        { title: "Departments", to: "/departments", color: "text-primary-600" },
-        { title: "Designations", to: "/designations", color: "text-warning-main" },
+        { title: "Departments", to: "/departments", color: "text-primary-600", permission: "department_view", page: "Departments" },
+        { title: "Designations", to: "/designations", color: "text-warning-main", permission: "designation_view", page: "Designations" },
       ],
     },
     {
       title: "Regions",
       icon: "material-symbols:map-outline",
-      roles: ["Admin"],
       children: [
-        { title: "States", to: "/states", color: "text-primary-600" },
-        { title: "Cities", to: "/cities", color: "text-warning-main" },
+        { title: "States", to: "/states", color: "text-primary-600", permission: "state_view", page: "States" },
+        { title: "Cities", to: "/cities", color: "text-warning-main", permission: "city_view", page: "Cities" },
       ],
     },
     {
       title: "Performers",
       icon: "flowbite:users-group-outline",
-      roles: ["Admin", "Distributor"], // who can see this section
       children: [
         {
           title: "Distributors",
           to: "/distributors",
           color: "text-primary-600",
-          roles: ["Admin"],
+          permission: "distributor_view",
+          page: "Distributors",
         },
         {
           title: "Dealers",
           to: "/dealers",
           color: "text-warning-main",
-          roles: ["Admin", "Distributor"], // allow multiple roles
+          permission: "dealer_view",
+          page: "Dealers",
         },
         {
           title: "Technicians",
           to: "/technicians",
           color: "text-info-main",
-          roles: ["Admin", "Distributor", "Dealer"],
+          permission: "technician_view",
+          page: "Technicians",
         },
         {
           title: "Employees",
           to: "/employees",
           color: "text-info-main",
-          roles: ["Admin"],
+          permission: "employee_view",
+          page: "Employees",
         },
       ],
     },
     {
       title: "Telecaler Assigning",
       icon: "hugeicons:user-check-02",
-      roles: ["Admin"],
       children: [
-        { title: "Telecaler Bookings", to: "/telecaler-bookings", color: "text-warning-main" },
-        { title: "Telecaler Tickets", to: "/telecaler-tickets", color: "text-info-main" },
+        { title: "Telecaler Bookings", to: "/telecaler-bookings", color: "text-warning-main", permission: "telecaler_booking_view", page: "Telecaler_Bookings" },
+        { title: "Telecaler Tickets", to: "/telecaler-tickets", color: "text-info-main", permission: "telecaler_ticket_view", page: "Telecaler_Tickets" },
+        { title: "Telecaler Assign Tickets", to: "/telecaler-assign-tickets", color: "text-success-main", permission: "telecaler_assign_ticket_view", page: "Telecaler_Assign_Tickets" },
+        { title: "Employee Tickets", to: "/employee-tickets", color: "text-danger-main", permission: "employee_ticket_view", page: "Employee_Tickets" },
       ],
     },
     {
       title: "Vehicle",
       icon: "hugeicons:car-03",
-      roles: ["Admin"],
       children: [
-        { title: "Brand", to: "/vehicle-brand", color: "text-primary-600" },
-        { title: "Model", to: "/vehicle-model", color: "text-warning-main" },
-        { title: "Fuel", to: "/vehicle-fuel", color: "text-info-main" },
+        { title: "Brand", to: "/vehicle-brand", color: "text-primary-600", permission: "vehicle_brand_view", page: "Vehicle_Brand" },
+        { title: "Model", to: "/vehicle-model", color: "text-warning-main", permission: "vehicle_model_view", page: "Vehicle_Model" },
+        { title: "Fuel", to: "/vehicle-fuel", color: "text-info-main", permission: "vehicle_fuel_view", page: "Vehicle_Fuel" },
       ],
     },
     {
       title: "Services",
       icon: "hugeicons:invoice-03",
-      roles: ["Admin"],
       children: [
         {
           title: "Categories",
           to: "/service-category",
           color: "text-primary-600",
+          permission: "service_category_view",
+          page: "Service_Category",
         },
         {
           title: "Sub Categories 1",
           to: "/service-subcategory1",
           color: "text-warning-main",
+          permission: "service_subcategory1_view",
+          page: "Service_Subcategory1",
         },
         // { title: "Sub Categories 2", to: "/service-subcategory2", color: "text-info-main" },
-        { title: "Skill", to: "/skills", color: "text-info-main" },
-        { title: "Includes", to: "/service-includes", color: "text-info-main" },
-        { title: "Packages", to: "/service-plans", color: "text-info-main" },
+        { title: "Skill", to: "/skills", color: "text-info-main", permission: "skill_view", page: "Skill" },
+        { title: "Includes", to: "/service-includes", color: "text-info-main", permission: "service_include_view", page: "Service_Include" },
+        { title: "Packages", to: "/service-plans", color: "text-info-main", permission: "service_plan_view", page: "Service_Plan" },
         {
           title: "Packages Price",
           to: "/service-plan-prices",
           color: "text-info-main",
+          permission: "service_plan_price_view",
+          page: "Service_Plan_Price",
         },
       ],
     },
     //  {
     //   title: "Payments",
     //   icon: "hugeicons:invoice-03",
-    //   roles: ["Admin", "Distributor", "Dealer"],
     //   children: [
     //     { title: "Payments", to: "/payments", color: "text-primary-600" },
     //   ],
@@ -479,42 +422,40 @@ const MasterLayout = ({ children }) => {
     {
       title: "Time Slots",
       icon: "ion:time-outline",
-      roles: ["Admin"],
       children: [
         {
           title: "Time Slots",
           to: "/booking-time-slot",
           color: "text-primary-600",
+          permission: "time_slot_view",
+          page: "Time_Slot",
         },
       ],
     },
     {
       title: "Coupons",
       icon: "ion:card-outline",
-      roles: ["Admin"],
       children: [
-        { title: "Coupons", to: "/coupons", color: "text-primary-600" },
+        { title: "Coupons", to: "/coupons", color: "text-primary-600", permission: "coupon_view", page: "Coupon" },
       ],
     },
     {
       title: "Leave Management",
       icon: "ion:document-text-outline",
-      roles: ["Admin"],
       children: [
-        { title: "Leaves", to: "/leave-list", color: "text-primary-600" },
+        { title: "Leaves", to: "/leave-list", color: "text-primary-600", permission: "leave_view", page: "Leave" },
       ],
     },
     {
       title: "Blog",
       icon: "material-symbols:article-outline",
-      roles: ["Admin", "DigitalManager"],
-      children: [{ title: "Blog", to: "/blog", color: "text-primary-600" }],
+      children: [{ title: "Blog", to: "/blog", color: "text-primary-600", permission: "blog_view", page: "Blog" }],
     },
     {
       title: "Contacts",
       icon: "flowbite:address-book-outline",
       children: [
-        { title: "Contacts", to: "/contacts", color: "text-primary-600" },
+        { title: "Contacts", to: "/contacts", color: "text-primary-600", permission: "contact_view", page: "Contact" },
       ],
     },
     {
@@ -525,33 +466,48 @@ const MasterLayout = ({ children }) => {
           title: "Dealer Service Price",
           to: "/DealerServicePrice",
           color: "text-primary-600",
+          permission: "dealer_service_price_view",
+          page: "Dealer_Service_Price",
         },
       ],
     },
     {
       title: "Settings",
       icon: "material-symbols:settings-outline-rounded",
-      roles: ["Admin"],
       children: [
-        { title: "Reasons", to: "/reason", color: "text-primary-600" },
+        { title: "Reasons", to: "/reason", color: "text-primary-600", permission: "reason_view", page: "Reason" },
         {
           title: "Notification Templates",
           to: "/notification-templates",
           color: "text-warning-main",
+          permission: "notification_template_view",
+          page: "Notification_Template",
         },
         {
           title: "Notifications",
           to: "/notifications",
           color: "text-info-main",
+          permission: "notification_view",
+          page: "Notification",
         },
-        { title: "SEO", to: "/seo", color: "text-info-main" },
-        { title: "Role", to: "/roles", color: "text-info-main" },
+        { title: "SEO", to: "/seo", color: "text-info-main", permission: "seo_view", page: "SEO" },
+        { title: "Role", to: "/roles", color: "text-info-main", permission: "role_view", page: "Role" },
         {
           title: "Permission Pages",
           to: "/permission-pages",
           color: "text-info-main",
+          permission: "permission_page_view",
+          page: "Permission_Page",
         },
       ],
+    },
+    {
+      title: "Master Settings",
+      icon: "material-symbols:admin-panel-settings-outline",
+      children: [
+        { title: "Admin Users", to: "/admin-users", color: "text-primary-600", permission: "admin_user_view", page: "Admin_User" },
+      ],
+
     },
     {
       title: "Go To Website",
@@ -606,23 +562,19 @@ const MasterLayout = ({ children }) => {
                 const hasChildren = Array.isArray(item.children);
                 const visibleChildren = hasChildren
                   ? item.children.filter((child) => {
-                    // Check if child has permission or fallback to role-based
-                    if (menuLoading) return true;
-                    if (!userPermissions || userPermissions.length === 0) {
-                      return child.roles ? child.roles.includes(role) : true;
+                    // Check role-based access first
+                    if (child.roles && child.roles.includes(role)) return true;
+
+                    // For Admin users, show all children
+                    if (role === "Admin") return true;
+
+                    // Check permissions for non-admin users
+                    if (child.permission && child.page) {
+                      return hasPermission(child.permission, child.page);
                     }
 
-                    // Check permission for child menu item
-                    const childMapping = permissionMappings[child.title];
-                    if (childMapping) {
-                      return hasPermission(
-                        childMapping.name,
-                        childMapping.page
-                      );
-                    }
-
-                    // Fallback to role-based
-                    return child.roles ? child.roles.includes(role) : true;
+                    // Hide if no permission defined
+                    return false;
                   })
                   : [];
 

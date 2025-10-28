@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Select from "react-select";
@@ -20,6 +20,8 @@ const TelecalerAssignTicketLayer = () => {
   const [selectedTickets, setSelectedTickets] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  const selectAllRef = useRef(null);
+
   const [formData, setFormData] = useState({
     selectedDepartment: null,
     selectedHead: null,
@@ -29,25 +31,32 @@ const TelecalerAssignTicketLayer = () => {
   useEffect(() => {
     if (role === "Admin") {
       fetchDepartments();
+      fetchAllEmployees();
     } else if (role === "DepartmentHead") {
-      // For department head, set their department automatically
-      setFormData(prev => ({ ...prev, selectedDepartment: { value: userId, label: "Your Department" } }));
-      fetchEmployeesByDepartment(userId);
+      setFormData((prev) => ({
+        ...prev,
+        selectedDepartment: { value: userId, label: "Your Department" },
+      }));
+      fetchAllEmployees();
     }
     fetchTickets();
   }, [role, userId]);
 
-  // Fetch Departments (Admin only)
+  // Fetch Departments
   const fetchDepartments = async () => {
     try {
       const res = await axios.get(`${API_BASE}Departments`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.data && Array.isArray(res.data)) {
-        setDepartments(res.data.map(dept => ({
-          value: dept.DepartmentID,
+
+      if (res.data?.status && Array.isArray(res.data.data)) {
+        const deptList = res.data.data.map((dept) => ({
+          value: dept.DeptId,
           label: dept.DepartmentName,
-        })));
+        }));
+        setDepartments(deptList);
+      } else {
+        Swal.fire("Warning", "No departments found", "warning");
       }
     } catch (error) {
       console.error("Failed to fetch departments:", error);
@@ -55,34 +64,50 @@ const TelecalerAssignTicketLayer = () => {
     }
   };
 
-  // Fetch Department Heads when department selected
+  // Fetch Department Heads
   const fetchDepartmentHeads = async (departmentId) => {
     try {
-      const res = await axios.get(`${API_BASE}Employees?departmentId=${departmentId}&role=DepartmentHead`, {
+      const res = await axios.get(`${API_BASE}Designations`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.data && Array.isArray(res.data)) {
-        setDepartmentHeads(res.data.map(emp => ({
-          value: emp.EmployeeID,
-          label: emp.FullName,
-        })));
+
+      if (res.data?.status && Array.isArray(res.data.data)) {
+        const headList = res.data.data
+          .filter(
+            (d) =>
+              d.DeptId === departmentId &&
+              (d.Is_Head === 1 || d.Is_Head === true)
+          )
+          .map((d) => ({
+            value: d.Id,
+            label: d.Designation_name,
+          }));
+
+        setDepartmentHeads(headList);
+      } else {
+        setDepartmentHeads([]);
       }
     } catch (error) {
       console.error("Failed to fetch department heads:", error);
+      Swal.fire("Error", "Unable to load department heads", "error");
     }
   };
 
-  // Fetch Employees by Department
-  const fetchEmployeesByDepartment = async (departmentId) => {
+  // Fetch All Employees
+  const fetchAllEmployees = async () => {
     try {
-      const res = await axios.get(`${API_BASE}Employees?departmentId=${departmentId}`, {
+      const res = await axios.get(`${API_BASE}Employee`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.data && Array.isArray(res.data)) {
-        setEmployees(res.data.map(emp => ({
-          value: emp.EmployeeID,
-          label: emp.FullName,
-        })));
+
+      if (Array.isArray(res.data)) {
+        const empList = res.data.map((emp) => ({
+          value: emp.Id,
+          label: emp.Name,
+        }));
+        setEmployees(empList);
+      } else {
+        Swal.fire("Warning", "No employees found", "warning");
       }
     } catch (error) {
       console.error("Failed to fetch employees:", error);
@@ -93,10 +118,10 @@ const TelecalerAssignTicketLayer = () => {
   // Fetch Unassigned Tickets
   const fetchTickets = async () => {
     try {
-      const res = await axios.get(`${API_BASE}Tickets?status=0`, { // Assuming 0 is unassigned/pending
+      const res = await axios.get(`${API_BASE}Tickets?status=0`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.data && Array.isArray(res.data)) {
+      if (Array.isArray(res.data)) {
         setTickets(res.data);
       }
     } catch (error) {
@@ -106,36 +131,46 @@ const TelecalerAssignTicketLayer = () => {
 
   // Handle Department Change
   const handleDepartmentChange = (selected) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       selectedDepartment: selected,
       selectedHead: null,
       selectedEmployees: [],
     }));
-    if (selected) {
-      fetchDepartmentHeads(selected.value);
-      fetchEmployeesByDepartment(selected.value);
+
+    if (selected) fetchDepartmentHeads(selected.value);
+    else setDepartmentHeads([]);
+  };
+
+  // ===== TICKET SELECTION HANDLERS =====
+  const handleTicketSelection = (ticketId) => {
+    setSelectedTickets((prev) => {
+      if (prev.includes(ticketId)) {
+        return prev.filter((id) => id !== ticketId);
+      } else {
+        return [...prev, ticketId];
+      }
+    });
+  };
+
+  const handleSelectAll = (isChecked) => {
+    if (isChecked) {
+      const allIds = tickets.map((t) => t.TicketID);
+      setSelectedTickets(allIds);
     } else {
-      setDepartmentHeads([]);
-      setEmployees([]);
+      setSelectedTickets([]);
     }
   };
 
-  // Handle Ticket Selection
-  const handleTicketSelection = (ticketId, isSelected) => {
-    setSelectedTickets(prev =>
-      isSelected
-        ? [...prev, ticketId]
-        : prev.filter(id => id !== ticketId)
-    );
-  };
+  // Update indeterminate state for select-all checkbox
+  useEffect(() => {
+    if (!selectAllRef.current) return;
+    const isIndeterminate =
+      selectedTickets.length > 0 && selectedTickets.length < tickets.length;
+    selectAllRef.current.indeterminate = isIndeterminate;
+  }, [selectedTickets, tickets]);
 
-  // Handle Select All Tickets
-  const handleSelectAll = (isSelected) => {
-    setSelectedTickets(isSelected ? tickets.map(t => t.TicketID) : []);
-  };
-
-  // Assign Tickets
+  // ===== ASSIGN HANDLER =====
   const handleAssign = async () => {
     if (selectedTickets.length === 0) {
       Swal.fire("Warning", "Please select at least one ticket", "warning");
@@ -163,7 +198,7 @@ const TelecalerAssignTicketLayer = () => {
         ticketIds: selectedTickets,
         departmentId: formData.selectedDepartment.value,
         headId: formData.selectedHead?.value,
-        employeeIds: formData.selectedEmployees.map(emp => emp.value),
+        employeeIds: formData.selectedEmployees.map((emp) => emp.value),
         assignedBy: userId,
       };
 
@@ -171,9 +206,9 @@ const TelecalerAssignTicketLayer = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      Swal.fire("Success", "Tickets assigned successfully", "success").then(() => {
-        navigate("/telecaler-tickets");
-      });
+      Swal.fire("Success", "Tickets assigned successfully", "success").then(
+        () => navigate("/telecaler-tickets")
+      );
     } catch (error) {
       console.error("Failed to assign tickets:", error);
       Swal.fire("Error", "Failed to assign tickets", "error");
@@ -182,24 +217,38 @@ const TelecalerAssignTicketLayer = () => {
     }
   };
 
-  // Ticket Columns for DataTable
+  // ===== TABLE COLUMNS =====
   const ticketColumns = [
     {
       name: (
         <input
+          ref={selectAllRef}
           type="checkbox"
           onChange={(e) => handleSelectAll(e.target.checked)}
-          checked={selectedTickets.length === tickets.length && tickets.length > 0}
+          checked={
+            tickets.length > 0 && selectedTickets.length === tickets.length
+          }
+          className="form-check-input cursor-pointer"
+          style={{ width: 16, height: 16 }}
         />
       ),
       cell: (row) => (
         <input
           type="checkbox"
           checked={selectedTickets.includes(row.TicketID)}
-          onChange={(e) => handleTicketSelection(row.TicketID, e.target.checked)}
+          onChange={() => handleTicketSelection(row.TicketID)}
+          className="form-check-input cursor-pointer"
+          style={{
+            width: 16,
+            height: 16,
+            accentColor: "#0d6efd",
+          }}
         />
       ),
-      width: "50px",
+      width: "60px",
+      center: true,
+      ignoreRowClick: true,
+      allowOverflow: true,
     },
     {
       name: "Ticket Track ID",
@@ -221,10 +270,12 @@ const TelecalerAssignTicketLayer = () => {
     <div className="card h-100 p-0 radius-12 overflow-hidden mt-3">
       <div className="card-body p-20">
         <div className="row g-3">
-          {/* Department Selection (Admin only) */}
+          {/* Department Selection */}
           {role === "Admin" && (
             <div className="col-md-6">
-              <label className="form-label fw-semibold">Select Department</label>
+              <label className="form-label fw-semibold">
+                Select Department
+              </label>
               <Select
                 options={departments}
                 value={formData.selectedDepartment}
@@ -236,14 +287,18 @@ const TelecalerAssignTicketLayer = () => {
             </div>
           )}
 
-          {/* Department Head Selection (Admin only) */}
+          {/* Department Head */}
           {role === "Admin" && (
             <div className="col-md-6">
-              <label className="form-label fw-semibold">Assign to Department Head</label>
+              <label className="form-label fw-semibold">
+                Assign to Department Head
+              </label>
               <Select
                 options={departmentHeads}
                 value={formData.selectedHead}
-                onChange={(selected) => setFormData(prev => ({ ...prev, selectedHead: selected }))}
+                onChange={(selected) =>
+                  setFormData((prev) => ({ ...prev, selectedHead: selected }))
+                }
                 placeholder="Choose department head..."
                 isSearchable
                 isDisabled={!formData.selectedDepartment}
@@ -252,37 +307,46 @@ const TelecalerAssignTicketLayer = () => {
             </div>
           )}
 
-          {/* Employee Selection */}
+          {/* Employees */}
           <div className="col-12">
-            <label className="form-label fw-semibold">Assign to Employees</label>
+            <label className="form-label fw-semibold">
+              Assign to Employees
+            </label>
             <Select
               options={employees}
               value={formData.selectedEmployees}
-              onChange={(selected) => setFormData(prev => ({ ...prev, selectedEmployees: selected || [] }))}
+              onChange={(selected) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  selectedEmployees: selected || [],
+                }))
+              }
               placeholder="Choose employees..."
               isMulti
               isSearchable
-              isDisabled={!formData.selectedDepartment}
               classNamePrefix="react-select"
+              closeMenuOnSelect={false}
             />
           </div>
 
-          {/* Tickets Selection */}
+          {/* Ticket Table */}
           <div className="col-12">
-            <label className="form-label fw-semibold">Select Tickets to Assign</label>
+            <label className="form-label fw-semibold">
+              Select Tickets to Assign
+            </label>
             <div className="border rounded p-3">
               <DataTable
                 columns={ticketColumns}
                 data={tickets}
-                selectableRows={false}
                 highlightOnHover
                 responsive
+                pagination
                 noDataComponent="No unassigned tickets available"
               />
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {/* Buttons */}
           <div className="d-flex justify-content-center gap-3 mt-4">
             <button
               type="button"
@@ -295,7 +359,7 @@ const TelecalerAssignTicketLayer = () => {
               type="button"
               className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
               onClick={handleAssign}
-              disabled={loading || selectedTickets.length === 0}
+              disabled={loading}
             >
               {loading ? "Assigning..." : "Assign Tickets"}
             </button>

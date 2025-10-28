@@ -46,8 +46,8 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
     ProfileImage1: null,
     City: "",
     DeptId: "",
-    ReportingTo: "",
-    DesignationName: "",
+    Reporting_To: "",
+    Designation_Id: "",
   });
 
   useEffect(() => {
@@ -58,12 +58,6 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
     fetchEmployees();
     fetchDesignations();
   }, [EmployeeID, isEditing, setPageTitle]);
-
-
-  if (designations.length > 0) {
-    console.log("Designations :", designations);
-  }
-
 
   useEffect(() => {
     if (isEditing && roles.length > 0) {
@@ -242,9 +236,9 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
         "DealerNames",
         "RoleName",
         "Designation_Id",
-        "Reporting_To",
-        "ReportingTo",
-        "DesignationName"
+        // "Reporting_To",
+        // "ReportingTo",
+        // "DesignationName"
       ];
       let currentErrors = validate(formData, validationFieldsToExclude);
 
@@ -414,7 +408,7 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
     // Reset selected designation when department changes
     setFormData((prev) => ({
       ...prev,
-      DesignationName: "",
+      Designation_Id: "",
     }));
   }, [formData.DeptId, allDesignations]);
 
@@ -581,21 +575,21 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                   </label>
                   <Select
                     value={designations.find(
-                      (option) => option.value === formData.DesignationName
+                      (option) => option.value === formData.Designation_Id
                     )}
                     onChange={(selectedOption) =>
                       setFormData((prev) => ({
                         ...prev,
-                        DesignationName: selectedOption ? selectedOption.value : "",
+                        Designation_Id: selectedOption ? selectedOption.value : "",
                       }))
                     }
                     options={designations}
                     placeholder="Select Designation"
                     classNamePrefix="react-select"
-                    className={errors.DesignationName ? "is-invalid" : ""}
+                    className={errors.Designation_Id ? "is-invalid" : ""}
                     isClearable
                   />
-                  <FormError error={errors.DesignationName} />
+                  <FormError error={errors.Designation_Id} />
                 </div>
 
                 {/* Role */}
@@ -623,20 +617,20 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                     Reporting To <span className="text-danger-600">*</span>
                   </label>
                   <Select
-                    value={employees.find((option) => option.value === formData.ReportingTo)}
+                    value={employees.find((option) => option.value === formData.Reporting_To)}
                     onChange={(selectedOption) =>
                       setFormData((prev) => ({
                         ...prev,
-                        ReportingTo: selectedOption ? selectedOption.value : "",
+                        Reporting_To: selectedOption ? selectedOption.value : "",
                       }))
                     }
                     options={employees}
                     placeholder="Select Reporting Person"
                     classNamePrefix="react-select"
-                    className={errors.ReportingTo ? "is-invalid" : ""}
+                    className={errors.Reporting_To ? "is-invalid" : ""}
                     isClearable
                   />
-                  <FormError error={errors.ReportingTo} />
+                  <FormError error={errors.Reporting_To} />
                 </div>
 
                 {/* Dealer Multi-Select */}
