@@ -63,6 +63,7 @@ const TelecalerAssignTicketLayer = () => {
   };
   
 
+
   const fetchDepartmentHeads = async (departmentId) => {
     try {
       const res = await axios.get(`${API_BASE}Designations`, {
