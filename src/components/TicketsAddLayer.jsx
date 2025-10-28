@@ -43,6 +43,7 @@ const TicketsAddLayer = ({ setPageTitle }) => {
           const formattedReasons = res.data.map((r) => ({
             value: r.ID,
             label: r.Reason,
+            reasonType: r.ReasonType,
           }));
 
           // Extract unique ReasonTypes
@@ -136,7 +137,7 @@ const TicketsAddLayer = ({ setPageTitle }) => {
         bookingID: Number(formData.bookingID),
         description: formData.description,
         status: Number(formData.status),
-        reasonID: Number(formData.reasonID),
+        reasonId: Number(formData.reasonID),
         reasonType: formData.reasonType,
       };
 
@@ -182,12 +183,12 @@ const TicketsAddLayer = ({ setPageTitle }) => {
               value={
                 formData.custID
                   ? {
-                      value: formData.custID,
-                      label:
-                        customerList.find(
-                          (c) => c.CustID === Number(formData.custID)
-                        )?.FullName || "Selected",
-                    }
+                    value: formData.custID,
+                    label:
+                      customerList.find(
+                        (c) => c.CustID === Number(formData.custID)
+                      )?.FullName || "Selected",
+                  }
                   : null
               }
               onChange={(selected) => {
@@ -224,12 +225,12 @@ const TicketsAddLayer = ({ setPageTitle }) => {
               value={
                 formData.bookingID
                   ? {
-                      value: formData.bookingID,
-                      label:
-                        bookingList.find(
-                          (b) => b.BookingID === Number(formData.bookingID)
-                        )?.BookingTrackID || "Selected",
-                    }
+                    value: formData.bookingID,
+                    label:
+                      bookingList.find(
+                        (b) => b.BookingID === Number(formData.bookingID)
+                      )?.BookingTrackID || "Selected",
+                  }
                   : null
               }
               onChange={(selected) =>
@@ -243,34 +244,6 @@ const TicketsAddLayer = ({ setPageTitle }) => {
               classNamePrefix="react-select"
             />
             <FormError error={errors.BookingTrackID} />
-          </div>
-
-          {/* 🔹 Reason Dropdown */}
-          <div className="col-md-6 mt-2">
-            <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-              Reason <span className="text-danger-600">*</span>
-            </label>
-            <Select
-              name="reasonID"
-              options={reasons}
-              placeholder={
-                reasons.length ? "Select a reason" : "No reasons available"
-              }
-              value={
-                formData.reasonID
-                  ? reasons.find((r) => r.value === formData.reasonID)
-                  : null
-              }
-              onChange={(selected) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  reasonID: selected?.value || "",
-                }))
-              }
-              isSearchable
-              classNamePrefix="react-select"
-            />
-            <FormError error={errors.Reason} />
           </div>
 
           {/* 🔹 Reason Type Dropdown */}
@@ -289,8 +262,8 @@ const TicketsAddLayer = ({ setPageTitle }) => {
               value={
                 formData.reasonType
                   ? reasonTypes.find(
-                      (t) => t.value === formData.reasonType
-                    ) || null
+                    (t) => t.value === formData.reasonType
+                  ) || null
                   : null
               }
               onChange={(selected) =>
@@ -304,6 +277,47 @@ const TicketsAddLayer = ({ setPageTitle }) => {
             />
             <FormError error={errors.ReasonType} />
           </div>
+
+          {/* 🔹 Reason Dropdown */}
+          <div className="col-md-6 mt-2">
+            <label className="form-label text-sm fw-semibold text-primary-light mb-8">
+              Reason <span className="text-danger-600">*</span>
+            </label>
+
+            <Select
+              name="reasonID"
+              options={
+                formData.reasonType
+                  ? reasons.filter(
+                    (r) =>
+                      r.reasonType?.toLowerCase() ===
+                      formData.reasonType.toLowerCase()
+                  )
+                  : reasons
+              }
+              placeholder={
+                formData.reasonType
+                  ? "Select a reason for this type"
+                  : "Select a reason type first"
+              }
+              value={
+                formData.reasonID
+                  ? reasons.find((r) => r.value === formData.reasonID)
+                  : null
+              }
+              onChange={(selected) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  reasonID: selected?.value || "",
+                }))
+              }
+              isSearchable
+              classNamePrefix="react-select"
+              isDisabled={!formData.reasonType}
+            />
+            <FormError error={errors.Reason} />
+          </div>
+
 
           {/* 🔹 Description */}
           <div className="col-12 mt-2">
@@ -323,7 +337,7 @@ const TicketsAddLayer = ({ setPageTitle }) => {
           </div>
 
           {/* 🔹 Buttons */}
-          <div className="d-flex justify-content-center gap-3 mt-24">
+          <div className="d-flex justify-content-center gap-3 my-80">
             <Link
               to="/tickets"
               className="btn btn-secondary radius-8 px-14 py-6 text-sm"
@@ -338,8 +352,8 @@ const TicketsAddLayer = ({ setPageTitle }) => {
               {isSubmitting
                 ? "Submitting..."
                 : isEditing
-                ? "Update Ticket"
-                : "Save Ticket"}
+                  ? "Update Ticket"
+                  : "Save Ticket"}
             </button>
           </div>
         </form>
