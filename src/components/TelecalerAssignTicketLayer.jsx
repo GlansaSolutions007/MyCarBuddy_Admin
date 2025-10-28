@@ -61,6 +61,7 @@ const TelecalerAssignTicketLayer = () => {
       Swal.fire("Error", "Unable to load departments", "error");
     }
   };
+  
 
   const fetchDepartmentHeads = async (departmentId) => {
     try {
