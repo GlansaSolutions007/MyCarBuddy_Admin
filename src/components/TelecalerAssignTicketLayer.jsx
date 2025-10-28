@@ -66,19 +66,19 @@ const TelecalerAssignTicketLayer = () => {
 
   const fetchDepartmentHeads = async (departmentId) => {
     try {
-      const res = await axios.get(`${API_BASE}Designations`, {
+      const res = await axios.get(`${API_BASE}Employee`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.data?.status && Array.isArray(res.data.data)) {
-        const headList = res.data.data
+      if (Array.isArray(res.data)) {
+        const headList = res.data
           .filter(
-            (d) =>
-              d.DeptId === departmentId &&
-              (d.Is_Head === 1 || d.Is_Head === true)
+            (emp) =>
+              emp.DeptId === departmentId &&
+              (emp.Is_Head === 1 || emp.Is_Head === true)
           )
-          .map((d) => ({
-            value: d.Id,
-            label: d.Designation_name,
+          .map((emp) => ({
+            value: emp.Id,
+            label: emp.Name,
           }));
         setDepartmentHeads(headList);
       }
