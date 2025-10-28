@@ -71,6 +71,7 @@ import EmployeeAddPage from "./pages/EmployeeAddPage";
 import Contacts from "./pages/Contacts"
 import DealerServiceP from "./pages/DealerServicePrice";
 import TicketsPage from "./pages/TicketsPage";
+import TicketInnerPage from "./pages/TicketInnerPage";
 import TicketsAddPage from "./pages/TicketsAddPage"
 import RefundPage from "./pages/RefundPage";
 import TelecalerAssigningPage from "./pages/TelecalerAssignBookingPage";
@@ -144,6 +145,7 @@ function App() {
           <Route exact path='/invoice-preview/:PaymentID' element={<InvoicePreviewPage />} />
 
           <Route exact path='/tickets' element={<TicketsPage />} />
+          <Route exact path='/tickets/:ticketId' element={<TicketInnerPage />} />
 
 
           <Route exact path='/booking-time-slot' element={<BookingTimeSlotPage />} />
