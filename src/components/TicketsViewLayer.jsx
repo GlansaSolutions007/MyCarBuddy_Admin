@@ -50,126 +50,53 @@ const TicketsViewLayer = () => {
     }
   };
 
-  // Status Options
-  const statusOptions = [
-    { value: 0, label: "Pending", color: "#ffc107", text: "#000" },
-    { value: 1, label: "Under Review", color: "#0dcaf0", text: "#fff" },
-    { value: 2, label: "Resolved", color: "#198754", text: "#fff" },
-    { value: 3, label: "Cancelled", color: "#6c757d", text: "#fff" },
-  ];
-
-  // Handle Status Change (PUT API call)
-  const handleStatusChange = async (ticketTrackId, newStatus) => {
-    try {
-      await axios.put(
-        `${API_BASE}Tickets`,
-        {
-          ticketTrackId,
-          status: newStatus,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      Swal.fire({
-        icon: "success",
-        title: "Status Updated",
-        text: "Ticket status updated successfully.",
-        timer: 1500,
-        showConfirmButton: false,
-      });
-
-      fetchTickets();
-    } catch (error) {
-      console.error("Failed to update status:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Failed to update ticket status.",
-      });
-    }
-  };
+  // Removed status update logic for simplified listing
 
   // DataTable Columns
   const columns = [
     {
-      name: "S.No",
-      selector: (row, index) => (currentPage - 1) * rowsPerPage + index + 1,
-      width: "80px",
+      name: "Ticket id",
+      selector: (row) => (
+        <Link to={`/tickets/${(row.TicketID ?? row.TicketId ?? row.Id)}`} className="text-primary">
+          {row.TicketTrackId || "-"}
+        </Link>
+      ),
     },
     {
-      name: "Ticket Track ID",
-      selector: (row) => row.TicketTrackId || "-",
-      sortable: true,
+      name: "Customer",
+      selector: (row) => (
+        <>
+          <span className="fw-bold">{row.CustomerName || "N/A"}</span>
+          <br />
+          {row.PhoneNumber || ""}
+        </>
+      ),
     },
     {
-      name: "Customer Name",
-      selector: (row) => row.CustomerName || "N/A",
-      sortable: true,
-    },
-    {
-      name: "Booking Track ID",
+      name: "Booking id",
       selector: (row) => row.BookingTrackID || "-",
-      sortable: true,
     },
-    { name: "Description", selector: (row) => row.Description || "-" },
-
-    // Stylish dropdown for Status
     {
-      name: "Status",
-      cell: (row) => {
-        const currentStatus =
-          statusOptions.find((s) => s.value === row.Status) || statusOptions[0];
-
-        return (
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <select
-              value={currentStatus.value}
-              onChange={(e) =>
-                handleStatusChange(row.TicketTrackId, Number(e.target.value))
-              }
-              style={{
-                borderRadius: "20px",
-                padding: "4px 22px 4px 10px",
-                fontSize: "13px",
-                fontWeight: "500",
-                border: "none",
-                backgroundColor: currentStatus.color,
-                color: currentStatus.text,
-                appearance: "none",
-                WebkitAppearance: "none",
-                MozAppearance: "none",
-                cursor: "pointer",
-                minWidth: "110px",
-                textAlign: "center",
-                backgroundImage:
-                  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='white' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "right 8px center",
-                backgroundSize: "14px",
-              }}
-            >
-              {statusOptions.map((status) => (
-                <option
-                  key={status.value}
-                  value={status.value}
-                  style={{
-                    backgroundColor: "#fff",
-                    color: "#000",
-                  }}
-                >
-                  {status.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        );
-      },
-      sortable: true,
+      name: "Description",
+      selector: (row) => row.Description || "-",
+      wrap: true,
+    },
+    {
+      name: "Actions",
+      cell: (row) => (
+        <div className="d-flex gap-2 align-items-center">
+          <Link
+            to={`/tickets/${(row.TicketID ?? row.TicketId ?? row.Id)}`}
+            className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+            title="View"
+          >
+            <Icon icon="lucide:eye" />
+          </Link>
+        </div>
+      ),
+      ignoreRowClick: true,
+      allowOverflow: true,
+      button: true,
     },
   ];
 
@@ -197,30 +124,29 @@ const TicketsViewLayer = () => {
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h5></h5>
         </div>
-        <div className="chat-main card overflow-hidden p-3">
-          <div className="card-header border-bottom bg-base pt-0 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between">
-            <form className="navbar-search">
-              <input
-                type="text"
-                className="bg-base w-auto form-control"
-                name="search"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                placeholder="Search Tickets"
-              />
-              <Icon icon="ion:search-outline" className="icon" />
-            </form>
-
-            <Link
-              to="/add-tickets"
-              className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
-            >
-              <Icon
-                icon="ic:baseline-plus"
-                className="icon text-xl line-height-1"
-              />
-              Add Ticket
-            </Link>
+        <div className="card overflow-hidden p-3">
+          <div className="card-header">
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <form className="navbar-search">
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Search Tickets"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                />
+                <Icon icon="ion:search-outline" className="icon" />
+              </form>
+              <div className="d-flex gap-2">
+                <Link
+                  to="/add-tickets"
+                  className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
+                >
+                  <Icon icon="ic:baseline-plus" className="icon text-xl line-height-1" />
+                  Add Ticket
+                </Link>
+              </div>
+            </div>
           </div>
 
           {error ? (
