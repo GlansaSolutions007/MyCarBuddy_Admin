@@ -25,9 +25,10 @@ const TelecalerAssignTicketLayer = () => {
   const [formData, setFormData] = useState({
     selectedDepartment: null,
     selectedHead: null,
-    selectedEmployees: [],
+    selectedEmployee: null, // single employee now
   });
 
+  // ===== INITIAL LOAD =====
   useEffect(() => {
     if (role === "Admin") {
       fetchDepartments();
@@ -42,21 +43,18 @@ const TelecalerAssignTicketLayer = () => {
     fetchTickets();
   }, [role, userId]);
 
-  // Fetch Departments
+  // ===== FETCH FUNCTIONS =====
   const fetchDepartments = async () => {
     try {
       const res = await axios.get(`${API_BASE}Departments`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (res.data?.status && Array.isArray(res.data.data)) {
         const deptList = res.data.data.map((dept) => ({
           value: dept.DeptId,
           label: dept.DepartmentName,
         }));
         setDepartments(deptList);
-      } else {
-        Swal.fire("Warning", "No departments found", "warning");
       }
     } catch (error) {
       console.error("Failed to fetch departments:", error);
@@ -64,13 +62,11 @@ const TelecalerAssignTicketLayer = () => {
     }
   };
 
-  // Fetch Department Heads
   const fetchDepartmentHeads = async (departmentId) => {
     try {
       const res = await axios.get(`${API_BASE}Designations`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (res.data?.status && Array.isArray(res.data.data)) {
         const headList = res.data.data
           .filter(
@@ -82,40 +78,30 @@ const TelecalerAssignTicketLayer = () => {
             value: d.Id,
             label: d.Designation_name,
           }));
-
         setDepartmentHeads(headList);
-      } else {
-        setDepartmentHeads([]);
       }
     } catch (error) {
       console.error("Failed to fetch department heads:", error);
-      Swal.fire("Error", "Unable to load department heads", "error");
     }
   };
 
-  // Fetch All Employees
   const fetchAllEmployees = async () => {
     try {
       const res = await axios.get(`${API_BASE}Employee`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (Array.isArray(res.data)) {
         const empList = res.data.map((emp) => ({
           value: emp.Id,
           label: emp.Name,
         }));
         setEmployees(empList);
-      } else {
-        Swal.fire("Warning", "No employees found", "warning");
       }
     } catch (error) {
       console.error("Failed to fetch employees:", error);
-      Swal.fire("Error", "Unable to load employees", "error");
     }
   };
 
-  // Fetch Unassigned Tickets
   const fetchTickets = async () => {
     try {
       const res = await axios.get(`${API_BASE}Tickets?status=0`, {
@@ -129,89 +115,82 @@ const TelecalerAssignTicketLayer = () => {
     }
   };
 
-  // Handle Department Change
+  // ===== UTILITY =====
+  const getTicketId = (ticket) =>
+    ticket.TicketTrackId || ticket.TicketID || ticket.TicketId || ticket.Id;
+
+  // ===== HANDLERS =====
   const handleDepartmentChange = (selected) => {
     setFormData((prev) => ({
       ...prev,
       selectedDepartment: selected,
       selectedHead: null,
-      selectedEmployees: [],
+      selectedEmployee: null,
     }));
-
     if (selected) fetchDepartmentHeads(selected.value);
     else setDepartmentHeads([]);
   };
 
-  // ===== TICKET SELECTION HANDLERS =====
-  const handleTicketSelection = (ticketId) => {
-    setSelectedTickets((prev) => {
-      if (prev.includes(ticketId)) {
-        return prev.filter((id) => id !== ticketId);
-      } else {
-        return [...prev, ticketId];
-      }
-    });
-  };
-
-  const handleSelectAll = (isChecked) => {
-    if (isChecked) {
-      const allIds = tickets.map((t) => t.TicketID);
-      setSelectedTickets(allIds);
+  const handleTicketSelection = (ticket) => {
+    const isSelected = selectedTickets.some(
+      (t) => getTicketId(t) === getTicketId(ticket)
+    );
+    if (isSelected) {
+      setSelectedTickets((prev) =>
+        prev.filter((t) => getTicketId(t) !== getTicketId(ticket))
+      );
     } else {
-      setSelectedTickets([]);
+      setSelectedTickets((prev) => [...prev, ticket]);
     }
   };
 
-  // Update indeterminate state for select-all checkbox
+  const handleSelectAll = (isChecked) => {
+    if (isChecked) setSelectedTickets(tickets);
+    else setSelectedTickets([]);
+  };
+
+  // Indeterminate select-all checkbox
   useEffect(() => {
     if (!selectAllRef.current) return;
-    const isIndeterminate =
+    selectAllRef.current.indeterminate =
       selectedTickets.length > 0 && selectedTickets.length < tickets.length;
-    selectAllRef.current.indeterminate = isIndeterminate;
   }, [selectedTickets, tickets]);
 
   // ===== ASSIGN HANDLER =====
   const handleAssign = async () => {
-    if (selectedTickets.length === 0) {
-      Swal.fire("Warning", "Please select at least one ticket", "warning");
-      return;
-    }
+    if (selectedTickets.length === 0)
+      return Swal.fire("Warning", "Please select at least one ticket", "warning");
 
-    if (!formData.selectedDepartment) {
-      Swal.fire("Warning", "Please select a department", "warning");
-      return;
-    }
+    if (!formData.selectedDepartment)
+      return Swal.fire("Warning", "Please select a department", "warning");
 
-    if (role === "Admin" && !formData.selectedHead) {
-      Swal.fire("Warning", "Please select a department head", "warning");
-      return;
-    }
+    if (role === "Admin" && !formData.selectedHead)
+      return Swal.fire("Warning", "Please select a department head", "warning");
 
-    if (formData.selectedEmployees.length === 0) {
-      Swal.fire("Warning", "Please select at least one employee", "warning");
-      return;
-    }
+    // Build payload
+    const payload = [
+      {
+        assignedBy: Number(userId),
+        assignedToHead: formData.selectedHead?.value || null,
+        assignedToEmp: formData.selectedEmployee?.value || null, // ✅ single employee only
+        ticketIds: selectedTickets.map((t) => getTicketId(t)),
+      },
+    ];
 
-    setLoading(true);
     try {
-      const payload = {
-        ticketIds: selectedTickets,
-        departmentId: formData.selectedDepartment.value,
-        headId: formData.selectedHead?.value,
-        employeeIds: formData.selectedEmployees.map((emp) => emp.value),
-        assignedBy: userId,
-      };
+      setLoading(true);
+      console.log("Assign Payload:", payload);
 
-      await axios.post(`${API_BASE}Tickets/assign`, payload, {
+      await axios.post(`${API_BASE}Ticket_Assignments`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      Swal.fire("Success", "Tickets assigned successfully", "success").then(
-        () => navigate("/telecaler-tickets")
+      Swal.fire("Success", "Tickets assigned successfully!", "success").then(() =>
+        navigate("/telecaler-tickets")
       );
     } catch (error) {
-      console.error("Failed to assign tickets:", error);
-      Swal.fire("Error", "Failed to assign tickets", "error");
+      console.error("Failed to assign ticket:", error);
+      Swal.fire("Error", "Failed to assign ticket", "error");
     } finally {
       setLoading(false);
     }
@@ -235,8 +214,10 @@ const TelecalerAssignTicketLayer = () => {
       cell: (row) => (
         <input
           type="checkbox"
-          checked={selectedTickets.includes(row.TicketID)}
-          onChange={() => handleTicketSelection(row.TicketID)}
+          checked={selectedTickets.some(
+            (t) => getTicketId(t) === getTicketId(row)
+          )}
+          onChange={() => handleTicketSelection(row)}
           className="form-check-input cursor-pointer"
           style={{
             width: 16,
@@ -266,11 +247,11 @@ const TelecalerAssignTicketLayer = () => {
     },
   ];
 
+  // ===== UI =====
   return (
     <div className="card h-100 p-0 radius-12 overflow-hidden mt-3">
       <div className="card-body p-20">
         <div className="row g-3">
-          {/* Department Selection */}
           {role === "Admin" && (
             <div className="col-md-6">
               <label className="form-label fw-semibold">
@@ -287,7 +268,6 @@ const TelecalerAssignTicketLayer = () => {
             </div>
           )}
 
-          {/* Department Head */}
           {role === "Admin" && (
             <div className="col-md-6">
               <label className="form-label fw-semibold">
@@ -307,29 +287,26 @@ const TelecalerAssignTicketLayer = () => {
             </div>
           )}
 
-          {/* Employees */}
           <div className="col-12">
             <label className="form-label fw-semibold">
-              Assign to Employees
+              Assign to Employee
             </label>
             <Select
               options={employees}
-              value={formData.selectedEmployees}
+              value={formData.selectedEmployee}
               onChange={(selected) =>
                 setFormData((prev) => ({
                   ...prev,
-                  selectedEmployees: selected || [],
+                  selectedEmployee: selected || null,
                 }))
               }
-              placeholder="Choose employees..."
-              isMulti
+              placeholder="Choose employee..."
               isSearchable
+              isMulti={false} // ✅ single employee only
               classNamePrefix="react-select"
-              closeMenuOnSelect={false}
             />
           </div>
 
-          {/* Ticket Table */}
           <div className="col-12">
             <label className="form-label fw-semibold">
               Select Tickets to Assign
@@ -346,7 +323,6 @@ const TelecalerAssignTicketLayer = () => {
             </div>
           </div>
 
-          {/* Buttons */}
           <div className="d-flex justify-content-center gap-3 mt-4">
             <button
               type="button"
@@ -361,7 +337,7 @@ const TelecalerAssignTicketLayer = () => {
               onClick={handleAssign}
               disabled={loading}
             >
-              {loading ? "Assigning..." : "Assign Tickets"}
+              {loading ? "Assigning..." : "Assign Ticket"}
             </button>
           </div>
         </div>
