@@ -84,6 +84,7 @@ const MasterLayout = ({ children }) => {
     }
     return true; // Show if no permission defined
   };
+  
 
 
 
@@ -173,11 +174,7 @@ const MasterLayout = ({ children }) => {
         trigger.removeEventListener("click", handleDropdownClick);
       });
     };
-  }, [location.pathname]);
-
-
-
-
+  }, [location.pathname, menuLoading]);
 
   // Firebase notification setup
   useEffect(() => {
