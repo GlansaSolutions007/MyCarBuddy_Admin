@@ -26,6 +26,7 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
   const [cities, setCities] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [reportingToOptions, setReportingToOptions] = useState([]);
   const [designations, setDesignations] = useState([]);
   const [allDesignations, setAllDesignations] = useState([]);
 
@@ -345,38 +346,49 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
     }
   };
 
-  const fetchEmployees = async () => {
+  const fetchEmployees = async (deptId = null) => {
     try {
       const res = await axios.get(`${API_BASE}Employee`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Store all fields, not just value/label
-      setEmployees(res.data);
+      // If API returns an array, use it. If not, default to an empty array.
+      const apiEmployees = Array.isArray(res.data) ? res.data : [];
+
+      // Filter employees by department if deptId is provided
+      let filteredEmployees = deptId
+        ? apiEmployees.filter(emp => emp.DeptId === deptId)
+        : apiEmployees;
+
+      // Further filter to only include department heads (Is_Head === 1)
+      if (deptId) {
+        filteredEmployees = filteredEmployees.filter(emp => emp.Is_Head === 1);
+      }
+
+      // Always include Admin as the first record if no deptId or for general cases
+      const employeesData = [
+        { id: 1, name: "Admin", role: "Administrator", DeptId: null, Is_Head: null },
+        ...filteredEmployees,
+      ];
+
+      // Format for react-select
+      const formattedEmployees = employeesData.map(emp => ({
+        value: emp.Id || emp.id, // handle Admin's id
+        label: emp.Name || emp.name,
+      }));
+
+      setReportingToOptions(formattedEmployees);
     } catch (error) {
       console.error("Failed to load employees", error);
-      Swal.fire("Error", "Failed to load employees", "error");
+
+      // If API fails (e.g., 404 or "Employees not found"), still set Admin
+      const formattedEmployees = [{ value: 1, label: "Admin" }];
+      setReportingToOptions(formattedEmployees);
+      // Swal.fire("Error", "Failed to load employees", "error");
     }
   };
 
-  // Filter employees who are heads in the selected department
-  const getDepartmentHeads = () => {
-  if (!formData.DeptId) return [];
 
-  return employees
-    .filter((emp) => {
-      // Ensure both department and head flag match correctly
-      return (
-        emp.DeptId === formData.DeptId &&
-        emp.Is_Head != null &&                     // not null or undefined
-        (Number(emp.Is_Head) === 1 || emp.Is_Head === true) // only heads
-      );
-    })
-    .map((emp) => ({
-      value: emp.Id,
-      label: emp.Name,
-    }));
-};
 
   // ------------------ Fetch Designations ------------------
   const fetchDesignations = async () => {
@@ -422,6 +434,9 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
       ...prev,
       Designation_Id: "",
     }));
+
+    // Fetch employees filtered by department for Reporting To
+    fetchEmployees(formData.DeptId);
   }, [formData.DeptId, allDesignations]);
 
   return (
@@ -580,36 +595,7 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                   <FormError error={errors.DeptId} />
                 </div>
 
-                {/* Department Head */}
-                <div className="col-sm-6 mt-2">
-                  <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-                    Department Head <span className="text-danger-600">*</span>
-                  </label>
-                  <Select
-                    value={getDepartmentHeads().find(
-                      (option) => option.value === formData.Reporting_To
-                    )}
-                    onChange={(selectedOption) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        Reporting_To: selectedOption ? selectedOption.value : "",
-                      }))
-                    }
-                    options={getDepartmentHeads()}
-                    placeholder={
-                      formData.DeptId
-                        ? getDepartmentHeads().length > 0
-                          ? "Select Department Head"
-                          : "No Head found for this department"
-                        : "Select a Department first"
-                    }
-                    classNamePrefix="react-select"
-                    className={errors.Reporting_To ? "is-invalid" : ""}
-                    isDisabled={!formData.DeptId || getDepartmentHeads().length === 0}
-                    isClearable
-                  />
-                  <FormError error={errors.Reporting_To} />
-                </div>
+
 
                 {/* Designations */}
                 <div className="col-sm-6 mt-2">
@@ -660,14 +646,14 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                     Reporting To <span className="text-danger-600">*</span>
                   </label>
                   <Select
-                    value={employees.find((option) => option.value === formData.Reporting_To)}
+                    value={reportingToOptions.find((option) => option.value === formData.Reporting_To)}
                     onChange={(selectedOption) =>
                       setFormData((prev) => ({
                         ...prev,
                         Reporting_To: selectedOption ? selectedOption.value : "",
                       }))
                     }
-                    options={employees}
+                    options={reportingToOptions}
                     placeholder="Select Reporting Person"
                     classNamePrefix="react-select"
                     className={errors.Reporting_To ? "is-invalid" : ""}

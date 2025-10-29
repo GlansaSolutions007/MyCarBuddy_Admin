@@ -37,11 +37,25 @@ const SignInLayer = () => {
       }
       const data = response.data;
       localStorage.setItem("token", data.token);
-      localStorage.setItem("userId", 1);
+      localStorage.setItem("userId", data.id);
       localStorage.setItem("role", data.role);
       localStorage.setItem("roleId", data.roleID);
 
       localStorage.setItem("name", data.name);
+
+      // If role is Employee, fetch additional employee data
+      if (data.role === "Employee") {
+        try {
+          const employeeRes = await axios.get(`${import.meta.env.VITE_APIURL}Employee/Id?Id=${data.id}`, {
+            headers: { Authorization: `Bearer ${data.token}` },
+          });
+          localStorage.setItem("employeeData", JSON.stringify(employeeRes.data[0]));
+        } catch (err) {
+          console.error("Failed to fetch employee data", err);
+          // Optionally handle error, but proceed to dashboard
+        }
+      }
+
       navigate("/dashboard");
     } catch (err) {
       setApiError(err.response?.data?.message || "Login failed. Try again.");

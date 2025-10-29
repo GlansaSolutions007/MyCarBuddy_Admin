@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import ThemeToggleButton from "../helper/ThemeToggleButton";
@@ -106,45 +106,36 @@ const MasterLayout = ({ children }) => {
     fetchProfileImage();
   }, [API_BASE]);
 
-  useEffect(() => {
-    const handleDropdownClick = (event) => {
-      event.preventDefault();
-      const clickedLink = event.currentTarget;
-      const clickedDropdown = clickedLink.closest(".dropdown");
+  const handleDropdownClick = useCallback((event) => {
+    event.preventDefault();
+    const clickedLink = event.currentTarget;
+    const clickedDropdown = clickedLink.closest(".dropdown");
 
-      if (!clickedDropdown) return;
+    if (!clickedDropdown) return;
 
-      const isActive = clickedDropdown.classList.contains("open");
+    const isActive = clickedDropdown.classList.contains("open");
 
-      // Close all dropdowns
-      const allDropdowns = document.querySelectorAll(".sidebar-menu .dropdown");
-      allDropdowns.forEach((dropdown) => {
-        dropdown.classList.remove("open");
-        const submenu = dropdown.querySelector(".sidebar-submenu");
-        if (submenu) {
-          submenu.style.maxHeight = "0px"; // Collapse submenu
-        }
-      });
-
-      // Toggle the clicked dropdown
-      if (!isActive) {
-        clickedDropdown.classList.add("open");
-        const submenu = clickedDropdown.querySelector(".sidebar-submenu");
-        if (submenu) {
-          submenu.style.maxHeight = `${submenu.scrollHeight}px`; // Expand submenu
-        }
+    // Close all dropdowns
+    const allDropdowns = document.querySelectorAll(".sidebar-menu .dropdown");
+    allDropdowns.forEach((dropdown) => {
+      dropdown.classList.remove("open");
+      const submenu = dropdown.querySelector(".sidebar-submenu");
+      if (submenu) {
+        submenu.style.maxHeight = "0px"; // Collapse submenu
       }
-    };
-
-    // Attach click event listeners to all dropdown triggers
-    const dropdownTriggers = document.querySelectorAll(
-      ".sidebar-menu .dropdown > a, .sidebar-menu .dropdown > Link"
-    );
-
-    dropdownTriggers.forEach((trigger) => {
-      trigger.addEventListener("click", handleDropdownClick);
     });
 
+    // Toggle the clicked dropdown
+    if (!isActive) {
+      clickedDropdown.classList.add("open");
+      const submenu = clickedDropdown.querySelector(".sidebar-submenu");
+      if (submenu) {
+        submenu.style.maxHeight = `${submenu.scrollHeight}px`; // Expand submenu
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     const openActiveDropdown = () => {
       const allDropdowns = document.querySelectorAll(".sidebar-menu .dropdown");
       allDropdowns.forEach((dropdown) => {
@@ -166,6 +157,15 @@ const MasterLayout = ({ children }) => {
 
     // Open the submenu that contains the active route
     openActiveDropdown();
+
+    // Attach click event listeners to dropdown triggers
+    const dropdownTriggers = document.querySelectorAll(
+      ".sidebar-menu .dropdown > a, .sidebar-menu .dropdown > Link"
+    );
+
+    dropdownTriggers.forEach((trigger) => {
+      trigger.addEventListener("click", handleDropdownClick);
+    });
 
     // Cleanup event listeners on unmount
     return () => {
