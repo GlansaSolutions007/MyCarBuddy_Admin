@@ -23,13 +23,12 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
   const [imagePreviewUrl, setImagePreviewUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [supervisorRoleId, setSupervisorRoleId] = useState(null);
-  const [cities, setCities] = useState([]);
+  const [cities, setCities] = useState([]); // This will be used for a separate 'City' field if needed, or if Address becomes a dropdown
   const [departments, setDepartments] = useState([]);
-  const [employees, setEmployees] = useState([]);
+  const [employees, setEmployees] = useState([]); // This state is not directly used for reportingToOptions but was in your original code
   const [reportingToOptions, setReportingToOptions] = useState([]);
   const [designations, setDesignations] = useState([]);
   const [allDesignations, setAllDesignations] = useState([]);
-
 
   const [formData, setFormData] = useState({
     Id: 0,
@@ -45,7 +44,8 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
     CreatedBy: 1,
     Status: true,
     ProfileImage1: null,
-    City: "",
+    // City: "", // If you want a separate 'City' dropdown/input, keep this
+    Address: "", // Changed to string for free-text address
     DeptId: "",
     Reporting_To: "",
     Designation_Id: "",
@@ -54,9 +54,9 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
   useEffect(() => {
     setPageTitle(isEditing ? "Edit Employee" : "Add Employee");
     fetchRoles();
-    fetchCities();
+    fetchCities(); // Still fetching cities if you might use it for a separate field later
     fetchDepartments();
-    fetchEmployees();
+    // fetchEmployees(); // Fetch employees might be called later based on DeptId
     fetchDesignations();
   }, [EmployeeID, isEditing, setPageTitle]);
 
@@ -106,11 +106,12 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
         const updatedFormData = {
           ...prev,
           ...employee,
-          ConfirmPassword: employee.Password || "",
+          ConfirmPassword: employee.Password || "", // Populate confirm password for comparison
           ProfileImage1: employee.ProfileImage || null,
           DealerIds: employeeDealerIds,
           DealerNames: employeeDealerNames,
-          City: employee.City || "",
+          // City: employee.City || "", // If you have a separate city field
+          Address: employee.Address || "", // Set the address from fetched data
         };
 
         if (employee.ProfileImage) {
@@ -236,9 +237,35 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
         "ProfileImage1",
         "DealerNames",
         "RoleName",
-        "Designation_Id",
+        // "City", // Exclude City if it's not a required field or handled differently
+        // "Designation_Id", // Designation_Id is now required for validation
+        // "Reporting_To", // Reporting_To is now required for validation
       ];
       let currentErrors = validate(formData, validationFieldsToExclude);
+
+      // Add custom validation for new required fields
+      if (!formData.DeptId) {
+        currentErrors.DeptId = "Department is required.";
+      }
+      if (!formData.Designation_Id) {
+        currentErrors.Designation_Id = "Designation is required.";
+      }
+      if (!formData.Reporting_To) {
+        currentErrors.Reporting_To = "Reporting To is required.";
+      }
+      if (!formData.Address) {
+        currentErrors.Address = "Address is required.";
+      }
+      // If editing, password is not strictly required unless changed
+      if (!isEditing || (formData.Password && formData.ConfirmPassword)) {
+        if (!formData.Password) {
+          currentErrors.Password = "Password is required.";
+        }
+        if (!formData.ConfirmPassword) {
+          currentErrors.ConfirmPassword = "Confirm Password is required.";
+        }
+      }
+
 
       if (
         formData.RoleId === supervisorRoleId &&
@@ -255,12 +282,16 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
         return;
       }
 
-      if (formData.Password !== formData.ConfirmPassword) {
-        setFormData((prev) => ({ ...prev, ConfirmPassword: "" }));
-        Swal.fire("Error", "Passwords do not match", "error");
-        setIsSubmitting(false);
-        return;
+      // Password match check only if passwords are provided
+      if (formData.Password || formData.ConfirmPassword) {
+        if (formData.Password !== formData.ConfirmPassword) {
+          setFormData((prev) => ({ ...prev, ConfirmPassword: "" }));
+          Swal.fire("Error", "Passwords do not match", "error");
+          setIsSubmitting(false);
+          return;
+        }
       }
+
 
       const formDataToSend = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
@@ -320,10 +351,13 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
     }
   };
 
-  const roleOptions = roles.map((role) => ({
+  // Filter roles to exclude the first 4 if they are "Admin", etc.
+  // Assuming roles.slice(4) gives you "Employee", "Supervisor", "Support Head", etc.
+  const roleOptions = roles.filter(role => role.name !== "Administrator").map((role) => ({
     value: role.id,
     label: role.name,
   }));
+
 
   const fetchDepartments = async () => {
     try {
@@ -356,25 +390,25 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
       const apiEmployees = Array.isArray(res.data) ? res.data : [];
 
       // Filter employees by department if deptId is provided
-      let filteredEmployees = deptId
-        ? apiEmployees.filter(emp => emp.DeptId === deptId)
-        : apiEmployees;
+      let filteredEmployees = apiEmployees;
 
-      // Further filter to only include department heads (Is_Head === 1)
+      // Only filter by Is_Head if a deptId is actually selected.
+      // Otherwise, we want all employees for general reporting.
       if (deptId) {
-        filteredEmployees = filteredEmployees.filter(emp => emp.Is_Head === 1);
+        filteredEmployees = filteredEmployees.filter(emp => emp.DeptId === deptId && emp.Is_Head === 1);
       }
+
 
       // Always include Admin as the first record if no deptId or for general cases
       const employeesData = [
-        { id: 1, name: "Admin", role: "Administrator", DeptId: null, Is_Head: null },
+        { Id: 1, Name: "Admin", RoleName: "Administrator", DeptId: null, Is_Head: null }, // Using Id and Name as per API for consistency
         ...filteredEmployees,
       ];
 
       // Format for react-select
       const formattedEmployees = employeesData.map(emp => ({
-        value: emp.Id || emp.id, // handle Admin's id
-        label: emp.Name || emp.name,
+        value: emp.Id,
+        label: emp.Name,
       }));
 
       setReportingToOptions(formattedEmployees);
@@ -417,25 +451,34 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
   };
 
   useEffect(() => {
+    let filtered = []; // <-- declare here so accessible below
+
     if (formData.DeptId && allDesignations.length > 0) {
-      const filtered = allDesignations
-        .filter((d) => d.DeptId === formData.DeptId)
+      filtered = allDesignations
+        .filter((d) => Number(d.DeptId) === Number(formData.DeptId))
         .map((d) => ({
           value: d.Id,
           label: d.Designation_name,
         }));
+
       setDesignations(filtered);
     } else {
+      // If no department is selected, clear designations
       setDesignations([]);
     }
 
-    // Reset selected designation when department changes
-    setFormData((prev) => ({
-      ...prev,
-      Designation_Id: "",
-    }));
+    // ✅ Only reset if the current designation does not belong to the selected dept
+    if (
+      formData.Designation_Id &&
+      !filtered.some((d) => Number(d.value) === Number(formData.Designation_Id))
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        Designation_Id: "",
+      }));
+    }
 
-    // Fetch employees filtered by department for Reporting To
+    // Call fetchEmployees here to update reportingToOptions based on the selected DeptId
     fetchEmployees(formData.DeptId);
   }, [formData.DeptId, allDesignations]);
 
@@ -547,28 +590,21 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                   <FormError error={errors.PhoneNumber} />
                 </div>
 
-                {/* City */}
+                {/* Address (Changed to text input) */}
                 <div className="col-sm-6 mt-2">
                   <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-                    City <span className="text-danger-600">*</span>
+                    Address <span className="text-danger-600">*</span>
                   </label>
-                  <Select
-                    value={cities.find(
-                      (option) => option.label === formData.City
-                    )}
-                    onChange={(selectedOption) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        City: selectedOption ? selectedOption.label : "",
-                      }))
-                    }
-                    options={cities}
-                    placeholder="Select City"
-                    classNamePrefix="react-select"
-                    className={errors.City ? "is-invalid" : ""}
-                    isClearable
+                  <input
+                    type="text"
+                    className={`form-control radius-8 ${errors.Address ? "is-invalid" : ""
+                      }`}
+                    name="Address"
+                    value={formData.Address}
+                    onChange={handleChange}
+                    placeholder="Enter full address"
                   />
-                  <FormError error={errors.City} />
+                  <FormError error={errors.Address} />
                 </div>
 
                 {/* Department */}
@@ -594,8 +630,6 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                   />
                   <FormError error={errors.DeptId} />
                 </div>
-
-
 
                 {/* Designations */}
                 <div className="col-sm-6 mt-2">
@@ -672,7 +706,7 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                       value={dealers
                         .map((d) => ({
                           ...d,
-                          label: d.label.split(". ")[1],
+                          label: d.label.split(". ")[1], // Assuming you want to display just the dealer name
                         }))
                         .filter((d) => formData.DealerIds.includes(d.value))}
                       onChange={(selectedOptions) => {
@@ -692,7 +726,7 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                       }}
                       options={dealers.map((d) => ({
                         ...d,
-                        label: d.label.split(". ")[1],
+                        label: d.label.split(". ")[1], // Assuming you want to display just the dealer name
                       }))}
                       placeholder="Select Dealer(s)"
                       classNamePrefix="react-select"
@@ -804,4 +838,3 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
 };
 
 export default EmployeeAddLayer;
-
