@@ -333,7 +333,7 @@ const MasterLayout = ({ children }) => {
           title: "Distributors",
           to: "/distributors",
           color: "text-primary-600",
-          permission: "distributor_view",
+          permission: "distributors_view",
           page: "Distributors",
         },
         {
@@ -365,7 +365,7 @@ const MasterLayout = ({ children }) => {
       children: [
         { title: "Telecaler Bookings", to: "/telecaler-bookings", color: "text-warning-main", permission: "telecaler_booking_view", page: "Telecaler_Bookings" },
         { title: "Telecaler Tickets", to: "/telecaler-tickets", color: "text-info-main", permission: "telecaler_ticket_view", page: "Telecaler_Tickets" },
-        { title: "Telecaler Assign Tickets", to: "/telecaler-assign-tickets", color: "text-success-main", permission: "telecaler_assign_ticket_view", page: "Telecaler_Assign_Tickets" },
+        { title: "Telecaler Assign Tickets", to: "/telecaler-assign-tickets", color: "text-success-main", permission: "telecalerassignticket_view", page: "Telecaler_Assign_Tickets" },
         { title: "Employee Tickets", to: "/employee-tickets", color: "text-danger-main", permission: "employee_ticket_view", page: "Employee_Tickets" },
       ],
     },
