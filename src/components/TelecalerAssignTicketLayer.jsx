@@ -329,9 +329,7 @@ const TelecalerAssignTicketLayer = () => {
           {role === "Admin" ? (
             <>
               <div className="col-md-4">
-                <label className="form-label fw-semibold mb-1">
-                  Department
-                </label>
+                <label className="form-label fw-semibold mb-1">Department</label>
                 <Select
                   options={departments}
                   value={formData.selectedDepartment}
@@ -343,9 +341,7 @@ const TelecalerAssignTicketLayer = () => {
               </div>
 
               <div className="col-md-4">
-                <label className="form-label fw-semibold mb-1">
-                  Department Head
-                </label>
+                <label className="form-label fw-semibold mb-1">Department Head</label>
                 <Select
                   options={departmentHeads}
                   value={formData.selectedHead}
@@ -402,8 +398,22 @@ const TelecalerAssignTicketLayer = () => {
 
           <div className="col-md-2">
             <label className="form-label fw-semibold mb-1">Total Tickets</label>
-            <div className="fw-bold text-primary fs-5">{tickets.length}</div>
+            <div className="fw-bold text-primary fs-5">
+              {Math.max(tickets.length - (ticketCount || 0), 0)}
+            </div>
           </div>
+        </div>
+
+        {/* ===== ACTION BUTTON (RIGHT ALIGNED) ===== */}
+        <div className="d-flex justify-content-end mt-4">
+          <button
+            type="button"
+            className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
+            onClick={handleAssign}
+            disabled={loading}
+          >
+            {loading ? "Assigning..." : "Assign Tickets"}
+          </button>
         </div>
 
         {/* ===== TICKET TABLE ===== */}
