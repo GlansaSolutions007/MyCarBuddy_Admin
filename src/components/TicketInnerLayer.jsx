@@ -112,6 +112,49 @@ const TicketInnerLayer = () => {
     }
   };
 
+  const handleAccept = async () => {
+    try {
+      await axios.put(`${API_BASE}Tickets/${normalizedTicketId}/accept`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      Swal.fire("Success", "Ticket accepted successfully", "success");
+      fetchTicket(); // Refresh ticket data
+    } catch (error) {
+      console.error("Failed to accept ticket:", error);
+      Swal.fire("Error", "Failed to accept ticket", "error");
+    }
+  };
+
+  const handleReject = async () => {
+    const { value: reason } = await Swal.fire({
+      title: "Reject Ticket",
+      input: "textarea",
+      inputLabel: "Reason for rejection",
+      inputPlaceholder: "Enter the reason for rejecting this ticket...",
+      inputValidator: (value) => {
+        if (!value) {
+          return "You need to provide a reason!";
+        }
+      },
+      showCancelButton: true,
+      confirmButtonText: "Reject",
+      confirmButtonColor: "#dc3545",
+    });
+
+    if (reason) {
+      try {
+        await axios.put(`${API_BASE}Tickets/${normalizedTicketId}/reject`, { reason }, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        Swal.fire("Success", "Ticket rejected successfully", "success");
+        fetchTicket(); // Refresh ticket data
+      } catch (error) {
+        console.error("Failed to reject ticket:", error);
+        Swal.fire("Error", "Failed to reject ticket", "error");
+      }
+    }
+  };
+
   return (
     <div className="row gy-4 mt-3">
       {/* ------------------ Left: Customer Info ------------------ */}
@@ -173,6 +216,12 @@ const TicketInnerLayer = () => {
                   <Icon icon="mdi:arrow-left" className="fs-5" />
                   Back
                 </Link>
+                <button className="btn btn-success btn-sm" onClick={handleAccept}>
+                  <Icon icon="mdi:check" className="me-1" /> Accept
+                </button>
+                <button className="btn btn-danger btn-sm" onClick={handleReject}>
+                  <Icon icon="mdi:close" className="me-1" /> Reject
+                </button>
               </div>
             </div>
           </div>

@@ -108,14 +108,12 @@ const RolePermissionLayer = () => {
         );
         return;
       }
-
-      await Promise.all(
-        permissionIds.map((permissionId) =>
-          axios.post(
+          await axios.post(
             `${API_BASE}rolehaspermissions`,
             {
-              permission_id: permissionId,
+              permission_ids: permissionIds,
               role_id: roleId,
+              isActive: true,
             },
             {
               headers: {
@@ -123,9 +121,24 @@ const RolePermissionLayer = () => {
                 Authorization: `Bearer ${token}`,
               },
             }
-          )
-        )
-      );
+          );
+      // await Promise.all(
+      //   permissionIds.map((permissionId) =>
+      //     axios.post(
+      //       `${API_BASE}rolehaspermissions`,
+      //       {
+      //         permission_id: permissionId,
+      //         role_id: roleId,
+      //       },
+      //       {
+      //         headers: {
+      //           "Content-Type": "application/json",
+      //           Authorization: `Bearer ${token}`,
+      //         },
+      //       }
+      //     )
+      //   )
+      // );
 
       Swal.fire("Success", "Permissions updated successfully", "success").then(
         () => {
