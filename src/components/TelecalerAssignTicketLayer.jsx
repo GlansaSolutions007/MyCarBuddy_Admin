@@ -113,9 +113,11 @@ const TelecalerAssignTicketLayer = () => {
         });
 
         if (Array.isArray(res.data)) {
+
           const unassignedTickets = res.data.filter(
-            (t) => t.IsAssigned_head === false
+            (t) => t.IsAssigned_head === null || t.IsAssigned_head === false
           );
+          console.log("Unassigned tickets for Admin:", unassignedTickets);
           setTickets(unassignedTickets);
         }
       }
@@ -441,7 +443,7 @@ const TelecalerAssignTicketLayer = () => {
 
         {/* ===== ACTION BUTTONS ===== */}
         {(role === "Admin" || userDetails?.Is_Head === 1) && (
-          <div className="d-flex justify-content-center gap-3 mt-4">
+          <div className="d-flex justify-content-center gap-3 mt-4 d-none">
             <button
               type="button"
               className="btn btn-secondary radius-8 px-14 py-6 text-sm"

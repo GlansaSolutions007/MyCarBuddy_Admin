@@ -206,6 +206,14 @@ const TicketInnerLayer = () => {
                     : {ticket?.TicketCreatedDate || "N/A"}
                   </span>
                 </li>
+                <li className="d-flex align-items-center gap-1 mb-12">
+                  <span className="w-30 text-md fw-semibold text-primary-light">
+                    Description
+                  </span>
+                  <span className="w-70 text-secondary-light fw-medium">
+                    :   {ticket?.TicketDescription || "-"}
+                  </span>
+                </li>
               </ul>
 
               <div className="d-flex gap-2 mt-3">
@@ -216,12 +224,12 @@ const TicketInnerLayer = () => {
                   <Icon icon="mdi:arrow-left" className="fs-5" />
                   Back
                 </Link>
-                <button className="btn btn-success btn-sm" onClick={handleAccept}>
+                {/* <button className="btn btn-success btn-sm" onClick={handleAccept}>
                   <Icon icon="mdi:check" className="me-1" /> Accept
                 </button>
                 <button className="btn btn-danger btn-sm" onClick={handleReject}>
                   <Icon icon="mdi:close" className="me-1" /> Reject
-                </button>
+                </button> */}
               </div>
             </div>
           </div>
@@ -264,7 +272,7 @@ const TicketInnerLayer = () => {
                         onChange={(e) => setSelectedStatus(e.target.value)}
                       >
                         <option value="">Select status</option>
-                        <option value="0">Pending</option>
+                        {/* <option value="0">Pending</option> */}
                         <option value="1">Under Review</option>
                         <option value="2">Resolved</option>
                         <option value="3">Cancelled</option>
@@ -440,12 +448,12 @@ const TicketInnerLayer = () => {
                 </Accordion>
 
                 {/* Ticket Description */}
-                <h6 className="text-md fw-semibold text-primary-light mt-3 mb-2">
+                {/* <h6 className="text-md fw-semibold text-primary-light mt-3 mb-2">
                   Ticket Description
                 </h6>
                 <p className="text-secondary-light mb-0 text-md">
                   {ticket.TicketDescription || "-"}
-                </p>
+                </p> */}
               </>
             ) : (
               <p>No data</p>
