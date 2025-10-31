@@ -469,7 +469,7 @@ const TicketInnerLayer = () => {
             <h6 className="text-xl mb-16 border-bottom pb-2">Timeline</h6>
             {ticket?.TrackingHistory && ticket.TrackingHistory.length > 0 ? (
               <ul className="mb-0 list-unstyled ps-0">
-                {ticket.TrackingHistory.map((item, idx) => (
+                {ticket.TrackingHistory.slice().reverse().map((item, idx) => (
                   <li
                     key={idx}
                     className="mb-3 pb-3 border-bottom border-dashed last:border-0"
