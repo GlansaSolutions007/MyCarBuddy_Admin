@@ -255,10 +255,16 @@ const TelecalerAssignTicketLayer = () => {
         );
         ticketIndex += ticketsForThisEmp;
 
+        // ✅ Handle "admin-" prefixed employee IDs
+        const empId =
+          typeof emp.id === "string" && emp.id.startsWith("admin-")
+            ? Number(emp.id.replace("admin-", ""))
+            : Number(emp.id);
+            
         return {
           AssignedBy: Number(userId),
           AssignedToHead: Number(userDetails.Id),
-          AssignedToEmp: Number(emp.id),
+          AssignedToEmp: empId,
           ticketIds: assignedTickets,
         };
       });
@@ -308,7 +314,7 @@ const TelecalerAssignTicketLayer = () => {
       cell: (row) => (
         <div className="d-flex gap-2 align-items-center">
           <Link
-            to={`/tickets/${row.TicketID ?? row.ticket_id ?? row.Id}`}
+            to={`/tickets/${row.Id}`}
             className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
             title="View"
           >

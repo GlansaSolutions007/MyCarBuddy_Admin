@@ -407,7 +407,7 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
 
       // Format for react-select
       const formattedEmployees = employeesData.map(emp => ({
-        value: emp.Id,
+        value: emp.Name === "Admin" ? `admin-${emp.Id}` : emp.Id,
         label: emp.Name,
       }));
 
