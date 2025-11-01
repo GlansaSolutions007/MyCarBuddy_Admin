@@ -17,6 +17,7 @@ const TicketInnerLayer = () => {
   const [error, setError] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [statusDescription, setStatusDescription] = useState("");
+  const [assignedToEmp, setAssignedToEmp] = useState(null);
 
   // 🔹 Fetch ticket details
   const fetchTicket = async () => {
@@ -50,6 +51,13 @@ const TicketInnerLayer = () => {
       } else {
         setTicket(data);
         if (typeof data.Status === "number") setSelectedStatus(String(data.Status));
+
+        // Get assigned employee ID
+        if (Array.isArray(data.assigned_to_emp) && data.assigned_to_emp.length > 0) {
+          setAssignedToEmp(data.assigned_to_emp[0].assigned_to_emp);
+        } else if (data.assigned_to_emp) {
+          setAssignedToEmp(data.assigned_to_emp);
+        }
       }
     } catch (err) {
       console.error("Failed to load ticket", err);
@@ -90,6 +98,7 @@ const TicketInnerLayer = () => {
           ticket.TicketTrackId || ticket.TicketId || ticket.TicketID,
         status: Number(selectedStatus),
         description: statusDescription,
+        assigned_to: assignedToEmp || null,
       };
 
       await axios.put(`${API_BASE}Tickets`, payload, headers);
@@ -250,18 +259,6 @@ const TicketInnerLayer = () => {
                 <h6 className="text-xl mb-16 border-bottom pb-2">Update Status</h6>
                 <div className="p-3 border radius-16 bg-light">
                   <div className="row g-3 align-items-start">
-                    <div className="col-md-8">
-                      <label className="form-label fw-semibold text-primary-light">
-                        Description
-                      </label>
-                      <textarea
-                        className="form-control"
-                        rows={2}
-                        placeholder="Add a description"
-                        value={statusDescription}
-                        onChange={(e) => setStatusDescription(e.target.value)}
-                      />
-                    </div>
                     <div className="col-md-4">
                       <label className="form-label fw-semibold text-primary-light">
                         Status
@@ -277,6 +274,27 @@ const TicketInnerLayer = () => {
                         <option value="2">Resolved</option>
                         <option value="3">Cancelled</option>
                       </select>
+                    </div>
+
+                    {/* Description Second */}
+                    <div className="col-md-8">
+                      <label className="form-label fw-semibold text-primary-light">
+                        Description
+                      </label>
+                      <textarea
+                        className="form-control"
+                        rows={4}
+                        placeholder="Add a description"
+                        value={statusDescription}
+                        maxLength={200}
+                        onChange={(e) => setStatusDescription(e.target.value)}
+                      />
+                      <small
+                        className="text-secondary-light text-sm"
+                        style={{ display: "block", textAlign: "right" }}
+                      >
+                        {statusDescription.length}/200 characters
+                      </small>
                     </div>
                   </div>
 
