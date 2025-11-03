@@ -18,6 +18,12 @@ const TicketInnerLayer = () => {
   const [selectedStatus, setSelectedStatus] = useState("");
   const [statusDescription, setStatusDescription] = useState("");
   const [assignedToEmp, setAssignedToEmp] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+
+  const history = ticket?.TrackingHistory;
+  const currentStatus = history?.[0]?.StatusName?.toLowerCase() || "";
+  const isDisabled = ["cancelled", "closed"].includes(currentStatus);
+
 
   // 🔹 Fetch ticket details
   const fetchTicket = async () => {
@@ -72,54 +78,106 @@ const TicketInnerLayer = () => {
   }, [ticketId]);
 
   // 🔹 Handle Submit Status (with Description)
-  const handleSubmitStatus = async () => {
-    if (!ticket) return;
-    if (selectedStatus === "") {
-      Swal.fire({
-        icon: "warning",
-        title: "Select status",
-        text: "Please choose a status.",
-      });
-      return;
-    }
+  // 🔹 Handle Submit Status (with Description & Files)
+const handleSubmitStatus = async () => {
+  if (!ticket) return;
 
-    try {
-      const headers = token
-        ? {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-        : { headers: { "Content-Type": "application/json" } };
+  if (selectedStatus === "") {
+    Swal.fire({
+      icon: "warning",
+      title: "Select status",
+      text: "Please choose a status.",
+    });
+    return;
+  }
 
-      const payload = {
-        ticketTrackId:
-          ticket.TicketTrackId || ticket.TicketId || ticket.TicketID,
-        status: Number(selectedStatus),
-        description: statusDescription,
-        assigned_to: assignedToEmp || null,
-      };
+  try {
+    // ✅ Use FormData for both text and files
+    const formData = new FormData();
+    formData.append("TicketTrackId", ticket.TicketTrackId || ticket.TicketId || ticket.TicketID);
+    formData.append("Status", selectedStatus);
+    formData.append("Description", statusDescription);
+    formData.append("Assigned_to", assignedToEmp || "");
 
-      await axios.put(`${API_BASE}Tickets`, payload, headers);
+    // ✅ Add all selected files
+    selectedFiles.forEach((file) => {
+      formData.append("Files", file);
+    });
 
-      Swal.fire({
-        icon: "success",
-        title: "Updated",
-        text: "Ticket status updated successfully.",
-      });
+    const headers = token
+  ? { headers: { Authorization: `Bearer ${token}` } }
+  : {};
 
-      fetchTicket();
-      setStatusDescription("");
-    } catch (err) {
-      console.error("Status update failed", err);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Failed to update status. Please try again.",
-      });
-    }
-  };
+    await axios.put(`${API_BASE}Tickets`, formData, headers);
+
+    Swal.fire({
+      icon: "success",
+      title: "Updated",
+      text: "Ticket status updated successfully.",
+    });
+
+    fetchTicket();
+    setStatusDescription("");
+    setSelectedFiles([]);
+  } catch (err) {
+    console.error("Status update failed", err);
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Failed to update status. Please try again.",
+    });
+  }
+};
+
+  // const handleSubmitStatus = async () => {
+  //   if (!ticket) return;
+  //   if (selectedStatus === "") {
+  //     Swal.fire({
+  //       icon: "warning",
+  //       title: "Select status",
+  //       text: "Please choose a status.",
+  //     });
+  //     return;
+  //   }
+
+  //   try {
+
+  //     const headers = token
+  //       ? {
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //       : { headers: { "Content-Type": "application/json" } };
+
+  //     const payload = {
+  //       TicketTrackId:
+  //       ticket.TicketTrackId || ticket.TicketId || ticket.TicketID,
+  //       Status: Number(selectedStatus),
+  //       Description: statusDescription,
+  //       Assigned_to: assignedToEmp || null,
+  //     };
+
+  //     await axios.put(`${API_BASE}Tickets`, payload, headers);
+
+  //     Swal.fire({
+  //       icon: "success",
+  //       title: "Updated",
+  //       text: "Ticket status updated successfully.",
+  //     });
+
+  //     fetchTicket();
+  //     setStatusDescription("");
+  //   } catch (err) {
+  //     console.error("Status update failed", err);
+  //     Swal.fire({
+  //       icon: "error",
+  //       title: "Error",
+  //       text: "Failed to update status. Please try again.",
+  //     });
+  //   }
+  // };
 
   const handleAccept = async () => {
     try {
@@ -162,6 +220,11 @@ const TicketInnerLayer = () => {
         Swal.fire("Error", "Failed to reject ticket", "error");
       }
     }
+  };
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setSelectedFiles(files);
   };
 
   return (
@@ -212,7 +275,17 @@ const TicketInnerLayer = () => {
                     Created
                   </span>
                   <span className="w-70 text-secondary-light fw-medium">
-                    : {ticket?.TicketCreatedDate || "N/A"}
+                    : {ticket?.TicketCreatedDate
+                      ? new Date(ticket.TicketCreatedDate).toLocaleString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                          hour12: true,
+                        })
+                      : "N/A"}
                   </span>
                 </li>
                 <li className="d-flex align-items-center gap-1 mb-12">
@@ -257,7 +330,7 @@ const TicketInnerLayer = () => {
               <>
                 {/* Update Status */}
                 <h6 className="text-xl mb-16 border-bottom pb-2">Update Status</h6>
-                <div className="p-3 border radius-16 bg-light">
+                <div className={`p-3 border radius-16 ${isDisabled ? "bg-light-subtle" : "bg-light"}`}>
                   <div className="row g-3 align-items-start">
                     <div className="col-md-4">
                       <label className="form-label fw-semibold text-primary-light">
@@ -267,12 +340,38 @@ const TicketInnerLayer = () => {
                         className="form-select"
                         value={selectedStatus}
                         onChange={(e) => setSelectedStatus(e.target.value)}
+                        disabled={isDisabled}
                       >
                         <option value="">Select status</option>
-                        {/* <option value="0">Pending</option> */}
-                        <option value="1">Under Review</option>
-                        <option value="2">Resolved</option>
-                        <option value="3">Cancelled</option>
+                        {[
+                          { value: 1, label: "Under Review" },
+                          { value: 2, label: "Resolved" },
+                          { value: 3, label: "Cancelled" },
+                          // { value: 4, label: "Closed" },
+                          // { value: 5, label: "Reopened" },
+                        ].map((opt) => {
+                          // Find last "Reopened" index
+                          const lastReopenedIndex = ticket?.TrackingHistory?.findLastIndex?.(
+                            (h) => Number(h.Status) === 5
+                          ) ?? -1;
+
+                          // Get statuses after the last reopen
+                          const afterReopen =
+                            lastReopenedIndex >= 0
+                              ? ticket?.TrackingHistory?.slice(lastReopenedIndex + 1)
+                              : ticket?.TrackingHistory || [];
+
+                          // Disable if used in the relevant portion
+                          const alreadyUsed = afterReopen?.some(
+                            (h) => Number(h.Status) === opt.value
+                          );
+
+                          return (
+                            <option key={opt.value} value={opt.value} disabled={alreadyUsed}>
+                              {opt.label}
+                            </option>
+                          );
+                        })}
                       </select>
                     </div>
 
@@ -288,6 +387,7 @@ const TicketInnerLayer = () => {
                         value={statusDescription}
                         maxLength={200}
                         onChange={(e) => setStatusDescription(e.target.value)}
+                        disabled={isDisabled}
                       />
                       <small
                         className="text-secondary-light text-sm"
@@ -298,14 +398,56 @@ const TicketInnerLayer = () => {
                     </div>
                   </div>
 
-                  <div className="d-flex justify-content-end mt-3">
+                  <div className="d-flex justify-content-end mt-3 gap-10">
+                    <button
+                      className="btn btn-secondary px-20 btn-sm"
+                      onClick={() => document.getElementById('file-input').click()}
+                    >
+                      Upload Docs/Images
+                    </button>
+                    <input
+                      type="file"
+                      id="file-input"
+                      multiple
+                      accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      style={{ display: 'none' }}
+                      onChange={handleFileChange}
+                    />
                     <button
                       className="btn btn-primary-600 px-20 btn-sm"
                       onClick={handleSubmitStatus}
+                      disabled={isDisabled}
                     >
                       Submit
                     </button>
                   </div>
+
+                  {selectedFiles.length > 0 && (
+                    <div className="mt-3">
+                      <h6>Selected Files:</h6>
+                      <div className="d-flex flex-wrap gap-2">
+                        {selectedFiles.map((file, index) => (
+                          <div key={index} className="border rounded" style={{ width: '100px', height: '100px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: file.type.startsWith('image/') ? '8px' : '0' }}>
+                            {file.type.startsWith('image/') ? (
+                              <img src={URL.createObjectURL(file)} alt={file.name} style={{ width: '80px', height: '80px', objectFit: 'cover' }} />
+                            ) : file.type === 'application/pdf' ? (
+                              <div className="text-center">
+                                <Icon icon="mdi:file-pdf" width={80} height={80} color="#dc3545" />
+                              </div>
+                            ) : file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.type === 'application/msword' ? (
+                              <div className="text-center">
+                                <Icon icon="mdi:file-word" width={80} height={80} color="#007bff" />
+                              </div>
+                            ) : (
+                              <div className="text-center">
+                                <Icon icon="mdi:file-document" width={80} height={80} />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* --- Accordion Sections --- */}
@@ -507,7 +649,18 @@ const TicketInnerLayer = () => {
                       </span>
                       <div>
                         <div className="text-sm text-secondary-light fw-medium">
-                          {item.StatusDate}
+                          {/* {item.StatusDate} */}
+                          {item.StatusDate
+                            ? new Date(item.StatusDate).toLocaleString("en-IN", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                // second: "2-digit",
+                                hour12: true,
+                              })
+                            : "-"}
                         </div>
                         <div className="text-sm text-secondary-light">
                           {item.StatusDescription || "-"}

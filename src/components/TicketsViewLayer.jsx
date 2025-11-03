@@ -14,10 +14,12 @@ const TicketsViewLayer = () => {
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [selectedStatus, setSelectedStatus] = useState("Pending");
 
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
   const userId = localStorage.getItem("userId");
+  const userDetails = JSON.parse(localStorage.getItem("employeeData"));
 
   useEffect(() => {
     fetchTickets();
@@ -25,12 +27,16 @@ const TicketsViewLayer = () => {
 
   // Fetch Tickets
   const fetchTickets = async () => {
-    const url =
-      role === "Admin"
-        ? `${API_BASE}Tickets`
-        : `${API_BASE}Tickets?role=${role}&UserID=${userId}`;
-    try {
-      setLoading(true);
+  const url =
+    role === "Admin"
+      ? `${API_BASE}Tickets`
+      : `${API_BASE}Tickets?role=${role}&UserID=${userId}`;
+
+  try {
+    setLoading(true);
+
+    if (role === "Admin") {
+      // ✅ Admin: fetch all tickets (unchanged)
       const res = await axios.get(url, {
         headers: {
           "Content-Type": "application/json",
@@ -42,15 +48,62 @@ const TicketsViewLayer = () => {
       } else {
         setTickets([]);
       }
-    } catch (error) {
-      console.error("Failed to load tickets", error);
-      setError("Failed to load tickets. Please try again later.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    } else {
+      // ✅ Head / Employee: fetch from Ticket_Assignments
+      const [resAssignments, resTickets] = await Promise.all([
+        axios.get(`${API_BASE}Ticket_Assignments`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }),
+        axios.get(`${API_BASE}Tickets`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }),
+      ]);
 
-  // Removed status update logic for simplified listing
+      const assignments = Array.isArray(resAssignments.data?.data)
+        ? resAssignments.data.data
+        : Array.isArray(resAssignments.data)
+        ? resAssignments.data
+        : [];
+
+      const allTickets = Array.isArray(resTickets.data) ? resTickets.data : [];
+
+      let filteredAssignments = [];
+
+      // ✅ Head: show tickets assigned to this head
+      // ✅ Employee: show tickets assigned to this employee
+      if (userDetails?.Is_Head === 1) {
+        filteredAssignments = assignments.filter(
+          (a) => Number(a.assigned_to_head) === Number(userDetails.Id)
+        );
+      } else {
+        filteredAssignments = assignments.filter(
+          (a) => Number(a.assigned_to_emp) === Number(userDetails.Id)
+        );
+      }
+
+      // ✅ Merge ticket info
+      const mergedTickets = filteredAssignments.map((assign) => {
+        const ticketInfo = allTickets.find(
+          (t) => t.TicketTrackId === assign.ticket_id
+        );
+        return { ...ticketInfo, ...assign };
+      });
+
+      setTickets(mergedTickets);
+    }
+  } catch (error) {
+    console.error("Failed to load tickets", error);
+    setError("Failed to load tickets. Please try again later.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   // DataTable Columns
   const columns = [
@@ -68,13 +121,32 @@ const TicketsViewLayer = () => {
         <>
           <span className="fw-bold">{row.CustomerName || "N/A"}</span>
           <br />
-          {row.PhoneNumber || ""}
+          {/* {row.PhoneNumber || ""} */}
         </>
       ),
     },
     {
       name: "Booking id",
       selector: (row) => row.BookingTrackID || "-",
+    },
+    {
+      name: "Ticket Status",
+      cell: (row) => {
+        const status = row?.TrackingHistory?.[0]?.StatusName ?? "-";
+        const colorMap = {
+          Pending: "bg-secondary text-white",
+          UnderReview: "bg-warning text-dark",
+          Resolved: "bg-success text-white",
+          Cancelled: "bg-danger text-white",
+        };
+        const badgeClass = colorMap[status] || "bg-light text-dark";
+        return (
+          <span className={`badge rounded-pill px-3 py-2 ${badgeClass}`}>
+            {status}
+          </span>
+        );
+      },
+      wrap: true,
     },
     {
       name: "Description",
@@ -103,11 +175,15 @@ const TicketsViewLayer = () => {
   // Filter
   const filteredTickets = tickets.filter((ticket) => {
     const text = searchText.toLowerCase();
+    const statusName = (ticket?.TrackingHistory?.[0]?.StatusName || "").toLowerCase();
+    const statusMatch = selectedStatus === "All" || statusName === selectedStatus.toLowerCase();
     return (
-      ticket.CustomerName?.toLowerCase().includes(text) ||
+      statusMatch &&
+      (ticket.CustomerName?.toLowerCase().includes(text) ||
       ticket.TicketTrackId?.toLowerCase().includes(text) ||
       ticket.BookingTrackID?.toLowerCase().includes(text) ||
-      ticket.Description?.toLowerCase().includes(text)
+      ticket.Description?.toLowerCase().includes(text) ||
+      statusName.includes(text))
     );
   });
 
@@ -138,6 +214,17 @@ const TicketsViewLayer = () => {
                 <Icon icon="ion:search-outline" className="icon" />
               </form>
               <div className="d-flex gap-2">
+                <select
+                  className="form-select radius-8 px-14 py-6 text-sm w-auto min-w-150"
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                >
+                  <option value="All">All</option>
+                  <option value="Pending">Pending</option>
+                  <option value="UnderReview">Under Review</option>
+                  <option value="Resolved">Resolved</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
                 <Link
                   to="/add-tickets"
                   className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
@@ -148,7 +235,6 @@ const TicketsViewLayer = () => {
               </div>
             </div>
           </div>
-
           {error ? (
             <div className="alert alert-danger m-3">{error}</div>
           ) : (

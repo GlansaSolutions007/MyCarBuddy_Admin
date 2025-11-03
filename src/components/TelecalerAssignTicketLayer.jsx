@@ -21,6 +21,7 @@ const TelecalerAssignTicketLayer = () => {
   const [ticketCount, setTicketCount] = useState("");
   const [loading, setLoading] = useState(false);
   const [employees, setEmployees] = useState([]);
+  const [selectedTickets, setSelectedTickets] = useState([]);
   const [formData, setFormData] = useState({
     selectedDepartment: null,
     selectedHead: null,
@@ -207,24 +208,29 @@ const TelecalerAssignTicketLayer = () => {
           "warning"
         );
     }
+    // Use selected tickets if any, else use count
+    let selectedTicketIds = [];
+    if (selectedTickets.length > 0) {
+      selectedTicketIds = selectedTickets;
+    } else {
+      if (!ticketCount || ticketCount <= 0)
+        return Swal.fire(
+          "Warning",
+          "Please enter a valid ticket count or select tickets",
+          "warning"
+        );
 
-    if (!ticketCount || ticketCount <= 0)
-      return Swal.fire(
-        "Warning",
-        "Please enter a valid ticket count",
-        "warning"
+      if (tickets.length === 0)
+        return Swal.fire("Info", "No unassigned tickets available", "info");
+
+      // Sort tickets and pick top N
+      const availableTickets = [...tickets].sort(
+        (a, b) => getTicketId(a) - getTicketId(b)
       );
-
-    if (tickets.length === 0)
-      return Swal.fire("Info", "No unassigned tickets available", "info");
-
-    // Sort tickets and pick top N
-    const availableTickets = [...tickets].sort(
-      (a, b) => getTicketId(a) - getTicketId(b)
-    );
-    const selectedTicketIds = availableTickets
-      .slice(0, ticketCount)
-      .map((t) => getTicketId(t));
+      selectedTicketIds = availableTickets
+        .slice(0, ticketCount)
+        .map((t) => getTicketId(t));
+    }
 
     let payload = [];
     if (role === "Admin") {
@@ -285,8 +291,45 @@ const TelecalerAssignTicketLayer = () => {
     }
   };
 
+  // Auto-select first N tickets when ticketCount changes
+      useEffect(() => {
+        if (ticketCount > 0 && tickets.length > 0) {
+          const autoSelected = tickets
+            .slice(0, ticketCount)
+            .map((t) => getTicketId(t));
+          setSelectedTickets(autoSelected);
+        } else {
+          setSelectedTickets([]);
+        }
+      }, [ticketCount, tickets]);
+
   // ===== TABLE COLUMNS =====
   const ticketColumns = [
+    ...(role === "Admin" || userDetails?.Is_Head === 1
+      ? [
+          {
+            name: "Select",
+            cell: (row) => (
+              <input
+                type="checkbox"
+                className="form-check-input"
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                checked={selectedTickets.includes(getTicketId(row))}
+                onChange={(e) => {
+                  const ticketId = getTicketId(row);
+                  if (e.target.checked) {
+                    setSelectedTickets((prev) => [...prev, ticketId]);
+                  } else {
+                    setSelectedTickets((prev) => prev.filter((id) => id !== ticketId));
+                  }
+                }}
+              />
+            ),
+            width: "80px",
+            ignoreRowClick: true,
+          },
+        ]
+      : []),
     {
       name: "Ticket Track ID",
       selector: (row) => (
@@ -303,6 +346,25 @@ const TelecalerAssignTicketLayer = () => {
           <span className="fw-bold">{row.CustomerName || row.CustID}</span>
         </>
       ),
+    },
+    {
+      name: "Ticket Status",
+      cell: (row) => {
+        const status = row?.TrackingHistory?.[0]?.StatusName ?? "-";
+        const colorMap = {
+          Pending: "bg-secondary text-white",
+          UnderReview: "bg-warning text-dark",
+          Resolved: "bg-success text-white",
+          Cancelled: "bg-danger text-white",
+        };
+        const badgeClass = colorMap[status] || "bg-light text-dark";
+        return (
+          <span className={`badge rounded-pill px-3 py-2 ${badgeClass}`}>
+            {status}
+          </span>
+        );
+      },
+      wrap: true,
     },
     {
       name: "Description",
@@ -388,26 +450,44 @@ const TelecalerAssignTicketLayer = () => {
             </div>
           ) : null}
           {(role === "Admin" || userDetails?.Is_Head === 1) && (
-            <div className="col-md-2">
+            <div className="col-md-2 position-relative min-h-90">
               <label className="form-label fw-semibold mb-1">
                 Ticket Count
               </label>
               <input
                 type="number"
-                className="form-control"
+                className={`form-control ${ticketCount > tickets.length ? "border-danger" : ""}`}
                 placeholder="Enter count"
                 value={ticketCount}
                 min={1}
                 max={tickets.length}
                 onChange={(e) => setTicketCount(Number(e.target.value))}
               />
+              {ticketCount > tickets.length && (
+                <small
+                  className="text-danger position-absolute"
+                  style={{ bottom: "-18px", fontSize: "12px" }}
+                >
+                  Entered count exceeds total tickets
+                </small>
+              )}
             </div>
           )}
 
-          <div className="col-md-2">
+          {/* <div className="col-md-2">
             <label className="form-label fw-semibold mb-1">Total Tickets</label>
             <div className="fw-bold text-primary fs-5">
               {Math.max(tickets.length - (ticketCount || 0), 0)}
+            </div>
+          </div> */}
+          <div className="col-md-1">
+            <label className="form-label fw-semibold mb-1">Total</label>
+            <div className="fw-bold text-primary fs-5">{tickets.length}</div>
+          </div>
+          <div className="col-md-1">
+            <label className="form-label fw-semibold mb-1">Selected</label>
+            <div className="fw-bold text-primary fs-5">
+              {selectedTickets.length}
             </div>
           </div>
         </div>
