@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import Accordion from "react-bootstrap/Accordion";
 import axios from "axios";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
 const TicketInnerLayer = () => {
   const { ticketId } = useParams();
+  const navigate = useNavigate();
   const normalizedTicketId = String(ticketId ?? "").trim();
   const token = localStorage.getItem("token");
 
@@ -23,6 +24,8 @@ const TicketInnerLayer = () => {
   const history = ticket?.TrackingHistory;
   const currentStatus = history?.[0]?.StatusName?.toLowerCase() || "";
   const isDisabled = ["cancelled", "closed"].includes(currentStatus);
+  const userRole = localStorage.getItem("role");
+  const isEmployee = userRole === "Employee";
 
   // 🔹 Fetch ticket details
   const fetchTicket = async () => {
@@ -134,56 +137,56 @@ const TicketInnerLayer = () => {
     }
   };
 
-  const handleAccept = async () => {
-    try {
-      await axios.put(
-        `${API_BASE}Tickets/${normalizedTicketId}/accept`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      Swal.fire("Success", "Ticket accepted successfully", "success");
-      fetchTicket(); // Refresh ticket data
-    } catch (error) {
-      console.error("Failed to accept ticket:", error);
-      Swal.fire("Error", "Failed to accept ticket", "error");
-    }
-  };
+  // const handleAccept = async () => {
+  //   try {
+  //     await axios.put(
+  //       `${API_BASE}Tickets/${normalizedTicketId}/accept`,
+  //       {},
+  //       {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //       }
+  //     );
+  //     Swal.fire("Success", "Ticket accepted successfully", "success");
+  //     fetchTicket(); // Refresh ticket data
+  //   } catch (error) {
+  //     console.error("Failed to accept ticket:", error);
+  //     Swal.fire("Error", "Failed to accept ticket", "error");
+  //   }
+  // };
 
-  const handleReject = async () => {
-    const { value: reason } = await Swal.fire({
-      title: "Reject Ticket",
-      input: "textarea",
-      inputLabel: "Reason for rejection",
-      inputPlaceholder: "Enter the reason for rejecting this ticket...",
-      inputValidator: (value) => {
-        if (!value) {
-          return "You need to provide a reason!";
-        }
-      },
-      showCancelButton: true,
-      confirmButtonText: "Reject",
-      confirmButtonColor: "#dc3545",
-    });
+  // const handleReject = async () => {
+  //   const { value: reason } = await Swal.fire({
+  //     title: "Reject Ticket",
+  //     input: "textarea",
+  //     inputLabel: "Reason for rejection",
+  //     inputPlaceholder: "Enter the reason for rejecting this ticket...",
+  //     inputValidator: (value) => {
+  //       if (!value) {
+  //         return "You need to provide a reason!";
+  //       }
+  //     },
+  //     showCancelButton: true,
+  //     confirmButtonText: "Reject",
+  //     confirmButtonColor: "#dc3545",
+  //   });
 
-    if (reason) {
-      try {
-        await axios.put(
-          `${API_BASE}Tickets/${normalizedTicketId}/reject`,
-          { reason },
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        Swal.fire("Success", "Ticket rejected successfully", "success");
-        fetchTicket(); // Refresh ticket data
-      } catch (error) {
-        console.error("Failed to reject ticket:", error);
-        Swal.fire("Error", "Failed to reject ticket", "error");
-      }
-    }
-  };
+  //   if (reason) {
+  //     try {
+  //       await axios.put(
+  //         `${API_BASE}Tickets/${normalizedTicketId}/reject`,
+  //         { reason },
+  //         {
+  //           headers: { Authorization: `Bearer ${token}` },
+  //         }
+  //       );
+  //       Swal.fire("Success", "Ticket rejected successfully", "success");
+  //       fetchTicket(); // Refresh ticket data
+  //     } catch (error) {
+  //       console.error("Failed to reject ticket:", error);
+  //       Swal.fire("Error", "Failed to reject ticket", "error");
+  //     }
+  //   }
+  // };
 
   const handleForward = async () => {
     const { value: reason } = await Swal.fire({
@@ -203,15 +206,22 @@ const TicketInnerLayer = () => {
 
     if (reason) {
       try {
-        await axios.put(
-          `${API_BASE}Tickets/${normalizedTicketId}/forward`,
-          { reason },
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+        const formData = new FormData();
+        formData.append(
+          "TicketTrackId",
+          ticket.TicketTrackId || ticket.TicketId || ticket.TicketID
         );
+        formData.append("Status", 7); // Forward status
+        formData.append("Description", reason);
+
+        const headers = token
+          ? { headers: { Authorization: `Bearer ${token}` } }
+          : {};
+
+        await axios.put(`${API_BASE}Tickets`, formData, headers);
+
         Swal.fire("Success", "Ticket forwarded successfully", "success");
-        fetchTicket(); // Refresh ticket data
+        navigate("/tickets");
       } catch (error) {
         console.error("Failed to forward ticket:", error);
         Swal.fire("Error", "Failed to forward ticket", "error");
@@ -308,13 +318,15 @@ const TicketInnerLayer = () => {
                   <Icon icon="mdi:arrow-left" className="fs-5" />
                   Back
                 </Link>
-                <button
-                  className="btn btn-primary btn-sm d-flex align-items-center justify-content-center gap-1"
-                  onClick={handleForward}
-                >
-                  <Icon icon="mdi:arrow-right" className="fs-5" />
-                  Forward
-                </button>
+                {isEmployee && (
+                  <button
+                    className="btn btn-primary btn-sm d-flex align-items-center justify-content-center gap-1"
+                    onClick={handleForward}
+                  >
+                    <Icon icon="mdi:arrow-right" className="fs-5" />
+                    Forward
+                  </button>
+                )}
                 {/* <button className="btn btn-success btn-sm" onClick={handleAccept}>
                   <Icon icon="mdi:check" className="me-1" /> Accept
                 </button>
