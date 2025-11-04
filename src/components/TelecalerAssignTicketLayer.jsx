@@ -116,8 +116,10 @@ const TelecalerAssignTicketLayer = () => {
         if (Array.isArray(res.data)) {
 
           const unassignedTickets = res.data.filter(
-            (t) => t.IsAssigned_head === null || t.IsAssigned_head === false
-          );
+          (t) =>
+            (t.IsAssigned_head === null || t.IsAssigned_head === false) &&
+            t.StatusName !== "Cancelled"
+        );
           console.log("Unassigned tickets for Admin:", unassignedTickets);
           setTickets(unassignedTickets);
         }
@@ -275,20 +277,21 @@ const TelecalerAssignTicketLayer = () => {
         };
       });
     }
-    try {
-      setLoading(true);
-      await axios.post(`${API_BASE}Ticket_Assignments`, payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      Swal.fire("Success", "Tickets assigned successfully!", "success").then(
-        () => navigate("/telecaler-tickets")
-      );
-    } catch (error) {
-      console.error("Failed to assign tickets:", error);
-      Swal.fire("Error", "Failed to assign tickets", "error");
-    } finally {
-      setLoading(false);
-    }
+      try {
+        setLoading(true);
+        await axios.post(`${API_BASE}Ticket_Assignments`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        Swal.fire("Success", "Tickets assigned successfully!", "success").then(() => {
+          fetchTickets(); // refresh data
+          // setSelectedTickets([]); // optional reset
+        });
+      } catch (error) {
+        console.error("Failed to assign tickets:", error);
+        Swal.fire("Error", "Failed to assign tickets", "error");
+      } finally {
+        setLoading(false);
+      }
   };
 
   // Auto-select first N tickets when ticketCount changes
