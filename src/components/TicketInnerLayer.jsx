@@ -24,7 +24,6 @@ const TicketInnerLayer = () => {
   const currentStatus = history?.[0]?.StatusName?.toLowerCase() || "";
   const isDisabled = ["cancelled", "closed"].includes(currentStatus);
 
-
   // 🔹 Fetch ticket details
   const fetchTicket = async () => {
     setLoading(true);
@@ -56,10 +55,14 @@ const TicketInnerLayer = () => {
         setError("Ticket not found.");
       } else {
         setTicket(data);
-        if (typeof data.Status === "number") setSelectedStatus(String(data.Status));
+        if (typeof data.Status === "number")
+          setSelectedStatus(String(data.Status));
 
         // Get assigned employee ID
-        if (Array.isArray(data.assigned_to_emp) && data.assigned_to_emp.length > 0) {
+        if (
+          Array.isArray(data.assigned_to_emp) &&
+          data.assigned_to_emp.length > 0
+        ) {
           setAssignedToEmp(data.assigned_to_emp[0].assigned_to_emp);
         } else if (data.assigned_to_emp) {
           setAssignedToEmp(data.assigned_to_emp);
@@ -77,113 +80,69 @@ const TicketInnerLayer = () => {
     fetchTicket();
   }, [ticketId]);
 
-  // 🔹 Handle Submit Status (with Description)
   // 🔹 Handle Submit Status (with Description & Files)
-const handleSubmitStatus = async () => {
-  if (!ticket) return;
+  const handleSubmitStatus = async () => {
+    if (!ticket) return;
 
-  if (selectedStatus === "") {
-    Swal.fire({
-      icon: "warning",
-      title: "Select status",
-      text: "Please choose a status.",
-    });
-    return;
-  }
+    if (selectedStatus === "") {
+      Swal.fire({
+        icon: "warning",
+        title: "Select status",
+        text: "Please choose a status.",
+      });
+      return;
+    }
 
-  try {
-    // ✅ Use FormData for both text and files
-    const formData = new FormData();
-    formData.append("TicketTrackId", ticket.TicketTrackId || ticket.TicketId || ticket.TicketID);
-    formData.append("Status", selectedStatus);
-    formData.append("Description", statusDescription);
-    formData.append("Assigned_to", assignedToEmp || "");
+    try {
+      // ✅ Use FormData for both text and files
+      const formData = new FormData();
+      formData.append(
+        "TicketTrackId",
+        ticket.TicketTrackId || ticket.TicketId || ticket.TicketID
+      );
+      formData.append("Status", selectedStatus);
+      formData.append("Description", statusDescription);
+      formData.append("Assigned_to", assignedToEmp || null);
 
-    // ✅ Add all selected files
-    selectedFiles.forEach((file) => {
-      formData.append("Files", file);
-    });
+      // ✅ Add all selected files
+      selectedFiles.forEach((file) => {
+        formData.append("Files", file);
+      });
 
-    const headers = token
-  ? { headers: { Authorization: `Bearer ${token}` } }
-  : {};
+      const headers = token
+        ? { headers: { Authorization: `Bearer ${token}` } }
+        : {};
 
-    await axios.put(`${API_BASE}Tickets`, formData, headers);
+      await axios.put(`${API_BASE}Tickets`, formData, headers);
 
-    Swal.fire({
-      icon: "success",
-      title: "Updated",
-      text: "Ticket status updated successfully.",
-    });
+      Swal.fire({
+        icon: "success",
+        title: "Updated",
+        text: "Ticket status updated successfully.",
+      });
 
-    fetchTicket();
-    setStatusDescription("");
-    setSelectedFiles([]);
-  } catch (err) {
-    console.error("Status update failed", err);
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "Failed to update status. Please try again.",
-    });
-  }
-};
-
-  // const handleSubmitStatus = async () => {
-  //   if (!ticket) return;
-  //   if (selectedStatus === "") {
-  //     Swal.fire({
-  //       icon: "warning",
-  //       title: "Select status",
-  //       text: "Please choose a status.",
-  //     });
-  //     return;
-  //   }
-
-  //   try {
-
-  //     const headers = token
-  //       ? {
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //       : { headers: { "Content-Type": "application/json" } };
-
-  //     const payload = {
-  //       TicketTrackId:
-  //       ticket.TicketTrackId || ticket.TicketId || ticket.TicketID,
-  //       Status: Number(selectedStatus),
-  //       Description: statusDescription,
-  //       Assigned_to: assignedToEmp || null,
-  //     };
-
-  //     await axios.put(`${API_BASE}Tickets`, payload, headers);
-
-  //     Swal.fire({
-  //       icon: "success",
-  //       title: "Updated",
-  //       text: "Ticket status updated successfully.",
-  //     });
-
-  //     fetchTicket();
-  //     setStatusDescription("");
-  //   } catch (err) {
-  //     console.error("Status update failed", err);
-  //     Swal.fire({
-  //       icon: "error",
-  //       title: "Error",
-  //       text: "Failed to update status. Please try again.",
-  //     });
-  //   }
-  // };
+      fetchTicket();
+      setStatusDescription("");
+      setSelectedFiles([]);
+    } catch (err) {
+      console.error("Status update failed", err);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to update status. Please try again.",
+      });
+    }
+  };
 
   const handleAccept = async () => {
     try {
-      await axios.put(`${API_BASE}Tickets/${normalizedTicketId}/accept`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.put(
+        `${API_BASE}Tickets/${normalizedTicketId}/accept`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       Swal.fire("Success", "Ticket accepted successfully", "success");
       fetchTicket(); // Refresh ticket data
     } catch (error) {
@@ -210,14 +169,52 @@ const handleSubmitStatus = async () => {
 
     if (reason) {
       try {
-        await axios.put(`${API_BASE}Tickets/${normalizedTicketId}/reject`, { reason }, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await axios.put(
+          `${API_BASE}Tickets/${normalizedTicketId}/reject`,
+          { reason },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         Swal.fire("Success", "Ticket rejected successfully", "success");
         fetchTicket(); // Refresh ticket data
       } catch (error) {
         console.error("Failed to reject ticket:", error);
         Swal.fire("Error", "Failed to reject ticket", "error");
+      }
+    }
+  };
+
+  const handleForward = async () => {
+    const { value: reason } = await Swal.fire({
+      title: "Forward Ticket",
+      input: "textarea",
+      inputLabel: "Reason for forwarding",
+      inputPlaceholder: "Enter the reason for forwarding this ticket...",
+      inputValidator: (value) => {
+        if (!value) {
+          return "You need to provide a reason!";
+        }
+      },
+      showCancelButton: true,
+      confirmButtonText: "Confirm Forward",
+      confirmButtonColor: "#007bff",
+    });
+
+    if (reason) {
+      try {
+        await axios.put(
+          `${API_BASE}Tickets/${normalizedTicketId}/forward`,
+          { reason },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        Swal.fire("Success", "Ticket forwarded successfully", "success");
+        fetchTicket(); // Refresh ticket data
+      } catch (error) {
+        console.error("Failed to forward ticket:", error);
+        Swal.fire("Error", "Failed to forward ticket", "error");
       }
     }
   };
@@ -239,8 +236,9 @@ const handleSubmitStatus = async () => {
               <img
                 src={
                   ticket?.BookingDetails?.ProfileImage
-                    ? `${import.meta.env.VITE_APIURL_IMAGE}${ticket.BookingDetails.ProfileImage
-                    }`
+                    ? `${import.meta.env.VITE_APIURL_IMAGE}${
+                        ticket.BookingDetails.ProfileImage
+                      }`
                     : "/assets/images/user-grid/user-grid-img14.png"
                 }
                 alt="customer"
@@ -275,16 +273,20 @@ const handleSubmitStatus = async () => {
                     Created
                   </span>
                   <span className="w-70 text-secondary-light fw-medium">
-                    : {ticket?.TicketCreatedDate
-                      ? new Date(ticket.TicketCreatedDate).toLocaleString("en-IN", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          second: "2-digit",
-                          hour12: true,
-                        })
+                    :{" "}
+                    {ticket?.TicketCreatedDate
+                      ? new Date(ticket.TicketCreatedDate).toLocaleString(
+                          "en-IN",
+                          {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                            hour12: true,
+                          }
+                        )
                       : "N/A"}
                   </span>
                 </li>
@@ -293,7 +295,7 @@ const handleSubmitStatus = async () => {
                     Description
                   </span>
                   <span className="w-70 text-secondary-light fw-medium">
-                    :   {ticket?.TicketDescription || "-"}
+                    : {ticket?.TicketDescription || "-"}
                   </span>
                 </li>
               </ul>
@@ -306,6 +308,13 @@ const handleSubmitStatus = async () => {
                   <Icon icon="mdi:arrow-left" className="fs-5" />
                   Back
                 </Link>
+                <button
+                  className="btn btn-primary btn-sm d-flex align-items-center justify-content-center gap-1"
+                  onClick={handleForward}
+                >
+                  <Icon icon="mdi:arrow-right" className="fs-5" />
+                  Forward
+                </button>
                 {/* <button className="btn btn-success btn-sm" onClick={handleAccept}>
                   <Icon icon="mdi:check" className="me-1" /> Accept
                 </button>
@@ -329,8 +338,14 @@ const handleSubmitStatus = async () => {
             ) : ticket ? (
               <>
                 {/* Update Status */}
-                <h6 className="text-xl mb-16 border-bottom pb-2">Update Status</h6>
-                <div className={`p-3 border radius-16 ${isDisabled ? "bg-light-subtle" : "bg-light"}`}>
+                <h6 className="text-xl mb-16 border-bottom pb-2">
+                  Update Status
+                </h6>
+                <div
+                  className={`p-3 border radius-16 ${
+                    isDisabled ? "bg-light-subtle" : "bg-light"
+                  }`}
+                >
                   <div className="row g-3 align-items-start">
                     <div className="col-md-4">
                       <label className="form-label fw-semibold text-primary-light">
@@ -344,21 +359,27 @@ const handleSubmitStatus = async () => {
                       >
                         <option value="">Select status</option>
                         {[
-                          { value: 1, label: "Under Review" },
-                          { value: 2, label: "Resolved" },
-                          { value: 3, label: "Cancelled" },
-                          // { value: 4, label: "Closed" },
-                          // { value: 5, label: "Reopened" },
+                          { value: 1, label: "UnderReview" },
+                          { value: 2, label: "Awaiting" },
+                          { value: 3, label: "Resolved" },
+                          { value: 4, label: "Closed" },
+                          { value: 5, label: "Cancelled" },
+                          { value: 6, label: "Reopened" },
+                          // { value: 7, label: "Forward" },
+                          
                         ].map((opt) => {
                           // Find last "Reopened" index
-                          const lastReopenedIndex = ticket?.TrackingHistory?.findLastIndex?.(
-                            (h) => Number(h.Status) === 5
-                          ) ?? -1;
+                          const lastReopenedIndex =
+                            ticket?.TrackingHistory?.findLastIndex?.(
+                              (h) => Number(h.Status) === 6
+                            ) ?? -1;
 
                           // Get statuses after the last reopen
                           const afterReopen =
                             lastReopenedIndex >= 0
-                              ? ticket?.TrackingHistory?.slice(lastReopenedIndex + 1)
+                              ? ticket?.TrackingHistory?.slice(
+                                  lastReopenedIndex + 1
+                                )
                               : ticket?.TrackingHistory || [];
 
                           // Disable if used in the relevant portion
@@ -367,7 +388,11 @@ const handleSubmitStatus = async () => {
                           );
 
                           return (
-                            <option key={opt.value} value={opt.value} disabled={alreadyUsed}>
+                            <option
+                              key={opt.value}
+                              value={opt.value}
+                              disabled={alreadyUsed}
+                            >
                               {opt.label}
                             </option>
                           );
@@ -401,7 +426,9 @@ const handleSubmitStatus = async () => {
                   <div className="d-flex justify-content-end mt-3 gap-10">
                     <button
                       className="btn btn-secondary px-20 btn-sm"
-                      onClick={() => document.getElementById('file-input').click()}
+                      onClick={() =>
+                        document.getElementById("file-input").click()
+                      }
                     >
                       Upload Docs/Images
                     </button>
@@ -410,7 +437,7 @@ const handleSubmitStatus = async () => {
                       id="file-input"
                       multiple
                       accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                      style={{ display: 'none' }}
+                      style={{ display: "none" }}
                       onChange={handleFileChange}
                     />
                     <button
@@ -427,20 +454,58 @@ const handleSubmitStatus = async () => {
                       <h6>Selected Files:</h6>
                       <div className="d-flex flex-wrap gap-2">
                         {selectedFiles.map((file, index) => (
-                          <div key={index} className="border rounded" style={{ width: '100px', height: '100px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: file.type.startsWith('image/') ? '8px' : '0' }}>
-                            {file.type.startsWith('image/') ? (
-                              <img src={URL.createObjectURL(file)} alt={file.name} style={{ width: '80px', height: '80px', objectFit: 'cover' }} />
-                            ) : file.type === 'application/pdf' ? (
+                          <div
+                            key={index}
+                            className="border rounded"
+                            style={{
+                              width: "100px",
+                              height: "100px",
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: file.type.startsWith("image/")
+                                ? "8px"
+                                : "0",
+                            }}
+                          >
+                            {file.type.startsWith("image/") ? (
+                              <img
+                                src={URL.createObjectURL(file)}
+                                alt={file.name}
+                                style={{
+                                  width: "80px",
+                                  height: "80px",
+                                  objectFit: "cover",
+                                }}
+                              />
+                            ) : file.type === "application/pdf" ? (
                               <div className="text-center">
-                                <Icon icon="mdi:file-pdf" width={80} height={80} color="#dc3545" />
+                                <Icon
+                                  icon="mdi:file-pdf"
+                                  width={80}
+                                  height={80}
+                                  color="#dc3545"
+                                />
                               </div>
-                            ) : file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.type === 'application/msword' ? (
+                            ) : file.type ===
+                                "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+                              file.type === "application/msword" ? (
                               <div className="text-center">
-                                <Icon icon="mdi:file-word" width={80} height={80} color="#007bff" />
+                                <Icon
+                                  icon="mdi:file-word"
+                                  width={80}
+                                  height={80}
+                                  color="#007bff"
+                                />
                               </div>
                             ) : (
                               <div className="text-center">
-                                <Icon icon="mdi:file-document" width={80} height={80} />
+                                <Icon
+                                  icon="mdi:file-document"
+                                  width={80}
+                                  height={80}
+                                />
                               </div>
                             )}
                           </div>
@@ -495,45 +560,60 @@ const handleSubmitStatus = async () => {
                     <Accordion.Body>
                       {ticket.BookingDetails?.TechnicianTracking?.length > 0 ? (
                         <ul className="list-unstyled mb-0 text-md">
-                          {ticket.BookingDetails.TechnicianTracking.map((track, idx) => {
-                            // Helper to format date and time clearly
-                            const formatDate = (dateStr) => {
-                              if (!dateStr) return "-";
-                              const date = new Date(dateStr);
-                              return date.toLocaleString("en-IN", {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                hour12: true,
-                              });
-                            };
+                          {ticket.BookingDetails.TechnicianTracking.map(
+                            (track, idx) => {
+                              // Helper to format date and time clearly
+                              const formatDate = (dateStr) => {
+                                if (!dateStr) return "-";
+                                const date = new Date(dateStr);
+                                return date.toLocaleString("en-IN", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                });
+                              };
 
-                            return (
-                              <li key={idx} className="mb-3 p-3 border rounded-3 bg-light">
-                                <div>
-                                  <strong>🚗 Journey Started:</strong>{" "}
-                                  <span className="text-secondary-light">{formatDate(track.JourneyStartedAt)}</span>
-                                </div>
-                                <div>
-                                  <strong>📍 Reached At:</strong>{" "}
-                                  <span className="text-secondary-light">{formatDate(track.ReachedAt)}</span>
-                                </div>
-                                <div>
-                                  <strong>🧰 Service Started:</strong>{" "}
-                                  <span className="text-secondary-light">{formatDate(track.ServiceStartedAt)}</span>
-                                </div>
-                                <div>
-                                  <strong>✅ Service Ended:</strong>{" "}
-                                  <span className="text-secondary-light">{formatDate(track.ServiceEndedAt)}</span>
-                                </div>
-                              </li>
-                            );
-                          })}
+                              return (
+                                <li
+                                  key={idx}
+                                  className="mb-3 p-3 border rounded-3 bg-light"
+                                >
+                                  <div>
+                                    <strong>🚗 Journey Started:</strong>{" "}
+                                    <span className="text-secondary-light">
+                                      {formatDate(track.JourneyStartedAt)}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <strong>📍 Reached At:</strong>{" "}
+                                    <span className="text-secondary-light">
+                                      {formatDate(track.ReachedAt)}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <strong>🧰 Service Started:</strong>{" "}
+                                    <span className="text-secondary-light">
+                                      {formatDate(track.ServiceStartedAt)}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <strong>✅ Service Ended:</strong>{" "}
+                                    <span className="text-secondary-light">
+                                      {formatDate(track.ServiceEndedAt)}
+                                    </span>
+                                  </div>
+                                </li>
+                              );
+                            }
+                          )}
                         </ul>
                       ) : (
-                        <p className="text-secondary-light mb-0">No tracking data available.</p>
+                        <p className="text-secondary-light mb-0">
+                          No tracking data available.
+                        </p>
                       )}
                     </Accordion.Body>
                   </Accordion.Item>
@@ -547,7 +627,8 @@ const handleSubmitStatus = async () => {
                           {ticket.BookingDetails.Payments.map((p, idx) => (
                             <li key={idx} className="mb-2">
                               <div>
-                                <strong>Transaction ID:</strong> {p.TransactionID}
+                                <strong>Transaction ID:</strong>{" "}
+                                {p.TransactionID}
                               </div>
                               <div>
                                 <strong>Amount Paid:</strong> ₹{p.AmountPaid}
@@ -557,7 +638,11 @@ const handleSubmitStatus = async () => {
                               </div>
                               <div>
                                 <strong>Invoice:</strong>{" "}
-                                <a href={p.FolderPath} target="_blank" rel="noreferrer">
+                                <a
+                                  href={p.FolderPath}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
                                   View PDF
                                 </a>
                               </div>
@@ -579,7 +664,9 @@ const handleSubmitStatus = async () => {
                       {ticket.BookingDetails?.Packages?.length > 0 ? (
                         ticket.BookingDetails.Packages.map((pkg, idx) => (
                           <div key={idx} className="mb-3">
-                            <h6 className="fw-semibold mb-2">{pkg.PackageName}</h6>
+                            <h6 className="fw-semibold mb-2">
+                              {pkg.PackageName}
+                            </h6>
                             <div className="text-md mb-2">
                               <strong>Category:</strong>{" "}
                               {pkg.Category?.CategoryName || "-"}
@@ -590,7 +677,9 @@ const handleSubmitStatus = async () => {
                                   <strong>{sub.SubCategoryName}</strong>
                                   <ul>
                                     {sub.Includes?.map((inc) => (
-                                      <li key={inc.IncludeID}>{inc.IncludeName}</li>
+                                      <li key={inc.IncludeID}>
+                                        {inc.IncludeName}
+                                      </li>
                                     ))}
                                   </ul>
                                 </li>
@@ -629,51 +718,113 @@ const handleSubmitStatus = async () => {
             <h6 className="text-xl mb-16 border-bottom pb-2">Timeline</h6>
             {ticket?.TrackingHistory && ticket.TrackingHistory.length > 0 ? (
               <ul className="mb-0 list-unstyled ps-0">
-                {ticket.TrackingHistory.slice().reverse().map((item, idx) => (
-                  <li
-                    key={idx}
-                    className="mb-3 pb-3 border-bottom border-dashed last:border-0"
-                  >
-                    <div className="d-flex align-items-start gap-3">
-                      <span
-                        className={`badge rounded-pill px-3 py-2 fw-semibold ${item.Status === 2
-                          ? "bg-success text-white"
-                          : item.Status === 1
-                            ? "bg-info text-white"
-                            : item.Status === 3
+                {ticket.TrackingHistory.slice()
+                  .reverse()
+                  .map((item, idx) => (
+                    <li
+                      key={idx}
+                      className="mb-3 pb-3 border-bottom border-dashed last:border-0"
+                    >
+                      <div className="d-flex align-items-start gap-3">
+                        <span
+                          className={`badge rounded-pill px-3 py-2 fw-semibold ${
+                            item.Status === 2
+                              ? "bg-success text-white"
+                              : item.Status === 1
+                              ? "bg-info text-white"
+                              : item.Status === 3
                               ? "bg-secondary text-white"
                               : "bg-warning text-dark"
                           }`}
-                      >
-                        {item.StatusName}
-                      </span>
-                      <div>
-                        <div className="text-sm text-secondary-light fw-medium">
-                          {/* {item.StatusDate} */}
-                          {item.StatusDate
-                            ? new Date(item.StatusDate).toLocaleString("en-IN", {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                // second: "2-digit",
-                                hour12: true,
-                              })
-                            : "-"}
-                        </div>
-                        <div className="text-sm text-secondary-light">
-                          {item.StatusDescription || "-"}
+                        >
+                          {item.StatusName}
+                        </span>
+                        <div>
+                          <div className="text-sm text-secondary-light fw-medium">
+                            {/* {item.StatusDate} */}
+                            {item.StatusDate
+                              ? new Date(item.StatusDate).toLocaleString(
+                                  "en-IN",
+                                  {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    // second: "2-digit",
+                                    hour12: true,
+                                  }
+                                )
+                              : "-"}
+                          </div>
+                          <div className="text-sm text-secondary-light">
+                            {item.StatusDescription || "-"}
+                          </div>
+                          {/* 🔽 Show attachments below description */}
+                          {item.FilePath && (
+                            <div className="mt-2">
+                              <div className="d-flex flex-wrap gap-3">
+                                {item.FilePath.split(",").map((fileName, i) => {
+                                  const fileUrl = `${import.meta.env.VITE_APIURL_IMAGE}TicketDocuments/${fileName}`;
+
+                                  const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(fileName);
+                                  const isPDF = /\.pdf$/i.test(fileName);
+                                  const isWord = /\.(doc|docx)$/i.test(fileName);
+
+                                  return (
+                                    <div
+                                      key={i}
+                                      className="border rounded bg-light text-center p-2"
+                                      style={{ width: "100px" }}
+                                    >
+                                      {isImage ? (
+                                        <img
+                                          src={fileUrl}
+                                          alt={fileName}
+                                          className="img-thumbnail mb-2"
+                                          style={{
+                                            width: "80px",
+                                            height: "80px",
+                                            objectFit: "cover",
+                                          }}
+                                        />
+                                      ) : (
+                                        <div
+                                          className="d-flex align-items-center justify-content-center bg-white border rounded mb-2"
+                                          style={{
+                                            width: "80px",
+                                            height: "80px",
+                                            fontSize: "12px",
+                                          }}
+                                        >
+                                          {isPDF
+                                            ? "PDF File"
+                                            : isWord
+                                            ? "Word File"
+                                            : "Other File"}
+                                        </div>
+                                      )}
+
+                                      <a
+                                        href={fileUrl}
+                                        download={fileName}
+                                        className="btn btn-sm btn-outline-primary w-100"
+                                      >
+                                        Download
+                                      </a>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  </li>
-                ))}
+                    </li>
+                  ))}
               </ul>
             ) : (
-              <p className="text-secondary-light mb-0">
-                No timeline available
-              </p>
+              <p className="text-secondary-light mb-0">No timeline available</p>
             )}
           </div>
         </div>
