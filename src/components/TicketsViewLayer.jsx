@@ -134,13 +134,13 @@ const TicketsViewLayer = () => {
       cell: (row) => {
         const status = row?.TrackingHistory?.[0]?.StatusName ?? "-";
         const colorMap = {
+            Pending: "bg-secondary text-white",
             UnderReview: "bg-info text-white",     
             Awaiting: "bg-warning text-dark",       
             Resolved: "bg-success text-white",      
-            Closed: "bg-secondary text-white",      
+            Closed: "bg-dark text-white",      
             Cancelled: "bg-danger text-white",     
-            Reopened: "bg-primary text-white",      
-            Pending: "bg-secondary text-white",     
+            Reopened: "bg-primary text-white",       
           };
         const badgeClass = colorMap[status] || "bg-light text-dark";
         return (

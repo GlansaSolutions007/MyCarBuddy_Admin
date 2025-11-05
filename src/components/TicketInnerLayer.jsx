@@ -106,7 +106,7 @@ const TicketInnerLayer = () => {
       );
       formData.append("Status", selectedStatus);
       formData.append("Description", statusDescription);
-      formData.append("Assigned_to", assignedToEmp || null);
+      formData.append("Assigned_to", assignedToEmp || "");
 
       // ✅ Add all selected files
       selectedFiles.forEach((file) => {

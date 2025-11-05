@@ -118,7 +118,7 @@ const TelecalerAssignTicketLayer = () => {
           const unassignedTickets = res.data.filter(
           (t) =>
             (t.IsAssigned_head === null || t.IsAssigned_head === false) &&
-            t.StatusName !== "Cancelled"
+            t.StatusName !== "Cancelled" && t.StatusName !== "Closed"
         );
           console.log("Unassigned tickets for Admin:", unassignedTickets);
           setTickets(unassignedTickets);
@@ -353,15 +353,17 @@ const TelecalerAssignTicketLayer = () => {
     {
       name: "Ticket Status",
       cell: (row) => {
-        const status = row?.TrackingHistory?.[0]?.StatusName ?? "-";
+        const originalStatus = row.StatusName ?? "-";
+        const status = originalStatus === "Pending" ? "Created" : originalStatus;
         const colorMap = {
-            UnderReview: "bg-info text-white",     
+            Created: "bg-secondary text-white",
+            UnderReview: "bg-info text-white",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
             Awaiting: "bg-warning text-dark",       
             Resolved: "bg-success text-white",      
             Closed: "bg-secondary text-white",      
             Cancelled: "bg-danger text-white",     
             Reopened: "bg-primary text-white",      
-            Pending: "bg-secondary text-white",     
+                 
           };
         const badgeClass = colorMap[status] || "bg-light text-dark";
         return (
