@@ -134,14 +134,17 @@ const TicketsViewLayer = () => {
       cell: (row) => {
         const status = row?.TrackingHistory?.[0]?.StatusName ?? "-";
         const colorMap = {
-          Pending: "bg-secondary text-white",
-          UnderReview: "bg-warning text-dark",
-          Resolved: "bg-success text-white",
-          Cancelled: "bg-danger text-white",
-        };
+            UnderReview: "bg-info text-white",     
+            Awaiting: "bg-warning text-dark",       
+            Resolved: "bg-success text-white",      
+            Closed: "bg-secondary text-white",      
+            Cancelled: "bg-danger text-white",     
+            Reopened: "bg-primary text-white",      
+            Pending: "bg-secondary text-white",     
+          };
         const badgeClass = colorMap[status] || "bg-light text-dark";
         return (
-          <span className={`badge rounded-pill px-3 py-2 ${badgeClass}`}>
+          <span className={`badge rounded-pill px-3 py-1 ${badgeClass}`}>
             {status}
           </span>
         );
@@ -219,11 +222,15 @@ const TicketsViewLayer = () => {
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
                 >
-                  <option value="All">All</option>
-                  <option value="Pending">Pending</option>
-                  <option value="UnderReview">Under Review</option>
-                  <option value="Resolved">Resolved</option>
-                  <option value="Cancelled">Cancelled</option>
+                   <option value="All">All</option>
+                   {/* <option value="Pending, Reopened">Pending + Reopened</option> */}
+                    <option value="Pending">Pending</option>
+                    <option value="UnderReview">Under Review</option>
+                    <option value="Awaiting">Awaiting</option>
+                    <option value="Resolved">Resolved</option>
+                    <option value="Closed">Closed</option>
+                    <option value="Cancelled">Cancelled</option>
+                    <option value="Reopened">Reopened</option>
                 </select>
                 <Link
                   to="/add-tickets"

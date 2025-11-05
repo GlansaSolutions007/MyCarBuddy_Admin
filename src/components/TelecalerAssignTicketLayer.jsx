@@ -355,14 +355,17 @@ const TelecalerAssignTicketLayer = () => {
       cell: (row) => {
         const status = row?.TrackingHistory?.[0]?.StatusName ?? "-";
         const colorMap = {
-          Pending: "bg-secondary text-white",
-          UnderReview: "bg-warning text-dark",
-          Resolved: "bg-success text-white",
-          Cancelled: "bg-danger text-white",
-        };
+            UnderReview: "bg-info text-white",     
+            Awaiting: "bg-warning text-dark",       
+            Resolved: "bg-success text-white",      
+            Closed: "bg-secondary text-white",      
+            Cancelled: "bg-danger text-white",     
+            Reopened: "bg-primary text-white",      
+            Pending: "bg-secondary text-white",     
+          };
         const badgeClass = colorMap[status] || "bg-light text-dark";
         return (
-          <span className={`badge rounded-pill px-3 py-2 ${badgeClass}`}>
+          <span className={`badge rounded-pill px-3 py-1 ${badgeClass}`}>
             {status}
           </span>
         );

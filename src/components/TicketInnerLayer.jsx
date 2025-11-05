@@ -24,8 +24,9 @@ const TicketInnerLayer = () => {
   const history = ticket?.TrackingHistory;
   const currentStatus = history?.[0]?.StatusName?.toLowerCase() || "";
   const isDisabled = ["cancelled", "closed"].includes(currentStatus);
-  const userRole = localStorage.getItem("role");
-  const isEmployee = userRole === "Employee";
+  const role = localStorage.getItem("role");
+  const isEmployee = role === "Employee";
+   const userDetails = JSON.parse(localStorage.getItem("employeeData"));
 
   // 🔹 Fetch ticket details
   const fetchTicket = async () => {
@@ -234,6 +235,28 @@ const TicketInnerLayer = () => {
     setSelectedFiles(files);
   };
 
+  const handleDownload = async (fileUrl, fileName) => {
+    try {
+      const response = await fetch(fileUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download failed", error);
+      Swal.fire({
+        icon: "error",
+        title: "Download Failed",
+        text: "Unable to download the file. Please try again.",
+      });
+    }
+  };
+
   return (
     <div className="row gy-4 mt-3">
       {/* ------------------ Left: Customer Info ------------------ */}
@@ -374,41 +397,18 @@ const TicketInnerLayer = () => {
                           { value: 1, label: "UnderReview" },
                           { value: 2, label: "Awaiting" },
                           { value: 3, label: "Resolved" },
-                          { value: 4, label: "Closed" },
-                          { value: 5, label: "Cancelled" },
-                          { value: 6, label: "Reopened" },
-                          // { value: 7, label: "Forward" },
-                          
-                        ].map((opt) => {
-                          // Find last "Reopened" index
-                          const lastReopenedIndex =
-                            ticket?.TrackingHistory?.findLastIndex?.(
-                              (h) => Number(h.Status) === 6
-                            ) ?? -1;
-
-                          // Get statuses after the last reopen
-                          const afterReopen =
-                            lastReopenedIndex >= 0
-                              ? ticket?.TrackingHistory?.slice(
-                                  lastReopenedIndex + 1
-                                )
-                              : ticket?.TrackingHistory || [];
-
-                          // Disable if used in the relevant portion
-                          const alreadyUsed = afterReopen?.some(
-                            (h) => Number(h.Status) === opt.value
-                          );
-
-                          return (
-                            <option
-                              key={opt.value}
-                              value={opt.value}
-                              disabled={alreadyUsed}
-                            >
-                              {opt.label}
-                            </option>
-                          );
-                        })}
+                          ...((role === "Admin" || userDetails?.Is_Head === 1)
+                          ? [
+                              { value: 4, label: "Closed" },
+                              { value: 5, label: "Cancelled" },
+                              { value: 6, label: "Reopened" },
+                            ]
+                          : []),
+                        ].map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
 
@@ -728,6 +728,7 @@ const TicketInnerLayer = () => {
         <div className="user-grid-card border pt-3 radius-16 overflow-hidden bg-base h-100">
           <div className="pb-24 ms-16 mb-24 me-16">
             <h6 className="text-xl mb-16 border-bottom pb-2">Timeline</h6>
+
             {ticket?.TrackingHistory && ticket.TrackingHistory.length > 0 ? (
               <ul className="mb-0 list-unstyled ps-0">
                 {ticket.TrackingHistory.slice()
@@ -740,20 +741,25 @@ const TicketInnerLayer = () => {
                       <div className="d-flex align-items-start gap-3">
                         <span
                           className={`badge rounded-pill px-3 py-2 fw-semibold ${
-                            item.Status === 2
-                              ? "bg-success text-white"
-                              : item.Status === 1
-                              ? "bg-info text-white"
+                            item.Status === 1
+                              ? "bg-info text-white"        
+                              : item.Status === 2
+                              ? "bg-warning text-dark"      
                               : item.Status === 3
-                              ? "bg-secondary text-white"
-                              : "bg-warning text-dark"
+                              ? "bg-success text-white"     
+                              : item.Status === 4
+                              ? "bg-secondary text-white"  
+                              : item.Status === 5
+                              ? "bg-danger text-white"      
+                              : item.Status === 6
+                              ? "bg-primary text-white"   
+                              : "bg-light text-dark"     
                           }`}
                         >
                           {item.StatusName}
                         </span>
                         <div>
                           <div className="text-sm text-secondary-light fw-medium">
-                            {/* {item.StatusDate} */}
                             {item.StatusDate
                               ? new Date(item.StatusDate).toLocaleString(
                                   "en-IN",
@@ -763,7 +769,6 @@ const TicketInnerLayer = () => {
                                     year: "numeric",
                                     hour: "2-digit",
                                     minute: "2-digit",
-                                    // second: "2-digit",
                                     hour12: true,
                                   }
                                 )
@@ -772,66 +777,212 @@ const TicketInnerLayer = () => {
                           <div className="text-sm text-secondary-light">
                             {item.StatusDescription || "-"}
                           </div>
-                          {/* 🔽 Show attachments below description */}
-                          {item.FilePath && (
-                            <div className="mt-2">
-                              <div className="d-flex flex-wrap gap-3">
-                                {item.FilePath.split(",").map((fileName, i) => {
-                                  const fileUrl = `${import.meta.env.VITE_APIURL_IMAGE}TicketDocuments/${fileName}`;
+                        </div>
+                      </div>
 
-                                  const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(fileName);
-                                  const isPDF = /\.pdf$/i.test(fileName);
-                                  const isWord = /\.(doc|docx)$/i.test(fileName);
+                      {/* 🔽 Show attachments below description */}
+                      {item.FilePath && (
+                        <div className="mt-2">
+                          {/* Use bootstrap grid to make attachments take full timeline width — 3 cols per row */}
+                          <div className="row row-cols-3 g-2 w-100 bg-light p-2 rounded">
+                            {item.FilePath.split(",").map((rawName, i) => {
+                              const fileName = rawName.trim();
+                              if (!fileName) return null;
+                              const fileUrl = `${
+                                import.meta.env.VITE_APIURL_IMAGE
+                              }TicketDocuments/${fileName}`;
+                              const isImage =
+                                /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(
+                                  fileName
+                                );
+                              const isPDF = /\.pdf$/i.test(fileName);
+                              const isWord = /\.(doc|docx)$/i.test(fileName);
 
-                                  return (
-                                    <div
-                                      key={i}
-                                      className="border rounded bg-light text-center p-2"
-                                      style={{ width: "100px" }}
-                                    >
-                                      {isImage ? (
+                              return (
+                                <div key={i} className="col">
+                                  <div className="border rounded bg-white text-center h-100 d-flex flex-column">
+                                    {/* view in new tab */}
+                                    {isImage ? (
+                                      <a
+                                        href={fileUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="d-block"
+                                      >
                                         <img
                                           src={fileUrl}
                                           alt={fileName}
-                                          className="img-thumbnail mb-2"
+                                          className="img-thumbnail"
                                           style={{
-                                            width: "80px",
+                                            width: "100%",
                                             height: "80px",
                                             objectFit: "cover",
                                           }}
                                         />
-                                      ) : (
-                                        <div
-                                          className="d-flex align-items-center justify-content-center bg-white border rounded mb-2"
-                                          style={{
-                                            width: "80px",
-                                            height: "80px",
-                                            fontSize: "12px",
-                                          }}
-                                        >
-                                          {isPDF
-                                            ? "PDF File"
-                                            : isWord
-                                            ? "Word File"
-                                            : "Other File"}
-                                        </div>
-                                      )}
-
+                                      </a>
+                                    ) : (
                                       <a
                                         href={fileUrl}
-                                        download={fileName}
-                                        className="btn btn-sm btn-outline-primary w-100"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="d-flex align-items-center justify-content-center bg-light border rounded"
+                                        style={{
+                                          width: "100%",
+                                          height: "80px",
+                                          textDecoration: "none",
+                                          color: "inherit",
+                                        }}
                                       >
-                                        Download
+                                        {isPDF ? (
+                                          <Icon
+                                            icon="mdi:file-pdf"
+                                            width={90}
+                                            height={90}
+                                            color="#dc3545"
+                                          />
+                                        ) : isWord ? (
+                                          <Icon
+                                            icon="mdi:file-word"
+                                            width={90}
+                                            height={90}
+                                            color="#007bff"
+                                          />
+                                        ) : (
+                                          <Icon
+                                            icon="mdi:file-document"
+                                            width={90}
+                                            height={90}
+                                          />
+                                        )}
                                       </a>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
+                                    )}
+
+                                    {/* <div className="mt-0">
+                                      <button
+                                        onClick={() =>
+                                          handleDownload(fileUrl, fileName)
+                                        }
+                                        className="btn btn-secondary btn-sm d-inline-flex align-items-center justify-content-center"
+                                        style={{
+                                          width: "50px",
+                                          height: "20px",
+                                        }}
+                                        title="Download"
+                                      >
+                                        <i className="bi bi-download text-white" />
+                                      </button>
+                                    </div> */}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
+                      )}
+
+                      {/* 🧩 Show customer-uploaded files only under Pending status */}
+                      {item.StatusName === "Pending" &&
+                        ticket?.FilePath &&
+                        ticket.FilePath.length > 0 && (
+                          <div className="mt-3">
+                            <h6 className="fw-semibold text-sm mb-2">
+                              Customer Attachments:
+                            </h6>
+
+                            <div className="row row-cols-3 g-2 w-100 bg-light rounded">
+                              {ticket.FilePath.split(",").map((rawName, i) => {
+                                const fileName = rawName.trim();
+                                if (!fileName) return null;
+                                const fileUrl = `${
+                                  import.meta.env.VITE_APIURL_IMAGE
+                                }TicketDocuments/${fileName}`;
+                                const isImage =
+                                  /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(
+                                    fileName
+                                  );
+                                const isPDF = /\.pdf$/i.test(fileName);
+                                const isWord = /\.(doc|docx)$/i.test(fileName);
+
+                                return (
+                                  <div key={i} className="col">
+                                    <div className="border rounded bg-white text-center h-100 d-flex flex-column">
+                                      {isImage ? (
+                                        <a
+                                          href={fileUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="d-block"
+                                        >
+                                          <img
+                                            src={fileUrl}
+                                            alt={fileName}
+                                            className="img-thumbnail"
+                                            style={{
+                                              width: "100%",
+                                              height: "80px",
+                                              objectFit: "cover",
+                                            }}
+                                          />
+                                        </a>
+                                      ) : (
+                                        <a
+                                          href={fileUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="d-flex align-items-center justify-content-center bg-light border rounded"
+                                          style={{
+                                            width: "100%",
+                                            height: "80px",
+                                            textDecoration: "none",
+                                            color: "inherit",
+                                          }}
+                                        >
+                                          {isPDF ? (
+                                            <Icon
+                                              icon="mdi:file-pdf"
+                                              width={90}
+                                              height={90}
+                                              color="#dc3545"
+                                            />
+                                          ) : isWord ? (
+                                            <Icon
+                                              icon="mdi:file-word"
+                                              width={90}
+                                              height={90}
+                                              color="#007bff"
+                                            />
+                                          ) : (
+                                            <Icon
+                                              icon="mdi:file-document"
+                                              width={90}
+                                              height={90}
+                                            />
+                                          )}
+                                        </a>
+                                      )}
+
+                                      {/* <div className="mt-0">
+                                        <button
+                                          onClick={() =>
+                                            handleDownload(fileUrl, fileName)
+                                          }
+                                          className="btn btn-secondary btn-sm d-inline-flex align-items-center justify-content-center"
+                                          style={{
+                                            width: "50px",
+                                            height: "20px",
+                                          }}
+                                          title="Download"
+                                        >
+                                          <i className="bi bi-download text-white" />
+                                        </button>
+                                      </div> */}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                     </li>
                   ))}
               </ul>
