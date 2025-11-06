@@ -14,7 +14,7 @@ const TicketsViewLayer = () => {
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [selectedStatus, setSelectedStatus] = useState("Pending");
+  const [selectedStatus, setSelectedStatus] = useState("Pending, Reopened");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
@@ -246,8 +246,13 @@ const TicketsViewLayer = () => {
     const statusName = (
       ticket?.TrackingHistory?.[0]?.StatusName || ""
     ).toLowerCase();
+    // const statusMatch =
+    //   selectedStatus === "All" || statusName === selectedStatus.toLowerCase();
     const statusMatch =
-      selectedStatus === "All" || statusName === selectedStatus.toLowerCase();
+      selectedStatus === "All" ||
+      (selectedStatus === "Pending, Reopened" &&
+        (statusName === "pending" || statusName === "reopened")) ||
+      statusName === selectedStatus.toLowerCase();
 
     // Date filtering
     const ticketDate = ticket.CreatedDate ? new Date(ticket.CreatedDate) : null;
@@ -313,7 +318,7 @@ const TicketsViewLayer = () => {
                   onChange={(e) => setSelectedStatus(e.target.value)}
                 >
                   <option value="All">All</option>
-                  {/* <option value="Pending, Reopened">Pending + Reopened</option> */}
+                  <option value="Pending, Reopened">Pending + Reopened</option>
                   <option value="Pending">Pending</option>
                   <option value="UnderReview">Under Review</option>
                   <option value="Awaiting">Awaiting</option>

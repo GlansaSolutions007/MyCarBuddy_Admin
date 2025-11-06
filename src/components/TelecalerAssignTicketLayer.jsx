@@ -167,14 +167,16 @@ const TelecalerAssignTicketLayer = () => {
         const data = res.data?.data || res.data || [];
 
         const assigned_to_head = Array.isArray(data)
-          ? data.filter(
-              (item) =>
-                Number(item.assigned_to_head) === Number(userDetails.Id) &&
-                (item.assigned_to_emp == null || item.assigned_to_emp === "")
-            )
-          : [];
+        ? data.filter(
+            (item) =>
+              Number(item.assigned_to_head) === Number(userDetails.Id) &&
+              (item.assigned_to_emp == null ||
+                item.assigned_to_emp === "" ||
+                item.assigned_to_emp === 0) &&
+              !["Closed", "Resolved", "Cancelled"].includes(item.StatusName)
+          )
+        : [];
 
-        console.log("Tickets assigned to this head:", assigned_to_head);
         setTickets(assigned_to_head);
       }
       // 🔹 Employee: Fetch tickets assigned to this employee
