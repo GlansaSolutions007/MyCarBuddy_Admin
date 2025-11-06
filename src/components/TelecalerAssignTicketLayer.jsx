@@ -22,6 +22,10 @@ const TelecalerAssignTicketLayer = () => {
   const [loading, setLoading] = useState(false);
   const [employees, setEmployees] = useState([]);
   const [selectedTickets, setSelectedTickets] = useState([]);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [filteredTickets, setFilteredTickets] = useState([]);
   const [formData, setFormData] = useState({
     selectedDepartment: null,
     selectedHead: null,
@@ -36,6 +40,29 @@ const TelecalerAssignTicketLayer = () => {
     fetchAllEmployees();
     fetchTickets();
   }, [role]);
+
+  // ===== FILTER TICKETS BY DATE AND STATUS =====
+  useEffect(() => {
+    let filtered = [...tickets];
+    if (fromDate) {
+      const from = new Date(fromDate);
+      filtered = filtered.filter(ticket => ticket.CreatedDate && new Date(ticket.CreatedDate) >= from);
+    }
+    if (toDate) {
+      const to = new Date(toDate);
+      to.setHours(23, 59, 59, 999); // Include the entire day
+      filtered = filtered.filter(ticket => ticket.CreatedDate && new Date(ticket.CreatedDate) <= to);
+    }
+    if (statusFilter !== "All") {
+      filtered = filtered.filter(ticket => {
+        const ticketStatus = ticket.StatusName || "Not Assigned";
+        return ticketStatus.toLowerCase() === statusFilter.toLowerCase();
+      });
+    }
+    setFilteredTickets(filtered);
+    // Reset selected tickets when filters change
+    setSelectedTickets([]);
+  }, [tickets, fromDate, toDate, statusFilter]);
 
   // ===== FETCH FUNCTIONS =====
   const fetchDepartments = async () => {
@@ -118,7 +145,9 @@ const TelecalerAssignTicketLayer = () => {
           const unassignedTickets = res.data.filter(
           (t) =>
             (t.IsAssigned_head === null || t.IsAssigned_head === false) &&
-            t.StatusName !== "Cancelled" && t.StatusName !== "Closed"
+            t.StatusName !== "Cancelled" && t.StatusName !== "Closed" 
+            && t.StatusName !== "Resolved"  && t.StatusName !== "Awaiting"
+             && t.StatusName !== "UserResponse"
         );
           console.log("Unassigned tickets for Admin:", unassignedTickets);
           setTickets(unassignedTickets);
@@ -296,15 +325,15 @@ const TelecalerAssignTicketLayer = () => {
 
   // Auto-select first N tickets when ticketCount changes
       useEffect(() => {
-        if (ticketCount > 0 && tickets.length > 0) {
-          const autoSelected = tickets
+        if (ticketCount > 0 && filteredTickets.length > 0) {
+          const autoSelected = filteredTickets
             .slice(0, ticketCount)
             .map((t) => getTicketId(t));
           setSelectedTickets(autoSelected);
         } else {
           setSelectedTickets([]);
         }
-      }, [ticketCount, tickets]);
+      }, [ticketCount, filteredTickets]);
 
   // ===== TABLE COLUMNS =====
   const ticketColumns = [
@@ -351,26 +380,74 @@ const TelecalerAssignTicketLayer = () => {
       ),
     },
     {
+      name: "Created Date",
+      cell: (row) => (
+        <span>
+          {row.CreatedDate
+            ? new Date(row.CreatedDate).toLocaleString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                // hour: "2-digit",
+                // minute: "2-digit",
+                // hour12: true,
+              })
+            : "-"}
+        </span>
+      ),
+      wrap: true,
+    },
+    // {
+    //   name: "Ticket Status",
+    //   cell: (row) => {
+    //     const originalStatus = row.StatusName ?? "-";
+    //     const status = originalStatus === "Pending" ? "Created" : originalStatus;
+    //     const colorMap = {
+    //         Created: "bg-secondary text-white",
+    //         UnderReview: "bg-info text-white",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+    //         Awaiting: "bg-warning text-dark",       
+    //         Resolved: "bg-success text-white",      
+    //         Closed: "bg-dark text-white",      
+    //         Cancelled: "bg-danger text-white",     
+    //         Reopened: "bg-primary text-white",      
+                 
+    //       };
+    //     const badgeClass = colorMap[status] || "bg-light text-dark";
+    //     return (
+    //       <span className={`badge rounded-pill px-3 py-1 ${badgeClass}`}>
+    //         {status}
+    //       </span>
+    //     );
+    //   },
+    //   wrap: true,
+    // },
+    {
       name: "Ticket Status",
       cell: (row) => {
-        const originalStatus = row.StatusName ?? "-";
-        const status = originalStatus === "Pending" ? "Created" : originalStatus;
+        let status = row?.StatusName ?? "-";
+         if (!status || status === "-") status = "Not Assigned";
         const colorMap = {
-            Created: "bg-secondary text-white",
-            UnderReview: "bg-info text-white",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
-            Awaiting: "bg-warning text-dark",       
-            Resolved: "bg-success text-white",      
-            Closed: "bg-secondary text-white",      
-            Cancelled: "bg-danger text-white",     
-            Reopened: "bg-primary text-white",      
-                 
-          };
-        const badgeClass = colorMap[status] || "bg-light text-dark";
-        return (
-          <span className={`badge rounded-pill px-3 py-1 ${badgeClass}`}>
-            {status}
-          </span>
-        );
+          Pending: "text-secondary fw-semibold",
+          UnderReview: "text-info fw-semibold",
+          Awaiting: "text-warning fw-semibold",
+          Resolved: "text-success fw-semibold",
+          Closed: "text-dark fw-semibold",
+          Cancelled: "text-danger fw-semibold",
+          Reopened: "text-primary fw-semibold",
+          Forward: "text-purple fw-semibold",
+          "Not Assigned": "text-muted fw-semibold",
+        };
+        const textClass = colorMap[status] || "text-muted";
+        return <span className={textClass}>
+          <span
+            className="rounded-circle"
+            style={{
+              width: "8px",
+              height: "8px",
+              marginRight: "4px",
+              backgroundColor: "currentColor",
+            }}
+          ></span>{status}</span>;
       },
       wrap: true,
     },
@@ -402,6 +479,47 @@ const TelecalerAssignTicketLayer = () => {
   return (
     <div className="card h-100 p-0 radius-12 overflow-hidden mt-3">
       <div className="card-body p-20">
+
+        <div className="row g-3 align-items-end mb-1">
+          <div className="col-md-6 d-flex gap-3">
+            <div>
+              <label className="form-label fw-semibold">Total Count</label>
+              <span className="fw-bold text-primary fs-5" style={{ marginLeft: '20px'}}>{filteredTickets.length}</span>
+            </div>
+            <div>
+              <label className="form-label fw-semibold">Selected Count</label>
+              <span className="fw-bold text-primary fs-5" style={{ marginLeft: '20px'}}>{selectedTickets.length}</span>
+            </div>
+          </div>
+          <div className="col-md-6 d-flex gap-2 align-items-center mr-20 flex-wrap justify-content-end">
+            <label className="text-sm fw-semibold">From:</label>
+            <input
+              type="date"
+              className="form-control radius-8 px-14 py-6 text-sm w-auto"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+            />
+            <label className="text-sm fw-semibold">To:</label>
+            <input
+              type="date"
+              className="form-control radius-8 px-14 py-6 text-sm w-auto"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+            />
+            <select
+              className="form-select radius-8 px-14 py- text-sm w-auto "
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={{ textAlign: 'center', minWidth: '150px' }}
+            >
+              <option value="All">All</option>
+              <option value="Pending">Pending</option>
+              <option value="Reopened">Reopened</option>
+              <option value="Forward">Forward</option>
+            </select>
+          </div>
+        </div>
+
         {/* ===== INLINE INPUTS ===== */}
         <div className="row g-3 align-items-end">
           {role === "Admin" ? (
@@ -458,59 +576,45 @@ const TelecalerAssignTicketLayer = () => {
             </div>
           ) : null}
           {(role === "Admin" || userDetails?.Is_Head === 1) && (
-            <div className="col-md-2 position-relative min-h-90">
-              <label className="form-label fw-semibold mb-1">
-                Ticket Count
-              </label>
-              <input
-                type="number"
-                className={`form-control ${ticketCount > tickets.length ? "border-danger" : ""}`}
-                placeholder="Enter count"
-                value={ticketCount}
-                min={1}
-                max={tickets.length}
-                onChange={(e) => setTicketCount(Number(e.target.value))}
-              />
-              {ticketCount > tickets.length && (
-                <small
-                  className="text-danger position-absolute"
-                  style={{ bottom: "-18px", fontSize: "12px" }}
+            <>
+              <div className="col-md-2 position-relative min-h-90">
+                <label className="form-label fw-semibold mb-1">
+                  Ticket Count
+                </label>
+                <input
+                  type="number"
+                  className={`form-control ${ticketCount > filteredTickets.length ? "border-danger" : ""}`}
+                  placeholder="Enter count"
+                  value={ticketCount}
+                  min={1}
+                  max={filteredTickets.length}
+                  onChange={(e) => setTicketCount(Number(e.target.value))}
+                />
+                {ticketCount > filteredTickets.length && (
+                  <small
+                    className="text-danger position-absolute"
+                    style={{ bottom: "-18px", fontSize: "12px" }}
+                  >
+                    Entered count exceeds total tickets
+                  </small>
+                )}
+              </div>
+              <div className="col-md-2">
+                <button
+                  type="button"
+                  className="btn btn-primary-600 radius-8 px-14 py-6 text-sm w-100"
+                  onClick={handleAssign}
+                  disabled={loading}
                 >
-                  Entered count exceeds total tickets
-                </small>
-              )}
-            </div>
+                  {loading ? "Assigning..." : "Assign Tickets"}
+                </button>
+              </div>
+            </>
           )}
 
-          {/* <div className="col-md-2">
-            <label className="form-label fw-semibold mb-1">Total Tickets</label>
-            <div className="fw-bold text-primary fs-5">
-              {Math.max(tickets.length - (ticketCount || 0), 0)}
-            </div>
-          </div> */}
-          <div className="col-md-1">
-            <label className="form-label fw-semibold mb-1">Total</label>
-            <div className="fw-bold text-primary fs-5">{tickets.length}</div>
-          </div>
-          <div className="col-md-1">
-            <label className="form-label fw-semibold mb-1">Selected</label>
-            <div className="fw-bold text-primary fs-5">
-              {selectedTickets.length}
-            </div>
-          </div>
         </div>
 
-        {/* ===== ACTION BUTTON (RIGHT ALIGNED) ===== */}
-        <div className="d-flex justify-content-end mt-4">
-          <button
-            type="button"
-            className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
-            onClick={handleAssign}
-            disabled={loading}
-          >
-            {loading ? "Assigning..." : "Assign Tickets"}
-          </button>
-        </div>
+
 
         {/* ===== TICKET TABLE ===== */}
         <div className="col-12 mt-4">
@@ -520,7 +624,7 @@ const TelecalerAssignTicketLayer = () => {
           <div className="border rounded p-3">
             <DataTable
               columns={ticketColumns}
-              data={tickets}
+              data={filteredTickets}
               highlightOnHover
               responsive
               pagination

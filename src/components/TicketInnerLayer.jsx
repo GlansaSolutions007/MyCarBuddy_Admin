@@ -23,6 +23,7 @@ const TicketInnerLayer = () => {
 
   const history = ticket?.TrackingHistory;
   const currentStatus = history?.[0]?.StatusName?.toLowerCase() || "";
+  // const isDisabled = !(role === "Admin" || userDetails?.Is_Head === 1) &&  ["cancelled", "closed"].includes(currentStatus);
   const isDisabled = ["cancelled", "closed"].includes(currentStatus);
   const role = localStorage.getItem("role");
   const isEmployee = role === "Employee";
@@ -393,18 +394,29 @@ const TicketInnerLayer = () => {
                         disabled={isDisabled}
                       >
                         <option value="">Select status</option>
-                        {[
-                          { value: 1, label: "UnderReview" },
-                          { value: 2, label: "Awaiting" },
-                          { value: 3, label: "Resolved" },
-                          ...((role === "Admin" || userDetails?.Is_Head === 1)
-                          ? [
-                              { value: 4, label: "Closed" },
-                              { value: 5, label: "Cancelled" },
-                              { value: 6, label: "Reopened" },
-                            ]
-                          : []),
-                        ].map((opt) => (
+                       {(
+                          currentStatus === "resolved"
+                            ? (
+                                (role === "Admin" || userDetails?.Is_Head === 1)
+                                  ? [
+                                      { value: 4, label: "Closed" },
+                                      { value: 6, label: "Reopened" },
+                                    ]
+                                  : [] 
+                              )
+                            : [
+                                { value: 1, label: "UnderReview" },
+                                { value: 2, label: "Awaiting" },
+                                { value: 3, label: "Resolved" },
+                                ...((role === "Admin" || userDetails?.Is_Head === 1)
+                                  ? [
+                                      { value: 4, label: "Closed" },
+                                      { value: 5, label: "Cancelled" },
+                                      { value: 6, label: "Reopened" },
+                                    ]
+                                  : []),
+                              ]
+                        ).map((opt) => (
                           <option key={opt.value} value={opt.value}>
                             {opt.label}
                           </option>
@@ -725,10 +737,10 @@ const TicketInnerLayer = () => {
 
       {/* ------------------ Right: Timeline ------------------ */}
       <div className="col-lg-3">
-        <div className="user-grid-card border pt-3 radius-16 overflow-hidden bg-base h-100">
-          <div className="pb-24 ms-16 mb-24 me-16">
+        <div className="user-grid-card border pt-3 radius-16 bg-base d-flex flex-column w-100" style={{ height: "810px" }}>
+          <div className="pb-24 ms-16 mb-24 me-16 flex-grow-1 d-flex flex-column">
             <h6 className="text-xl mb-16 border-bottom pb-2">Timeline</h6>
-
+             <div className="flex-grow-1 overflow-auto pe-0"  style={{ maxHeight: "725px", scrollbarWidth: "thin",}}>
             {ticket?.TrackingHistory && ticket.TrackingHistory.length > 0 ? (
               <ul className="mb-0 list-unstyled ps-0">
                 {ticket.TrackingHistory.slice()
@@ -748,7 +760,7 @@ const TicketInnerLayer = () => {
                               : item.Status === 3
                               ? "bg-success text-white"     
                               : item.Status === 4
-                              ? "bg-secondary text-white"  
+                              ? "bg-dark text-white"  
                               : item.Status === 5
                               ? "bg-danger text-white"      
                               : item.Status === 6
@@ -776,6 +788,9 @@ const TicketInnerLayer = () => {
                           </div>
                           <div className="text-sm text-secondary-light">
                             {item.StatusDescription || "-"}
+                          </div>
+                          <div className="text-sm text-secondary-light">
+                            {item.EmployeeName || "-"}
                           </div>
                         </div>
                       </div>
@@ -989,6 +1004,7 @@ const TicketInnerLayer = () => {
             ) : (
               <p className="text-secondary-light mb-0">No timeline available</p>
             )}
+            </div>
           </div>
         </div>
       </div>

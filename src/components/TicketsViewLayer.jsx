@@ -15,6 +15,8 @@ const TicketsViewLayer = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedStatus, setSelectedStatus] = useState("Pending");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
@@ -130,25 +132,78 @@ const TicketsViewLayer = () => {
       selector: (row) => row.BookingTrackID || "-",
     },
     {
+      name: "Created Date",
+      selector: (row) => {
+        if (!row.CreatedDate) return "-";
+        const date = new Date(row.CreatedDate);
+        return date.toLocaleString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          // hour: "2-digit",
+          // minute: "2-digit",
+          // hour12: true,
+        });
+      },
+      wrap: true,
+    },
+
+    // {
+    //   name: "Ticket Status",
+    //   cell: (row) => {
+    //     const status = row?.TrackingHistory?.[0]?.StatusName ?? "-";
+    //     const colorMap = {
+    //         Pending: "bg-secondary text-white",
+    //         UnderReview: "bg-info text-white",     
+    //         Awaiting: "bg-warning text-dark",       
+    //         Resolved: "bg-success text-white",      
+    //         Closed: "bg-dark text-white",      
+    //         Cancelled: "bg-danger text-white",     
+    //         Reopened: "bg-primary text-white",
+              // Forward: "bg-purple text-white",       
+    //       };
+    //     const badgeClass = colorMap[status] || "bg-light text-dark";
+    //     return (
+    //       <span className={`badge rounded-pill px-3 py-1 ${badgeClass}`}>
+    //         {status}
+    //       </span>
+    //     );
+    //   },
+    //   wrap: true,
+    // },
+    {
       name: "Ticket Status",
       cell: (row) => {
-        const status = row?.TrackingHistory?.[0]?.StatusName ?? "-";
+        let status = row?.TrackingHistory?.[0]?.StatusName ?? "-";
+         if (!status || status === "-") status = "Not Assigned";
         const colorMap = {
-            Pending: "bg-secondary text-white",
-            UnderReview: "bg-info text-white",     
-            Awaiting: "bg-warning text-dark",       
-            Resolved: "bg-success text-white",      
-            Closed: "bg-dark text-white",      
-            Cancelled: "bg-danger text-white",     
-            Reopened: "bg-primary text-white",       
-          };
-        const badgeClass = colorMap[status] || "bg-light text-dark";
-        return (
-          <span className={`badge rounded-pill px-3 py-1 ${badgeClass}`}>
-            {status}
-          </span>
-        );
+          Pending: "text-secondary fw-semibold",
+          UnderReview: "text-info fw-semibold",
+          Awaiting: "text-warning fw-semibold",
+          Resolved: "text-success fw-semibold",
+          Closed: "text-dark fw-semibold",
+          Cancelled: "text-danger fw-semibold",
+          Reopened: "text-primary fw-semibold",
+          Forward: "text-purple fw-semibold",
+          "Not Assigned": "text-muted fw-semibold",
+        };
+        const textClass = colorMap[status] || "text-muted";
+        return <span className={textClass}>
+          <span
+            className="rounded-circle"
+            style={{
+              width: "8px",
+              height: "8px",
+              marginRight: "4px",
+              backgroundColor: "currentColor",
+            }}
+          ></span>{status}</span>;
       },
+      wrap: true,
+    },
+    {
+      name: "Assigned Emp",
+      selector: (row) => row.EmployeeName || "-",
       wrap: true,
     },
     {
@@ -180,8 +235,16 @@ const TicketsViewLayer = () => {
     const text = searchText.toLowerCase();
     const statusName = (ticket?.TrackingHistory?.[0]?.StatusName || "").toLowerCase();
     const statusMatch = selectedStatus === "All" || statusName === selectedStatus.toLowerCase();
+
+    // Date filtering
+    const ticketDate = ticket.CreatedDate ? new Date(ticket.CreatedDate) : null;
+    const from = fromDate ? new Date(fromDate) : null;
+    const to = toDate ? new Date(toDate) : null;
+    const dateMatch = (!from || (ticketDate && ticketDate >= from)) && (!to || (ticketDate && ticketDate <= to));
+
     return (
       statusMatch &&
+      dateMatch &&
       (ticket.CustomerName?.toLowerCase().includes(text) ||
       ticket.TicketTrackId?.toLowerCase().includes(text) ||
       ticket.BookingTrackID?.toLowerCase().includes(text) ||
@@ -201,7 +264,6 @@ const TicketsViewLayer = () => {
     <div className="row gy-4">
       <div className="col-12">
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <h5></h5>
         </div>
         <div className="card overflow-hidden p-3">
           <div className="card-header">
@@ -216,7 +278,21 @@ const TicketsViewLayer = () => {
                 />
                 <Icon icon="ion:search-outline" className="icon" />
               </form>
-              <div className="d-flex gap-2">
+              <div className="d-flex gap-2 align-items-center">
+                <label className="text-sm fw-semibold">From:</label>
+                <input
+                  type="date"
+                  className="form-control radius-8 px-14 py-6 text-sm w-auto"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                />
+                <label className="text-sm fw-semibold">To:</label>
+                <input
+                  type="date"
+                  className="form-control radius-8 px-14 py-6 text-sm w-auto"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                />
                 <select
                   className="form-select radius-8 px-14 py-6 text-sm w-auto min-w-150"
                   value={selectedStatus}
