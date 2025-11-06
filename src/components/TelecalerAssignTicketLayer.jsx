@@ -147,7 +147,7 @@ const TelecalerAssignTicketLayer = () => {
             (t.IsAssigned_head === null || t.IsAssigned_head === false) &&
             t.StatusName !== "Cancelled" && t.StatusName !== "Closed" 
             && t.StatusName !== "Resolved"  && t.StatusName !== "Awaiting"
-             && t.StatusName !== "UserResponse"
+            && t.StatusName !== "UserResponse"
         );
           console.log("Unassigned tickets for Admin:", unassignedTickets);
           setTickets(unassignedTickets);
@@ -483,11 +483,11 @@ const TelecalerAssignTicketLayer = () => {
         <div className="row g-3 align-items-end mb-1">
           <div className="col-md-6 d-flex gap-3">
             <div>
-              <label className="form-label fw-semibold">Total Count</label>
+              <label className="form-label fw-semibold">Total Unassigned Tickets : </label>
               <span className="fw-bold text-primary fs-5" style={{ marginLeft: '20px'}}>{filteredTickets.length}</span>
             </div>
             <div>
-              <label className="form-label fw-semibold">Selected Count</label>
+              <label className="form-label fw-semibold">Selected Tickets : </label>
               <span className="fw-bold text-primary fs-5" style={{ marginLeft: '20px'}}>{selectedTickets.length}</span>
             </div>
           </div>

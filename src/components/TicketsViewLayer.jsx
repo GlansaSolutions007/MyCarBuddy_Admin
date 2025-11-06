@@ -185,6 +185,7 @@ const TicketsViewLayer = () => {
           Cancelled: "text-danger fw-semibold",
           Reopened: "text-primary fw-semibold",
           Forward: "text-purple fw-semibold",
+          UserResponse: "text-teal fw-semibold",
           "Not Assigned": "text-muted fw-semibold",
         };
         const textClass = colorMap[status] || "text-muted";

@@ -333,7 +333,41 @@ const TicketInnerLayer = () => {
                   </span>
                 </li>
               </ul>
+{/* Customer Uploaded Images */}
+{ticket?.FilePath && ticket.FilePath.trim() !== "" && (
+  <div className="mt-3">
+    <strong>Customer Uploaded Images:</strong>
+    <div className="d-flex flex-wrap gap-2 mt-2">
+      {ticket.FilePath.split(",").map((rawName, index) => {
+        const fileName = rawName.trim();
+        if (!fileName) return null;
 
+        const fileUrl = `${import.meta.env.VITE_APIURL_IMAGE}TicketDocuments/${fileName}`;
+
+        return (
+          <div
+            key={index}
+            className="border rounded bg-white text-center p-1"
+            style={{ width: "100px", height: "100px" }}
+          >
+            <img
+              src={fileUrl}
+              alt={`Customer upload ${index + 1}`}
+              className="rounded border"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                cursor: "pointer",
+              }}
+              onClick={() => window.open(fileUrl, "_blank")}
+            />
+          </div>
+        );
+      })}
+    </div>
+  </div>
+)}
               <div className="d-flex gap-2 mt-3">
                 <Link
                   to="/tickets"
@@ -401,6 +435,7 @@ const TicketInnerLayer = () => {
                                   ? [
                                       { value: 4, label: "Closed" },
                                       { value: 6, label: "Reopened" },
+                                      { value: 5, label: "Cancelled" }
                                     ]
                                   : [] 
                               )
