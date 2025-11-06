@@ -46,15 +46,19 @@ const TelecalerAssignTicketLayer = () => {
     let filtered = [...tickets];
     if (fromDate) {
       const from = new Date(fromDate);
-      filtered = filtered.filter(ticket => ticket.CreatedDate && new Date(ticket.CreatedDate) >= from);
+      filtered = filtered.filter(
+        (ticket) => ticket.CreatedDate && new Date(ticket.CreatedDate) >= from
+      );
     }
     if (toDate) {
       const to = new Date(toDate);
       to.setHours(23, 59, 59, 999); // Include the entire day
-      filtered = filtered.filter(ticket => ticket.CreatedDate && new Date(ticket.CreatedDate) <= to);
+      filtered = filtered.filter(
+        (ticket) => ticket.CreatedDate && new Date(ticket.CreatedDate) <= to
+      );
     }
     if (statusFilter !== "All") {
-      filtered = filtered.filter(ticket => {
+      filtered = filtered.filter((ticket) => {
         const ticketStatus = ticket.StatusName || "Not Assigned";
         return ticketStatus.toLowerCase() === statusFilter.toLowerCase();
       });
@@ -141,14 +145,15 @@ const TelecalerAssignTicketLayer = () => {
         });
 
         if (Array.isArray(res.data)) {
-
           const unassignedTickets = res.data.filter(
-          (t) =>
-            (t.IsAssigned_head === null || t.IsAssigned_head === false) &&
-            t.StatusName !== "Cancelled" && t.StatusName !== "Closed" 
-            && t.StatusName !== "Resolved"  && t.StatusName !== "Awaiting"
-            && t.StatusName !== "UserResponse"
-        );
+            (t) =>
+              (t.IsAssigned_head === null || t.IsAssigned_head === false) &&
+              t.StatusName !== "Cancelled" &&
+              t.StatusName !== "Closed" &&
+              t.StatusName !== "Resolved" &&
+              t.StatusName !== "Awaiting" &&
+              t.StatusName !== "UserResponse"
+          );
           console.log("Unassigned tickets for Admin:", unassignedTickets);
           setTickets(unassignedTickets);
         }
@@ -297,7 +302,7 @@ const TelecalerAssignTicketLayer = () => {
           typeof emp.id === "string" && emp.id.startsWith("admin-")
             ? Number(emp.id.replace("admin-", ""))
             : Number(emp.id);
-            
+
         return {
           AssignedBy: Number(userId),
           AssignedToHead: Number(userDetails.Id),
@@ -306,34 +311,36 @@ const TelecalerAssignTicketLayer = () => {
         };
       });
     }
-      try {
-        setLoading(true);
-        await axios.post(`${API_BASE}Ticket_Assignments`, payload, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        Swal.fire("Success", "Tickets assigned successfully!", "success").then(() => {
+    try {
+      setLoading(true);
+      await axios.post(`${API_BASE}Ticket_Assignments`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      Swal.fire("Success", "Tickets assigned successfully!", "success").then(
+        () => {
           fetchTickets(); // refresh data
           // setSelectedTickets([]); // optional reset
-        });
-      } catch (error) {
-        console.error("Failed to assign tickets:", error);
-        Swal.fire("Error", "Failed to assign tickets", "error");
-      } finally {
-        setLoading(false);
-      }
+        }
+      );
+    } catch (error) {
+      console.error("Failed to assign tickets:", error);
+      Swal.fire("Error", "Failed to assign tickets", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Auto-select first N tickets when ticketCount changes
-      useEffect(() => {
-        if (ticketCount > 0 && filteredTickets.length > 0) {
-          const autoSelected = filteredTickets
-            .slice(0, ticketCount)
-            .map((t) => getTicketId(t));
-          setSelectedTickets(autoSelected);
-        } else {
-          setSelectedTickets([]);
-        }
-      }, [ticketCount, filteredTickets]);
+  useEffect(() => {
+    if (ticketCount > 0 && filteredTickets.length > 0) {
+      const autoSelected = filteredTickets
+        .slice(0, ticketCount)
+        .map((t) => getTicketId(t));
+      setSelectedTickets(autoSelected);
+    } else {
+      setSelectedTickets([]);
+    }
+  }, [ticketCount, filteredTickets]);
 
   // ===== TABLE COLUMNS =====
   const ticketColumns = [
@@ -345,14 +352,16 @@ const TelecalerAssignTicketLayer = () => {
               <input
                 type="checkbox"
                 className="form-check-input"
-                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                style={{ width: "18px", height: "18px", cursor: "pointer" }}
                 checked={selectedTickets.includes(getTicketId(row))}
                 onChange={(e) => {
                   const ticketId = getTicketId(row);
                   if (e.target.checked) {
                     setSelectedTickets((prev) => [...prev, ticketId]);
                   } else {
-                    setSelectedTickets((prev) => prev.filter((id) => id !== ticketId));
+                    setSelectedTickets((prev) =>
+                      prev.filter((id) => id !== ticketId)
+                    );
                   }
                 }}
               />
@@ -404,13 +413,13 @@ const TelecalerAssignTicketLayer = () => {
     //     const status = originalStatus === "Pending" ? "Created" : originalStatus;
     //     const colorMap = {
     //         Created: "bg-secondary text-white",
-    //         UnderReview: "bg-info text-white",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
-    //         Awaiting: "bg-warning text-dark",       
-    //         Resolved: "bg-success text-white",      
-    //         Closed: "bg-dark text-white",      
-    //         Cancelled: "bg-danger text-white",     
-    //         Reopened: "bg-primary text-white",      
-                 
+    //         UnderReview: "bg-info text-white",
+    //         Awaiting: "bg-warning text-dark",
+    //         Resolved: "bg-success text-white",
+    //         Closed: "bg-dark text-white",
+    //         Cancelled: "bg-danger text-white",
+    //         Reopened: "bg-primary text-white",
+
     //       };
     //     const badgeClass = colorMap[status] || "bg-light text-dark";
     //     return (
@@ -425,7 +434,7 @@ const TelecalerAssignTicketLayer = () => {
       name: "Ticket Status",
       cell: (row) => {
         let status = row?.StatusName ?? "-";
-         if (!status || status === "-") status = "Not Assigned";
+        if (!status || status === "-") status = "Not Assigned";
         const colorMap = {
           Pending: "text-secondary fw-semibold",
           UnderReview: "text-info fw-semibold",
@@ -438,16 +447,20 @@ const TelecalerAssignTicketLayer = () => {
           "Not Assigned": "text-muted fw-semibold",
         };
         const textClass = colorMap[status] || "text-muted";
-        return <span className={textClass}>
-          <span
-            className="rounded-circle"
-            style={{
-              width: "8px",
-              height: "8px",
-              marginRight: "4px",
-              backgroundColor: "currentColor",
-            }}
-          ></span>{status}</span>;
+        return (
+          <span className={textClass}>
+            <span
+              className="rounded-circle"
+              style={{
+                width: "8px",
+                height: "8px",
+                marginRight: "4px",
+                backgroundColor: "currentColor",
+              }}
+            ></span>
+            {status}
+          </span>
+        );
       },
       wrap: true,
     },
@@ -479,16 +492,29 @@ const TelecalerAssignTicketLayer = () => {
   return (
     <div className="card h-100 p-0 radius-12 overflow-hidden mt-3">
       <div className="card-body p-20">
-
         <div className="row g-3 align-items-end mb-1">
           <div className="col-md-6 d-flex gap-3">
             <div>
-              <label className="form-label fw-semibold">Total Unassigned Tickets : </label>
-              <span className="fw-bold text-primary fs-5" style={{ marginLeft: '20px'}}>{filteredTickets.length}</span>
+              <label className="form-label fw-semibold">
+                Total Unassigned Tickets :{" "}
+              </label>
+              <span
+                className="fw-bold text-primary fs-5"
+                style={{ marginLeft: "20px" }}
+              >
+                {filteredTickets.length}
+              </span>
             </div>
             <div>
-              <label className="form-label fw-semibold">Selected Tickets : </label>
-              <span className="fw-bold text-primary fs-5" style={{ marginLeft: '20px'}}>{selectedTickets.length}</span>
+              <label className="form-label fw-semibold">
+                Selected Tickets :{" "}
+              </label>
+              <span
+                className="fw-bold text-primary fs-5"
+                style={{ marginLeft: "20px" }}
+              >
+                {selectedTickets.length}
+              </span>
             </div>
           </div>
           <div className="col-md-6 d-flex gap-2 align-items-center mr-20 flex-wrap justify-content-end">
@@ -510,7 +536,7 @@ const TelecalerAssignTicketLayer = () => {
               className="form-select radius-8 px-14 py- text-sm w-auto "
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              style={{ textAlign: 'center', minWidth: '150px' }}
+              style={{ textAlign: "center", minWidth: "150px" }}
             >
               <option value="All">All</option>
               <option value="Pending">Pending</option>
@@ -525,7 +551,9 @@ const TelecalerAssignTicketLayer = () => {
           {role === "Admin" ? (
             <>
               <div className="col-md-4">
-                <label className="form-label fw-semibold mb-1">Department</label>
+                <label className="form-label fw-semibold mb-1">
+                  Department
+                </label>
                 <Select
                   options={departments}
                   value={formData.selectedDepartment}
@@ -537,7 +565,9 @@ const TelecalerAssignTicketLayer = () => {
               </div>
 
               <div className="col-md-4">
-                <label className="form-label fw-semibold mb-1">Department Head</label>
+                <label className="form-label fw-semibold mb-1">
+                  Department Head
+                </label>
                 <Select
                   options={departmentHeads}
                   value={formData.selectedHead}
@@ -583,7 +613,9 @@ const TelecalerAssignTicketLayer = () => {
                 </label>
                 <input
                   type="number"
-                  className={`form-control ${ticketCount > filteredTickets.length ? "border-danger" : ""}`}
+                  className={`form-control ${
+                    ticketCount > filteredTickets.length ? "border-danger" : ""
+                  }`}
                   placeholder="Enter count"
                   value={ticketCount}
                   min={1}
@@ -611,10 +643,7 @@ const TelecalerAssignTicketLayer = () => {
               </div>
             </>
           )}
-
         </div>
-
-
 
         {/* ===== TICKET TABLE ===== */}
         <div className="col-12 mt-4">
