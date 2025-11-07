@@ -14,7 +14,7 @@ const TicketsViewLayer = () => {
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [selectedStatus, setSelectedStatus] = useState("Pending");
+  const [selectedStatus, setSelectedStatus] = useState("Pending, Reopened");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
@@ -29,90 +29,95 @@ const TicketsViewLayer = () => {
 
   // Fetch Tickets
   const fetchTickets = async () => {
-  const url =
-    role === "Admin"
-      ? `${API_BASE}Tickets`
-      : `${API_BASE}Tickets?role=${role}&UserID=${userId}`;
+    const url =
+      role === "Admin"
+        ? `${API_BASE}Tickets`
+        : `${API_BASE}Tickets?role=${role}&UserID=${userId}`;
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    if (role === "Admin") {
-      // ✅ Admin: fetch all tickets (unchanged)
-      const res = await axios.get(url, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (res.data && Array.isArray(res.data)) {
-        setTickets(res.data);
-      } else {
-        setTickets([]);
-      }
-    } else {
-      // ✅ Head / Employee: fetch from Ticket_Assignments
-      const [resAssignments, resTickets] = await Promise.all([
-        axios.get(`${API_BASE}Ticket_Assignments`, {
+      if (role === "Admin") {
+        // ✅ Admin: fetch all tickets (unchanged)
+        const res = await axios.get(url, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-        }),
-        axios.get(`${API_BASE}Tickets`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-      ]);
-
-      const assignments = Array.isArray(resAssignments.data?.data)
-        ? resAssignments.data.data
-        : Array.isArray(resAssignments.data)
-        ? resAssignments.data
-        : [];
-
-      const allTickets = Array.isArray(resTickets.data) ? resTickets.data : [];
-
-      let filteredAssignments = [];
-
-      // ✅ Head: show tickets assigned to this head
-      // ✅ Employee: show tickets assigned to this employee
-      if (userDetails?.Is_Head === 1) {
-        filteredAssignments = assignments.filter(
-          (a) => Number(a.assigned_to_head) === Number(userDetails.Id)
-        );
+        });
+        if (res.data && Array.isArray(res.data)) {
+          setTickets(res.data);
+        } else {
+          setTickets([]);
+        }
       } else {
-        filteredAssignments = assignments.filter(
-          (a) => Number(a.assigned_to_emp) === Number(userDetails.Id)
-        );
+        // ✅ Head / Employee: fetch from Ticket_Assignments
+        const [resAssignments, resTickets] = await Promise.all([
+          axios.get(`${API_BASE}Ticket_Assignments`, {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+          axios.get(`${API_BASE}Tickets`, {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+        ]);
+
+        const assignments = Array.isArray(resAssignments.data?.data)
+          ? resAssignments.data.data
+          : Array.isArray(resAssignments.data)
+          ? resAssignments.data
+          : [];
+
+        const allTickets = Array.isArray(resTickets.data)
+          ? resTickets.data
+          : [];
+
+        let filteredAssignments = [];
+
+        // ✅ Head: show tickets assigned to this head
+        // ✅ Employee: show tickets assigned to this employee
+        if (userDetails?.Is_Head === 1) {
+          filteredAssignments = assignments.filter(
+            (a) => Number(a.assigned_to_head) === Number(userDetails.Id)
+          );
+        } else {
+          filteredAssignments = assignments.filter(
+            (a) => Number(a.assigned_to_emp) === Number(userDetails.Id)
+          );
+        }
+
+        // ✅ Merge ticket info
+        const mergedTickets = filteredAssignments.map((assign) => {
+          const ticketInfo = allTickets.find(
+            (t) => t.TicketTrackId === assign.ticket_id
+          );
+          return { ...ticketInfo, ...assign };
+        });
+
+        setTickets(mergedTickets);
       }
-
-      // ✅ Merge ticket info
-      const mergedTickets = filteredAssignments.map((assign) => {
-        const ticketInfo = allTickets.find(
-          (t) => t.TicketTrackId === assign.ticket_id
-        );
-        return { ...ticketInfo, ...assign };
-      });
-
-      setTickets(mergedTickets);
+    } catch (error) {
+      console.error("Failed to load tickets", error);
+      setError("Failed to load tickets. Please try again later.");
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Failed to load tickets", error);
-    setError("Failed to load tickets. Please try again later.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   // DataTable Columns
   const columns = [
     {
       name: "Ticket id",
       selector: (row) => (
-        <Link to={`/tickets/${(row.TicketID ?? row.TicketId ?? row.Id)}`} className="text-primary">
+        <Link
+          to={`/tickets/${row.TicketID ?? row.TicketId ?? row.Id}`}
+          className="text-primary"
+        >
           {row.TicketTrackId || "-"}
         </Link>
       ),
@@ -154,13 +159,13 @@ const TicketsViewLayer = () => {
     //     const status = row?.TrackingHistory?.[0]?.StatusName ?? "-";
     //     const colorMap = {
     //         Pending: "bg-secondary text-white",
-    //         UnderReview: "bg-info text-white",     
-    //         Awaiting: "bg-warning text-dark",       
-    //         Resolved: "bg-success text-white",      
-    //         Closed: "bg-dark text-white",      
-    //         Cancelled: "bg-danger text-white",     
+    //         UnderReview: "bg-info text-white",
+    //         Awaiting: "bg-warning text-dark",
+    //         Resolved: "bg-success text-white",
+    //         Closed: "bg-dark text-white",
+    //         Cancelled: "bg-danger text-white",
     //         Reopened: "bg-primary text-white",
-              // Forward: "bg-purple text-white",       
+    // Forward: "bg-purple text-white",
     //       };
     //     const badgeClass = colorMap[status] || "bg-light text-dark";
     //     return (
@@ -175,7 +180,7 @@ const TicketsViewLayer = () => {
       name: "Ticket Status",
       cell: (row) => {
         let status = row?.TrackingHistory?.[0]?.StatusName ?? "-";
-         if (!status || status === "-") status = "Not Assigned";
+        if (!status || status === "-") status = "Not Assigned";
         const colorMap = {
           Pending: "text-secondary fw-semibold",
           UnderReview: "text-info fw-semibold",
@@ -185,19 +190,24 @@ const TicketsViewLayer = () => {
           Cancelled: "text-danger fw-semibold",
           Reopened: "text-primary fw-semibold",
           Forward: "text-purple fw-semibold",
+          UserResponse: "text-teal fw-semibold",
           "Not Assigned": "text-muted fw-semibold",
         };
         const textClass = colorMap[status] || "text-muted";
-        return <span className={textClass}>
-          <span
-            className="rounded-circle"
-            style={{
-              width: "8px",
-              height: "8px",
-              marginRight: "4px",
-              backgroundColor: "currentColor",
-            }}
-          ></span>{status}</span>;
+        return (
+          <span className={textClass}>
+            <span
+              className="rounded-circle"
+              style={{
+                width: "8px",
+                height: "8px",
+                marginRight: "4px",
+                backgroundColor: "currentColor",
+              }}
+            ></span>
+            {status}
+          </span>
+        );
       },
       wrap: true,
     },
@@ -216,7 +226,7 @@ const TicketsViewLayer = () => {
       cell: (row) => (
         <div className="d-flex gap-2 align-items-center">
           <Link
-            to={`/tickets/${(row.TicketID ?? row.TicketId ?? row.Id)}`}
+            to={`/tickets/${row.TicketID ?? row.TicketId ?? row.Id}`}
             className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
             title="View"
           >
@@ -233,23 +243,33 @@ const TicketsViewLayer = () => {
   // Filter
   const filteredTickets = tickets.filter((ticket) => {
     const text = searchText.toLowerCase();
-    const statusName = (ticket?.TrackingHistory?.[0]?.StatusName || "").toLowerCase();
-    const statusMatch = selectedStatus === "All" || statusName === selectedStatus.toLowerCase();
+    const statusName = (
+      ticket?.TrackingHistory?.[0]?.StatusName || ""
+    ).toLowerCase();
+    // const statusMatch =
+    //   selectedStatus === "All" || statusName === selectedStatus.toLowerCase();
+    const statusMatch =
+      selectedStatus === "All" ||
+      (selectedStatus === "Pending, Reopened" &&
+        (statusName === "pending" || statusName === "reopened")) ||
+      statusName === selectedStatus.toLowerCase();
 
     // Date filtering
     const ticketDate = ticket.CreatedDate ? new Date(ticket.CreatedDate) : null;
     const from = fromDate ? new Date(fromDate) : null;
     const to = toDate ? new Date(toDate) : null;
-    const dateMatch = (!from || (ticketDate && ticketDate >= from)) && (!to || (ticketDate && ticketDate <= to));
+    const dateMatch =
+      (!from || (ticketDate && ticketDate >= from)) &&
+      (!to || (ticketDate && ticketDate <= to));
 
     return (
       statusMatch &&
       dateMatch &&
       (ticket.CustomerName?.toLowerCase().includes(text) ||
-      ticket.TicketTrackId?.toLowerCase().includes(text) ||
-      ticket.BookingTrackID?.toLowerCase().includes(text) ||
-      ticket.Description?.toLowerCase().includes(text) ||
-      statusName.includes(text))
+        ticket.TicketTrackId?.toLowerCase().includes(text) ||
+        ticket.BookingTrackID?.toLowerCase().includes(text) ||
+        ticket.Description?.toLowerCase().includes(text) ||
+        statusName.includes(text))
     );
   });
 
@@ -263,8 +283,7 @@ const TicketsViewLayer = () => {
   return (
     <div className="row gy-4">
       <div className="col-12">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-        </div>
+        <div className="d-flex justify-content-between align-items-center mb-3"></div>
         <div className="card overflow-hidden p-3">
           <div className="card-header">
             <div className="d-flex justify-content-between align-items-center mb-2">
@@ -298,21 +317,24 @@ const TicketsViewLayer = () => {
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
                 >
-                   <option value="All">All</option>
-                   {/* <option value="Pending, Reopened">Pending + Reopened</option> */}
-                    <option value="Pending">Pending</option>
-                    <option value="UnderReview">Under Review</option>
-                    <option value="Awaiting">Awaiting</option>
-                    <option value="Resolved">Resolved</option>
-                    <option value="Closed">Closed</option>
-                    <option value="Cancelled">Cancelled</option>
-                    <option value="Reopened">Reopened</option>
+                  <option value="All">All</option>
+                  <option value="Pending, Reopened">Pending + Reopened</option>
+                  <option value="Pending">Pending</option>
+                  <option value="UnderReview">Under Review</option>
+                  <option value="Awaiting">Awaiting</option>
+                  <option value="Resolved">Resolved</option>
+                  <option value="Closed">Closed</option>
+                  <option value="Cancelled">Cancelled</option>
+                  <option value="Reopened">Reopened</option>
                 </select>
                 <Link
                   to="/add-tickets"
                   className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
                 >
-                  <Icon icon="ic:baseline-plus" className="icon text-xl line-height-1" />
+                  <Icon
+                    icon="ic:baseline-plus"
+                    className="icon text-xl line-height-1"
+                  />
                   Add Ticket
                 </Link>
               </div>

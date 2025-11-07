@@ -23,11 +23,12 @@ const TicketInnerLayer = () => {
 
   const history = ticket?.TrackingHistory;
   const currentStatus = history?.[0]?.StatusName?.toLowerCase() || "";
-  // const isDisabled = !(role === "Admin" || userDetails?.Is_Head === 1) &&  ["cancelled", "closed"].includes(currentStatus);
-  const isDisabled = ["cancelled", "closed"].includes(currentStatus);
   const role = localStorage.getItem("role");
   const isEmployee = role === "Employee";
-   const userDetails = JSON.parse(localStorage.getItem("employeeData"));
+  const userDetails = JSON.parse(localStorage.getItem("employeeData"));
+  const isDisabled =
+    !(role === "Admin" || userDetails?.Is_Head === 1) &&
+    ["cancelled", "closed"].includes(currentStatus);
 
   // 🔹 Fetch ticket details
   const fetchTicket = async () => {
@@ -333,7 +334,43 @@ const TicketInnerLayer = () => {
                   </span>
                 </li>
               </ul>
+              {/* Customer Uploaded Images */}
+              {ticket?.FilePath && ticket.FilePath.trim() !== "" && (
+                <div className="mt-3">
+                  <strong>Customer Uploaded Images:</strong>
+                  <div className="d-flex flex-wrap gap-2 mt-2">
+                    {ticket.FilePath.split(",").map((rawName, index) => {
+                      const fileName = rawName.trim();
+                      if (!fileName) return null;
 
+                      const fileUrl = `${
+                        import.meta.env.VITE_APIURL_IMAGE
+                      }TicketDocuments/${fileName}`;
+
+                      return (
+                        <div
+                          key={index}
+                          className="border rounded bg-white text-center p-1"
+                          style={{ width: "100px", height: "100px" }}
+                        >
+                          <img
+                            src={fileUrl}
+                            alt={`Customer upload ${index + 1}`}
+                            className="rounded border"
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                              cursor: "pointer",
+                            }}
+                            onClick={() => window.open(fileUrl, "_blank")}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <div className="d-flex gap-2 mt-3">
                 <Link
                   to="/tickets"
@@ -342,7 +379,11 @@ const TicketInnerLayer = () => {
                   <Icon icon="mdi:arrow-left" className="fs-5" />
                   Back
                 </Link>
-                {isEmployee && (
+                {(userDetails?.Is_Head === 1 ||
+                  (userDetails?.RoleName === "Employee" &&
+                    !["resolved", "closed", "cancelled"].includes(
+                      currentStatus?.toLowerCase()
+                    ))) && (
                   <button
                     className="btn btn-primary btn-sm d-flex align-items-center justify-content-center gap-1"
                     onClick={handleForward}
@@ -351,6 +392,7 @@ const TicketInnerLayer = () => {
                     Forward
                   </button>
                 )}
+
                 {/* <button className="btn btn-success btn-sm" onClick={handleAccept}>
                   <Icon icon="mdi:check" className="me-1" /> Accept
                 </button>
@@ -394,28 +436,26 @@ const TicketInnerLayer = () => {
                         disabled={isDisabled}
                       >
                         <option value="">Select status</option>
-                       {(
-                          currentStatus === "resolved"
-                            ? (
-                                (role === "Admin" || userDetails?.Is_Head === 1)
-                                  ? [
-                                      { value: 4, label: "Closed" },
-                                      { value: 6, label: "Reopened" },
-                                    ]
-                                  : [] 
-                              )
-                            : [
-                                { value: 1, label: "UnderReview" },
-                                { value: 2, label: "Awaiting" },
-                                { value: 3, label: "Resolved" },
-                                ...((role === "Admin" || userDetails?.Is_Head === 1)
-                                  ? [
-                                      { value: 4, label: "Closed" },
-                                      { value: 5, label: "Cancelled" },
-                                      { value: 6, label: "Reopened" },
-                                    ]
-                                  : []),
+                        {(currentStatus === "resolved"
+                          ? role === "Admin" || userDetails?.Is_Head === 1
+                            ? [
+                                { value: 4, label: "Closed" },
+                                { value: 6, label: "Reopened" },
+                                { value: 5, label: "Cancelled" },
                               ]
+                            : []
+                          : [
+                              { value: 1, label: "UnderReview" },
+                              { value: 2, label: "Awaiting" },
+                              { value: 3, label: "Resolved" },
+                              ...(role === "Admin" || userDetails?.Is_Head === 1
+                                ? [
+                                    { value: 4, label: "Closed" },
+                                    { value: 5, label: "Cancelled" },
+                                    { value: 6, label: "Reopened" },
+                                  ]
+                                : []),
+                            ]
                         ).map((opt) => (
                           <option key={opt.value} value={opt.value}>
                             {opt.label}
@@ -453,6 +493,7 @@ const TicketInnerLayer = () => {
                       onClick={() =>
                         document.getElementById("file-input").click()
                       }
+                      disabled={isDisabled}
                     >
                       Upload Docs/Images
                     </button>
@@ -737,175 +778,82 @@ const TicketInnerLayer = () => {
 
       {/* ------------------ Right: Timeline ------------------ */}
       <div className="col-lg-3">
-        <div className="user-grid-card border pt-3 radius-16 bg-base d-flex flex-column w-100" style={{ height: "810px" }}>
+        <div
+          className="user-grid-card border pt-3 radius-16 bg-base d-flex flex-column w-100"
+          style={{ height: "810px" }}
+        >
           <div className="pb-24 ms-16 mb-24 me-16 flex-grow-1 d-flex flex-column">
             <h6 className="text-xl mb-16 border-bottom pb-2">Timeline</h6>
-             <div className="flex-grow-1 overflow-auto pe-0"  style={{ maxHeight: "725px", scrollbarWidth: "thin",}}>
-            {ticket?.TrackingHistory && ticket.TrackingHistory.length > 0 ? (
-              <ul className="mb-0 list-unstyled ps-0">
-                {ticket.TrackingHistory.slice()
-                  .reverse()
-                  .map((item, idx) => (
-                    <li
-                      key={idx}
-                      className="mb-3 pb-3 border-bottom border-dashed last:border-0"
-                    >
-                      <div className="d-flex align-items-start gap-3">
-                        <span
-                          className={`badge rounded-pill px-3 py-2 fw-semibold ${
-                            item.Status === 1
-                              ? "bg-info text-white"        
-                              : item.Status === 2
-                              ? "bg-warning text-dark"      
-                              : item.Status === 3
-                              ? "bg-success text-white"     
-                              : item.Status === 4
-                              ? "bg-dark text-white"  
-                              : item.Status === 5
-                              ? "bg-danger text-white"      
-                              : item.Status === 6
-                              ? "bg-primary text-white"   
-                              : "bg-light text-dark"     
-                          }`}
-                        >
-                          {item.StatusName}
-                        </span>
-                        <div>
-                          <div className="text-sm text-secondary-light fw-medium">
-                            {item.StatusDate
-                              ? new Date(item.StatusDate).toLocaleString(
-                                  "en-IN",
-                                  {
-                                    day: "2-digit",
-                                    month: "short",
-                                    year: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    hour12: true,
-                                  }
-                                )
-                              : "-"}
-                          </div>
-                          <div className="text-sm text-secondary-light">
-                            {item.StatusDescription || "-"}
-                          </div>
-                          <div className="text-sm text-secondary-light">
-                            {item.EmployeeName || "-"}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* 🔽 Show attachments below description */}
-                      {item.FilePath && (
-                        <div className="mt-2">
-                          {/* Use bootstrap grid to make attachments take full timeline width — 3 cols per row */}
-                          <div className="row row-cols-3 g-2 w-100 bg-light p-2 rounded">
-                            {item.FilePath.split(",").map((rawName, i) => {
-                              const fileName = rawName.trim();
-                              if (!fileName) return null;
-                              const fileUrl = `${
-                                import.meta.env.VITE_APIURL_IMAGE
-                              }TicketDocuments/${fileName}`;
-                              const isImage =
-                                /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(
-                                  fileName
-                                );
-                              const isPDF = /\.pdf$/i.test(fileName);
-                              const isWord = /\.(doc|docx)$/i.test(fileName);
-
-                              return (
-                                <div key={i} className="col">
-                                  <div className="border rounded bg-white text-center h-100 d-flex flex-column">
-                                    {/* view in new tab */}
-                                    {isImage ? (
-                                      <a
-                                        href={fileUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="d-block"
-                                      >
-                                        <img
-                                          src={fileUrl}
-                                          alt={fileName}
-                                          className="img-thumbnail"
-                                          style={{
-                                            width: "100%",
-                                            height: "80px",
-                                            objectFit: "cover",
-                                          }}
-                                        />
-                                      </a>
-                                    ) : (
-                                      <a
-                                        href={fileUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="d-flex align-items-center justify-content-center bg-light border rounded"
-                                        style={{
-                                          width: "100%",
-                                          height: "80px",
-                                          textDecoration: "none",
-                                          color: "inherit",
-                                        }}
-                                      >
-                                        {isPDF ? (
-                                          <Icon
-                                            icon="mdi:file-pdf"
-                                            width={90}
-                                            height={90}
-                                            color="#dc3545"
-                                          />
-                                        ) : isWord ? (
-                                          <Icon
-                                            icon="mdi:file-word"
-                                            width={90}
-                                            height={90}
-                                            color="#007bff"
-                                          />
-                                        ) : (
-                                          <Icon
-                                            icon="mdi:file-document"
-                                            width={90}
-                                            height={90}
-                                          />
-                                        )}
-                                      </a>
-                                    )}
-
-                                    {/* <div className="mt-0">
-                                      <button
-                                        onClick={() =>
-                                          handleDownload(fileUrl, fileName)
-                                        }
-                                        className="btn btn-secondary btn-sm d-inline-flex align-items-center justify-content-center"
-                                        style={{
-                                          width: "50px",
-                                          height: "20px",
-                                        }}
-                                        title="Download"
-                                      >
-                                        <i className="bi bi-download text-white" />
-                                      </button>
-                                    </div> */}
-                                  </div>
-                                </div>
-                              );
-                            })}
+            <div
+              className="flex-grow-1 overflow-auto pe-0"
+              style={{ maxHeight: "725px", scrollbarWidth: "thin" }}
+            >
+              {ticket?.TrackingHistory && ticket.TrackingHistory.length > 0 ? (
+                <ul className="mb-0 list-unstyled ps-0">
+                  {ticket.TrackingHistory.slice()
+                    .reverse()
+                    .map((item, idx) => (
+                      <li
+                        key={idx}
+                        className="mb-3 pb-3 border-bottom border-dashed last:border-0"
+                      >
+                        <div className="d-flex align-items-start gap-3">
+                          <span
+                            className={`badge rounded-pill px-3 py-2 fw-semibold ${
+                              item.Status === 0
+                                ? "bg-secondary text-white"
+                                : item.Status === 1
+                                ? "bg-info text-dark"
+                                : item.Status === 2
+                                ? "bg-warning text-dark"
+                                : item.Status === 3
+                                ? "bg-success text-white"
+                                : item.Status === 4
+                                ? "bg-dark text-white"
+                                : item.Status === 5
+                                ? "bg-danger text-white"
+                                : item.Status === 6
+                                ? "bg-primary text-white"
+                                : item.Status === 7
+                                ? "bg-purple text-white"
+                                : item.Status === 8
+                                ? "bg-teal text-white"
+                                : "bg-light text-dark"
+                            }`}
+                          >
+                            {item.StatusName}
+                          </span>
+                          <div>
+                            <div className="text-sm text-secondary-light fw-medium">
+                              {item.StatusDate
+                                ? new Date(item.StatusDate).toLocaleString(
+                                    "en-IN",
+                                    {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      hour12: true,
+                                    }
+                                  )
+                                : "-"}
+                            </div>
+                            <div className="text-sm text-secondary-light">
+                              {item.StatusDescription || "-"}
+                            </div>
+                            <div className="text-sm text-secondary-light">
+                              {item.EmployeeName || "-"}
+                            </div>
                           </div>
                         </div>
-                      )}
 
-                      {/* 🧩 Show customer-uploaded files only under Pending status */}
-                      {item.StatusName === "Pending" &&
-                        ticket?.FilePath &&
-                        ticket.FilePath.length > 0 && (
-                          <div className="mt-3">
-                            <h6 className="fw-semibold text-sm mb-2">
-                              Customer Attachments:
-                            </h6>
-
-                            <div className="row row-cols-3 g-2 w-100 bg-light rounded">
-                              {ticket.FilePath.split(",").map((rawName, i) => {
+                        {/* 🔽 Show attachments below description */}
+                        {item.FilePath && (
+                          <div className="mt-2">
+                            {/* Use bootstrap grid to make attachments take full timeline width — 3 cols per row */}
+                            <div className="row row-cols-3 g-2 w-100 bg-light p-2 rounded">
+                              {item.FilePath.split(",").map((rawName, i) => {
                                 const fileName = rawName.trim();
                                 if (!fileName) return null;
                                 const fileUrl = `${
@@ -921,6 +869,7 @@ const TicketInnerLayer = () => {
                                 return (
                                   <div key={i} className="col">
                                     <div className="border rounded bg-white text-center h-100 d-flex flex-column">
+                                      {/* view in new tab */}
                                       {isImage ? (
                                         <a
                                           href={fileUrl}
@@ -977,6 +926,113 @@ const TicketInnerLayer = () => {
                                       )}
 
                                       {/* <div className="mt-0">
+                                      <button
+                                        onClick={() =>
+                                          handleDownload(fileUrl, fileName)
+                                        }
+                                        className="btn btn-secondary btn-sm d-inline-flex align-items-center justify-content-center"
+                                        style={{
+                                          width: "50px",
+                                          height: "20px",
+                                        }}
+                                        title="Download"
+                                      >
+                                        <i className="bi bi-download text-white" />
+                                      </button>
+                                    </div> */}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 🧩 Show customer-uploaded files only under Pending status */}
+                        {item.StatusName === "Pending" &&
+                          ticket?.FilePath &&
+                          ticket.FilePath.length > 0 && (
+                            <div className="mt-3">
+                              <h6 className="fw-semibold text-sm mb-2">
+                                Customer Attachments:
+                              </h6>
+
+                              <div className="row row-cols-3 g-2 w-100 bg-light rounded">
+                                {ticket.FilePath.split(",").map(
+                                  (rawName, i) => {
+                                    const fileName = rawName.trim();
+                                    if (!fileName) return null;
+                                    const fileUrl = `${
+                                      import.meta.env.VITE_APIURL_IMAGE
+                                    }TicketDocuments/${fileName}`;
+                                    const isImage =
+                                      /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(
+                                        fileName
+                                      );
+                                    const isPDF = /\.pdf$/i.test(fileName);
+                                    const isWord = /\.(doc|docx)$/i.test(
+                                      fileName
+                                    );
+
+                                    return (
+                                      <div key={i} className="col">
+                                        <div className="border rounded bg-white text-center h-100 d-flex flex-column">
+                                          {isImage ? (
+                                            <a
+                                              href={fileUrl}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="d-block"
+                                            >
+                                              <img
+                                                src={fileUrl}
+                                                alt={fileName}
+                                                className="img-thumbnail"
+                                                style={{
+                                                  width: "100%",
+                                                  height: "80px",
+                                                  objectFit: "cover",
+                                                }}
+                                              />
+                                            </a>
+                                          ) : (
+                                            <a
+                                              href={fileUrl}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="d-flex align-items-center justify-content-center bg-light border rounded"
+                                              style={{
+                                                width: "100%",
+                                                height: "80px",
+                                                textDecoration: "none",
+                                                color: "inherit",
+                                              }}
+                                            >
+                                              {isPDF ? (
+                                                <Icon
+                                                  icon="mdi:file-pdf"
+                                                  width={90}
+                                                  height={90}
+                                                  color="#dc3545"
+                                                />
+                                              ) : isWord ? (
+                                                <Icon
+                                                  icon="mdi:file-word"
+                                                  width={90}
+                                                  height={90}
+                                                  color="#007bff"
+                                                />
+                                              ) : (
+                                                <Icon
+                                                  icon="mdi:file-document"
+                                                  width={90}
+                                                  height={90}
+                                                />
+                                              )}
+                                            </a>
+                                          )}
+
+                                          {/* <div className="mt-0">
                                         <button
                                           onClick={() =>
                                             handleDownload(fileUrl, fileName)
@@ -991,19 +1047,22 @@ const TicketInnerLayer = () => {
                                           <i className="bi bi-download text-white" />
                                         </button>
                                       </div> */}
-                                    </div>
-                                  </div>
-                                );
-                              })}
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )}
-                    </li>
-                  ))}
-              </ul>
-            ) : (
-              <p className="text-secondary-light mb-0">No timeline available</p>
-            )}
+                          )}
+                      </li>
+                    ))}
+                </ul>
+              ) : (
+                <p className="text-secondary-light mb-0">
+                  No timeline available
+                </p>
+              )}
             </div>
           </div>
         </div>
