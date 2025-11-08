@@ -7,10 +7,19 @@ const API_BASE = import.meta.env.VITE_APIURL;
 const UnitCountSeven = () => {
   const [data, setData] = useState([]);
   const [refunds, setRefunds] = useState([]);
+  const [ticketTotal, setTicketTotal] = useState(0);
+  const [resolvedCount, setResolvedCount] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
+  const userDetails = JSON.parse(localStorage.getItem("employeeData") );
+  const department = userDetails?.DepartmentName;
+  const role = localStorage.getItem("role");
 
   useEffect(() => {
     fetchDashboard();
     fetchRefunds();
+      if (department === "Support Department") {
+        fetchTicketCounts();
+      }
   },[]);
 
   const fetchDashboard = async () => {
@@ -42,6 +51,36 @@ const UnitCountSeven = () => {
     }
   };
 
+  const fetchTicketCounts = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await axios.get(`${API_BASE}Tickets`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const all = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+
+    // total tickets
+    setTicketTotal(all.length);
+
+    // resolved = closed, cancelled, or resolved
+    const resolved = all.filter((t) => {
+      const s = (t.StatusName || "").toLowerCase();
+      return s === "resolved" || s === "closed" || s === "cancelled";
+    }).length;
+    setResolvedCount(resolved);
+
+    // pending = everything else
+    const pending = all.filter((t) => {
+      const s = (t.StatusName || "").toLowerCase();
+      return !(s === "resolved" || s === "closed" || s === "cancelled");
+    }).length;
+    setPendingCount(pending);
+  } catch (err) {
+    console.error("Failed to fetch ticket counts:", err);
+    // keep defaults 0
+  }
+};
 
   return (
     <div className='col-12'>
@@ -110,9 +149,11 @@ const UnitCountSeven = () => {
                   <div className='d-flex flex-wrap align-items-center justify-content-between gap-1 mb-8'>
                     <div>
                       <span className='mb-2 fw-medium text-secondary-light text-md'>
-                        Total Bookings
+                        {department === "Support Department" && role !== "Admin" ? "Total Tickets" : "Total Bookings"}
                       </span>
-                      <h6 className='fw-semibold mb-1'>{data.TotalBookings || 0}</h6>
+                      <h6 className='fw-semibold mb-1'>
+                        {department === "Support Department" && role !== "Admin" ? ticketTotal : (data.TotalBookings || 0)}
+                      </h6>
                     </div>
                     <span className='w-44-px h-44-px radius-8 d-inline-flex justify-content-center align-items-center text-2xl mb-12 bg-lilac-200 text-lilac-600'>
                       <i className='ri-handbag-fill' />
@@ -131,9 +172,11 @@ const UnitCountSeven = () => {
                   <div className='d-flex flex-wrap align-items-center justify-content-between gap-1 mb-8'>
                     <div>
                       <span className='mb-2 fw-medium text-secondary-light text-md'>
-                        Upcoming Bookings
+                        {department === "Support Department" && role !== "Admin" ? "Resolved Tickets" : "Upcoming Bookings"}
                       </span>
-                      <h6 className='fw-semibold mb-1'>{data.UpcomingBookings || 0}</h6>
+                      <h6 className='fw-semibold mb-1'>
+                        {department === "Support Department" && role !== "Admin" ? resolvedCount : (data.UpcomingBookings || 0)}
+                      </h6>
                     </div>
                     <span className='w-44-px h-44-px radius-8 d-inline-flex justify-content-center align-items-center text-2xl mb-12 bg-success-200 text-success-600'>
                       <i className='ri-shopping-cart-fill' />
@@ -153,9 +196,11 @@ const UnitCountSeven = () => {
                     <div>
                       <Link to="/refunds">
                         <span className='mb-2 fw-medium text-secondary-light text-md'>
-                          Total Refunds
+                          {department === "Support Department" && role !== "Admin" ? "Pending Tickets" : "Total Refunds"}
                         </span>
-                        <h6 className='fw-semibold mb-1'>{refunds.length || 0}</h6>
+                        <h6 className='fw-semibold mb-1'>
+                          {department === "Support Department" && role !== "Admin" ? pendingCount : (refunds.length || 0)}
+                        </h6>
                       </Link>
                     </div>
                     <span className='w-44-px h-44-px radius-8 d-inline-flex justify-content-center align-items-center text-2xl mb-12 bg-warning-focus text-warning-600'>

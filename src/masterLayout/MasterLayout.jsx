@@ -370,6 +370,14 @@ const MasterLayout = ({ children }) => {
       ],
     },
     {
+      title: "Reports",
+      icon: "hugeicons:chart-line",
+      children: [
+        { title: "Ticket Reports", to: "/ticket-reports", color: "text-warning-main", permission: "ticketreports_view", page: "Ticket Reports" },
+
+      ],
+    },
+    {
       title: "Vehicle",
       icon: "hugeicons:car-03",
       children: [

@@ -9,34 +9,40 @@ import RecentTransactions from "./child/RecentTransactions";
 import TodaysBookings from "./child/TodaysBookings";
 
 const DashBoardLayerTen = () => {
+  const role = localStorage.getItem("role");
+
   return (
-    <div className='row gy-4'>
+    <div className="row gy-4">
       {/* UnitCountSeven */}
       <UnitCountSeven />
+      
+      {role === "Admin" && (
+        <>
+          {/* IncomeVsExpense */}
+          <IncomeVsExpense />
 
-      {/* IncomeVsExpense */}
-      <IncomeVsExpense />
+          {/* TodayBookingsLayer */}
+          <TodaysBookings />
 
-      {/* TodayBookingsLayer */}
-      <TodaysBookings />
+          {/* UsersChart */}
+          {/* <UsersChart /> */}
 
-      {/* UsersChart */}
-      {/* <UsersChart /> */}
+          {/* TopSuppliers */}
+          {/* <TopSuppliers /> */}
 
-      {/* TopSuppliers */}
-      {/* <TopSuppliers /> */}
+          {/* TopCustomer */}
+          <TopCustomer />
 
-      {/* TopCustomer */}
-      <TopCustomer />
+          {/* OverallReport */}
+          {/* <OverallReport /> */}
 
-      {/* OverallReport */}
-      {/* <OverallReport /> */}
+          {/* PurchaseAndSales */}
+          {/* <PurchaseAndSales /> */}
 
-      {/* PurchaseAndSales */}
-      {/* <PurchaseAndSales /> */}
-
-      {/* RecentTransactions */}
-      <RecentTransactions />
+          {/* RecentTransactions */}
+          <RecentTransactions />
+        </>
+      )}
     </div>
   );
 };
