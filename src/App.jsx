@@ -81,8 +81,6 @@ import TelecalerAssignTicketPage from "./pages/TelecalerAssignTicketPage";
 import EmployeeTicketsPage from "./pages/EmployeeTicketsPage";
 import DepartmentsPage from "./pages/DepartmentsPage";
 import DesignationsPage from "./pages/DesignationsPage";
-import SupervisorBookingPage from "./pages/SupervisorBookingPage";
-import SupervisorAssignBookingPage from "./pages/SupervisorAssignBookingPage";
 
 
 
@@ -177,6 +175,10 @@ function App() {
           <Route exact path="/edit-employee/:EmployeeID" element={<EmployeeAddPage />} />
           <Route exact path="/notifications" element={<NotificationPage />} />
           <Route exact path='/todays-booking' element={<TodaysBookingPage />} />
+          <Route exact path='/ticket-reports' element={<DeptWiseTicketReportPage />} />
+          <Route exact path='/dept-employee-reports/:deptId' element={<DeptEmployeePage />} />
+          <Route exact path='/view-employee-report/:id' element={<EmpTicketViewPage />} />
+          
         </Route>
 
 
