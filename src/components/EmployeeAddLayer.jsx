@@ -49,6 +49,7 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
     DeptId: "",
     Reporting_To: "",
     Designation_Id: "",
+    Reporting_To_Role: "",
   });
 
   useEffect(() => {
@@ -407,7 +408,7 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
 
       // Format for react-select
       const formattedEmployees = employeesData.map(emp => ({
-        value: emp.Name === "Admin" ? `admin-${emp.Id}` : emp.Id,
+        value: emp.Id,
         label: emp.Name,
       }));
 
@@ -685,6 +686,12 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
                       setFormData((prev) => ({
                         ...prev,
                         Reporting_To: selectedOption ? selectedOption.value : "",
+                        Reporting_To_Role:
+                          selectedOption && selectedOption.label === "Admin"
+                            ? "Admin"
+                            : selectedOption
+                              ? "Employee"
+                              : "", // clear if no selection
                       }))
                     }
                     options={reportingToOptions}

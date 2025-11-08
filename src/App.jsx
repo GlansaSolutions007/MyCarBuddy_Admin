@@ -81,6 +81,8 @@ import TelecalerAssignTicketPage from "./pages/TelecalerAssignTicketPage";
 import EmployeeTicketsPage from "./pages/EmployeeTicketsPage";
 import DepartmentsPage from "./pages/DepartmentsPage";
 import DesignationsPage from "./pages/DesignationsPage";
+import SupervisorBookingPage from "./pages/SupervisorBookingPage";
+import SupervisorAssignBookingPage from "./pages/SupervisorAssignBookingPage";
 
 
 
@@ -224,6 +226,10 @@ function App() {
         <Route exact path='/departments' element={<DepartmentsPage />} />
 
         <Route exact path='/designations' element={<DesignationsPage />} />
+
+        <Route exact path='/supervisor-bookings' element={<SupervisorBookingPage />} />
+
+        <Route exact path='/supervisor-assign-bookings' element={<SupervisorAssignBookingPage />} />
 
       </Routes>
     </BrowserRouter>
