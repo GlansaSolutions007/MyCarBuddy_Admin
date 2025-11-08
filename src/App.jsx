@@ -81,7 +81,11 @@ import TelecalerAssignTicketPage from "./pages/TelecalerAssignTicketPage";
 import EmployeeTicketsPage from "./pages/EmployeeTicketsPage";
 import DepartmentsPage from "./pages/DepartmentsPage";
 import DesignationsPage from "./pages/DesignationsPage";
-
+import SupervisorBookingPage from "./pages/SupervisorBookingPage";
+import SupervisorAssignBookingPage from "./pages/SupervisorAssignBookingPage";
+import DeptEmployeePage from "./pages/DeptEmployeePage";
+import EmpTicketViewPage from "./pages/EmpTicketViewPage";
+import DeptWiseTicketReportPage from "./pages/DeptWiseTicketReportPage";
 
 
 function App() {
