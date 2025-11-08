@@ -370,13 +370,6 @@ const MasterLayout = ({ children }) => {
       ],
     },
     {
-      title: "Supervisor Assignment",
-      icon: "hugeicons:user-settings-02",
-      children: [
-        { title: "Assign Supervisor", to: "/supervisor-Assign-Bookings", color: "text-primary-600", permission: "assignsupervisor_view", page: "Assign Supervisor" },
-      ],
-    },
-    {
       title: "Vehicle",
       icon: "hugeicons:car-03",
       children: [
