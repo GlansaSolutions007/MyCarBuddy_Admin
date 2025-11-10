@@ -126,34 +126,67 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
       },
       wrap: true,
     },
+    // {
+    //   name: "Ticket Status",
+    //   cell: (row) => {
+    //     let status = row?.StatusName ?? "-";
+    //     const colorMap = {
+    //       Pending: "text-secondary fw-semibold",
+    //       UnderReview: "text-info fw-semibold",
+    //       Awaiting: "text-warning fw-semibold",
+    //       Resolved: "text-success fw-semibold",
+    //       Closed: "text-dark fw-semibold",
+    //       Cancelled: "text-danger fw-semibold",
+    //       Reopened: "text-primary fw-semibold",
+    //       Forward: "text-purple fw-semibold",
+    //       UserResponse: "text-teal fw-semibold",
+    //     };
+    //     const textClass = colorMap[status] || "text-muted";
+    //     return (
+    //       <span className={textClass}>
+    //         <span
+    //           className="rounded-circle"
+    //           style={{
+    //             width: "8px",
+    //             height: "8px",
+    //             marginRight: "4px",
+    //             backgroundColor: "currentColor",
+    //           }}
+    //         ></span>
+    //         {status}
+    //       </span>
+    //     );
+    //   },
+    //   wrap: true,
+    // },
     {
       name: "Ticket Status",
       cell: (row) => {
         let status = row?.StatusName ?? "-";
+        // Hex color map from your badge reference
         const colorMap = {
-          Pending: "text-secondary fw-semibold",
-          UnderReview: "text-info fw-semibold",
-          Awaiting: "text-warning fw-semibold",
-          Resolved: "text-success fw-semibold",
-          Closed: "text-dark fw-semibold",
-          Cancelled: "text-danger fw-semibold",
-          Reopened: "text-primary fw-semibold",
-          Forward: "text-purple fw-semibold",
-          UserResponse: "text-teal fw-semibold",
+          Pending: "#F57C00",        // Orange
+          UnderReview: "#F7AE21",    // Yellow
+          Awaiting: "#F7AE21",       // Yellow
+          Resolved: "#28A745",       // Green
+          Closed: "#28A745",         // Green
+          Cancelled: "#E34242",      // Red
+          Reopened: "#25878F",       // Teal-blue
+          Forward: "#BFBFBF",        // Grey
+          UserResponse: "#BFBFBF",   // Grey
         };
-        const textClass = colorMap[status] || "text-muted";
+        const color = colorMap[status] || "#6c757d"; // default muted grey
         return (
-          <span className={textClass}>
+          <span className="fw-semibold d-flex align-items-center">
             <span
-              className="rounded-circle"
+              className="rounded-circle d-inline-block me-1"
               style={{
                 width: "8px",
                 height: "8px",
-                marginRight: "4px",
-                backgroundColor: "currentColor",
+                backgroundColor: color,
               }}
             ></span>
-            {status}
+            <span style={{ color }}>{status}</span>
           </span>
         );
       },
