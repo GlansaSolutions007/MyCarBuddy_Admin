@@ -159,7 +159,7 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
       cell: (row) => (
         <div className="d-flex gap-2 align-items-center">
           <Link
-            to={`/tickets/${row.TicketTrackId ?? row.TicketId ?? row.Id}`}
+            to={`/tickets/${row.TicketID ?? row.TicketId ?? row.Id}`}
             className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
             title="View"
           >
