@@ -20,7 +20,6 @@ const BookingLayer = () => {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [status, setStatus] = useState("all");
-  const [showFilters, setShowFilters] = useState(false);
 
   const API_BASE = import.meta.env.VITE_APIURL;
   const token = localStorage.getItem("token");
@@ -319,7 +318,7 @@ const BookingLayer = () => {
         </div>
         <div className="card overflow-hidden p-3">
           <div className="card-header">
-            <div className="d-flex justify-content-between align-items-center mb-2">
+            <div className="d-flex gap-2 flex-wrap align-items-center">
               <form className="navbar-search">
                 <input
                   type="text"
@@ -330,78 +329,54 @@ const BookingLayer = () => {
                 />
                 <Icon icon="ion:search-outline" className="icon" />
               </form>
-              <div className="d-flex gap-2">
-                <button
-                  className="btn btn-outline-primary radius-8 px-14 py-6 text-sm"
-                  onClick={() => setShowFilters(!showFilters)}
-                >
-                  <Icon icon="tabler:filter" /> Filters
-                </button>
-                <button
-                  className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                  onClick={exportToExcel}
-                >
-                  <Icon icon="mdi:microsoft-excel" width="20" height="20" />
-                </button>
-              </div>
+              <input
+                type="date"
+                className="form-control"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                style={{ width: "140px" }}
+              />
+              <input
+                type="date"
+                className="form-control"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                style={{ width: "140px" }}
+              />
+              <input
+                type="number"
+                className="form-control"
+                placeholder="Min Price"
+                value={minPrice}
+                onChange={(e) => setMinPrice(e.target.value)}
+                style={{ width: "140px" }}
+              />
+              <input
+                type="number"
+                className="form-control"
+                placeholder="Max Price"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+                style={{ width: "140px" }}
+              />
+              <select
+                className="form-select"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                style={{ width: "140px" }}
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+              <button
+                className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                onClick={exportToExcel}
+              >
+                <Icon icon="mdi:microsoft-excel" width="20" height="20" />
+              </button>
             </div>
-            {showFilters && (
-              <div className="d-flex gap-2 flex-wrap align-items-center">
-                <input
-                  type="date"
-                  className="form-control"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  style={{ width: "160px" }}
-                />
-                <input
-                  type="date"
-                  className="form-control"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  style={{ width: "160px" }}
-                />
-                <input
-                  type="number"
-                  className="form-control"
-                  placeholder="Min Price"
-                  value={minPrice}
-                  onChange={(e) => setMinPrice(e.target.value)}
-                  style={{ width: "160px" }}
-                />
-                <input
-                  type="number"
-                  className="form-control"
-                  placeholder="Max Price"
-                  value={maxPrice}
-                  onChange={(e) => setMaxPrice(e.target.value)}
-                  style={{ width: "160px" }}
-                />
-                <select
-                  className="form-select"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  style={{ width: "160px" }}
-                >
-                  <option value="all">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-                <button
-                  className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
-                  onClick={() => {
-                    setStartDate("");
-                    setEndDate("");
-                    setMinPrice("");
-                    setMaxPrice("");
-                    setStatus("all");
-                  }}
-                >
-                  Clear Filters
-                </button>
-              </div>
-            )}
           </div>
           <DataTable
             columns={columns}

@@ -98,9 +98,14 @@ const DepartmentTicketsLayer = ({ deptId }) => {
   };
 
   const columns = [
-    { name: "Employee Name", selector: (row) => row.Name, sortable: true, cell: (row) => <span className="fw-bold">{row.Name}</span>, },
-    { name: "Emp ID", selector: (row) => row.Id, sortable: true },
-    { name: "Role", selector: (row) => row.RoleName || "N/A", sortable: true },
+    // { name: "Employee Name", selector: (row) => row.Name, sortable: true, cell: (row) => <span className="fw-bold">{row.Name}</span>, },
+    { name: "Employee Name", selector: (row) => row.Name, sortable: true, cell: (row) => {
+        const formattedName = row.Name ? row.Name.replace(/\b\w/g, (char) => char.toUpperCase()) : "N/A";
+        return <span className="fw-bold">{formattedName}</span>;
+      },
+    },
+    // { name: "Emp ID", selector: (row) => row.Id, sortable: true },
+    { name: "Designation", selector: (row) => row.RoleName || "N/A", sortable: true },
     { name: "Phone Number", selector: (row) => row.PhoneNumber },
     { name: "Total Tickets", selector: (row) => row.totalTickets, sortable: true },
     { name: "Pending Tickets", selector: (row) => row.pendingTickets, sortable: true },

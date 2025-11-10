@@ -93,11 +93,21 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
         </Link>
       ),
     },
+    // {
+    //   name: "Customer Name",
+    //   selector: (row) => (
+    //       <span className="fw-bold">{row.CustomerName || "N/A"}</span>
+    //   ),
+    // },
     {
-      name: "Customer",
-      selector: (row) => (
-          <span className="fw-bold">{row.CustomerName || "N/A"}</span>
-      ),
+      name: "Customer Name",
+      selector: (row) => row.CustomerName,
+      cell: (row) => {
+        const formattedName = row.CustomerName
+          ? row.CustomerName.replace(/\b\w/g, (char) => char.toUpperCase())
+          : "N/A";
+        return <span className="fw-bold">{formattedName}</span>;
+      },
     },
     {
       name: "Booking id",

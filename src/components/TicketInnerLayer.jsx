@@ -790,8 +790,7 @@ const TicketInnerLayer = () => {
             >
               {ticket?.TrackingHistory && ticket.TrackingHistory.length > 0 ? (
                 <ul className="mb-0 list-unstyled ps-0">
-                  {ticket.TrackingHistory.slice()
-                    .reverse()
+                  {ticket.TrackingHistory
                     .map((item, idx) => (
                       <li
                         key={idx}
