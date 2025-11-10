@@ -4,16 +4,16 @@ import Breadcrumb from "../components/Breadcrumb";
 import EmployeeTicketReportLayer from "../components/EmployeeTicketReportLayer";
 
 const EmpTicketViewPage = () => {
-  const { id } = useParams(); // Get employee ID from URL
+  const { id } = useParams(); 
 
   return (
     <>
       {/* MasterLayout */}
       <MasterLayout>
         {/* Breadcrumb */}
-        <Breadcrumb title='Employee View' />
+        <Breadcrumb title='Employee Report' />
 
-        {/* TicketDeptEmpView */}
+        {/* EmployeeTicketReportLayer */}
         <EmployeeTicketReportLayer employeeId={id} />
       </MasterLayout>
     </>

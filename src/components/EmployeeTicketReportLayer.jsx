@@ -31,8 +31,6 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
   useEffect(() => {
     if (employeeId) {
       fetchTicketsForEmployee(employeeId);
-    } else {
-      fetchEmployees(); // Fallback if no employeeId
     }
   }, [employeeId]);
 
@@ -40,69 +38,31 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
   const fetchTicketsForEmployee = async (empId) => {
     try {
       setLoading(true);
-      // Fetch ticket assignments for this employee
-      const [resAssignments, resTickets, resEmployees] = await Promise.all([
-        axios.get(`${API_BASE}Ticket_Assignments`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-        axios.get(`${API_BASE}Tickets`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-        axios.get(`${API_BASE}Employee`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-      ]);
-
-      const assignments = Array.isArray(resAssignments.data?.data)
-        ? resAssignments.data.data
-        : Array.isArray(resAssignments.data)
-        ? resAssignments.data
-        : [];
-
-      const allTickets = Array.isArray(resTickets.data)
-        ? resTickets.data
-        : [];
-
-      const employees = Array.isArray(resEmployees.data)
-        ? resEmployees.data
-        : [];
-
-      // Filter assignments for this employee
-      const filteredAssignments = assignments.filter(
-        (a) => Number(a.assigned_to_emp) === Number(empId)
-      );
-
-      // Merge ticket info
-      const mergedTickets = filteredAssignments.map((assign) => {
-        const ticketInfo = allTickets.find(
-          (t) => t.TicketTrackId === assign.ticket_id
-        );
-        return { ...ticketInfo, ...assign };
+      const res = await axios.get(`${API_BASE}Tickets/EmpId?EmpId=${empId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
 
-      // Calculate stats
-      const totalTickets = mergedTickets.length;
-      const pendingTickets = mergedTickets.filter(ticket => {
-        const status = ticket?.TrackingHistory?.[0]?.StatusName?.toLowerCase();
-        return status === 'pending' || status === 'reopened';
-      }).length;
-      const resolvedTickets = mergedTickets.filter(ticket => {
-        const status = ticket?.TrackingHistory?.[0]?.StatusName?.toLowerCase();
-        return status === 'resolved' || status === 'closed';
-      }).length;
+      const ticketsData = Array.isArray(res.data) ? res.data : [];
 
-      // Get employee name
-      const employee = employees.find(emp => Number(emp.Id) === Number(empId));
-      const employeeName = employee ? employee.Name : 'Unknown Employee';
+      // Calculate stats
+      const totalTickets = ticketsData.length;
+      const pendingTickets = ticketsData.filter(ticket =>
+        ticket.StatusName?.toLowerCase() === 'pending' ||
+        ticket.StatusName?.toLowerCase() === 'underreview' ||
+        ticket.StatusName?.toLowerCase() === 'reopened' ||
+        ticket.StatusName?.toLowerCase() === 'awaiting'
+      ).length;
+      const resolvedTickets = ticketsData.filter(ticket =>
+        ticket.StatusName?.toLowerCase() === 'closed' ||
+        ticket.StatusName?.toLowerCase() === 'cancelled' ||
+        ticket.StatusName?.toLowerCase() === 'resolved'
+      ).length;
+
+      // Get employee name from first ticket (assuming all have same employee)
+      const employeeName = ticketsData.length > 0 ? ticketsData[0].EmployeeName : 'Unknown Employee';
 
       setEmployeeStats({
         name: employeeName,
@@ -111,33 +71,10 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
         resolvedTickets,
       });
 
-      setTickets(mergedTickets);
+      setTickets(ticketsData);
     } catch (error) {
       console.error("Failed to load tickets", error);
       setError("Failed to load tickets. Please try again later.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch Employees (fallback)
-  const fetchEmployees = async () => {
-    try {
-      setLoading(true);
-      const res = await axios.get(`${API_BASE}Employee`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (res.data && Array.isArray(res.data)) {
-        setTickets(res.data); // Temporarily use tickets state for employees
-      } else {
-        setTickets([]);
-      }
-    } catch (error) {
-      console.error("Failed to load employees", error);
-      setError("Failed to load employees. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -159,11 +96,7 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
     {
       name: "Customer",
       selector: (row) => (
-        <>
           <span className="fw-bold">{row.CustomerName || "N/A"}</span>
-          <br />
-          {/* {row.PhoneNumber || ""} */}
-        </>
       ),
     },
     {
@@ -179,9 +112,6 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
           day: "2-digit",
           month: "short",
           year: "numeric",
-          // hour: "2-digit",
-          // minute: "2-digit",
-          // hour12: true,
         });
       },
       wrap: true,
@@ -189,8 +119,7 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
     {
       name: "Ticket Status",
       cell: (row) => {
-        let status = row?.TrackingHistory?.[0]?.StatusName ?? "-";
-        if (!status || status === "-") status = "Not Assigned";
+        let status = row?.StatusName ?? "-";
         const colorMap = {
           Pending: "text-secondary fw-semibold",
           UnderReview: "text-info fw-semibold",
@@ -201,7 +130,6 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
           Reopened: "text-primary fw-semibold",
           Forward: "text-purple fw-semibold",
           UserResponse: "text-teal fw-semibold",
-          "Not Assigned": "text-muted fw-semibold",
         };
         const textClass = colorMap[status] || "text-muted";
         return (
@@ -231,7 +159,7 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
       cell: (row) => (
         <div className="d-flex gap-2 align-items-center">
           <Link
-            to={`/tickets/${row.TicketID ?? row.TicketId ?? row.Id}`}
+            to={`/tickets/${row.TicketTrackId ?? row.TicketId ?? row.Id}`}
             className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
             title="View"
           >
@@ -248,11 +176,7 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
   // Filter
   const filteredData = tickets.filter((ticket) => {
     const text = searchText.toLowerCase();
-    const statusName = (
-      ticket?.TrackingHistory?.[0]?.StatusName || ""
-    ).toLowerCase();
-    // const statusMatch =
-    //   selectedStatus === "All" || statusName === selectedStatus.toLowerCase();
+    const statusName = (ticket?.StatusName || "").toLowerCase();
     const statusMatch =
       selectedStatus === "All" ||
       (selectedStatus === "Pending, Reopened" &&

@@ -57,6 +57,7 @@ const DeptWiseTicketReport = () => {
           reopenedTickets: dept.ReopenedCount,
           forwardTickets: dept.ForwardCount,
         }));
+        departmentsWithStats.sort((a, b) => b.totalTickets - a.totalTickets);
 
         setDepartments(departmentsWithStats);
         setFilteredDepartments(departmentsWithStats);

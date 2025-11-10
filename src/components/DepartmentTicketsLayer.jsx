@@ -67,6 +67,7 @@ const DepartmentTicketsLayer = ({ deptId }) => {
           pendingTickets: item.PendingCount + item.UnderReviewCount + item.AwaitingCount + item.ReopenedCount,
           resolvedTickets: item.ResolvedCount + item.ClosedCount + item.CancelledCount,
         }));
+        employeesWithTickets.sort((a, b) => b.totalTickets - a.totalTickets);
 
         // Calculate department stats
         const totalEmployees = employeesWithTickets.length;
@@ -126,7 +127,7 @@ const DepartmentTicketsLayer = ({ deptId }) => {
               <div className="col-md-4">
                 <div className="card bg-body-secondary border-0 shadow-sm">
                   <div className="card-body py-1 d-flex justify-content-between">
-                    <span className="card-text mb-0 fw-bold" style={{ fontSize: '14px' }}>Department Name : </span>
+                    <span className="card-text mb-0 fw-bold" style={{ fontSize: '14px' }}>Department : </span>
                     <p className="card-text mb-0 fw-bold" style={{ fontSize: '14px' }}>{departmentStats.departmentName}</p>
                   </div>
                 </div>
@@ -134,7 +135,7 @@ const DepartmentTicketsLayer = ({ deptId }) => {
               <div className="col-md-2">
                 <div className="card bg-primary-subtle border-0 shadow-sm">
                   <div className="card-body py-1 d-flex justify-content-between">
-                    <span className="card-text mb-0 fw-bold" style={{ fontSize: '14px' }}>Total Employees : </span>
+                    <span className="card-text mb-0 fw-bold" style={{ fontSize: '14px' }}>Employee : </span>
                     <p className="card-text mb-0 fw-bold" style={{ fontSize: '14px' }}>{departmentStats.totalEmployees}</p>
                   </div>
                 </div>
@@ -142,7 +143,7 @@ const DepartmentTicketsLayer = ({ deptId }) => {
               <div className="col-md-2">
                 <div className="card bg-info-subtle border-0 shadow-sm">
                   <div className="card-body py-1 d-flex justify-content-between">
-                    <span className="card-text mb-0 fw-bold" style={{ fontSize: '14px' }}>Total Tickets : </span>
+                    <span className="card-text mb-0 fw-bold" style={{ fontSize: '14px' }}>Tickets : </span>
                     <p className="card-text mb-0 fw-bold" style={{ fontSize: '14px' }}>{departmentStats.totalTickets}</p>
                   </div>
                 </div>
@@ -150,7 +151,7 @@ const DepartmentTicketsLayer = ({ deptId }) => {
               <div className="col-md-2">
                 <div className="card bg-warning-subtle border-0 shadow-sm">
                   <div className="card-body py-1 d-flex justify-content-between">
-                    <span className="card-text mb-0 fw-bold" style={{ fontSize: '14px' }}>Pending Tickets : </span>
+                    <span className="card-text mb-0 fw-bold" style={{ fontSize: '14px' }}>Pending : </span>
                     <p className="card-text mb-0 fw-bold" style={{ fontSize: '14px' }}>{departmentStats.pendingTickets}</p>
                   </div>
                 </div>
@@ -158,7 +159,7 @@ const DepartmentTicketsLayer = ({ deptId }) => {
               <div className="col-md-2">
                 <div className="card bg-success-subtle border-0 shadow-sm">
                   <div className="card-body py-1 d-flex justify-content-between">
-                    <span className="card-text mb-0 fw-bold" style={{ fontSize: '14px' }}>Resolved Tickets : </span>
+                    <span className="card-text mb-0 fw-bold" style={{ fontSize: '14px' }}>Resolved : </span>
                     <p className="card-text mb-0 fw-bold" style={{ fontSize: '14px' }}>{departmentStats.resolvedTickets}</p>
                   </div>
                 </div>

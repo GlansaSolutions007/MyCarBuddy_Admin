@@ -357,6 +357,13 @@ const MasterLayout = ({ children }) => {
           permission: "employee_view",
           page: "Employees",
         },
+                {
+          title: "Leads",
+          to: "/leads",
+          color: "text-info-danger",
+          permission: "leads_view",
+          page: "Leads",
+        },
       ],
     },
     {
@@ -367,6 +374,14 @@ const MasterLayout = ({ children }) => {
         // { title: "Telecaller Tickets", to: "/telecaler-tickets", color: "text-info-main", permission: "telecaler_ticket_view", page: "Telecaler_Tickets" },
         { title: "Assign Tickets", to: "/telecaler-assign-tickets", color: "text-success-main", permission: "telecalerassignticket_view", page: "Telecaler_Assign_Tickets" },
         // { title: "Employee Tickets", to: "/employee-tickets", color: "text-danger-main", permission: "employee_ticket_view", page: "Employee_Tickets" },
+      ],
+    },
+        {
+      title: "Reports",
+      icon: "ion:document-text-outline",
+      children: [
+        { title: "Ticket Reports", to: "/ticket-reports", color: "text-warning-main", permission: "ticketreports_view", page: "Ticket Reports" },
+
       ],
     },
     {

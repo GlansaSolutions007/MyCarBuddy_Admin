@@ -86,6 +86,7 @@ import SupervisorAssignBookingPage from "./pages/SupervisorAssignBookingPage";
 import DeptEmployeePage from "./pages/DeptEmployeePage";
 import EmpTicketViewPage from "./pages/EmpTicketViewPage";
 import DeptWiseTicketReportPage from "./pages/DeptWiseTicketReportPage";
+import LeadsPage from "./pages/LeadsPage";
 
 
 function App() {
@@ -182,6 +183,7 @@ function App() {
           <Route exact path='/ticket-reports' element={<DeptWiseTicketReportPage />} />
           <Route exact path='/dept-employee-reports/:deptId' element={<DeptEmployeePage />} />
           <Route exact path='/view-employee-report/:id' element={<EmpTicketViewPage />} />
+          <Route exact path='/leads' element={<LeadsPage />} />
           
         </Route>
 
