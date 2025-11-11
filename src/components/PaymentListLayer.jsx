@@ -19,7 +19,6 @@ const PaymentsListLayer = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [refundStatus, setRefundStatus] = useState("all");
-  const [showFilters, setShowFilters] = useState(false);
   const API_BASE = import.meta.env.VITE_APIURL;
   const token = localStorage.getItem("token");
 
@@ -263,7 +262,7 @@ const exportToPDF = () => {
         </div>
         <div className="card overflow-hidden p-3">
           <div className="card-header">
-            <div className="d-flex justify-content-between align-items-center mb-2">
+            <div className="d-flex gap-2 flex-wrap align-items-center">
               <form className="navbar-search">
                 <input
                   type="text"
@@ -274,77 +273,52 @@ const exportToPDF = () => {
                 />
                 <Icon icon='ion:search-outline' className='icon' />
               </form>
-
-              <div className="d-flex gap-2">
-                <button
-                  className="btn btn-outline-primary radius-8 px-14 py-6 text-sm"
-                  onClick={() => setShowFilters(!showFilters)}
-                >
-                  <Icon icon="tabler:filter" /> Filters
-                </button>
-                <button className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center" onClick={exportToExcel}>
-                  <Icon icon="mdi:microsoft-excel" />
-                </button>
-              </div>
+              <input
+                type="number"
+                className="form-control"
+                placeholder="Min Amount"
+                value={minAmount}
+                onChange={(e) => setMinAmount(e.target.value)}
+                style={{ width: '140px' }}
+              />
+              <input
+                type="number"
+                className="form-control"
+                placeholder="Max Amount"
+                value={maxAmount}
+                onChange={(e) => setMaxAmount(e.target.value)}
+                style={{ width: '140px' }}
+              />
+              <input
+                type="date"
+                className="form-control"
+                placeholder="Start Date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                style={{ width: '140px' }}
+              />
+              <input
+                type="date"
+                className="form-control"
+                placeholder="End Date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                style={{ width: '140px' }}
+              />
+              <select
+                className="form-select"
+                value={refundStatus}
+                onChange={(e) => setRefundStatus(e.target.value)}
+                style={{ width: '140px' }}
+              >
+                <option value="all">All Refunds</option>
+                <option value="refunded">Refunded</option>
+                <option value="not_refunded">Not Refunded</option>
+              </select>
+              <button className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center" onClick={exportToExcel}>
+                <Icon icon="mdi:microsoft-excel" />
+              </button>
             </div>
-            {showFilters && (
-              <div className="d-flex gap-2 flex-wrap align-items-center">
-                <input
-                  type="number"
-                  className="form-control"
-                  placeholder="Min Amount"
-                  value={minAmount}
-                  onChange={(e) => setMinAmount(e.target.value)}
-                  style={{ width: '160px' }}
-                />
-                <input
-                  type="number"
-                  className="form-control"
-                  placeholder="Max Amount"
-                  value={maxAmount}
-                  onChange={(e) => setMaxAmount(e.target.value)}
-                  style={{ width: '160px' }}
-                />
-                <input
-                  type="date"
-                  className="form-control"
-                  placeholder="Start Date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  style={{ width: '160px' }}
-                />
-                <input
-                  type="date"
-                  className="form-control"
-                  placeholder="End Date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  style={{ width: '160px' }}
-                />
-                <select
-                  className="form-select"
-                  value={refundStatus}
-                  onChange={(e) => setRefundStatus(e.target.value)}
-                  style={{ width: '160px' }}
-                >
-                  <option value="all">All Refunds</option>
-                  <option value="refunded">Refunded</option>
-                  <option value="not_refunded">Not Refunded</option>
-                </select>
-                <button
-                  className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
-                  onClick={() => {
-                    setMinAmount("");
-                    setMaxAmount("");
-                    setStartDate("");
-                    setEndDate("");
-                    setRefundStatus("all");
-                  }}
-                >
-                  Clear Filters
-                </button>
-              </div>
-            )}
           </div>
           <DataTable
             columns={columns}

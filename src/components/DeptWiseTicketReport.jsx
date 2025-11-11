@@ -74,17 +74,17 @@ const DeptWiseTicketReport = () => {
   };
 
   const columns = [
-    { name: "Department Name", selector: (row) => row.DepartmentName, sortable: true, cell: (row) => <span className="fw-bold">{row.DepartmentName}</span> },
-    { name: "Dept ID", selector: (row) => row.Id, sortable: true },
-    { name: "Total Tickets", selector: (row) => row.totalTickets, sortable: true },
-    { name: "Pending", selector: (row) => row.pendingTickets, sortable: true },
-    { name: "Resolved", selector: (row) => row.resolvedTickets, sortable: true },
-    { name: "Under Review", selector: (row) => row.underReviewTickets, sortable: true },
-    { name: "Awaiting", selector: (row) => row.awaitingTickets, sortable: true },
-    { name: "Closed", selector: (row) => row.closedTickets, sortable: true },
-    { name: "Cancelled", selector: (row) => row.cancelledTickets, sortable: true },
-    { name: "Reopened", selector: (row) => row.reopenedTickets, sortable: true },
-    { name: "Forward", selector: (row) => row.forwardTickets, sortable: true },
+    { name: "Department", selector: (row) => row.DepartmentName, sortable: true, width: "140px", cell: (row) => <span className="fw-bold">{row.DepartmentName}</span> },
+    // { name: "Dept ID", selector: (row) => row.Id, sortable: true },
+    { name: "Total Tickets", selector: (row) => row.totalTickets, sortable: true, width: "140px" },
+    { name: "Pending", selector: (row) => row.pendingTickets, sortable: true, width: "120px", },
+    { name: "Resolved", selector: (row) => row.resolvedTickets, sortable: true, width: "120px", },
+    { name: "Under Review", selector: (row) => row.underReviewTickets, sortable: true,  width: "140px" },
+    { name: "Awaiting", selector: (row) => row.awaitingTickets, sortable: true, width: "120px", },
+    { name: "Closed", selector: (row) => row.closedTickets, sortable: true, width: "120px", },
+    { name: "Cancelled", selector: (row) => row.cancelledTickets, sortable: true, width: "120px", },
+    { name: "Reopened", selector: (row) => row.reopenedTickets, sortable: true, width: "120px", },
+    { name: "Forward", selector: (row) => row.forwardTickets, sortable: true, width: "120px", },
     {
       name: "Actions",
       cell: (row) => (

@@ -15810,3 +15810,6 @@ div:where(.swal2-container) h2:where(.swal2-title){
 html[data-theme="dark"] .sidebar-logo {
   background: #273142;
 }
+.rdt_TableCol{
+  font-weight: 900;
+}

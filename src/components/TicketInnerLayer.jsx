@@ -790,8 +790,7 @@ const TicketInnerLayer = () => {
             >
               {ticket?.TrackingHistory && ticket.TrackingHistory.length > 0 ? (
                 <ul className="mb-0 list-unstyled ps-0">
-                  {ticket.TrackingHistory.slice()
-                    .reverse()
+                  {ticket.TrackingHistory
                     .map((item, idx) => (
                       <li
                         key={idx}
@@ -799,6 +798,37 @@ const TicketInnerLayer = () => {
                       >
                         <div className="d-flex align-items-start gap-3">
                           <span
+                            className="badge rounded-pill px-3 py-2 fw-semibold text-white"
+                            style={{
+                              backgroundColor:
+                                item.Status === 0
+                                  ? "#F57C00" 
+                                  : item.Status === 1
+                                  ? "#F7AE21" 
+                                  : item.Status === 2
+                                  ? "#F7AE21" 
+                                  : item.Status === 3
+                                  ? "#28A745" 
+                                  : item.Status === 4
+                                  ? "#28A745" 
+                                  : item.Status === 5
+                                  ? "#E34242" 
+                                  : item.Status === 6
+                                  ? "#25878F" 
+                                  : item.Status === 7
+                                  ? "#BFBFBF" 
+                                  : item.Status === 8
+                                  ? "#BFBFBF" 
+                                  : "#BFBFBF", 
+                              color:
+                                item.Status === 2 || item.Status === 1
+                                  ? "#212529" 
+                                  : "#ffffff",
+                            }}
+                          >
+                            {item.StatusName}
+                          </span>
+                          {/* <span
                             className={`badge rounded-pill px-3 py-2 fw-semibold ${
                               item.Status === 0
                                 ? "bg-secondary text-white"
@@ -822,7 +852,7 @@ const TicketInnerLayer = () => {
                             }`}
                           >
                             {item.StatusName}
-                          </span>
+                          </span> */}
                           <div>
                             <div className="text-sm text-secondary-light fw-medium">
                               {item.StatusDate
