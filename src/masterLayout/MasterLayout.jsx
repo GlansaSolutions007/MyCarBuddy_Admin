@@ -491,6 +491,20 @@ const MasterLayout = ({ children }) => {
       ],
     },
     {
+      title: "Digital Marketing",
+      icon: "mdi:bullhorn-outline",
+      children: [
+        { title: "SEO", to: "/seo", color: "text-info-main", permission: "seo_view", page: "SEO" },
+        {
+          title: "Packages FAQ",
+          to: "/package-faq",
+          color: "text-primary-600",
+          permission: "package_faq_view",
+          page: "package_faq",
+        },
+      ],
+    },
+    {
       title: "Settings",
       icon: "material-symbols:settings-outline-rounded",
       children: [
@@ -509,7 +523,6 @@ const MasterLayout = ({ children }) => {
           permission: "notification_view",
           page: "Notification",
         },
-        { title: "SEO", to: "/seo", color: "text-info-main", permission: "seo_view", page: "SEO" },
         { title: "Role", to: "/roles", color: "text-info-main", permission: "role_view", page: "Role" },
         {
           title: "Permission Pages",

@@ -36,17 +36,27 @@ const SupervisorAssignBookingLayer = () => {
   const [departments, setDepartments] = useState([]); // Will store { value: DeptId, label: DepartmentName }
   const [departmentHeads, setDepartmentHeads] = useState([]); // Will store { value: EmpId, label: EmpName }
 
+  // For Assign Supervisor Modal
+  const [assignSupervisorModalOpen, setAssignSupervisorModalOpen] = useState(false);
+  // const [selectedSupervisor, setSelectedSupervisor] = useState(null);
+  const [supervisors, setSupervisors] = useState([]);
+  const [assignType, setAssignType] = useState("technician"); // 'technician' | 'supervisor'
+  const [selectedSupervisor, setSelectedSupervisor] = useState(null);
+
+
+
 
   // ========================== INITIAL LOAD ==========================
   useEffect(() => {
     fetchTechnicians();
     fetchBookings();
+    fetchSupervisors(); // 👈 add this line
     if (role === "Admin") {
       fetchDepartments();
     } else if (userDetails?.Is_Head === 1) {
-      fetchAllEmployees(); // Fetch employees under this head
+      fetchAllEmployees();
     }
-  }, [role, userDetails?.Is_Head]); // Depend on role and Is_Head for initial fetches
+  }, [role, userDetails?.Is_Head]);
 
   useEffect(() => {
     const interval = setInterval(fetchBookings, 15000);
@@ -58,8 +68,8 @@ const SupervisorAssignBookingLayer = () => {
     let currentBookings = [...bookings];
 
     if (!fromDate && !toDate) {
-        setFilteredBookings(currentBookings);
-        return;
+      setFilteredBookings(currentBookings);
+      return;
     }
 
     const from = fromDate ? new Date(fromDate + "T00:00:00") : null;
@@ -78,39 +88,82 @@ const SupervisorAssignBookingLayer = () => {
     setSelectedBookings([]); // Reset selected bookings when filters change
   }, [fromDate, toDate, bookings]);
 
+  const handleAssignClick = (booking) => {
+    setSelectedBooking(booking);
+    setSelectedTechnician(null);
+
+    const slots = booking.TimeSlot?.split(",").map((s) => s.trim()) || [];
+    if (slots.length === 1) {
+      setSelectedTimeSlot({ value: slots[0], label: slots[0] });
+    } else {
+      setSelectedTimeSlot(null);
+    }
+
+    setAssignModalOpen(true);
+  };
+
 
   // ========================== FETCH FUNCTIONS ==========================
   const fetchBookings = async () => {
-  try {
-    let res;
-    res = await axios.get(`${API_BASE}Bookings`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    try {
+      let res;
+      res = await axios.get(`${API_BASE}Bookings`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    let allBookings = res.data?.data || res.data || [];
+      let allBookings = res.data?.data || res.data || [];
 
-    // Ensure array
-    if (!Array.isArray(allBookings)) allBookings = [];
+      // Ensure array
+      if (!Array.isArray(allBookings)) allBookings = [];
 
-    // Sort newest first
-    allBookings.sort((a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate));
+      // Sort newest first
+      allBookings.sort((a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate));
 
-    // ✅ Admin or Department Head both can see all bookings
-    if (role === "Admin" || userDetails?.Is_Head === 1) {
-      setBookings(allBookings);
-    } 
-    // ✅ Regular employee → only their assigned ones
-    else {
-      const assigned = allBookings.filter(
-        (item) => Number(item.assignedToEmp) === Number(userDetails?.Id)
-      );
-      setBookings(assigned);
+      // ✅ Admin or Department Head both can see all bookings
+      if (role === "Admin" || userDetails?.Is_Head === 1) {
+        setBookings(allBookings);
+      }
+      // ✅ Regular employee → only their assigned ones
+      else {
+        const assigned = allBookings.filter(
+          (item) => Number(item.assignedToEmp) === Number(userDetails?.Id)
+        );
+        setBookings(assigned);
+      }
+    } catch (err) {
+      console.error("Error fetching bookings:", err);
+      setBookings([]);
     }
-  } catch (err) {
-    console.error("Error fetching bookings:", err);
-    setBookings([]);
-  }
-};
+  };
+
+  const fetchSupervisors = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}Employee`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const employees = Array.isArray(res.data)
+        ? res.data
+        : res.data?.data || [];
+
+      // ✅ Filter supervisors based on DepartmentName
+      const supervisorList = employees
+        .filter(
+          (emp) =>
+            emp.DepartmentName?.toLowerCase() === "supervisor" ||
+            emp.RoleName?.toLowerCase() === "supervisor"
+        )
+        .map((emp) => ({
+          value: emp.Id,
+          label: `${emp.Name} (${emp.PhoneNumber || "N/A"})`,
+        }));
+
+      setSupervisors(supervisorList);
+    } catch (error) {
+      console.error("Failed to fetch supervisors:", error);
+      setSupervisors([]);
+    }
+  };
 
   const fetchTechnicians = async () => {
     try {
@@ -184,8 +237,8 @@ const SupervisorAssignBookingLayer = () => {
       const empArray = Array.isArray(res.data)
         ? res.data
         : Array.isArray(res.data.data)
-        ? res.data.data
-        : [];
+          ? res.data.data
+          : [];
 
       // Filter for employees that are NOT heads AND are in the current head's department
       const empList = empArray
@@ -229,10 +282,10 @@ const SupervisorAssignBookingLayer = () => {
   const handleEmployeeSelect = (selectedOptions) => {
     const newEmployees = selectedOptions
       ? selectedOptions.map((opt) => ({
-          id: opt.value,
-          name: opt.label,
-          count: bookingCount ? Number(bookingCount) : 1, // Default to 1 if count not set
-        }))
+        id: opt.value,
+        name: opt.label,
+        count: bookingCount ? Number(bookingCount) : 1, // Default to 1 if count not set
+      }))
       : [];
     setFormData((prev) => ({
       ...prev,
@@ -383,23 +436,23 @@ const SupervisorAssignBookingLayer = () => {
   const columns = [
     ...(role === "Admin" || userDetails?.Is_Head === 1
       ? [
-          {
-            name: "Select",
-            cell: (row) => (
-              <input
-                type="checkbox"
-                className="form-check-input"
-                style={{ width: "15px", height: "15px", cursor: "pointer" }}
-                checked={selectedBookings.includes(row.BookingID)}
-                onChange={(e) => handleBookingSelect(row.BookingID, e.target.checked)}
-              />
-            ),
-            width: "80px",
-            ignoreRowClick: true,
-            allowOverflow: true,
-            button: true,
-          },
-        ]
+        {
+          name: "Select",
+          cell: (row) => (
+            <input
+              type="checkbox"
+              className="form-check-input"
+              style={{ width: "15px", height: "15px", cursor: "pointer" }}
+              checked={selectedBookings.includes(row.BookingID)}
+              onChange={(e) => handleBookingSelect(row.BookingID, e.target.checked)}
+            />
+          ),
+          width: "80px",
+          ignoreRowClick: true,
+          allowOverflow: true,
+          button: true,
+        },
+      ]
       : []),
     {
       name: "Booking ID",
@@ -518,6 +571,70 @@ const SupervisorAssignBookingLayer = () => {
     }));
   };
 
+  // ========================== ASSIGN TECHNICIAN & Supervisor CONFIRM ==========================
+  const handleAssignConfirm = async (type = "technician") => {
+    // ... (existing checks)
+
+    let payload;
+    let apiUrl;
+
+    if (type === "technician") {
+      if (!selectedTechnician) {
+        Swal.fire({
+          icon: "warning",
+          title: "Missing Technician",
+          text: "Please select a technician before assigning.",
+        });
+        return;
+      }
+      // MODIFIED PAYLOAD AND API URL FOR TECHNICIAN
+      payload = {
+        TechID: selectedTechnician.value, // Changed from TechnicianID
+        BookingID: selectedBooking.BookingID,
+        AssingedTimeSlot: selectedTimeSlot.value, // Changed from TimeSlot
+        // Remove AssignedBy if the old endpoint doesn't expect it
+        // You might need to check your backend for this
+      };
+      apiUrl = `${API_BASE}Bookings/assign-technician`; // Changed to original endpoint
+      // Use PUT method for this endpoint as in BookingLayer
+      try {
+        const res = await axios.put(apiUrl, payload, { // <--- Changed to axios.put
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        // ... (rest of the success/error handling)
+      } catch (error) {
+        // ... (error handling)
+      }
+
+    } else { // type === "supervisor"
+      // ... (Supervisor specific logic, keep as is for now)
+      if (!selectedSupervisor) {
+        Swal.fire({
+          icon: "warning",
+          title: "Missing Supervisor",
+          text: "Please select a supervisor before assigning.",
+        });
+        return;
+      }
+      payload = {
+        BookingID: selectedBooking.BookingID,
+        SupervisorID: selectedSupervisor.value,
+        TimeSlot: selectedTimeSlot.value,
+        AssignedBy: userId,
+      };
+      apiUrl = `${API_BASE}AssignSupervisor`; // Your new supervisor endpoint
+      // Use POST method for this endpoint
+      try {
+        const res = await axios.post(apiUrl, payload, { // <--- Keep axios.post for supervisor
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        // ... (rest of the success/error handling)
+      } catch (error) {
+        // ... (error handling)
+      }
+    }
+  };
+
   // ========================== UI ==========================
   return (
     <div className="row gy-4">
@@ -612,28 +729,31 @@ const SupervisorAssignBookingLayer = () => {
                 </>
               )}
 
-             {userDetails?.Is_Head === 1 && role !== "Admin" && (
+              {userDetails?.Is_Head === 1 && role !== "Admin" && (
                 <>
-                  {/* Employee Name Multi-Select (Department Head) */}
+                  {/* Employee Name Single-Select (Department Head) */}
                   <div className="col-sm-8 mt-2">
                     <label className="form-label fw-semibold">
                       Employee Name <span className="text-danger">*</span>{" "}
                     </label>
                     <Select
-                      name="EmployeeIDs"
+                      name="EmployeeID"
                       options={employees.filter(
                         (emp) => !formData.employees?.some((e) => e.id === emp.value)
                       )}
                       value={
-                        formData.employees?.map((emp) => ({
-                          value: emp.id,
-                          label: emp.name,
-                        })) || []
+                        formData.selectedEmployee
+                          ? { value: formData.selectedEmployee.id, label: formData.selectedEmployee.name }
+                          : null
                       }
-                      onChange={handleEmployeeSelect}
-                      isMulti
-                      closeMenuOnSelect={false}
-                      placeholder="Select Employees"
+                      onChange={(selected) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          selectedEmployee: selected ? { id: selected.value, name: selected.label } : null,
+                        }));
+                      }}
+                      isClearable
+                      placeholder="Select Employee"
                       classNamePrefix="react-select"
                     />
                   </div>
@@ -658,101 +778,31 @@ const SupervisorAssignBookingLayer = () => {
 
                     // If Head is assigning to multiple employees, update employee counts
                     if (userDetails?.Is_Head === 1 && formData.employees.length > 0) {
-                        setFormData((prev) => ({
-                            ...prev,
-                            employees: prev.employees.map((emp) => ({ ...emp, count: value })),
-                        }));
+                      setFormData((prev) => ({
+                        ...prev,
+                        employees: prev.employees.map((emp) => ({ ...emp, count: value })),
+                      }));
                     }
                   }}
                 />
                 {bookingCount > filteredBookings.length && (
-                    <small
-                      className="text-danger position-absolute"
-                      style={{ bottom: "-18px", fontSize: "12px" }}
-                    >
-                      Entered count exceeds total available bookings
-                    </small>
-                  )}
+                  <small
+                    className="text-danger position-absolute"
+                    style={{ bottom: "-18px", fontSize: "12px" }}
+                  >
+                    Entered count exceeds total available bookings
+                  </small>
+                )}
               </div>
 
               {/* Assign Bookings Button (Common for Admin and Head) */}
-              <div className="col-md-2 mt-2">
-                <button
-                  type="button"
-                  className="btn btn-primary-600 radius-8 px-14 py-6 text-sm w-100"
-                  onClick={handleAssignBookingsToAgents}
-                  disabled={
-                    (role === "Admin" && (!formData.selectedDepartment || !formData.selectedHead)) ||
-                    (userDetails?.Is_Head === 1 && formData.employees.length === 0) ||
-                    (selectedBookings.length === 0 && (!bookingCount || bookingCount <= 0))
-                  }
-                >
+              <div className="col-md-2 d-flex justify-content-end">
+                <button className="btn btn-primary-600 radius-8 px-14 py-6 text-sm w-100" onClick={handleAssignBookingsToAgents}>
                   Assign Bookings
                 </button>
               </div>
             </div>
           )}
-
-          {/* ---------- Selected Employees Table (Only for Department Head) ---------- */}
-          {userDetails?.Is_Head === 1 && formData.employees.length > 0 && (
-            <div className="table-responsive mb-3">
-              <label className="form-label fw-semibold">Employees & Bookings to Assign</label>
-              <table className="table table-bordered table-sm align-middle">
-                <thead className="table-light">
-                  <tr>
-                    <th style={{ width: "60px" }}>S.No</th>
-                    <th>Employee Name</th>
-                    <th style={{ width: "140px" }}>Count</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {formData.employees.map((emp, index) => (
-                    <tr key={emp.id}>
-                      <td>{index + 1}</td>
-                      <td>{emp.name}</td>
-                      <td>
-                        <input
-                          type="number"
-                          className="form-control form-control-sm text-center"
-                          value={emp.count}
-                          min={1}
-                          onChange={(e) => {
-                            const newCount = Number(e.target.value);
-                            const totalOtherEmployees = formData.employees
-                              .filter((item) => item.id !== emp.id)
-                              .reduce((sum, item) => sum + item.count, 0);
-                            const maxAllowed = filteredBookings.length - totalOtherEmployees; // Use filteredBookings
-
-                            if (newCount > maxAllowed) {
-                              Swal.fire({
-                                icon: "warning",
-                                title: "Booking Limit Exceeded",
-                                text: `You can assign a maximum of ${maxAllowed} bookings to this employee.`,
-                              });
-                              return;
-                            }
-
-                            setFormData((prev) => ({
-                              ...prev,
-                              employees: prev.employees.map((item) =>
-                                item.id === emp.id ? { ...item, count: newCount } : item
-                              ),
-                            }));
-                          }}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="d-flex justify-content-end mt-3">
-                <button className="btn btn-primary px-4" onClick={handleAssignBookingsToAgents}>
-                  <Icon icon="bi:check2-circle" className="me-1" /> Assign Bookings
-                </button>
-              </div>
-            </div>
-          )}
-
 
           {/* ---------- Bookings Table ---------- */}
           <div className="mt-3">
@@ -775,57 +825,123 @@ const SupervisorAssignBookingLayer = () => {
       {/* ---------- Assign Technician Modal (Existing) ---------- */}
       {assignModalOpen && (
         <div className="modal fade show d-block" style={{ background: "#00000080" }}>
-          <div className="modal-dialog modal-sm modal-dialog-centered">
-            <div className="modal-content border-0 shadow">
-              <div className="modal-header bg-primary text-white py-2">
-                <h6 className="modal-title mb-0">Assign Technician</h6>
+          <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: "500px", width: "90%" }}>
+            <div className="modal-content">
+              <div className="modal-header">
+                <h6 className="modal-title">Assign</h6>
                 <button
                   type="button"
-                  className="btn-close btn-close-white"
-                  onClick={() => setAssignModalOpen(false)}
+                  className="btn-close"
+                  onClick={() => {
+                    setAssignModalOpen(false);
+                    setAssignType("technician");
+                    setSelectedTechnician(null);
+                    setSelectedSupervisor(null);
+                  }}
                 />
               </div>
 
               <div className="modal-body">
-                <div className="mb-3">
-                  {selectedBooking?.TimeSlot?.split(",").length === 1 ? (
-                    <Select value={selectedTimeSlot} isDisabled styles={singleSlotStyle} />
-                  ) : (
-                    <Select
-                      options={getTimeSlotOptions()}
-                      value={selectedTimeSlot}
-                      onChange={(val) => setSelectedTimeSlot(val)}
-                      placeholder="Select TimeSlot"
+                {/* ---------- Assignment Type ---------- */}
+                <div className="d-flex justify-content-center align-items-center gap-4 mb-3">
+                  <div className="form-check d-flex align-items-center gap-2 m-0">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id="assignTech"
+                      checked={assignType === "technician"}
+                      onChange={() => setAssignType("technician")}
+                      style={{ width: "18px", height: "18px", margin: 0 }}
                     />
-                  )}
+                    <label htmlFor="assignTech" className="form-check-label mb-0">
+                      Technician
+                    </label>
+                  </div>
+
+                  <div className="form-check d-flex align-items-center gap-2 m-0">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id="assignSup"
+                      checked={assignType === "supervisor"}
+                      onChange={() => setAssignType("supervisor")}
+                      style={{ width: "18px", height: "18px", margin: 0 }}
+                    />
+                    <label htmlFor="assignSup" className="form-check-label mb-0">
+                      Supervisor
+                    </label>
+                  </div>
                 </div>
 
-                <div className="mb-2">
+
+                {/* ---------- Time Slot ---------- */}
+                {selectedBooking?.TimeSlot && (
+                  <div className="mb-3">
+                    {selectedBooking.TimeSlot.split(",").length === 1 ? (
+                      <Select
+                        value={selectedTimeSlot}
+                        isDisabled
+                        styles={singleSlotStyle}
+                      />
+                    ) : (
+                      <Select
+                        options={getTimeSlotOptions()}
+                        value={selectedTimeSlot}
+                        onChange={(val) => setSelectedTimeSlot(val)}
+                        placeholder="Select TimeSlot"
+                      />
+                    )}
+                  </div>
+                )}
+
+                {/* ---------- Technician / Supervisor Selection ---------- */}
+                {assignType === "technician" ? (
                   <Select
                     options={technicians}
                     value={selectedTechnician}
                     onChange={(val) => setSelectedTechnician(val)}
                     placeholder="Select Technician"
                   />
-                </div>
+                ) : (
+                  <Select
+                    options={supervisors}
+                    value={selectedSupervisor}
+                    onChange={(val) => setSelectedSupervisor(val)}
+                    placeholder="Select Supervisor"
+                  />
+                )}
               </div>
 
               <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setAssignModalOpen(false)}>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setAssignModalOpen(false);
+                    setAssignType("technician");
+                    setSelectedTechnician(null);
+                    setSelectedSupervisor(null);
+                  }}
+                >
                   Cancel
                 </button>
+
                 <button
                   className="btn btn-primary"
-                  onClick={handleAssignConfirm}
-                  disabled={!selectedTechnician || !selectedTimeSlot}
+                  onClick={() => handleAssignConfirm(assignType)}
+                  disabled={
+                    !selectedTimeSlot ||
+                    (assignType === "technician" && !selectedTechnician) ||
+                    (assignType === "supervisor" && !selectedSupervisor)
+                  }
                 >
-                  <Icon icon="bi:send-check" className="me-1" /> Assign
+                  Assign
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 };

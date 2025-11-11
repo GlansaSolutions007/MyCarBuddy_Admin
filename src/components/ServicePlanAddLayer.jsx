@@ -520,7 +520,7 @@ const ServicePlanAddLayer = ({ setPageTitle }) => {
 
 
               <div className="col-md-6">
-                <label className="form-label text-sm fw-semibold text-primary-light mb-8">
+                {/* <label className="form-label text-sm fw-semibold text-primary-light mb-8">
                   Show Info Panel
                 </label>
                 <div className="form-check d-flex align-items-center mt-2">
@@ -539,7 +539,7 @@ const ServicePlanAddLayer = ({ setPageTitle }) => {
                   >
                     Enable
                   </label>
-                </div>
+                </div> */}
               </div>
 
 

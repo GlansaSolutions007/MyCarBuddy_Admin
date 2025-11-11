@@ -22,12 +22,19 @@ const BookingLayer = () => {
   const [status, setStatus] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
 
+  // New states for Supervisor Assignment
+  const [supervisors, setSupervisors] = useState([]);
+  const [selectedSupervisor, setSelectedSupervisor] = useState(null);
+  const [assignType, setAssignType] = useState("technician"); // 'technician' | 'supervisor'
+
   const API_BASE = import.meta.env.VITE_APIURL;
   const token = localStorage.getItem("token");
+  const userId = localStorage.getItem("userId"); // Assuming userId is available in localStorage
 
   useEffect(() => {
     fetchTechnicians();
     fetchBookings();
+    fetchSupervisors(); // Fetch supervisors on component mount
   }, []);
 
   useEffect(() => {
@@ -65,9 +72,39 @@ const BookingLayer = () => {
     }
   };
 
+  const fetchSupervisors = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}Employee`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const employees = Array.isArray(res.data)
+        ? res.data
+        : res.data?.data || [];
+
+      const supervisorList = employees
+        .filter(
+          (emp) =>
+            emp.DepartmentName?.toLowerCase() === "supervisor" ||
+            emp.RoleName?.toLowerCase() === "supervisor"
+        )
+        .map((emp) => ({
+          value: emp.Id,
+          label: `${emp.Name} (${emp.PhoneNumber || "N/A"})`,
+        }));
+
+      setSupervisors(supervisorList);
+    } catch (error) {
+      console.error("Failed to fetch supervisors:", error);
+      setSupervisors([]);
+    }
+  };
+
   const handleAssignClick = (booking) => {
     setSelectedBooking(booking);
     setSelectedTechnician(null);
+    setSelectedSupervisor(null); // Reset supervisor selection
+    setAssignType("technician"); // Default to technician when opening modal
 
     const slots = booking.TimeSlot?.split(",").map((s) => s.trim()) || [];
     if (slots.length === 1) {
@@ -80,54 +117,98 @@ const BookingLayer = () => {
   };
 
   const handleAssignConfirm = async () => {
-    if (!selectedTechnician || !selectedTimeSlot) {
+    if (!selectedTimeSlot) {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: "Please select both technician and time slot",
+        text: "Please select a time slot",
       });
       return;
     }
 
-    try {
-      const res = await axios.put(
-        `${API_BASE}Bookings/assign-technician`,
-        {
-          TechID: selectedTechnician.value,
-          BookingID: selectedBooking.BookingID,
-          AssingedTimeSlot: selectedTimeSlot.value,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+    let payload;
+    let apiUrl;
+    let method;
 
-      if (res.data.success) {
+    // Common payload format
+    payload = {
+      bookingID: selectedBooking.BookingID,
+      techID:
+        assignType === "technician"
+          ? selectedTechnician?.value
+          : selectedSupervisor?.value,
+      assingedTimeSlot: selectedTimeSlot.value,
+      role: assignType === "technician" ? "Technician" : "Supervisor",
+    };
+
+    // API URL and method differ based on assign type
+    if (assignType === "technician") {
+      if (!selectedTechnician) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Please select a technician before assigning.",
+        });
+        return;
+      }
+      apiUrl = `${API_BASE}Bookings/assign-technician`;
+      method = "put";
+    } else {
+      if (!selectedSupervisor) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Please select a supervisor before assigning.",
+        });
+        return;
+      }
+      apiUrl = `${API_BASE}Bookings/assign-technician`;
+      method = "put";
+    }
+
+    try {
+      const res = await axios({
+        method: method,
+        url: apiUrl,
+        data: payload,
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.status === 200 || res.status === 201) {
         Swal.fire({
           icon: "success",
           title: "Success",
-          text: res.data.message || "Technician assigned successfully",
+          text:
+            res.data.message ||
+            `${assignType === "technician" ? "Technician" : "Supervisor"} assigned successfully`,
         });
         fetchBookings();
         setAssignModalOpen(false);
+        setSelectedTechnician(null);
+        setSelectedSupervisor(null);
+        setAssignType("technician");
       } else {
         Swal.fire({
           icon: "error",
           title: "Error",
-          text: "Failed to assign technician",
+          text:
+            res.data.message ||
+            `Failed to assign ${assignType === "technician" ? "technician" : "supervisor"}`,
         });
       }
     } catch (error) {
-      console.error("Failed to assign technician", error);
-      if (error.response) {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: error.response.data.message || "Failed to assign technician",
-        });
-      }
+      console.error("Assignment failed:", error);
+      Swal.fire({
+        icon: "error",
+        title: "API Error",
+        text:
+          error.response?.data?.message ||
+          `Error while assigning ${assignType}. Please check the console for details.`,
+      });
     }
   };
+
+
 
   const getTimeSlotOptions = () => {
     if (!selectedBooking || !selectedBooking.TimeSlot) return [];
@@ -196,13 +277,12 @@ const BookingLayer = () => {
       name: "Booking Status",
       selector: (row) => (
         <span
-          className={`badge ${
-            row.BookingStatus.toLowerCase() === "pending"
-              ? "bg-warning"
-              : row.BookingStatus.toLowerCase() === "confirmed"
+          className={`badge ${row.BookingStatus.toLowerCase() === "pending"
+            ? "bg-warning"
+            : row.BookingStatus.toLowerCase() === "confirmed"
               ? "bg-success"
               : "bg-danger"
-          }`}
+            }`}
         >
           {row.BookingStatus}
         </span>
@@ -219,13 +299,12 @@ const BookingLayer = () => {
         }
         return (
           <span
-            className={`badge ${
-              displayText.toLowerCase() === "paid"
-                ? "bg-success"
-                : displayText.toLowerCase() === "pending"
+            className={`badge ${displayText.toLowerCase() === "paid"
+              ? "bg-success"
+              : displayText.toLowerCase() === "pending"
                 ? "bg-warning"
                 : "bg-danger"
-            }`}
+              }`}
           >
             {displayText}
           </span>
@@ -251,15 +330,17 @@ const BookingLayer = () => {
             >
               <Icon icon="lucide:eye" />
             </Link>
-            {isFutureOrToday && row.BookingStatus.toLowerCase() === "pending" && (
-              <Link
-                onClick={() => handleAssignClick(row)}
-                className="w-32-px h-32-px bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                title="Assign"
-              >
-                <Icon icon="mdi:account-cog-outline" />
-              </Link>
-            )}
+            {isFutureOrToday &&
+              row.BookingStatus.toLowerCase() === "pending" &&
+              (row.SupervisorID === null || row.SupervisorID === 0) && ( // 👈 condition added here
+                <Link
+                  onClick={() => handleAssignClick(row)}
+                  className="w-32-px h-32-px bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                  title="Assign"
+                >
+                  <Icon icon="mdi:account-cog-outline" />
+                </Link>
+              )}
           </div>
         );
       },
@@ -418,54 +499,112 @@ const BookingLayer = () => {
         </div>
       </div>
 
-      {/* Assign Technician Modal */}
+      {/* Assign Technician/Supervisor Modal */}
       {assignModalOpen && (
         <div className="modal fade show d-block" style={{ background: "#00000080" }}>
-          <div className="modal-dialog modal-sm modal-dialog-centered">
+          <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: "500px", width: "90%" }}>
             <div className="modal-content">
               <div className="modal-header">
-                <h6 className="modal-title">Assign Technician</h6>
+                <h6 className="modal-title">Assign</h6>
                 <button
                   type="button"
                   className="btn-close"
-                  onClick={() => setAssignModalOpen(false)}
+                  onClick={() => {
+                    setAssignModalOpen(false);
+                    setAssignType("technician");
+                    setSelectedTechnician(null);
+                    setSelectedSupervisor(null);
+                  }}
                 />
               </div>
+
               <div className="modal-body">
-                {selectedBooking?.TimeSlot?.split(",").length === 1 ? (
+                {/* Assignment Type Checkboxes */}
+                <div className="d-flex justify-content-center align-items-center gap-4 mb-3">
+                  <div className="form-check d-flex align-items-center gap-2 m-0">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id="assignTech"
+                      checked={assignType === "technician"}
+                      onChange={() => setAssignType("technician")}
+                      style={{ width: "18px", height: "18px", margin: 0 }}
+                    />
+                    <label htmlFor="assignTech" className="form-check-label mb-0">
+                      Technician
+                    </label>
+                  </div>
+
+                  <div className="form-check d-flex align-items-center gap-2 m-0">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id="assignSup"
+                      checked={assignType === "supervisor"}
+                      onChange={() => setAssignType("supervisor")}
+                      style={{ width: "18px", height: "18px", margin: 0 }}
+                    />
+                    <label htmlFor="assignSup" className="form-check-label mb-0">
+                      Supervisor
+                    </label>
+                  </div>
+                </div>
+
+                {/* Time Slot Selection */}
+                <div className="mb-3">
+                  {selectedBooking?.TimeSlot?.split(",").length === 1 ? (
+                    <Select
+                      value={selectedTimeSlot}
+                      isDisabled
+                      styles={singleSlotStyle}
+                    />
+                  ) : (
+                    <Select
+                      options={getTimeSlotOptions()}
+                      value={selectedTimeSlot}
+                      onChange={(val) => setSelectedTimeSlot(val)}
+                      placeholder="Select TimeSlot"
+                    />
+                  )}
+                </div>
+
+                {/* Technician or Supervisor Selection based on assignType */}
+                {assignType === "technician" ? (
                   <Select
-                    value={selectedTimeSlot}
-                    isDisabled
-                    styles={singleSlotStyle}
+                    options={technicians}
+                    value={selectedTechnician}
+                    onChange={(val) => setSelectedTechnician(val)}
+                    placeholder="Select Technician"
                   />
                 ) : (
                   <Select
-                    options={getTimeSlotOptions()}
-                    value={selectedTimeSlot}
-                    onChange={(val) => setSelectedTimeSlot(val)}
-                    placeholder="Select TimeSlot"
+                    options={supervisors}
+                    value={selectedSupervisor}
+                    onChange={(val) => setSelectedSupervisor(val)}
+                    placeholder="Select Supervisor"
                   />
                 )}
-              </div>
-              <div className="modal-body">
-                <Select
-                  options={technicians}
-                  value={selectedTechnician}
-                  onChange={(val) => setSelectedTechnician(val)}
-                  placeholder="Select Technician"
-                />
               </div>
               <div className="modal-footer">
                 <button
                   className="btn btn-secondary"
-                  onClick={() => setAssignModalOpen(false)}
+                  onClick={() => {
+                    setAssignModalOpen(false);
+                    setAssignType("technician");
+                    setSelectedTechnician(null);
+                    setSelectedSupervisor(null);
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   className="btn btn-primary"
                   onClick={handleAssignConfirm}
-                  disabled={!selectedTechnician || !selectedTimeSlot}
+                  disabled={
+                    !selectedTimeSlot ||
+                    (assignType === "technician" && !selectedTechnician) ||
+                    (assignType === "supervisor" && !selectedSupervisor)
+                  }
                 >
                   Assign
                 </button>
