@@ -28,6 +28,7 @@ const BookingLayer = () => {
 
   const API_BASE = import.meta.env.VITE_APIURL;
   const token = localStorage.getItem("token");
+  const roleId = localStorage.getItem("roleId");
   const userId = localStorage.getItem("userId"); // Assuming userId is available in localStorage
 
   useEffect(() => {
@@ -43,12 +44,24 @@ const BookingLayer = () => {
 
   const fetchBookings = async () => {
     try {
-      const res = await axios.get(`${API_BASE}Bookings`, {
+      let url = "";
+
+      if (roleId === "8") {
+        // If supervisor
+        url = `${API_BASE}Supervisor/AssingedBookings?SupervisorID=${userId}`;
+      } else {
+        // For all other roles
+        url = `${API_BASE}Bookings`;
+      }
+
+      const res = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
       const sortedBookings = res.data.sort(
         (a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate)
       );
+
       setBookings(sortedBookings);
     } catch (err) {
       console.error("Error fetching bookings", err);
