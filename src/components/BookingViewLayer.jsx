@@ -524,6 +524,37 @@ const BookingViewLayer = () => {
     ? bookingData.BookingAddOns.reduce((sum, item) => sum + (item.TotalPrice || 0), 0)
     : 0;
 
+  const handleDeleteAddOn = (addOnID) => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "Do you really want to delete this service?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // 👉 Call your delete API or logic here
+        console.log("Deleting addon:", addOnID);
+
+        // Example: call your API or update state
+        // axios.delete(`${API_BASE}/Bookings/DeleteAddOn?Id=${addOnID}`, { headers: { Authorization: `Bearer ${token}` } })
+        //   .then(() => fetchBookingData());
+
+        Swal.fire({
+          title: "Deleted!",
+          text: "The service has been removed successfully.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      }
+    });
+  };
+
+
 
   return (
     <div className='row gy-4 mt-3'>
@@ -832,11 +863,20 @@ const BookingViewLayer = () => {
                   Bookings
                 </button>
               </li>
-              <li className='nav-item'>
-                <button className='nav-link' data-bs-toggle='pill' data-bs-target='#addservice'>
-                  Add Service
-                </button>
-              </li>
+              {bookingData &&
+                bookingData.BookingStatus !== "Cancelled" &&
+                bookingData.BookingStatus !== "Failed" &&
+                bookingData.BookingStatus !== "Completed" && (
+                  <li className="nav-item">
+                    <button
+                      className="nav-link"
+                      data-bs-toggle="pill"
+                      data-bs-target="#addservice"
+                    >
+                      Add Service
+                    </button>
+                  </li>
+                )}
               {/* You might want a payment tab here to view past payments */}
               {/* <li className='nav-item'><button className='nav-link' data-bs-toggle='pill' data-bs-target='#payment'>Payments</button></li> */}
             </ul>
@@ -918,7 +958,16 @@ const BookingViewLayer = () => {
                                             </div>
 
                                             <span className="badge bg-success-subtle text-success border border-success">
-                                              ⏱ Duration: {pkg.EstimatedDurationMinutes} mins
+                                              ⏱ Duration:{" "}
+                                              {pkg.EstimatedDurationMinutes >= 60
+                                                ? (() => {
+                                                  const hours = Math.floor(pkg.EstimatedDurationMinutes / 60);
+                                                  const minutes = pkg.EstimatedDurationMinutes % 60;
+                                                  return minutes === 0
+                                                    ? `${hours} hr`
+                                                    : `${hours} hr ${minutes} mins`;
+                                                })()
+                                                : `${pkg.EstimatedDurationMinutes} mins`}
                                             </span>
                                           </div>
                                         </li>
@@ -972,22 +1021,43 @@ const BookingViewLayer = () => {
                             <Accordion defaultActiveKey="2" className="mb-4">
                               <Accordion.Item eventKey="2">
                                 <Accordion.Header>
-                                  <h6 className="text-warning fw-bold mb-0">
-                                    🔧 Added Services
-                                  </h6>
+                                  <h6 className="text-warning fw-bold mb-0">🔧 Added Services</h6>
                                 </Accordion.Header>
                                 <Accordion.Body>
-                                  <div
-                                    className="overflow-auto"
-                                    style={{ maxHeight: "300px" }}
-                                  >
+                                  <div className="overflow-auto" style={{ maxHeight: "300px" }}>
                                     <ul className="list-group list-group-flush">
                                       {bookingData.BookingAddOns.map((addon, index) => (
                                         <li
                                           key={addon.AddOnID || index}
-                                          className="list-group-item d-flex justify-content-between align-items-center flex-wrap"
+                                          className="list-group-item position-relative d-flex justify-content-between align-items-center flex-wrap"
                                         >
-                                          <div className="me-3">
+                                          {/* ❌ Delete (X) button - top-left */}
+                                          <button
+                                            className="btn btn-sm p-0 px-2 position-absolute"
+                                            style={{
+                                              top: "2px",
+                                              left: "2px",
+                                              lineHeight: "1",
+                                              backgroundColor: "#f8d7da",
+                                              color: "#dc3545",
+                                              border: "1px solid #f5c2c7",
+                                              borderRadius: "4px",
+                                              transition: "all 0.2s ease",
+                                            }}
+                                            title="Remove Service"
+                                            onMouseEnter={(e) => {
+                                              e.target.style.backgroundColor = "#dc3545";
+                                              e.target.style.color = "#fff";
+                                            }}
+                                            onMouseLeave={(e) => {
+                                              e.target.style.backgroundColor = "#f8d7da";
+                                              e.target.style.color = "#dc3545";
+                                            }}
+                                            onClick={() => handleDeleteAddOn(addon.AddOnID)}
+                                          >
+                                            ×
+                                          </button>
+                                          <div className="me-3 ms-4">
                                             <strong className="text-dark">{addon.ServiceName}</strong>
                                             <p className="mb-0 text-muted small">
                                               {addon.Description || "No description available"}
@@ -999,6 +1069,7 @@ const BookingViewLayer = () => {
                                                 : "N/A"}
                                             </small>
                                           </div>
+
                                           <div className="text-end">
                                             {addon.ServicePrice && (
                                               <div className="fw-semibold text-dark">
@@ -1007,7 +1078,8 @@ const BookingViewLayer = () => {
                                             )}
                                             {addon.GSTPrice && (
                                               <small className="text-muted d-block">
-                                                GST: ₹{Number(addon.GSTPrice).toFixed(2)} ({addon.GSTPercent || 0}%)
+                                                GST: ₹{Number(addon.GSTPrice).toFixed(2)} ({addon.GSTPercent || 0}
+                                                %)
                                               </small>
                                             )}
                                             {addon.TotalPrice && (
