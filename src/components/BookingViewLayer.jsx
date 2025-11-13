@@ -759,7 +759,8 @@ const BookingViewLayer = () => {
               <h6 className="fw-bold text-primary mb-0">Billing Summary</h6>
               {bookingData?.Payments?.length > 0 && (
                 <span
-                  className={`badge px-3 py-2 fw-semibold ${bookingData.Payments[0].PaymentStatus === "Paid"
+                  className={`badge px-3 py-2 fw-semibold ${bookingData.Payments[0].PaymentStatus === "Paid" ||
+                    bookingData.Payments[0].PaymentStatus === "Success"
                     ? "bg-success"
                     : bookingData.Payments[0].PaymentStatus === "Pending"
                       ? "bg-warning text-dark"
@@ -768,7 +769,9 @@ const BookingViewLayer = () => {
                         : "bg-secondary"
                     }`}
                 >
-                  {bookingData.Payments[0].PaymentStatus}
+                  {bookingData.Payments[0].PaymentStatus === "Success"
+                    ? "Paid"
+                    : bookingData.Payments[0].PaymentStatus}
                 </span>
               )}
             </div>
@@ -970,7 +973,7 @@ const BookingViewLayer = () => {
                               <Accordion.Item eventKey="2">
                                 <Accordion.Header>
                                   <h6 className="text-warning fw-bold mb-0">
-                                    🔧 Supervisor Added Services
+                                    🔧 Added Services
                                   </h6>
                                 </Accordion.Header>
                                 <Accordion.Body>
@@ -1098,15 +1101,19 @@ const BookingViewLayer = () => {
 
                       <div className="row mb-3">
                         <div className="col-md-6">
-                          <label className="form-label fw-semibold">Service Name</label>
+                          <label className="form-label fw-semibold">
+                            Service Name <span className="text-danger">*</span>
+                          </label>
                           <input
                             type="text"
                             className="form-control"
                             placeholder="Enter service name"
                             value={service.name}
+                            required
                             onChange={(e) => handleServiceChange(service.id, "name", e.target.value)}
                           />
                         </div>
+
                         <div className="col-md-6">
                           <label className="form-label fw-semibold">Service Description</label>
                           <textarea
@@ -1121,12 +1128,15 @@ const BookingViewLayer = () => {
 
                       <div className="row mb-3">
                         <div className="col-md-3">
-                          <label className="form-label fw-semibold">Service Price</label>
+                          <label className="form-label fw-semibold">
+                            Service Price <span className="text-danger">*</span>
+                          </label>
                           <input
                             type="number"
                             className="form-control"
                             placeholder="Enter price"
                             value={service.price}
+                            required
                             onChange={(e) => handleServiceChange(service.id, "price", e.target.value)}
                           />
                         </div>
