@@ -469,16 +469,21 @@ const BookingViewLayer = () => {
       return;
     }
 
+    // ✅ Build new structured payload
     const payload = {
       bookingID: bookingData.BookingID,
       supervisorID: supervisorId,
-      serviceName: validServices.map((s) => s.name),
-      servicePrice: validServices.map((s) => parseFloat(s.price) || 0),
-      description: validServices.map((s) => s.description || ""),
-      getPercent: validServices.map((s) => parseFloat(s.gstPercent) || 0),
-      gstPrice: validServices.map((s) => parseFloat(s.gstAmount) || 0),
-      totalPrice: validServices.map((s) => parseFloat(s.totalAmount) || 0),
+      addOns: validServices.map((s) => ({
+        serviceName: s.name,
+        servicePrice: parseFloat(s.price) || 0,
+        description: s.description || "",
+        gstPercent: parseFloat(s.gstPercent) || 0,
+        gstPrice: parseFloat(s.gstAmount) || 0,
+        totalPrice: parseFloat(s.totalAmount) || 0,
+      })),
     };
+
+    console.log("Submitting payload:", payload); // ✅ Debug log
 
     try {
       const response = await axios.post(
@@ -514,6 +519,12 @@ const BookingViewLayer = () => {
     }, 0).toFixed(2);
   };
 
+  // Calculate Add Service total dynamically
+  const addServiceTotal = bookingData?.BookingAddOns
+    ? bookingData.BookingAddOns.reduce((sum, item) => sum + (item.TotalPrice || 0), 0)
+    : 0;
+
+
   return (
     <div className='row gy-4 mt-3'>
       {/* Left Profile + Billing Summary (Vertical Stack) */}
@@ -543,7 +554,7 @@ const BookingViewLayer = () => {
                 <h6 className="text-xl mb-16">Personal Info</h6>
                 <ul>
                   <li className="d-flex align-items-center gap-1 mb-12">
-                    <span className="w-30 text-md fw-semibold text-primary-light">
+                    <span className="w-50 text-md fw-semibold text-primary-light">
                       Full Name
                     </span>
                     <span className="w-70 text-secondary-light fw-medium">
@@ -551,7 +562,7 @@ const BookingViewLayer = () => {
                     </span>
                   </li>
                   <li className="d-flex align-items-center gap-1 mb-12">
-                    <span className="w-30 text-md fw-semibold text-primary-light">
+                    <span className="w-50 text-md fw-semibold text-primary-light">
                       Phone Number
                     </span>
                     <span className="w-70 text-secondary-light fw-medium">
@@ -559,7 +570,7 @@ const BookingViewLayer = () => {
                     </span>
                   </li>
                   <li className="d-flex align-items-center gap-1 mb-12">
-                    <span className="w-30 text-md fw-semibold text-primary-light">
+                    <span className="w-50 text-md fw-semibold text-primary-light">
                       Vehicle
                     </span>
                     <span className="w-70 text-secondary-light fw-medium">
@@ -567,40 +578,62 @@ const BookingViewLayer = () => {
                     </span>
                   </li>
 
-                  {bookingData.TechID ? (
-                    <>
-                      <li className="d-flex align-items-center gap-1 mb-12">
-                        <span className="w-30 text-md fw-semibold text-primary-light">
-                          Technician ID
-                        </span>
-                        <span className="w-70 text-secondary-light fw-medium">
-                          : {bookingData.TechID}
-                        </span>
-                      </li>
-                      <li className="d-flex align-items-center gap-1 mb-12">
-                        <span className="w-30 text-md fw-semibold text-primary-light">
-                          Technician Name
-                        </span>
-                        <span className="w-70 text-secondary-light fw-medium">
-                          : {bookingData.TechFullName}
-                        </span>
-                      </li>
-                      <li className="d-flex align-items-center gap-1 mb-12">
-                        <span className="w-30 text-md fw-semibold text-primary-light">
-                          Technician Number
-                        </span>
-                        <span className="w-70 text-secondary-light fw-medium">
-                          : {bookingData.TechPhoneNumber}
-                        </span>
-                      </li>
-                    </>
-                  ) : (
+                  {/* If both are missing */}
+                  {!bookingData.TechFullName && !bookingData.SupervisorName ? (
                     <li className="d-flex align-items-center gap-1 mb-12">
-                      <span className="w-30 text-md fw-semibold text-primary-light">
-                        Technician
-                      </span>
+                      <span className="w-50 text-md fw-semibold text-primary-light">Assigned To</span>
                       <span className="w-70 text-secondary-light fw-medium">: N/A</span>
                     </li>
+                  ) : (
+                    <>
+                      {/* Technician Details */}
+                      {bookingData.TechFullName && (
+                        <>
+                          <li className="d-flex align-items-center gap-1 mb-12">
+                            <span className="w-50 text-md fw-semibold text-primary-light">
+                              Technician Name
+                            </span>
+                            <span className="w-70 text-secondary-light fw-medium">
+                              : {bookingData.TechFullName}
+                            </span>
+                          </li>
+                          {bookingData.TechPhoneNumber && (
+                            <li className="d-flex align-items-center gap-1 mb-12">
+                              <span className="w-50 text-md fw-semibold text-primary-light">
+                                Technician Number
+                              </span>
+                              <span className="w-70 text-secondary-light fw-medium">
+                                : {bookingData.TechPhoneNumber}
+                              </span>
+                            </li>
+                          )}
+                        </>
+                      )}
+
+                      {/* Supervisor Details */}
+                      {bookingData.SupervisorName && (
+                        <>
+                          <li className="d-flex align-items-center gap-1 mb-12">
+                            <span className="w-50 text-md fw-semibold text-primary-light">
+                              Supervisor Name
+                            </span>
+                            <span className="w-70 text-secondary-light fw-medium">
+                              : {bookingData.SupervisorName}
+                            </span>
+                          </li>
+                          {bookingData.SupervisorPhoneNumber && (
+                            <li className="d-flex align-items-center gap-1 mb-12">
+                              <span className="w-50 text-md fw-semibold text-primary-light">
+                                Supervisor Number
+                              </span>
+                              <span className="w-70 text-secondary-light fw-medium">
+                                : {bookingData.SupervisorPhoneNumber}
+                              </span>
+                            </li>
+                          )}
+                        </>
+                      )}
+                    </>
                   )}
                 </ul>
 
@@ -727,12 +760,12 @@ const BookingViewLayer = () => {
               {bookingData?.Payments?.length > 0 && (
                 <span
                   className={`badge px-3 py-2 fw-semibold ${bookingData.Payments[0].PaymentStatus === "Paid"
-                      ? "bg-success"
-                      : bookingData.Payments[0].PaymentStatus === "Pending"
-                        ? "bg-warning text-dark"
-                        : bookingData.Payments[0].PaymentStatus === "Refunded"
-                          ? "bg-info text-dark"
-                          : "bg-secondary"
+                    ? "bg-success"
+                    : bookingData.Payments[0].PaymentStatus === "Pending"
+                      ? "bg-warning text-dark"
+                      : bookingData.Payments[0].PaymentStatus === "Refunded"
+                        ? "bg-info text-dark"
+                        : "bg-secondary"
                     }`}
                 >
                   {bookingData.Payments[0].PaymentStatus}
@@ -755,7 +788,7 @@ const BookingViewLayer = () => {
 
                 <li className="list-group-item d-flex justify-content-between">
                   <span className="fw-semibold text-secondary">Add Service Amount</span>
-                  <span>₹{Number(0).toFixed(2)}</span>
+                  <span>₹{Number(addServiceTotal).toFixed(2)}</span>
                 </li>
 
                 {bookingData.CouponAmount ? (
@@ -771,7 +804,8 @@ const BookingViewLayer = () => {
                     ₹
                     {Number(
                       (bookingData.TotalPrice || 0) +
-                      (bookingData.GSTAmount || 0) -
+                      (bookingData.GSTAmount || 0) +
+                      addServiceTotal -
                       (bookingData.CouponAmount || 0)
                     ).toFixed(2)}
                   </span>
