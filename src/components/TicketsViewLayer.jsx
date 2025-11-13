@@ -70,8 +70,8 @@ const TicketsViewLayer = () => {
         const assignments = Array.isArray(resAssignments.data?.data)
           ? resAssignments.data.data
           : Array.isArray(resAssignments.data)
-          ? resAssignments.data
-          : [];
+            ? resAssignments.data
+            : [];
 
         const allTickets = Array.isArray(resTickets.data)
           ? resTickets.data
@@ -323,61 +323,93 @@ const TicketsViewLayer = () => {
       <div className="col-12">
         <div className="d-flex justify-content-between align-items-center mb-3"></div>
         <div className="card overflow-hidden p-3">
-          <div className="card-header">
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <form className="navbar-search">
+          <div className="card-header bg-white border-bottom-0">
+            <div
+              className="d-flex align-items-center flex-wrap gap-2"
+              style={{
+                overflowX: "auto",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {/* 🔍 Search Input */}
+              <form
+                className="navbar-search flex-grow-1 flex-shrink-1 position-relative"
+                style={{ minWidth: "180px" }}
+              >
                 <input
                   type="text"
-                  className="form-control"
+                  className="form-control ps-5"
                   placeholder="Search Tickets"
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
+                  style={{
+                    minWidth: "200px",
+                    width: "100%",
+                  }}
                 />
-                <Icon icon="ion:search-outline" className="icon" />
+                <Icon
+                  icon="ion:search-outline"
+                  className="position-absolute top-50 start-0 translate-middle-y ms-2 text-muted"
+                  width="20"
+                  height="20"
+                />
               </form>
-              <div className="d-flex gap-2 align-items-center">
-                <label className="text-sm fw-semibold">From:</label>
+
+              {/* 📅 Date Filters */}
+              <div className="d-flex align-items-center gap-2 flex-shrink-0">
+                <label className="text-sm fw-semibold mb-0">From:</label>
                 <input
                   type="date"
-                  className="form-control radius-8 px-14 py-6 text-sm w-auto"
+                  className="form-control text-sm"
                   value={fromDate}
                   onChange={(e) => setFromDate(e.target.value)}
+                  style={{ minWidth: "130px", flex: "1 1 130px" }}
                 />
-                <label className="text-sm fw-semibold">To:</label>
+                <label className="text-sm fw-semibold mb-0">To:</label>
                 <input
                   type="date"
-                  className="form-control radius-8 px-14 py-6 text-sm w-auto"
+                  className="form-control text-sm"
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
+                  style={{ minWidth: "130px", flex: "1 1 130px" }}
                 />
-                <select
-                  className="form-select radius-8 px-14 py-6 text-sm w-auto min-w-150"
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                >
-                  <option value="All">All</option>
-                  <option value="Pending, Reopened">Pending + Reopened</option>
-                  <option value="Pending">Pending</option>
-                  <option value="UnderReview">Under Review</option>
-                  <option value="Awaiting">Awaiting</option>
-                  <option value="Resolved">Resolved</option>
-                  <option value="Closed">Closed</option>
-                  <option value="Cancelled">Cancelled</option>
-                  <option value="Reopened">Reopened</option>
-                </select>
-                <Link
-                  to="/add-tickets"
-                  className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
-                >
-                  <Icon
-                    icon="ic:baseline-plus"
-                    className="icon text-xl line-height-1"
-                  />
-                  Add Ticket
-                </Link>
               </div>
+
+              {/* 🔁 Status Filter */}
+              <select
+                className="form-select flex-shrink-0 text-sm"
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                style={{ minWidth: "180px", flex: "1 1 180px" }}
+              >
+                <option value="All">All</option>
+                <option value="Pending, Reopened">Pending + Reopened</option>
+                <option value="Pending">Pending</option>
+                <option value="UnderReview">Under Review</option>
+                <option value="Awaiting">Awaiting</option>
+                <option value="Resolved">Resolved</option>
+                <option value="Closed">Closed</option>
+                <option value="Cancelled">Cancelled</option>
+                <option value="Reopened">Reopened</option>
+              </select>
+
+              {/* ➕ Add Ticket Button */}
+              <Link
+                to="/add-tickets"
+                className="btn btn-primary d-flex align-items-center gap-1 text-sm flex-shrink-0"
+                style={{
+                  whiteSpace: "nowrap",
+                  padding: "6px 12px",
+                  borderRadius: "8px",
+                  flex: "0 0 auto",
+                }}
+              >
+                <Icon icon="ic:baseline-plus" width="18" height="18" />
+                Add Ticket
+              </Link>
             </div>
           </div>
+
           {error ? (
             <div className="alert alert-danger m-3">{error}</div>
           ) : (

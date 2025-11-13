@@ -73,7 +73,7 @@ const PaymentsListLayer = () => {
 
     try {
       const res = await axios.post(`${API_BASE}Refund/Refund`, {
-        bookingId : row.BookingID,
+        bookingId: row.BookingID,
         paymentId: row.TransactionID,
         amount: parseFloat(refundAmount)
       }, {
@@ -99,15 +99,18 @@ const PaymentsListLayer = () => {
 
   const columns = [
     { name: "S.No", selector: (_, index) => index + 1, width: "60px" },
-    { name: "Booking ID", selector: (row) => (
-      <Link to={`/view-booking/${row.BookingID}`} className="text-primary">
-        {row.BookingTrackID}
-      </Link>
-    ), width: "150px" },
+    {
+      name: "Booking ID", selector: (row) => (
+        <Link to={`/view-booking/${row.BookingID}`} className="text-primary">
+          {row.BookingTrackID}
+        </Link>
+      ), width: "150px"
+    },
     { name: "Invoice No", selector: (row) => (row.InvoiceNumber), width: "150px" },
     { name: "Total Amount", selector: (row) => `₹${row.AmountPaid}` },
-    { name: "Payment Status", selector: (row) => (row.PaymentStatus?.toLowerCase() === "success" ? "Paid" : "Pending"),
- },
+    {
+      name: "Payment Status", selector: (row) => (row.PaymentStatus?.toLowerCase() === "success" ? "Paid" : "Pending"),
+    },
     { name: "Payment Mode", selector: (row) => row.PaymentMode },
     { name: "Transaction ID", selector: (row) => (row.TransactionID), width: "180px" },
     {
@@ -143,7 +146,7 @@ const PaymentsListLayer = () => {
       name: "Actions",
       cell: (row) => (
         <div className="d-flex gap-2">
-    
+
           {/* Invoice - open PDF */}
           {row.FolderPath && (
             <a
@@ -186,73 +189,73 @@ const PaymentsListLayer = () => {
   // });
 
 
-    const filteredPayments = payments.filter((payment) => {
+  const filteredPayments = payments.filter((payment) => {
     const matchesSearch =
       payment.PaymentMode?.toLowerCase().includes(searchText.toLowerCase()) ||
       payment.InvoiceNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
       payment.BookingTrackID?.toLowerCase().includes(searchText.toLowerCase());
 
     const matchesAmount = (!minAmount || parseFloat(payment.AmountPaid) >= parseFloat(minAmount)) &&
-                          (!maxAmount || parseFloat(payment.AmountPaid) <= parseFloat(maxAmount));
+      (!maxAmount || parseFloat(payment.AmountPaid) <= parseFloat(maxAmount));
 
     const paymentDate = new Date(payment.PaymentDate);
     const matchesDate = (!startDate || paymentDate >= new Date(startDate)) &&
-                        (!endDate || paymentDate <= new Date(endDate));
+      (!endDate || paymentDate <= new Date(endDate));
 
     const matchesRefund = refundStatus === 'all' ||
-                          (refundStatus === 'refunded' && payment.IsRefunded) ||
-                          (refundStatus === 'not_refunded' && !payment.IsRefunded);
+      (refundStatus === 'refunded' && payment.IsRefunded) ||
+      (refundStatus === 'not_refunded' && !payment.IsRefunded);
 
     return matchesSearch && matchesAmount && matchesDate && matchesRefund;
   });
 
   // Export to Excel
-const exportToExcel = () => {
-  if (!payments.length) return;
-  const worksheet = XLSX.utils.json_to_sheet(payments);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Payments");
-  XLSX.writeFile(workbook, "Payments_Report.xlsx");
-};
+  const exportToExcel = () => {
+    if (!payments.length) return;
+    const worksheet = XLSX.utils.json_to_sheet(payments);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Payments");
+    XLSX.writeFile(workbook, "Payments_Report.xlsx");
+  };
 
-// Export to PDF
-const exportToPDF = () => {
-  if (!payments.length) return;
-  const doc = new jsPDF();
-  doc.text("Payments Report", 14, 10);
+  // Export to PDF
+  const exportToPDF = () => {
+    if (!payments.length) return;
+    const doc = new jsPDF();
+    doc.text("Payments Report", 14, 10);
 
-  // Prepare columns and rows
-  const tableColumn = [
-    "Payment ID",
-    "Booking ID",
-    "Invoice No",
-    "Amount Paid",
-    "Payment Mode",
-    "Transaction ID",
-    "Payment Date",
-    "Refunded",
-  ];
+    // Prepare columns and rows
+    const tableColumn = [
+      "Payment ID",
+      "Booking ID",
+      "Invoice No",
+      "Amount Paid",
+      "Payment Mode",
+      "Transaction ID",
+      "Payment Date",
+      "Refunded",
+    ];
 
-  const tableRows = payments.map((p) => [
-    p.PaymentID,
-    p.BookingTrackID || p.BookingID,
-    p.InvoiceNumber,
-    `₹${p.AmountPaid}`,
-    p.PaymentMode,
-    p.TransactionID,
-    new Date(p.PaymentDate).toLocaleString(),
-    p.IsRefunded ? "Yes" : "No",
-  ]);
+    const tableRows = payments.map((p) => [
+      p.PaymentID,
+      p.BookingTrackID || p.BookingID,
+      p.InvoiceNumber,
+      `₹${p.AmountPaid}`,
+      p.PaymentMode,
+      p.TransactionID,
+      new Date(p.PaymentDate).toLocaleString(),
+      p.IsRefunded ? "Yes" : "No",
+    ]);
 
-  autoTable(doc, {
-    head: [tableColumn],
-    body: tableRows,
-    startY: 20,
-    styles: { fontSize: 8 },
-  });
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 20,
+      styles: { fontSize: 8 },
+    });
 
-  doc.save("Payments_Report.pdf");
-};
+    doc.save("Payments_Report.pdf");
+  };
 
   return (
     <div className="row gy-4">
@@ -261,62 +264,94 @@ const exportToPDF = () => {
           <h5></h5>
         </div>
         <div className="card overflow-hidden p-3">
-          <div className="card-header">
-            <div className="d-flex gap-2 flex-wrap align-items-center">
-              <form className="navbar-search">
+          <div className="card-header bg-white border-bottom-0">
+            <div
+              className="d-flex align-items-center flex-wrap gap-2"
+              style={{
+                overflowX: "auto",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {/* 🔍 Search */}
+              <form
+                className="navbar-search flex-grow-1 flex-shrink-1 position-relative"
+                style={{ minWidth: "180px" }}
+              >
                 <input
                   type="text"
-                  className="form-control"
+                  className="form-control ps-5"
                   placeholder="Search"
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
+                  style={{ minWidth: "200px", width: "100%" }}
                 />
-                <Icon icon='ion:search-outline' className='icon' />
+                <Icon
+                  icon="ion:search-outline"
+                  className="position-absolute top-50 start-0 translate-middle-y ms-2 text-muted"
+                  width="20"
+                  height="20"
+                />
               </form>
+
+              {/* 📅 Date Range */}
+              <input
+                type="date"
+                className="form-control flex-shrink-0"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                style={{ minWidth: "130px", flex: "1 1 130px" }}
+              />
+              <input
+                type="date"
+                className="form-control flex-shrink-0"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                style={{ minWidth: "130px", flex: "1 1 130px" }}
+              />
+
+              {/* 💰 Amount Range */}
               <input
                 type="number"
-                className="form-control"
+                className="form-control flex-shrink-0"
                 placeholder="Min Amount"
                 value={minAmount}
                 onChange={(e) => setMinAmount(e.target.value)}
-                style={{ width: '140px' }}
+                style={{ minWidth: "120px", flex: "1 1 120px" }}
               />
               <input
                 type="number"
-                className="form-control"
+                className="form-control flex-shrink-0"
                 placeholder="Max Amount"
                 value={maxAmount}
                 onChange={(e) => setMaxAmount(e.target.value)}
-                style={{ width: '140px' }}
+                style={{ minWidth: "120px", flex: "1 1 120px" }}
               />
-              <input
-                type="date"
-                className="form-control"
-                placeholder="Start Date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                style={{ width: '140px' }}
-              />
-              <input
-                type="date"
-                className="form-control"
-                placeholder="End Date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                style={{ width: '140px' }}
-              />
+
+              {/* 🔁 Refund Status */}
               <select
-                className="form-select"
+                className="form-select flex-shrink-0"
                 value={refundStatus}
                 onChange={(e) => setRefundStatus(e.target.value)}
-                style={{ width: '140px' }}
+                style={{ minWidth: "150px", flex: "1 1 150px" }}
               >
                 <option value="all">All Refunds</option>
                 <option value="refunded">Refunded</option>
                 <option value="not_refunded">Not Refunded</option>
               </select>
-              <button className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center" onClick={exportToExcel}>
-                <Icon icon="mdi:microsoft-excel" />
+
+              {/* 📊 Export Excel */}
+              <button
+                className="d-inline-flex align-items-center justify-content-center rounded-circle border-0"
+                onClick={exportToExcel}
+                style={{
+                  width: "36px",
+                  height: "36px",
+                  backgroundColor: "#e8f5e9",
+                  color: "#2e7d32",
+                  flex: "0 0 auto",
+                }}
+              >
+                <Icon icon="mdi:microsoft-excel" width="20" height="20" />
               </button>
             </div>
           </div>

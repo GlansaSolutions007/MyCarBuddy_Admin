@@ -273,6 +273,19 @@ const BookingLayer = () => {
       width: "150px",
     },
     {
+      name: "Supervisor",
+      selector: (row) => (
+        <>
+          <span className="fw-bold">
+            {row.SupervisorName ? row.SupervisorName : "Not Assigned"}
+          </span>
+          <br />
+          {row.SupervisorPhoneNumber || ""}
+        </>
+      ),
+      width: "150px",
+    },
+    {
       name: "Booking Status",
       selector: (row) => (
         <span
@@ -399,58 +412,84 @@ const BookingLayer = () => {
         </div>
         <div className="card overflow-hidden p-3">
           <div className="card-header">
-            <div className="d-flex gap-2 flex-wrap align-items-center">
-              <form className="navbar-search">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Search"
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                />
-                <Icon icon="ion:search-outline" className="icon" />
+            <div
+              className="d-flex align-items-center flex-wrap gap-2"
+              style={{
+                overflowX: "auto",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {/* Search */}
+              <form className="navbar-search flex-grow-1 flex-shrink-1" style={{ minWidth: "180px" }}>
+                <div className="position-relative">
+                  <input
+                    type="text"
+                    className="form-control ps-5"
+                    placeholder="Search"
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    style={{
+                      minWidth: "200px",
+                      width: "100%",
+                    }}
+                  />
+                  <Icon
+                    icon="ion:search-outline"
+                    className="position-absolute top-50 start-0 translate-middle-y ms-2 text-muted"
+                    width="20"
+                    height="20"
+                  />
+                </div>
               </form>
+
+              {/* Dates */}
               <input
                 type="date"
-                className="form-control"
+                className="form-control flex-shrink-0"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                style={{ width: "140px" }}
+                style={{ minWidth: "120px", flex: "1 1 130px" }}
               />
               <input
                 type="date"
-                className="form-control"
+                className="form-control flex-shrink-0"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                style={{ width: "140px" }}
+                style={{ minWidth: "120px", flex: "1 1 130px" }}
               />
+
+              {/* Price Range */}
               <input
                 type="number"
-                className="form-control"
+                className="form-control flex-shrink-0"
                 placeholder="Min Price"
                 value={minPrice}
                 onChange={(e) => setMinPrice(e.target.value)}
-                style={{ width: "140px" }}
+                style={{ minWidth: "100px", flex: "1 1 100px" }}
               />
               <input
                 type="number"
-                className="form-control"
+                className="form-control flex-shrink-0"
                 placeholder="Max Price"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(e.target.value)}
-                style={{ width: "140px" }}
+                style={{ minWidth: "100px", flex: "1 1 100px" }}
               />
+
+              {/* Status */}
               <select
-                className="form-select"
+                className="form-select flex-shrink-0"
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                style={{ width: "140px" }}
+                style={{ minWidth: "120px", flex: "1 1 120px" }}
               >
-                <option value="all">All Status</option>
+                <option value="all">All</option>
                 <option value="pending">Pending</option>
                 <option value="confirmed">Confirmed</option>
                 <option value="cancelled">Cancelled</option>
               </select>
+
+              {/* Excel Button */}
               <button
                 className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
                 onClick={exportToExcel}
@@ -458,6 +497,7 @@ const BookingLayer = () => {
                 <Icon icon="mdi:microsoft-excel" width="20" height="20" />
               </button>
             </div>
+
           </div>
           <DataTable
             columns={columns}
