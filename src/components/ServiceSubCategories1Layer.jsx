@@ -45,7 +45,7 @@ const ServiceSubCategories1Layer = () => {
   const UserId = localStorage.getItem("userId");
 
   const iconInputRef = useRef(null);
-const thumbnailInputRef = useRef(null);
+  const thumbnailInputRef = useRef(null);
 
   useEffect(() => {
     fetchSubCategories();
@@ -170,13 +170,13 @@ const thumbnailInputRef = useRef(null);
     if (row.IconImage) {
       setIconPreview(`${import.meta.env.VITE_APIURL_IMAGE}${row.IconImage}`);
     }
-    else{
+    else {
       setIconPreview("");
     }
     if (row.ThumbnailImage) {
       setThumbnailPreview(`${import.meta.env.VITE_APIURL_IMAGE}${row.ThumbnailImage}`);
     }
-    else{
+    else {
       setThumbnailPreview("");
     }
   };
@@ -195,12 +195,36 @@ const thumbnailInputRef = useRef(null);
     { name: "Description", selector: (row) => row.Description },
     {
       name: "Status",
-      selector: (row) =>
-        row.IsActive ? (
-          <span className="badge bg-success">Active</span>
-        ) : (
-          <span className="badge bg-danger">Inactive</span>
-        ),
+      cell: (row) => {
+        const status = row.IsActive ? "Active" : "Inactive";
+
+        // Color map (follow sample style)
+        const colorMap = {
+          Active: "#28A745",    // Green
+          Inactive: "#E34242",  // Red
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span
+            className="d-flex align-items-center"
+            style={{ fontSize: "13px", fontWeight: 500 }}
+          >
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
+      // width: "140px",
     },
     {
       name: "Actions",
@@ -245,9 +269,9 @@ const thumbnailInputRef = useRef(null);
                     value={
                       categories.find((option) => option.CategoryID === formData.CategoryID)
                         ? {
-                            value: formData.CategoryID,
-                            label: categories.find((c) => c.CategoryID === formData.CategoryID)?.CategoryName,
-                          }
+                          value: formData.CategoryID,
+                          label: categories.find((c) => c.CategoryID === formData.CategoryID)?.CategoryName,
+                        }
                         : null
                     }
                     onChange={(selected) =>
@@ -294,14 +318,14 @@ const thumbnailInputRef = useRef(null);
                 <div className="mb-3">
                   <label className='text-sm fw-semibold text-primary-light mb-8'>Thumbnail Image <span className='text-danger'>*</span></label>
                   <input
-                      ref={thumbnailInputRef}
-                      type="file"
-                      name="ThumbnailImage1"
-                      accept="image/*"
-                      className={`form-control ${errors.ThumbnailImage1 ? "is-invalid" : ""}`}
-                      onChange={(e) => handleImageChange(e, "thumbnail")}
-                    />
-                    <FormError error={errors.ThumbnailImage1} />
+                    ref={thumbnailInputRef}
+                    type="file"
+                    name="ThumbnailImage1"
+                    accept="image/*"
+                    className={`form-control ${errors.ThumbnailImage1 ? "is-invalid" : ""}`}
+                    onChange={(e) => handleImageChange(e, "thumbnail")}
+                  />
+                  <FormError error={errors.ThumbnailImage1} />
                   {thumbnailPreview && (
                     <div className="mt-2">
                       <img src={thumbnailPreview} alt="Thumbnail" style={{ width: 120, height: 80 }} />
@@ -343,11 +367,11 @@ const thumbnailInputRef = useRef(null);
                 value={
                   filterCategoryID
                     ? {
-                        value: filterCategoryID,
-                        label:
-                          categories.find((c) => c.CategoryID === filterCategoryID)?.CategoryName ||
-                          "Selected Category",
-                      }
+                      value: filterCategoryID,
+                      label:
+                        categories.find((c) => c.CategoryID === filterCategoryID)?.CategoryName ||
+                        "Selected Category",
+                    }
                     : { value: "", label: "All Categories" }
                 }
                 onChange={(selectedOption) => setFilterCategoryID(selectedOption?.value || "")}

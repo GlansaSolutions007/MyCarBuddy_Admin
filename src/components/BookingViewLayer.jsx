@@ -59,6 +59,8 @@ const BookingViewLayer = () => {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
   const [selectedReassignTimeSlot, setSelectedReassignTimeSlot] = useState(null);
   const token = localStorage.getItem("token");
+  const [previewServices, setPreviewServices] = useState([]);
+  const [serviceTypes, setServiceTypes] = useState([]);
 
   // NEW STATES FOR SUPERVISOR/TECHNICIAN SELECTION
   const [assignType, setAssignType] = useState("technician"); // 'technician' | 'supervisor'
@@ -67,7 +69,17 @@ const BookingViewLayer = () => {
 
   // State for dynamically adding services
   const [servicesToAdd, setServicesToAdd] = useState([
-    { id: Date.now(), name: "", price: "", description: "" },
+    {
+      id: Date.now(),
+      name: "",
+      bodyPart: "",
+      price: "",
+      description: "",
+      gstPercent: "",
+      gstAmount: "",
+      totalAmount: ""
+    }
+
   ]);
 
   const { bookingId } = useParams();
@@ -133,6 +145,8 @@ const BookingViewLayer = () => {
     fetchBookingData();
     fetchTimeSlots();
     fetchSupervisors();
+    fetchServiceTypes();
+    fetchTempServices();
   }, [bookingId]);
 
 
@@ -439,76 +453,53 @@ const BookingViewLayer = () => {
 
 
   // Handler for removing a service input block
-  const handleRemoveServiceBlock = (id) => {
+  const handleFinalSubmit = (id) => {
     setServicesToAdd(servicesToAdd.filter((s) => s.id !== id));
   };
 
   // Handler for submitting all added services
   const handleSubmitAllServices = async () => {
-    if (!bookingData || !bookingData.BookingID) {
-      Swal.fire("Error", "Booking data not available. Please refresh.", "error");
+
+    const supervisorId = bookingData?.SupervisorID; // FIX
+    if (!previewServices.length) {
+      Swal.fire("Error", "No services added.", "error");
       return;
     }
 
-    const supervisorId = localStorage.getItem("userId");
-    if (!supervisorId) {
-      Swal.fire("Error", "Supervisor ID not found. Please log in.", "error");
-      return;
-    }
-
-    const validServices = servicesToAdd.filter(
-      (s) => s.name && s.price && parseFloat(s.price) > 0
-    );
-
-    if (validServices.length === 0) {
-      Swal.fire(
-        "Warning",
-        "No valid services to add. Please fill in service name and a positive price.",
-        "warning"
-      );
-      return;
-    }
-
-    // ✅ Build new structured payload
     const payload = {
-      bookingID: bookingData.BookingID,
-      supervisorID: supervisorId,
-      addOns: validServices.map((s) => ({
-        serviceName: s.name,
-        servicePrice: parseFloat(s.price) || 0,
-        description: s.description || "",
-        gstPercent: parseFloat(s.gstPercent) || 0,
-        gstPrice: parseFloat(s.gstAmount) || 0,
-        totalPrice: parseFloat(s.totalAmount) || 0,
+      bookingID: Number(bookingId),
+      supervisorID: Number(supervisorId),
+      addOns: previewServices.map((item) => ({
+        serviceName: item.name,
+        servicePrice: Number(item.price),
+        description: item.description || "",
+        gstPercent: Number(item.gstPercent || 0),
+        gstPrice: Number(item.gstAmount || 0),
+        totalPrice: Number(item.totalAmount || item.price),
+        type: item.type || "SparePart",
       })),
     };
 
-    console.log("Submitting payload:", payload); // ✅ Debug log
 
     try {
-      const response = await axios.post(
-        `${API_BASE}Supervisor/add-booking-addons`,
+      const res = await axios.post(
+        `${API_BASE}Supervisor/add-temp-addons`,
         payload,
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
-      if (response.data.success || response.status === 200 || response.status === 201) {
-        Swal.fire("Success", "Services added successfully!", "success");
-        setServicesToAdd([{ id: Date.now(), name: "", price: "", description: "" }]);
-        fetchBookingData();
-      } else {
-        Swal.fire("Error", response.data.message || "Failed to add services.", "error");
-      }
+      Swal.fire("Success", "Add-ons added successfully!", "success");
+
     } catch (error) {
-      console.error("Error submitting services:", error);
-      Swal.fire(
-        "Error",
-        error.response?.data?.message ||
-        "Failed to add services. Please try again.",
-        "error"
-      );
+      console.error("Error submitting spare parts:", error);
+      Swal.fire("Error", "Failed to submit add-ons.", "error");
     }
   };
+
 
 
   // Calculate the grand total of all services
@@ -524,36 +515,167 @@ const BookingViewLayer = () => {
     ? bookingData.BookingAddOns.reduce((sum, item) => sum + (item.TotalPrice || 0), 0)
     : 0;
 
-  const handleDeleteAddOn = (addOnID) => {
+
+  const handleAddLocalService = async () => {
+    const valid = servicesToAdd.filter(
+      s => s.name && s.price && Number(s.price) > 0
+    );
+
+    if (valid.length === 0) {
+      Swal.fire("Error", "Please add the required fields!", "error");
+      return;
+    }
+
+    const supervisorId = bookingData?.SupervisorID || 0;
+
+    const payload = {
+      bookingID: Number(bookingId),
+      supervisorID: supervisorId,
+      addOns: valid.map(item => ({
+        serviceName: item.name,
+        servicePrice: Number(item.price),
+        description: item.description || "",
+        gstPercent: Number(item.gstPercent || 0),
+        gstPrice: Number(item.gstAmount || 0),
+        totalPrice: Number(item.totalAmount || item.price),
+        type: item.bodyPart || "SparePart"
+      }))
+    };
+
+    try {
+      await axios.post(`${API_BASE}Supervisor/add-temp-addons`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      Swal.fire("Success", "Service added successfully!", "success");
+
+      // clear form
+      setServicesToAdd([
+        {
+          id: Date.now(),
+          name: "",
+          bodyPart: "",
+          price: "",
+          gstPercent: "",
+          gstAmount: "",
+          totalAmount: "",
+          description: ""
+        }
+      ]);
+
+      fetchTempServices();
+
+      fetchBookingData(); // refresh
+    } catch (error) {
+      console.error("Add Service Error:", error);
+      Swal.fire("Error", "Failed to add service.", "error");
+    }
+  };
+
+
+  const fetchServiceTypes = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}Supervisor/ServiceTypes`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setServiceTypes(
+        Array.isArray(res.data) ? res.data : []
+      );
+
+    } catch (error) {
+      console.error("Failed to load service types", error);
+    }
+  };
+
+  const fetchTempServices = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}Supervisor/TempServices`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // Filter only services related to current booking
+      const temp = Array.isArray(res.data)
+        ? res.data.filter(item => item.BookingID == bookingId)
+        : [];
+
+      setPreviewServices(temp.map(item => ({
+        id: item.AddOnID,
+        name: item.ServiceName,
+        price: item.ServicePrice,
+        description: item.Description,
+        gstPercent: item.GSTPercent,
+        gstAmount: item.GSTPrice,
+        totalAmount: item.TotalPrice,
+        bodyPart: item.Type
+      })));
+
+      console.log("Fetched Temp Services:", temp);
+
+    } catch (error) {
+      console.error("Failed to load temp services", error);
+    }
+  };
+
+  const handleDeleteTempService = async (id) => {
+    if (!id) return;
+
     Swal.fire({
       title: "Are you sure?",
-      text: "Do you really want to delete this service?",
+      text: "This service will be removed!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
+      confirmButtonText: "Yes, Delete",
       cancelButtonText: "Cancel",
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        // 👉 Call your delete API or logic here
-        console.log("Deleting addon:", addOnID);
+        try {
+          await axios.delete(`${API_BASE}Supervisor/TempAddOnService?addOnId=${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
 
-        // Example: call your API or update state
-        // axios.delete(`${API_BASE}/Bookings/DeleteAddOn?Id=${addOnID}`, { headers: { Authorization: `Bearer ${token}` } })
-        //   .then(() => fetchBookingData());
+          // Remove from UI
+          setPreviewServices((prev) => prev.filter((s) => s.id !== id));
 
-        Swal.fire({
-          title: "Deleted!",
-          text: "The service has been removed successfully.",
-          icon: "success",
-          timer: 1500,
-          showConfirmButton: false,
-        });
+          Swal.fire("Deleted!", "Service removed successfully", "success");
+        } catch (error) {
+          console.error(error);
+          Swal.fire("Error", "Failed to delete service", "error");
+        }
       }
     });
   };
 
+  const handleFinalSubmitToMain = async () => {
+    if (!previewServices.length) {
+      Swal.fire("Error", "No services to submit!", "error");
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `${API_BASE}Supervisor/MoveTempAddOns?bookingId=${bookingId}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        Swal.fire("Success", "Services saved successfully!", "success");
+
+        // Clear preview list
+        setPreviewServices([]);
+
+        // Refresh booking
+        fetchBookingData();
+        fetchTempServices();
+      } else {
+        Swal.fire("Error", response.data.message || "Something went wrong", "error");
+      }
+    } catch (error) {
+      console.error("Final Submit Error:", error);
+      Swal.fire("Error", "Failed to save services", "error");
+    }
+  };
 
 
   return (
@@ -788,23 +910,36 @@ const BookingViewLayer = () => {
             {/* Header with Billing Summary + Payment Status */}
             <div className="d-flex justify-content-between align-items-center mb-3">
               <h6 className="fw-bold text-primary mb-0">Billing Summary</h6>
-              {bookingData?.Payments?.length > 0 && (
-                <span
-                  className={`badge px-3 py-2 fw-semibold ${bookingData.Payments[0].PaymentStatus === "Paid" ||
-                    bookingData.Payments[0].PaymentStatus === "Success"
-                    ? "bg-success"
-                    : bookingData.Payments[0].PaymentStatus === "Pending"
-                      ? "bg-warning text-dark"
-                      : bookingData.Payments[0].PaymentStatus === "Refunded"
-                        ? "bg-info text-dark"
-                        : "bg-secondary"
-                    }`}
-                >
-                  {bookingData.Payments[0].PaymentStatus === "Success"
-                    ? "Paid"
-                    : bookingData.Payments[0].PaymentStatus}
-                </span>
-              )}
+              {bookingData?.Payments?.length > 0 && (() => {
+                const rawStatus = bookingData.Payments[0].PaymentStatus || "-";
+                const status = rawStatus === "Success" ? "Paid" : rawStatus;
+
+                // Color map like your sample code
+                const colorMap = {
+                  Paid: "#28A745",        // Green
+                  Pending: "#F57C00",     // Orange
+                  Refunded: "#25878F",    // Teal-blue
+                  Failed: "#E34242",      // Red
+                  "-": "#BFBFBF",         // Grey
+                };
+
+                const color = colorMap[status] || "#6c757d";
+
+                return (
+                  <span className="fw-semibold d-flex align-items-center" style={{ fontSize: "13px", fontWeight: 500 }}>
+                    <span
+                      className="rounded-circle d-inline-block me-1"
+                      style={{
+                        width: "10px",
+                        height: "10px",
+                        backgroundColor: color,
+                      }}
+                    ></span>
+
+                    <span style={{ color }}>{status}</span>
+                  </span>
+                );
+              })()}
             </div>
 
             {/* Billing Summary Details */}
@@ -1031,32 +1166,6 @@ const BookingViewLayer = () => {
                                           key={addon.AddOnID || index}
                                           className="list-group-item position-relative d-flex justify-content-between align-items-center flex-wrap"
                                         >
-                                          {/* ❌ Delete (X) button - top-left */}
-                                          <button
-                                            className="btn btn-sm p-0 px-2 position-absolute"
-                                            style={{
-                                              top: "2px",
-                                              left: "2px",
-                                              lineHeight: "1",
-                                              backgroundColor: "#f8d7da",
-                                              color: "#dc3545",
-                                              border: "1px solid #f5c2c7",
-                                              borderRadius: "4px",
-                                              transition: "all 0.2s ease",
-                                            }}
-                                            title="Remove Service"
-                                            onMouseEnter={(e) => {
-                                              e.target.style.backgroundColor = "#dc3545";
-                                              e.target.style.color = "#fff";
-                                            }}
-                                            onMouseLeave={(e) => {
-                                              e.target.style.backgroundColor = "#f8d7da";
-                                              e.target.style.color = "#dc3545";
-                                            }}
-                                            onClick={() => handleDeleteAddOn(addon.AddOnID)}
-                                          >
-                                            ×
-                                          </button>
                                           <div className="me-3 ms-4">
                                             <strong className="text-dark">{addon.ServiceName}</strong>
                                             <p className="mb-0 text-muted small">
@@ -1096,6 +1205,7 @@ const BookingViewLayer = () => {
                               </Accordion.Item>
                             </Accordion>
                           )}
+
 
                           {/* ============= Location Map ============= */}
                           {bookingData?.Latitude && bookingData?.Longitude && (
@@ -1138,13 +1248,13 @@ const BookingViewLayer = () => {
                   <h6 className="fw-bold fs-5 text-primary">
                     Add Services for Booking #{bookingData?.BookingTrackID || "N/A"}
                   </h6>
-                  <button
+                  {/* <button
                     className="btn btn-success btn-sm mx-4 px-3"
                     onClick={handleAddServiceBlock}
                     title="Add Service"
                   >
                     <i className="bi bi-plus-circle mx-1"></i> Add
-                  </button>
+                  </button> */}
                 </div>
 
                 <div
@@ -1157,22 +1267,8 @@ const BookingViewLayer = () => {
                 >
                   {servicesToAdd.map((service, index) => (
                     <div key={service.id} className="border rounded p-3 mb-3 bg-light">
-                      <div className="d-flex justify-content-between align-items-center mb-2">
-                        <h6 className="fw-semibold mb-0">({index + 1})</h6>
-                        {servicesToAdd.length > 1 && (
-                          <button
-                            className="btn btn-outline-danger btn-sm p-0 d-flex align-items-center justify-content-center"
-                            style={{ width: "26px", height: "26px", fontSize: "12px" }}
-                            onClick={() => handleRemoveServiceBlock(service.id)}
-                            title="Delete Service"
-                          >
-                            <i className="bi bi-trash" style={{ fontSize: "12px" }}></i>
-                          </button>
-                        )}
-                      </div>
-
-                      <div className="row mb-3">
-                        <div className="col-md-6">
+                      <div className="row mb-1">
+                        <div className="col-md-4">
                           <label className="form-label fw-semibold">
                             Service Name <span className="text-danger">*</span>
                           </label>
@@ -1186,7 +1282,32 @@ const BookingViewLayer = () => {
                           />
                         </div>
 
-                        <div className="col-md-6">
+                        <div className="col-md-4">
+                          <label className="form-label fw-semibold">
+                            Spare parts <span className="text-danger">*</span>
+                          </label>
+
+                          <select
+                            className="form-select"
+                            required
+                            value={service.bodyPart}
+                            onChange={(e) => handleServiceChange(service.id, "bodyPart", e.target.value)}
+                          >
+                            <option value="" disabled hidden>
+                              Select body part
+                            </option>
+
+                            {serviceTypes
+                              .filter((item) => item.IsActive)   // show only active
+                              .map((item) => (
+                                <option key={item.Id} value={item.ServiceName}>
+                                  {item.ServiceName}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+
+                        <div className="col-md-4">
                           <label className="form-label fw-semibold">Service Description</label>
                           <textarea
                             className="form-control"
@@ -1199,7 +1320,7 @@ const BookingViewLayer = () => {
                       </div>
 
                       <div className="row mb-3">
-                        <div className="col-md-3">
+                        <div className="col-md-4">
                           <label className="form-label fw-semibold">
                             Service Price <span className="text-danger">*</span>
                           </label>
@@ -1212,7 +1333,7 @@ const BookingViewLayer = () => {
                             onChange={(e) => handleServiceChange(service.id, "price", e.target.value)}
                           />
                         </div>
-                        <div className="col-md-3">
+                        <div className="col-md-4">
                           <label className="form-label fw-semibold">GST %</label>
                           <input
                             type="number"
@@ -1222,7 +1343,7 @@ const BookingViewLayer = () => {
                             onChange={(e) => handleServiceChange(service.id, "gstPercent", e.target.value)}
                           />
                         </div>
-                        <div className="col-md-3">
+                        <div className="col-md-4">
                           <label className="form-label fw-semibold">GST Amount</label>
                           <input
                             type="number"
@@ -1232,7 +1353,7 @@ const BookingViewLayer = () => {
                             onChange={(e) => handleServiceChange(service.id, "gstAmount", e.target.value)}
                           />
                         </div>
-                        <div className="col-md-3">
+                        {/* <div className="col-md-3">
                           <label className="form-label fw-semibold">Total Amount</label>
                           <input
                             type="number"
@@ -1241,7 +1362,7 @@ const BookingViewLayer = () => {
                             value={service.totalAmount}
                             onChange={(e) => handleServiceChange(service.id, "totalAmount", e.target.value)}
                           />
-                        </div>
+                        </div> */}
                       </div>
                     </div>
                   ))}
@@ -1250,24 +1371,110 @@ const BookingViewLayer = () => {
                 {/* Total + Submit */}
                 <div className="d-flex justify-content-end align-items-center mt-3 gap-3">
                   <h6 className="fw-semibold mb-0 text-secondary">
-                    Grand Total:{" "}
-                    <span className="text-success fs-5">₹{calculateGrandTotal()}</span>
+                    Total Amount:{" "}
+                    <span className="text-success fs-5">
+                      ₹{servicesToAdd.reduce((sum, s) => sum + Number(s.totalAmount || 0), 0)}
+                    </span>
                   </h6>
                   <button
-                    className="btn btn-primary fw-semibold"
-                    style={{ width: "120px", height: "35px", fontSize: "15px" }}
-                    onClick={handleSubmitAllServices}
-                    disabled={
-                      !bookingData?.BookingID ||
-                      servicesToAdd.filter((s) => s.name && parseFloat(s.price) > 0).length === 0
-                    }
+                    className="btn btn-primary fw-semibold d-flex justify-content-center align-items-center"
+                    style={{ width: "80px", height: "35px", fontSize: "15px" }}
+                    onClick={handleAddLocalService}
                   >
-                    Submit
+                    Add
                   </button>
                 </div>
+
+
+                {previewServices.length > 0 && (
+                  <>
+                    {/* Table Data */}
+                    <div
+                      style={{
+                        maxHeight: "415px",
+                        overflowY: "auto",
+                        border: "1px solid #dee2e6",
+                        marginTop: "10px",
+                      }}
+                    >
+                      <table className="table table-bordered mt-2">
+                        <thead
+                          style={{
+                            position: "sticky",
+                            top: 0,
+                            background: "#f8f9fa",
+                            zIndex: 5,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          <tr>
+                            <th>#</th>
+                            <th>Service Name</th>
+                            <th>Spare Part</th>
+                            <th>Price</th>
+                            <th>GST%</th>
+                            <th>GST ₹ </th>
+                            <th>Total Amount</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {previewServices.map((srv, idx) => (
+                            <tr key={idx}>
+                              <td>{idx + 1}</td>
+
+                              <td
+                                style={{
+                                  maxWidth: "150px",
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                }}
+                              >
+                                {srv.name}
+                              </td>
+
+                              <td>{srv.bodyPart}</td>
+                              <td>₹{srv.price ?? 0}</td>
+                              <td>{srv.gstPercent}%</td>
+                              <td>₹{srv.gstAmount ?? 0}</td>
+                              <td>₹{srv.totalAmount ?? 0}</td>
+
+                              <td className="text-center">
+                                <button
+                                  className="btn btn-sm btn-outline-danger d-flex justify-content-center align-items-center mx-auto"
+                                  style={{
+                                    width: "32px",
+                                    height: "32px",
+                                    borderRadius: "8px",
+                                    padding: 0,
+                                  }}
+                                  onClick={() => handleDeleteTempService(srv.id)}
+                                >
+                                  <i className="bi bi-trash"></i>
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Submit Button */}
+                    <div className="d-flex justify-content-end align-items-center mt-3 gap-3">
+                      <button
+                        className="btn btn-primary fw-semibold d-flex justify-content-center align-items-center"
+                        style={{ width: "100px", height: "35px", fontSize: "15px" }}
+                        onClick={handleFinalSubmitToMain}
+                      >
+                        Submit
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
-
           </div>
         </div>
       </div>

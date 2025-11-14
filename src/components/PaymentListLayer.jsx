@@ -109,7 +109,38 @@ const PaymentsListLayer = () => {
     { name: "Invoice No", selector: (row) => (row.InvoiceNumber), width: "150px" },
     { name: "Total Amount", selector: (row) => `₹${row.AmountPaid}` },
     {
-      name: "Payment Status", selector: (row) => (row.PaymentStatus?.toLowerCase() === "success" ? "Paid" : "Pending"),
+      name: "Payment Status",
+      cell: (row) => {
+        // Convert success → Paid, otherwise Pending
+        const status =
+          row.PaymentStatus?.toLowerCase() === "success"
+            ? "Paid"
+            : "Pending";
+
+        // Color mapping
+        const colorMap = {
+          Paid: "#28A745",     // Green
+          Pending: "#F57C00",  // Orange
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
+      // width: "150px",
     },
     { name: "Payment Mode", selector: (row) => row.PaymentMode },
     { name: "Transaction ID", selector: (row) => (row.TransactionID), width: "180px" },
@@ -126,12 +157,33 @@ const PaymentsListLayer = () => {
     { name: "Refund Amount", selector: (row) => row.RefundAmount ? `₹${row.RefundAmount}` : 0 },
     {
       name: "Refund Initialization",
-      selector: (row) =>
-        row.IsRefunded ? (
-          <span className="badge bg-danger">Raised</span>
-        ) : (
-          <span className="badge bg-success">Not Raised</span>
-        ),
+      cell: (row) => {
+        const status = row.IsRefunded ? "Raised" : "Not Raised";
+
+        // Color mapping
+        const colorMap = {
+          Raised: "#E34242",       // Red
+          "Not Raised": "#28A745", // Green
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
+      // width: "170px",
     },
     // {
     //   name: "Refunded",

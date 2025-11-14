@@ -82,24 +82,40 @@ const RefundLayer = () => {
     },
     {
       name: "Payment Status",
-      selector: (row) => {
+      cell: (row) => {
         const paymentStatus = row.PaymentStatus || "Pending";
-        let displayText = paymentStatus;
-        if (paymentStatus.toLowerCase() === "success") displayText = "Paid";
+
+        // Convert "Success" → "Paid"
+        let status =
+          paymentStatus.toLowerCase() === "success"
+            ? "Paid"
+            : paymentStatus;
+
+        // Color mapping like sample
+        const colorMap = {
+          Paid: "#28A745",      // Green
+          Pending: "#F57C00",   // Orange
+          Failed: "#E34242",    // Red
+          Cancelled: "#E34242", // Red
+        };
+
+        const color = colorMap[status] || "#6c757d"; // default grey
 
         return (
-          <span
-            className={`badge ${displayText.toLowerCase() === "paid"
-              ? "bg-success"
-              : displayText.toLowerCase() === "pending"
-                ? "bg-warning"
-                : "bg-danger"
-              }`}
-          >
-            {displayText}
+          <span className="fw-semibold d-flex align-items-center">
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+            <span style={{ color }}>{status}</span>
           </span>
         );
       },
+      width: "150px",
     },
     {
       name: "Actions",

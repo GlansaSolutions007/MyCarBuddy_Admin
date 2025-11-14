@@ -168,12 +168,32 @@ const EmployeeLayer = () => {
     { name: "Department Name", selector: (row) => row.DepartmentName },
     {
       name: "Status",
-      selector: (row) =>
-        row.Status ? (
-          <span className="badge bg-success">Active</span>
-        ) : (
-          <span className="badge bg-secondary">Inactive</span>
-        ),
+      cell: (row) => {
+        const status = row.Status ? "Active" : "Inactive";
+
+        const colorMap = {
+          Active: "#28A745",     // Green
+          Inactive: "#E34242",   // Grey (same as bg-secondary)
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
+      // width: "140px",
     },
     {
       name: "Actions",

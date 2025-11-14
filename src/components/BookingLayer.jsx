@@ -300,42 +300,77 @@ const BookingLayer = () => {
     },
     {
       name: "Booking Status",
-      selector: (row) => (
-        <span
-          className={`badge ${row.BookingStatus.toLowerCase() === "pending"
-            ? "bg-warning"
-            : row.BookingStatus.toLowerCase() === "confirmed"
-              ? "bg-success"
-              : "bg-danger"
-            }`}
-        >
-          {row.BookingStatus}
-        </span>
-      ),
-      width: "120px",
-    },
-    {
-      name: "Payment Status",
-      selector: (row) => {
-        const paymentStatus = row.PaymentStatus || "Pending";
-        let displayText = paymentStatus;
-        if (paymentStatus.toLowerCase() === "success") {
-          displayText = "Paid";
-        }
+      cell: (row) => {
+        let status = row?.BookingStatus ?? "-";
+        if (!status || status === "-") status = "Not Assigned";
+
+        // Define colors similar to Ticket Status
+        const colorMap = {
+          Pending: "#F57C00",        // Orange
+          Confirmed: "#28A745",      // Green
+          Cancelled: "#E34242",      // Red
+          Completed: "#25878F",      // Teal-blue
+          Rejected: "#E34242",       // Red
+          "Not Assigned": "#BFBFBF", // Grey
+        };
+
+        const color = colorMap[status] || "#6c757d"; // Default muted grey
+
         return (
-          <span
-            className={`badge ${displayText.toLowerCase() === "paid"
-              ? "bg-success"
-              : displayText.toLowerCase() === "pending"
-                ? "bg-warning"
-                : "bg-danger"
-              }`}
-          >
-            {displayText}
+          <span className="fw-semibold d-flex align-items-center">
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+            <span style={{ color }}>{status}</span>
           </span>
         );
       },
-      width: "120px",
+      wrap: true,
+      width: "150px",
+    },
+    {
+      name: "Payment Status",
+      cell: (row) => {
+        let paymentStatus = row?.PaymentStatus ?? "Pending";
+        let displayText = paymentStatus;
+
+        // Convert 'Success' to 'Paid'
+        if (paymentStatus.toLowerCase() === "success") {
+          displayText = "Paid";
+        }
+
+        // Color mapping (consistent with your badge logic)
+        const colorMap = {
+          Paid: "#28A745",       // Green
+          Pending: "#F7AE21",    // Yellow/Orange
+          Failed: "#E34242",     // Red
+          Refunded: "#25878F",   // Teal-blue
+          "Not Paid": "#BFBFBF", // Grey
+        };
+
+        const color = colorMap[displayText] || "#6c757d"; // Default muted grey
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+            <span style={{ color }}>{displayText}</span>
+          </span>
+        );
+      },
+      wrap: true,
+      width: "150px",
     },
     {
       name: "Actions",

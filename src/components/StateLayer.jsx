@@ -8,15 +8,15 @@ import useFormError from "../hook/useFormError"; // form errors
 import FormError from "./FormError"; // form errors
 
 const StateLayer = () => {
-    const [formData, setFormData] = useState({
-      StateID: "",
-      StateName: "",
-      IsActive: true,
-    });
+  const [formData, setFormData] = useState({
+    StateID: "",
+    StateName: "",
+    IsActive: true,
+  });
   const [states, setStates] = useState([]);
   const { errors, validate, clearError } = useFormError();
   const [apiError, setApiError] = useState("");
-  const API_BASE = `${import.meta.env.VITE_APIURL}State`; 
+  const API_BASE = `${import.meta.env.VITE_APIURL}State`;
 
   const token = localStorage.getItem("token");
 
@@ -45,7 +45,7 @@ const StateLayer = () => {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        } 
+        }
       });
       // Update the state with the fetched states data
       setStates(res.data);
@@ -67,7 +67,7 @@ const StateLayer = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setApiError("");
-    const validationErrors = validate(formData, ["StateID" ,"IsActive"]);
+    const validationErrors = validate(formData, ["StateID", "IsActive"]);
     console.log(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
 
@@ -93,33 +93,33 @@ const StateLayer = () => {
         }, { headers });
       }
 
-        const data = res.data;
-        if (data.status) {
-          Swal.fire({
-            title: 'Success',
-            text: 'State added successfully',
-            icon: 'success',
-            customClass: {
-              container: 'my-swal-container', // for the wrapper
-              popup: 'my-swal-popup',         // main dialog box
-              confirmButton: 'my-confirm-btn',
-              cancelButton: 'my-cancel-btn',
-            }
-          });
+      const data = res.data;
+      if (data.status) {
+        Swal.fire({
+          title: 'Success',
+          text: 'State added successfully',
+          icon: 'success',
+          customClass: {
+            container: 'my-swal-container', // for the wrapper
+            popup: 'my-swal-popup',         // main dialog box
+            confirmButton: 'my-confirm-btn',
+            cancelButton: 'my-cancel-btn',
+          }
+        });
         // Show success message
-        } else {
-          Swal.fire({
-            title: 'Error',
-            text: res.data.message || 'Failed to add state',
-            icon: 'error',
-            customClass: {
-              container: 'my-swal-container', // for the wrapper
-              popup: 'my-swal-popup',         // main dialog box
-              confirmButton: 'my-confirm-btn',
-              cancelButton: 'my-cancel-btn',
-            }
-          });
-        }
+      } else {
+        Swal.fire({
+          title: 'Error',
+          text: res.data.message || 'Failed to add state',
+          icon: 'error',
+          customClass: {
+            container: 'my-swal-container', // for the wrapper
+            popup: 'my-swal-popup',         // main dialog box
+            confirmButton: 'my-confirm-btn',
+            cancelButton: 'my-cancel-btn',
+          }
+        });
+      }
 
       // Reset the form data
       setFormData({ StateID: "", StateName: "", IsActive: true });
@@ -128,52 +128,52 @@ const StateLayer = () => {
     } catch (error) {
       // Log an error message if the request fails
       Swal.fire({
-            title: 'Error',
-            text: error.response.data.message || 'Failed to add state',
-            icon: 'error',
-            customClass: {
-              container: 'my-swal-container', // for the wrapper
-              popup: 'my-swal-popup',         // main dialog box
-              confirmButton: 'my-confirm-btn',
-              cancelButton: 'my-cancel-btn',
-            }
+        title: 'Error',
+        text: error.response.data.message || 'Failed to add state',
+        icon: 'error',
+        customClass: {
+          container: 'my-swal-container', // for the wrapper
+          popup: 'my-swal-popup',         // main dialog box
+          confirmButton: 'my-confirm-btn',
+          cancelButton: 'my-cancel-btn',
+        }
       });
       console.error("Add failed", error);
     }
   };
 
-  const handleDelete = async (id , name) => {
-  const result = await Swal.fire({
-    title: 'Are you sure?',
-    text: "You won't be able to revert this!",
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: `delete ${name}`,
-    customClass: {
-    container: 'delete-container', // for the wrapper
-    popup: 'my-swal-popup',         // main dialog box
-    confirmButton: 'my-confirm-btn',
-    cancelButton: 'my-cancel-btn',
-  }
-  });
+  const handleDelete = async (id, name) => {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: `delete ${name}`,
+      customClass: {
+        container: 'delete-container', // for the wrapper
+        popup: 'my-swal-popup',         // main dialog box
+        confirmButton: 'my-confirm-btn',
+        cancelButton: 'my-cancel-btn',
+      }
+    });
 
-  if (result.isConfirmed) {
-    try {
-      await axios.delete(`${API_BASE}/`, { data: { StateID: id } });
-      Swal.fire('Deleted!', 'The state has been deleted.', 'success');
-      fetchStates();
-    } catch (error) {
-      console.error("Delete failed", error);
-      Swal.fire('Error!', 'Something went wrong.', 'error');
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(`${API_BASE}/`, { data: { StateID: id } });
+        Swal.fire('Deleted!', 'The state has been deleted.', 'success');
+        fetchStates();
+      } catch (error) {
+        console.error("Delete failed", error);
+        Swal.fire('Error!', 'Something went wrong.', 'error');
+      }
     }
-  }
-};
+  };
 
   const handleEdit = (state) => {
     setFormData(state);
-  }; 
+  };
 
   const columns = [
     {
@@ -188,19 +188,45 @@ const StateLayer = () => {
     },
     {
       name: "Status",
-      selector: (row) => row.IsActive ? <span className="badge bg-success">Actve</span> : <span className="badge bg-danger">InActve</span>,
+      cell: (row) => {
+        const status = row.IsActive ? "Actve" : "InActve";
+
+        // Color mapping
+        const colorMap = {
+          Actve: "#28A745",     // Green
+          InActve: "#E34242",   // Red
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
+      // width: "150px",
     },
     {
       name: "Actions",
       cell: (row) => (
         <div>
-           <Link
-                  onClick={() => handleEdit(row)}
-                  className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='lucide:edit' />
-            </Link>
-            {/* <Link
+          <Link
+            onClick={() => handleEdit(row)}
+            className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
+          >
+            <Icon icon='lucide:edit' />
+          </Link>
+          {/* <Link
                   onClick={() => handleDelete(row.StateID , row.StateName)}
                   className='w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
                 >
@@ -225,13 +251,13 @@ const StateLayer = () => {
                   State Name <span className='text-danger'>*</span>
                 </label>
                 <input
-                      type="text"
-                      name="StateName"
-                      className={`form-control ${errors.StateName ? "is-invalid" : ""}`}
-                      placeholder="Enter state name"
-                      value={formData.StateName}
-                      onChange={handleChange}
-                      />
+                  type="text"
+                  name="StateName"
+                  className={`form-control ${errors.StateName ? "is-invalid" : ""}`}
+                  placeholder="Enter state name"
+                  value={formData.StateName}
+                  onChange={handleChange}
+                />
                 <FormError error={errors.StateName} />
               </div>
               <div className='mb-20'>
@@ -251,8 +277,8 @@ const StateLayer = () => {
                   <option value="false">InActive</option>
                 </select>
               </div>
-              <button  type="submit" className="btn btn-primary-600 radius-8 px-14 py-6 text-sm">
-                  {formData.StateID ? "Update State" : "Add State"}
+              <button type="submit" className="btn btn-primary-600 radius-8 px-14 py-6 text-sm">
+                {formData.StateID ? "Update State" : "Add State"}
               </button>
             </form>
           </div>
@@ -260,16 +286,16 @@ const StateLayer = () => {
       </div>
       <div className='col-xxl-8 col-lg-8'>
         <div className='chat-main card overflow-hidden'>
-            <DataTable
-                columns={columns}
-                data={states}
-                pagination
-                highlightOnHover
-                responsive
-                striped
-                persistTableHead
-                noDataComponent="No states available"
-            />
+          <DataTable
+            columns={columns}
+            data={states}
+            pagination
+            highlightOnHover
+            responsive
+            striped
+            persistTableHead
+            noDataComponent="No states available"
+          />
         </div>
       </div>
     </div>

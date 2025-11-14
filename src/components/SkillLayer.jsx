@@ -48,11 +48,11 @@ const SkillLayer = () => {
     try {
       let res;
       if (formData.SkillID) {
-          const payload = {
-              ...formData,
-              ModifiedBy: userId,
-            };
-        res = axios.put(API_BASE, formData,{
+        const payload = {
+          ...formData,
+          ModifiedBy: userId,
+        };
+        res = axios.put(API_BASE, formData, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
@@ -60,10 +60,10 @@ const SkillLayer = () => {
         });
       } else {
         const { SkillID, ...rest } = formData;
-         const payload = {
-              ...rest,
-              CreatedBy: userId, 
-            };
+        const payload = {
+          ...rest,
+          CreatedBy: userId,
+        };
         res = axios.post(API_BASE, payload, {
           headers: {
             "Content-Type": "application/json",
@@ -72,14 +72,14 @@ const SkillLayer = () => {
         });
 
       }
-       Swal.fire({
-          title: "Success",
-          text: `Skill ${formData.SkillID ? "updated" : "added"} successfully`,
-          icon: "success",
-        });
+      Swal.fire({
+        title: "Success",
+        text: `Skill ${formData.SkillID ? "updated" : "added"} successfully`,
+        icon: "success",
+      });
 
       fetchSkill();
-      setFormData({ SkillID: "", SkillName: "", IsActive: true , Description: ""});
+      setFormData({ SkillID: "", SkillName: "", IsActive: true, Description: "" });
 
     } catch (error) {
       console.log(error);
@@ -108,12 +108,35 @@ const SkillLayer = () => {
     },
     {
       name: "Status",
-      selector: (row) =>
-        row.IsActive ? (
-          <span className="badge bg-success">Active</span>
-        ) : (
-          <span className="badge bg-danger">Inactive</span>
-        ),
+      cell: (row) => {
+        const status = row.IsActive ? "Active" : "Inactive";
+
+        const colorMap = {
+          Active: "#28A745",    // Green
+          Inactive: "#E34242",  // Red
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span
+            className="d-flex align-items-center"
+            style={{ fontSize: "13px", fontWeight: 500 }}
+          >
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
+      // width: "140px",
     },
     {
       name: "Actions",
