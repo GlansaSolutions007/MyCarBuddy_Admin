@@ -41,32 +41,32 @@ export default function ReasonLayer() {
     }));
   };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  const validationErrors = validate(formData, ["ID"]);
-  if (Object.keys(validationErrors).length > 0) return;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const validationErrors = validate(formData, ["ID"]);
+    if (Object.keys(validationErrors).length > 0) return;
 
-  setIsLoading(true);
-  try {
-    if (formData.ID) {
-      // Update existing reason
-      await axios.put(API_REASON, formData);
-    } else {
-      // Remove ID for new record
-      const { ID, ...payload } = formData;
-      await axios.post(API_REASON, payload);
+    setIsLoading(true);
+    try {
+      if (formData.ID) {
+        // Update existing reason
+        await axios.put(API_REASON, formData);
+      } else {
+        // Remove ID for new record
+        const { ID, ...payload } = formData;
+        await axios.post(API_REASON, payload);
+      }
+
+      // Reset form
+
+      Swal.fire("Success", `Reason ${formData.ID ? "updated" : "created"} successfully`, "success");
+      setIsLoading(false);
+      setFormData({ ID: "", Reason: "", IsActive: true });
+      fetchReasons();
+    } catch (err) {
+      console.error("Save failed", err);
     }
-
-    // Reset form
-
-    Swal.fire("Success", `Reason ${formData.ID ? "updated" : "created"} successfully`, "success");
-    setIsLoading(false);
-    setFormData({ ID: "", Reason: "", IsActive: true });
-    fetchReasons();
-  } catch (err) {
-    console.error("Save failed", err);
-  }
-};
+  };
   const handleEdit = (row) => setFormData(row);
 
   const handleDelete = async (id, reason) => {
@@ -90,7 +90,37 @@ export default function ReasonLayer() {
       selector: (row) =>
         new Date(row.CreatedDate).toLocaleDateString("en-GB"),
     },
-    { name: "Status", selector: (row) => (row.IsActive ? "Active" : "Inactive") },
+    {
+      name: "Status",
+      cell: (row) => {
+        const status = row.IsActive ? "Active" : "Inactive";
+
+        // Color mapping like sample code
+        const colorMap = {
+          Active: "#28A745",   // Green
+          Inactive: "#E34242", // Red
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            {/* Colored Dot */}
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            {/* Status Text */}
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      }
+    },
     {
       name: "Actions",
       cell: (row) => (
@@ -115,15 +145,15 @@ export default function ReasonLayer() {
   return (
     <div className='row gy-4 mt-2'>
       {/* Form Section */}
-     <div className='col-xxl-4 col-lg-4 '>
+      <div className='col-xxl-4 col-lg-4 '>
         <div className="card p-3">
           {/* <h5>{formData.ID ? "Edit Reason" : "Add Reason"}</h5> */}
           <form onSubmit={handleSubmit}>
             <div className="mb-20">
               <label
-                  htmlFor='format'
-                  className='text-sm fw-semibold text-primary-light mb-8'
-                >Reason</label>
+                htmlFor='format'
+                className='text-sm fw-semibold text-primary-light mb-8'
+              >Reason</label>
               <input
                 name="Reason"
                 value={formData.Reason}
@@ -135,9 +165,9 @@ export default function ReasonLayer() {
 
             <div className="mb-20">
               <label
-                  htmlFor='format'
-                  className='text-sm fw-semibold text-primary-light mb-8'
-                >Reason Type</label>
+                htmlFor='format'
+                className='text-sm fw-semibold text-primary-light mb-8'
+              >Reason Type</label>
               <select
                 name="ReasonType"
                 value={formData.ReasonType}
@@ -160,10 +190,10 @@ export default function ReasonLayer() {
             </div>
 
             <div className="mb-20">
-             <label
-                  htmlFor='format'
-                  className='text-sm fw-semibold text-primary-light mb-8'
-                >Status</label>
+              <label
+                htmlFor='format'
+                className='text-sm fw-semibold text-primary-light mb-8'
+              >Status</label>
               <select
                 name="IsActive"
                 value={formData.IsActive ? "true" : "false"}
@@ -175,23 +205,23 @@ export default function ReasonLayer() {
               </select>
             </div>
 
-            <button  type="submit" className="btn btn-primary-600 radius-8 px-14 py-6 text-sm" disabled={isLoading}>
-                  {isLoading ? "Saving..." : formData.ID ? "Update" : "Save"}
-              </button>
+            <button type="submit" className="btn btn-primary-600 radius-8 px-14 py-6 text-sm" disabled={isLoading}>
+              {isLoading ? "Saving..." : formData.ID ? "Update" : "Save"}
+            </button>
           </form>
         </div>
       </div>
 
       {/* List Section */}
-       <div className='col-xxl-8 col-lg-8'>
+      <div className='col-xxl-8 col-lg-8'>
         <div className='chat-main card overflow-hidden'>
-            <DataTable
-                columns={columns}
-                data={reasons}
-                pagination
-                highlightOnHover
-                striped
-            />
+          <DataTable
+            columns={columns}
+            data={reasons}
+            pagination
+            highlightOnHover
+            striped
+          />
         </div>
       </div>
     </div>

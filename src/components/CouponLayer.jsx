@@ -120,7 +120,34 @@ const CouponsPage = () => {
     { name: "Max Usage", selector: (row) => row.UsageLimit },
     {
       name: "Active",
-      selector: (row) => (row.IsActive ? "Active" : "Inactive"),
+      cell: (row) => {
+        const status = row.IsActive ? "Active" : "Inactive";
+
+        // Color map (same style as your sample)
+        const colorMap = {
+          Active: "#28A745",     // Green
+          Inactive: "#E34242",   // Red
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            {/* Dot */}
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            {/* Status Text */}
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
       sortable: true,
     },
     {
@@ -144,7 +171,7 @@ const CouponsPage = () => {
         <div className="card p-3">
           <form onSubmit={handleSubmit}>
 
-             <div className="mb-3">
+            <div className="mb-3">
               <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
                 Discount Type
               </label>
@@ -188,7 +215,7 @@ const CouponsPage = () => {
             ))}
 
             {/* Discount Type Dropdown */}
-           
+
 
             {/* ✅ Status Dropdown */}
             <div className="mb-3">

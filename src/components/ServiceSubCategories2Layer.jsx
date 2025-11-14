@@ -184,12 +184,34 @@ const ServiceSubCategories2Layer = () => {
     { name: "Description", selector: (row) => row.Description },
     {
       name: "Status",
-      selector: (row) =>
-        row.IsActive ? (
-          <span className="badge bg-success">Active</span>
-        ) : (
-          <span className="badge bg-danger">Inactive</span>
-        ),
+      cell: (row) => {
+        const status = row.IsActive ? "Active" : "Inactive";
+
+        // Color mapping same style as sample code
+        const colorMap = {
+          Active: "#28A745",   // Green
+          Inactive: "#DC3545", // Red
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            {/* Small colored dot */}
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            {/* Status text */}
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
     },
     {
       name: "Actions",
@@ -237,9 +259,9 @@ const ServiceSubCategories2Layer = () => {
                     value={
                       categories.find((option) => option.CategoryID === formData.CategoryID)
                         ? {
-                            value: formData.CategoryID,
-                            label: categories.find((c) => c.CategoryID === formData.CategoryID)?.CategoryName,
-                          }
+                          value: formData.CategoryID,
+                          label: categories.find((c) => c.CategoryID === formData.CategoryID)?.CategoryName,
+                        }
                         : null
                     }
                     onChange={(selected) =>
@@ -322,11 +344,11 @@ const ServiceSubCategories2Layer = () => {
                 value={
                   filterCategoryID
                     ? {
-                        value: filterCategoryID,
-                        label:
-                          categories.find((c) => c.CategoryID === filterCategoryID)?.CategoryName ||
-                          "Selected Category",
-                      }
+                      value: filterCategoryID,
+                      label:
+                        categories.find((c) => c.CategoryID === filterCategoryID)?.CategoryName ||
+                        "Selected Category",
+                    }
                     : { value: "", label: "All Categories" }
                 }
                 onChange={(selectedOption) => setFilterCategoryID(selectedOption?.value || "")}

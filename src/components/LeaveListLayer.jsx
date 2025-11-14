@@ -45,13 +45,44 @@ const LeaveListLayer = () => {
     { name: "To", selector: row => row.ToDate },
     { name: "Reason", selector: row => row.LeaveReason },
     {
-      name: "Status", selector: row => (
-        <>
-          {row.Status === 0 && <span className="badge bg-warning">Pending</span>}
-          {row.Status === 1 && <span className="badge bg-success">Approved</span>}
-          {row.Status === 2 && <span className="badge bg-danger">Rejected</span>}
-        </>
-      )
+      name: "Status",
+      cell: (row) => {
+        // Convert numeric status to text
+        const statusMap = {
+          0: "Pending",
+          1: "Approved",
+          2: "Rejected",
+        };
+
+        const status = statusMap[row.Status] ?? "-";
+
+        // Colors similar to sample code
+        const colorMap = {
+          Pending: "#F57C00",   // Orange
+          Approved: "#28A745",  // Green
+          Rejected: "#E34242",  // Red
+          "-": "#BFBFBF",       // Grey
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            {/* Dot */}
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            {/* Text */}
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      }
     },
     {
       name: "Actions",

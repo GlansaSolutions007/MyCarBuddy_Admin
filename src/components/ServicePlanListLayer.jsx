@@ -115,12 +115,32 @@ const ServicePlanListLayer = () => {
     // },
     {
       name: "Status",
-      selector: (row) =>
-        row.IsActive ? (
-          <span className="badge bg-success">Active</span>
-        ) : (
-          <span className="badge bg-danger">Inactive</span>
-        ),
+      cell: (row) => {
+        const status = row.IsActive ? "Active" : "Inactive";
+
+        // Color mapping (same pattern as your sample code)
+        const colorMap = {
+          Active: "#28A745",     // Green
+          Inactive: "#E34242",   // Red
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
     },
     {
       name: "Actions",
@@ -128,7 +148,7 @@ const ServicePlanListLayer = () => {
         <div>
           <Link
             to={`/edit-service-package/${row.PackageID}`}
-          className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+            className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
           >
             <Icon icon="lucide:edit" />
           </Link>
@@ -145,61 +165,61 @@ const ServicePlanListLayer = () => {
 
   return (
     <div className="row gy-4">
-          <div className="col-12">
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5></h5>
+      <div className="col-12">
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h5></h5>
+        </div>
+        <div className="chat-main card overflow-hidden p-3">
+          <div className='card-header border-bottom bg-base pt-0 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between'>
+            <div className='d-flex align-items-center flex-wrap gap-3'>
+              <form className='navbar-search d-flex align-items-center gap-2'>
+                <input
+                  type='text'
+                  className='bg-base w-auto form-control'
+                  name='search'
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  placeholder='Search by Plan Name'
+                />
+                <Icon icon='ion:search-outline' className='icon' />
+              </form>
+              <select
+                className="form-select  w-auto form-control"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+              >
+                <option value="">All Categories</option>
+                {categories.map((cat) => (
+                  <option key={cat.CategoryID} value={cat.CategoryName}>
+                    {cat.CategoryName}
+                  </option>
+                ))}
+              </select>
             </div>
-            <div className="chat-main card overflow-hidden p-3">
-              <div className='card-header border-bottom bg-base pt-0 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between'>
-                <div className='d-flex align-items-center flex-wrap gap-3'>
-                  <form className='navbar-search d-flex align-items-center gap-2'>
-                    <input
-                      type='text'
-                      className='bg-base w-auto form-control'
-                      name='search'
-                      value={searchText}
-                      onChange={(e) => setSearchText(e.target.value)}
-                      placeholder='Search by Plan Name'
-                    />
-                    <Icon icon='ion:search-outline' className='icon' />
-                  </form>
-                  <select
-                    className="form-select  w-auto form-control"
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                  >
-                    <option value="">All Categories</option>
-                    {categories.map((cat) => (
-                      <option key={cat.CategoryID} value={cat.CategoryName}>
-                        {cat.CategoryName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <Link
-                  to={"/add-service-package"}
-                  className='btn btn-primary-600 radius-8 px-14 py-6 text-sm'
-                >
-                  <Icon
-                    icon='ic:baseline-plus'
-                    className='icon text-xl line-height-1'
-                  />
-                  Add Packages
-                </Link>
-              </div>
-               <DataTable
-                columns={columns}
-                data={filteredPlans}
-                pagination
-                highlightOnHover
-                responsive
-                striped
-                persistTableHead
-                noDataComponent="No plans available"
+            <Link
+              to={"/add-service-package"}
+              className='btn btn-primary-600 radius-8 px-14 py-6 text-sm'
+            >
+              <Icon
+                icon='ic:baseline-plus'
+                className='icon text-xl line-height-1'
               />
-            </div>
+              Add Packages
+            </Link>
           </div>
-    
+          <DataTable
+            columns={columns}
+            data={filteredPlans}
+            pagination
+            highlightOnHover
+            responsive
+            striped
+            persistTableHead
+            noDataComponent="No plans available"
+          />
+        </div>
+      </div>
+
     </div>
   );
 };

@@ -23,7 +23,7 @@ const ServicePlanPriceListLayer = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-     setPlans(res.data.data)
+      setPlans(res.data.data)
     } catch (error) {
       console.error("Failed to load service plans", error);
     }
@@ -89,12 +89,32 @@ const ServicePlanPriceListLayer = () => {
     // },
     {
       name: "Status",
-      selector: (row) =>
-        row.IsActive ? (
-          <span className="badge bg-success">Active</span>
-        ) : (
-          <span className="badge bg-danger">Inactive</span>
-        ),
+      cell: (row) => {
+        const status = row.IsActive ? "Active" : "Inactive";
+
+        // Color mapping (same pattern as sample)
+        const colorMap = {
+          Active: "#28A745",     // Green
+          Inactive: "#E34242",   // Red
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
     },
     {
       name: "Actions",
