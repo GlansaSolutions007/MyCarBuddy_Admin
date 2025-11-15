@@ -496,11 +496,11 @@ const MasterLayout = ({ children }) => {
       children: [
         { title: "SEO", to: "/seo", color: "text-info-main", permission: "seo_view", page: "SEO" },
         {
-          title: "Packages FAQ",
-          to: "/package-faq",
+          title: "FAQs",
+          to: "/faqs",
           color: "text-primary-600",
-          permission: "package_faq_view",
-          page: "package_faq",
+          permission: "faqs_view",
+          page: "FAQs",
         },
       ],
     },

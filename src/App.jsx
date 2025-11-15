@@ -89,7 +89,8 @@ import DeptWiseTicketReportPage from "./pages/DeptWiseTicketReportPage";
 import LeadsPage from "./pages/LeadsPage";
 import AddLeadPage from "./pages/AddLeadPage";
 import ViewLeadPage from "./pages/ViewLeadPage";
-
+import FaqsPage from "./pages/FaqsPage";
+import FaqsAddPage from "./pages/FaqsAddPage";
 
 function App() {
   return (
@@ -202,6 +203,8 @@ function App() {
           <Route exact path='/designations' element={<DesignationsPage />} />
           <Route exact path='/supervisor-bookings' element={<SupervisorBookingPage />} />
           <Route exact path='/supervisor-assign-bookings' element={<SupervisorAssignBookingPage />} />
+          <Route exact path='/faqs' element={<FaqsPage />} />
+          <Route exact path='/add-faqs' element={<FaqsAddPage />} />
 
         </Route>
 
