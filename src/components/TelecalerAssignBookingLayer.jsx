@@ -5,8 +5,10 @@ import { Link } from "react-router-dom";
 import Select from "react-select";
 import axios from "axios";
 import Swal from "sweetalert2";
+import { usePermissions } from "../context/PermissionContext";
 
 const TelecalerAssignBookingLayer = () => {
+  const { hasPermission } = usePermissions();
   const [bookings, setBookings] = useState([]);
   const [technicians, setTechnicians] = useState([]);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
@@ -324,6 +326,7 @@ const TelecalerAssignBookingLayer = () => {
       <div className="col-12">
         <div className="card overflow-hidden p-3">
           {/* Filter Row */}
+          {hasPermission("assigntickets_edit") && (
           <div className="row align-items-end mb-3">
             <div className="col-sm-8 mt-2">
               <label className="form-label text-sm fw-semibold text-primary-light mb-8">
@@ -401,9 +404,9 @@ const TelecalerAssignBookingLayer = () => {
               </div>
             </div>
           </div>
-
+          )}
           {/* Selected Employee Table */}
-          {formData.employees.length > 0 && (
+          {hasPermission("assigntickets_edit") && formData.employees.length > 0 && (
             <div className="table-responsive mb-3">
               <table className="table table-bordered table-sm align-middle">
                 <thead className="table-light">

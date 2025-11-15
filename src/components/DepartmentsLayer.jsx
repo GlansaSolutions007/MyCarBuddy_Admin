@@ -6,14 +6,16 @@ import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
 import useFormError from "../hook/useFormError";
 import FormError from "./FormError";
+import { usePermissions } from "../context/PermissionContext";
 
 const DepartmentsLayer = () => {
+  const { hasPermission } = usePermissions();
   const [formData, setFormData] = useState({
     id: "", // frontend internal id, mapped to API
     departmentName: "",
     isActive: true,
   });
-
+  
   const [departments, setDepartments] = useState([]);
   const { errors, validate } = useFormError();
   const API_BASE = `${import.meta.env.VITE_APIURL}Departments`;
@@ -127,21 +129,26 @@ const DepartmentsLayer = () => {
       selector: (row) =>
         row.isActive ? <span className="badge bg-success">Active</span> : <span className="badge bg-danger">Inactive</span>,
     },
-    {
-      name: "Actions",
-      cell: (row) => (
-        <Link
-          onClick={() => handleEdit(row)}
-          className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-        >
-          <Icon icon="lucide:edit" />
-        </Link>
-      ),
-    },
+    ...(hasPermission("department_edit")
+    ? [
+        {
+          name: "Actions",
+          cell: (row) => (
+            <Link
+              onClick={() => handleEdit(row)}
+              className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+            >
+              <Icon icon="lucide:edit" />
+            </Link>
+          ),
+        },
+      ]
+    : []),
   ];
 
   return (
     <div className="row gy-4 mt-2">
+      {hasPermission("department_add") && (
       <div className="col-xxl-4 col-lg-4">
         <div className="card h-100 p-0">
           <div className="card-body p-24">
@@ -181,6 +188,7 @@ const DepartmentsLayer = () => {
           </div>
         </div>
       </div>
+      )}
 
       <div className="col-xxl-8 col-lg-8">
         <div className="chat-main card overflow-hidden">

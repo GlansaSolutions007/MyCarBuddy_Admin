@@ -4,10 +4,12 @@ import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
-import useFormError from "../hook/useFormError"; // form errors
-import FormError from "./FormError"; // form errors
+import useFormError from "../hook/useFormError";
+import FormError from "./FormError";
+import { usePermissions } from "../context/PermissionContext";
 
 const EmployeeLayer = () => {
+  const { hasPermission } = usePermissions();
   const [employees, setEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [selectedEmployees, setSelectedEmployees] = useState([]);
@@ -175,6 +177,8 @@ const EmployeeLayer = () => {
           <span className="badge bg-secondary">Inactive</span>
         ),
     },
+    ...(hasPermission("employees_edit")
+    ? [
     {
       name: "Actions",
       cell: (row) => (
@@ -185,6 +189,8 @@ const EmployeeLayer = () => {
         </div>
       ),
     },
+      ]
+    : []),
   ];
 
   return (
@@ -206,6 +212,7 @@ const EmployeeLayer = () => {
             </div>
 
             <div className="d-flex gap-2">
+              {hasPermission("employees_edit") && (
               <button
                 type="button"
                 onClick={handleAssignClick}
@@ -214,6 +221,8 @@ const EmployeeLayer = () => {
                 <Icon icon="ic:baseline-plus" className="icon text-xl line-height-1" />
                 Assign Department
               </button>
+              )}
+              {hasPermission("employees_add") && (
               <Link
                 to="/add-employee"
                 className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
@@ -221,6 +230,7 @@ const EmployeeLayer = () => {
                 <Icon icon="ic:baseline-plus" className="icon text-xl line-height-1" />
                 Add Employee
               </Link>
+              )}
             </div>
           </div>
 

@@ -88,6 +88,7 @@ import EmpTicketViewPage from "./pages/EmpTicketViewPage";
 import DeptWiseTicketReportPage from "./pages/DeptWiseTicketReportPage";
 import LeadsPage from "./pages/LeadsPage";
 import AddLeadPage from "./pages/AddLeadPage";
+import ViewLeadPage from "./pages/ViewLeadPage";
 
 
 function App() {
@@ -103,9 +104,10 @@ function App() {
         <Route exact path='/reset-password' element={<SignInPage />} />
         <Route exact path='/reset-password/:token' element={<ResetPasswordPage />} />
 
-        <Route element={<PrivateRoute />}>
-          <Route exact path='/index' element={<HomePageTen />} />
+      <Route exact path='/index' element={<HomePageTen />} />
           <Route exact path='/dashboard' element={<HomePageTen />} />
+        <Route element={<PrivateRoute />}>
+          
           <Route exact path='/states' element={<StatePage />} />
           <Route exact path='/cities' element={<CityPage />} />
           <Route exact path='/distributors' element={<DistributorPage />} />
@@ -153,7 +155,6 @@ function App() {
           <Route exact path='/tickets' element={<TicketsPage />} />
           <Route exact path='/tickets/:ticketId' element={<TicketInnerPage />} />
 
-
           <Route exact path='/booking-time-slot' element={<BookingTimeSlotPage />} />
 
           <Route exact path='/coupons' element={<CouponPage />} />
@@ -186,9 +187,23 @@ function App() {
           <Route exact path='/view-employee-report/:id' element={<EmpTicketViewPage />} />
           <Route exact path='/leads' element={<LeadsPage />} />
           <Route exact path='/add-lead' element={<AddLeadPage />} />
-          
-        </Route>
+          <Route exact path='/view-lead' element={<ViewLeadPage />} />
+          <Route exact path='/departments' element={<DepartmentsPage />} />
+          <Route exact path="/contacts" element={<Contacts />} />
+          <Route exact path="/DealerServicePrice" element={<DealerServiceP />} />
+          <Route exact path='/add-tickets' element={<TicketsAddPage />} />
+          <Route exact path='/edit-tickets/:TicketID' element={<TicketsAddPage />} />
+          <Route exact path='/refunds' element={<RefundPage />} />
+          <Route exact path='/telecaler-Assign-bookings' element={<TelecalerAssigningPage />} />
+          <Route exact path='/telecaler-bookings' element={<TelecalerBookingPage />} />
+          <Route exact path='/telecaler-tickets' element={<TelecalerTicketsPage />} />
+          <Route exact path='/assign-tickets' element={<TelecalerAssignTicketPage />} />
+          <Route exact path='/employee-tickets' element={<EmployeeTicketsPage />} />
+          <Route exact path='/designations' element={<DesignationsPage />} />
+          <Route exact path='/supervisor-bookings' element={<SupervisorBookingPage />} />
+          <Route exact path='/supervisor-assign-bookings' element={<SupervisorAssignBookingPage />} />
 
+        </Route>
 
         {/* //extra  pages */}
 
@@ -197,7 +212,6 @@ function App() {
         <Route exact path='/access-denied' element={<AccessDeniedPage />} />
         <Route exact path='/maintenance' element={<MaintenancePage />} />
         <Route exact path='/blank-page' element={<BlankPagePage />} />
-
 
         <Route
           exact
@@ -210,37 +224,6 @@ function App() {
           path='/notification-alert'
           element={<NotificationAlertPage />}
         />
-
-        <Route exact path="/contacts" element={<Contacts />} />
-
-
-        <Route exact path="/DealerServicePrice" element={<DealerServiceP />} />
-
-        <Route exact path='/add-tickets' element={<TicketsAddPage />} />
-
-        <Route exact path='/edit-tickets/:TicketID' element={<TicketsAddPage />} />
-
-
-        <Route exact path='/refunds' element={<RefundPage />} />
-
-        <Route exact path='/telecaler-Assign-bookings' element={<TelecalerAssigningPage />} />
-
-        <Route exact path='/telecaler-bookings' element={<TelecalerBookingPage />} />
-
-        <Route exact path='/telecaler-tickets' element={<TelecalerTicketsPage />} />
-
-        <Route exact path='/telecaler-assign-tickets' element={<TelecalerAssignTicketPage />} />
-
-        <Route exact path='/employee-tickets' element={<EmployeeTicketsPage />} />
-
-        <Route exact path='/departments' element={<DepartmentsPage />} />
-
-        <Route exact path='/designations' element={<DesignationsPage />} />
-
-        <Route exact path='/supervisor-bookings' element={<SupervisorBookingPage />} />
-
-        <Route exact path='/supervisor-assign-bookings' element={<SupervisorAssignBookingPage />} />
-
       </Routes>
     </BrowserRouter>
   );

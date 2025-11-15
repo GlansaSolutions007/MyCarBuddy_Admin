@@ -5,10 +5,12 @@ import Select from "react-select";
 import Swal from "sweetalert2";
 import DataTable from "react-data-table-component";
 import { Icon } from "@iconify/react";
+import { usePermissions } from "../context/PermissionContext";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
 const TelecalerAssignTicketLayer = () => {
+  const { hasPermission } = usePermissions();
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
@@ -532,6 +534,7 @@ const TelecalerAssignTicketLayer = () => {
   return (
     <div className="card h-100 p-0 radius-12 overflow-hidden mt-3">
       <div className="card-body p-20">
+        {hasPermission("assigntickets_edit") && (
         <div className="row g-3 align-items-end mb-1">
           <div className="col-md-6 d-flex gap-3">
             <div>
@@ -585,10 +588,12 @@ const TelecalerAssignTicketLayer = () => {
             </select>
           </div>
         </div>
-
+        )}
+        
         {/* ===== INLINE INPUTS ===== */}
+        
         <div className="row g-3 align-items-end">
-          {role === "Admin" ? (
+          {hasPermission("assigntickets_edit") && role === "Admin" ? (
             <>
               <div className="col-md-4">
                 <label className="form-label fw-semibold mb-1">
@@ -621,7 +626,7 @@ const TelecalerAssignTicketLayer = () => {
                 />
               </div>
             </>
-          ) : userDetails?.Is_Head === 1 ? (
+          ) : userDetails?.Is_Head === 1 ? hasPermission("assigntickets_edit") && (
             <div className="col-sm-8 mt-2">
               <label className="form-label fw-semibold">
                 Employee Name <span className="text-danger">*</span>{" "}
@@ -645,7 +650,7 @@ const TelecalerAssignTicketLayer = () => {
               />
             </div>
           ) : null}
-          {(role === "Admin" || userDetails?.Is_Head === 1) && (
+          {( role === "Admin" || userDetails?.Is_Head === 1) && hasPermission("assigntickets_edit") && (
             <>
               <div className="col-md-2 position-relative min-h-90">
                 <label className="form-label fw-semibold mb-1">

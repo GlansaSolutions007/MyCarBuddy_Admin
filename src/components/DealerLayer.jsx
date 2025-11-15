@@ -3,10 +3,11 @@ import axios from "axios";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
-
+import { usePermissions } from "../context/PermissionContext";
 const API_BASE = import.meta.env.VITE_APIURL;
 
 const DealerLayer = () => {
+  const { hasPermission } = usePermissions();
   const [dealers, setDealers] = useState([]);
   const [searchText, setSearchText] = useState("");
 
@@ -68,6 +69,8 @@ const DealerLayer = () => {
           <span className="badge bg-secondary">Inactive</span>
         ),
     },
+     ...(hasPermission("dealers_edit")
+    ? [
     {
       name: "Actions",
       cell: (row) => (
@@ -79,6 +82,8 @@ const DealerLayer = () => {
         </Link>
       ),
     },
+    ]
+    : []),
   ];
 
   // Search Filtering
@@ -111,17 +116,18 @@ const DealerLayer = () => {
               />
               <Icon icon="ion:search-outline" className="icon" />
             </form>
-
-            <Link
-              to="/add-dealers"
-              className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
-            >
-              <Icon
-                icon="ic:baseline-plus"
-                className="icon text-xl line-height-1"
-              />
-              Add Dealer
-            </Link>
+          {hasPermission("dealers_add") && (
+          <Link
+                  to="/add-dealers"
+                  className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
+                >
+                  <Icon
+                    icon="ic:baseline-plus"
+                    className="icon text-xl line-height-1"
+                  />
+                  Add Dealer
+                </Link>
+          )}
           </div>
 
           <DataTable

@@ -340,24 +340,24 @@ const MasterLayout = ({ children }) => {
           title: "Dealers",
           to: "/dealers",
           color: "text-warning-main",
-          permission: "dealer_view",
+          permission: "dealers_view",
           page: "Dealers",
         },
         {
           title: "Technicians",
           to: "/technicians",
           color: "text-info-main",
-          permission: "technician_view",
+          permission: "technicians_view",
           page: "Technicians",
         },
         {
           title: "Employees",
           to: "/employees",
           color: "text-info-main",
-          permission: "employee_view",
+          permission: "employees_view",
           page: "Employees",
         },
-                {
+        {
           title: "Leads",
           to: "/leads",
           color: "text-info-danger",
@@ -372,7 +372,7 @@ const MasterLayout = ({ children }) => {
       children: [
         { title: "Assign Bookings", to: "/telecaler-bookings", color: "text-warning-main", permission: "telecaler_booking_view", page: "Telecaler_Bookings" },
         // { title: "Telecaller Tickets", to: "/telecaler-tickets", color: "text-info-main", permission: "telecaler_ticket_view", page: "Telecaler_Tickets" },
-        { title: "Assign Tickets", to: "/telecaler-assign-tickets", color: "text-success-main", permission: "telecalerassignticket_view", page: "Telecaler_Assign_Tickets" },
+        { title: "Assign Tickets", to: "/assign-tickets", color: "text-success-main", permission: "assigntickets_view", page: "Assign Tickets" },
         // { title: "Employee Tickets", to: "/employee-tickets", color: "text-danger-main", permission: "employee_ticket_view", page: "Employee_Tickets" },
       ],
     },

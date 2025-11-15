@@ -8,105 +8,55 @@ const LeadsLayer = () => {
   const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
+  const API_BASE = import.meta.env.VITE_APIURL;
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  
 
   useEffect(() => {
     fetchLeads();
   }, []);
 
-  // Fetch Leads (Dummy Data)
-  const fetchLeads = () => {
+  // Fetch Leads from API
+  const fetchLeads = async () => {
     setLoading(true);
     setError("");
 
-    // Dummy leads data
-    const dummyLeads = [
-      {
-        id: 1,
-        date: "2023-10-01",
-        customerName: "John Doe",
-        customerPhone: "123-456-7890",
-        customerEmail: "john.doe@example.com",
-        customerAddress: "123 Main St, City, State",
-        description: "Interested in car service",
-        currentStatus: "New",
-      },
-      {
-        id: 2,
-        date: "2023-10-02",
-        customerName: "Jane Smith",
-        customerPhone: "987-654-3210",
-        customerEmail: "jane.smith@example.com",
-        customerAddress: "456 Elm St, City, State",
-        description: "Needs oil change",
-        currentStatus: "Contacted",
-      },
-      {
-        id: 3,
-        date: "2023-10-03",
-        customerName: "Bob Johnson",
-        customerPhone: "555-123-4567",
-        customerEmail: "bob.johnson@example.com",
-        customerAddress: "789 Oak St, City, State",
-        description: "Tire replacement",
-        currentStatus: "Qualified",
-      },
-      {
-        id: 4,
-        date: "2023-10-04",
-        customerName: "Alice Brown",
-        customerPhone: "444-567-8901",
-        customerEmail: "alice.brown@example.com",
-        customerAddress: "321 Pine St, City, State",
-        description: "General maintenance",
-        currentStatus: "New",
-      },
-      {
-        id: 5,
-        date: "2023-10-05",
-        customerName: "Charlie Wilson",
-        customerPhone: "222-333-4444",
-        customerEmail: "charlie.wilson@example.com",
-        customerAddress: "654 Maple St, City, State",
-        description: "Brake inspection",
-        currentStatus: "Closed",
-      },
-    ];
-
-    setTimeout(() => {
-      setLeads(dummyLeads);
+    try {
+      const response = await fetch(`${API_BASE}ServiceLeads/FacebookLeads`,);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setLeads(data);
+    } catch (err) {
+      setError("Failed to fetch leads. Please try again.");
+      console.error("Error fetching leads:", err);
+    } finally {
       setLoading(false);
-    }, 500); // Simulate loading delay
+    }
   };
 
   // DataTable Columns
   const columns = [
     {
-      name: "S.No.",
-      selector: (row, index) => index + 1,
-      sortable: true,
-      width: "80px",
-    },
-    {
       name: "Customer Name",
-      selector: (row) => row.customerName || "-",
+      selector: (row) => row.FullName || "-",
       sortable: true,
       wrap: true,
     },
     {
       name: "Phone Number",
-      selector: (row) => row.customerPhone || "-",
+      selector: (row) => row.PhoneNumber || "-",
       sortable: true,
       wrap: true,
     },
     {
-      name: "Date",
+      name: "Created Date",
       selector: (row) => {
-        if (!row.date) return "-";
-        const date = new Date(row.date);
+        if (!row.CreatedDate) return "-";
+        const date = new Date(row.CreatedDate);
         return date.toLocaleString("en-GB", {
           day: "2-digit",
           month: "short",
@@ -118,49 +68,36 @@ const LeadsLayer = () => {
     },
     {
       name: "Email",
-      selector: (row) => row.customerEmail || "-",
+      selector: (row) => row.Email || "-",
       sortable: true,
       wrap: true,
     },
     {
-      name: "Address",
-      selector: (row) => row.customerAddress || "-",
+      name: "City",
+      selector: (row) => row.City || "-",
       wrap: true,
     },
     {
-      name: "Description",
-      selector: (row) => row.description || "-",
-      wrap: true,
-    },
-    {
-      name: "Current Status",
-      cell: (row) => {
-        const status = row.currentStatus || "-";
-        const colorMap = {
-          New: "text-primary fw-semibold",
-          Contacted: "text-info fw-semibold",
-          Qualified: "text-success fw-semibold",
-          Closed: "text-dark fw-semibold",
-        };
-        const textClass = colorMap[status] || "text-muted";
-        return (
-          <span className={textClass}>
-            <span
-              className="rounded-circle"
-              style={{
-                width: "8px",
-                height: "8px",
-                marginRight: "4px",
-                backgroundColor: "currentColor",
-              }}
-            ></span>
-            {status}
-          </span>
-        );
-      },
+      name: "Lead Status",
+      selector: (row) => row.LeadStatus || "-",
       sortable: true,
       wrap: true,
     },
+    {
+      name: "Action",
+      cell: (row) => (
+        <Link
+          to={`/view-lead?id=${row.Id}`}
+          className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+          title="View"
+        >
+        <Icon icon="lucide:eye" />
+        </Link>
+      ),
+      ignoreRowClick: true,
+      allowOverflow: true,
+      button: true,
+    }
   ];
 
   // Filter
@@ -168,12 +105,12 @@ const LeadsLayer = () => {
     const text = searchText.toLowerCase();
     const statusMatch =
       selectedStatus === "All" ||
-      lead.currentStatus?.toLowerCase() === selectedStatus.toLowerCase();
+      lead.LeadStatus?.toLowerCase() === selectedStatus.toLowerCase();
 
     // Date filtering
-    const leadDate = lead.date ? new Date(lead.date) : null;
-    const from = fromDate ? new Date(fromDate) : null;
-    const to = toDate ? new Date(toDate) : null;
+    const leadDate = lead.CreatedDate ? new Date(lead.CreatedDate) : null;
+    const from = fromDate ? new Date(fromDate + "T00:00:00") : null;
+    const to = toDate ? new Date(toDate + "T23:59:59") : null;
     const dateMatch =
       (!from || (leadDate && leadDate >= from)) &&
       (!to || (leadDate && leadDate <= to));
@@ -181,16 +118,13 @@ const LeadsLayer = () => {
     return (
       statusMatch &&
       dateMatch &&
-      (lead.customerName?.toLowerCase().includes(text) ||
-        lead.customerPhone?.toLowerCase().includes(text) ||
-        lead.customerEmail?.toLowerCase().includes(text) ||
-        lead.customerAddress?.toLowerCase().includes(text) ||
-        lead.description?.toLowerCase().includes(text) ||
-        lead.currentStatus?.toLowerCase().includes(text))
+      (lead.FullName?.toLowerCase().includes(text) ||
+        lead.PhoneNumber?.toLowerCase().includes(text) ||
+        lead.Email?.toLowerCase().includes(text) ||
+        lead.City?.toLowerCase().includes(text) ||
+        lead.LeadStatus?.toLowerCase().includes(text))
     );
   });
-
-
 
   return (
     <div className="row gy-4">
@@ -230,10 +164,10 @@ const LeadsLayer = () => {
                   onChange={(e) => setSelectedStatus(e.target.value)}
                 >
                   <option value="All">All</option>
-                  <option value="New">New</option>
-                  <option value="Contacted">Contacted</option>
-                  <option value="Qualified">Qualified</option>
-                  <option value="Closed">Closed</option>
+                  <option value="CREATED">CREATED</option>
+                  <option value="CONTACTED">CONTACTED</option>
+                  <option value="QUALIFIED">QUALIFIED</option>
+                  <option value="CLOSED">CLOSED</option>
                 </select>
                 <Link
                   to="/add-lead"

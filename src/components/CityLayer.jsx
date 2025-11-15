@@ -7,11 +7,13 @@ import Swal from 'sweetalert2';
 import useFormError from "../hook/useFormError"; // form errors
 import FormError from "./FormError"; // form errors
 import Select from "react-select"; 
+import { usePermissions } from "../context/PermissionContext";
 
 const API_CITIES = `${import.meta.env.VITE_APIURL}City`;
 const API_STATES = `${import.meta.env.VITE_APIURL}State`;
 
 const CityLayer = () => {
+    const { hasPermission } = usePermissions();
 //   const [cityName, setCityName] = useState("");
     const [cities, setCities] = useState([]);
     const [states, setStates] = useState([]);
@@ -165,6 +167,8 @@ const CityLayer = () => {
       name: "Status",
       selector: (row) => row.IsActive ? <span className="badge bg-success">Actve</span> : <span className="badge bg-danger">InActve</span>,
     },
+    ...(hasPermission("city_edit")
+    ? [
     {
       name: "Actions",
       cell: (row) => (
@@ -183,6 +187,8 @@ const CityLayer = () => {
         </div>
       ),
     },
+    ]
+    : []),
   ];
 
   const filteredCities = cities.filter((city) => {
@@ -199,6 +205,7 @@ const CityLayer = () => {
 
   return (
     <div className="row gy-4 mt-2">
+      {hasPermission("city_add") && (
       <div className="col-xxl-4 col-lg-4">
         <div className="card h-100 p-0">
           <div className="card-body p-24">
@@ -297,6 +304,7 @@ const CityLayer = () => {
           </div>
         </div>
       </div>
+      )}
 
       <div className="col-xxl-8 col-lg-8">
         <div className="card mb-3">

@@ -6,8 +6,10 @@ import DataTable from "react-data-table-component";
 import Swal from 'sweetalert2';
 import useFormError from "../hook/useFormError"; // form errors
 import FormError from "./FormError"; // form errors
+import { usePermissions } from "../context/PermissionContext";
 
 const StateLayer = () => {
+    const { hasPermission } = usePermissions();
     const [formData, setFormData] = useState({
       StateID: "",
       StateName: "",
@@ -190,6 +192,8 @@ const StateLayer = () => {
       name: "Status",
       selector: (row) => row.IsActive ? <span className="badge bg-success">Actve</span> : <span className="badge bg-danger">InActve</span>,
     },
+    ...(hasPermission("state_edit")
+    ? [
     {
       name: "Actions",
       cell: (row) => (
@@ -209,10 +213,13 @@ const StateLayer = () => {
         </div>
       ),
     },
+    ]
+    : []),
   ];
 
   return (
     <div className='row gy-4 mt-2'>
+      {hasPermission("state_add") && (
       <div className='col-xxl-4 col-lg-4 '>
         <div className='card h-100 p-0'>
           <div className='card-body p-24'>
@@ -258,6 +265,7 @@ const StateLayer = () => {
           </div>
         </div>
       </div>
+      )}
       <div className='col-xxl-8 col-lg-8'>
         <div className='chat-main card overflow-hidden'>
             <DataTable

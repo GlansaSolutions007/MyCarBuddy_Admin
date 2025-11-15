@@ -6,8 +6,10 @@ import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
 import useFormError from "../hook/useFormError";
 import FormError from "./FormError";
+import { usePermissions } from "../context/PermissionContext";
 
 const DesignationLayer = () => {
+  const { hasPermission } = usePermissions();
   const [formData, setFormData] = useState({
     id: "",
     designationName: "",
@@ -196,10 +198,12 @@ const DesignationLayer = () => {
           3: "Mid",
           4: "Employee",
         };
-        return levelMap[row.level] || row.level;
+        return levelMap[row.level] || row.level;  
       },
       sortable: true,
     },
+    ...(hasPermission("designation_edit")
+    ? [
     {
       name: "Actions",
       cell: (row) => (
@@ -211,12 +215,15 @@ const DesignationLayer = () => {
         </Link>
       ),
     },
+    ]
+    : []),
   ];
 
   // ------------------ Render ------------------
   return (
     <div className="row gy-4 mt-2">
       {/* ---------- Form Section ---------- */}
+      {hasPermission("designation_add") && (
       <div className="col-xxl-4 col-lg-4">
         <div className="card h-100 p-0">
           <div className="card-body p-24">
@@ -310,6 +317,7 @@ const DesignationLayer = () => {
           </div>
         </div>
       </div>
+      )}
 
       {/* ---------- Table Section ---------- */}
       <div className="col-xxl-8 col-lg-8">

@@ -5,12 +5,14 @@ import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import Swal from 'sweetalert2';
 import Select from 'react-select';
-import useFormError from "../hook/useFormError"; // form errors
-import FormError from "./FormError"; // form errors
+import useFormError from "../hook/useFormError"; 
+import FormError from "./FormError"; 
+import { usePermissions } from "../context/PermissionContext";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
 const DistributorLayer = () => {
+  const { hasPermission } = usePermissions();
   const [distributors, setDistributors] = useState([]);
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
@@ -258,6 +260,8 @@ const DistributorLayer = () => {
           <span className="badge bg-secondary">Inactive</span>
         ),
     },
+    ...(hasPermission("distributors_edit")
+    ? [
     {
       name: "Actions",
       cell: (row) => (
@@ -270,6 +274,8 @@ const DistributorLayer = () => {
         </>
       ),
     },
+    ]
+    : []),
   ];
 
   const filteredDistributors = distributors.filter((distributor) =>
@@ -305,6 +311,7 @@ const DistributorLayer = () => {
               </form>
 
             </div>
+          {hasPermission("distributors_add") && (
             <Link
               onClick={() => { resetForm(); clearAllErrors();  setShowModal(true); }}
               className='btn btn-primary-600 radius-8 px-14 py-6 text-sm'
@@ -315,6 +322,7 @@ const DistributorLayer = () => {
               />
               Add Distributor
             </Link>
+          )}
           </div>
           <DataTable
             columns={columns}

@@ -3,10 +3,12 @@ import axios from "axios";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
+import { usePermissions } from "../context/PermissionContext";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
 const TechnicianLayer = () => {
+  const { hasPermission } = usePermissions();
   const [technicians, setTechnicians] = useState([]);
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
@@ -80,14 +82,17 @@ const TechnicianLayer = () => {
       name: "Actions",
       cell: (row) => (
        <div>
+        {hasPermission("technicians_edit") && (
          <Link to={`/edit-technicians/${row.TechID}`} className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'>
           <Icon icon='lucide:edit' />
         </Link>
+        )}
+        
          <Link to={`/view-technician/${row.TechID}`}
-                                className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                                >
-                                    <Icon icon='lucide:eye' />
-                </Link>
+            className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
+          >
+          <Icon icon='lucide:eye' />
+          </Link>
        </div>
       ),
     },
@@ -120,6 +125,7 @@ const TechnicianLayer = () => {
               />
               <Icon icon='ion:search-outline' className='icon' />
             </form>
+      {hasPermission("technicians_add") && (
             <Link
               to='/technicians/add'
               className='btn btn-primary-600 radius-8 px-14 py-6 text-sm'
@@ -127,6 +133,7 @@ const TechnicianLayer = () => {
               <Icon icon='ic:baseline-plus' className='icon text-xl line-height-1' />
               Add Technician
             </Link>
+      )}
           </div>
 
           <DataTable
