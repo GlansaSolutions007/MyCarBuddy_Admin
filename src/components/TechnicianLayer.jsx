@@ -16,7 +16,7 @@ const TechnicianLayer = () => {
   const [searchText, setSearchText] = useState("");
   const role = localStorage.getItem('role');
   const userId = localStorage.getItem('userId');
-  
+
 
 
 
@@ -76,30 +76,52 @@ const TechnicianLayer = () => {
     // },
     {
       name: "Status",
-      selector: (row) => row.IsActive ? <span className="badge bg-success">Active</span> : <span className="badge bg-secondary">Inactive</span>,
+      cell: (row) => {
+        const status = row.IsActive ? "Active" : "Inactive";
+
+        const colorMap = {
+          Active: "#28A745",     // Green
+          Inactive: "#E34242",   // Grey (same as bg-secondary)
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
+      // width: "140px",
     },
     {
       name: "Actions",
       cell: (row) => (
        <div>
-        {hasPermission("technicians_edit") && (
          <Link to={`/edit-technicians/${row.TechID}`} className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'>
           <Icon icon='lucide:edit' />
         </Link>
-        )}
-        
          <Link to={`/view-technician/${row.TechID}`}
-            className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
-          >
-          <Icon icon='lucide:eye' />
-          </Link>
+                                className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
+                                >
+                                    <Icon icon='lucide:eye' />
+                </Link>
        </div>
       ),
     },
   ];
 
   const filteredTechnicians = technicians.filter((t) =>
-    t.TechnicianName?.toLowerCase().includes(searchText.toLowerCase()) 
+    t.TechnicianName?.toLowerCase().includes(searchText.toLowerCase())
     // t.Email?.toLowerCase().includes(searchText.toLowerCase()) ||
     // t.PhoneNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
     // states.find((s) => s.StateID === t.StateID)?.StateName?.toLowerCase().includes(searchText.toLowerCase()) ||

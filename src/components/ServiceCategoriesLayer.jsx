@@ -39,7 +39,7 @@ const ServiceCategoriesLayer = () => {
   const token = localStorage.getItem("token");
 
   const iconInputRef = useRef(null);
-const thumbnailInputRef = useRef(null);
+  const thumbnailInputRef = useRef(null);
 
   useEffect(() => {
     fetchCategories();
@@ -91,7 +91,7 @@ const thumbnailInputRef = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationErrors = validate(formData, ["CategoryID", "IsActive" ]);
+    const validationErrors = validate(formData, ["CategoryID", "IsActive"]);
     console.log(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
 
@@ -132,7 +132,7 @@ const thumbnailInputRef = useRef(null);
       setThumbnailPreview("");
       fetchCategories();
       setIsLoading(false);
-     if (iconInputRef.current) iconInputRef.current.value = "";
+      if (iconInputRef.current) iconInputRef.current.value = "";
       if (thumbnailInputRef.current) thumbnailInputRef.current.value = "";
     } catch (error) {
       setIsLoading(false);
@@ -166,12 +166,36 @@ const thumbnailInputRef = useRef(null);
     { name: "Description", selector: (row) => row.Description },
     {
       name: "Status",
-      selector: (row) =>
-        row.IsActive ? (
-          <span className="badge bg-success">Active</span>
-        ) : (
-          <span className="badge bg-danger">Inactive</span>
-        ),
+      cell: (row) => {
+        const status = row.IsActive ? "Active" : "Inactive";
+
+        // Colors same style as sample
+        const colorMap = {
+          Active: "#28A745",   // Green
+          Inactive: "#E34242", // Red
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span
+            className="d-flex align-items-center"
+            style={{ fontSize: "13px", fontWeight: 500 }}
+          >
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
+      // width: "140px",
     },
     {
       name: "Actions",

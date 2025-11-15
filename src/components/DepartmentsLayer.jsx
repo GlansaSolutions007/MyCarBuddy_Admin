@@ -126,8 +126,33 @@ const DepartmentsLayer = () => {
     { name: "Department Name", selector: (row) => row.departmentName, sortable: true },
     {
       name: "Status",
-      selector: (row) =>
-        row.isActive ? <span className="badge bg-success">Active</span> : <span className="badge bg-danger">Inactive</span>,
+      cell: (row) => {
+        const status = row.isActive ? "Active" : "Inactive";
+
+        // Color mapping
+        const colorMap = {
+          Active: "#28A745",    // Green
+          Inactive: "#E34242",  // Red
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
+      // width: "150px",
     },
     ...(hasPermission("department_edit")
     ? [

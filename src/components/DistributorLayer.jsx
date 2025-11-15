@@ -20,7 +20,7 @@ const DistributorLayer = () => {
   const token = localStorage.getItem('token');
   const [searchText, setSearchText] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const { errors, validate, clearError , clearAllErrors } = useFormError();
+  const { errors, validate, clearError, clearAllErrors } = useFormError();
   const [apiError, setApiError] = useState("");
   const [filteredCities, setFilteredCities] = useState([]);
   const [formData, setFormData] = useState({
@@ -44,13 +44,13 @@ const DistributorLayer = () => {
   }, []);
 
   useEffect(() => {
-  if (formData.StateID) {
-    const citiesInState = cities.filter(c => c.StateID === formData.StateID);
-    setFilteredCities(citiesInState);
-  } else {
-    setFilteredCities([]);
-  }
-}, [formData.StateID, cities]);
+    if (formData.StateID) {
+      const citiesInState = cities.filter(c => c.StateID === formData.StateID);
+      setFilteredCities(citiesInState);
+    } else {
+      setFilteredCities([]);
+    }
+  }, [formData.StateID, cities]);
 
   /**
    * Fetch the list of distributors from the API.
@@ -63,7 +63,7 @@ const DistributorLayer = () => {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        } 
+        }
       });
       // Update the state with the fetched distributors data
       setDistributors(res.data);
@@ -72,48 +72,48 @@ const DistributorLayer = () => {
       console.error("Failed to load dealers", error);
     }
   };
-  
-    /**
-     * Fetch the list of states from the API.
-     * Updates the state with the fetched data.
-     */
-    const fetchStates = async () => {
-      try {
-        // Make a GET request to the State endpoint
-        const res = await axios.get(`${API_BASE}State`, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          } 
-        });
-        // Update the state with the fetched states data
-        setStates(res.data);
-      } catch (error) {
-        // Log an error message if the request fails
-        console.error("Failed to load states", error);
-      }
-    };
-  
-    /**
-     * Fetch the list of cities from the API.
-     * Updates the state with the fetched data.
-     */
-    const fetchCities = async () => {
-      try {
-        // Make a GET request to the City endpoint
-        const res = await axios.get(`${API_BASE}City`, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          } 
-        });
-        // Update the state with the fetched cities data
-        setCities(res.data);
-      } catch (error) {
-        // Log an error message if the request fails
-        console.error("Failed to load cities", error);
-      }
-    };
+
+  /**
+   * Fetch the list of states from the API.
+   * Updates the state with the fetched data.
+   */
+  const fetchStates = async () => {
+    try {
+      // Make a GET request to the State endpoint
+      const res = await axios.get(`${API_BASE}State`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      // Update the state with the fetched states data
+      setStates(res.data);
+    } catch (error) {
+      // Log an error message if the request fails
+      console.error("Failed to load states", error);
+    }
+  };
+
+  /**
+   * Fetch the list of cities from the API.
+   * Updates the state with the fetched data.
+   */
+  const fetchCities = async () => {
+    try {
+      // Make a GET request to the City endpoint
+      const res = await axios.get(`${API_BASE}City`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      // Update the state with the fetched cities data
+      setCities(res.data);
+    } catch (error) {
+      // Log an error message if the request fails
+      console.error("Failed to load cities", error);
+    }
+  };
 
   /**
    * Handles a change event for a form input.
@@ -139,34 +139,34 @@ const DistributorLayer = () => {
    * If the request fails, logs an error message.
    */
   const handleSubmit = async () => {
-    
+
     // Validate the form data
-    const validationErrors = validate(formData, ["DistributorID" ,"IsActive" ]);
+    const validationErrors = validate(formData, ["DistributorID", "IsActive"]);
 
     // Check if password and confirm password match
     if (formData.PasswordHash !== formData.ConfirmPassword) {
       validationErrors.ConfirmPassword = "Passwords do not match";
     }
-    
+
     if (Object.keys(validationErrors).length > 0) return; // If the form data is invalid, do nothing
-    
+
     try {
       let res;
       // Make a PUT or POST request to the API
       if (formData.DistributorID) {
-        res = await axios.put(`${API_BASE}Distributors`, formData , {
+        res = await axios.put(`${API_BASE}Distributors`, formData, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
-          } 
+          }
         });
       } else {
         const { DistributorID, ConfirmPassword, ...newFormData } = formData;
-        res = await axios.post(`${API_BASE}Distributors`, newFormData ,{
+        res = await axios.post(`${API_BASE}Distributors`, newFormData, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
-          } 
+          }
         });
       }
       console.log("Submit successful", res);
@@ -190,19 +190,19 @@ const DistributorLayer = () => {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: err.response.data.message,  
+        text: err.response.data.message,
       });
       console.error("Submit failed", err);
     }
   };
 
- const handleEdit = (data) => {
-  setFormData({
-    ...data,
-    ConfirmPassword: data.PasswordHash || "", // ensure both are in sync
-  });
-  setShowModal(true);
-};
+  const handleEdit = (data) => {
+    setFormData({
+      ...data,
+      ConfirmPassword: data.PasswordHash || "", // ensure both are in sync
+    });
+    setShowModal(true);
+  };
 
   const resetForm = () => {
     setFormData({
@@ -253,12 +253,32 @@ const DistributorLayer = () => {
     },
     {
       name: "Status",
-      selector: (row) =>
-        row.IsActive ? (
-          <span className="badge bg-success">Active</span>
-        ) : (
-          <span className="badge bg-secondary">Inactive</span>
-        ),
+      cell: (row) => {
+        const status = row.IsActive ? "Active" : "Inactive";
+
+        const colorMap = {
+          Active: "#28A745",     // Green
+          Inactive: "#E34242",   // Grey (same as your bg-secondary)
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
+      // width: "150px",
     },
     ...(hasPermission("distributors_edit")
     ? [
@@ -266,11 +286,11 @@ const DistributorLayer = () => {
       name: "Actions",
       cell: (row) => (
         <>
-        <Link onClick={() => handleEdit(row)}
-                        className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                        >
-                            <Icon icon='lucide:edit' />
-        </Link>
+          <Link onClick={() => handleEdit(row)}
+            className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
+          >
+            <Icon icon='lucide:edit' />
+          </Link>
         </>
       ),
     },
@@ -280,10 +300,10 @@ const DistributorLayer = () => {
 
   const filteredDistributors = distributors.filter((distributor) =>
     distributor.name?.toLowerCase().includes(searchText.toLowerCase())
-  || distributor.email?.toLowerCase().includes(searchText.toLowerCase())
-  || distributor.phoneNumber?.toLowerCase().includes(searchText.toLowerCase())
-  || states.find((s) => s.StateID === distributor.StateID)?.StateName?.toLowerCase().includes(searchText.toLowerCase())
-  || cities.find((c) => c.CityID === distributor.CityID)?.CityName?.toLowerCase().includes(searchText.toLowerCase())
+    || distributor.email?.toLowerCase().includes(searchText.toLowerCase())
+    || distributor.phoneNumber?.toLowerCase().includes(searchText.toLowerCase())
+    || states.find((s) => s.StateID === distributor.StateID)?.StateName?.toLowerCase().includes(searchText.toLowerCase())
+    || cities.find((c) => c.CityID === distributor.CityID)?.CityName?.toLowerCase().includes(searchText.toLowerCase())
   );
 
   return (
@@ -313,7 +333,7 @@ const DistributorLayer = () => {
             </div>
           {hasPermission("distributors_add") && (
             <Link
-              onClick={() => { resetForm(); clearAllErrors();  setShowModal(true); }}
+              onClick={() => { resetForm(); clearAllErrors(); setShowModal(true); }}
               className='btn btn-primary-600 radius-8 px-14 py-6 text-sm'
             >
               <Icon
@@ -338,269 +358,269 @@ const DistributorLayer = () => {
       </div>
 
       {/* Modal */}
-            {showModal && (
-            <div className="modal fade show d-block" style={{ background: "#00000080" }}>
-                <div className="modal-dialog modal-lg"> {/* wider modal for two-column layout */}
-                <div className="modal-content">
-                    <div className="modal-header">
-                    <h6 className="modal-title">
-                        {formData.DistributorID ? "Edit" : "Add"} Distributor
-                    </h6>
-                    <button
-                        type="button"
-                        className="btn-close"
-                        onClick={() => setShowModal(false)}
+      {showModal && (
+        <div className="modal fade show d-block" style={{ background: "#00000080" }}>
+          <div className="modal-dialog modal-lg"> {/* wider modal for two-column layout */}
+            <div className="modal-content">
+              <div className="modal-header">
+                <h6 className="modal-title">
+                  {formData.DistributorID ? "Edit" : "Add"} Distributor
+                </h6>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowModal(false)}
+                />
+              </div>
+
+              <div className="modal-body">
+                <div className="row mb-10">
+                  <div className="col-6">
+                    <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
+                      Full Name <span className="text-danger-600">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="FullName"
+                      className={`form-control ${errors.GSTNumber ? "is-invalid" : ""}`}
+                      placeholder="Enter full name"
+                      value={formData.FullName}
+                      onChange={handleChange}
                     />
-                    </div>
+                    <FormError error={errors.FullName} />
+                  </div>
 
-                    <div className="modal-body">
-                    <div className="row mb-10">
-                        <div className="col-6">
-                        <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
-                            Full Name <span className="text-danger-600">*</span>
-                        </label>
+                  <div className="col-6">
+                    <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
+                      GST Number <span className="text-danger-600">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="GSTNumber"
+                      className={`form-control ${errors.GSTNumber ? "is-invalid" : ""}`}
+                      placeholder="Enter GST number"
+                      value={formData.GSTNumber}
+                      onChange={handleChange}
+                    />
+                    <FormError error={errors.GSTNumber} />
+                  </div>
+                </div>
+
+                <div className="row mb-10">
+                  <div className="col-6">
+                    <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
+                      Phone Number <span className="text-danger-600">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="PhoneNumber"
+                      className={`form-control ${errors.GSTNumber ? "is-invalid" : ""}`}
+                      placeholder="Enter phone number"
+                      value={formData.PhoneNumber}
+                      onChange={handleChange}
+                    />
+                    <FormError error={errors.PhoneNumber} />
+                  </div>
+
+                  <div className="col-6">
+                    <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
+                      Email <span className="text-danger-600">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      name="Email"
+                      className={`form-control ${errors.GSTNumber ? "is-invalid" : ""}`}
+                      placeholder="Enter email"
+                      value={formData.Email}
+                      onChange={handleChange}
+                    />
+                    <FormError error={errors.Email} />
+                  </div>
+
+
+                </div>
+
+                <div className="row mb-10">
+                  <div className="col-6">
+                    <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
+                      Password <span className="text-danger-600">*</span>
+                    </label>
+                    <div className="position-relative mt-1">
+                      <div className="icon-field">
+                        <span className="icon top-50 translate-middle-y">
+                          <Icon icon="solar:lock-password-outline" />
+                        </span>
                         <input
-                            type="text"
-                            name="FullName"
-                            className={`form-control ${errors.GSTNumber ? "is-invalid" : ""}`}
-                            placeholder="Enter full name"
-                            value={formData.FullName}
-                            onChange={handleChange}
+                          type={showPassword ? "text" : "password"}
+                          name="PasswordHash"
+                          value={formData.PasswordHash}
+                          onChange={handleChange}
+                          className={`form-control  bg-neutral-50 radius-12`}
+                          placeholder="Enter password"
                         />
-                        <FormError error={errors.FullName} />
-                        </div>
-
-                        <div className="col-6">
-                        <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
-                            GST Number <span className="text-danger-600">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            name="GSTNumber"
-                            className={`form-control ${errors.GSTNumber ? "is-invalid" : ""}`}
-                            placeholder="Enter GST number"
-                            value={formData.GSTNumber}
-                            onChange={handleChange}
-                        />
-                        <FormError error={errors.GSTNumber} />
-                        </div>
-                    </div>
-
-                    <div className="row mb-10">
-                      <div className="col-6">
-                        <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
-                            Phone Number <span className="text-danger-600">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            name="PhoneNumber"
-                            className={`form-control ${errors.GSTNumber ? "is-invalid" : ""}`}
-                            placeholder="Enter phone number"
-                            value={formData.PhoneNumber}
-                            onChange={handleChange}
-                        />
-                        <FormError error={errors.PhoneNumber} />
-                        </div>
-
-                        <div className="col-6">
-                        <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
-                            Email <span className="text-danger-600">*</span>
-                        </label>
-                        <input
-                            type="email"
-                            name="Email"
-                            className={`form-control ${errors.GSTNumber ? "is-invalid" : ""}`}
-                            placeholder="Enter email"
-                            value={formData.Email}
-                            onChange={handleChange}
-                        />
-                        <FormError error={errors.Email} />
-                        </div>
-                        
-                        
-                    </div>
-
-                    <div className="row mb-10">
-                        <div className="col-6">
-                        <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
-                             Password <span className="text-danger-600">*</span>
-                        </label>
-                        <div className="position-relative mt-1">
-                            <div className="icon-field">
-                              <span className="icon top-50 translate-middle-y">
-                                <Icon icon="solar:lock-password-outline" />
-                              </span>
-                              <input
-                                type={showPassword ? "text" : "password"}
-                                name="PasswordHash"
-                                value={formData.PasswordHash}
-                                onChange={handleChange}
-                                className={`form-control  bg-neutral-50 radius-12`}
-                                placeholder="Enter password"
-                              />
-                              {/* 👁️ Eye Icon */}
-                              <span
-                                className="position-absolute end-0 top-50 translate-middle-y me-16 cursor-pointer text-secondary-light"
-                                onClick={() => setShowPassword((prev) => !prev)}
-                              >
-                                <Icon icon={showPassword ? "mdi:eye-off-outline" : "mdi:eye-outline"} />
-                              </span>
-                            </div>
-                            <FormError error={errors.PasswordHash} />
-                          </div>
-
-                        </div>
-
-                        <div className="col-6">
-                        <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
-                            Confirm Password <span className="text-danger-600">*</span>
-                        </label>
-                        <div className="position-relative mt-1">
-                            <div className="icon-field">
-                              <span className="icon top-50 translate-middle-y">
-                                <Icon icon="solar:lock-password-outline" />
-                              </span>
-                              <input
-                                type={showPassword ? "text" : "password"}
-                                name="ConfirmPassword"
-                                value={formData.ConfirmPassword}
-                                onChange={handleChange}
-                                className={`form-control  bg-neutral-50 radius-12 `}
-                                placeholder="Enter password"
-                              />
-                              {/* 👁️ Eye Icon */}
-                              <span
-                                className="position-absolute end-0 top-50 translate-middle-y me-16 cursor-pointer text-secondary-light"
-                                onClick={() => setShowPassword((prev) => !prev)}
-                              >
-                                <Icon icon={showPassword ? "mdi:eye-off-outline" : "mdi:eye-outline"} />
-                              </span>
-                            </div>
-                            <FormError error={errors.ConfirmPassword} />
-                          </div>
-
-                        </div>
-                    </div>
-
-                    <div className="row mb-10">
-                        <div className="col-6">
-                          <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
-                            State <span className="text-danger-600">*</span>
-                          </label>
-                          <Select
-                              name="StateID"
-                              options={states.sort((a, b) => (b.IsActive === a.IsActive ? 0 : b.IsActive ? 1 : -1))
-                                  .map((state) => ({
-                                  value: state.StateID,
-                                  label: (
-                                    <span>
-                                      {state.StateName}{" "}
-                                      <span style={{ color: state.IsActive ? "green" : "red" }}>
-                                        ({state.IsActive ? "Active" : "Inactive"})
-                                      </span>
-                                    </span>
-                                  ),
-                                  name: state.StateName,
-                                  status: state.IsActive,
-                                }))}
-                              value={
-                                formData.StateID
-                                  ? {
-                                      value: formData.StateID,
-                                      label:
-                                        states.find((s) => s.StateID === formData.StateID)?.StateName ||
-                                        "Select State",
-                                    }
-                                  : null
-                              }
-                              onChange={(selectedOption) =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  StateID: selectedOption?.value || "",
-                                  CityID: "", // ⬅️ This clears the City when State changes
-                                }))
-                              }
-                              classNamePrefix="react-select"
-                              placeholder="Select State"
-                            />
-
-                          <FormError error={errors.StateID} />
-                        </div>
-
-                        <div className="col-6">
-                          <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
-                            City <span className="text-danger-600">*</span>
-                          </label>
-                          <Select
-                            name="CityID"
-                            options={filteredCities.map((c) => ({
-                              value: c.CityID,
-                              label: c.CityName,
-                            }))}
-                            value={
-                              formData.CityID
-                                ? {
-                                    value: formData.CityID,
-                                    label:
-                                      cities.find((c) => c.CityID === formData.CityID)?.CityName ||
-                                      "Select City",
-                                  }
-                                : null
-                            }
-                            onChange={(selectedOption) =>
-                              handleChange({ target: { name: "CityID", value: selectedOption?.value || "" } })
-                            }
-                            classNamePrefix="react-select"
-                            placeholder="Select City"
-                          />
-                          <FormError error={errors.CityID} />
-                        </div>
-                      </div>
-
-                    <div className="row mb-10">
-                        <div className="col-6">
-                        <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
-                            Address 
-                        </label>
-                        <input
-                            type="text"
-                            name="Address"
-                            className="form-control"
-                            placeholder="Enter address"
-                            value={formData.Address}
-                            onChange={handleChange}
-                        />
-                        </div>
-
-                        <div className="col-6">
-                        <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
-                            Status
-                        </label>
-                        <select
-                            name="IsActive"
-                            className="form-select form-control"
-                            value={formData.IsActive ? "true" : "false"}
-                            onChange={handleChange}
+                        {/* 👁️ Eye Icon */}
+                        <span
+                          className="position-absolute end-0 top-50 translate-middle-y me-16 cursor-pointer text-secondary-light"
+                          onClick={() => setShowPassword((prev) => !prev)}
                         >
-                            <option value="true">Active</option>
-                            <option value="false">Inactive</option>
-                        </select>
-                        </div>
-                    </div>
+                          <Icon icon={showPassword ? "mdi:eye-off-outline" : "mdi:eye-outline"} />
+                        </span>
+                      </div>
+                      <FormError error={errors.PasswordHash} />
                     </div>
 
-                    <div className="modal-footer">
-                    <button className="btn btn-secondary-600 radius-8 px-14 py-6 text-sm" onClick={() => setShowModal(false)}>
-                        Cancel
-                    </button>
-                    <button className="btn btn-primary-600 radius-8 px-14 py-6 text-sm" onClick={handleSubmit}>
-                        {formData.DistributorID ? "Update" : "Add"}
-                    </button>
+                  </div>
+
+                  <div className="col-6">
+                    <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
+                      Confirm Password <span className="text-danger-600">*</span>
+                    </label>
+                    <div className="position-relative mt-1">
+                      <div className="icon-field">
+                        <span className="icon top-50 translate-middle-y">
+                          <Icon icon="solar:lock-password-outline" />
+                        </span>
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          name="ConfirmPassword"
+                          value={formData.ConfirmPassword}
+                          onChange={handleChange}
+                          className={`form-control  bg-neutral-50 radius-12 `}
+                          placeholder="Enter password"
+                        />
+                        {/* 👁️ Eye Icon */}
+                        <span
+                          className="position-absolute end-0 top-50 translate-middle-y me-16 cursor-pointer text-secondary-light"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                        >
+                          <Icon icon={showPassword ? "mdi:eye-off-outline" : "mdi:eye-outline"} />
+                        </span>
+                      </div>
+                      <FormError error={errors.ConfirmPassword} />
+                    </div>
+
+                  </div>
+                </div>
+
+                <div className="row mb-10">
+                  <div className="col-6">
+                    <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
+                      State <span className="text-danger-600">*</span>
+                    </label>
+                    <Select
+                      name="StateID"
+                      options={states.sort((a, b) => (b.IsActive === a.IsActive ? 0 : b.IsActive ? 1 : -1))
+                        .map((state) => ({
+                          value: state.StateID,
+                          label: (
+                            <span>
+                              {state.StateName}{" "}
+                              <span style={{ color: state.IsActive ? "green" : "red" }}>
+                                ({state.IsActive ? "Active" : "Inactive"})
+                              </span>
+                            </span>
+                          ),
+                          name: state.StateName,
+                          status: state.IsActive,
+                        }))}
+                      value={
+                        formData.StateID
+                          ? {
+                            value: formData.StateID,
+                            label:
+                              states.find((s) => s.StateID === formData.StateID)?.StateName ||
+                              "Select State",
+                          }
+                          : null
+                      }
+                      onChange={(selectedOption) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          StateID: selectedOption?.value || "",
+                          CityID: "", // ⬅️ This clears the City when State changes
+                        }))
+                      }
+                      classNamePrefix="react-select"
+                      placeholder="Select State"
+                    />
+
+                    <FormError error={errors.StateID} />
+                  </div>
+
+                  <div className="col-6">
+                    <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
+                      City <span className="text-danger-600">*</span>
+                    </label>
+                    <Select
+                      name="CityID"
+                      options={filteredCities.map((c) => ({
+                        value: c.CityID,
+                        label: c.CityName,
+                      }))}
+                      value={
+                        formData.CityID
+                          ? {
+                            value: formData.CityID,
+                            label:
+                              cities.find((c) => c.CityID === formData.CityID)?.CityName ||
+                              "Select City",
+                          }
+                          : null
+                      }
+                      onChange={(selectedOption) =>
+                        handleChange({ target: { name: "CityID", value: selectedOption?.value || "" } })
+                      }
+                      classNamePrefix="react-select"
+                      placeholder="Select City"
+                    />
+                    <FormError error={errors.CityID} />
+                  </div>
+                </div>
+
+                <div className="row mb-10">
+                  <div className="col-6">
+                    <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
+                      Address
+                    </label>
+                    <input
+                      type="text"
+                      name="Address"
+                      className="form-control"
+                      placeholder="Enter address"
+                      value={formData.Address}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div className="col-6">
+                    <label className="text-sm fw-semibold text-primary-light mb-8 d-block">
+                      Status
+                    </label>
+                    <select
+                      name="IsActive"
+                      className="form-select form-control"
+                      value={formData.IsActive ? "true" : "false"}
+                      onChange={handleChange}
+                    >
+                      <option value="true">Active</option>
+                      <option value="false">Inactive</option>
+                    </select>
                   </div>
                 </div>
               </div>
+
+              <div className="modal-footer">
+                <button className="btn btn-secondary-600 radius-8 px-14 py-6 text-sm" onClick={() => setShowModal(false)}>
+                  Cancel
+                </button>
+                <button className="btn btn-primary-600 radius-8 px-14 py-6 text-sm" onClick={handleSubmit}>
+                  {formData.DistributorID ? "Update" : "Add"}
+                </button>
+              </div>
             </div>
-            )}
+          </div>
+        </div>
+      )}
 
 
     </div>

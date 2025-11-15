@@ -19,7 +19,9 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
   const [roles, setRoles] = useState([]);
   const [dealers, setDealers] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
-  const { errors, validate, clearAllErrors } = useFormError();
+  // const { errors, validate, clearAllErrors } = useFormError();
+  const { errors, setErrors, validate, clearAllErrors } = useFormError();
+
   const [imagePreviewUrl, setImagePreviewUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [supervisorRoleId, setSupervisorRoleId] = useState(null);
@@ -104,6 +106,11 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
             ? employee.DealerNames.split(",")
             : [];
 
+        // 👇 Add this safe default logic
+        const updatedReportingRole =
+          employee.Reporting_To_Role ||
+          (employee.Reporting_To === 1 ? "Admin" : "Employee");
+
         const updatedFormData = {
           ...prev,
           ...employee,
@@ -113,6 +120,7 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
           DealerNames: employeeDealerNames,
           // City: employee.City || "", // If you have a separate city field
           Address: employee.Address || "", // Set the address from fetched data
+          Reporting_To_Role: updatedReportingRole, // ✅ Ensure it's set
         };
 
         if (employee.ProfileImage) {
@@ -238,6 +246,8 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
         "ProfileImage1",
         "DealerNames",
         "RoleName",
+        "Is_Head",
+        "ProfileImage",
         // "City", // Exclude City if it's not a required field or handled differently
         // "Designation_Id", // Designation_Id is now required for validation
         // "Reporting_To", // Reporting_To is now required for validation
@@ -278,7 +288,8 @@ const EmployeeAddLayer = ({ setPageTitle }) => {
 
       if (Object.keys(currentErrors).length > 0) {
         console.log("Validation Errors:", currentErrors);
-        errors.setErrors(currentErrors);
+        // errors.setErrors(currentErrors);
+        setErrors(currentErrors);
         setIsSubmitting(false);
         return;
       }

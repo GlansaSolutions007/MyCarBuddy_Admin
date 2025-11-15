@@ -75,7 +75,7 @@ const VehicleModelLayer = () => {
     }
   };
 
-  
+
 
   const fetchVehicleType = async () => {
     try {
@@ -88,13 +88,13 @@ const VehicleModelLayer = () => {
     }
   };
   const fuelTypeOptions = vehicleType.map((v) => ({
-  value: v.FuelTypeID,
-  label: v.FuelTypeName,
-}));
+    value: v.FuelTypeID,
+    label: v.FuelTypeName,
+  }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-     setIsSubmitting(true); // 🔵 Start loading
+    setIsSubmitting(true); // 🔵 Start loading
 
     const requiredFields = ["ModelID", "IsActive"];
     if (!formData.ModelID && !formData.VehicleImages1) {
@@ -129,60 +129,90 @@ const VehicleModelLayer = () => {
       Swal.fire("Error", error.response?.data?.message || "Submit failed", "error");
     }
     finally {
-    setIsSubmitting(false); // ✅ Reset button
-  }
+      setIsSubmitting(false); // ✅ Reset button
+    }
   };
 
-const handleEdit = (row) => {
-  setFormData({
-    ModelID: row.ModelID || "",
-    BrandID: row.BrandID || "",
-    ModelName: row.ModelName || "",
-    FuelTypeID: row.FuelTypeID || "",
-    IsActive: row.IsActive ?? true,
-    VehicleImages1:  row.VehicleImage || null, // Reset to null, don't put the URL string here
-  });
+  const handleEdit = (row) => {
+    setFormData({
+      ModelID: row.ModelID || "",
+      BrandID: row.BrandID || "",
+      ModelName: row.ModelName || "",
+      FuelTypeID: row.FuelTypeID || "",
+      IsActive: row.IsActive ?? true,
+      VehicleImages1: row.VehicleImage || null, // Reset to null, don't put the URL string here
+    });
 
-  // Set preview only if image exists
-  if (row.VehicleImage && typeof row.VehicleImage === "string") {
-    const cleanedImagePath = row.VehicleImage.startsWith("/") ? row.VehicleImage.substring(1) : row.VehicleImage;
-    setImagePreviewUrl(`${import.meta.env.VITE_APIURL_IMAGE}${encodeURI(cleanedImagePath)}`);
-  } else {
-    setImagePreviewUrl("");
-  }
+    // Set preview only if image exists
+    if (row.VehicleImage && typeof row.VehicleImage === "string") {
+      const cleanedImagePath = row.VehicleImage.startsWith("/") ? row.VehicleImage.substring(1) : row.VehicleImage;
+      setImagePreviewUrl(`${import.meta.env.VITE_APIURL_IMAGE}${encodeURI(cleanedImagePath)}`);
+    } else {
+      setImagePreviewUrl("");
+    }
 
-  console.log(formData);
-};
+    console.log(formData);
+  };
 
 
   const columns = [
     { name: "Model ID", selector: (row) => row.ModelID },
-    { name: "Image", selector: (row) =>  <img
-          src={`${import.meta.env.VITE_APIURL_IMAGE}${row.VehicleImage}`}
-          alt="Brand Logo"
-          style={{ width: 50, height: 50, objectFit: "contain" }}
-        /> },
+    {
+      name: "Image", selector: (row) => <img
+        src={`${import.meta.env.VITE_APIURL_IMAGE}${row.VehicleImage}`}
+        alt="Brand Logo"
+        style={{ width: 50, height: 50, objectFit: "contain" }}
+      />
+    },
     { name: "Model Name", selector: (row) => row.ModelName },
-    { name: "Status", selector: (row) => row.IsActive ? <span className='badge bg-success'>Active</span> : <span className='badge bg-danger'>Inactive</span> },
-     {
-          name: "Actions",
-          cell: (row) => (
-            <div>
-               <Link
-                      onClick={() => handleEdit(row)}
-                      className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                    >
-                      <Icon icon='lucide:edit' />
-                </Link>
-                {/* <Link
+    {
+      name: "Status",
+      cell: (row) => {
+        const status = row.IsActive ? "Active" : "Inactive";
+
+        const colorMap = {
+          Active: "#28A745",     // Green
+          Inactive: "#E34242",   // Red
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
+      // width: "150px",
+    },
+    {
+      name: "Actions",
+      cell: (row) => (
+        <div>
+          <Link
+            onClick={() => handleEdit(row)}
+            className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
+          >
+            <Icon icon='lucide:edit' />
+          </Link>
+          {/* <Link
                       onClick={() => handleDelete(row.StateID , row.StateName)}
                       className='w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
                     >
                       <Icon icon='mingcute:delete-2-line' />
                 </Link> */}
-            </div>
-          ),
-        },
+        </div>
+      ),
+    },
   ];
 
   const filteredModel = model.filter((item) => {
@@ -196,55 +226,55 @@ const handleEdit = (row) => {
       <div className='col-xxl-4 col-lg-4'>
         <div className='card h-100'>
           <div className='card-body'>
-           <form onSubmit={handleSubmit} className='form' noValidate>
+            <form onSubmit={handleSubmit} className='form' noValidate>
               <div className='mb-24 mt-16 justify-content-center d-flex'>
-                                                <div className='avatar-upload'>
-                                                  <div className='avatar-edit position-absolute bottom-0 end-0 me-24 mt-16 z-1 cursor-pointer'>
-                                                    <input
-                                                      type='file'
-                                                      id='imageUpload'
-                                                      accept='.png, .jpg, .jpeg'
-                                                      hidden
-                                                      onChange={handleImageChange}
-                                                    />
-                                                    <label
-                                                      htmlFor='imageUpload'
-                                                      className='w-32-px h-32-px d-flex justify-content-center align-items-center bg-primary-50 text-primary-600 border border-primary-600 bg-hover-primary-100 text-lg rounded-circle'
-                                                    >
-                                                      <Icon
-                                                        icon='solar:camera-outline'
-                                                        className='icon'
-                                                      ></Icon>
-                                                    </label>
-                                                  </div>
-                                                  <div className='avatar-preview'>
-                                                    <div
-                                                      id='imagePreview'
-                                                      style={{
-                                                        backgroundImage: imagePreviewUrl
-                                                          ? `url(${imagePreviewUrl})`
-                                                          : "",
-                                                      }}
-                                                    ></div>
-                                                  </div>
-                                                </div>
-                                              </div>
+                <div className='avatar-upload'>
+                  <div className='avatar-edit position-absolute bottom-0 end-0 me-24 mt-16 z-1 cursor-pointer'>
+                    <input
+                      type='file'
+                      id='imageUpload'
+                      accept='.png, .jpg, .jpeg'
+                      hidden
+                      onChange={handleImageChange}
+                    />
+                    <label
+                      htmlFor='imageUpload'
+                      className='w-32-px h-32-px d-flex justify-content-center align-items-center bg-primary-50 text-primary-600 border border-primary-600 bg-hover-primary-100 text-lg rounded-circle'
+                    >
+                      <Icon
+                        icon='solar:camera-outline'
+                        className='icon'
+                      ></Icon>
+                    </label>
+                  </div>
+                  <div className='avatar-preview'>
+                    <div
+                      id='imagePreview'
+                      style={{
+                        backgroundImage: imagePreviewUrl
+                          ? `url(${imagePreviewUrl})`
+                          : "",
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
 
               <div className='mb-3'>
-                 <label
+                <label
                   htmlFor='format'
                   className='text-sm fw-semibold text-primary-light mb-8'
                 >
                   Model Name <span className='text-danger'>*</span>
                 </label>
                 <input
-                      type="text"
-                      name="ModelName"
-                      className={`form-control ${errors.ModelName ? "is-invalid" : ""}`}
-                      placeholder="Enter Model Name"
-                      value={formData.ModelName}
-                      onChange={handleChange}
-                      />
+                  type="text"
+                  name="ModelName"
+                  className={`form-control ${errors.ModelName ? "is-invalid" : ""}`}
+                  placeholder="Enter Model Name"
+                  value={formData.ModelName}
+                  onChange={handleChange}
+                />
                 <FormError error={errors.ModelName} />
               </div>
 
@@ -252,12 +282,12 @@ const handleEdit = (row) => {
                 <label className='text-sm fw-semibold text-primary-light mb-8'>Brand <span className='text-danger'>*</span></label>
                 <Select
                   name="BrandID"
-                  options={brand.filter(b =>b.IsActive === true).map((b) => ({ value: b.BrandID, label: b.BrandName }))}
+                  options={brand.filter(b => b.IsActive === true).map((b) => ({ value: b.BrandID, label: b.BrandName }))}
                   value={brand.find(b => b.BrandID === formData.BrandID) ? { value: formData.BrandID, label: brand.find(b => b.BrandID === formData.BrandID)?.BrandName } : null}
                   onChange={(selected) => setFormData({ ...formData, BrandID: selected?.value || "" })}
-                   classNamePrefix="react-select"
-                      className={errors.BrandID ? "is-invalid" : ""}
-                      placeholder="-- Select Brand --"
+                  classNamePrefix="react-select"
+                  className={errors.BrandID ? "is-invalid" : ""}
+                  placeholder="-- Select Brand --"
                 />
                 <FormError error={errors.BrandID} />
               </div>
@@ -298,8 +328,8 @@ const handleEdit = (row) => {
                 {isSubmitting
                   ? "Saving..."
                   : formData.ModelID
-                  ? "Update Model"
-                  : "Add Model"}
+                    ? "Update Model"
+                    : "Add Model"}
               </button>
             </form>
           </div>
@@ -307,38 +337,38 @@ const handleEdit = (row) => {
       </div>
 
       <div className='col-xxl-8 col-lg-8'>
-         <div className="row ">
-                        <div className="col-md-6 mb-2">
-                            <Select
-                                options={[
-                                  { value: "", label: "All Brands" },
-                                  ...brand.map((state) => ({
-                                    value: state.BrandID,
-                                    label: state.BrandName,
-                                  })),
-                                ]}
-                                value={
-                                  filterBrandID
-                                    ? {
-                                        value: filterBrandID,
-                                        label:
-                                          brand.find((s) => s.BrandID === filterBrandID)?.BrandName ||
-                                          "Selected Brand",
-                                      }
-                                    : { value: "", label: "All Brands" }
-                                }
-                                onChange={(selectedOption) => setFilterBrandID(selectedOption?.value || "")}
-                                className="basic-single"
-                                classNamePrefix="react-select"
-                                placeholder="Filter by Brand"
-                              />
-                        </div>
-                        <div className="col-md-6 mb-2">
-                            <input type='text' className='form-control mb-2' placeholder='Search Model...' value={search} onChange={(e) => setSearch(e.target.value)} />
-                        </div>
-                    </div>
+        <div className="row ">
+          <div className="col-md-6 mb-2">
+            <Select
+              options={[
+                { value: "", label: "All Brands" },
+                ...brand.map((state) => ({
+                  value: state.BrandID,
+                  label: state.BrandName,
+                })),
+              ]}
+              value={
+                filterBrandID
+                  ? {
+                    value: filterBrandID,
+                    label:
+                      brand.find((s) => s.BrandID === filterBrandID)?.BrandName ||
+                      "Selected Brand",
+                  }
+                  : { value: "", label: "All Brands" }
+              }
+              onChange={(selectedOption) => setFilterBrandID(selectedOption?.value || "")}
+              className="basic-single"
+              classNamePrefix="react-select"
+              placeholder="Filter by Brand"
+            />
+          </div>
+          <div className="col-md-6 mb-2">
+            <input type='text' className='form-control mb-2' placeholder='Search Model...' value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+        </div>
         <div className='chat-main card overflow-hidden'>
-         
+
           <DataTable
             columns={columns}
             data={filteredModel}

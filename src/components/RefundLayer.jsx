@@ -82,24 +82,40 @@ const RefundLayer = () => {
     },
     {
       name: "Payment Status",
-      selector: (row) => {
+      cell: (row) => {
         const paymentStatus = row.PaymentStatus || "Pending";
-        let displayText = paymentStatus;
-        if (paymentStatus.toLowerCase() === "success") displayText = "Paid";
+
+        // Convert "Success" → "Paid"
+        let status =
+          paymentStatus.toLowerCase() === "success"
+            ? "Paid"
+            : paymentStatus;
+
+        // Color mapping like sample
+        const colorMap = {
+          Paid: "#28A745",      // Green
+          Pending: "#F57C00",   // Orange
+          Failed: "#E34242",    // Red
+          Cancelled: "#E34242", // Red
+        };
+
+        const color = colorMap[status] || "#6c757d"; // default grey
 
         return (
-          <span
-            className={`badge ${displayText.toLowerCase() === "paid"
-              ? "bg-success"
-              : displayText.toLowerCase() === "pending"
-                ? "bg-warning"
-                : "bg-danger"
-              }`}
-          >
-            {displayText}
+          <span className="fw-semibold d-flex align-items-center">
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+            <span style={{ color }}>{status}</span>
           </span>
         );
       },
+      width: "150px",
     },
     {
       name: "Actions",
@@ -148,51 +164,83 @@ const RefundLayer = () => {
           <h5></h5>
         </div>
         <div className="card overflow-hidden p-3">
-          <div className="card-header">
-            <div className="d-flex gap-2 flex-wrap align-items-center">
-              <form className="navbar-search">
+          <div className="card-header bg-white border-bottom-0">
+            <div
+              className="d-flex align-items-center flex-wrap gap-2"
+              style={{
+                overflowX: "auto",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {/* 🔍 Search Input */}
+              <form
+                className="navbar-search flex-grow-1 flex-shrink-1 position-relative"
+                style={{ minWidth: "180px" }}
+              >
                 <input
                   type="text"
-                  className="form-control"
+                  className="form-control ps-5"
                   placeholder="Search"
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
+                  style={{
+                    minWidth: "200px",
+                    width: "100%",
+                  }}
                 />
-                <Icon icon="ion:search-outline" className="icon" />
+                <Icon
+                  icon="ion:search-outline"
+                  className="position-absolute top-50 start-0 translate-middle-y ms-2 text-muted"
+                  width="20"
+                  height="20"
+                />
               </form>
+
+              {/* 📅 Date Filters */}
               <input
                 type="date"
-                className="form-control"
+                className="form-control flex-shrink-0"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                style={{ width: "170px" }}
+                style={{ minWidth: "130px", flex: "1 1 130px" }}
               />
               <input
                 type="date"
-                className="form-control"
+                className="form-control flex-shrink-0"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                style={{ width: "170px" }}
+                style={{ minWidth: "130px", flex: "1 1 130px" }}
               />
+
+              {/* 💰 Price Range */}
               <input
                 type="number"
-                className="form-control"
+                className="form-control flex-shrink-0"
                 placeholder="Min Price"
                 value={minPrice}
                 onChange={(e) => setMinPrice(e.target.value)}
-                style={{ width: "170px" }}
+                style={{ minWidth: "100px", flex: "1 1 100px" }}
               />
               <input
                 type="number"
-                className="form-control"
+                className="form-control flex-shrink-0"
                 placeholder="Max Price"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(e.target.value)}
-                style={{ width: "170px" }}
+                style={{ minWidth: "100px", flex: "1 1 100px" }}
               />
+
+              {/* 📊 Excel Export Button */}
               <button
-                className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                className="d-inline-flex align-items-center justify-content-center rounded-circle border-0"
                 onClick={exportToExcel}
+                style={{
+                  width: "36px",
+                  height: "36px",
+                  backgroundColor: "#e8f5e9",
+                  color: "#2e7d32",
+                  flex: "0 0 auto",
+                }}
               >
                 <Icon icon="mdi:microsoft-excel" width="20" height="20" />
               </button>

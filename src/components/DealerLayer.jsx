@@ -62,12 +62,32 @@ const DealerLayer = () => {
     },
     {
       name: "Status",
-      selector: (row) =>
-        row.IsActive ? (
-          <span className="badge bg-success">Active</span>
-        ) : (
-          <span className="badge bg-secondary">Inactive</span>
-        ),
+      cell: (row) => {
+        const status = row.IsActive ? "Active" : "Inactive";
+
+        const colorMap = {
+          Active: "#28A745",     // Green
+          Inactive: "#E34242",   // Grey (same as bg-secondary)
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
+      // width: "150px",
     },
      ...(hasPermission("dealers_edit")
     ? [

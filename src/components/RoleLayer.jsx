@@ -8,16 +8,16 @@ import useFormError from "../hook/useFormError"; // form errors
 import FormError from "./FormError"; // form errors
 
 const RoleLayer = () => {
-    const [formData, setFormData] = useState({
-      RoleID: "",
-      RoleName: "",
-      // Description: "",
-      IsActive: true,
-    });
+  const [formData, setFormData] = useState({
+    RoleID: "",
+    RoleName: "",
+    // Description: "",
+    IsActive: true,
+  });
   const [roles, setRoles] = useState([]);
   const { errors, validate, clearError } = useFormError();
   const [apiError, setApiError] = useState("");
-  const API_BASE = `${import.meta.env.VITE_APIURL}Roles`; 
+  const API_BASE = `${import.meta.env.VITE_APIURL}Roles`;
 
   const token = localStorage.getItem("token");
 
@@ -46,7 +46,7 @@ const RoleLayer = () => {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        } 
+        }
       });
       // Update the state with the fetched roles data
       setRoles(res.data);
@@ -68,7 +68,7 @@ const RoleLayer = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setApiError("");
-    const validationErrors = validate(formData, ["RoleID" ,"IsActive"]);
+    const validationErrors = validate(formData, ["RoleID", "IsActive"]);
     console.log(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
 
@@ -94,33 +94,33 @@ const RoleLayer = () => {
         }, { headers });
       }
 
-        const data = res.data;
-        if (data.status) {
-          Swal.fire({
-            title: 'Success',
-            text: 'Role added successfully',
-            icon: 'success',
-            customClass: {
-              container: 'my-swal-container', // for the wrapper
-              popup: 'my-swal-popup',         // main dialog box
-              confirmButton: 'my-confirm-btn',
-              cancelButton: 'my-cancel-btn',
-            }
-          });
+      const data = res.data;
+      if (data.status) {
+        Swal.fire({
+          title: 'Success',
+          text: 'Role added successfully',
+          icon: 'success',
+          customClass: {
+            container: 'my-swal-container', // for the wrapper
+            popup: 'my-swal-popup',         // main dialog box
+            confirmButton: 'my-confirm-btn',
+            cancelButton: 'my-cancel-btn',
+          }
+        });
         // Show success message
-        } else {
-          Swal.fire({
-            title: 'Error',
-            text: res.data.message || 'Failed to add role',
-            icon: 'error',
-            customClass: {
-              container: 'my-swal-container', // for the wrapper
-              popup: 'my-swal-popup',         // main dialog box
-              confirmButton: 'my-confirm-btn',
-              cancelButton: 'my-cancel-btn',
-            }
-          });
-        }
+      } else {
+        Swal.fire({
+          title: 'Error',
+          text: res.data.message || 'Failed to add role',
+          icon: 'error',
+          customClass: {
+            container: 'my-swal-container', // for the wrapper
+            popup: 'my-swal-popup',         // main dialog box
+            confirmButton: 'my-confirm-btn',
+            cancelButton: 'my-cancel-btn',
+          }
+        });
+      }
 
       // Reset the form data
       setFormData({ RoleID: "", RoleName: "", Description: "", IsActive: true });
@@ -129,48 +129,48 @@ const RoleLayer = () => {
     } catch (error) {
       // Log an error message if the request fails
       Swal.fire({
-            title: 'Error',
-            text: error.response?.data?.message || 'Failed to add role',
-            icon: 'error',
-            customClass: {
-              container: 'my-swal-container', // for the wrapper
-              popup: 'my-swal-popup',         // main dialog box
-              confirmButton: 'my-confirm-btn',
-              cancelButton: 'my-cancel-btn',
-            }
+        title: 'Error',
+        text: error.response?.data?.message || 'Failed to add role',
+        icon: 'error',
+        customClass: {
+          container: 'my-swal-container', // for the wrapper
+          popup: 'my-swal-popup',         // main dialog box
+          confirmButton: 'my-confirm-btn',
+          cancelButton: 'my-cancel-btn',
+        }
       });
       console.error("Add failed", error);
     }
   };
 
-  const handleDelete = async (id , name) => {
-  const result = await Swal.fire({
-    title: 'Are you sure?',
-    text: "You won't be able to revert this!",
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: `delete ${name}`,
-    customClass: {
-    container: 'delete-container', // for the wrapper
-    popup: 'my-swal-popup',         // main dialog box
-    confirmButton: 'my-confirm-btn',
-    cancelButton: 'my-cancel-btn',
-  }
-  });
+  const handleDelete = async (id, name) => {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: `delete ${name}`,
+      customClass: {
+        container: 'delete-container', // for the wrapper
+        popup: 'my-swal-popup',         // main dialog box
+        confirmButton: 'my-confirm-btn',
+        cancelButton: 'my-cancel-btn',
+      }
+    });
 
-  if (result.isConfirmed) {
-    try {
-      await axios.delete(`${API_BASE}/`, { data: { RoleID: id } });
-      Swal.fire('Deleted!', 'The role has been deleted.', 'success');
-      fetchRoles();
-    } catch (error) {
-      console.error("Delete failed", error);
-      Swal.fire('Error!', 'Something went wrong.', 'error');
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(`${API_BASE}/`, { data: { RoleID: id } });
+        Swal.fire('Deleted!', 'The role has been deleted.', 'success');
+        fetchRoles();
+      } catch (error) {
+        console.error("Delete failed", error);
+        Swal.fire('Error!', 'Something went wrong.', 'error');
+      }
     }
-  }
-};
+  };
 
   const handleEdit = (role) => {
     setFormData({
@@ -178,7 +178,7 @@ const RoleLayer = () => {
       RoleName: role.name,
       IsActive: role.IsActive,
     });
-  }; 
+  };
 
   const columns = [
     {
@@ -193,26 +193,53 @@ const RoleLayer = () => {
     },
     {
       name: "Status",
-      selector: (row) => row.IsActive ? <span className="badge bg-success">Active</span> : <span className="badge bg-danger">Inactive</span>,
+      cell: (row) => {
+        const status = row.IsActive ? "Active" : "Inactive";
+
+        // Color mapping like your sample code
+        const colorMap = {
+          Active: "#28A745",   // Green
+          Inactive: "#E34242", // Red
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            {/* Dot */}
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            {/* Text */}
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
     },
     {
       name: "Actions",
       cell: (row) => (
         <div>
-           <Link
-                  onClick={() => handleEdit(row)}
-                  className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='lucide:edit' />
-            </Link>
+          <Link
+            onClick={() => handleEdit(row)}
+            className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
+          >
+            <Icon icon='lucide:edit' />
+          </Link>
           {/* permission add*/}
           <Link
-                  to={`/role-permission/${row.id}`}
-                  className='w-32-px h-32-px me-8 bg-primary-focus text-primary-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='lucide:key' />
-            </Link>
-            {/* <Link
+            to={`/role-permission/${row.id}`}
+            className='w-32-px h-32-px me-8 bg-primary-focus text-primary-main rounded-circle d-inline-flex align-items-center justify-content-center'
+          >
+            <Icon icon='lucide:key' />
+          </Link>
+          {/* <Link
                   onClick={() => handleDelete(row.RoleID , row.RoleName)}
                   className='w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
                 >
@@ -237,13 +264,13 @@ const RoleLayer = () => {
                   Role Name <span className='text-danger'>*</span>
                 </label>
                 <input
-                      type="text"
-                      name="RoleName"
-                      className={`form-control ${errors.RoleName ? "is-invalid" : ""}`}
-                      placeholder="Enter role name"
-                      value={formData.RoleName}
-                      onChange={handleChange}
-                      />
+                  type="text"
+                  name="RoleName"
+                  className={`form-control ${errors.RoleName ? "is-invalid" : ""}`}
+                  placeholder="Enter role name"
+                  value={formData.RoleName}
+                  onChange={handleChange}
+                />
                 <FormError error={errors.RoleName} />
               </div>
 
@@ -264,8 +291,8 @@ const RoleLayer = () => {
                   <option value="false">Inactive</option>
                 </select>
               </div>
-              <button  type="submit" className="btn btn-primary-600 radius-8 px-14 py-6 text-sm" onClick={handleSubmit}>
-                  {formData.RoleID ? "Update Role" : "Add Role"}
+              <button type="submit" className="btn btn-primary-600 radius-8 px-14 py-6 text-sm" onClick={handleSubmit}>
+                {formData.RoleID ? "Update Role" : "Add Role"}
               </button>
             </form>
           </div>
@@ -273,16 +300,16 @@ const RoleLayer = () => {
       </div>
       <div className='col-xxl-8 col-lg-8'>
         <div className='chat-main card overflow-hidden'>
-            <DataTable
-                columns={columns}
-                data={roles}
-                pagination
-                highlightOnHover
-                responsive
-                striped
-                persistTableHead
-                noDataComponent="No roles available"
-            />
+          <DataTable
+            columns={columns}
+            data={roles}
+            pagination
+            highlightOnHover
+            responsive
+            striped
+            persistTableHead
+            noDataComponent="No roles available"
+          />
         </div>
       </div>
     </div>

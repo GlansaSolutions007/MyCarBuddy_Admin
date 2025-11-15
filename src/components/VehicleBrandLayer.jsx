@@ -8,20 +8,20 @@ import useFormError from "../hook/useFormError"; // form errors
 import FormError from "./FormError"; // form errors
 
 const VehicleBrandLayer = () => {
-    const [formData, setFormData] = useState({
-      BrandID : 0,
-      BrandName: "",
-      BrandLogoImage: null,
-      IsActive: true,
-      Status:1
-    });
+  const [formData, setFormData] = useState({
+    BrandID: 0,
+    BrandName: "",
+    BrandLogoImage: null,
+    IsActive: true,
+    Status: 1
+  });
   const [brand, setBrand] = useState([]);
   const { errors, validate, clearError } = useFormError();
   const [apiError, setApiError] = useState("");
-    const token = localStorage.getItem('token');
-  const API_BASE = `${import.meta.env.VITE_APIURL}VehicleBrands`; 
+  const token = localStorage.getItem('token');
+  const API_BASE = `${import.meta.env.VITE_APIURL}VehicleBrands`;
   const [imagePreviewUrl, setImagePreviewUrl] = useState("");
-   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchBrand();
@@ -38,20 +38,20 @@ const VehicleBrandLayer = () => {
   };
 
   const handleImageChange = (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreviewUrl(reader.result);
-    };
-    reader.readAsDataURL(file);
-  }
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreviewUrl(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
 
-  setFormData((prev) => ({
-    ...prev,
-    BrandLogoImage: file, // Corrected key
-  }));
-};
+    setFormData((prev) => ({
+      ...prev,
+      BrandLogoImage: file, // Corrected key
+    }));
+  };
 
   /**
    * Fetches the list of Brand from the API.
@@ -60,11 +60,11 @@ const VehicleBrandLayer = () => {
   const fetchBrand = async () => {
     try {
       // Make a GET request to the Brand endpoint
-      const res = await axios.get(`${API_BASE}/GetVehicleBrands`,{
+      const res = await axios.get(`${API_BASE}/GetVehicleBrands`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        } 
+        }
       });
       if (!res.data.status) {
         throw new Error(res.data.message);
@@ -87,136 +87,136 @@ const VehicleBrandLayer = () => {
    * If the request fails, logs an error message.
    * @param {object} e - The event object.
    */
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  setApiError("");
+    setApiError("");
 
-  const requiredFields = ["BrandID", "IsActive"];
+    const requiredFields = ["BrandID", "IsActive"];
 
 
-  // ✅ Show alert and stop if it's an insert and no logo file provided
-  if (!formData.BrandID && !formData.BrandLogoImage) {
-    Swal.fire({
-      icon: "warning",
-      title: "Brand Logo Required",
-      text: "Please upload a brand logo before submitting.",
-    });
-    return;
-  }
-
-  // ✅ Only validate logo if it's an insert
-  if (!formData.BrandID && !formData.BrandLogoImage) {
-    requiredFields.push("BrandLogoImage");
-  }
-
-  const validationErrors = validate(formData, requiredFields);
-  console.log(formData);
-  console.log(validationErrors);
-  if (Object.keys(validationErrors).length > 0) return;
-
-  try {
-    const form = new FormData();
-    Object.entries(formData).forEach(([key, value]) => {
-      if (value !== null) form.append(key, value);
-    });
-
-    form.append("Status", 1);
-       if (formData.BrandID) {
-      form.append("ModifiedBy", localStorage.getItem("userId"));
-    } else {
-      form.append("CreatedBy", localStorage.getItem("userId"));
+    // ✅ Show alert and stop if it's an insert and no logo file provided
+    if (!formData.BrandID && !formData.BrandLogoImage) {
+      Swal.fire({
+        icon: "warning",
+        title: "Brand Logo Required",
+        text: "Please upload a brand logo before submitting.",
+      });
+      return;
     }
 
-
-    const headers = {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'multipart/form-data',
-    };
-    setIsSubmitting(true);
-    let res;
-    if (formData.BrandID) {
-      // Update
-      res = await axios.put(`${API_BASE}/UpdateVehicleBrand`, form, { headers });
-    } else {
-      // Insert
-      res = await axios.post(`${API_BASE}/InsertVehicleBrand`, form, { headers });
+    // ✅ Only validate logo if it's an insert
+    if (!formData.BrandID && !formData.BrandLogoImage) {
+      requiredFields.push("BrandLogoImage");
     }
 
-    const data = res.data;
-    if (data.status) {
-      Swal.fire("Success", res.data.message, "success");
-    } else {
-      Swal.fire("Error", res.data.message || "Failed to save brand", "error");
-    }
+    const validationErrors = validate(formData, requiredFields);
+    console.log(formData);
+    console.log(validationErrors);
+    if (Object.keys(validationErrors).length > 0) return;
 
-    setFormData({
-      BrandID: "",
-      BrandName: "",
-      BrandLogoImage: null,
-      IsActive: true,
-    });
-    setImagePreviewUrl("");
-    fetchBrand();
-  } catch (error) {
-    Swal.fire("Error", error.response?.data?.message || "Failed to save brand", "error");
-    console.error("Submit failed", error);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
-
-
-
-  const handleDelete = async (id , name) => {
-  const result = await Swal.fire({
-    title: 'Are you sure?',
-    text: "You won't be able to revert this!",
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: `delete ${name}`,
-    customClass: {
-    container: 'delete-container', // for the wrapper
-    popup: 'my-swal-popup',         // main dialog box
-    confirmButton: 'my-confirm-btn',
-    cancelButton: 'my-cancel-btn',
-  }
-  });
-
-  if (result.isConfirmed) {
     try {
-      await axios.delete(`${API_BASE}/`, { data: { StateID: id } });
-      Swal.fire('Deleted!', 'The Brand has been deleted.', 'success');
-      fetchStates();
+      const form = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== null) form.append(key, value);
+      });
+
+      form.append("Status", 1);
+      if (formData.BrandID) {
+        form.append("ModifiedBy", localStorage.getItem("userId"));
+      } else {
+        form.append("CreatedBy", localStorage.getItem("userId"));
+      }
+
+
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data',
+      };
+      setIsSubmitting(true);
+      let res;
+      if (formData.BrandID) {
+        // Update
+        res = await axios.put(`${API_BASE}/UpdateVehicleBrand`, form, { headers });
+      } else {
+        // Insert
+        res = await axios.post(`${API_BASE}/InsertVehicleBrand`, form, { headers });
+      }
+
+      const data = res.data;
+      if (data.status) {
+        Swal.fire("Success", res.data.message, "success");
+      } else {
+        Swal.fire("Error", res.data.message || "Failed to save brand", "error");
+      }
+
+      setFormData({
+        BrandID: "",
+        BrandName: "",
+        BrandLogoImage: null,
+        IsActive: true,
+      });
+      setImagePreviewUrl("");
+      fetchBrand();
     } catch (error) {
-      console.error("Delete failed", error);
-      Swal.fire('Error!', 'Something went wrong.', 'error');
+      Swal.fire("Error", error.response?.data?.message || "Failed to save brand", "error");
+      console.error("Submit failed", error);
+    } finally {
+      setIsSubmitting(false);
     }
-  }
-};
+  };
 
-const handleEdit = (row) => {
-  setFormData({
-    BrandID: row.BrandID,
-    BrandName: row.BrandName,
-    IsActive: row.IsActive,
-    BrandLogoImage: row.BrandLogo, // reset file input
-  });
-  console.log(formData);
 
-  if (row.BrandLogo) {
-    setImagePreviewUrl(`${import.meta.env.VITE_APIURL_IMAGE}${row.BrandLogo}`);
-    console.log(imagePreviewUrl);
-  } else {
-    setImagePreviewUrl("");
-  }
-};
+
+  const handleDelete = async (id, name) => {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: `delete ${name}`,
+      customClass: {
+        container: 'delete-container', // for the wrapper
+        popup: 'my-swal-popup',         // main dialog box
+        confirmButton: 'my-confirm-btn',
+        cancelButton: 'my-cancel-btn',
+      }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(`${API_BASE}/`, { data: { StateID: id } });
+        Swal.fire('Deleted!', 'The Brand has been deleted.', 'success');
+        fetchStates();
+      } catch (error) {
+        console.error("Delete failed", error);
+        Swal.fire('Error!', 'Something went wrong.', 'error');
+      }
+    }
+  };
+
+  const handleEdit = (row) => {
+    setFormData({
+      BrandID: row.BrandID,
+      BrandName: row.BrandName,
+      IsActive: row.IsActive,
+      BrandLogoImage: row.BrandLogo, // reset file input
+    });
+    console.log(formData);
+
+    if (row.BrandLogo) {
+      setImagePreviewUrl(`${import.meta.env.VITE_APIURL_IMAGE}${row.BrandLogo}`);
+      console.log(imagePreviewUrl);
+    } else {
+      setImagePreviewUrl("");
+    }
+  };
 
   const columns = [
     {
-      name : "Brand ID",
+      name: "Brand ID",
       selector: (row) => row.BrandID
     },
     {
@@ -236,19 +236,44 @@ const handleEdit = (row) => {
     },
     {
       name: "Status",
-      selector: (row) => row.IsActive ? <span className="badge bg-success">Actve</span> : <span className="badge bg-danger">InActve</span>,
+      cell: (row) => {
+        const status = row.IsActive ? "Actve" : "InActve";
+
+        const colorMap = {
+          Actve: "#28A745",     // Green
+          InActve: "#E34242",   // Red
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
+      // width: "150px",
     },
     {
       name: "Actions",
       cell: (row) => (
         <div>
-           <Link
-                  onClick={() => handleEdit(row)}
-                  className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='lucide:edit' />
-            </Link>
-            {/* <Link
+          <Link
+            onClick={() => handleEdit(row)}
+            className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
+          >
+            <Icon icon='lucide:edit' />
+          </Link>
+          {/* <Link
                   onClick={() => handleDelete(row.StateID , row.StateName)}
                   className='w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
                 >
@@ -265,53 +290,53 @@ const handleEdit = (row) => {
         <div className='card h-100 p-0'>
           <div className='card-body p-24'>
             <form onSubmit={handleSubmit} className='form' noValidate>
-                <div className='mb-24 mt-16 justify-content-center d-flex'>
-                                  <div className='avatar-upload'>
-                                    <div className='avatar-edit position-absolute bottom-0 end-0 me-24 mt-16 z-1 cursor-pointer'>
-                                      <input
-                                        type='file'
-                                        id='imageUpload'
-                                        accept='.png, .jpg, .jpeg'
-                                        hidden
-                                        onChange={handleImageChange}
-                                      />
-                                      <label
-                                        htmlFor='imageUpload'
-                                        className='w-32-px h-32-px d-flex justify-content-center align-items-center bg-primary-50 text-primary-600 border border-primary-600 bg-hover-primary-100 text-lg rounded-circle'
-                                      >
-                                        <Icon
-                                          icon='solar:camera-outline'
-                                          className='icon'
-                                        ></Icon>
-                                      </label>
-                                    </div>
-                                    <div className='avatar-preview'>
-                                      <div
-                                        id='imagePreview'
-                                        style={{
-                                          backgroundImage: imagePreviewUrl
-                                            ? `url(${imagePreviewUrl})`
-                                            : "",
-                                        }}
-                                      ></div>
-                                    </div>
-                                  </div>
-                                </div>
+              <div className='mb-24 mt-16 justify-content-center d-flex'>
+                <div className='avatar-upload'>
+                  <div className='avatar-edit position-absolute bottom-0 end-0 me-24 mt-16 z-1 cursor-pointer'>
+                    <input
+                      type='file'
+                      id='imageUpload'
+                      accept='.png, .jpg, .jpeg'
+                      hidden
+                      onChange={handleImageChange}
+                    />
+                    <label
+                      htmlFor='imageUpload'
+                      className='w-32-px h-32-px d-flex justify-content-center align-items-center bg-primary-50 text-primary-600 border border-primary-600 bg-hover-primary-100 text-lg rounded-circle'
+                    >
+                      <Icon
+                        icon='solar:camera-outline'
+                        className='icon'
+                      ></Icon>
+                    </label>
+                  </div>
+                  <div className='avatar-preview'>
+                    <div
+                      id='imagePreview'
+                      style={{
+                        backgroundImage: imagePreviewUrl
+                          ? `url(${imagePreviewUrl})`
+                          : "",
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
               <div className='mb-10'>
                 <label
                   htmlFor='format'
                   className='text-sm fw-semibold text-primary-light mb-8'
                 >
-                 Brand Name <span className='text-danger'>*</span>
+                  Brand Name <span className='text-danger'>*</span>
                 </label>
                 <input
-                      type="text"
-                      name="BrandName"
-                      className={`form-control ${errors.BrandName ? "is-invalid" : ""}`}
-                      placeholder="Enter Brand Name"
-                      value={formData.BrandName}
-                      onChange={handleChange}
-                      />
+                  type="text"
+                  name="BrandName"
+                  className={`form-control ${errors.BrandName ? "is-invalid" : ""}`}
+                  placeholder="Enter Brand Name"
+                  value={formData.BrandName}
+                  onChange={handleChange}
+                />
                 <FormError error={errors.BrandName} />
               </div>
               <div className='mb-20'>
@@ -331,9 +356,9 @@ const handleEdit = (row) => {
                   <option value="false">InActive</option>
                 </select>
               </div>
-              <button  type="submit" className="btn btn-primary-600 radius-8 px-14 py-6 text-sm" disabled={isSubmitting}>
-                  {/* {formData.BrandID ? "Update Brand" : "Add Brand"} */}
-                  {isSubmitting ? "Saving..." : formData.BrandID ? "Update Brand" : "Add Brand"}
+              <button type="submit" className="btn btn-primary-600 radius-8 px-14 py-6 text-sm" disabled={isSubmitting}>
+                {/* {formData.BrandID ? "Update Brand" : "Add Brand"} */}
+                {isSubmitting ? "Saving..." : formData.BrandID ? "Update Brand" : "Add Brand"}
               </button>
             </form>
           </div>
@@ -341,16 +366,16 @@ const handleEdit = (row) => {
       </div>
       <div className='col-xxl-8 col-lg-8'>
         <div className='chat-main card overflow-hidden'>
-            <DataTable
-                columns={columns}
-                data={brand}
-                pagination
-                highlightOnHover
-                responsive
-                striped
-                persistTableHead
-                noDataComponent="No Brand available"
-            />
+          <DataTable
+            columns={columns}
+            data={brand}
+            pagination
+            highlightOnHover
+            responsive
+            striped
+            persistTableHead
+            noDataComponent="No Brand available"
+          />
         </div>
       </div>
     </div>

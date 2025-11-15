@@ -28,7 +28,7 @@ const IncludesLayer = () => {
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("userId");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [skills , setSkills] = useState([]);
+  const [skills, setSkills] = useState([]);
   const [selectedSkills, setSelectedSkills] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -99,15 +99,15 @@ const IncludesLayer = () => {
   };
 
   const fetchSkills = async () => {
-  try {
-    const res = await axios.get(`${import.meta.env.VITE_APIURL}Skills`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setSkills(res.data || []);
-  } catch (error) {
-    console.error("Failed to load skills", error);
-  }
-};
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_APIURL}Skills`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSkills(res.data || []);
+    } catch (error) {
+      console.error("Failed to load skills", error);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -182,12 +182,33 @@ const IncludesLayer = () => {
     { name: "Description", selector: (row) => row.Description },
     {
       name: "Status",
-      selector: (row) =>
-        row.IsActive ? (
-          <span className="badge bg-success">Active</span>
-        ) : (
-          <span className="badge bg-danger">Inactive</span>
-        ),
+      cell: (row) => {
+        const status = row.IsActive ? "Active" : "Inactive";
+
+        const colorMap = {
+          Active: "#28A745",   // Green
+          Inactive: "#DC3545", // Red
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            {/* Colored Dot */}
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            {/* Status Text */}
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
     },
     {
       name: "Actions",
@@ -203,8 +224,8 @@ const IncludesLayer = () => {
   ];
 
   const filteredSubCategories = subCategories.filter(
-  (sub) => sub.CategoryID === formData.CategoryID
-);
+    (sub) => sub.CategoryID === formData.CategoryID
+  );
 
   return (
     <div className="row gy-4 mt-2">
@@ -213,151 +234,151 @@ const IncludesLayer = () => {
           <div className="card-body p-24">
             <form onSubmit={handleSubmit} className="form" noValidate>
               <div className='mb-10'>
-                  <label className='form-label text-sm fw-semibold text-primary-light mb-8'>
-                    Category <span className='text-danger-600'>*</span>
-                  </label>
-                  <Select
-                    name='CategoryID'
-                    options={categories
-                      .sort((a, b) => (b.IsActive === a.IsActive ? 0 : b.IsActive ? 1 : -1)) // Sort active first
-                      .map((c) => ({
-                        value: c.CategoryID,
-                        label: (
-                          <span>
-                            {c.CategoryName}{" "}
-                            <span style={{ color: c.IsActive ? "green" : "red" }}>
-                              ({c.IsActive ? "Active" : "Inactive"})
-                            </span>
-                          </span>
-                        ),
-                        name: c.CategoryName,
-                        status: c.IsActive,
-                      }))}
-                    value={
-                      formData.CategoryID
-                        ? {
-                            value: formData.CategoryID,
-                            label: (
-                              <span>
-                                {
-                                  categories.find((c) => c.CategoryID === formData.CategoryID)
-                                    ?.CategoryName
-                                }{" "}
-                                <span
-                                  style={{
-                                    color: categories.find(
-                                      (c) => c.CategoryID === formData.CategoryID
-                                    )?.IsActive
-                                      ? "green"
-                                      : "red",
-                                  }}
-                                >
-                                  (
-                                  {categories.find(
-                                    (c) => c.CategoryID === formData.CategoryID
-                                  )?.IsActive
-                                    ? "Active"
-                                    : "Inactive"}
-                                  )
-                                </span>
-                              </span>
-                            ),
-                          }
-                        : null
-                    }
-                    onChange={(selected) =>
-                      handleChange({
-                        target: { name: "CategoryID", value: selected?.value || "" },
-                      })
-                    }
-                    classNamePrefix="react-select"
-                  />
-                  <FormError error={errors.CategoryID} />
-                </div>
-
-
-           <div className='mb-10 d-none'>
-            <label className='form-label text-sm fw-semibold text-primary-light mb-8'>
-              Sub Category <span className='text-danger-600'>*</span>
-            </label>
-            <Select
-              name='SubCategoryID'
-              options={filteredSubCategories
-                .sort((a, b) => (b.IsActive === a.IsActive ? 0 : b.IsActive ? 1 : -1)) // Sort: active first
-                .map((c) => ({
-                  value: c.SubCategoryID,
-                  label: (
-                    <span>
-                      {c.SubCategoryName}{" "}
-                      <span style={{ color: c.IsActive ? "green" : "red" }}>
-                        ({c.IsActive ? "Active" : "Inactive"})
-                      </span>
-                    </span>
-                  ),
-                }))}
-              value={
-                formData.SubCategoryID
-                  ? {
-                      value: formData.SubCategoryID,
+                <label className='form-label text-sm fw-semibold text-primary-light mb-8'>
+                  Category <span className='text-danger-600'>*</span>
+                </label>
+                <Select
+                  name='CategoryID'
+                  options={categories
+                    .sort((a, b) => (b.IsActive === a.IsActive ? 0 : b.IsActive ? 1 : -1)) // Sort active first
+                    .map((c) => ({
+                      value: c.CategoryID,
                       label: (
                         <span>
-                          {
-                            subCategories.find(
-                              (c) => c.SubCategoryID === formData.SubCategoryID
-                            )?.SubCategoryName
-                          }{" "}
-                          <span
-                            style={{
-                              color: subCategories.find(
-                                (c) => c.SubCategoryID === formData.SubCategoryID
-                              )?.IsActive
-                                ? "green"
-                                : "red",
-                            }}
-                          >
-                            (
-                            {subCategories.find(
-                              (c) => c.SubCategoryID === formData.SubCategoryID
-                            )?.IsActive
-                              ? "Active"
-                              : "Inactive"}
-                            )
+                          {c.CategoryName}{" "}
+                          <span style={{ color: c.IsActive ? "green" : "red" }}>
+                            ({c.IsActive ? "Active" : "Inactive"})
                           </span>
                         </span>
                       ),
-                    }
-                  : null
-              }
-              onChange={(selected) =>
-                handleChange({
-                  target: { name: "SubCategoryID", value: selected?.value || "" },
-                })
-              }
-              classNamePrefix="react-select"
-            />
-            <FormError error={errors.SubCategoryID} />
-          </div>
+                      name: c.CategoryName,
+                      status: c.IsActive,
+                    }))}
+                  value={
+                    formData.CategoryID
+                      ? {
+                        value: formData.CategoryID,
+                        label: (
+                          <span>
+                            {
+                              categories.find((c) => c.CategoryID === formData.CategoryID)
+                                ?.CategoryName
+                            }{" "}
+                            <span
+                              style={{
+                                color: categories.find(
+                                  (c) => c.CategoryID === formData.CategoryID
+                                )?.IsActive
+                                  ? "green"
+                                  : "red",
+                              }}
+                            >
+                              (
+                              {categories.find(
+                                (c) => c.CategoryID === formData.CategoryID
+                              )?.IsActive
+                                ? "Active"
+                                : "Inactive"}
+                              )
+                            </span>
+                          </span>
+                        ),
+                      }
+                      : null
+                  }
+                  onChange={(selected) =>
+                    handleChange({
+                      target: { name: "CategoryID", value: selected?.value || "" },
+                    })
+                  }
+                  classNamePrefix="react-select"
+                />
+                <FormError error={errors.CategoryID} />
+              </div>
 
 
-            <div className="mb-10">
+              <div className='mb-10 d-none'>
+                <label className='form-label text-sm fw-semibold text-primary-light mb-8'>
+                  Sub Category <span className='text-danger-600'>*</span>
+                </label>
+                <Select
+                  name='SubCategoryID'
+                  options={filteredSubCategories
+                    .sort((a, b) => (b.IsActive === a.IsActive ? 0 : b.IsActive ? 1 : -1)) // Sort: active first
+                    .map((c) => ({
+                      value: c.SubCategoryID,
+                      label: (
+                        <span>
+                          {c.SubCategoryName}{" "}
+                          <span style={{ color: c.IsActive ? "green" : "red" }}>
+                            ({c.IsActive ? "Active" : "Inactive"})
+                          </span>
+                        </span>
+                      ),
+                    }))}
+                  value={
+                    formData.SubCategoryID
+                      ? {
+                        value: formData.SubCategoryID,
+                        label: (
+                          <span>
+                            {
+                              subCategories.find(
+                                (c) => c.SubCategoryID === formData.SubCategoryID
+                              )?.SubCategoryName
+                            }{" "}
+                            <span
+                              style={{
+                                color: subCategories.find(
+                                  (c) => c.SubCategoryID === formData.SubCategoryID
+                                )?.IsActive
+                                  ? "green"
+                                  : "red",
+                              }}
+                            >
+                              (
+                              {subCategories.find(
+                                (c) => c.SubCategoryID === formData.SubCategoryID
+                              )?.IsActive
+                                ? "Active"
+                                : "Inactive"}
+                              )
+                            </span>
+                          </span>
+                        ),
+                      }
+                      : null
+                  }
+                  onChange={(selected) =>
+                    handleChange({
+                      target: { name: "SubCategoryID", value: selected?.value || "" },
+                    })
+                  }
+                  classNamePrefix="react-select"
+                />
+                <FormError error={errors.SubCategoryID} />
+              </div>
+
+
+              <div className="mb-10">
                 <label className="text-sm fw-semibold text-primary-light mb-8">
                   Skills <span className="text-danger">*</span>
                 </label>
                 <Select
-                    name="SkillID"
-                    options={skills.map((c) => ({ value: c.SkillID, label: c.SkillName }))}
-                    value={
-                      formData.SkillID
-                        ? {
-                            value: formData.SkillID,
-                            label: skills.find((c) => c.SkillID === formData.SkillID)?.SkillName,
-                          }
-                        : null
-                    }
-                    onChange={(selected) => handleChange({ target: { name: "SkillID", value: selected?.value || "" } })}
-                    classNamePrefix="react-select"
-                  />
-                  <FormError error={errors.SkillID} />
+                  name="SkillID"
+                  options={skills.map((c) => ({ value: c.SkillID, label: c.SkillName }))}
+                  value={
+                    formData.SkillID
+                      ? {
+                        value: formData.SkillID,
+                        label: skills.find((c) => c.SkillID === formData.SkillID)?.SkillName,
+                      }
+                      : null
+                  }
+                  onChange={(selected) => handleChange({ target: { name: "SkillID", value: selected?.value || "" } })}
+                  classNamePrefix="react-select"
+                />
+                <FormError error={errors.SkillID} />
 
               </div>
 

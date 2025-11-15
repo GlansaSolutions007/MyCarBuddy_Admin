@@ -8,12 +8,12 @@ import useFormError from "../hook/useFormError"; // form errors
 import FormError from "./FormError"; // form errors
 
 const PermissionLayer = () => {
-    const [formData, setFormData] = useState({
-      PermissionID: "",
-      page: "",
-      name: "",
-      IsActive: true,
-    });
+  const [formData, setFormData] = useState({
+    PermissionID: "",
+    page: "",
+    name: "",
+    IsActive: true,
+  });
   const [permissions, setPermissions] = useState([]);
   const { errors, validate, clearError } = useFormError();
   const [apiError, setApiError] = useState("");
@@ -68,7 +68,7 @@ const PermissionLayer = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setApiError("");
-    const validationErrors = validate(formData, ["PermissionID" ,"IsActive"]);
+    const validationErrors = validate(formData, ["PermissionID", "IsActive"]);
     console.log(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
 
@@ -96,32 +96,32 @@ const PermissionLayer = () => {
         }, { headers });
       }
 
-        const data = res.data;
-        if (data.status) {
-          Swal.fire({
-            title: 'Success',
-            text: 'Permission added successfully',
-            icon: 'success',
-            customClass: {
-              container: 'my-swal-container', // for the wrapper
-              popup: 'my-swal-popup',         // main dialog box
-              confirmButton: 'my-confirm-btn',
-              cancelButton: 'my-cancel-btn',
-            }
-          });
-        } else {
-          Swal.fire({
-            title: 'Error',
-            text: res.data.message || 'Failed to add permission',
-            icon: 'error',
-            customClass: {
-              container: 'my-swal-container', // for the wrapper
-              popup: 'my-swal-popup',         // main dialog box
-              confirmButton: 'my-confirm-btn',
-              cancelButton: 'my-cancel-btn',
-            }
-          });
-        }
+      const data = res.data;
+      if (data.status) {
+        Swal.fire({
+          title: 'Success',
+          text: 'Permission added successfully',
+          icon: 'success',
+          customClass: {
+            container: 'my-swal-container', // for the wrapper
+            popup: 'my-swal-popup',         // main dialog box
+            confirmButton: 'my-confirm-btn',
+            cancelButton: 'my-cancel-btn',
+          }
+        });
+      } else {
+        Swal.fire({
+          title: 'Error',
+          text: res.data.message || 'Failed to add permission',
+          icon: 'error',
+          customClass: {
+            container: 'my-swal-container', // for the wrapper
+            popup: 'my-swal-popup',         // main dialog box
+            confirmButton: 'my-confirm-btn',
+            cancelButton: 'my-cancel-btn',
+          }
+        });
+      }
 
       // Reset the form data
       setFormData({ PermissionID: "", page: "", name: "", IsActive: true });
@@ -130,52 +130,52 @@ const PermissionLayer = () => {
     } catch (error) {
       // Log an error message if the request fails
       Swal.fire({
-            title: 'Error',
-            text: error.response?.data?.message || 'Failed to add permission',
-            icon: 'error',
-            customClass: {
-              container: 'my-swal-container', // for the wrapper
-              popup: 'my-swal-popup',         // main dialog box
-              confirmButton: 'my-confirm-btn',
-              cancelButton: 'my-cancel-btn',
-            }
+        title: 'Error',
+        text: error.response?.data?.message || 'Failed to add permission',
+        icon: 'error',
+        customClass: {
+          container: 'my-swal-container', // for the wrapper
+          popup: 'my-swal-popup',         // main dialog box
+          confirmButton: 'my-confirm-btn',
+          cancelButton: 'my-cancel-btn',
+        }
       });
       console.error("Add failed", error);
     }
   };
 
-  const handleDelete = async (id , name) => {
-  const result = await Swal.fire({
-    title: 'Are you sure?',
-    text: "You won't be able to revert this!",
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: `delete ${name}`,
-    customClass: {
-    container: 'delete-container', // for the wrapper
-    popup: 'my-swal-popup',         // main dialog box
-    confirmButton: 'my-confirm-btn',
-    cancelButton: 'my-cancel-btn',
-  }
-  });
+  const handleDelete = async (id, name) => {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: `delete ${name}`,
+      customClass: {
+        container: 'delete-container', // for the wrapper
+        popup: 'my-swal-popup',         // main dialog box
+        confirmButton: 'my-confirm-btn',
+        cancelButton: 'my-cancel-btn',
+      }
+    });
 
-  if (result.isConfirmed) {
-    try {
-      await axios.delete(`${API_BASE}/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      Swal.fire('Deleted!', 'The permission has been deleted.', 'success');
-      fetchPermissions();
-    } catch (error) {
-      console.error("Delete failed", error);
-      Swal.fire('Error!', 'Something went wrong.', 'error');
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(`${API_BASE}/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        Swal.fire('Deleted!', 'The permission has been deleted.', 'success');
+        fetchPermissions();
+      } catch (error) {
+        console.error("Delete failed", error);
+        Swal.fire('Error!', 'Something went wrong.', 'error');
+      }
     }
-  }
-};
+  };
 
   const handleEdit = (permission) => {
     setFormData({
@@ -204,24 +204,49 @@ const PermissionLayer = () => {
     },
     {
       name: "Status",
-      selector: (row) => row.IsActive ? <span className="badge bg-success">Active</span> : <span className="badge bg-danger">Inactive</span>,
+      cell: (row) => {
+        const status = row.IsActive ? "Active" : "Inactive";
+
+        // Color mapping (same pattern as your sample)
+        const colorMap = {
+          Active: "#28A745",   // Green
+          Inactive: "#E34242", // Red
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
     },
     {
       name: "Actions",
       cell: (row) => (
         <div>
-           <Link
-                  onClick={() => handleEdit(row)}
-                  className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='lucide:edit' />
-            </Link>
-            <Link
-                  onClick={() => handleDelete(row.id , row.name)}
-                  className='w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='mingcute:delete-2-line' />
-            </Link>
+          <Link
+            onClick={() => handleEdit(row)}
+            className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
+          >
+            <Icon icon='lucide:edit' />
+          </Link>
+          <Link
+            onClick={() => handleDelete(row.id, row.name)}
+            className='w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
+          >
+            <Icon icon='mingcute:delete-2-line' />
+          </Link>
         </div>
       ),
     },
@@ -241,13 +266,13 @@ const PermissionLayer = () => {
                   Page <span className='text-danger'>*</span>
                 </label>
                 <input
-                      type="text"
-                      name="page"
-                      className={`form-control ${errors.page ? "is-invalid" : ""}`}
-                      placeholder="Enter page"
-                      value={formData.page}
-                      onChange={handleChange}
-                      />
+                  type="text"
+                  name="page"
+                  className={`form-control ${errors.page ? "is-invalid" : ""}`}
+                  placeholder="Enter page"
+                  value={formData.page}
+                  onChange={handleChange}
+                />
                 <FormError error={errors.page} />
               </div>
 
@@ -259,13 +284,13 @@ const PermissionLayer = () => {
                   Name <span className='text-danger'>*</span>
                 </label>
                 <input
-                      type="text"
-                      name="name"
-                      className={`form-control ${errors.name ? "is-invalid" : ""}`}
-                      placeholder="Enter name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      />
+                  type="text"
+                  name="name"
+                  className={`form-control ${errors.name ? "is-invalid" : ""}`}
+                  placeholder="Enter name"
+                  value={formData.name}
+                  onChange={handleChange}
+                />
                 <FormError error={errors.name} />
               </div>
 
@@ -286,8 +311,8 @@ const PermissionLayer = () => {
                   <option value="false">Inactive</option>
                 </select>
               </div>
-              <button  type="submit" className="btn btn-primary-600 radius-8 px-14 py-6 text-sm" onClick={handleSubmit}>
-                  {formData.PermissionID ? "Update Permission" : "Add Permission"}
+              <button type="submit" className="btn btn-primary-600 radius-8 px-14 py-6 text-sm" onClick={handleSubmit}>
+                {formData.PermissionID ? "Update Permission" : "Add Permission"}
               </button>
             </form>
           </div>
@@ -295,16 +320,16 @@ const PermissionLayer = () => {
       </div>
       <div className='col-xxl-8 col-lg-8'>
         <div className='chat-main card overflow-hidden'>
-            <DataTable
-                columns={columns}
-                data={permissions}
-                pagination
-                highlightOnHover
-                responsive
-                striped
-                persistTableHead
-                noDataComponent="No permissions available"
-            />
+          <DataTable
+            columns={columns}
+            data={permissions}
+            pagination
+            highlightOnHover
+            responsive
+            striped
+            persistTableHead
+            noDataComponent="No permissions available"
+          />
         </div>
       </div>
     </div>

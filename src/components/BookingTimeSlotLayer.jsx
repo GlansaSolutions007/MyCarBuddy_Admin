@@ -208,12 +208,34 @@ const BookingTimeSlotLayer = () => {
     },
     {
       name: "Status",
-      selector: (row) =>
-        row.Status ? (
-          <span className="badge bg-success">Active</span>
-        ) : (
-          <span className="badge bg-danger">Inactive</span>
-        ),
+      cell: (row) => {
+        const status = row.Status ? "Active" : "Inactive";
+
+        // Color map (same structure as sample code)
+        const colorMap = {
+          Active: "#28A745",     // Green
+          Inactive: "#E34242",   // Red
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            {/* Dot Indicator */}
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+
+            {/* Text */}
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
     },
     {
       name: "Actions",
@@ -249,9 +271,8 @@ const BookingTimeSlotLayer = () => {
                 <input
                   type="time"
                   name="StartTime"
-                  className={`form-control ${
-                    errors.StartTime ? "is-invalid" : ""
-                  }`}
+                  className={`form-control ${errors.StartTime ? "is-invalid" : ""
+                    }`}
                   value={formData.StartTime}
                   onChange={handleChange}
                 />
@@ -265,9 +286,8 @@ const BookingTimeSlotLayer = () => {
                 <input
                   type="time"
                   name="EndTime"
-                  className={`form-control ${
-                    errors.EndTime ? "is-invalid" : ""
-                  }`}
+                  className={`form-control ${errors.EndTime ? "is-invalid" : ""
+                    }`}
                   value={formData.EndTime}
                   onChange={handleChange}
                 />

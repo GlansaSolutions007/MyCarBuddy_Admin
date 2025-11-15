@@ -384,13 +384,13 @@ const MasterLayout = ({ children }) => {
 
       ],
     },
-    {
-      title: "Supervisor Assignment",
-      icon: "hugeicons:user-settings-02",
-      children: [
-        { title: "Assign Supervisor", to: "/supervisor-Assign-Bookings", color: "text-primary-600", permission: "assignsupervisor_view", page: "Assign Supervisor" },
-      ],
-    },
+    // {
+    //   title: "Supervisor Assignment",
+    //   icon: "hugeicons:user-settings-02",
+    //   children: [
+    //     { title: "Assign Supervisor", to: "/supervisor-Assign-Bookings", color: "text-primary-600", permission: "assignsupervisor_view", page: "Assign Supervisor" },
+    //   ],
+    // },
     {
       title: "Vehicle",
       icon: "hugeicons:car-03",
@@ -491,6 +491,20 @@ const MasterLayout = ({ children }) => {
       ],
     },
     {
+      title: "Digital Marketing",
+      icon: "mdi:bullhorn-outline",
+      children: [
+        { title: "SEO", to: "/seo", color: "text-info-main", permission: "seo_view", page: "SEO" },
+        {
+          title: "Packages FAQ",
+          to: "/package-faq",
+          color: "text-primary-600",
+          permission: "package_faq_view",
+          page: "package_faq",
+        },
+      ],
+    },
+    {
       title: "Settings",
       icon: "material-symbols:settings-outline-rounded",
       children: [
@@ -509,7 +523,6 @@ const MasterLayout = ({ children }) => {
           permission: "notification_view",
           page: "Notification",
         },
-        { title: "SEO", to: "/seo", color: "text-info-main", permission: "seo_view", page: "SEO" },
         { title: "Role", to: "/roles", color: "text-info-main", permission: "role_view", page: "Role" },
         {
           title: "Permission Pages",

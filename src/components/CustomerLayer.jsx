@@ -51,15 +51,37 @@ const CustomerLayer = () => {
     },
     {
       name: "Status",
-      selector: (row) => {
-        if (row.IsDelete === 1) {
-          return <span className="badge bg-danger">Inactive</span>;
-        } else if (row.IsActive) {
-          return <span className="badge bg-success">Active</span>;
-        } else {
-          return <span className="badge bg-secondary">Inactive</span>;
-        }
+      cell: (row) => {
+        // Determine status text
+        let status = row.IsDelete === 1
+          ? "Inactive"
+          : row.IsActive
+            ? "Active"
+            : "Inactive";
+
+        // Color map like your sample
+        const colorMap = {
+          Active: "#28A745",     // Green
+          Inactive: "#E34242",   // Red (same for deleted or inactive)
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
       },
+      width: "150px",
     },
     {
       name: "Actions",
