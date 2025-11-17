@@ -10,8 +10,10 @@ import Cropper from "react-easy-crop";
 import getCroppedImg from "../utils/cropImage";
 import Modal from "react-modal";
 import Select from 'react-select';
+import { usePermissions } from "../context/PermissionContext";
 
 const ServiceSubCategories1Layer = () => {
+  const { hasPermission } = usePermissions();
   const [formData, setFormData] = useState({
     SubCategoryID: "",
     CategoryID: "",
@@ -224,8 +226,9 @@ const ServiceSubCategories1Layer = () => {
           </span>
         );
       },
-      // width: "140px",
     },
+    ...(hasPermission("servicesubcategory1_edit")
+    ? [
     {
       name: "Actions",
       cell: (row) => (
@@ -237,11 +240,14 @@ const ServiceSubCategories1Layer = () => {
         </Link>
       ),
     },
+      ]
+    : []),
   ];
 
   return (
     <>
       <div className="row gy-4 mt-2">
+        { (hasPermission("servicesubcategory1_add") || hasPermission("servicesubcategory1_edit")) && (
         <div className="col-xxl-4 col-lg-4">
           <div className="card h-100 p-0">
             <div className="card-body p-24">
@@ -355,6 +361,7 @@ const ServiceSubCategories1Layer = () => {
             </div>
           </div>
         </div>
+      )}
 
         <div className="col-xxl-8 col-lg-8">
           <div className="row mb-3">

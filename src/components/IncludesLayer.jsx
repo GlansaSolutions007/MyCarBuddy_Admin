@@ -7,8 +7,10 @@ import Swal from "sweetalert2";
 import useFormError from "../hook/useFormError";
 import FormError from "./FormError";
 import Select from "react-select";
+import { usePermissions } from "../context/PermissionContext";
 
 const IncludesLayer = () => {
+  const { hasPermission } = usePermissions();
   const [formData, setFormData] = useState({
     IncludeID: "",
     IncludeName: "",
@@ -210,6 +212,8 @@ const IncludesLayer = () => {
         );
       },
     },
+    ...(hasPermission("serviceincludes_edit")
+    ? [
     {
       name: "Actions",
       cell: (row) => (
@@ -221,6 +225,8 @@ const IncludesLayer = () => {
         </Link>
       ),
     },
+      ]
+    : []),
   ];
 
   const filteredSubCategories = subCategories.filter(
@@ -229,6 +235,7 @@ const IncludesLayer = () => {
 
   return (
     <div className="row gy-4 mt-2">
+      { (hasPermission("serviceincludes_add") || hasPermission("serviceincludes_edit")) && (
       <div className="col-xxl-4 col-lg-4">
         <div className="card h-100 p-0">
           <div className="card-body p-24">
@@ -443,6 +450,7 @@ const IncludesLayer = () => {
           </div>
         </div>
       </div>
+      )}
       <div className="col-xxl-8 col-lg-8">
         <div className="card mb-24">
           <div className="card-body p-24">

@@ -197,8 +197,9 @@ const ServiceCategoriesLayer = () => {
           </span>
         );
       },
-      // width: "140px",
     },
+    ...(hasPermission("servicecategory_edit")
+    ? [
     {
       name: "Actions",
       cell: (row) => (
@@ -210,11 +211,14 @@ const ServiceCategoriesLayer = () => {
         </Link>
       ),
     },
+    ]
+    : []),
   ];
 
   return (
     <>
       <div className="row gy-4 mt-2">
+        { (hasPermission("servicecategory_add") || hasPermission("servicecategory_edit")) && (
         <div className="col-xxl-4 col-lg-4">
           <div className="card h-100 p-0">
             <div className="card-body p-24">
@@ -303,6 +307,7 @@ const ServiceCategoriesLayer = () => {
             </div>
           </div>
         </div>
+        )}
 
         <div className="col-xxl-8 col-lg-8">
           <div className="chat-main card overflow-hidden">

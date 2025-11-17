@@ -5,8 +5,10 @@ import Swal from "sweetalert2";
 import useFormError from "../hook/useFormError";
 import FormError from "./FormError";
 import axios from "axios";
+import { usePermissions } from "../context/PermissionContext";
 
 const SkillLayer = () => {
+  const { hasPermission } = usePermissions();
   const [skills, setSkills] = useState([]);
   const [formData, setFormData] = useState({
     SkillID: "",
@@ -136,8 +138,9 @@ const SkillLayer = () => {
           </span>
         );
       },
-      // width: "140px",
     },
+    ...(hasPermission("skills_edit")
+    ? [
     {
       name: "Actions",
       cell: (row) => (
@@ -151,10 +154,13 @@ const SkillLayer = () => {
         </div>
       ),
     },
+      ]
+    : []),
   ];
 
   return (
     <div className="row gy-4 mt-2">
+    { (hasPermission("skills_add") || hasPermission("skills_edit")) && (
       <div className="col-lg-4">
         <div className="card h-100 p-0">
           <div className="card-body p-24">
@@ -209,6 +215,7 @@ const SkillLayer = () => {
           </div>
         </div>
       </div>
+      )}
 
       <div className="col-lg-8">
         <div className="card overflow-hidden">

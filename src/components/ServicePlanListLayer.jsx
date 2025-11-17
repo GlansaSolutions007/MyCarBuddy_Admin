@@ -4,8 +4,10 @@ import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
+import { usePermissions } from "../context/PermissionContext";
 
 const ServicePlanListLayer = () => {
+  const { hasPermission } = usePermissions();
   const [plans, setPlans] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -142,25 +144,33 @@ const ServicePlanListLayer = () => {
         );
       },
     },
+    ...(hasPermission("serviceplans_edit")
+    ? [
     {
       name: "Actions",
       cell: (row) => (
         <div>
+          {hasPermission("serviceplans_edit") && (
           <Link
             to={`/edit-service-package/${row.PackageID}`}
             className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
           >
             <Icon icon="lucide:edit" />
           </Link>
-          {/* <button
+          )}
+          {/* {hasPermission("serviceplans_delete") && (
+          <button
             onClick={() => handleDelete(row.PlanID, row.PlanName)}
             className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
           >
             <Icon icon="mingcute:delete-2-line" />
-          </button> */}
+          </button>
+          )} */}
         </div>
       ),
     },
+     ]
+    : []),
   ];
 
   return (
@@ -196,6 +206,7 @@ const ServicePlanListLayer = () => {
                 ))}
               </select>
             </div>
+            {hasPermission("serviceplans_add") && (
             <Link
               to={"/add-service-package"}
               className='btn btn-primary-600 radius-8 px-14 py-6 text-sm'
@@ -206,6 +217,7 @@ const ServicePlanListLayer = () => {
               />
               Add Packages
             </Link>
+            )}
           </div>
           <DataTable
             columns={columns}

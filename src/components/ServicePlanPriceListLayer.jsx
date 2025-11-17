@@ -4,8 +4,10 @@ import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
+import { usePermissions } from "../context/PermissionContext";
 
 const ServicePlanPriceListLayer = () => {
+  const { hasPermission } = usePermissions();
   const [plans, setPlans] = useState([]);
   const [searchText, setSearchText] = useState("");
   const API_BASE = `${import.meta.env.VITE_APIURL}PlanPackagePrice`;
@@ -116,25 +118,33 @@ const ServicePlanPriceListLayer = () => {
         );
       },
     },
+    ...(hasPermission("serviceplanprices_edit")
+    ? [
     {
       name: "Actions",
       cell: (row) => (
         <div>
+          {hasPermission("serviceplanprices_edit") && (
           <Link
             to={`/edit-service-plan-price/${row.PlanPriceID}`}
             className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
           >
             <Icon icon="lucide:edit" />
           </Link>
-          {/* <button
+          )}
+          {/* {hasPermission("serviceplanprices_delete") && (
+          <button
             onClick={() => handleDelete(row.PlanPriceID, row.PlanId)}
             className="btn btn-sm btn-outline-danger"
           >
             <Icon icon="mingcute:delete-2-line" />
-          </button> */}
+          </button>
+          )} */}
         </div>
       ),
     },
+      ]
+    : []),
   ];
 
   const filteredPlans = plans.filter((plan) =>
@@ -164,6 +174,7 @@ const ServicePlanPriceListLayer = () => {
                 <Icon icon='ion:search-outline' className='icon' />
               </form>
             </div>
+            {hasPermission("serviceplanprices_add") && (
             <Link
               to={"/add-service-plan-price"}
               className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
@@ -171,6 +182,7 @@ const ServicePlanPriceListLayer = () => {
               <Icon icon="ic:baseline-plus" className="icon text-xl line-height-1" />
               Add Package Price
             </Link>
+            )}
           </div>
 
           <DataTable

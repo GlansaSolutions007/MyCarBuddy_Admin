@@ -8,7 +8,7 @@ const IncludesPage = () => {
       {/* MasterLayout */}
       <MasterLayout>
         {/* Breadcrumb */}
-        <Breadcrumb title='Includes' />
+        <Breadcrumb title='Service Includes' />
 
         {/* IncludesLayer */}
         <IncludesLayer />

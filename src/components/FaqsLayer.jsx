@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { usePermissions } from "../context/PermissionContext";
+import Swal from "sweetalert2";
 
 const FaqsLayer = () => {
   const { hasPermission } = usePermissions();
@@ -31,6 +32,31 @@ const FaqsLayer = () => {
     }
   };
 
+  const handleDeleteFaq = async (faqId) => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(`${API_BASE}FAQS/DeleteFAQ/${faqId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        Swal.fire("Deleted!", "FAQ has been deleted.", "success");
+        fetchFaqs(); 
+      } catch (error) {
+        console.error("Failed to delete FAQ", error);
+        Swal.fire("Error", "Failed to delete FAQ", "error");
+      }
+    }
+  };
+
   // Flatten the data for table display
   const faqs = [];
   if (faqData && Array.isArray(faqData)) {
@@ -38,6 +64,7 @@ const FaqsLayer = () => {
       if (pkg.FAQS && Array.isArray(pkg.FAQS)) {
         pkg.FAQS.forEach((faq, index) => {
           faqs.push({
+            id: faq.id || faq.FAQID,
             package: index === 0 ? pkg.PackageName : "",
             question: faq.Question,
             Answer: faq.Answer,
@@ -67,17 +94,23 @@ const FaqsLayer = () => {
     },
     {
       name: "Actions",
-      cell: () => (
+      cell: (row) => (
         <div>
           {hasPermission("faqs_edit") && (
-            <Link className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center">
+            <Link
+              to={`/add-faqs?id=${row.id}`}
+              className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+            >
               <Icon icon="lucide:edit" />
             </Link>
           )}
           {hasPermission("faqs_delete") && (
-            <Link className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center">
+            <button
+              className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
+              onClick={() => handleDeleteFaq(row.id)}
+            >
               <Icon icon="mingcute:delete-2-line" />
-            </Link>
+            </button>
           )}
         </div>
       ),

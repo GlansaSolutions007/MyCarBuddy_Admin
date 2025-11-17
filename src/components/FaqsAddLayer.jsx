@@ -5,9 +5,15 @@ import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
 import { Icon } from "@iconify/react";
 import { usePermissions } from "../context/PermissionContext";
+import { useSearchParams, useNavigate } from "react-router-dom";
 
 const FaqsAddLayer = () => {
   const { hasPermission } = usePermissions();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const editId = searchParams.get("id");
+  const isEditMode = !!editId;
+
   const [packages, setPackages] = useState([]);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [question, setQuestion] = useState("");
@@ -19,8 +25,14 @@ const FaqsAddLayer = () => {
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    fetchAllPackages();
-  }, []);
+    const loadData = async () => {
+      const packagesData = await fetchAllPackages();
+      if (isEditMode) {
+        fetchFaq(editId, packagesData);
+      }
+    };
+    loadData();
+  }, [isEditMode, editId]);
 
   const fetchAllPackages = async () => {
     try {
@@ -30,14 +42,41 @@ const FaqsAddLayer = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      setPackages(
-        res.data.map((pkg) => ({
-          value: pkg.PackageID,
-          label: pkg.PackageName,
-        }))
-      );
+      const packagesData = res.data.map((pkg) => ({
+        value: pkg.PackageID,
+        label: pkg.PackageName,
+      }));
+      setPackages(packagesData);
+      return packagesData;
     } catch (error) {
       console.error("Failed to load all packages", error);
+      return [];
+    }
+  };
+
+  const fetchFaq = async (id, packagesData) => {
+    try {
+      const res = await axios.get(`${API_BASE}FAQS?Id=${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const faq = Array.isArray(res.data) ? res.data[0] : res.data;
+
+      if (!faq) {
+        Swal.fire("Error", "No FAQ found", "error");
+        return;
+      }
+
+      setSelectedPackage({
+        value: faq.PackageID,
+        label: packagesData.find((p) => p.value === faq.PackageID)?.label || "",
+      });
+
+      setQuestion(faq.Question);
+      setAnswer(faq.Answer);
+    } catch (error) {
+      console.error("Failed to load FAQ", error);
+      Swal.fire("Error", "Failed to load FAQ", "error");
     }
   };
 
@@ -99,6 +138,35 @@ const FaqsAddLayer = () => {
     } catch (error) {
       console.error("Failed to save FAQs", error);
       Swal.fire("Error", "Failed to save FAQs", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateFaq = async () => {
+    if (!selectedPackage || !question.trim() || !answer.trim()) {
+      Swal.fire("Error", "Please fill all fields", "error");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const payload = {
+        id: parseInt(editId),
+        question: question.trim(),
+        answer: answer.trim(),
+        packageID: selectedPackage.value,
+      };
+
+      await axios.put(`${API_BASE}FAQS`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      Swal.fire("Success", "FAQ updated successfully", "success");
+      navigate("/faqs");
+    } catch (error) {
+      console.error("Failed to update FAQ", error);
+      Swal.fire("Error", "Failed to update FAQ", "error");
     } finally {
       setLoading(false);
     }
@@ -175,7 +243,7 @@ const FaqsAddLayer = () => {
                   placeholder="Enter answer"
                 />
               </div>
-              {hasPermission("faqs_add") && (
+              {!isEditMode && hasPermission("faqs_add") && (
                 <div className="col-12 d-flex justify-content-end mb-10">
                   <button
                     className="btn btn-primary radius-8 px-14 py-2 d-flex align-items-center"
@@ -186,30 +254,45 @@ const FaqsAddLayer = () => {
                   </button>
                 </div>
               )}
-            </div>
-            <hr />
-            <DataTable
-              columns={columns}
-              data={faqs}
-              pagination
-              highlightOnHover
-              responsive
-              striped
-              persistTableHead
-              noDataComponent="No FAQs added yet"
-            />
-            {faqs.length > 0 && (
-              <div className="d-flex justify-content-center mt-3">
-                {hasPermission("faqs_add") && (
+              {isEditMode && hasPermission("faqs_edit") && (
+                <div className="col-12 d-flex justify-content-center mb-10">
                   <button
                     className="btn btn-primary-600 radius-8 px-10 py-4 d-flex align-items-center gap-2"
-                    onClick={handleSaveFaqs}
+                    onClick={handleUpdateFaq}
                     disabled={loading}
                   >
-                    {loading ? "Saving..." : "Save FAQs"}
+                    {loading ? "Updating..." : "Update FAQ"}
                   </button>
+                </div>
+              )}
+            </div>
+            {!isEditMode && (
+              <>
+                <hr />
+                <DataTable
+                  columns={columns}
+                  data={faqs}
+                  pagination
+                  highlightOnHover
+                  responsive
+                  striped
+                  persistTableHead
+                  noDataComponent="No FAQs added yet"
+                />
+                {faqs.length > 0 && (
+                  <div className="d-flex justify-content-center mt-3">
+                    {hasPermission("faqs_add") && (
+                      <button
+                        className="btn btn-primary-600 radius-8 px-10 py-4 d-flex align-items-center gap-2"
+                        onClick={handleSaveFaqs}
+                        disabled={loading}
+                      >
+                        {loading ? "Saving..." : "Save FAQs"}
+                      </button>
+                    )}
+                  </div>
                 )}
-              </div>
+              </>
             )}
           </div>
         </div>
