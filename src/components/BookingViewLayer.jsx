@@ -59,6 +59,7 @@ const BookingViewLayer = () => {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
   const [selectedReassignTimeSlot, setSelectedReassignTimeSlot] = useState(null);
   const token = localStorage.getItem("token");
+  const roleId = localStorage.getItem("roleId");
   const [previewServices, setPreviewServices] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
 
@@ -417,6 +418,11 @@ const BookingViewLayer = () => {
   const filteredTechnicians = technicians.filter(tech => {
     return bookingData && bookingData.TechID ? tech.value !== bookingData.TechID : true;
   });
+
+  const filteredSupervisors = supervisors.filter(sup => {
+    return bookingData && bookingData.SupervisorID ? sup.value !== bookingData.SupervisorID : true;
+  });
+
 
   // Handler for adding a new service input block
   const handleAddServiceBlock = () => {
@@ -829,7 +835,8 @@ const BookingViewLayer = () => {
                       >
                         Reschedule
                       </button>
-                      {bookingData.TechID && (
+                      {/* BUTTON 1 — your current condition, but ONLY when roleId !== "8" */}
+                      {roleId !== "8" && (bookingData.TechID || bookingData.SupervisorID) && (
                         <button
                           className="btn btn-info btn-sm"
                           onClick={() => handleAssignClick()}
@@ -837,6 +844,18 @@ const BookingViewLayer = () => {
                           Reassign
                         </button>
                       )}
+
+                      {/* BUTTON 2 — only for roleId = "8" AND TechID available */}
+                      {roleId === "8" && bookingData.TechID && (
+                        <button
+                          className="btn btn-info btn-sm"
+                          onClick={() => handleAssignClick()}
+                        >
+                          Reassign
+                        </button>
+                      )}
+
+
                     </div>
                   )}
 
@@ -1245,7 +1264,7 @@ const BookingViewLayer = () => {
               {/* ====================== ADD SERVICE TAB ====================== */}
               <div className="tab-pane fade" id="addservice">
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h6 className="fw-bold fs-5 text-primary">
+                  <h6 className="fw-bold fs-5 text-primary-600">
                     Add Services for Booking #{bookingData?.BookingTrackID || "N/A"}
                   </h6>
                   {/* <button
@@ -1397,32 +1416,33 @@ const BookingViewLayer = () => {
                         marginTop: "10px",
                       }}
                     >
-                      <table className="table table-bordered mt-2">
+                      <table className="table table-striped table-hover table-bordered mt-2 text-sm align-middle">
                         <thead
                           style={{
                             position: "sticky",
                             top: 0,
-                            background: "#f8f9fa",
+                            background: "#f1f3f5",
                             zIndex: 5,
                             whiteSpace: "nowrap",
+                            fontSize: "14px",
                           }}
                         >
                           <tr>
-                            <th>#</th>
-                            <th>Service Name</th>
-                            <th>Spare Part</th>
-                            <th>Price</th>
-                            <th>GST%</th>
-                            <th>GST ₹ </th>
-                            <th>Total Amount</th>
-                            <th>Action</th>
+                            <th style={{ padding: "6px 10px" }}>S.N</th>
+                            <th style={{ padding: "6px 10px" }}>Service Name</th>
+                            <th style={{ padding: "6px 10px" }}>Spare Part</th>
+                            <th style={{ padding: "6px 10px" }}>Price</th>
+                            <th style={{ padding: "6px 10px" }}>GST%</th>
+                            <th style={{ padding: "6px 10px" }}>GST ₹</th>
+                            <th style={{ padding: "6px 10px" }}>Total Amount</th>
+                            <th style={{ padding: "6px 10px" }}>Action</th>
                           </tr>
                         </thead>
 
-                        <tbody>
+                        <tbody style={{ fontSize: "14px" }}>
                           {previewServices.map((srv, idx) => (
                             <tr key={idx}>
-                              <td>{idx + 1}</td>
+                              <td style={{ padding: "6px 10px" }}>{idx + 1}</td>
 
                               <td
                                 style={{
@@ -1430,25 +1450,27 @@ const BookingViewLayer = () => {
                                   whiteSpace: "nowrap",
                                   overflow: "hidden",
                                   textOverflow: "ellipsis",
+                                  padding: "6px 10px",
                                 }}
                               >
                                 {srv.name}
                               </td>
 
-                              <td>{srv.bodyPart}</td>
-                              <td>₹{srv.price ?? 0}</td>
-                              <td>{srv.gstPercent}%</td>
-                              <td>₹{srv.gstAmount ?? 0}</td>
-                              <td>₹{srv.totalAmount ?? 0}</td>
+                              <td style={{ padding: "6px 10px" }}>{srv.bodyPart}</td>
+                              <td style={{ padding: "6px 10px" }}>₹{srv.price ?? 0}</td>
+                              <td style={{ padding: "6px 10px" }}>{srv.gstPercent}%</td>
+                              <td style={{ padding: "6px 10px" }}>₹{srv.gstAmount ?? 0}</td>
+                              <td style={{ padding: "6px 10px" }}>₹{srv.totalAmount ?? 0}</td>
 
-                              <td className="text-center">
+                              <td className="text-center" style={{ padding: "6px 10px" }}>
                                 <button
                                   className="btn btn-sm btn-outline-danger d-flex justify-content-center align-items-center mx-auto"
                                   style={{
-                                    width: "32px",
-                                    height: "32px",
-                                    borderRadius: "8px",
+                                    width: "28px",
+                                    height: "28px",
+                                    borderRadius: "6px",
                                     padding: 0,
+                                    fontSize: "14px",
                                   }}
                                   onClick={() => handleDeleteTempService(srv.id)}
                                 >
@@ -1464,7 +1486,7 @@ const BookingViewLayer = () => {
                     {/* Submit Button */}
                     <div className="d-flex justify-content-end align-items-center mt-3 gap-3">
                       <button
-                        className="btn btn-primary fw-semibold d-flex justify-content-center align-items-center"
+                        className="btn btn-primary-600 fw-semibold d-flex justify-content-center align-items-center"
                         style={{ width: "100px", height: "35px", fontSize: "15px" }}
                         onClick={handleFinalSubmitToMain}
                       >
@@ -1478,13 +1500,15 @@ const BookingViewLayer = () => {
           </div>
         </div>
       </div>
+
+      {/* Assign Technician/Supervisor Modal */}
       {assignModalOpen && (
         <div
           className="modal fade show d-block"
           style={{ background: "#00000080" }}
         >
           <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: "500px", width: "90%" }}>
-            <div className="modal-content">
+            <div className="modal-content" >
               <div className="modal-header">
                 <h6 className="modal-title">Assign</h6>
                 <button
@@ -1499,7 +1523,7 @@ const BookingViewLayer = () => {
                 />
               </div>
               <div className="modal-body">
-                <div className="d-flex justify-content-center align-items-center gap-4 mb-3">
+                <div className="d-flex justify-content-center align-items-center gap-4 mb-3 ">
                   <div className="form-check d-flex align-items-center gap-2 m-0">
                     <input
                       type="checkbox"
@@ -1516,27 +1540,28 @@ const BookingViewLayer = () => {
                       Technician
                     </label>
                   </div>
-
-                  <div className="form-check d-flex align-items-center gap-2 m-0">
-                    <input
-                      type="checkbox"
-                      className="form-check-input"
-                      id="assignSup"
-                      checked={assignType === "supervisor"}
-                      onChange={() => {
-                        setAssignType("supervisor");
-                        setSelectedTechnician(null);
-                      }}
-                      style={{ width: "18px", height: "18px", margin: 0 }}
-                    />
-                    <label htmlFor="assignSup" className="form-check-label mb-0">
-                      Supervisor
-                    </label>
-                  </div>
+                  {roleId !== "8" && (
+                    <div className="form-check d-flex align-items-center gap-2 m-0">
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        id="assignSup"
+                        checked={assignType === "supervisor"}
+                        onChange={() => {
+                          setAssignType("supervisor");
+                          setSelectedTechnician(null);
+                        }}
+                        style={{ width: "18px", height: "18px", margin: 0 }}
+                      />
+                      <label htmlFor="assignSup" className="form-check-label mb-0">
+                        Supervisor
+                      </label>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mb-3">
-                  <label className="form-label">Time Slot</label>
+                  {/* <label className="form-label">Time Slot</label> */}
                   <Select
                     options={getSelectedTimeSlotOptions()}
                     value={selectedReassignTimeSlot}
@@ -1547,8 +1572,8 @@ const BookingViewLayer = () => {
                 </div>
 
                 {assignType === "technician" ? (
-                  <div className="mb-3">
-                    <label className="form-label">Technician</label>
+                  <div>
+                    {/* <label className="form-label">Technician</label> */}
                     <Select
                       options={filteredTechnicians}
                       value={selectedTechnician}
@@ -1558,10 +1583,10 @@ const BookingViewLayer = () => {
                     />
                   </div>
                 ) : (
-                  <div className="mb-3">
-                    <label className="form-label">Supervisor</label>
+                  <div>
+                    {/* <label className="form-label">Supervisor</label> */}
                     <Select
-                      options={supervisors}
+                      options={filteredSupervisors}
                       value={selectedSupervisor}
                       onChange={(val) => setSelectedSupervisor(val)}
                       placeholder="Select Supervisor"
