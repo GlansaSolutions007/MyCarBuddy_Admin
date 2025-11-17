@@ -8,7 +8,7 @@ const ServicePlanPriceListPage = () => {
       {/* MasterLayout */}
       <MasterLayout>
         {/* Breadcrumb */}
-        <Breadcrumb title='Service Plan Prices' />
+        <Breadcrumb title='Service Plan Price' />
 
         {/* IncludesLayer */}
         <ServicePlanPriceListLayer />

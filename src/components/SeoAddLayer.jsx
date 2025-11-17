@@ -7,9 +7,10 @@ import Swal from "sweetalert2";
 import Select from "react-select";
 import useFormError from "../hook/useFormError";
 import FormError from "../components/FormError";
-
+import { usePermissions } from "../context/PermissionContext";
 
 const SeoAddLayer = () => {
+  const { hasPermission } = usePermissions();
   const API_BASE = `${import.meta.env.VITE_APIURL}Seometa`;
   const PACKAGE_API_BASE = `${import.meta.env.VITE_APIURL}PlanPackage`;
   const CATEGORY_API_BASE = `${import.meta.env.VITE_APIURL}Category`;
@@ -465,12 +466,11 @@ const [loading, setLoading] = useState(false);
       <div className="mb-3">
         <strong>Total SEO Score:</strong> {seoData.seo_score} / 100
       </div>
-
-      <button className="btn btn-primary" onClick={(e) => handleSubmit(e)} disabled={loading}>
-        {loading ? "Saving..." : (seoData.seo_id ? "Update SEO" : "Add SEO")}
-      </button>
-
-
+      {hasPermission("seo_add") && (
+        <button className="btn btn-primary" onClick={(e) => handleSubmit(e)} disabled={loading}>
+          {loading ? "Saving..." : (seoData.seo_id ? "Update SEO" : "Add SEO")}
+        </button>
+      )}
     </div>
     </div>
   );

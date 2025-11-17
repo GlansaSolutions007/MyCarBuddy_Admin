@@ -7,10 +7,12 @@ import Swal from "sweetalert2";
 import useFormError from "../hook/useFormError";
 import FormError from "./FormError";
 import Cropper from "react-easy-crop";
-import getCroppedImg from "../utils/cropImage"; // You'll create this util function (code below)
+import getCroppedImg from "../utils/cropImage";
 import Modal from "react-modal";
+import { usePermissions } from "../context/PermissionContext";
 
 const ServiceCategoriesLayer = () => {
+  const { hasPermission } = usePermissions();
   const [formData, setFormData] = useState({
     CategoryID: "",
     CategoryName: "",

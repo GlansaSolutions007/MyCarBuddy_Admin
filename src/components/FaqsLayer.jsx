@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
@@ -7,90 +8,44 @@ import { usePermissions } from "../context/PermissionContext";
 const FaqsLayer = () => {
   const { hasPermission } = usePermissions();
   const [searchText, setSearchText] = useState("");
-  const [loading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [faqData, setFaqData] = useState([]);
 
-  // Dummy FAQ data structured as provided
-  const faqData = [
-    {
-      packageName: "Basic Package",
-      faqs: [
-        {
-          question: "What is included in the Basic Package?",
-          explanation:
-            "The Basic Package includes essential services like oil change and tire rotation.",
-        },
-        {
-          question: "How long does the Basic Package take?",
-          explanation: "It typically takes 1–2 hours depending on the vehicle.",
-        },
-        {
-          question: "Is the Basic Package available for all vehicles?",
-          explanation:
-            "Yes, the Basic Package is suitable for most standard vehicles.",
-        },
-        {
-          question: "How to schedule a service?",
-          explanation:
-            "You can schedule a service through our website or by calling support.",
-        },
-      ],
-    },
-    {
-      packageName: "Premium Package",
-      faqs: [
-        {
-          question: "What additional services are in the Premium Package?",
-          explanation:
-            "Includes Basic services plus brake inspection and battery check.",
-        },
-        {
-          question: "How much does the Premium Package cost?",
-          explanation: "It costs $150, subject to change based on location.",
-        },
-        {
-          question: "Can I customize the Premium Package?",
-          explanation:
-            "Yes, you can add or remove services based on requirements.",
-        },
-        {
-          question: "How to schedule a service?",
-          explanation:
-            "You can schedule a service through our website or by calling support.",
-        },
-      ],
-    },
-    {
-      packageName: "Deluxe Package",
-      faqs: [
-        {
-          question: "What makes the Deluxe Package different?",
-          explanation:
-            "Includes engine diagnostics and air filter replacement.",
-        },
-        {
-          question: "Is there a warranty on the Deluxe Package?",
-          explanation: "Yes, all services include a 6-month warranty.",
-        },
-        {
-          question: "How to book the Deluxe Package?",
-          explanation:
-            "You can book the Deluxe Package through our app or website.",
-        },
-      ],
-    },
-  ];
+  const API_BASE = `${import.meta.env.VITE_APIURL}`;
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    fetchFaqs();
+  }, []);
+
+  const fetchFaqs = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}FAQS/Packages`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setFaqData(res.data);
+    } catch (error) {
+      console.error("Failed to load FAQs", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Flatten the data for table display
   const faqs = [];
-  faqData.forEach((pkg) => {
-    pkg.faqs.forEach((faq, index) => {
-      faqs.push({
-        package: index === 0 ? pkg.packageName : "",
-        question: faq.question,
-        Explanation: faq.explanation,
-      });
+  if (faqData && Array.isArray(faqData)) {
+    faqData.forEach((pkg) => {
+      if (pkg.FAQS && Array.isArray(pkg.FAQS)) {
+        pkg.FAQS.forEach((faq, index) => {
+          faqs.push({
+            package: index === 0 ? pkg.PackageName : "",
+            question: faq.Question,
+            Answer: faq.Answer,
+          });
+        });
+      }
     });
-  });
+  }
 
   // DataTable Columns
   const columns = [
@@ -107,27 +62,27 @@ const FaqsLayer = () => {
     },
     {
       name: "Explanation",
-      selector: (row) => row.Explanation,
+      selector: (row) => row.Answer,
       wrap: true,
     },
-    // {
-    //   name: "Actions",
-    //   cell: () => (
-    //     <div>
-    //       {hasPermission("faqs_edit") && (
-    //         <Link className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center">
-    //           <Icon icon="lucide:edit" />
-    //         </Link>
-    //       )}
-    //       {hasPermission("faqs_delete") && (
-    //         <Link className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center">
-    //           <Icon icon="mingcute:delete-2-line" />
-    //         </Link>
-    //       )}
-    //     </div>
-    //   ),
-    //   width: "15%",
-    // },
+    {
+      name: "Actions",
+      cell: () => (
+        <div>
+          {hasPermission("faqs_edit") && (
+            <Link className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center">
+              <Icon icon="lucide:edit" />
+            </Link>
+          )}
+          {hasPermission("faqs_delete") && (
+            <Link className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center">
+              <Icon icon="mingcute:delete-2-line" />
+            </Link>
+          )}
+        </div>
+      ),
+      width: "15%",
+    },
   ];
 
   // Filter FAQs based on search text
@@ -136,7 +91,7 @@ const FaqsLayer = () => {
     return (
       faq.package.toLowerCase().includes(text) ||
       faq.question.toLowerCase().includes(text) ||
-      faq.Explanation.toLowerCase().includes(text)
+      faq.Answer.toLowerCase().includes(text)
     );
   });
 

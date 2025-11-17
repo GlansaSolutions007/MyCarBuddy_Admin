@@ -6,8 +6,10 @@ import DataTable from "react-data-table-component";
 import Swal from 'sweetalert2';
 import useFormError from "../hook/useFormError"; // form errors
 import FormError from "./FormError"; // form errors
+import { usePermissions } from "../context/PermissionContext";
 
 const VehicleFuelLayer = () => {
+  const { hasPermission } = usePermissions();
   const [formData, setFormData] = useState({
     FuelTypeID: "",
     FuelTypeName: "",
@@ -246,29 +248,38 @@ const VehicleFuelLayer = () => {
       },
       // width: "150px",
     },
+    ...(hasPermission("vehiclefuel_edit")
+    ? [
     {
       name: "Actions",
       cell: (row) => (
         <div>
+          {hasPermission("vehiclefuel_edit") && (
           <Link
             onClick={() => handleEdit(row)}
             className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
           >
             <Icon icon='lucide:edit' />
           </Link>
-          {/* <Link
+          )}
+          {/* {hasPermission("vehiclefuel_delete") && (
+          <Link
                   onClick={() => handleDelete(row.StateID , row.StateName)}
                   className='w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
                 >
                   <Icon icon='mingcute:delete-2-line' />
-            </Link> */}
+          </Link>
+          )} */}
         </div>
       ),
     },
+      ]
+    : []),
   ];
 
   return (
     <div className='row gy-4 mt-2'>
+      { (hasPermission("vehiclefuel_add") || hasPermission("vehiclefuel_update")) && (
       <div className='col-xxl-4 col-lg-4 '>
         <div className='card h-100 p-0'>
           <div className='card-body p-24'>
@@ -346,6 +357,7 @@ const VehicleFuelLayer = () => {
           </div>
         </div>
       </div>
+      )}
       <div className='col-xxl-8 col-lg-8'>
         <div className='chat-main card overflow-hidden'>
           <DataTable

@@ -19,8 +19,6 @@ import MaintenancePage from "./pages/MaintenancePage";
 import BlankPagePage from "./pages/BlankPagePage";
 import TodaysBookingPage from "./pages/TodaysBookingPage";
 
-
-
 //my pages
 
 import PrivateRoute from "./components/PrivateRoute";

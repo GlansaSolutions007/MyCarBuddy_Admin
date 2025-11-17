@@ -7,8 +7,10 @@ import Swal from 'sweetalert2';
 import useFormError from "../hook/useFormError";
 import FormError from "./FormError";
 import Select from 'react-select';
+import { usePermissions } from "../context/PermissionContext";
 
 const VehicleModelLayer = () => {
+  const { hasPermission } = usePermissions();
   const [formData, setFormData] = useState({
     ModelID: "",
     BrandID: "",
@@ -194,25 +196,33 @@ const VehicleModelLayer = () => {
       },
       // width: "150px",
     },
+    ...(hasPermission("vehiclemodel_edit")
+    ? [
     {
       name: "Actions",
       cell: (row) => (
         <div>
+          {hasPermission("vehiclemodel_edit") && (
           <Link
             onClick={() => handleEdit(row)}
             className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
           >
             <Icon icon='lucide:edit' />
           </Link>
-          {/* <Link
-                      onClick={() => handleDelete(row.StateID , row.StateName)}
-                      className='w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                    >
-                      <Icon icon='mingcute:delete-2-line' />
-                </Link> */}
+          )}
+          {/* {hasPermission("vehiclemodel_delete") && (
+          <Link
+            onClick={() => handleDelete(row.StateID , row.StateName)}
+            className='w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
+            >
+            <Icon icon='mingcute:delete-2-line' />
+          </Link>
+          )} */}
         </div>
       ),
     },
+      ]
+    : []),
   ];
 
   const filteredModel = model.filter((item) => {
@@ -223,6 +233,7 @@ const VehicleModelLayer = () => {
 
   return (
     <div className='row gy-4 mt-2'>
+      { (hasPermission("vehiclemodel_add") || hasPermission("vehiclemodel_update")) && (
       <div className='col-xxl-4 col-lg-4'>
         <div className='card h-100'>
           <div className='card-body'>
@@ -335,7 +346,7 @@ const VehicleModelLayer = () => {
           </div>
         </div>
       </div>
-
+      )}
       <div className='col-xxl-8 col-lg-8'>
         <div className="row ">
           <div className="col-md-6 mb-2">

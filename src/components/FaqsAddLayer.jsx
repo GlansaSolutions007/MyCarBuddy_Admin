@@ -11,7 +11,7 @@ const FaqsAddLayer = () => {
   const [packages, setPackages] = useState([]);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [question, setQuestion] = useState("");
-  const [explanation, setExplanation] = useState("");
+  const [answer, setAnswer] = useState("");
   const [faqs, setFaqs] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -42,7 +42,7 @@ const FaqsAddLayer = () => {
   };
 
   const handleAddFaq = () => {
-    if (!selectedPackage || !question.trim() || !explanation.trim()) {
+    if (!selectedPackage || !question.trim() || !answer.trim()) {
       Swal.fire("Error", "Please fill all fields", "error");
       return;
     }
@@ -50,11 +50,11 @@ const FaqsAddLayer = () => {
       packageId: selectedPackage.value,
       packageName: selectedPackage.label,
       question: question.trim(),
-      explanation: explanation.trim(),
+      answer: answer.trim(),
     };
     setFaqs([...faqs, newFaq]);
     setQuestion("");
-    setExplanation("");
+    setAnswer("");
   };
 
   const handleRemoveFaq = (index) => {
@@ -72,27 +72,27 @@ const FaqsAddLayer = () => {
       const groupedFaqs = faqs.reduce((acc, faq) => {
         const packageId = faq.packageId;
         if (!acc[packageId]) {
-          acc[packageId] = {
-            packageName: faq.packageName,
-            faqs: [],
-          };
+          acc[packageId] = [];
         }
-        acc[packageId].faqs.push({
+        acc[packageId].push({
           question: faq.question,
-          explanation: faq.explanation,
+          answer: faq.answer,
         });
         return acc;
       }, {});
 
-      // Convert to array format
-      const payload = Object.values(groupedFaqs);
+      // Send POST for each package
+      for (const packageId in groupedFaqs) {
+        const payload = {
+          packageID: parseInt(packageId),
+          faQs: groupedFaqs[packageId],
+        };
+        await axios.post(`${API_BASE}FAQS`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
 
-      // Assuming there's an API endpoint like /Faqs/AddFaqs
-      // For now, placeholder
-      // await axios.post(`${API_BASE}Faqs/AddFaqs`, payload, {
-      //   headers: { Authorization: `Bearer ${token}` },
-      // });
-      console.log("Saving FAQs:", payload);
+      console.log("Saving FAQs completed");
       Swal.fire("Success", "FAQs saved successfully", "success");
       setFaqs([]);
       setSelectedPackage(null);
@@ -119,7 +119,7 @@ const FaqsAddLayer = () => {
     },
     {
       name: "Explanation",
-      selector: (row) => row.explanation,
+      selector: (row) => row.answer,
       wrap: true,
       width: "40%",
     },
@@ -170,9 +170,9 @@ const FaqsAddLayer = () => {
                 <textarea
                   className="form-control"
                   rows={3}
-                  value={explanation}
-                  onChange={(e) => setExplanation(e.target.value)}
-                  placeholder="Enter explanation"
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  placeholder="Enter answer"
                 />
               </div>
               {hasPermission("faqs_add") && (

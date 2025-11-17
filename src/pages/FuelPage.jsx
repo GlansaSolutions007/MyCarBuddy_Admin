@@ -8,7 +8,7 @@ const FuelPage = () => {
       {/* MasterLayout */}
       <MasterLayout>
         {/* Breadcrumb */}
-        <Breadcrumb title='Fuel' />
+        <Breadcrumb title='Vehicle Fuel' />
 
         {/* VehicleFuelLayer */}
         <VehicleFuelLayer />

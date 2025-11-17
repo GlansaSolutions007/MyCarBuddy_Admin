@@ -3,10 +3,12 @@ import axios from "axios";
 import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
+import { usePermissions } from "../context/PermissionContext";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
 const DeptWiseTicketReport = () => {
+  const { hasPermission } = usePermissions();
   const [departments, setDepartments] = useState([]);
   const [filteredDepartments, setFilteredDepartments] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,7 +43,7 @@ const DeptWiseTicketReport = () => {
       if (res.data && Array.isArray(res.data)) {
         // Filter out Admin Department and HR Department
         const filteredData = res.data.filter(dept =>
-          dept.DepartmentName !== "Admin Department" && dept.DepartmentName !== "HR Department"
+          dept.DepartmentName !== "Admin" && dept.DepartmentName !== "HR"
         );
 
         const departmentsWithStats = filteredData.map((dept) => ({
@@ -85,6 +87,8 @@ const DeptWiseTicketReport = () => {
     { name: "Cancelled", selector: (row) => row.cancelledTickets, sortable: true, width: "120px", },
     { name: "Reopened", selector: (row) => row.reopenedTickets, sortable: true, width: "120px", },
     { name: "Forward", selector: (row) => row.forwardTickets, sortable: true, width: "120px", },
+    ...(hasPermission("ticketreports_view")
+    ? [
     {
       name: "Actions",
       cell: (row) => (
@@ -95,6 +99,8 @@ const DeptWiseTicketReport = () => {
         </div>
       ),
     },
+   ]
+    : []),
   ];
 
   return (

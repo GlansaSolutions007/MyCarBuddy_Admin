@@ -3,8 +3,10 @@ import DataTable from "react-data-table-component";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { usePermissions } from "../context/PermissionContext";
 
 const SeoListLayer = () => {
+  const { hasPermission } = usePermissions();
   const API_BASE = `${import.meta.env.VITE_APIURL}Seometa`;
   const [seoList, setSeoList] = useState([]);
   const [expandedRows, setExpandedRows] = useState(new Set());
@@ -92,6 +94,8 @@ const SeoListLayer = () => {
       sortable: false,
       wrap: true,
     },
+    ...(hasPermission("seo_edit")
+    ? [
     {
       name: "Actions",
       cell: (row) => (
@@ -105,6 +109,8 @@ const SeoListLayer = () => {
         </div>
       ),
     },
+    ]
+    : []),
   ];
 
   return (
@@ -117,10 +123,12 @@ const SeoListLayer = () => {
         <div className="chat-main card overflow-hidden p-3">
           <div className="card-header border-bottom bg-base pt-0 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between">
             <div className="d-flex align-items-center flex-wrap gap-3"></div>
+            {hasPermission("seo_add") && (
             <Link to="/add-seo" className="btn btn-primary-600 radius-8 px-14 py-6 text-sm">
               <Icon icon="ic:baseline-plus" className="icon text-xl line-height-1" />
               Add Seo
             </Link>
+            )}
           </div>
           <DataTable
             columns={columns}
