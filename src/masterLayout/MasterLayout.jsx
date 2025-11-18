@@ -21,7 +21,7 @@ const MasterLayout = ({ children }) => {
   const role = localStorage.getItem("role");
   const userId = localStorage.getItem("userId");
   const roleId = localStorage.getItem("roleId");
-  
+
   const token = localStorage.getItem("token");
   const API_BASE = import.meta.env.VITE_APIURL;
   const API_IMAGE = import.meta.env.VITE_APIURL_IMAGE;
@@ -84,7 +84,7 @@ const MasterLayout = ({ children }) => {
     }
     return true; // Show if no permission defined
   };
-  
+
 
 
 
@@ -376,12 +376,12 @@ const MasterLayout = ({ children }) => {
         // { title: "Employee Tickets", to: "/employee-tickets", color: "text-danger-main", permission: "employee_ticket_view", page: "Employee_Tickets" },
       ],
     },
-        {
+    {
       title: "Reports",
       icon: "ion:document-text-outline",
       children: [
         { title: "Ticket Reports", to: "/ticket-reports", color: "text-warning-main", permission: "ticketreports_view", page: "Ticket Reports" },
-
+        { title: "Booking Reports", to: "/booking-reports", color: "text-success-main", permission: "bookingreports_view", page: "Booking Reports" },
       ],
     },
     // {
@@ -921,7 +921,7 @@ const MasterLayout = ({ children }) => {
                     )}
                   </button>
 
-                  <div className="dropdown-menu to-top  p-0" style={{width: "520px"}} > {/*dropdown-menu-lg*/}
+                  <div className="dropdown-menu to-top  p-0" style={{ width: "520px" }} > {/*dropdown-menu-lg*/}
                     {/* Header */}
                     <div className="m-16 py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2">
                       <div>

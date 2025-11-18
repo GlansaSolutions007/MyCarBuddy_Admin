@@ -89,6 +89,7 @@ import AddLeadPage from "./pages/AddLeadPage";
 import ViewLeadPage from "./pages/ViewLeadPage";
 import FaqsPage from "./pages/FaqsPage";
 import FaqsAddPage from "./pages/FaqsAddPage";
+import BookingReportPage from "./pages/BookingReportPage"
 
 function App() {
   return (
@@ -225,6 +226,7 @@ function App() {
           path='/notification-alert'
           element={<NotificationAlertPage />}
         />
+        <Route exact path='/booking-reports' element={<BookingReportPage/>} />
       </Routes>
     </BrowserRouter>
   );
