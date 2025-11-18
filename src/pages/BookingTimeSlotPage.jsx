@@ -8,7 +8,7 @@ const BookingTimeSlotPage = () => {
       {/* MasterLayout */}
       <MasterLayout>
         {/* Breadcrumb */}
-        <Breadcrumb title='Booking TimeSlot' />
+        <Breadcrumb title='Booking Time Slot' />
 
         {/* BookingTimeSlotLayer */}
         <BookingTimeSlotLayer />
