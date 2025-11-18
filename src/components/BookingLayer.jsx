@@ -392,7 +392,11 @@ const BookingLayer = () => {
             </Link>
             {isFutureOrToday &&
               row.BookingStatus.toLowerCase() === "pending" &&
-              (row.SupervisorID === null || row.SupervisorID === 0) && ( // 👈 condition added here
+              (
+                row.SupervisorID === null ||
+                row.SupervisorID === 0 ||
+                (row.SupervisorID !== null && row.SupervisorID !== 0 && roleId === "8")
+              ) && (
                 <Link
                   onClick={() => handleAssignClick(row)}
                   className="w-32-px h-32-px bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center"
@@ -400,7 +404,9 @@ const BookingLayer = () => {
                 >
                   <Icon icon="mdi:account-cog-outline" />
                 </Link>
-              )}
+              )
+            }
+
           </div>
         );
       },
@@ -586,6 +592,7 @@ const BookingLayer = () => {
               <div className="modal-body">
                 {/* Assignment Type Checkboxes */}
                 <div className="d-flex justify-content-center align-items-center gap-4 mb-3">
+                  {/* Technician Checkbox: always show */}
                   <div className="form-check d-flex align-items-center gap-2 m-0">
                     <input
                       type="checkbox"
@@ -594,25 +601,29 @@ const BookingLayer = () => {
                       checked={assignType === "technician"}
                       onChange={() => setAssignType("technician")}
                       style={{ width: "18px", height: "18px", margin: 0 }}
+                      disabled={false} // always enabled
                     />
                     <label htmlFor="assignTech" className="form-check-label mb-0">
                       Technician
                     </label>
                   </div>
 
-                  <div className="form-check d-flex align-items-center gap-2 m-0">
-                    <input
-                      type="checkbox"
-                      className="form-check-input"
-                      id="assignSup"
-                      checked={assignType === "supervisor"}
-                      onChange={() => setAssignType("supervisor")}
-                      style={{ width: "18px", height: "18px", margin: 0 }}
-                    />
-                    <label htmlFor="assignSup" className="form-check-label mb-0">
-                      Supervisor
-                    </label>
-                  </div>
+                  {/* Supervisor Checkbox: show only if roleId is NOT 8 */}
+                  {roleId !== "8" && (
+                    <div className="form-check d-flex align-items-center gap-2 m-0">
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        id="assignSup"
+                        checked={assignType === "supervisor"}
+                        onChange={() => setAssignType("supervisor")}
+                        style={{ width: "18px", height: "18px", margin: 0 }}
+                      />
+                      <label htmlFor="assignSup" className="form-check-label mb-0">
+                        Supervisor
+                      </label>
+                    </div>
+                  )}
                 </div>
 
                 {/* Time Slot Selection */}
