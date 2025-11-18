@@ -1,20 +1,20 @@
 import MasterLayout from "../masterLayout/MasterLayout";
 import Breadcrumb from "../components/Breadcrumb";
-import LeaveListLayer from "../components/LeaveListLayer";
+import LeadsAssignLayer from "../components/LeadsAssignLayer";
 
-const LeaveListPage = () => {
+const LeadsAssignPage = () => {
   return (
     <>
       {/* MasterLayout */}
       <MasterLayout>
         {/* Breadcrumb */}
-        <Breadcrumb title='Leave List' />
+        <Breadcrumb title='Assign Leads' />
 
-        {/* BookingTimeSlotLayer */}
-        <LeaveListLayer />
+        {/* LeadsAssignLayer */}
+        <LeadsAssignLayer />
       </MasterLayout>
     </>
   );
 };
 
-export default LeaveListPage;
+export default LeadsAssignPage;

@@ -89,6 +89,8 @@ import AddLeadPage from "./pages/AddLeadPage";
 import ViewLeadPage from "./pages/ViewLeadPage";
 import FaqsPage from "./pages/FaqsPage";
 import FaqsAddPage from "./pages/FaqsAddPage";
+import LeadsAssignPage from "./pages/LeadsAssignPage";
+import LeadViewPage from "./pages/LeadViewPage";
 
 function App() {
   return (
@@ -203,6 +205,8 @@ function App() {
           <Route exact path='/supervisor-assign-bookings' element={<SupervisorAssignBookingPage />} />
           <Route exact path='/faqs' element={<FaqsPage />} />
           <Route exact path='/add-faqs' element={<FaqsAddPage />} />
+          <Route exact path='/assign-leads' element={<LeadsAssignPage />} />
+          <Route exact path='/lead-view/:leadId' element={<LeadViewPage />} />
 
         </Route>
 
