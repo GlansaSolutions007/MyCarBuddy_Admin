@@ -373,7 +373,7 @@ const MasterLayout = ({ children }) => {
         { title: "Assign Bookings", to: "/telecaler-bookings", color: "text-warning-main", permission: "telecaler_booking_view", page: "Telecaler_Bookings" },
         // { title: "Telecaller Tickets", to: "/telecaler-tickets", color: "text-info-main", permission: "telecaler_ticket_view", page: "Telecaler_Tickets" },
         { title: "Assign Tickets", to: "/assign-tickets", color: "text-success-main", permission: "assigntickets_view", page: "Assign Tickets" },
-        { title: "Assign Leads", to: "/assign-leads", color: "text-danger-main", permission: "assignleads_view", page: "Assign Leads" },
+        // { title: "Employee Tickets", to: "/employee-tickets", color: "text-danger-main", permission: "employee_ticket_view", page: "Employee_Tickets" },
       ],
     },
     {
@@ -446,8 +446,8 @@ const MasterLayout = ({ children }) => {
           title: "Time Slots",
           to: "/booking-time-slot",
           color: "text-primary-600",
-          permission: "bookingtimeslot_view",
-          page: "Booking Time Slot",
+          permission: "time_slot_view",
+          page: "Time_Slot",
         },
       ],
     },
@@ -455,14 +455,14 @@ const MasterLayout = ({ children }) => {
       title: "Coupons",
       icon: "ion:card-outline",
       children: [
-        { title: "Coupons", to: "/coupons", color: "text-primary-600", permission: "coupons_view", page: "Coupons" },
+        { title: "Coupons", to: "/coupons", color: "text-primary-600", permission: "coupon_view", page: "Coupon" },
       ],
     },
     {
       title: "Leave Management",
       icon: "ion:document-text-outline",
       children: [
-        { title: "Leaves", to: "/leave-list", color: "text-primary-600", permission: "leavelist_view", page: "Leave List" },
+        { title: "Leaves", to: "/leave-list", color: "text-primary-600", permission: "leave_view", page: "Leave" },
       ],
     },
     {
