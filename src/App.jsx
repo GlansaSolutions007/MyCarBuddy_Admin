@@ -231,6 +231,7 @@ function App() {
           path='/notification-alert'
           element={<NotificationAlertPage />}
         />
+        <Route exact path='/booking-reports' element={<BookingReportPage/>} />
       </Routes>
     </BrowserRouter>
   );
