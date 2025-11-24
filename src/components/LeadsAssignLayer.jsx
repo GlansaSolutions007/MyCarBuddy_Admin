@@ -20,7 +20,7 @@ const LeadsAssignLayer = () => {
   const [departments, setDepartments] = useState([]);
   const [departmentHeads, setDepartmentHeads] = useState([]);
   const [leads, setLeads] = useState([]);
-  const [leadCount, setLeadCount] = useState("");
+  const [leadCount, setLeadCount] = useState();
   const [loading, setLoading] = useState(false);
   const [employees, setEmployees] = useState([]);
   const [selectedLeads, setSelectedLeads] = useState([]);
@@ -41,24 +41,50 @@ const LeadsAssignLayer = () => {
     setError("");
 
     try {
-      const response = await fetch(`${API_BASE}ServiceLeads/FacebookLeads`);
+      const response = await fetch(`${API_BASE}Leads`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
       const mappedData = data.map((lead) => ({
         Id: lead.Id,
-        LeadTrackId: lead.Id.toString(),
+        LeadTrackId: lead.Id,
         CustomerName: lead.FullName || "",
         PhoneNumber: lead.PhoneNumber || "",
         Email: lead.Email || "",
         City: lead.City || "",
         CreatedDate: lead.CreatedDate,
         StatusName: lead.LeadStatus || "Not Assigned",
-        Description: "Lead from Facebook",
+        // Description: "Lead",
         TrackingHistory: [{ StatusName: lead.LeadStatus || "Not Assigned" }],
+        IsAssigned_Head: lead.IsAssigned_Head,
+        IsAssigned_Emp: lead.IsAssigned_Emp,
+        Head_Assign: lead.Head_Assign,
+        Emp_Assign: lead.Emp_Assign,
       }));
-      setLeads(mappedData);
+
+      // Filter based on role
+      let filteredData = mappedData;
+      if (role === "Admin") {
+        // Show unassigned leads (null or 0)
+        filteredData = mappedData.filter(
+          (lead) => (lead.IsAssigned_Head == null || lead.IsAssigned_Head == 0) &&
+                    (lead.IsAssigned_Emp == null || lead.IsAssigned_Emp == 0)
+        );
+      } else if (userDetails?.Is_Head === 1) {
+        // Show leads assigned to this head and not assigned to employee
+        filteredData = mappedData.filter(
+          (lead) => lead.Head_Assign === userDetails.Id &&
+                    (lead.IsAssigned_Emp == null || lead.IsAssigned_Emp == 0)
+        );
+      } else {
+        // Employee: Show leads assigned to this employee
+        filteredData = mappedData.filter(
+          (lead) => lead.Emp_Assign === userDetails.Id
+        );
+      }
+
+      setLeads(filteredData);
     } catch (err) {
       setError("Failed to fetch leads. Please try again.");
       console.error("Error fetching leads:", err);
@@ -109,8 +135,12 @@ const LeadsAssignLayer = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data?.status && Array.isArray(res.data.data)) {
+        const supportDepts = res.data.data.filter(
+        (dept) => dept.DepartmentName?.trim().toLowerCase() === 'support'
+        );
+
         setDepartments(
-          res.data.data.map((dept) => ({
+          supportDepts.map((dept) => ({
             value: dept.DeptId,
             label: dept.DepartmentName,
           }))
@@ -198,34 +228,68 @@ const LeadsAssignLayer = () => {
   };
 
   const handleAssign = async () => {
-    if (role === "Admin") {
+    if (role === 'Admin') {
       if (!formData.selectedDepartment)
-        return Swal.fire("Warning", "Please select a department", "warning");
+        return Swal.fire('Warning', 'Please select a department', 'warning');
       if (!formData.selectedHead)
-        return Swal.fire("Warning", "Please select a department head", "warning");
+        return Swal.fire('Warning', 'Please select a department head', 'warning');
     }
 
+    let selectedLeadIds = [];
     if (selectedLeads.length > 0) {
-      // Use selected leads
+      selectedLeadIds = selectedLeads;
     } else {
       if (!leadCount || leadCount <= 0)
-        return Swal.fire("Warning", "Please enter a valid lead count or select leads", "warning");
-      if (leads.length === 0)
-        return Swal.fire("Info", "No unassigned leads available", "info");
+        return Swal.fire('Warning', 'Please enter a valid lead count or select leads', 'warning');
+      if (filteredLeads.length === 0)
+        return Swal.fire('Info', 'No unassigned leads available', 'info');
 
-      // Select first leadCount leads for assignment (dummy implementation)
+      // Select first leadCount leads
+      selectedLeadIds = filteredLeads.slice(0, leadCount).map((l) => getLeadId(l));
     }
 
-    // Simulate assignment
-    setLoading(true);
-    setTimeout(() => {
-      Swal.fire("Success", "Leads assigned successfully!", "success").then(() => {
-        // Refresh data
+    try {
+      setLoading(true);
+
+      if (role === 'Admin') {
+        // Assign to head
+        const payload = {
+          leadIds: selectedLeadIds,
+          head_Assign: formData.selectedHead.value,
+        };
+        await axios.post(`${API_BASE}Leads/AssignLeadsToHead`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else if (userDetails?.Is_Head === 1) {
+        // Assign to employees
+        const empList = formData.employees;
+        if (empList.length === 0)
+          return Swal.fire('Warning', 'Please select at least one employee', 'warning');
+
+        // For each employee, assign the leads (assuming API expects one emp per call)
+        for (const emp of empList) {
+          const payload = {
+            leadIds: selectedLeadIds,
+            emp_Assign: emp.id,
+          };
+          await axios.post(`${API_BASE}Leads/AssignLeadsToEmployee`, payload, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        }
+      }
+
+      Swal.fire('Success', 'Leads assigned successfully!', 'success').then(() => {
         fetchLeads();
         setSelectedLeads([]);
-        setLoading(false);
+        setLeadCount('');
+        setFormData((prev) => ({ ...prev, employees: [] }));
       });
-    }, 1000);
+    } catch (error) {
+      console.error('Failed to assign leads:', error);
+      Swal.fire('Error', 'Failed to assign leads', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Auto-select first N leads when leadCount changes
@@ -260,7 +324,7 @@ const LeadsAssignLayer = () => {
                 }}
               />
             ),
-            width: "60px",
+            width: "80px",
             ignoreRowClick: true,
           },
         ]
@@ -300,43 +364,43 @@ const LeadsAssignLayer = () => {
       ),
       wrap: true,
     },
-    {
-      name: "Lead Status",
-      cell: (row) => {
-        let status = row?.TrackingHistory?.[0]?.StatusName ?? "-";
-        if (!status || status === "-") status = "Not Assigned";
+    // {
+    //   name: "Lead Status",
+    //   cell: (row) => {
+    //     let status = row?.TrackingHistory?.[0]?.StatusName ?? "-";
+    //     if (!status || status === "-") status = "Not Assigned";
 
-        const colorMap = {
-          New: "#F57C00",
-          Contacted: "#F7AE21",
-          Qualified: "#28A745",
-          Lost: "#E34242",
-          "Not Assigned": "#BFBFBF",
-        };
+    //     const colorMap = {
+    //       New: "#F57C00",
+    //       Contacted: "#F7AE21",
+    //       Qualified: "#28A745",
+    //       Lost: "#E34242",
+    //       "Not Assigned": "#BFBFBF",
+    //     };
 
-        const color = colorMap[status] || "#6c757d";
+    //     const color = colorMap[status] || "#6c757d";
 
-        return (
-          <span className="fw-semibold d-flex align-items-center">
-            <span
-              className="rounded-circle d-inline-block me-1"
-              style={{
-                width: "8px",
-                height: "8px",
-                backgroundColor: color,
-              }}
-            ></span>
-            <span style={{ color }}>{status}</span>
-          </span>
-        );
-      },
-      wrap: true,
-    },
-    {
-      name: "Description",
-      selector: (row) => row.Description,
-      wrap: true,
-    },
+    //     return (
+    //       <span className="fw-semibold d-flex align-items-center">
+    //         <span
+    //           className="rounded-circle d-inline-block me-1"
+    //           style={{
+    //             width: "8px",
+    //             height: "8px",
+    //             backgroundColor: color,
+    //           }}
+    //         ></span>
+    //         <span style={{ color }}>{status}</span>
+    //       </span>
+    //     );
+    //   },
+    //   wrap: true,
+    // },
+    // {
+    //   name: "Description",
+    //   selector: (row) => row.Description,
+    //   wrap: true,
+    // },
     {
       name: "Actions",
       cell: (row) => (

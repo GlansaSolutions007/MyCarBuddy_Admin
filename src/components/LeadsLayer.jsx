@@ -87,8 +87,8 @@ const LeadsLayer = () => {
       name: "Action",
       cell: (row) => (
         <Link
-          // to={`/lead-view/${row.Id}`}
-           to={`/view-lead?id=${row.Id}`}
+           to={`/lead-view/${row.Id}`}
+          //  to={`/view-lead?id=${row.Id}`}
           className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
           title="View"
         >

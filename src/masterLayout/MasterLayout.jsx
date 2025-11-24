@@ -381,7 +381,7 @@ const MasterLayout = ({ children }) => {
       icon: "ion:document-text-outline",
       children: [
         { title: "Ticket Reports", to: "/ticket-reports", color: "text-warning-main", permission: "ticketreports_view", page: "Ticket Reports" },
-
+        { title: "Lead Reports", to: "/lead-reports", color: "text-danger-main", permission: "leadreports_view", page: "Lead Reports" },
       ],
     },
     // {

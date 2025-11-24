@@ -53,7 +53,7 @@ export const PermissionProvider = ({
    */
   const hasPermission = (permissionName) => {
     if (role === "Admin") return true; // 👈 bypass for Admin
-    // alert(permissionName)
+    // alert(permissionName);
     return permissions.some((p) => p.name === permissionName && p.IsActive);
   };
 
@@ -68,7 +68,7 @@ export const PermissionProvider = ({
 
   return (
     <PermissionContext.Provider
-      value={{ permissions, hasPermission, getPagePermissions, loading }}
+      value={{ permissions, hasPermission, getPagePermissions, loading, userId }}
     >
       {children}
     </PermissionContext.Provider>
