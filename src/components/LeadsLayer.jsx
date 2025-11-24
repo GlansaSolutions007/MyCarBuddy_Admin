@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
+import { usePermissions } from "../context/PermissionContext";
 
 const LeadsLayer = () => {
+  const { hasPermission } = usePermissions();
   const [leads, setLeads] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -83,12 +85,13 @@ const LeadsLayer = () => {
       sortable: true,
       wrap: true,
     },
+    ...(hasPermission("leadview_view")
+    ? [
     {
       name: "Action",
       cell: (row) => (
         <Link
            to={`/lead-view/${row.Id}`}
-          //  to={`/view-lead?id=${row.Id}`}
           className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
           title="View"
         >
@@ -99,6 +102,8 @@ const LeadsLayer = () => {
       allowOverflow: true,
       button: true,
     }
+      ]
+    : []),
   ];
 
   // Filter
@@ -131,7 +136,7 @@ const LeadsLayer = () => {
     <div className="row gy-4">
       <div className="col-12">
         <div className="d-flex justify-content-between align-items-center mb-3"></div>
-        <div className="card overflow-hidden p-3">
+        <div className="card overflow-hidden py-3">
           <div className="card-header">
             <div className="d-flex justify-content-between align-items-center mb-2">
               <form className="navbar-search">
@@ -165,11 +170,23 @@ const LeadsLayer = () => {
                   onChange={(e) => setSelectedStatus(e.target.value)}
                 >
                   <option value="All">All</option>
-                  <option value="CREATED">CREATED</option>
-                  <option value="CONTACTED">CONTACTED</option>
-                  <option value="QUALIFIED">QUALIFIED</option>
-                  <option value="CLOSED">CLOSED</option>
+                  <option value="CREATED">Created</option>
+                  <option value="CONTACTED">Contacted</option>
+                  <option value="QUALIFIED">Qualified</option>
+                  <option value="CLOSED">Closed</option>
                 </select>
+                {hasPermission("todayslead_view") && (
+                <Link
+                  to="/todays-lead"
+                  className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
+                >
+                  <Icon
+                    className="icon text-xl line-height-1"
+                  />
+                  New Leads
+                </Link>
+                )}
+                 {hasPermission("todayslead_view") && (
                 <Link
                   to="/add-lead"
                   className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
@@ -180,6 +197,7 @@ const LeadsLayer = () => {
                   />
                   Add Leads
                 </Link>
+                 )}
               </div>
             </div>
           </div>

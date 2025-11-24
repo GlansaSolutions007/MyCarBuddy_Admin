@@ -373,6 +373,7 @@ const MasterLayout = ({ children }) => {
         { title: "Assign Bookings", to: "/telecaler-bookings", color: "text-warning-main", permission: "telecaler_booking_view", page: "Telecaler_Bookings" },
         // { title: "Telecaller Tickets", to: "/telecaler-tickets", color: "text-info-main", permission: "telecaler_ticket_view", page: "Telecaler_Tickets" },
         { title: "Assign Tickets", to: "/assign-tickets", color: "text-success-main", permission: "assigntickets_view", page: "Assign Tickets" },
+        { title: "Assign Leads", to: "/assign-leads", color: "text-danger-main", permission: "assignleads_view", page: "Assign Leads" },
         // { title: "Employee Tickets", to: "/employee-tickets", color: "text-danger-main", permission: "employee_ticket_view", page: "Employee_Tickets" },
       ],
     },
@@ -382,6 +383,7 @@ const MasterLayout = ({ children }) => {
       children: [
         { title: "Ticket Reports", to: "/ticket-reports", color: "text-warning-main", permission: "ticketreports_view", page: "Ticket Reports" },
         { title: "Lead Reports", to: "/lead-reports", color: "text-danger-main", permission: "leadreports_view", page: "Lead Reports" },
+        { title: "Booking Reports", to: "/booking-reports", color: "text-success-main", permission: "bookingreports_view", page: "Booking Reports" },
       ],
     },
     // {
