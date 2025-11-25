@@ -72,7 +72,7 @@ const EmployeeLeadsReportLayer = ({
 
   const columns = [
     {
-      name: "LeadId",
+      name: "Lead ID",
       selector: (row) => row.LeadId || "-",
       sortable: true,
       wrap: true,
@@ -96,7 +96,8 @@ const EmployeeLeadsReportLayer = ({
       wrap: true,
     },
     {
-      name: "Next FollowUp Date",
+      name: "Next Follow Up ",
+      title: "Next Follow Up ",
       selector: (row) => formatDate(row.NextFollowUp_Date) || "-",
       sortable: true,
       wrap: true,
@@ -113,21 +114,21 @@ const EmployeeLeadsReportLayer = ({
       sortable: true,
       wrap: true,
     },
-{
-          name: "Action",
-          cell: (row) => (
-            <Link
-               to={`/lead-view/${row.LeadId}`}
-              className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-              title="View"
-            >
-            <Icon icon="lucide:eye" />
-            </Link>
-          ),
-          ignoreRowClick: true,
-          allowOverflow: true,
-          button: true,
-        }
+    {
+      name: "Action",
+      cell: (row) => (
+        <Link
+          to={`/lead-view/${row.LeadId}`}
+          className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+          title="View"
+        >
+          <Icon icon="lucide:eye" />
+        </Link>
+      ),
+      ignoreRowClick: true,
+      allowOverflow: true,
+      button: true,
+    },
   ];
 
   function formatDate(dateStr) {
@@ -187,7 +188,9 @@ const EmployeeLeadsReportLayer = ({
             </div>
           </div>
           {error ? (
-            <div className="alert m-3 align-items-center fw-bold d-flex justify-content-center">No leads available for selected date</div>
+            <div className="alert m-3 align-items-center fw-bold d-flex justify-content-center">
+              No leads available for selected date
+            </div>
           ) : (
             <DataTable
               columns={columns}

@@ -3,18 +3,16 @@ import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { usePermissions } from "../context/PermissionContext";
+const API_BASE = import.meta.env.VITE_APIURL;
 
-const LeadsLayer = () => {
+const OrganicLeadsLayer = () => {
   const { hasPermission } = usePermissions();
   const [leads, setLeads] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const API_BASE = import.meta.env.VITE_APIURL;
-  const [selectedStatus, setSelectedStatus] = useState("All");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  
 
   useEffect(() => {
     fetchLeads();
@@ -26,12 +24,17 @@ const LeadsLayer = () => {
     setError("");
 
     try {
-      const response = await fetch(`${API_BASE}ServiceLeads/FacebookLeads`,);
+      const response = await fetch(`${API_BASE}ServiceLeads/FacebookLeads`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      setLeads(data);
+
+      const organicOnly = Array.isArray(data)
+        ? data.filter((lead) => lead.Platform === "Organic")
+        : [];
+
+      setLeads(organicOnly);
     } catch (err) {
       setError("Failed to fetch leads. Please try again.");
       console.error("Error fetching leads:", err);
@@ -86,33 +89,29 @@ const LeadsLayer = () => {
       wrap: true,
     },
     ...(hasPermission("leadview_view")
-    ? [
-    {
-      name: "Action",
-      cell: (row) => (
-        <Link
-           to={`/lead-view/${row.Id}`}
-          className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-          title="View"
-        >
-        <Icon icon="lucide:eye" />
-        </Link>
-      ),
-      ignoreRowClick: true,
-      allowOverflow: true,
-      button: true,
-    }
-      ]
-    : []),
+      ? [
+          {
+            name: "Action",
+            cell: (row) => (
+              <Link
+                to={`/lead-view/${row.Id}`}
+                className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                title="View"
+              >
+                <Icon icon="lucide:eye" />
+              </Link>
+            ),
+            ignoreRowClick: true,
+            allowOverflow: true,
+            button: true,
+          },
+        ]
+      : []),
   ];
 
   // Filter
   const filteredLeads = leads.filter((lead) => {
-    if (lead.Platform === "Organic") return false;
     const text = searchText.toLowerCase();
-    const statusMatch =
-      selectedStatus === "All" ||
-      lead.LeadStatus?.toLowerCase() === selectedStatus.toLowerCase();
 
     // Date filtering
     const leadDate = lead.CreatedDate ? new Date(lead.CreatedDate) : null;
@@ -123,7 +122,6 @@ const LeadsLayer = () => {
       (!to || (leadDate && leadDate <= to));
 
     return (
-      statusMatch &&
       dateMatch &&
       (lead.FullName?.toLowerCase().includes(text) ||
         lead.PhoneNumber?.toLowerCase().includes(text) ||
@@ -165,27 +163,17 @@ const LeadsLayer = () => {
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
                 />
-                <select
-                  className="form-select radius-8 px-14 py-6 text-sm w-auto min-w-150"
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                >
-                  <option value="All">All</option>
-                  <option value="CREATED">Created</option>
-                  <option value="CONTACTED">Contacted</option>
-                  <option value="QUALIFIED">Qualified</option>
-                  <option value="CLOSED">Closed</option>
-                </select>
-                {hasPermission("todayslead_view") && (
-                <Link
-                  to="/todays-lead"
-                  className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
-                >
-                  <Icon
-                    className="icon text-xl line-height-1"
-                  />
-                  Today Leads
-                </Link>
+                {hasPermission("organicleads_add") && (
+                  <Link
+                    to="/add-lead"
+                    className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
+                  >
+                    <Icon
+                      icon="ic:baseline-plus"
+                      className="icon text-xl line-height-1"
+                    />
+                    Add Leads
+                  </Link>
                 )}
               </div>
             </div>
@@ -205,7 +193,6 @@ const LeadsLayer = () => {
               noDataComponent={
                 loading ? "Loading leads..." : "No leads available"
               }
-
             />
           )}
         </div>
@@ -214,4 +201,4 @@ const LeadsLayer = () => {
   );
 };
 
-export default LeadsLayer;
+export default OrganicLeadsLayer;

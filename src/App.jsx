@@ -86,7 +86,7 @@ import EmpTicketViewPage from "./pages/EmpTicketViewPage";
 import DeptWiseTicketReportPage from "./pages/DeptWiseTicketReportPage";
 import LeadsPage from "./pages/LeadsPage";
 import AddLeadPage from "./pages/AddLeadPage";
-import ViewLeadPage from "./pages/ViewLeadPage";
+import OrganicLeadsPage from "./pages/OrganicLeadsPage";
 import FaqsPage from "./pages/FaqsPage";
 import FaqsAddPage from "./pages/FaqsAddPage";
 import LeadsAssignPage from "./pages/LeadsAssignPage";
@@ -193,7 +193,7 @@ function App() {
           <Route exact path='/view-employee-report/:id' element={<EmpTicketViewPage />} />
           <Route exact path='/leads' element={<LeadsPage />} />
           <Route exact path='/add-lead' element={<AddLeadPage />} />
-          <Route exact path='/view-lead' element={<ViewLeadPage />} />
+          <Route exact path='/organic-leads' element={<OrganicLeadsPage />} />
           <Route exact path='/departments' element={<DepartmentsPage />} />
           <Route exact path="/contacts" element={<Contacts />} />
           <Route exact path="/DealerServicePrice" element={<DealerServiceP />} />

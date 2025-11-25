@@ -37,6 +37,7 @@ const LeadViewLayer = () => {
   const [brands, setBrands] = useState([]);
   const [models, setModels] = useState([]);
   const [fuelTypes, setFuelTypes] = useState([]);
+  const [filteredModels, setFilteredModels] = useState([]);
 
   // Personal Information States
   const [personalFullName, setPersonalFullName] = useState("");
@@ -56,6 +57,36 @@ const LeadViewLayer = () => {
     fetchFuelTypes();
     fetchSupervisors();
   }, [leadId]);
+
+// filter models for selected brand — keep model if it already matches, otherwise clear it
+useEffect(() => {
+  if (!models || models.length === 0) {
+    setFilteredModels([]);
+    return;
+  }
+
+  // if no brand selected -> show all models
+  if (!carBrand) {
+    setFilteredModels(models);
+    // clear model because no brand selected
+    setCarModel(null);
+    return;
+  }
+
+  const brandId = Number(carBrand.value);
+  const list = models.filter(m => Number(m.BrandID) === brandId);
+  setFilteredModels(list);
+
+  // only clear carModel if it doesn't belong to the selected brand
+  if (carModel) {
+    const modelId = Number(carModel.value);
+    const modelBelongs = list.some(m => Number(m.ModelID) === modelId);
+    if (!modelBelongs) {
+      setCarModel(null);
+    }
+  }
+}, [models, carBrand, carModel]);
+
   // Prefill Personal Information and Car Details fields with data from the lead
   useEffect(() => {
     if (lead) {
@@ -932,7 +963,7 @@ const LeadViewLayer = () => {
                           Model
                         </label>
                         <Select
-                          options={models.map(model => ({ value: model.ModelID, label: model.ModelName }))}
+                          options={filteredModels.map(model => ({ value: model.ModelID, label: model.ModelName }))}
                           value={carModel}
                           onChange={setCarModel}
                           placeholder="Select Model"
