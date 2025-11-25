@@ -8,7 +8,7 @@ const TodayLeadsPage = () => {
     <>
       <MasterLayout>
 
-        <Breadcrumb title="Todays Lead" />
+        <Breadcrumb title="Todays Assigned Lead" />
 
         {/* TodayLeadsLayer */}
         <TodayLeadsLayer/>

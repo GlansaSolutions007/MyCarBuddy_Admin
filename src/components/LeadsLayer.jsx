@@ -5,6 +5,9 @@ import DataTable from "react-data-table-component";
 import { usePermissions } from "../context/PermissionContext";
 
 const LeadsLayer = () => {
+  const employeeData = JSON.parse(localStorage.getItem("employeeData"));
+  const roleName = employeeData?.RoleName;
+  const role = localStorage.getItem("role");
   const { hasPermission } = usePermissions();
   const [leads, setLeads] = useState([]);
   const [searchText, setSearchText] = useState("");
@@ -14,19 +17,24 @@ const LeadsLayer = () => {
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  
 
   useEffect(() => {
     fetchLeads();
   }, []);
 
-  // Fetch Leads from API
   const fetchLeads = async () => {
     setLoading(true);
     setError("");
 
     try {
-      const response = await fetch(`${API_BASE}ServiceLeads/FacebookLeads`,);
+      let url;
+      if (role === "Admin") {
+        url = `${API_BASE}ServiceLeads/FacebookLeads`;
+      } else {
+        url = `${API_BASE}ServiceLeads/FacebookLeads?EmployeeId=${employeeData?.Id}&RoleName=${employeeData?.RoleName}`;
+      }
+
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -81,29 +89,29 @@ const LeadsLayer = () => {
     },
     {
       name: "Lead Status",
-      selector: (row) => row.LeadStatus || "-",
+      selector: (row) => row.FollowUpStatus || "Created",
       sortable: true,
       wrap: true,
     },
     ...(hasPermission("leadview_view")
-    ? [
-    {
-      name: "Action",
-      cell: (row) => (
-        <Link
-           to={`/lead-view/${row.Id}`}
-          className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-          title="View"
-        >
-        <Icon icon="lucide:eye" />
-        </Link>
-      ),
-      ignoreRowClick: true,
-      allowOverflow: true,
-      button: true,
-    }
-      ]
-    : []),
+      ? [
+          {
+            name: "Action",
+            cell: (row) => (
+              <Link
+                to={`/lead-view/${row.Id}`}
+                className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                title="View"
+              >
+                <Icon icon="lucide:eye" />
+              </Link>
+            ),
+            ignoreRowClick: true,
+            allowOverflow: true,
+            button: true,
+          },
+        ]
+      : []),
   ];
 
   // Filter
@@ -176,17 +184,16 @@ const LeadsLayer = () => {
                   <option value="QUALIFIED">Qualified</option>
                   <option value="CLOSED">Closed</option>
                 </select>
-                {hasPermission("todayslead_view") && (
-                <Link
-                  to="/todays-lead"
-                  className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
-                >
-                  <Icon
-                    className="icon text-xl line-height-1"
-                  />
-                  Today Leads
-                </Link>
-                )}
+                {hasPermission("todayslead_view") &&
+                  roleName === "Employee" && (
+                    <Link
+                      to="/todays-lead"
+                      className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
+                    >
+                      <Icon className="icon text-xl line-height-1" />
+                      Today Assigned Leads
+                    </Link>
+                  )}
               </div>
             </div>
           </div>
@@ -205,7 +212,6 @@ const LeadsLayer = () => {
               noDataComponent={
                 loading ? "Loading leads..." : "No leads available"
               }
-
             />
           )}
         </div>
