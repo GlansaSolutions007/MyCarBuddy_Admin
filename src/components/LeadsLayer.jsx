@@ -63,6 +63,12 @@ const LeadsLayer = () => {
       wrap: true,
     },
     {
+      name: "Email",
+      selector: (row) => row.Email || "-",
+      sortable: true,
+      wrap: true,
+    },
+    {
       name: "Created Date",
       selector: (row) => {
         if (!row.CreatedDate) return "-";
@@ -77,14 +83,13 @@ const LeadsLayer = () => {
       wrap: true,
     },
     {
-      name: "Email",
-      selector: (row) => row.Email || "-",
-      sortable: true,
+      name: "City",
+      selector: (row) => row.City || "-",
       wrap: true,
     },
     {
-      name: "City",
-      selector: (row) => row.City || "-",
+      name: "Platform",
+      selector: (row) => row.Platform || "-",
       wrap: true,
     },
     {
@@ -98,6 +103,8 @@ const LeadsLayer = () => {
           {
             name: "Action",
             cell: (row) => (
+              <div className="d-flex gap-2">
+                
               <Link
                 to={`/lead-view/${row.Id}`}
                 className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
@@ -105,6 +112,18 @@ const LeadsLayer = () => {
               >
                 <Icon icon="lucide:eye" />
               </Link>
+              {hasPermission("bookservices_view") && (
+               <Link
+                to={`/book-services`}
+                //  to={`/book-service/${row.Id}`}
+                className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                title="Book Services"
+              >
+                <Icon icon="lucide:calendar-check" />
+                {/* <Icon icon="mdi:car-wrench" /> */}
+              </Link>
+              )}
+              </div>
             ),
             ignoreRowClick: true,
             allowOverflow: true,
@@ -115,7 +134,10 @@ const LeadsLayer = () => {
   ];
 
   // Filter
-  const filteredLeads = leads.filter((lead) => {
+    const filteredLeads = [...leads]
+    .sort((a, b) => new Date(a.CreatedDate) - new Date(b.CreatedDate))
+    .filter((lead) => {
+  // const filteredLeads = leads.filter((lead) => {
     if (lead.Platform === "Organic") return false;
     const text = searchText.toLowerCase();
     const statusMatch =

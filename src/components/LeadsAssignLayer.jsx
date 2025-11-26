@@ -15,7 +15,7 @@ const LeadsAssignLayer = () => {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
 
-  const userDetails = JSON.parse(localStorage.getItem("employeeData") || "{}");
+  const userDetails = JSON.parse(localStorage.getItem("employeeData"));
 
   const [departments, setDepartments] = useState([]);
   const [departmentHeads, setDepartmentHeads] = useState([]);
@@ -55,7 +55,7 @@ const LeadsAssignLayer = () => {
         City: lead.City || "",
         CreatedDate: lead.CreatedDate,
         StatusName: lead.LeadStatus || "Not Assigned",
-        // Description: "Lead",
+        Description: lead.Description,
         TrackingHistory: [{ StatusName: lead.LeadStatus || "Not Assigned" }],
         IsAssigned_Head: lead.IsAssigned_Head,
         IsAssigned_Emp: lead.IsAssigned_Emp,
@@ -69,13 +69,13 @@ const LeadsAssignLayer = () => {
         // Show unassigned leads (null or 0)
         filteredData = mappedData.filter(
           (lead) => (lead.IsAssigned_Head == null || lead.IsAssigned_Head == 0) &&
-                    (lead.IsAssigned_Emp == null || lead.IsAssigned_Emp == 0)
+          (lead.IsAssigned_Emp == null || lead.IsAssigned_Emp == 0)
         );
       } else if (userDetails?.Is_Head === 1) {
         // Show leads assigned to this head and not assigned to employee
         filteredData = mappedData.filter(
           (lead) => lead.Head_Assign === userDetails.Id &&
-                    (lead.IsAssigned_Emp == null || lead.IsAssigned_Emp == 0)
+          (lead.IsAssigned_Emp == null || lead.IsAssigned_Emp == 0)
         );
       } else {
         // Employee: Show leads assigned to this employee
@@ -83,6 +83,9 @@ const LeadsAssignLayer = () => {
           (lead) => lead.Emp_Assign === userDetails.Id
         );
       }
+        filteredData = [...filteredData].sort(
+          (a, b) => new Date(a.CreatedDate) - new Date(b.CreatedDate)
+        );
 
       setLeads(filteredData);
     } catch (err) {
@@ -396,11 +399,11 @@ const LeadsAssignLayer = () => {
     //   },
     //   wrap: true,
     // },
-    // {
-    //   name: "Description",
-    //   selector: (row) => row.Description,
-    //   wrap: true,
-    // },
+    {
+      name: "Description",
+      selector: (row) => row.Description,
+      wrap: true,
+    },
     {
       name: "Actions",
       cell: (row) => (

@@ -163,7 +163,7 @@ const OrganicLeadsLayer = () => {
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
                 />
-                {hasPermission("organicleads_add") && (
+                {hasPermission("addlead_add") && (
                   <Link
                     to="/add-lead"
                     className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"

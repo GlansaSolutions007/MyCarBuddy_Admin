@@ -95,6 +95,7 @@ import LeadReportsPage from "./pages/LeadReportsPage";
 import BookingReportPage from "./pages/BookingReportPage"
 import EmployeeLeadsReportPage from "./pages/EmployeeLeadsReportPage";
 import TodayLeadsPage from "./pages/TodayLeadsPage";
+import BookServicesPage from "./pages/BookSevicesPage";
 
 
 function App() {
@@ -215,6 +216,8 @@ function App() {
           <Route exact path='/lead-reports' element={<LeadReportsPage />} />
           <Route exact path="/emp-leads-report/:employeeId" element={<EmployeeLeadsReportPage />} />
           <Route exact path="todays-lead" element={<TodayLeadsPage />} />
+          <Route exact path="/book-services" element={<BookServicesPage />} />
+          <Route exact path='/booking-reports' element={<BookingReportPage/>} />
 
         </Route>
 
@@ -237,7 +240,6 @@ function App() {
           path='/notification-alert'
           element={<NotificationAlertPage />}
         />
-        <Route exact path='/booking-reports' element={<BookingReportPage/>} />
       </Routes>
     </BrowserRouter>
   );
