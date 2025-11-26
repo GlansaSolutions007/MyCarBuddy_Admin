@@ -72,20 +72,32 @@ const EmployeeLeadsReportLayer = ({
 
   const columns = [
     {
-      name: "Lead ID",
-      selector: (row) => row.LeadId || "-",
+      name: "Customer Name",
+      selector: (row) => row.FullName || "-",
       sortable: true,
       wrap: true,
     },
     {
       name: "Created At",
-      selector: (row) => formatDate(row.Created_At) || "-",
+      selector: (row) => formatDate(row.Leadcreateddate) || "-",
       sortable: true,
       wrap: true,
     },
     {
       name: "Status",
       selector: (row) => row.Status || "-",
+      sortable: true,
+      wrap: true,
+    },
+    {
+      name: "Notes",
+      selector: (row) => row.Notes || "-",
+      sortable: false,
+      wrap: true,
+    },
+    {
+      name: "Updated At",
+      selector: (row) => formatDate(row.Created_At) || "-",
       sortable: true,
       wrap: true,
     },
@@ -99,18 +111,6 @@ const EmployeeLeadsReportLayer = ({
       name: "Next Follow Up ",
       title: "Next Follow Up ",
       selector: (row) => formatDate(row.NextFollowUp_Date) || "-",
-      sortable: true,
-      wrap: true,
-    },
-    {
-      name: "Notes",
-      selector: (row) => row.Notes || "-",
-      sortable: false,
-      wrap: true,
-    },
-    {
-      name: "Updated At",
-      selector: (row) => formatDate(row.Updated_At) || "-",
       sortable: true,
       wrap: true,
     },

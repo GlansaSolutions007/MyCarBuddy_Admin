@@ -306,7 +306,7 @@ const MasterLayout = ({ children }) => {
         { title: "Bookings", to: "/bookings", color: "text-warning-main", permission: "booking_view", page: "Bookings" },
         { title: "Refunds", to: "/refunds", color: "text-black", permission: "refund_view", page: "Refunds" },
         { title: "Payments", to: "/payments", color: "text-info-main", permission: "payment_view", page: "Payments" },
-        { title: "Tickets", to: "/tickets", color: "text-info-danger", permission: "ticket_view", page: "Tickets" },
+        { title: "Tickets", to: "/tickets", color: "text-info-danger", permission: "tickets_view", page: "Tickets" },
       ],
     },
     {

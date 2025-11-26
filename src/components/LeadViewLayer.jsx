@@ -578,6 +578,14 @@ const LeadViewLayer = () => {
                   </li>
                   <li className="d-flex align-items-center gap-1 mb-12">
                     <span className="w-30 text-md fw-semibold text-primary-light">
+                      Description
+                    </span>
+                    <span className="w-70 text-secondary-light fw-medium">
+                      : {lead?.Description || "N/A"}
+                    </span>
+                  </li>
+                  <li className="d-flex align-items-center gap-1 mb-12">
+                    <span className="w-30 text-md fw-semibold text-primary-light">
                       Created
                     </span>
                     <span className="w-70 text-secondary-light fw-medium">
