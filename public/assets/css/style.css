@@ -15813,3 +15813,38 @@ html[data-theme="dark"] .sidebar-logo {
 .rdt_TableCol{
   font-weight: 900;
 }
+
+input[type="date"] {
+  position: relative;
+  color: transparent;
+  text-transform: uppercase;
+}
+
+/* Show placeholder text */
+input[type="date"]::before {
+  content: attr(placeholder);
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6c757d;
+  pointer-events: none;
+  text-transform: uppercase;
+  font-weight: 400;
+  opacity: 0.55; 
+}
+
+/* Hide placeholder when focused or when a value is selected */
+input[type="date"]:focus::before,
+input[type="date"]:not(:placeholder-shown)::before {
+  content: '';
+}
+
+/* optional: remove browser date icon if needed */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 8px;
+  color: transparent;
+  opacity: 1;
+  cursor: pointer;
+}

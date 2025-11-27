@@ -143,6 +143,7 @@ const LeadReportsLayer = () => {
                     type="date"
                     id="fromDate"
                     className="form-control"
+                    placeholder="DD-MM-YYYY"
                     value={fromDate}
                     onChange={(e) => setFromDate(e.target.value)}
                   />
@@ -155,6 +156,7 @@ const LeadReportsLayer = () => {
                     type="date"
                     id="toDate"
                     className="form-control"
+                    placeholder="DD-MM-YYYY"
                     value={toDate}
                     onChange={(e) => setToDate(e.target.value)}
                   />

@@ -500,6 +500,7 @@ const BookingLayer = () => {
               <input
                 type="date"
                 className="form-control flex-shrink-0"
+                placeholder="DD-MM-YYYY"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 style={{ minWidth: "120px", flex: "1 1 130px" }}
@@ -507,6 +508,7 @@ const BookingLayer = () => {
               <input
                 type="date"
                 className="form-control flex-shrink-0"
+                placeholder="DD-MM-YYYY"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 style={{ minWidth: "120px", flex: "1 1 130px" }}

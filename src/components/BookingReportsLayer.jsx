@@ -85,6 +85,7 @@ const BookingReportsLayer = () => {
                         <input
                             type="date"
                             className="form-control m-1"
+                            placeholder="DD-MM-YYYY"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
                             style={{
@@ -96,6 +97,7 @@ const BookingReportsLayer = () => {
                         <input
                             type="date"
                             className="form-control m-1"
+                            placeholder="DD-MM-YYYY"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
                             style={{

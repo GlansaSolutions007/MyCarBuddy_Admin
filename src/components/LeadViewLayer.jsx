@@ -748,6 +748,7 @@ const LeadViewLayer = () => {
                           </label>
                           <input
                             type="date"
+                            placeholder="DD-MM-YYYY"
                             className="form-control"
                             value={notAnsweredFollowUpDate}
                             onChange={(e) =>
@@ -857,6 +858,7 @@ const LeadViewLayer = () => {
                             </label>
                             <input
                               type="date"
+                              placeholder="DD-MM-YYYY"
                               className="form-control"
                               value={nextFollowUpDate}
                               onChange={(e) =>

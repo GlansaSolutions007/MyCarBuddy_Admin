@@ -348,6 +348,7 @@ const PaymentsListLayer = () => {
               {/* 📅 Date Range */}
               <input
                 type="date"
+                placeholder="DD-MM-YYYY"
                 className="form-control flex-shrink-0"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
@@ -355,6 +356,7 @@ const PaymentsListLayer = () => {
               />
               <input
                 type="date"
+                placeholder="DD-MM-YYYY"
                 className="form-control flex-shrink-0"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}

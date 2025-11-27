@@ -135,7 +135,7 @@ const LeadsLayer = () => {
 
   // Filter
     const filteredLeads = [...leads]
-    .sort((a, b) => new Date(a.CreatedDate) - new Date(b.CreatedDate))
+    .sort((a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate))
     .filter((lead) => {
   // const filteredLeads = leads.filter((lead) => {
     if (lead.Platform === "Organic") return false;
@@ -185,6 +185,7 @@ const LeadsLayer = () => {
                 <input
                   type="date"
                   className="form-control radius-8 px-14 py-6 text-sm w-auto"
+                  placeholder="DD-MM-YYYY"
                   value={fromDate}
                   onChange={(e) => setFromDate(e.target.value)}
                 />
@@ -192,6 +193,7 @@ const LeadsLayer = () => {
                 <input
                   type="date"
                   className="form-control radius-8 px-14 py-6 text-sm w-auto"
+                  placeholder="DD-MM-YYYY"
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
                 />

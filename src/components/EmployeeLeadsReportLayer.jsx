@@ -56,8 +56,11 @@ const EmployeeLeadsReportLayer = ({
       });
 
       if (res.data && Array.isArray(res.data)) {
-        setLeads(res.data);
-        setFilteredLeads(res.data);
+      const sorted = [...res.data].sort(
+        (a, b) => new Date(b.Leadcreateddate) - new Date(a.Leadcreateddate)
+      );
+        setLeads(sorted);
+        setFilteredLeads(sorted);
       } else {
         setLeads([]);
         setFilteredLeads([]);
@@ -98,6 +101,12 @@ const EmployeeLeadsReportLayer = ({
     {
       name: "Updated At",
       selector: (row) => formatDate(row.Created_At) || "-",
+      sortable: true,
+      wrap: true,
+    },
+    {
+      name: "Count",
+      selector: (row) => row.FollowUpCount || "-",
       sortable: true,
       wrap: true,
     },
@@ -159,31 +168,26 @@ const EmployeeLeadsReportLayer = ({
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </form>
-              <div className="d-flex gap-3 flex-wrap">
-                <div>
-                  <label htmlFor="fromDate" className="form-label">
-                    From Date
-                  </label>
+              <div className="d-flex align-items-center gap-3 flex-wrap">
+                
+                  <label className="text-sm fw-semibold">From:</label>
                   <input
                     type="date"
                     id="fromDate"
-                    className="form-control"
+                    className="form-control w-auto"
                     value={fromDate}
                     onChange={(e) => setFromDate(e.target.value)}
                   />
-                </div>
-                <div>
-                  <label htmlFor="toDate" className="form-label">
-                    To Date
-                  </label>
+                
+                   <label className="text-sm fw-semibold">To:</label>
                   <input
                     type="date"
                     id="toDate"
-                    className="form-control"
+                    className="form-control w-auto"
                     value={toDate}
                     onChange={(e) => setToDate(e.target.value)}
                   />
-                </div>
+               
               </div>
             </div>
           </div>

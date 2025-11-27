@@ -109,27 +109,28 @@ const OrganicLeadsLayer = () => {
       : []),
   ];
 
-  // Filter
-  const filteredLeads = leads.filter((lead) => {
-    const text = searchText.toLowerCase();
+  let filteredLeads = leads
+    .filter((lead) => {
+      const text = searchText.toLowerCase();
 
-    // Date filtering
-    const leadDate = lead.CreatedDate ? new Date(lead.CreatedDate) : null;
-    const from = fromDate ? new Date(fromDate + "T00:00:00") : null;
-    const to = toDate ? new Date(toDate + "T23:59:59") : null;
-    const dateMatch =
-      (!from || (leadDate && leadDate >= from)) &&
-      (!to || (leadDate && leadDate <= to));
+      const leadDate = lead.CreatedDate ? new Date(lead.CreatedDate) : null;
+      const from = fromDate ? new Date(fromDate + "T00:00:00") : null;
+      const to = toDate ? new Date(toDate + "T23:59:59") : null;
 
-    return (
-      dateMatch &&
-      (lead.FullName?.toLowerCase().includes(text) ||
-        lead.PhoneNumber?.toLowerCase().includes(text) ||
-        lead.Email?.toLowerCase().includes(text) ||
-        lead.City?.toLowerCase().includes(text) ||
-        lead.LeadStatus?.toLowerCase().includes(text))
-    );
-  });
+      const dateMatch =
+        (!from || (leadDate && leadDate >= from)) &&
+        (!to || (leadDate && leadDate <= to));
+
+      return (
+        dateMatch &&
+        (lead.FullName?.toLowerCase().includes(text) ||
+          lead.PhoneNumber?.toLowerCase().includes(text) ||
+          lead.Email?.toLowerCase().includes(text) ||
+          lead.City?.toLowerCase().includes(text) ||
+          lead.LeadStatus?.toLowerCase().includes(text))
+      );
+    })
+    .sort((a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate));
 
   return (
     <div className="row gy-4">
@@ -152,14 +153,16 @@ const OrganicLeadsLayer = () => {
                 <label className="text-sm fw-semibold">From:</label>
                 <input
                   type="date"
-                  className="form-control radius-8 px-14 py-6 text-sm w-auto"
+                  placeholder="DD-MM-YYYY"
+                  className="custom-date form-control radius-8 px-14 py-6 text-sm w-auto"
                   value={fromDate}
                   onChange={(e) => setFromDate(e.target.value)}
                 />
                 <label className="text-sm fw-semibold">To:</label>
                 <input
                   type="date"
-                  className="form-control radius-8 px-14 py-6 text-sm w-auto"
+                  placeholder="DD-MM-YYYY"
+                  className="custom-date form-control radius-8 px-14 py-6 text-sm w-auto"
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
                 />

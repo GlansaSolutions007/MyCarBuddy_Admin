@@ -361,6 +361,7 @@ const TicketsViewLayer = () => {
                 <input
                   type="date"
                   className="form-control text-sm"
+                  placeholder="DD-MM-YYYY"
                   value={fromDate}
                   onChange={(e) => setFromDate(e.target.value)}
                   style={{ minWidth: "130px", flex: "1 1 130px" }}
