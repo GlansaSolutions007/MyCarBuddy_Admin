@@ -96,6 +96,8 @@ import BookingReportPage from "./pages/BookingReportPage"
 import EmployeeLeadsReportPage from "./pages/EmployeeLeadsReportPage";
 import TodayLeadsPage from "./pages/TodayLeadsPage";
 import BookServicesPage from "./pages/BookSevicesPage";
+import ExplanationsPage from "./pages/ExplanationsPage";
+import ExplanationsAddPage from "./pages/ExplanationsAddPage";
 
 
 function App() {
@@ -219,7 +221,9 @@ function App() {
           <Route exact path="/book-service" element={<BookServicesPage />} />
           <Route exact path="/book-service/:Id" element={<BookServicesPage />} />
           <Route exact path='/booking-reports' element={<BookingReportPage/>} />
-
+          <Route exact path='/explanations' element={<ExplanationsPage/>} />
+          <Route exact path='/add-explanations' element={<ExplanationsAddPage/>} />
+          
         </Route>
 
         {/* //extra  pages */}

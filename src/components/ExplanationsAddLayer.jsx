@@ -7,7 +7,7 @@ import { Icon } from "@iconify/react";
 import { usePermissions } from "../context/PermissionContext";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
-const FaqsAddLayer = () => {
+const ExplanationsAddLayer = () => {
   const { hasPermission } = usePermissions();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -20,9 +20,9 @@ const FaqsAddLayer = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
-  const [faqs, setFaqs] = useState([]);
+  const [explanations, setExplanations] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [faqType, setFaqType] = useState("category");
+  const [explanationType, setExplanationType] = useState("category");
 
   const API_BASE = `${import.meta.env.VITE_APIURL}`;
   const token = localStorage.getItem("token");
@@ -32,17 +32,17 @@ const FaqsAddLayer = () => {
       await fetchAllCategories();
       const packagesData = await fetchAllPackages();
       if (isEditMode) {
-        fetchFaq(editId, packagesData);
+        fetchExplanation(editId, packagesData);
       }
     };
     loadData();
   }, [isEditMode, editId]);
 
   useEffect(() => {
-    setFaqs([]);
+    setExplanations([]);
     setSelectedCategory(null);
     setSelectedPackage(null);
-  }, [faqType]);
+  }, [explanationType]);
 
   const fetchAllPackages = async () => {
     try {
@@ -81,49 +81,49 @@ const FaqsAddLayer = () => {
     }
   };
 
-  const fetchFaq = async (id, packagesData) => {
+  const fetchExplanation = async (id, packagesData) => {
     try {
-      const res = await axios.get(`${API_BASE}FAQS?Id=${id}`, {
+      const res = await axios.get(`${API_BASE}Explanations?Id=${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const faq = Array.isArray(res.data) ? res.data[0] : res.data;
+      const explanation = Array.isArray(res.data) ? res.data[0] : res.data;
 
-      if (!faq) {
-        Swal.fire("Error", "No FAQ found", "error");
+      if (!explanation) {
+        Swal.fire("Error", "No Explanation found", "error");
         return;
       }
 
       setSelectedPackage({
-        value: faq.PackageID,
-        label: packagesData.find((p) => p.value === faq.PackageID)?.label || "",
+        value: explanation.PackageID,
+        label: packagesData.find((p) => p.value === explanation.PackageID)?.label || "",
       });
 
-      setQuestion(faq.Question);
-      setAnswer(faq.Answer);
+      setQuestion(explanation.Question);
+      setAnswer(explanation.Explanation);
     } catch (error) {
-      console.error("Failed to load FAQ", error);
-      Swal.fire("Error", "Failed to load FAQ", "error");
+      console.error("Failed to load Explanation", error);
+      Swal.fire("Error", "Failed to load Explanation", "error");
     }
   };
 
-  const handleAddFaq = () => {
+  const handleAddExplanation = () => {
     if (
-      faqType === "category" &&
+      explanationType === "category" &&
       (!selectedCategory || !question.trim() || !answer.trim())
     ) {
-      Swal.fire("Error", "Please fill category, question, and answer", "error");
+      Swal.fire("Error", "Please fill category, question, and explanation", "error");
       return;
     }
     if (
-      faqType === "package" &&
+      explanationType === "package" &&
       (!selectedPackage || !question.trim() || !answer.trim())
     ) {
-      Swal.fire("Error", "Please fill package, question, and answer", "error");
+      Swal.fire("Error", "Please fill package, question, and explanation", "error");
       return;
     }
-    const newFaq = {
-      faqType,
+    const newExplanation = {
+      explanationType,
       categoryId: selectedCategory?.value || null,
       categoryName: selectedCategory?.label || "",
       packageId: selectedPackage?.value || null,
@@ -131,20 +131,20 @@ const FaqsAddLayer = () => {
       question: question.trim(),
       answer: answer.trim(),
     };
-    setFaqs([...faqs, newFaq]);
+    setExplanations([...explanations, newExplanation]);
     setQuestion("");
     setAnswer("");
     setSelectedCategory(null);
     setSelectedPackage(null);
   };
 
-  const handleRemoveFaq = (index) => {
-    setFaqs(faqs.filter((_, i) => i !== index));
+  const handleRemoveExplanation = (index) => {
+    setExplanations(explanations.filter((_, i) => i !== index));
   };
 
-  const handleSaveFaqs = async () => {
-    if (faqs.length === 0) {
-      Swal.fire("Error", "No FAQs to save", "error");
+  const handleSaveExplanations = async () => {
+    if (explanations.length === 0) {
+      Swal.fire("Error", "No Explanations to save", "error");
       return;
     }
 
@@ -152,23 +152,23 @@ const FaqsAddLayer = () => {
 
     try {
       // Group by each row's own type and ID
-      const grouped = faqs.reduce((acc, faq) => {
+      const grouped = explanations.reduce((acc, explanation) => {
         const key =
-          faq.faqType === "category"
-            ? `cat-${faq.categoryId}`
-            : `pkg-${faq.packageId}`;
+          explanation.explanationType === "category"
+            ? `cat-${explanation.categoryId}`
+            : `pkg-${explanation.packageId}`;
 
         if (!acc[key]) {
           acc[key] = {
-            faqType: faq.faqType,
-            id: faq.faqType === "category" ? faq.categoryId : faq.packageId,
-            faqs: [],
+            explanationType: explanation.explanationType,
+            id: explanation.explanationType === "category" ? explanation.categoryId : explanation.packageId,
+            explanations: [],
           };
         }
 
-        acc[key].faqs.push({
-          question: faq.question,
-          answer: faq.answer,
+        acc[key].explanations.push({
+          question: explanation.question,
+          explanation: explanation.answer,
         });
 
         return acc;
@@ -179,28 +179,28 @@ const FaqsAddLayer = () => {
         const group = grouped[key];
 
         const payload =
-          group.faqType === "category"
-            ? { categoryID: group.id, faQs: group.faqs }
-            : { packageID: group.id, faQs: group.faqs };
+          group.explanationType === "category"
+            ? { categoryID: group.id, explanations: group.explanations }
+            : { packageID: group.id, explanations: group.explanations };
 
-        await axios.post(`${API_BASE}FAQS`, payload, {
+        await axios.post(`${API_BASE}Explanations`, payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
       }
 
-      Swal.fire("Success", "FAQs saved successfully", "success");
-      setFaqs([]);
+      Swal.fire("Success", "Explanations saved successfully", "success");
+      setExplanations([]);
       setSelectedCategory(null);
       setSelectedPackage(null);
     } catch (error) {
-      console.error("Failed to save FAQs", error);
-      Swal.fire("Error", "Failed to save FAQs", "error");
+      console.error("Failed to save Explanations", error);
+      Swal.fire("Error", "Failed to save Explanations", "error");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpdateFaq = async () => {
+  const handleUpdateExplanation = async () => {
     if (!selectedPackage || !question.trim() || !answer.trim()) {
       Swal.fire("Error", "Please fill all fields", "error");
       return;
@@ -211,19 +211,19 @@ const FaqsAddLayer = () => {
       const payload = {
         id: parseInt(editId),
         question: question.trim(),
-        answer: answer.trim(),
+        explanation: answer.trim(),
         packageID: selectedPackage.value,
       };
 
-      await axios.put(`${API_BASE}FAQS`, payload, {
+      await axios.put(`${API_BASE}Explanations`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      Swal.fire("Success", "FAQ updated successfully", "success");
-      navigate("/faqs");
+      Swal.fire("Success", "Explanation updated successfully", "success");
+      navigate("/explanations");
     } catch (error) {
-      console.error("Failed to update FAQ", error);
-      Swal.fire("Error", "Failed to update FAQ", "error");
+      console.error("Failed to update Explanation", error);
+      Swal.fire("Error", "Failed to update Explanation", "error");
     } finally {
       setLoading(false);
     }
@@ -231,9 +231,9 @@ const FaqsAddLayer = () => {
 
   const columns = [
     {
-      name: faqType === "category" ? "Category" : "Package",
+      name: explanationType === "category" ? "Category" : "Package",
       selector: (row) =>
-        faqType === "category" ? row.categoryName : row.packageName,
+        explanationType === "category" ? row.categoryName : row.packageName,
       sortable: true,
       width: "20%",
     },
@@ -254,7 +254,7 @@ const FaqsAddLayer = () => {
       cell: (row, index) => (
         <button
           className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
-          onClick={() => handleRemoveFaq(index)}
+          onClick={() => handleRemoveExplanation(index)}
         >
           <Icon icon="mingcute:delete-2-line" />
         </button>
@@ -274,29 +274,29 @@ const FaqsAddLayer = () => {
                   <label className="form-label d-flex align-items-center gap-2 col-6">
                     <input
                       type="radio"
-                      name="faqType"
+                      name="explanationType"
                       value="category"
-                      checked={faqType === "category"}
-                      onChange={(e) => setFaqType(e.target.value)}
+                      checked={explanationType === "category"}
+                      onChange={(e) => setExplanationType(e.target.value)}
                       className="form-check-input"
                       style={{ accentColor: "black" }}
                     />
-                    Add FAQ for Category
+                    Add Explanation for Category
                   </label>
                   <label className="form-label d-flex align-items-center gap-2 col-6">
                     <input
                       type="radio"
-                      name="faqType"
+                      name="explanationType"
                       value="package"
-                      checked={faqType === "package"}
-                      onChange={(e) => setFaqType(e.target.value)}
+                      checked={explanationType === "package"}
+                      onChange={(e) => setExplanationType(e.target.value)}
                       className="form-check-input"
                     />
-                    Add FAQ for Package
+                    Add Explanation for Package
                   </label>
                 </div>
               </div>
-              {faqType === "category" && (
+              {explanationType === "category" && (
                 <div className="col-md-12">
                   <label className="form-label">Select Category</label>
                   <Select
@@ -311,7 +311,7 @@ const FaqsAddLayer = () => {
                 </div>
               )}
 
-              {faqType === "package" && (
+              {explanationType === "package" && (
                 <div className="col-md-12">
                   <label className="form-label">Select Package</label>
                   <Select
@@ -343,28 +343,28 @@ const FaqsAddLayer = () => {
                   rows={3}
                   value={answer}
                   onChange={(e) => setAnswer(e.target.value)}
-                  placeholder="Enter answer"
+                  placeholder="Enter explanation"
                 />
               </div>
-              {!isEditMode && hasPermission("faqs_add") && (
+              {!isEditMode && hasPermission("explanations_add") && (
                 <div className="col-12 d-flex justify-content-end mb-10">
                   <button
                     className="btn btn-primary radius-8 px-14 py-2 d-flex align-items-center"
-                    onClick={handleAddFaq}
+                    onClick={handleAddExplanation}
                   >
                     <Icon icon="ic:baseline-plus" />
                     Add
                   </button>
                 </div>
               )}
-              {isEditMode && hasPermission("faqs_edit") && (
+              {isEditMode && hasPermission("explanations_edit") && (
                 <div className="col-12 d-flex justify-content-center mb-10">
                   <button
                     className="btn btn-primary-600 radius-8 px-10 py-4 d-flex align-items-center gap-2"
-                    onClick={handleUpdateFaq}
+                    onClick={handleUpdateExplanation}
                     disabled={loading}
                   >
-                    {loading ? "Updating..." : "Update FAQ"}
+                    {loading ? "Updating..." : "Update Explanation"}
                   </button>
                 </div>
               )}
@@ -374,23 +374,23 @@ const FaqsAddLayer = () => {
                 <hr />
                 <DataTable
                   columns={columns}
-                  data={faqs}
+                  data={explanations}
                   pagination
                   highlightOnHover
                   responsive
                   striped
                   persistTableHead
-                  noDataComponent="No FAQs added yet"
+                  noDataComponent="No Explanations added yet"
                 />
-                {faqs.length > 0 && (
+                {explanations.length > 0 && (
                   <div className="d-flex justify-content-center mt-3">
-                    {hasPermission("faqs_add") && (
+                    {hasPermission("explanations_add") && (
                       <button
                         className="btn btn-primary-600 radius-8 px-10 py-4 d-flex align-items-center gap-2"
-                        onClick={handleSaveFaqs}
+                        onClick={handleSaveExplanations}
                         disabled={loading}
                       >
-                        {loading ? "Saving..." : "Save FAQs"}
+                        {loading ? "Saving..." : "Save Explanations"}
                       </button>
                     )}
                   </div>
@@ -404,4 +404,4 @@ const FaqsAddLayer = () => {
   );
 };
 
-export default FaqsAddLayer;
+export default ExplanationsAddLayer;

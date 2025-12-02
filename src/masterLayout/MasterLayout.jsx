@@ -492,13 +492,6 @@ const MasterLayout = ({ children }) => {
       children: [
         { title: "SEO", to: "/seo", color: "text-info-main", permission: "seo_view", page: "SEO" },
         {
-          title: "FAQs",
-          to: "/faqs",
-          color: "text-primary-600",
-          permission: "faqs_view",
-          page: "FAQs",
-        },
-        {
           title: "Leads",
           to: "/leads",
           color: "text-info-danger",
@@ -508,9 +501,23 @@ const MasterLayout = ({ children }) => {
         {
           title: "Organic Leads",
           to: "/organic-leads",
-          color: "text-info-main",
+          color: "text-success-main",
           permission: "organicleads_view",
           page: "Organic Leads",
+        },
+                {
+          title: "FAQs",
+          to: "/faqs",
+          color: "text-primary-600",
+          permission: "faqs_view",
+          page: "FAQs",
+        },
+        {
+          title: "Explanations",
+          to: "/explanations",
+          color: "text-warning-main",
+          permission: "explanations_view",
+          page: "Explanations",
         },
       ],
     },
