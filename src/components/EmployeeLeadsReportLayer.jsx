@@ -4,12 +4,14 @@ import DataTable from "react-data-table-component";
 import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 const API_BASE = import.meta.env.VITE_APIURL;
+import { usePermissions } from "../context/PermissionContext";
 
 const EmployeeLeadsReportLayer = ({
   employeeId,
   initialFromDate = "",
   initialToDate = "",
 }) => {
+  const { hasPermission } = usePermissions();
   const [leads, setLeads] = useState([]);
   const [filteredLeads, setFilteredLeads] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -123,6 +125,8 @@ const EmployeeLeadsReportLayer = ({
       sortable: true,
       wrap: true,
     },
+    ...(hasPermission("leadview_view")
+    ? [
     {
       name: "Action",
       cell: (row) => (
@@ -138,6 +142,8 @@ const EmployeeLeadsReportLayer = ({
       allowOverflow: true,
       button: true,
     },
+    ]
+    : []),
   ];
 
   function formatDate(dateStr) {

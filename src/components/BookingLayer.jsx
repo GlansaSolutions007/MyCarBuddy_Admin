@@ -6,8 +6,10 @@ import Select from "react-select";
 import axios from "axios";
 import Swal from "sweetalert2";
 import * as XLSX from "xlsx";
+import { usePermissions } from "../context/PermissionContext";
 
 const BookingLayer = () => {
+  const { hasPermission } = usePermissions();
   const [bookings, setBookings] = useState([]);
   const [technicians, setTechnicians] = useState([]);
   const [searchText, setSearchText] = useState("");
@@ -231,6 +233,8 @@ const BookingLayer = () => {
   };
 
   const columns = [
+    ...(hasPermission("viewbooking_view")
+    ? [
     {
       name: "Booking id",
       selector: (row) => (
@@ -240,6 +244,8 @@ const BookingLayer = () => {
       ),
       width: "150px",
     },
+      ]
+    : []),
     {
       name: "Booking date",
       selector: (row) => {
@@ -383,6 +389,7 @@ const BookingLayer = () => {
 
         return (
           <div className="d-flex gap-2 align-items-center">
+            {hasPermission("viewbooking_view") && (
             <Link
               to={`/view-booking/${row.BookingID}`}
               className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
@@ -390,6 +397,7 @@ const BookingLayer = () => {
             >
               <Icon icon="lucide:eye" />
             </Link>
+            )}
             {isFutureOrToday &&
               row.BookingStatus.toLowerCase() === "pending" &&
               (

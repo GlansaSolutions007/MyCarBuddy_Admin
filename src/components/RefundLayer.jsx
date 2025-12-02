@@ -4,8 +4,10 @@ import DataTable from "react-data-table-component";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import * as XLSX from "xlsx";
+import { usePermissions } from "../context/PermissionContext";
 
 const RefundLayer = () => {
+  const { hasPermission } = usePermissions();
   const [bookings, setBookings] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -117,6 +119,8 @@ const RefundLayer = () => {
       },
       width: "150px",
     },
+    ...(hasPermission("viewbooking_view")
+    ? [
     {
       name: "Actions",
       cell: (row) => (
@@ -129,6 +133,8 @@ const RefundLayer = () => {
         </Link>
       ),
     },
+    ]
+    : []),
   ];
 
   const filteredBookings = bookings.filter((booking) => {

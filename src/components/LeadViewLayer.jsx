@@ -10,9 +10,10 @@ import Select from "react-select";
 const API_BASE = import.meta.env.VITE_APIURL;
 
 const LeadViewLayer = () => {
+  const { hasPermission } = usePermissions();
   const token = localStorage.getItem("token");
   const { leadId } = useParams();
-  const { userId } = usePermissions();
+  const userId = JSON.parse(localStorage.getItem("employeeData"))?.Id || null;
   const [lead, setLead] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -45,6 +46,7 @@ const LeadViewLayer = () => {
   const [personalEmail, setPersonalEmail] = useState("");
   const [personalFullAddress, setPersonalFullAddress] = useState("");
 
+  const [bookings, setBookings] = useState([]);
   // Assign Supervisor States
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedSupervisor, setSelectedSupervisor] = useState(null);
@@ -58,7 +60,6 @@ const LeadViewLayer = () => {
     fetchSupervisors();
   }, [leadId]);
 
-  // filter models for selected brand — keep model if it already matches, otherwise clear it
   useEffect(() => {
     if (!models || models.length === 0) {
       setFilteredModels([]);
@@ -116,6 +117,12 @@ const LeadViewLayer = () => {
         );
         // Note: Year of Purchase and Km Driven are not in the API response, so they remain empty
       }
+    }
+  }, [lead]);
+
+  useEffect(() => {
+    if (lead?.PhoneNumber) {
+      fetchBookings();
     }
   }, [lead]);
 
@@ -190,6 +197,26 @@ const LeadViewLayer = () => {
       setFuelTypes(res.data.data);
     } catch (error) {
       console.error("Failed to load fuel types", error);
+    }
+  };
+
+  const fetchBookings = async () => {
+    try {
+      if (!lead || !lead.PhoneNumber) return;
+
+      const res = await axios.get(
+        `${API_BASE}Supervisor/ExistingBookings?PhoneNumber=${lead.PhoneNumber}`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+
+      if (Array.isArray(res.data)) {
+        setBookings(res.data);
+      } else {
+        setBookings([]);
+      }
+    } catch (err) {
+      console.error("bookings fetch error:", err);
+      setBookings([]);
     }
   };
 
@@ -660,6 +687,18 @@ const LeadViewLayer = () => {
                     <Icon icon="mdi:account-plus" className="fs-5" />
                     Assign Supervisor
                   </button>
+                  {hasPermission("bookservice_view") && (
+                    <Link
+                      to={`/book-service/${lead?.Id}`}
+                      className="btn btn-secondary btn-sm d-flex align-items-center justify-content-center gap-1"
+                    >
+                      <Icon
+                        icon="lucide:calendar-check"
+                        className="text-white"
+                      />{" "}
+                      Book Services
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>
@@ -1065,6 +1104,67 @@ const LeadViewLayer = () => {
                   </Accordion.Body>
                 </Accordion.Item>
               </Accordion>
+              <Accordion className="mt-3">
+                <Accordion.Item eventKey="existing">
+                  <Accordion.Header>Existing Bookings</Accordion.Header>
+                  <Accordion.Body>
+                    {bookings.length === 0 ? (
+                      <p className="text-muted">No previous bookings found.</p>
+                    ) : (
+                      <div className="table-responsive">
+                        <table className="table table-bordered table-striped p-2 radius-16">
+                          <thead className="form-label fw-semibold text-primary-light">
+                            <tr>
+                              <th>ID</th>
+                              <th>Booking TrackID</th>
+                              <th>Booking Date</th>
+                              <th className="text-center">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {bookings.map((b) => (
+                              <tr key={b.BookingID}>
+                                <td>{b.BookingID}</td>
+                                <td>
+                                  <Link
+                                    to={`/view-booking/${b.BookingTrackID}`}
+                                    className="text-primary"
+                                  >
+                                    {b.BookingTrackID}
+                                  </Link>
+                                </td>
+                                <td>
+                                  {b.CreatedDate
+                                    ? new Date(
+                                        b.CreatedDate
+                                      ).toLocaleDateString("en-IN")
+                                    : "N/A"}
+                                </td>
+                                <td className="text-center">
+                                  <Link
+                                    to={`/view-booking/${b.BookingID}`}
+                                    className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                    title="View"
+                                  >
+                                    <Icon icon="lucide:eye" />
+                                  </Link>
+                                  <Link
+                                    to={`/book-service?bookingId=${b.BookingID}`}
+                                    className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                    title="Edit"
+                                  >
+                                    <Icon icon="lucide:edit" />
+                                  </Link>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </Accordion.Body>
+                </Accordion.Item>
+              </Accordion>
             </div>
           </div>
         </div>
@@ -1131,7 +1231,7 @@ const LeadViewLayer = () => {
                           </div>
                           <div className="text-sm text-secondary-light">
                             <strong>Updated By: </strong>
-                            {item.Created_By || "-"}
+                            {item.EmployeeName || "-"}
                           </div>
                         </div>
                       </li>

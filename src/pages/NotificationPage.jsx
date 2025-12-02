@@ -8,7 +8,7 @@ const NotificationPage = () => {
       {/* MasterLayout */}
       <MasterLayout>
         {/* Breadcrumb */}
-        <Breadcrumb title='Notification' />
+        <Breadcrumb title='Notifications' />
 
         {/* NotificationSendLayer */}
         <NotificationSendLayer />

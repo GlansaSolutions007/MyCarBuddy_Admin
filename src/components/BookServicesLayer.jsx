@@ -1,45 +1,23 @@
 import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { Icon } from "@iconify/react";
 import Swal from "sweetalert2";
+import axios from "axios";
 
 const BookServicesLayer = () => {
-  // initial dummy data
-  const [addedItems, setAddedItems] = useState([
-    {
-      type: "Service",
-      name: "Oil Change",
-      price: 500,
-      description: "Engine oil change service",
-      gstPercent: 18,
-      gstPrice: 90,
-    },
-    {
-      type: "Spare Part",
-      name: "Brake Pad",
-      price: 2000,
-      description: "Front brake pads",
-      gstPercent: 18,
-      gstPrice: 360,
-    },
-    {
-      type: "Service",
-      name: "Tire Rotation",
-      price: 300,
-      description: "Rotate tires for even wear",
-      gstPercent: 18,
-      gstPrice: 54,
-    },
-  ]);
-
-  // Single form fields (type dropdown)
+  const { Id } = useParams();
+  const leadId = Id;
+  const API_BASE = import.meta.env.VITE_APIURL;
+  const token = localStorage.getItem("token");
+  const [addedItems, setAddedItems] = useState([]);
   const [itemType, setItemType] = useState("Service");
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [gstPercent, setGstPercent] = useState("");
   const [gstPrice, setGstPrice] = useState("");
-
+  const [loading, setLoading] = useState(false);
   // edit state
   const [editIndex, setEditIndex] = useState(null);
 
@@ -56,6 +34,57 @@ const BookServicesLayer = () => {
     }
   }, [price, gstPercent]);
 
+  useEffect(() => {
+    if (leadId) {
+      fetchBookingData();
+    } else {
+      setAddedItems([]);
+    }
+  }, [leadId]);
+
+const fetchBookingData = async () => {
+  try {
+    setLoading(true);
+
+    const response = await axios.get(
+      `${API_BASE}Supervisor/LeadId?LeadId=${leadId}`,
+      { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+    );
+
+    // Case 1: data exists (edit mode)
+    if (
+      response.status === 200 &&
+      Array.isArray(response.data) &&
+      response.data.length > 0
+    ) {
+      const converted = response.data.map((item) => ({
+        type: item.ServiceType || "Service",
+        name: item.ServiceName || "",
+        price: Number(item.Price || 0),
+        description: item.Description || "",
+        gstPercent: Number(item.GSTPercent || 0),
+        gstPrice: Number(item.GSTAmount || 0),
+
+        // API identifiers (keep for update)
+        _apiId: item.Id || null,
+        _bookingId: item.BookingId || null,
+        _bookingTrackId: item.BookingTrackID || null,
+      }));
+
+      setAddedItems(converted);
+      return; // --- STOP here
+    }
+
+    // Case 2: no data found (fresh new booking)
+    setAddedItems([]);
+  } catch (err) {
+    console.error("Failed to fetch booking data:", err);
+    // Swal.fire( "No Previous Booking", "No previous bookings exist. Please add a new booking", "info");
+  } finally {
+    setLoading(false);
+  }
+};
+
   const resetForm = () => {
     setItemType("Service");
     setName("");
@@ -66,15 +95,14 @@ const BookServicesLayer = () => {
     setEditIndex(null);
   };
 
-  const handleAddOrSave = () => {
-    // validations
+  const handleAddOrSave = async () => {
     if (!name.trim()) return Swal.fire("Please enter name");
     if (price === "" || isNaN(parseFloat(price)))
       return Swal.fire("Please enter valid price");
     if (gstPercent === "" || isNaN(parseFloat(gstPercent)))
       return Swal.fire("Please enter valid GST %");
 
-    const newItem = {
+    const updatedItem = {
       type: itemType,
       name: name.trim(),
       price: parseFloat(price),
@@ -82,16 +110,69 @@ const BookServicesLayer = () => {
       gstPercent: parseFloat(gstPercent),
       gstPrice: parseFloat(gstPrice) || 0,
     };
+    // CASE 1: Editing an Existing API Item → CALL PUT
+    if (editIndex !== null && addedItems[editIndex]?._apiId) {
+      const original = addedItems[editIndex];
 
-    if (editIndex !== null && editIndex >= 0) {
-      const copy = [...addedItems];
-      copy[editIndex] = newItem;
-      setAddedItems(copy);
-      resetForm();
-    } else {
-      setAddedItems((prev) => [...prev, newItem]);
-      resetForm();
+      const payload = {
+        id: original._apiId,
+        bookingId: original._bookingId,
+        bookingTrackID: original._bookingTrackId,
+        leadId: leadId,
+        serviceType: updatedItem.type,
+        serviceName: updatedItem.name,
+        price: updatedItem.price,
+        gstPercent: updatedItem.gstPercent,
+        gstAmount: updatedItem.gstPrice,
+        description: updatedItem.description,
+        modifiedBy: parseInt(localStorage.getItem("userId")) || 1,
+        isActive: true,
+      };
+
+      try {
+        const resp = await axios.put(
+          `${API_BASE}Supervisor/UpdateSupervisorBooking`,
+          payload,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (resp.status === 200) {
+          Swal.fire("Updated!", "Item updated successfully", "success");
+
+          // update UI
+          const copy = [...addedItems];
+          copy[editIndex] = {
+            ...updatedItem,
+            _apiId: original._apiId,
+            _bookingId: original._bookingId,
+            _bookingTrackId: original._bookingTrackId,
+          };
+
+          setAddedItems(copy);
+          resetForm();
+        }
+      } catch (err) {
+        console.error(err);
+        Swal.fire("Error", "Failed to update existing booking item", "error");
+      }
+
+      return; 
     }
+    // CASE 2: Editing / Adding NEW item → LOCAL ONLY
+    if (editIndex !== null) {
+      const copy = [...addedItems];
+      copy[editIndex] = updatedItem;
+      setAddedItems(copy);
+    } else {
+      setAddedItems((prev) => [...prev, updatedItem]);
+    }
+
+    resetForm();
   };
 
   const handleEditItem = (index) => {
@@ -103,36 +184,114 @@ const BookServicesLayer = () => {
     setDescription(item.description);
     setGstPercent(item.gstPercent);
     setGstPrice(item.gstPrice);
-    // scroll to top of form? optional
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleRemoveItem = (index) => {
-  Swal.fire({
-    title: "Are you sure?",
-    text: "Are you sure you want to remove this item?",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "Yes, remove",
-  }).then((result) => {
-    if (result.isConfirmed) {
-      setAddedItems((prev) => prev.filter((_, i) => i !== index));
+    const item = addedItems[index];
 
-      if (editIndex === index) resetForm();
-    }
-  });
-};
-
-
-  const handleSubmit = () => {
-    if (addedItems.length === 0) return alert("No items to submit");
-    // implement API submit here
-    console.log("Submitting:", addedItems);
     Swal.fire({
-      icon: "success",
-      title: "Submitted!",
-      text: "Your booking has been created successfully.",
+      title: "Are you sure?",
+      text: "Do you want to remove this item?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, remove",
+    }).then(async (result) => {
+      if (!result.isConfirmed) return;
+      // CASE 1: DELETE FROM API (existing booking item)
+      if (item._apiId) {
+        try {
+          const response = await axios.delete(
+            `${API_BASE}Supervisor/Id?id=${item._apiId}`,
+            {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            }
+          );
+
+          if (response.status === 200) {
+            Swal.fire("Deleted!", "Item removed successfully.", "success");
+
+            // Remove from UI
+            setAddedItems((prev) => prev.filter((_, i) => i !== index));
+
+            // If user was editing this item → reset form
+            if (editIndex === index) resetForm();
+          }
+        } catch (err) {
+          console.error(err);
+          Swal.fire("Error", "Failed to delete item from server", "error");
+        }
+        return; 
+      }
+      // CASE 2: DELETE LOCAL UNSAVED ITEM
+      setAddedItems((prev) => prev.filter((_, i) => i !== index));
+      if (editIndex === index) resetForm();
+      Swal.fire("Removed", "Item removed", "success");
     });
+  };
+
+  const handleSubmit = async () => {
+    if (addedItems.length === 0)
+      return Swal.fire("Error", "No items to submit", "error");
+    if (!leadId) return Swal.fire("Error", "Lead ID is required", "error");
+
+    try {
+      // Transform addedItems to match API payload format
+      const services = addedItems
+        .filter((item) => !item._apiId) // only new items
+        .map((item) => ({
+          serviceType: item.type,
+          serviceName: item.name,
+          price: item.price,
+          gstPercent: item.gstPercent,
+          gstAmount: parseFloat(item.gstPrice),
+          description: item.description,
+        }));
+
+      const payload = {
+        createdBy: parseInt(localStorage.getItem("userId")) || 1,
+        leadId: leadId,
+        services: services,
+      };
+
+      const response = await axios.post(
+        `${API_BASE}Supervisor/InsertSupervisorBooking`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        Swal.fire({
+          icon: "success",
+          title: "Success!",
+          text: "Your booking has been created successfully.",
+        });
+        // // Optionally reset the form or redirect
+        // setAddedItems([]);
+        // Refresh booking list again
+        await fetchBookingData();
+
+        // Reset form
+        resetForm();
+      } else {
+        throw new Error(response.data?.message || "Failed to create booking");
+      }
+    } catch (error) {
+      console.error("API Error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to submit booking. Please try again.",
+      });
+    }
   };
 
   const columns = [
@@ -188,7 +347,7 @@ const BookServicesLayer = () => {
             onClick={() => handleRemoveItem(index)}
             title="Delete"
           >
-           <Icon icon="mingcute:delete-2-line" />
+            <Icon icon="mingcute:delete-2-line" />
           </button>
         </div>
       ),

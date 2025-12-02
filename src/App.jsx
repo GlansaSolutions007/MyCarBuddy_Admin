@@ -171,7 +171,7 @@ function App() {
           <Route exact path='/leave-list' element={<LeaveListPage />} />
           <Route exact path='/leave-edit/:LeaveID' element={<LeaveEditPage />} />
           <Route exact path='/notification-templates' element={<NotificationTemplatesPage />} />
-          <Route exact path='/reason' element={<ReasonPage />} />
+          <Route exact path='/reasons' element={<ReasonPage />} />
           <Route exact path='/policy' element={<PolicyPage />} />
           <Route exact path='/seo' element={<SeoPage />} />
           <Route exact path='/add-seo' element={<SeoAddPage />} />
@@ -197,7 +197,7 @@ function App() {
           <Route exact path='/organic-leads' element={<OrganicLeadsPage />} />
           <Route exact path='/departments' element={<DepartmentsPage />} />
           <Route exact path="/contacts" element={<Contacts />} />
-          <Route exact path="/DealerServicePrice" element={<DealerServiceP />} />
+          <Route exact path="/dealer-service-price" element={<DealerServiceP />} />
           <Route exact path='/add-tickets' element={<TicketsAddPage />} />
           <Route exact path='/edit-tickets/:TicketID' element={<TicketsAddPage />} />
           <Route exact path='/refunds' element={<RefundPage />} />
@@ -216,7 +216,8 @@ function App() {
           <Route exact path='/lead-reports' element={<LeadReportsPage />} />
           <Route exact path="/emp-leads-report/:employeeId" element={<EmployeeLeadsReportPage />} />
           <Route exact path="todays-lead" element={<TodayLeadsPage />} />
-          <Route exact path="/book-services" element={<BookServicesPage />} />
+          <Route exact path="/book-service" element={<BookServicesPage />} />
+          <Route exact path="/book-service/:Id" element={<BookServicesPage />} />
           <Route exact path='/booking-reports' element={<BookingReportPage/>} />
 
         </Route>

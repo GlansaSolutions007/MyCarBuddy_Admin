@@ -8,7 +8,7 @@ const BookServicesPage = () => {
       {/* MasterLayout */}
       <MasterLayout>
         {/* Breadcrumb */}
-        <Breadcrumb title='Book Services' />
+        <Breadcrumb title='Book Service' />
 
         {/* BookServicesLayer */}
         <BookServicesLayer />

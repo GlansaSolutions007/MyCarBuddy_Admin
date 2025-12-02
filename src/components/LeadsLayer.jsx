@@ -98,13 +98,11 @@ const LeadsLayer = () => {
       sortable: true,
       wrap: true,
     },
-    ...(hasPermission("leadview_view")
-      ? [
           {
             name: "Action",
             cell: (row) => (
               <div className="d-flex gap-2">
-                
+              {hasPermission("leadview_view") && (
               <Link
                 to={`/lead-view/${row.Id}`}
                 className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
@@ -112,25 +110,22 @@ const LeadsLayer = () => {
               >
                 <Icon icon="lucide:eye" />
               </Link>
-              {hasPermission("bookservices_view") && (
+              )}
+              {/* {hasPermission("bookservice_view") && (
                <Link
-                to={`/book-services`}
-                //  to={`/book-service/${row.Id}`}
+                 to={`/book-service/${row.Id}`}
                 className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
                 title="Book Services"
               >
                 <Icon icon="lucide:calendar-check" />
-                {/* <Icon icon="mdi:car-wrench" /> */}
               </Link>
-              )}
+              )} */}
               </div>
             ),
             ignoreRowClick: true,
             allowOverflow: true,
             button: true,
           },
-        ]
-      : []),
   ];
 
   // Filter

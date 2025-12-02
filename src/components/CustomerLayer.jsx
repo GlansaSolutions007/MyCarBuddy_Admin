@@ -3,10 +3,12 @@ import axios from "axios";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
+import { usePermissions } from "../context/PermissionContext";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
 const CustomerLayer = () => {
+  const { hasPermission } = usePermissions();
   const [customers, setCustomers] = useState([]);
   const token = localStorage.getItem('token');
   const [searchText, setSearchText] = useState("");
@@ -83,6 +85,8 @@ const CustomerLayer = () => {
       },
       width: "150px",
     },
+    ...(hasPermission("viewcustomer_view")
+    ? [
     {
       name: "Actions",
       cell: (row) => (
@@ -96,6 +100,8 @@ const CustomerLayer = () => {
         </>
       ),
     },
+      ]
+    : []),
   ];
 
   // Search filter

@@ -11,6 +11,7 @@ import axios from "axios";
 // import CrytoJS from "crypto-js";
 
 const MasterLayout = ({ children }) => {
+
   let [sidebarActive, seSidebarActive] = useState(false);
   let [mobileMenu, setMobileMenu] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -302,10 +303,10 @@ const MasterLayout = ({ children }) => {
       title: "Customer Details",
       icon: "flowbite:users-group-outline",
       children: [
-        { title: "Customers", to: "/customers", color: "text-primary-600", permission: "customer_view", page: "Customers" },
-        { title: "Bookings", to: "/bookings", color: "text-warning-main", permission: "booking_view", page: "Bookings" },
-        { title: "Refunds", to: "/refunds", color: "text-black", permission: "refund_view", page: "Refunds" },
-        { title: "Payments", to: "/payments", color: "text-info-main", permission: "payment_view", page: "Payments" },
+        { title: "Customers", to: "/customers", color: "text-primary-600", permission: "customers_view", page: "Customers" },
+        { title: "Bookings", to: "/bookings", color: "text-warning-main", permission: "bookings_view", page: "Bookings" },
+        { title: "Refunds", to: "/refunds", color: "text-black", permission: "refunds_view", page: "Refunds" },
+        { title: "Payments", to: "/payments", color: "text-info-main", permission: "payments_view", page: "Payments" },
         { title: "Tickets", to: "/tickets", color: "text-info-danger", permission: "tickets_view", page: "Tickets" },
       ],
     },
@@ -439,10 +440,10 @@ const MasterLayout = ({ children }) => {
       children: [
         {
           title: "Time Slots",
-          to: "/booking-time-slot",
+          to: "/booking-time-slot", 
           color: "text-primary-600",
-          permission: "time_slot_view",
-          page: "Time_Slot",
+          permission: "bookingtimeslot_view",
+          page: "Booking Time Slot",
         },
       ],
     },
@@ -450,14 +451,14 @@ const MasterLayout = ({ children }) => {
       title: "Coupons",
       icon: "ion:card-outline",
       children: [
-        { title: "Coupons", to: "/coupons", color: "text-primary-600", permission: "coupon_view", page: "Coupon" },
+        { title: "Coupons", to: "/coupons", color: "text-primary-600", permission: "coupons_view", page: "Coupons" },
       ],
     },
     {
       title: "Leave Management",
       icon: "ion:document-text-outline",
       children: [
-        { title: "Leaves", to: "/leave-list", color: "text-primary-600", permission: "leave_view", page: "Leave" },
+        { title: "Leaves", to: "/leave-list", color: "text-primary-600", permission: "leavelist_view", page: "Leave List" },
       ],
     },
     {
@@ -469,7 +470,7 @@ const MasterLayout = ({ children }) => {
       title: "Contacts",
       icon: "flowbite:address-book-outline",
       children: [
-        { title: "Contacts", to: "/contacts", color: "text-primary-600", permission: "contact_view", page: "Contact" },
+        { title: "Contacts", to: "/contacts", color: "text-primary-600", permission: "contacts_view", page: "Contacts" },
       ],
     },
     {
@@ -478,10 +479,10 @@ const MasterLayout = ({ children }) => {
       children: [
         {
           title: "Dealer Service Price",
-          to: "/DealerServicePrice",
+          to: "/dealer-service-price",
           color: "text-primary-600",
-          permission: "dealer_service_price_view",
-          page: "Dealer_Service_Price",
+          permission: "dealerserviceprice_view",
+          page: "Dealer Service Price",
         },
       ],
     },
@@ -517,28 +518,28 @@ const MasterLayout = ({ children }) => {
       title: "Settings",
       icon: "material-symbols:settings-outline-rounded",
       children: [
-        { title: "Reasons", to: "/reason", color: "text-primary-600", permission: "reason_view", page: "Reason" },
+        { title: "Reasons", to: "/reasons", color: "text-primary-600", permission: "reasons_view", page: "Reasons" },
         {
           title: "Notification Templates",
           to: "/notification-templates",
           color: "text-warning-main",
-          permission: "notification_template_view",
-          page: "Notification_Template",
+          permission: "notificationtemplates_view",
+          page: "Notification Template",
         },
         {
           title: "Notifications",
           to: "/notifications",
           color: "text-info-main",
-          permission: "notification_view",
-          page: "Notification",
+          permission: "notifications_view",
+          page: "Notifications",
         },
-        { title: "Role", to: "/roles", color: "text-info-main", permission: "role_view", page: "Role" },
+        { title: "Roles", to: "/roles", color: "text-info-main", permission: "roles_view", page: "Roles" },
         {
           title: "Permission Pages",
           to: "/permission-pages",
           color: "text-info-main",
-          permission: "permission_page_view",
-          page: "Permission_Page",
+          permission: "permissionpages_view",
+          page: "Permission Pages",
         },
       ],
     },

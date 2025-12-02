@@ -99,7 +99,7 @@ const LeadReportsLayer = () => {
       sortable: true,
       width: "140px",
     },
-    ...(hasPermission("leadreports_view")
+    ...(hasPermission("empleadsreport_view")
       ? [
           {
             name: "Actions",
