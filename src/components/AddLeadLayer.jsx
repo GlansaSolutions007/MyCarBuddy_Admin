@@ -215,7 +215,7 @@ const AddLeadLayer = () => {
           {/* Phone */}
           <div className="col-md-6 mt-2">
             <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-              Phone Number 
+              Phone Number
             </label>
             <input
               type="tel"
@@ -231,7 +231,7 @@ const AddLeadLayer = () => {
           {/* Email */}
           <div className="col-md-6 mt-2">
             <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-              Customer Email 
+              Customer Email
             </label>
             <input
               type="email"
@@ -240,14 +240,13 @@ const AddLeadLayer = () => {
               placeholder="Enter email address"
               value={formData.customerEmail}
               onChange={handleChange}
-              required
             />
           </div>
 
           {/* Address */}
           <div className="col-12 mt-2">
             <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-              Customer Address 
+              Customer Address
             </label>
             <textarea
               name="customerAddress"
@@ -256,7 +255,6 @@ const AddLeadLayer = () => {
               rows="3"
               value={formData.customerAddress}
               onChange={handleChange}
-              required
             ></textarea>
           </div>
           {/* Brand */}

@@ -151,7 +151,6 @@ const FaqsAddLayer = () => {
     setLoading(true);
 
     try {
-      // Group by each row's own type and ID
       const grouped = faqs.reduce((acc, faq) => {
         const key =
           faq.faqType === "category"
@@ -174,14 +173,15 @@ const FaqsAddLayer = () => {
         return acc;
       }, {});
 
-      // Send API call group-wise
       for (const key in grouped) {
         const group = grouped[key];
 
-        const payload =
-          group.faqType === "category"
-            ? { categoryID: group.id, faQs: group.faqs }
-            : { packageID: group.id, faQs: group.faqs };
+        // FINAL PAYLOAD FORMAT EXPECTED BY API
+        const payload = {
+          type: group.faqType, // "category" or "package"
+          packageID: group.id, // categoryID OR packageID
+          faQs: group.faqs,
+        };
 
         await axios.post(`${API_BASE}FAQS`, payload, {
           headers: { Authorization: `Bearer ${token}` },

@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
+import axios from "axios";
+import Swal from "sweetalert2";
 import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { usePermissions } from "../context/PermissionContext";
+
 const API_BASE = import.meta.env.VITE_APIURL;
 
 const OrganicLeadsLayer = () => {
@@ -13,6 +16,8 @@ const OrganicLeadsLayer = () => {
   const [error, setError] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     fetchLeads();
@@ -40,6 +45,39 @@ const OrganicLeadsLayer = () => {
       console.error("Error fetching leads:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBulkUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await axios.post(`${API_BASE}Leads/UploadExcel`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        onUploadProgress: (p) => {
+          const percent = Math.round((p.loaded / p.total) * 100);
+          setUploadProgress(percent);
+        },
+      });
+
+      if (res.status === 200) {
+        Swal.fire("Success", "Bulk Upload Completed", "success");
+        setUploading(false);
+        setUploadProgress(0);
+        fetchLeads();
+      }
+    } catch (error) {
+      console.error(error);
+      Swal.fire("Error", "Bulk Upload Failed", "error");
+      setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -166,6 +204,28 @@ const OrganicLeadsLayer = () => {
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
                 />
+                <input
+                  type="file"
+                  accept=".xlsx, .xls"
+                  id="organicUpload"
+                  style={{ display: "none" }}
+                  onChange={handleBulkUpload}
+                />
+                {/* Bulk Upload button */}
+                <button
+                  type="button"
+                  className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
+                  onClick={() =>
+                    document.getElementById("organicUpload").click()
+                  }
+                  disabled={uploading}
+                >
+                  <Icon
+                    icon="mdi:upload"
+                    className="icon text-xl line-height-1"
+                  />
+                  Bulk Upload
+                </button>
                 {hasPermission("addlead_add") && (
                   <Link
                     to="/add-lead"
@@ -181,6 +241,9 @@ const OrganicLeadsLayer = () => {
               </div>
             </div>
           </div>
+          {uploading && (
+            <div className="m-3">Uploading {uploadProgress}%...</div>
+          )}
           {error ? (
             <div className="alert alert-danger m-3">{error}</div>
           ) : (

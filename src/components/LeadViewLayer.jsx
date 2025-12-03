@@ -250,6 +250,26 @@ const LeadViewLayer = () => {
     }
   };
 
+  const handleWhatsapp = () => {
+    let phone = lead?.PhoneNumber;
+    const name = lead?.FullName;
+    if (!phone) {
+      alert("Customer phone number not available");
+      return;
+    }
+    // Clean the number (remove +, spaces, brackets, hyphens)
+    phone = phone.toString().trim().replace(/\D/g, "");
+    // Add country code if missing
+    if (!phone.startsWith("91")) {
+      phone = "91" + phone;
+    }
+    const message = `Hello ${name}!`;
+    const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(
+      message
+    )}`;
+    window.open(url, "_blank");
+  };
+
   // Handle Assign Supervisor
   const handleAssignSupervisor = async () => {
     if (!selectedSupervisor) {
@@ -716,9 +736,19 @@ const LeadViewLayer = () => {
               ) : lead ? (
                 <>
                   {/* Update Status */}
-                  <h6 className="text-xl mb-16 border-bottom pb-2">
+                  {/* <h6 className="text-xl mb-16 border-bottom pb-2">
                     Update Status
-                  </h6>
+                  </h6> */}
+                  <div className="d-flex justify-content-between align-items-center">
+                    <h6 className="card-title">Update Status</h6>
+                    <Icon
+                      icon="ic:baseline-whatsapp"
+                      fontSize={28}
+                      style={{ color: "#25D366", cursor: "pointer" }}
+                      onClick={handleWhatsapp}
+                    />
+                  </div>
+
                   <div className="p-3 border radius-16 bg-light">
                     {/* Call Answered Radio Buttons */}
                     <div className="mb-3">
