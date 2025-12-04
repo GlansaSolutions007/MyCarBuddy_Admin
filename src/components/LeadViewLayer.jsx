@@ -806,9 +806,13 @@ const LeadViewLayer = () => {
                             onChange={(e) => setFollowUpStatus(e.target.value)}
                           >
                             <option value="">Select status</option>
-                            <option value="Not Reachable">Not Reachable</option>
+                            <option value="Ringing But Not Responded">Ringing But Not Responded</option>
                             <option value="Busy">Busy</option>
+                            <option value="Not Reachable">Not Reachable</option>
                             <option value="Switched Off">Switched Off</option>
+                            <option value="Temporary Out of Service">Temporary Out of Service</option>
+                            <option value="Number Does Not Exist">Number Does Not Exist</option>
+                            <option value="DND">DND</option>
                           </select>
                         </div>
                         <div className="col-md-6">
@@ -873,7 +877,8 @@ const LeadViewLayer = () => {
                               Schedule Meeting
                             </option>
                             <option value="Price Issue">Price Issue</option>
-                            <option value="Converted">Converted</option>
+                            <option value="Conversion">Conversion</option>
+                            <option value="Conversion">Referred a Friend</option>
                           </select>
                         </div>
                         <div className="col-12">
@@ -917,6 +922,12 @@ const LeadViewLayer = () => {
                             <option value="Close Lead">Close Lead</option>
                             <option value="Convert to Customer">
                               Convert to Customer
+                            </option>
+                            <option value="Ok for Inspection">
+                              Ok for Inspection
+                            </option>
+                            <option value="Not Converted">
+                              Not Converted
                             </option>
                           </select>
                         </div>

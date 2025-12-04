@@ -133,7 +133,7 @@ const LeadsLayer = () => {
     .sort((a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate))
     .filter((lead) => {
   // const filteredLeads = leads.filter((lead) => {
-    if (lead.Platform === "Organic") return false;
+    // if (lead.Platform === "Organic") return false;
     const text = searchText.toLowerCase();
     const statusMatch =
       selectedStatus === "All" ||
@@ -203,7 +203,7 @@ const LeadsLayer = () => {
                   <option value="QUALIFIED">Qualified</option>
                   <option value="CLOSED">Closed</option>
                 </select>
-                {hasPermission("todayslead_view") &&
+                {/* {hasPermission("todayslead_view") &&
                   roleName === "Employee" && (
                     <Link
                       to="/todays-lead"
@@ -212,7 +212,7 @@ const LeadsLayer = () => {
                       <Icon className="icon text-xl line-height-1" />
                       Today Assigned Leads
                     </Link>
-                  )}
+                  )} */}
               </div>
             </div>
           </div>

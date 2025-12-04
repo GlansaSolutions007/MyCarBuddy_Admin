@@ -217,7 +217,7 @@ function App() {
           <Route exact path='/lead-view/:leadId' element={<LeadViewPage />} />
           <Route exact path='/lead-reports' element={<LeadReportsPage />} />
           <Route exact path="/emp-leads-report/:employeeId" element={<EmployeeLeadsReportPage />} />
-          <Route exact path="todays-lead" element={<TodayLeadsPage />} />
+          <Route exact path="/todays-lead" element={<TodayLeadsPage />} />
           <Route exact path="/book-service" element={<BookServicesPage />} />
           <Route exact path="/book-service/:Id" element={<BookServicesPage />} />
           <Route exact path='/booking-reports' element={<BookingReportPage/>} />
