@@ -49,7 +49,7 @@ const FaqsLayer = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
         Swal.fire("Deleted!", "FAQ has been deleted.", "success");
-        fetchFaqs(); 
+        fetchFaqs();
       } catch (error) {
         console.error("Failed to delete FAQ", error);
         Swal.fire("Error", "Failed to delete FAQ", "error");
@@ -57,15 +57,32 @@ const FaqsLayer = () => {
     }
   };
 
-  // Flatten the data for table display
   const faqs = [];
-  if (faqData && Array.isArray(faqData)) {
-    faqData.forEach((pkg) => {
-      if (pkg.FAQS && Array.isArray(pkg.FAQS)) {
+  // ------- 1) PACKAGE FAQS -------
+  if (faqData?.PackageFAQS && Array.isArray(faqData.PackageFAQS)) {
+    faqData.PackageFAQS.forEach((pkg) => {
+      if (Array.isArray(pkg.FAQS)) {
         pkg.FAQS.forEach((faq, index) => {
           faqs.push({
-            id: faq.id || faq.FAQID,
+            id: faq.FAQID,
+            Type: index === 0 ? pkg.Type : "",
             package: index === 0 ? pkg.PackageName : "",
+            question: faq.Question,
+            Answer: faq.Answer,
+          });
+        });
+      }
+    });
+  }
+  // ------- 2) CATEGORY FAQS -------
+  if (faqData?.CategoryFAQS && Array.isArray(faqData.CategoryFAQS)) {
+    faqData.CategoryFAQS.forEach((cat) => {
+      if (Array.isArray(cat.FAQS)) {
+        cat.FAQS.forEach((faq, index) => {
+          faqs.push({
+            id: faq.FAQID,
+            Type: index === 0 ? cat.Type : "",
+            package: index === 0 ? cat.CategoryName : "",
             question: faq.Question,
             Answer: faq.Answer,
           });
@@ -77,6 +94,12 @@ const FaqsLayer = () => {
   // DataTable Columns
   const columns = [
     {
+      name: "FAQ Type",
+      selector: (row) => row.Type,
+      sortable: true,
+      width: "10%",
+    },
+    {
       name: "Package",
       selector: (row) => row.package,
       sortable: true,
@@ -86,11 +109,13 @@ const FaqsLayer = () => {
       name: "Questions",
       selector: (row) => row.question,
       wrap: true,
+      width: "25%",
     },
     {
       name: "Explanation",
       selector: (row) => row.Answer,
       wrap: true,
+      width: "30%",
     },
     {
       name: "Actions",

@@ -3,17 +3,16 @@ import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { usePermissions } from "../context/PermissionContext";
+const API_BASE = import.meta.env.VITE_APIURL;
 
 const LeadsLayer = () => {
   const employeeData = JSON.parse(localStorage.getItem("employeeData"));
-  const roleName = employeeData?.RoleName;
   const role = localStorage.getItem("role");
   const { hasPermission } = usePermissions();
   const [leads, setLeads] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const API_BASE = import.meta.env.VITE_APIURL;
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -39,7 +38,8 @@ const LeadsLayer = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      setLeads(data);
+      // setLeads(data);
+      setLeads(Array.isArray(data) ? data : []);
     } catch (err) {
       setError("Failed to fetch leads. Please try again.");
       console.error("Error fetching leads:", err);
@@ -50,6 +50,12 @@ const LeadsLayer = () => {
 
   // DataTable Columns
   const columns = [
+    {
+      name: "Lead ID",
+      selector: (row) => row.Id || "-",
+      sortable: true,
+      wrap: true,
+    },
     {
       name: "Customer Name",
       selector: (row) => row.FullName || "-",
@@ -85,78 +91,96 @@ const LeadsLayer = () => {
     {
       name: "City",
       selector: (row) => row.City || "-",
+      sortable: true,
       wrap: true,
     },
     {
       name: "Platform",
       selector: (row) => row.Platform || "-",
+      sortable: true,
+      wrap: true,
+    },
+    {
+      name: "Updated At",
+      selector: (row) => {
+        if (!row.Updated_At) return "-";
+        const date = new Date(row.Updated_At);
+        return date.toLocaleString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+      },
+      sortable: true,
       wrap: true,
     },
     {
       name: "Lead Status",
-      selector: (row) => row.FollowUpStatus || "Created",
+      selector: (row) => row.FollowUpStatus || "No FollowUp Yet",
       sortable: true,
       wrap: true,
     },
-          {
-            name: "Action",
-            cell: (row) => (
-              <div className="d-flex gap-2">
-              {hasPermission("leadview_view") && (
-              <Link
-                to={`/lead-view/${row.Id}`}
-                className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                title="View"
-              >
-                <Icon icon="lucide:eye" />
-              </Link>
-              )}
-              {/* {hasPermission("bookservice_view") && (
-               <Link
-                 to={`/book-service/${row.Id}`}
-                className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                title="Book Services"
-              >
-                <Icon icon="lucide:calendar-check" />
-              </Link>
-              )} */}
-              </div>
-            ),
-            ignoreRowClick: true,
-            allowOverflow: true,
-            button: true,
-          },
+    {
+      name: "Next FollowUp",
+      selector: (row) => row.NextFollowUp_Date || "-",
+      sortable: true,
+      wrap: true,
+    },
+    {
+      name: "Action",
+      cell: (row) => (
+        <div className="d-flex gap-2">
+          {hasPermission("leadview_view") && (
+            <Link
+              to={`/lead-view/${row.Id}`}
+              className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+              title="View"
+            >
+              <Icon icon="lucide:eye" />
+            </Link>
+          )}
+        </div>
+      ),
+      ignoreRowClick: true,
+      allowOverflow: true,
+      button: true,
+    },
   ];
 
   // Filter
-    const filteredLeads = [...leads]
+  const filteredLeads = [...leads]
     .sort((a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate))
     .filter((lead) => {
-  // const filteredLeads = leads.filter((lead) => {
-    // if (lead.Platform === "Organic") return false;
-    const text = searchText.toLowerCase();
-    const statusMatch =
-      selectedStatus === "All" ||
-      lead.LeadStatus?.toLowerCase() === selectedStatus.toLowerCase();
+      // const filteredLeads = leads.filter((lead) => {
+      if (
+        lead.Platform === "Organic" ||
+        lead.Platform === "web" ||
+        lead.Platform === "app"
+      )
+        return false;
+      const text = searchText.toLowerCase();
+      const statusMatch =
+        selectedStatus === "All" ||
+        lead.LeadStatus?.toLowerCase() === selectedStatus.toLowerCase();
 
-    // Date filtering
-    const leadDate = lead.CreatedDate ? new Date(lead.CreatedDate) : null;
-    const from = fromDate ? new Date(fromDate + "T00:00:00") : null;
-    const to = toDate ? new Date(toDate + "T23:59:59") : null;
-    const dateMatch =
-      (!from || (leadDate && leadDate >= from)) &&
-      (!to || (leadDate && leadDate <= to));
+      // Date filtering
+      const leadDate = lead.CreatedDate ? new Date(lead.CreatedDate) : null;
+      const from = fromDate ? new Date(fromDate + "T00:00:00") : null;
+      const to = toDate ? new Date(toDate + "T23:59:59") : null;
+      const dateMatch =
+        (!from || (leadDate && leadDate >= from)) &&
+        (!to || (leadDate && leadDate <= to));
 
-    return (
-      statusMatch &&
-      dateMatch &&
-      (lead.FullName?.toLowerCase().includes(text) ||
-        lead.PhoneNumber?.toLowerCase().includes(text) ||
-        lead.Email?.toLowerCase().includes(text) ||
-        lead.City?.toLowerCase().includes(text) ||
-        lead.LeadStatus?.toLowerCase().includes(text))
-    );
-  });
+      return (
+        statusMatch &&
+        dateMatch &&
+        (lead.FullName?.toLowerCase().includes(text) ||
+          lead.PhoneNumber?.toLowerCase().includes(text) ||
+          lead.Email?.toLowerCase().includes(text) ||
+          lead.City?.toLowerCase().includes(text) ||
+          lead.LeadStatus?.toLowerCase().includes(text))
+      );
+    });
 
   return (
     <div className="row gy-4">

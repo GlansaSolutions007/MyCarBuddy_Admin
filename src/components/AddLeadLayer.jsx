@@ -7,8 +7,9 @@ const API_BASE = import.meta.env.VITE_APIURL;
 
 const AddLeadLayer = () => {
   const navigate = useNavigate();
+  const role = localStorage.getItem("role");
+  const employeeData = JSON.parse(localStorage.getItem("employeeData"));
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   // Local states for brand, model, fuel type selections
   const [brands, setBrands] = useState([]);
   const [models, setModels] = useState([]);
@@ -122,6 +123,8 @@ const AddLeadLayer = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
+    const isAdmin = role === "admin";
+
     const payload = {
       FullName: formData.customerName,
       PhoneNumber: formData.customerPhone,
@@ -133,6 +136,12 @@ const AddLeadLayer = () => {
       BrandID: carBrand?.value ?? null,
       ModelID: carModel?.value ?? null,
       FuelTypeID: carFuelType?.value ?? null,
+      ...(role === "Admin"
+        ? {}
+        : {
+            role: employeeData?.Is_Head === 1 ? "Head" : "Employee",
+            employeeId: employeeData?.Id,
+          }),
     };
 
     try {

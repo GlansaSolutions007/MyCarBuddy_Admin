@@ -14,7 +14,6 @@ const LeadsAssignLayer = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
-
   const userDetails = JSON.parse(localStorage.getItem("employeeData"));
 
   const [departments, setDepartments] = useState([]);

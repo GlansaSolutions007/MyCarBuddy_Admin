@@ -10,6 +10,8 @@ const API_BASE = import.meta.env.VITE_APIURL;
 
 const OrganicLeadsLayer = () => {
   const { hasPermission } = usePermissions();
+  const employeeData = JSON.parse(localStorage.getItem("employeeData"));
+  const role = localStorage.getItem("role");
   const [leads, setLeads] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,20 +25,30 @@ const OrganicLeadsLayer = () => {
     fetchLeads();
   }, []);
 
-  // Fetch Leads from API
   const fetchLeads = async () => {
     setLoading(true);
     setError("");
 
     try {
-      const response = await fetch(`${API_BASE}ServiceLeads/FacebookLeads`);
+      let url;
+      if (role === "Admin") {
+        url = `${API_BASE}ServiceLeads/FacebookLeads`;
+      } else {
+        url = `${API_BASE}ServiceLeads/FacebookLeads?EmployeeId=${employeeData?.Id}&RoleName=${employeeData?.RoleName}`;
+      }
+
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-
       const organicOnly = Array.isArray(data)
-        ? data.filter((lead) => lead.Platform === "Organic")
+        ? data.filter(
+            (lead) =>
+              lead.Platform === "Organic" ||
+              lead.Platform === "web" ||
+              lead.Platform === "app"
+          )
         : [];
 
       setLeads(organicOnly);
@@ -84,6 +96,12 @@ const OrganicLeadsLayer = () => {
   // DataTable Columns
   const columns = [
     {
+      name: "Lead ID",
+      selector: (row) => row.Id || "-",
+      sortable: true,
+      wrap: true,
+    },
+    {
       name: "Customer Name",
       selector: (row) => row.FullName || "-",
       sortable: true,
@@ -92,6 +110,12 @@ const OrganicLeadsLayer = () => {
     {
       name: "Phone Number",
       selector: (row) => row.PhoneNumber || "-",
+      sortable: true,
+      wrap: true,
+    },
+    {
+      name: "Email",
+      selector: (row) => row.Email || "-",
       sortable: true,
       wrap: true,
     },
@@ -110,19 +134,40 @@ const OrganicLeadsLayer = () => {
       wrap: true,
     },
     {
-      name: "Email",
-      selector: (row) => row.Email || "-",
+      name: "City",
+      selector: (row) => row.City || "-",
       sortable: true,
       wrap: true,
     },
     {
-      name: "City",
-      selector: (row) => row.City || "-",
+      name: "Platform",
+      selector: (row) => row.Platform || "-",
+      sortable: true,
+      wrap: true,
+    },
+    {
+      name: "Updated At",
+      selector: (row) => {
+        if (!row.Updated_At) return "-";
+        const date = new Date(row.Updated_At);
+        return date.toLocaleString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+      },
+      sortable: true,
       wrap: true,
     },
     {
       name: "Lead Status",
-      selector: (row) => row.LeadStatus || "-",
+      selector: (row) => row.FollowUpStatus || "No FollowUp Yet",
+      sortable: true,
+      wrap: true,
+    },
+    {
+      name: "Next FollowUp",
+      selector: (row) => row.NextFollowUp_Date || "-",
       sortable: true,
       wrap: true,
     },
@@ -212,30 +257,32 @@ const OrganicLeadsLayer = () => {
                   onChange={handleBulkUpload}
                 />
                 {/* Bulk Upload button */}
-                <button
-                  type="button"
-                  className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
-                  onClick={() =>
-                    document.getElementById("organicUpload").click()
-                  }
-                  disabled={uploading}
-                >
-                  <Icon
-                    icon="mdi:upload"
-                    className="icon text-xl line-height-1"
-                  />
-                  Bulk Upload
-                </button>
-                {hasPermission("addlead_add") && (
+                {role === "Admin" && (
+                  <button
+                    type="button"
+                    className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
+                    onClick={() =>
+                      document.getElementById("organicUpload").click()
+                    }
+                    disabled={uploading}
+                  >
+                    <Icon
+                      icon="mdi:upload"
+                      className="icon text-xl line-height-1"
+                    />
+                    Bulk Upload
+                  </button>
+                )}
+                {hasPermission("createlead_add") && (
                   <Link
-                    to="/add-lead"
+                    to="/create-lead"
                     className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
                   >
                     <Icon
                       icon="ic:baseline-plus"
                       className="icon text-xl line-height-1"
                     />
-                    Add Leads
+                    Add Lead
                   </Link>
                 )}
               </div>

@@ -8,7 +8,7 @@ const LeadsPage = () => {
       {/* MasterLayout */}
       <MasterLayout>
         {/* Breadcrumb */}
-        <Breadcrumb title='Leads' />
+        <Breadcrumb title='Social Leads' />
 
         {/* LeadsLayer */}
         <LeadsLayer />

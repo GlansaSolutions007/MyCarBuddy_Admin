@@ -13,7 +13,9 @@ const LeadViewLayer = () => {
   const { hasPermission } = usePermissions();
   const token = localStorage.getItem("token");
   const { leadId } = useParams();
-  const userId = JSON.parse(localStorage.getItem("employeeData"))?.Id || null;
+  const employeeData = JSON.parse(localStorage.getItem("employeeData"));
+  const userId = employeeData?.Id;
+  const roleName = employeeData?.RoleName;
   const [lead, setLead] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -115,7 +117,6 @@ const LeadViewLayer = () => {
             ? { value: vehicle.FuelTypeID, label: vehicle.FuelTypeName }
             : null
         );
-        // Note: Year of Purchase and Km Driven are not in the API response, so they remain empty
       }
     }
   }, [lead]);
@@ -700,13 +701,15 @@ const LeadViewLayer = () => {
                     <Icon icon="mdi:arrow-left" className="fs-5" />
                     Back
                   </Link>
-                  <button
-                    className="btn btn-primary-600 btn-sm d-flex align-items-center justify-content-center gap-1"
-                    onClick={() => setAssignModalOpen(true)}
-                  >
-                    <Icon icon="mdi:account-plus" className="fs-5" />
-                    Assign Supervisor
-                  </button>
+                  {!["Supervisor Head", "Supervisor"].includes(roleName) && (
+                    <button
+                      className="btn btn-primary-600 btn-sm d-flex align-items-center justify-content-center gap-1"
+                      onClick={() => setAssignModalOpen(true)}
+                    >
+                      <Icon icon="mdi:account-plus" className="fs-5" />
+                      Assign Supervisor
+                    </button>
+                  )}
                   {hasPermission("bookservice_view") && (
                     <Link
                       to={`/book-service/${lead?.Id}`}
@@ -806,12 +809,18 @@ const LeadViewLayer = () => {
                             onChange={(e) => setFollowUpStatus(e.target.value)}
                           >
                             <option value="">Select status</option>
-                            <option value="Ringing But Not Responded">Ringing But Not Responded</option>
+                            <option value="Ringing But Not Responded">
+                              Ringing But Not Responded
+                            </option>
                             <option value="Busy">Busy</option>
                             <option value="Not Reachable">Not Reachable</option>
                             <option value="Switched Off">Switched Off</option>
-                            <option value="Temporary Out of Service">Temporary Out of Service</option>
-                            <option value="Number Does Not Exist">Number Does Not Exist</option>
+                            <option value="Temporary Out of Service">
+                              Temporary Out of Service
+                            </option>
+                            <option value="Number Does Not Exist">
+                              Number Does Not Exist
+                            </option>
                             <option value="DND">DND</option>
                           </select>
                         </div>
@@ -878,7 +887,9 @@ const LeadViewLayer = () => {
                             </option>
                             <option value="Price Issue">Price Issue</option>
                             <option value="Conversion">Conversion</option>
-                            <option value="Conversion">Referred a Friend</option>
+                            <option value="Conversion">
+                              Referred a Friend
+                            </option>
                           </select>
                         </div>
                         <div className="col-12">
@@ -890,15 +901,20 @@ const LeadViewLayer = () => {
                             rows={3}
                             placeholder="Add discussion notes"
                             value={discussionNotes}
-                            maxLength={200}
-                            onChange={(e) => setDiscussionNotes(e.target.value)}
+                            onChange={(e) => {
+                              setDiscussionNotes(e.target.value);
+                              e.target.style.height = "auto";
+                              e.target.style.height =
+                                e.target.scrollHeight + "px";
+                            }}
+                            style={{ overflow: "hidden", resize: "none" }}
                           />
-                          <small
+                          {/* <small
                             className="text-secondary-light text-sm"
                             style={{ display: "block", textAlign: "right" }}
                           >
                             {discussionNotes.length}/200 characters
-                          </small>
+                          </small> */}
                         </div>
                         <div className="col-12">
                           <label className="form-label fw-semibold text-primary-light">
@@ -926,9 +942,7 @@ const LeadViewLayer = () => {
                             <option value="Ok for Inspection">
                               Ok for Inspection
                             </option>
-                            <option value="Not Converted">
-                              Not Converted
-                            </option>
+                            <option value="Not Converted">Not Converted</option>
                           </select>
                         </div>
                         {nextAction && (
@@ -1224,59 +1238,70 @@ const LeadViewLayer = () => {
               >
                 {lead?.FollowUps && lead.FollowUps.length > 0 ? (
                   <ul className="mb-0 list-unstyled ps-0">
-                    {lead.FollowUps.map((item, idx) => (
-                      <li
-                        key={idx}
-                        className="mb-3 pb-3 border-bottom border-dashed last:border-0"
-                      >
-                        <div className="d-flex align-items-start gap-3">
-                          <span
-                            className={`badge rounded-pill px-3 py-2 fw-semibold text-white bg-orange`}
-                          >
-                            {item.Status}
-                          </span>
-                          <div className="text-sm text-secondary-light fw-medium">
-                            {item.Created_At
-                              ? new Date(item.Created_At).toLocaleString(
-                                  "en-IN",
-                                  {
-                                    day: "2-digit",
-                                    month: "short",
-                                    year: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    hour12: true,
-                                  }
-                                )
-                              : "-"}
+                    {[...lead.FollowUps]
+                      .sort((a, b) => {
+                        const dateA = a.Updated_At
+                          ? new Date(a.Updated_At)
+                          : new Date(a.Created_At);
+                        const dateB = b.Updated_At
+                          ? new Date(b.Updated_At)
+                          : new Date(b.Created_At);
+                        return dateB - dateA;
+                      })
+                      .map((item, idx) => (
+                        <li
+                          key={idx}
+                          className="mb-3 pb-3 border-bottom border-dashed last:border-0"
+                        >
+                          <div className="d-flex align-items-start gap-3">
+                            <span
+                              className={`badge rounded-pill px-3 py-2 fw-semibold text-white bg-orange`}
+                            >
+                              {item.Status}
+                            </span>
                           </div>
-                        </div>
-                        <div>
-                          <div className="text-sm text-secondary-light">
-                            <strong>Discussion Notes: </strong>
-                            {item.Notes || "-"}
-                          </div>
-                          {item.NextAction && (
-                            <div className="text-sm text-secondary-light">
-                              <strong>Next Action: </strong>
-                              {item.NextAction}
+                          <div>
+                            <div className="text-sm text-secondary-light fw-medium">
+                              <strong>Updation Date: </strong>
+                              {item.Updated_At
+                                ? new Date(item.Updated_At).toLocaleString(
+                                    "en-IN",
+                                    {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      hour12: true,
+                                    }
+                                  )
+                                : "-"}
                             </div>
-                          )}
-                          <div className="text-sm text-secondary-light">
-                            <strong>Next Follow-up Date: </strong>{" "}
-                            {item.NextFollowUp_Date
-                              ? new Date(
-                                  item.NextFollowUp_Date
-                                ).toLocaleDateString()
-                              : "-"}
+                            <div className="text-sm text-secondary-light">
+                              <strong>Discussion Notes: </strong>
+                              {item.Notes || "-"}
+                            </div>
+                            {item.NextAction && (
+                              <div className="text-sm text-secondary-light">
+                                <strong>Next Action: </strong>
+                                {item.NextAction}
+                              </div>
+                            )}
+                            <div className="text-sm text-secondary-light">
+                              <strong>Next Follow-up Date: </strong>{" "}
+                              {item.NextFollowUp_Date
+                                ? new Date(
+                                    item.NextFollowUp_Date
+                                  ).toLocaleDateString()
+                                : "-"}
+                            </div>
+                            <div className="text-sm text-secondary-light">
+                              <strong>Updated By: </strong>
+                              {item.EmployeeName || "-"}
+                            </div>
                           </div>
-                          <div className="text-sm text-secondary-light">
-                            <strong>Updated By: </strong>
-                            {item.EmployeeName || "-"}
-                          </div>
-                        </div>
-                      </li>
-                    ))}
+                        </li>
+                      ))}
                   </ul>
                 ) : (
                   <p className="text-secondary-light mb-0">

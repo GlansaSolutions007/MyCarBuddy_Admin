@@ -151,9 +151,7 @@ const TodayLeadsLayer = () => {
               />
             </form>
           </div>
-          {error && (
-            <div className="alert m-3 align-items-center fw-bold d-flex justify-content-center">  No leads assigned for today. Please check back later.</div>
-          )}
+          
           <DataTable
             columns={columns}
             data={filteredLeads}
@@ -162,6 +160,7 @@ const TodayLeadsLayer = () => {
             highlightOnHover
             responsive
             striped
+            persistTableHead
             noDataComponent={loading ? "Loading leads..." : "No leads available"}
           />
         </div>

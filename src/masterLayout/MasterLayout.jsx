@@ -371,7 +371,7 @@ const MasterLayout = ({ children }) => {
         // { title: "Employee Tickets", to: "/employee-tickets", color: "text-danger-main", permission: "employee_ticket_view", page: "Employee_Tickets" },
       ],
     },
-        {
+    {
       title: "Digital Marketing",
       icon: "mdi:bullhorn-outline",
       children: [
@@ -392,16 +392,16 @@ const MasterLayout = ({ children }) => {
         },
       ],
     },
-        {
+    {
       title: "Support",
       icon: "mdi:headset-mic",
       children: [
         {
-          title: "Leads",
+          title: "Social Leads",
           to: "/leads",
           color: "text-info-danger",
           permission: "leads_view",
-          page: "Leads",
+          page: "Social Leads",
         },
         {
           title: "Organic Leads",
@@ -411,11 +411,11 @@ const MasterLayout = ({ children }) => {
           page: "Organic Leads",
         },
         {
-          title: "Todays Lead",
+          title: "Today Pending Leads",
           to: "/todays-lead",
           color: "text-warning-main",
           permission: "todayslead_view",
-          page: "Todays Lead",
+          page: "Today Pending Leads",
         },
       ],
     },

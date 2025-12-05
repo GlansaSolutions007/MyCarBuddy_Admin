@@ -22,27 +22,30 @@ const FaqsAddLayer = () => {
   const [answer, setAnswer] = useState("");
   const [faqs, setFaqs] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [faqType, setFaqType] = useState("category");
+  const [faqType, setFaqType] = useState("package");
 
   const API_BASE = `${import.meta.env.VITE_APIURL}`;
   const token = localStorage.getItem("token");
 
   useEffect(() => {
     const loadData = async () => {
-      await fetchAllCategories();
       const packagesData = await fetchAllPackages();
+      const categoriesData = await fetchAllCategories();
+
       if (isEditMode) {
-        fetchFaq(editId, packagesData);
+        await fetchFaq(editId, packagesData, categoriesData);
       }
     };
     loadData();
   }, [isEditMode, editId]);
 
   useEffect(() => {
-    setFaqs([]);
-    setSelectedCategory(null);
-    setSelectedPackage(null);
-  }, [faqType]);
+    if (!isEditMode) {
+      setFaqs([]);
+      setSelectedCategory(null);
+      setSelectedPackage(null);
+    }
+  }, [faqType, isEditMode]);
 
   const fetchAllPackages = async () => {
     try {
@@ -81,26 +84,41 @@ const FaqsAddLayer = () => {
     }
   };
 
-  const fetchFaq = async (id, packagesData) => {
+  const fetchFaq = async (id, packagesData, categoriesData) => {
     try {
       const res = await axios.get(`${API_BASE}FAQS?Id=${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       const faq = Array.isArray(res.data) ? res.data[0] : res.data;
-
       if (!faq) {
         Swal.fire("Error", "No FAQ found", "error");
         return;
       }
 
-      setSelectedPackage({
-        value: faq.PackageID,
-        label: packagesData.find((p) => p.value === faq.PackageID)?.label || "",
-      });
-
       setQuestion(faq.Question);
       setAnswer(faq.Answer);
+
+      // Identify FAQ belongs to category or package
+      if (faq.Type === "category") {
+        setFaqType("category");
+
+        const match = categoriesData.find(
+          (c) => Number(c.value) === Number(faq.PackageID)
+        );
+
+        setSelectedCategory(match || null);
+        setSelectedPackage(null);
+      } else if (faq.Type === "package") {
+        setFaqType("package");
+
+        const match = packagesData.find(
+          (p) => Number(p.value) === Number(faq.PackageID)
+        );
+
+        setSelectedPackage(match || null);
+        setSelectedCategory(null);
+      }
     } catch (error) {
       console.error("Failed to load FAQ", error);
       Swal.fire("Error", "Failed to load FAQ", "error");
@@ -175,7 +193,6 @@ const FaqsAddLayer = () => {
 
       for (const key in grouped) {
         const group = grouped[key];
-
         // FINAL PAYLOAD FORMAT EXPECTED BY API
         const payload = {
           type: group.faqType, // "category" or "package"
@@ -201,7 +218,12 @@ const FaqsAddLayer = () => {
   };
 
   const handleUpdateFaq = async () => {
-    if (!selectedPackage || !question.trim() || !answer.trim()) {
+    if (
+      (faqType === "package" && !selectedPackage) ||
+      (faqType === "category" && !selectedCategory) ||
+      !question.trim() ||
+      !answer.trim()
+    ) {
       Swal.fire("Error", "Please fill all fields", "error");
       return;
     }
@@ -212,7 +234,11 @@ const FaqsAddLayer = () => {
         id: parseInt(editId),
         question: question.trim(),
         answer: answer.trim(),
-        packageID: selectedPackage.value,
+        type: faqType,
+        packageID:
+          faqType === "package"
+            ? selectedPackage?.value
+            : selectedCategory?.value,
       };
 
       await axios.put(`${API_BASE}FAQS`, payload, {
