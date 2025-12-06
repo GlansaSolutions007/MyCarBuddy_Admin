@@ -1,79 +1,104 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
+import { usePermissions } from "../context/PermissionContext";
 import Swal from "sweetalert2";
 
 const ExplanationsLayer = () => {
+  const { hasPermission } = usePermissions();
   const [searchText, setSearchText] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [explanationData, setExplanationData] = useState([]);
 
-  // ---- Dummy Data (similar to FAQs Packages structure) ----
+  const API_BASE = `${import.meta.env.VITE_APIURL}`;
+  const token = localStorage.getItem("token");
+
   useEffect(() => {
-    const dummy = [
-      {
-        PackageName: "Basic Package",
-        EXPLANATIONS: [
-          {
-            id: 1,
-            Question: "What is included in the basic package?",
-            Explanation: "It includes general information and basic support.",
-          },
-          {
-            id: 2,
-            Question: "How to activate the basic package?",
-            Explanation: "You can activate it through the dashboard.",
-          },
-        ],
-      },
-      {
-        PackageName: "Premium Package",
-        EXPLANATIONS: [
-          {
-            id: 3,
-            Question: "What benefits are available?",
-            Explanation: "Premium users get extra features and priority support.",
-          },
-        ],
-      },
-    ];
-
-    setData(dummy);
+    fetchFaqs();
   }, []);
 
-  // ---- Flatten Table Data ----
-  const explanations = [];
-  data.forEach((pkg) => {
-    pkg.EXPLANATIONS.forEach((exp, index) => {
-      explanations.push({
-        id: exp.id,
-        package: index === 0 ? pkg.PackageName : "",
-        question: exp.Question,
-        explanation: exp.Explanation,
+  const fetchFaqs = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}Explanations/Packages`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-    });
-  });
+      setExplanationData(res.data);
+    } catch (error) {
+      console.error("Failed to load Explanation", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // ---- Delete Handler ----
-  const handleDelete = (id) => {
-    Swal.fire({
+  const handleDeleteFaq = async (faqId) => {
+    const result = await Swal.fire({
       title: "Are you sure?",
-      text: "This explanation will be deleted!",
+      text: "You won't be able to revert this!",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
       cancelButtonColor: "#3085d6",
       confirmButtonText: "Yes, delete it!",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        Swal.fire("Deleted!", "Explanation has been deleted.", "success");
-      }
     });
+
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(`${API_BASE}Explanations/DeleteExplanation/${faqId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        Swal.fire("Deleted!", "Explanation has been deleted.", "success");
+        fetchFaqs();
+      } catch (error) {
+        console.error("Failed to delete Explanation", error);
+        Swal.fire("Error", "Failed to delete Explanation", "error");
+      }
+    }
   };
 
-  // ---- Table Columns ----
+  const faqs = [];
+  // ------- 1) PACKAGE FAQS -------
+  if (explanationData?.PackageFAQS && Array.isArray(explanationData.PackageFAQS)) {
+    explanationData.PackageFAQS.forEach((pkg) => {
+      if (Array.isArray(pkg.FAQS)) {
+        pkg.FAQS.forEach((faq, index) => {
+          faqs.push({
+            id: faq.FAQID,
+            Type: index === 0 ? pkg.Type : "",
+            package: index === 0 ? pkg.PackageName : "",
+            question: faq.Question,
+            Answer: faq.Answer,
+          });
+        });
+      }
+    });
+  }
+  // ------- 2) CATEGORY FAQS -------
+  if (explanationData?.CategoryFAQS && Array.isArray(explanationData.CategoryFAQS)) {
+    explanationData.CategoryFAQS.forEach((cat) => {
+      if (Array.isArray(cat.FAQS)) {
+        cat.FAQS.forEach((faq, index) => {
+          faqs.push({
+            id: faq.FAQID,
+            Type: index === 0 ? cat.Type : "",
+            package: index === 0 ? cat.CategoryName : "",
+            question: faq.Question,
+            Answer: faq.Answer,
+          });
+        });
+      }
+    });
+  }
+
+  // DataTable Columns
   const columns = [
+    {
+      name: "FAQ Type",
+      selector: (row) => row.Type,
+      sortable: true,
+      width: "10%",
+    },
     {
       name: "Package",
       selector: (row) => row.package,
@@ -84,42 +109,47 @@ const ExplanationsLayer = () => {
       name: "Questions",
       selector: (row) => row.question,
       wrap: true,
+      width: "25%",
     },
     {
       name: "Explanation",
-      selector: (row) => row.explanation,
+      selector: (row) => row.Answer,
       wrap: true,
+      width: "30%",
     },
     {
       name: "Actions",
-      width: "15%",
       cell: (row) => (
         <div>
-          <Link
-            to={`/add-explanation?id=${row.id}`}
-            className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-          >
-            <Icon icon="lucide:edit" />
-          </Link>
-
-          <button
-            onClick={() => handleDelete(row.id)}
-            className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
-          >
-            <Icon icon="mingcute:delete-2-line" />
-          </button>
+          {hasPermission("explanations_edit") && (
+            <Link
+              to={`/add-explanations?id=${row.id}`}
+              className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+            >
+              <Icon icon="lucide:edit" />
+            </Link>
+          )}
+          {hasPermission("explanations_delete") && (
+            <button
+              className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
+              onClick={() => handleDeleteFaq(row.id)}
+            >
+              <Icon icon="mingcute:delete-2-line" />
+            </button>
+          )}
         </div>
       ),
+      width: "15%",
     },
   ];
 
-  // ---- Search Filter ----
-  const filtered = explanations.filter((e) => {
+  // Filter FAQs based on search text
+  const filteredExplanations = faqs.filter((exp) => {
     const text = searchText.toLowerCase();
     return (
-      e.package.toLowerCase().includes(text) ||
-      e.question.toLowerCase().includes(text) ||
-      e.explanation.toLowerCase().includes(text)
+      exp.package.toLowerCase().includes(text) ||
+      exp.question.toLowerCase().includes(text) ||
+      exp.Answer.toLowerCase().includes(text)
     );
   });
 
@@ -130,9 +160,12 @@ const ExplanationsLayer = () => {
           <div className="card-header bg-white border-bottom-0">
             <div
               className="d-flex align-items-center flex-wrap gap-2 justify-content-between"
-              style={{ overflowX: "auto", whiteSpace: "nowrap" }}
+              style={{
+                overflowX: "auto",
+                whiteSpace: "nowrap",
+              }}
             >
-              {/* Search Bar */}
+              {/* Search Input */}
               <form
                 className="navbar-search flex-shrink-1 position-relative"
                 style={{ minWidth: "400px", maxWidth: "500px" }}
@@ -140,9 +173,12 @@ const ExplanationsLayer = () => {
                 <input
                   type="text"
                   className="form-control ps-5"
-                  placeholder="Search Explanations"
+                  placeholder="Search Explanation"
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
+                  style={{
+                    width: "100%",
+                  }}
                 />
                 <Icon
                   icon="ion:search-outline"
@@ -152,28 +188,32 @@ const ExplanationsLayer = () => {
                 />
               </form>
 
-              {/* Add Button */}
-              <Link
-                to={"/add-explanations"}
-                className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
-              >
-                <Icon icon="ic:baseline-plus" className="icon text-xl" />
-                Add Explanation
-              </Link>
+              {/* Add FAQ Button */}
+              {hasPermission("explanations_add") && (
+                <Link
+                  to={"/add-explanations"}
+                  className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
+                >
+                  <Icon
+                    icon="ic:baseline-plus"
+                    className="icon text-xl line-height-1"
+                  />
+                  Add Explanation
+                </Link>
+              )}
             </div>
           </div>
 
-          {/* Table */}
           <DataTable
             columns={columns}
-            data={filtered}
+            data={filteredExplanations}
             progressPending={loading}
             pagination
-            striped
             highlightOnHover
             responsive
+            striped
             persistTableHead
-            noDataComponent={"No Explanations Available"}
+            noDataComponent={loading ? "Loading Explanations..." : "No Explanations available"}
           />
         </div>
       </div>

@@ -20,29 +20,32 @@ const ExplanationsAddLayer = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
-  const [explanations, setExplanations] = useState([]);
+  const [faqs, setFaqs] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [explanationType, setExplanationType] = useState("category");
+  const [faqType, setFaqType] = useState("package");
 
   const API_BASE = `${import.meta.env.VITE_APIURL}`;
   const token = localStorage.getItem("token");
 
   useEffect(() => {
     const loadData = async () => {
-      await fetchAllCategories();
       const packagesData = await fetchAllPackages();
+      const categoriesData = await fetchAllCategories();
+
       if (isEditMode) {
-        fetchExplanation(editId, packagesData);
+        await fetchExplanation(editId, packagesData, categoriesData);
       }
     };
     loadData();
   }, [isEditMode, editId]);
 
   useEffect(() => {
-    setExplanations([]);
-    setSelectedCategory(null);
-    setSelectedPackage(null);
-  }, [explanationType]);
+    if (!isEditMode) {
+      setFaqs([]);
+      setSelectedCategory(null);
+      setSelectedPackage(null);
+    }
+  }, [faqType, isEditMode]);
 
   const fetchAllPackages = async () => {
     try {
@@ -81,49 +84,64 @@ const ExplanationsAddLayer = () => {
     }
   };
 
-  const fetchExplanation = async (id, packagesData) => {
+  const fetchExplanation = async (id, packagesData, categoriesData) => {
     try {
       const res = await axios.get(`${API_BASE}Explanations?Id=${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const explanation = Array.isArray(res.data) ? res.data[0] : res.data;
-
-      if (!explanation) {
-        Swal.fire("Error", "No Explanation found", "error");
+      const faq = Array.isArray(res.data) ? res.data[0] : res.data;
+      if (!faq) {
+        Swal.fire("Error", "No Explanations found", "error");
         return;
       }
 
-      setSelectedPackage({
-        value: explanation.PackageID,
-        label: packagesData.find((p) => p.value === explanation.PackageID)?.label || "",
-      });
+      setQuestion(faq.Question);
+      setAnswer(faq.Answer);
 
-      setQuestion(explanation.Question);
-      setAnswer(explanation.Explanation);
+      // Identify FAQ belongs to category or package
+      if (faq.Type === "category") {
+        setFaqType("category");
+
+        const match = categoriesData.find(
+          (c) => Number(c.value) === Number(faq.PackageID)
+        );
+
+        setSelectedCategory(match || null);
+        setSelectedPackage(null);
+      } else if (faq.Type === "package") {
+        setFaqType("package");
+
+        const match = packagesData.find(
+          (p) => Number(p.value) === Number(faq.PackageID)
+        );
+
+        setSelectedPackage(match || null);
+        setSelectedCategory(null);
+      }
     } catch (error) {
-      console.error("Failed to load Explanation", error);
-      Swal.fire("Error", "Failed to load Explanation", "error");
+      console.error("Failed to load Explanations", error);
+      Swal.fire("Error", "Failed to load Explanations", "error");
     }
   };
 
-  const handleAddExplanation = () => {
+  const handleAddExpplanation = () => {
     if (
-      explanationType === "category" &&
+      faqType === "category" &&
       (!selectedCategory || !question.trim() || !answer.trim())
     ) {
-      Swal.fire("Error", "Please fill category, question, and explanation", "error");
+      Swal.fire("Error", "Please fill category, question, and answer", "error");
       return;
     }
     if (
-      explanationType === "package" &&
+      faqType === "package" &&
       (!selectedPackage || !question.trim() || !answer.trim())
     ) {
-      Swal.fire("Error", "Please fill package, question, and explanation", "error");
+      Swal.fire("Error", "Please fill package, question, and answer", "error");
       return;
     }
     const newExplanation = {
-      explanationType,
+      faqType,
       categoryId: selectedCategory?.value || null,
       categoryName: selectedCategory?.label || "",
       packageId: selectedPackage?.value || null,
@@ -131,7 +149,7 @@ const ExplanationsAddLayer = () => {
       question: question.trim(),
       answer: answer.trim(),
     };
-    setExplanations([...explanations, newExplanation]);
+    setFaqs([...faqs, newExplanation]);
     setQuestion("");
     setAnswer("");
     setSelectedCategory(null);
@@ -139,11 +157,11 @@ const ExplanationsAddLayer = () => {
   };
 
   const handleRemoveExplanation = (index) => {
-    setExplanations(explanations.filter((_, i) => i !== index));
+    setFaqs(faqs.filter((_, i) => i !== index));
   };
 
-  const handleSaveExplanations = async () => {
-    if (explanations.length === 0) {
+  const handleSaveExplannation = async () => {
+    if (faqs.length === 0) {
       Swal.fire("Error", "No Explanations to save", "error");
       return;
     }
@@ -151,37 +169,36 @@ const ExplanationsAddLayer = () => {
     setLoading(true);
 
     try {
-      // Group by each row's own type and ID
-      const grouped = explanations.reduce((acc, explanation) => {
+      const grouped = faqs.reduce((acc, faq) => {
         const key =
-          explanation.explanationType === "category"
-            ? `cat-${explanation.categoryId}`
-            : `pkg-${explanation.packageId}`;
+          faq.faqType === "category"
+            ? `cat-${faq.categoryId}`
+            : `pkg-${faq.packageId}`;
 
         if (!acc[key]) {
           acc[key] = {
-            explanationType: explanation.explanationType,
-            id: explanation.explanationType === "category" ? explanation.categoryId : explanation.packageId,
-            explanations: [],
+            faqType: faq.faqType,
+            id: faq.faqType === "category" ? faq.categoryId : faq.packageId,
+            faqs: [],
           };
         }
 
-        acc[key].explanations.push({
-          question: explanation.question,
-          explanation: explanation.answer,
+        acc[key].faqs.push({
+          question: faq.question,
+          answer: faq.answer,
         });
 
         return acc;
       }, {});
 
-      // Send API call group-wise
       for (const key in grouped) {
         const group = grouped[key];
-
-        const payload =
-          group.explanationType === "category"
-            ? { categoryID: group.id, explanations: group.explanations }
-            : { packageID: group.id, explanations: group.explanations };
+        // FINAL PAYLOAD FORMAT EXPECTED BY API
+        const payload = {
+          type: group.faqType, // "category" or "package"
+          packageID: group.id, // categoryID OR packageID
+          explanation: group.faqs,
+        };
 
         await axios.post(`${API_BASE}Explanations`, payload, {
           headers: { Authorization: `Bearer ${token}` },
@@ -189,7 +206,7 @@ const ExplanationsAddLayer = () => {
       }
 
       Swal.fire("Success", "Explanations saved successfully", "success");
-      setExplanations([]);
+      setFaqs([]);
       setSelectedCategory(null);
       setSelectedPackage(null);
     } catch (error) {
@@ -201,7 +218,12 @@ const ExplanationsAddLayer = () => {
   };
 
   const handleUpdateExplanation = async () => {
-    if (!selectedPackage || !question.trim() || !answer.trim()) {
+    if (
+      (faqType === "package" && !selectedPackage) ||
+      (faqType === "category" && !selectedCategory) ||
+      !question.trim() ||
+      !answer.trim()
+    ) {
       Swal.fire("Error", "Please fill all fields", "error");
       return;
     }
@@ -211,19 +233,23 @@ const ExplanationsAddLayer = () => {
       const payload = {
         id: parseInt(editId),
         question: question.trim(),
-        explanation: answer.trim(),
-        packageID: selectedPackage.value,
+        answer: answer.trim(),
+        type: faqType,
+        packageID:
+          faqType === "package"
+            ? selectedPackage?.value
+            : selectedCategory?.value,
       };
 
       await axios.put(`${API_BASE}Explanations`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      Swal.fire("Success", "Explanation updated successfully", "success");
+      Swal.fire("Success", "Explanations updated successfully", "success");
       navigate("/explanations");
     } catch (error) {
-      console.error("Failed to update Explanation", error);
-      Swal.fire("Error", "Failed to update Explanation", "error");
+      console.error("Failed to update Explanations", error);
+      Swal.fire("Error", "Failed to update Explanations", "error");
     } finally {
       setLoading(false);
     }
@@ -231,9 +257,9 @@ const ExplanationsAddLayer = () => {
 
   const columns = [
     {
-      name: explanationType === "category" ? "Category" : "Package",
+      name: faqType === "category" ? "Category" : "Package",
       selector: (row) =>
-        explanationType === "category" ? row.categoryName : row.packageName,
+        faqType === "category" ? row.categoryName : row.packageName,
       sortable: true,
       width: "20%",
     },
@@ -274,29 +300,29 @@ const ExplanationsAddLayer = () => {
                   <label className="form-label d-flex align-items-center gap-2 col-6">
                     <input
                       type="radio"
-                      name="explanationType"
+                      name="faqType"
                       value="category"
-                      checked={explanationType === "category"}
-                      onChange={(e) => setExplanationType(e.target.value)}
+                      checked={faqType === "category"}
+                      onChange={(e) => setFaqType(e.target.value)}
                       className="form-check-input"
                       style={{ accentColor: "black" }}
                     />
-                    Add Explanation for Category
+                    Add Explanations for Category
                   </label>
                   <label className="form-label d-flex align-items-center gap-2 col-6">
                     <input
                       type="radio"
-                      name="explanationType"
+                      name="faqType"
                       value="package"
-                      checked={explanationType === "package"}
-                      onChange={(e) => setExplanationType(e.target.value)}
+                      checked={faqType === "package"}
+                      onChange={(e) => setFaqType(e.target.value)}
                       className="form-check-input"
                     />
-                    Add Explanation for Package
+                    Add Explanations for Package
                   </label>
                 </div>
               </div>
-              {explanationType === "category" && (
+              {faqType === "category" && (
                 <div className="col-md-12">
                   <label className="form-label">Select Category</label>
                   <Select
@@ -311,7 +337,7 @@ const ExplanationsAddLayer = () => {
                 </div>
               )}
 
-              {explanationType === "package" && (
+              {faqType === "package" && (
                 <div className="col-md-12">
                   <label className="form-label">Select Package</label>
                   <Select
@@ -343,14 +369,14 @@ const ExplanationsAddLayer = () => {
                   rows={3}
                   value={answer}
                   onChange={(e) => setAnswer(e.target.value)}
-                  placeholder="Enter explanation"
+                  placeholder="Enter answer"
                 />
               </div>
               {!isEditMode && hasPermission("explanations_add") && (
                 <div className="col-12 d-flex justify-content-end mb-10">
                   <button
                     className="btn btn-primary radius-8 px-14 py-2 d-flex align-items-center"
-                    onClick={handleAddExplanation}
+                    onClick={handleAddExpplanation}
                   >
                     <Icon icon="ic:baseline-plus" />
                     Add
@@ -364,7 +390,7 @@ const ExplanationsAddLayer = () => {
                     onClick={handleUpdateExplanation}
                     disabled={loading}
                   >
-                    {loading ? "Updating..." : "Update Explanation"}
+                    {loading ? "Updating..." : "Update Explanations"}
                   </button>
                 </div>
               )}
@@ -374,7 +400,7 @@ const ExplanationsAddLayer = () => {
                 <hr />
                 <DataTable
                   columns={columns}
-                  data={explanations}
+                  data={faqs}
                   pagination
                   highlightOnHover
                   responsive
@@ -382,12 +408,12 @@ const ExplanationsAddLayer = () => {
                   persistTableHead
                   noDataComponent="No Explanations added yet"
                 />
-                {explanations.length > 0 && (
+                {faqs.length > 0 && (
                   <div className="d-flex justify-content-center mt-3">
                     {hasPermission("explanations_add") && (
                       <button
                         className="btn btn-primary-600 radius-8 px-10 py-4 d-flex align-items-center gap-2"
-                        onClick={handleSaveExplanations}
+                        onClick={handleSaveExplannation}
                         disabled={loading}
                       >
                         {loading ? "Saving..." : "Save Explanations"}

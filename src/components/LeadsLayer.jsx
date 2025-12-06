@@ -55,24 +55,28 @@ const LeadsLayer = () => {
       selector: (row) => row.Id || "-",
       sortable: true,
       wrap: true,
+      width: "120px",
     },
     {
       name: "Customer Name",
       selector: (row) => row.FullName || "-",
       sortable: true,
       wrap: true,
+      width: "180px",
     },
     {
       name: "Phone Number",
       selector: (row) => row.PhoneNumber || "-",
       sortable: true,
       wrap: true,
+      width: "150px",
     },
     {
       name: "Email",
       selector: (row) => row.Email || "-",
       sortable: true,
       wrap: true,
+      width: "180px",
     },
     {
       name: "Created Date",
@@ -87,18 +91,21 @@ const LeadsLayer = () => {
       },
       sortable: true,
       wrap: true,
+      width: "150px",
     },
     {
       name: "City",
       selector: (row) => row.City || "-",
       sortable: true,
       wrap: true,
+      width: "180px",
     },
     {
       name: "Platform",
       selector: (row) => row.Platform || "-",
       sortable: true,
       wrap: true,
+      width: "120px",
     },
     {
       name: "Updated At",
@@ -113,18 +120,21 @@ const LeadsLayer = () => {
       },
       sortable: true,
       wrap: true,
+      width: "150px",
     },
     {
       name: "Lead Status",
       selector: (row) => row.FollowUpStatus || "No FollowUp Yet",
       sortable: true,
       wrap: true,
+      width: "180px",
     },
     {
       name: "Next FollowUp",
       selector: (row) => row.NextFollowUp_Date || "-",
       sortable: true,
       wrap: true,
+      width: "150px",
     },
     {
       name: "Action",
@@ -154,8 +164,8 @@ const LeadsLayer = () => {
       // const filteredLeads = leads.filter((lead) => {
       if (
         lead.Platform === "Organic" ||
-        lead.Platform === "web" ||
-        lead.Platform === "app"
+        lead.Platform === "Web" ||
+        lead.Platform === "App"
       )
         return false;
       const text = searchText.toLowerCase();

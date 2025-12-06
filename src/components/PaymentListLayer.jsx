@@ -103,7 +103,7 @@ const PaymentsListLayer = () => {
     { name: "S.No", selector: (_, index) => index + 1, width: "60px" },
     {
       name: "Booking ID", selector: (row) => (
-        <Link to={`/view-booking/${row.BookingID}`} className="text-primary">
+        <Link to={`/booking-view/${row.BookingID}`} className="text-primary">
           {row.BookingTrackID}
         </Link>
       ), width: "150px"

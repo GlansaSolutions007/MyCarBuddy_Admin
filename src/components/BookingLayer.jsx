@@ -233,12 +233,12 @@ const BookingLayer = () => {
   };
 
   const columns = [
-    ...(hasPermission("viewbooking_view")
+    ...(hasPermission("bookingview_view")
     ? [
     {
       name: "Booking id",
       selector: (row) => (
-        <Link to={`/view-booking/${row.BookingID}`} className="text-primary">
+        <Link to={`/booking-view/${row.BookingID}`} className="text-primary">
           {row.BookingTrackID}
         </Link>
       ),
@@ -389,15 +389,13 @@ const BookingLayer = () => {
 
         return (
           <div className="d-flex gap-2 align-items-center">
-            {hasPermission("viewbooking_view") && (
             <Link
-              to={`/view-booking/${row.BookingID}`}
+              to={`/booking-view/${row.BookingID}`}
               className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
               title="View"
             >
               <Icon icon="lucide:eye" />
             </Link>
-            )}
             {isFutureOrToday &&
               row.BookingStatus.toLowerCase() === "pending" &&
               (

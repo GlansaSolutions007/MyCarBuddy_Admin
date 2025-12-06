@@ -155,7 +155,7 @@ function App() {
           <Route exact path='/add-service-plan-price' element={<ServicePlanPriceAddPage />} />
           <Route exact path='/edit-service-plan-price/:PlanPackagePriceID' element={<ServicePlanPriceEditPage />} />
 
-          <Route path="/view-booking/:bookingId" element={<BookingViewPage />} />
+          <Route path="/booking-view/:bookingId" element={<BookingViewPage />} />
           {/* <Route path="/booking/assign-technician/:bookingId" element={<AssignTechnician />} /> */}
 
           <Route exact path='/payments' element={<PaymentListPage />} />

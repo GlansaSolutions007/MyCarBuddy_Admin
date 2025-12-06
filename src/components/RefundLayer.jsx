@@ -43,7 +43,7 @@ const RefundLayer = () => {
     {
       name: "Booking ID",
       selector: (row) => (
-        <Link to={`/view-booking/${row.BookingID}`} className="text-primary">
+        <Link to={`/booking-view/${row.BookingID}`} className="text-primary">
           {row.BookingTrackID}
         </Link>
       ),
@@ -119,13 +119,13 @@ const RefundLayer = () => {
       },
       width: "150px",
     },
-    ...(hasPermission("viewbooking_view")
+    ...(hasPermission("bookingview_view")
     ? [
     {
       name: "Actions",
       cell: (row) => (
         <Link
-          to={`/view-booking/${row.BookingID}`}
+          to={`/booking-view/${row.BookingID}`}
           className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
           title="View"
         >

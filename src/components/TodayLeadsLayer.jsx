@@ -78,7 +78,7 @@ const TodayLeadsLayer = () => {
 
   const columns = [
     {
-      name: "Assigned Date",
+      name: "Assigning Date",
       selector: (row) => formatDate(row.AssignedDate),
       sortable: true,
       width: "150px",
@@ -88,36 +88,49 @@ const TodayLeadsLayer = () => {
       selector: (row) => row.FullName || "-",
       sortable: true,
       wrap: true,
+      width: "180px",
     },
     {
       name: "Phone Number",
       selector: (row) => row.PhoneNumber || "-",
       sortable: true,
       wrap: true,
+      width: "150px",
     },
     {
       name: "Email",
       selector: (row) => row.Email || "-",
       sortable: true,
       wrap: true,
+      width: "180px",
     },
     {
-      name: "Lead Created Date",
+      name: "Created Date",
       selector: (row) => formatDate(row.Leadcreateddate),
       sortable: true,
       wrap: true,
+      width: "150px",
     },
     {
       name: "City",
       selector: (row) => row.City || "-",
       sortable: true,
       wrap: true,
+      width: "180px",
     },
     {
       name: "Status",
       selector: (row) => row.Status || "-",
       sortable: true,
       wrap: true,
+      width: "180px",
+    },
+    {
+      name: "Next FollowUp",
+      selector: (row) => row.NextFollowUp_Date || "-",
+      sortable: true,
+      wrap: true,
+      width: "150px",
     },
     {
           name: "Action",
