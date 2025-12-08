@@ -84,6 +84,12 @@ const TodayLeadsLayer = () => {
       width: "150px",
     },
     {
+      name: "Lead ID",
+      selector: (row) => row.LeadId || "-",
+      sortable: true,
+      width: "150px",
+    },
+    {
       name: "Full Name",
       selector: (row) => row.FullName || "-",
       sortable: true,

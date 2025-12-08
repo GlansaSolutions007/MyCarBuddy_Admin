@@ -386,6 +386,8 @@ const fetchBookingData = async () => {
                 >
                   <option value="Service">Service</option>
                   <option value="Spare Part">Spare Part</option>
+                  <option value="Spare Part">Package</option>
+                  <option value="Spare Part">New Package</option>
                 </select>
               </div>
 

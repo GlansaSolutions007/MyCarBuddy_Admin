@@ -38,7 +38,8 @@ const LeadReportsLayer = () => {
       setLoading(true);
       setError("");
 
-      let url = `${API_BASE}Leads/UniqueLeadCounts`;
+      // let url = `${API_BASE}Leads/UniqueLeadCounts`;
+      let url = `${API_BASE}Leads/EmployeeFollowupStatus`;
       const params = [];
       if (fromDate) {
         params.push(`FromDate=${fromDate}`);
@@ -59,17 +60,33 @@ const LeadReportsLayer = () => {
 
       if (res.data && Array.isArray(res.data)) {
         const leadsData = res.data.map((lead) => ({
-          EmployeeId: lead.EmployeeId,
-          Name: lead.Name,
-          LeadCount: lead.LeadCount,
+          EmpId: lead.EmpId,
+          EmployeeName: lead.EmployeeName,
+          TotalAssigned: lead.TotalAssigned,
+          NoFollowUpYet: lead.NoFollowUpYet,
+
+          RingingButNotResponded: lead.RingingButNotResponded,
+          Busy: lead.Busy,
+          NotReachable: lead.NotReachable,
+          SwitchedOff: lead.SwitchedOff,
+          TemporaryOutofService: lead.TemporaryOutofService,
+          DND: lead.DND,
+
+          NumberDoesNotExist: lead.NumberDoesNotExist,
+          Interested: lead.Interested,
+          NotInterested: lead.NotInterested,
+          NeedMoreInfo: lead.NeedMoreInfo,
+          ConvertedCustomer: lead.ConvertedCustomer,
+          NotConverted: lead.NotConverted,
+          NotHavingCar: lead.NotHavingCar,
         }));
 
         setLeads(leadsData);
         setFilteredLeads(leadsData);
 
-          if (leadsData.length === 0) {
+        if (leadsData.length === 0) {
           setError("No leads available for selected dates.");
-         }
+        }
       }
     } catch (err) {
       console.error(err);
@@ -81,23 +98,75 @@ const LeadReportsLayer = () => {
 
   const columns = [
     {
-      name: "Employee ID",
-      selector: (row) => row.EmployeeId,
+      name: "Emp ID",
+      selector: (row) => row.EmpId,
+      sortable: true,
+      width: "100px",
+    },
+    {
+      name: "Emp Name",
+      selector: (row) => row.EmployeeName,
+      sortable: true,
+      width: "150px",
+    },
+    {
+      name: "Total Leads",
+      selector: (row) => row.TotalAssigned,
       sortable: true,
       width: "140px",
     },
     {
-      name: "Name",
-      selector: (row) => row.Name,
-      sortable: true,
-      width: "200px",
-      cell: (row) => <span className="fw-bold">{row.Name}</span>,
-    },
-    {
-      name: "Lead Count",
-      selector: (row) => row.LeadCount,
+      name: "No FollowUp",
+      selector: (row) => row.NoFollowUpYet,
       sortable: true,
       width: "140px",
+    },
+        {
+      name: "Converted",
+      selector: (row) => row.ConvertedCustomer,
+      width: "120px",
+    },
+     {
+      name: "Interested",
+      selector: (row) => row.Interested,
+      width: "120px",
+    },
+    {
+      name: "Not Converted",
+      selector: (row) => row.NotConverted,
+      width: "140px",
+    },
+    {
+      name: "Need Info",
+      selector: (row) => row.NeedMoreInfo,
+      width: "120px",
+    },
+    {
+      name: "No Car",
+      selector: (row) => row.NotHavingCar,
+      width: "120px",
+    },
+    {
+      name: "Not Connected",
+      selector: (row) =>
+        (row.RingingButNotResponded) +
+        (row.Busy) +
+        (row.NotReachable) +
+        (row.SwitchedOff) +
+        (row.TemporaryOutofService) +
+        (row.DND),
+      sortable: true,
+      width: "150px",
+    },
+    {
+      name: "Not Interested",
+      selector: (row) => row.NotInterested,
+      width: "140px",
+    },
+    {
+      name: "Doesn't Exist",
+      selector: (row) => row.NumberDoesNotExist,
+      width: "120px",
     },
     ...(hasPermission("empleadsreport_view")
       ? [
@@ -106,7 +175,7 @@ const LeadReportsLayer = () => {
             cell: (row) => (
               <div>
                 <Link
-                  to={`/emp-leads-report/${row.EmployeeId}?fromDate=${fromDate}&toDate=${toDate}`}
+                  to={`/emp-leads-report/${row.EmpId}?fromDate=${fromDate}&toDate=${toDate}`}
                   className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
                 >
                   <Icon icon="lucide:eye" />
@@ -165,7 +234,9 @@ const LeadReportsLayer = () => {
             </div>
           </div>
           {error ? (
-            <div className="alert m-3 align-items-center fw-bold d-flex justify-content-center">No leads reports available for selected date</div>
+            <div className="alert m-3 align-items-center fw-bold d-flex justify-content-center">
+              No leads reports available for selected date
+            </div>
           ) : (
             <DataTable
               columns={columns}

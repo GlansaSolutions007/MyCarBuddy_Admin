@@ -875,21 +875,12 @@ const LeadViewLayer = () => {
                           >
                             <option value="">Select outcome</option>
                             <option value="Interested">Interested</option>
-                            <option value="Not Interested">
-                              Not Interested
-                            </option>
-                            <option value="Need More Info">
-                              Need More Info
-                            </option>
-                            <option value="Send Details">Send Details</option>
-                            <option value="Schedule Meeting">
-                              Schedule Meeting
-                            </option>
-                            <option value="Price Issue">Price Issue</option>
-                            <option value="Conversion">Conversion</option>
-                            <option value="Conversion">
-                              Referred a Friend
-                            </option>
+                            <option value="Not Interested">Not Interested</option>
+                            <option value="Need More Info">Need More Info</option>
+                            <option value="Converted to Customer">Converted to Customer</option>
+                            <option value="Not Converted">Not Converted</option>
+                            <option value="Not Having Car">Not Having Car</option>
+                            {/* <option value="Conversion">Customer Referred</option> */}
                           </select>
                         </div>
                         <div className="col-12">
@@ -909,12 +900,6 @@ const LeadViewLayer = () => {
                             }}
                             style={{ overflow: "hidden", resize: "none" }}
                           />
-                          {/* <small
-                            className="text-secondary-light text-sm"
-                            style={{ display: "block", textAlign: "right" }}
-                          >
-                            {discussionNotes.length}/200 characters
-                          </small> */}
                         </div>
                         <div className="col-12">
                           <label className="form-label fw-semibold text-primary-light">
@@ -926,23 +911,22 @@ const LeadViewLayer = () => {
                             onChange={(e) => setNextAction(e.target.value)}
                           >
                             <option value="">Select action</option>
-                            <option value="Follow-up Needed">
-                              Follow-up Needed
-                            </option>
-                            <option value="Send Quotation">
-                              Send Quotation
+                            <option value="Ok for Inspection">
+                              Ok for Inspection
                             </option>
                             <option value="Schedule Meeting">
                               Schedule Meeting
                             </option>
-                            <option value="Close Lead">Close Lead</option>
-                            <option value="Convert to Customer">
-                              Convert to Customer
+                            <option value="Price Issue">Price Issue</option>
+                            <option value="Follow-up Needed">
+                              Follow-up Needed
                             </option>
-                            <option value="Ok for Inspection">
-                              Ok for Inspection
+                            <option value="Send Details">
+                              Send Details
                             </option>
-                            <option value="Not Converted">Not Converted</option>
+                            <option value="Lead Closed">
+                              Lead Closed
+                            </option>
                           </select>
                         </div>
                         {nextAction && (

@@ -137,6 +137,13 @@ const LeadsLayer = () => {
       width: "150px",
     },
     {
+      name: "Next Action",
+      selector: (row) => row.NextAction || "-",
+      sortable: true,
+      wrap: true,
+      width: "150px",
+    },
+    {
       name: "Action",
       cell: (row) => (
         <div className="d-flex gap-2">

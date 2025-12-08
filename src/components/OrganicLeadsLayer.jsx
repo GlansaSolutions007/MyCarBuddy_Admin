@@ -18,6 +18,7 @@ const OrganicLeadsLayer = () => {
   const [error, setError] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [platformFilter, setPlatformFilter] = useState("All");
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
@@ -100,7 +101,7 @@ const OrganicLeadsLayer = () => {
       selector: (row) => row.Id || "-",
       sortable: true,
       wrap: true,
-       width: "120px",
+      width: "120px",
     },
     {
       name: "Customer Name",
@@ -181,6 +182,13 @@ const OrganicLeadsLayer = () => {
       wrap: true,
       width: "150px",
     },
+    {
+      name: "Next Action",
+      selector: (row) => row.NextAction || "-",
+      sortable: true,
+      wrap: true,
+      width: "150px",
+    },
     ...(hasPermission("leadview_view")
       ? [
           {
@@ -214,8 +222,12 @@ const OrganicLeadsLayer = () => {
         (!from || (leadDate && leadDate >= from)) &&
         (!to || (leadDate && leadDate <= to));
 
+      const platformMatch =
+        platformFilter === "All" || lead.Platform === platformFilter;
+
       return (
         dateMatch &&
+        platformMatch &&
         (lead.FullName?.toLowerCase().includes(text) ||
           lead.PhoneNumber?.toLowerCase().includes(text) ||
           lead.Email?.toLowerCase().includes(text) ||
@@ -259,6 +271,48 @@ const OrganicLeadsLayer = () => {
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
                 />
+                {/* <select
+                  className="form-control radius-8 px-14 py-6 text-sm w-auto"
+                  value={platformFilter}
+                  onChange={(e) => setPlatformFilter(e.target.value)}
+                >
+                  <option value="All">All</option>
+                  <option value="Organic">Organic</option>
+                  <option value="Web">Web</option>
+                  <option value="App">App</option>
+                </select> */}
+
+                <div className="position-relative d-inline-block">
+                  <select
+                    className="form-control radius-8 px-14 py-6 text-sm w-auto"
+                    value={platformFilter}
+                    onChange={(e) => setPlatformFilter(e.target.value)}
+                    style={{
+                      appearance: "none",
+                      WebkitAppearance: "none",
+                      MozAppearance: "none",
+                      paddingRight: "30px", // space for arrow
+                    }}
+                  >
+                    <option value="All">All</option>
+                    <option value="Organic">Organic</option>
+                    <option value="Web">Web</option>
+                    <option value="App">App</option>
+                  </select>
+                  <i
+                    className="bi bi-chevron-down"
+                    style={{
+                      position: "absolute",
+                      right: "10px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      pointerEvents: "none",
+                      fontSize: "14px",
+                      color: "#555",
+                    }}
+                  ></i>
+                </div>
+
                 <input
                   type="file"
                   accept=".xlsx, .xls"
