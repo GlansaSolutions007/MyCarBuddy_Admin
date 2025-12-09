@@ -424,8 +424,10 @@ const MasterLayout = ({ children }) => {
       icon: "ion:document-text-outline",
       children: [
         { title: "Ticket Reports", to: "/ticket-reports", color: "text-warning-main", permission: "ticketreports_view", page: "Ticket Reports" },
-        { title: "Lead Reports", to: "/lead-reports", color: "text-danger-main", permission: "leadreports_view", page: "Lead Reports" },
+        { title: "Lead Reports", to: "/lead-reports", color: "text-info-main", permission: "leadreports_view", page: "Lead Reports" },
         { title: "Booking Reports", to: "/booking-reports", color: "text-success-main", permission: "bookingreports_view", page: "Booking Reports" },
+        { title: "Services Earning Report", to: "/services-earning-report", color: "text-danger-main", permission: "servicesearningreport_view", page: "Services Earning Report" },
+        { title: "Garage Earning Report", to: "/garage-earning-report", color: "text-primary-600", permission: "garageearningreport_view", page: "Garage Earning Report" },
       ],
     },
     // {

@@ -875,11 +875,19 @@ const LeadViewLayer = () => {
                           >
                             <option value="">Select outcome</option>
                             <option value="Interested">Interested</option>
-                            <option value="Not Interested">Not Interested</option>
-                            <option value="Need More Info">Need More Info</option>
-                            <option value="Converted to Customer">Converted to Customer</option>
+                            <option value="Not Interested">
+                              Not Interested
+                            </option>
+                            <option value="Need More Info">
+                              Need More Info
+                            </option>
+                            <option value="Converted to Customer">
+                              Converted to Customer
+                            </option>
                             <option value="Not Converted">Not Converted</option>
-                            <option value="Not Having Car">Not Having Car</option>
+                            <option value="Not Having Car">
+                              Not Having Car
+                            </option>
                             {/* <option value="Conversion">Customer Referred</option> */}
                           </select>
                         </div>
@@ -921,12 +929,8 @@ const LeadViewLayer = () => {
                             <option value="Follow-up Needed">
                               Follow-up Needed
                             </option>
-                            <option value="Send Details">
-                              Send Details
-                            </option>
-                            <option value="Lead Closed">
-                              Lead Closed
-                            </option>
+                            <option value="Send Details">Send Details</option>
+                            <option value="Lead Closed">Lead Closed</option>
                           </select>
                         </div>
                         {nextAction && (
@@ -949,6 +953,14 @@ const LeadViewLayer = () => {
                     )}
 
                     <div className="d-flex justify-content-end mt-3 gap-10">
+                      {hasPermission("createlead_add") && (
+                        <Link
+                          to="/create-lead"
+                          className="btn btn-secondary px-20 btn-sm"
+                        >
+                          Add Lead
+                        </Link>
+                      )}
                       <button
                         className="btn btn-primary-600 px-20 btn-sm"
                         onClick={handleSubmitStatus}
