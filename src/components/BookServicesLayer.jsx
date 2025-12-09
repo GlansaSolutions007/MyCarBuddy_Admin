@@ -4,6 +4,8 @@ import DataTable from "react-data-table-component";
 import { Icon } from "@iconify/react";
 import Swal from "sweetalert2";
 import axios from "axios";
+import Select, { components } from "react-select";
+import CreatableSelect from "react-select/creatable";
 
 const BookServicesLayer = () => {
   const { Id } = useParams();
@@ -17,9 +19,47 @@ const BookServicesLayer = () => {
   const [description, setDescription] = useState("");
   const [gstPercent, setGstPercent] = useState("");
   const [gstPrice, setGstPrice] = useState("");
+  const [packagesList, setPackagesList] = useState([]);
+  const [selectedPackage, setSelectedPackage] = useState("");
+  const [includesList, setIncludesList] = useState([]);
+  const [selectedIncludes, setSelectedIncludes] = useState([]);
   const [loading, setLoading] = useState(false);
   // edit state
   const [editIndex, setEditIndex] = useState(null);
+
+useEffect(() => {
+  const fetchIncludes = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}Includes`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      // Assuming API returns { data: [...] } or similar
+      setIncludesList(res.data.data || []);
+    } catch (error) {
+      console.error("Failed to load includes", error);
+    }
+  };
+
+  fetchIncludes();
+}, []);
+
+
+const CheckboxOption = (props) => {
+  return (
+    <components.Option {...props}>
+      <input
+        type="checkbox"
+        checked={props.isSelected} // let react-select handle selection
+        readOnly // important to prevent all being selected
+        style={{ marginRight: 8 }}
+      />
+      {props.label}
+    </components.Option>
+  );
+};
+  useEffect(() => {
+  fetchAllPackages();
+}, []);
 
   // keep gstPrice in sync when price or gstPercent changes
   useEffect(() => {
@@ -42,46 +82,84 @@ const BookServicesLayer = () => {
     }
   }, [leadId]);
 
-const fetchBookingData = async () => {
-  try {
-    setLoading(true);
+  const fetchBookingData = async () => {
+    try {
+      setLoading(true);
 
-    const response = await axios.get(
-      `${API_BASE}Supervisor/LeadId?LeadId=${leadId}`,
-      { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      const response = await axios.get(
+        `${API_BASE}Supervisor/LeadId?LeadId=${leadId}`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+
+      // Case 1: data exists (edit mode)
+      if (
+        response.status === 200 &&
+        Array.isArray(response.data) &&
+        response.data.length > 0
+      ) {
+        const converted = response.data.map((item) => ({
+          type: item.ServiceType || "Service",
+          name: item.ServiceName || "",
+          price: Number(item.Price || 0),
+          description: item.Description || "",
+          gstPercent: Number(item.GSTPercent || 0),
+          gstPrice: Number(item.GSTAmount || 0),
+
+          // API identifiers (keep for update)
+          _apiId: item.Id || null,
+          _bookingId: item.BookingId || null,
+          _bookingTrackId: item.BookingTrackID || null,
+        }));
+
+        setAddedItems(converted);
+        return; // --- STOP here
+      }
+
+      // Case 2: no data found (fresh new booking)
+      setAddedItems([]);
+    } catch (err) {
+      console.error("Failed to fetch booking data:", err);
+      // Swal.fire( "No Previous Booking", "No previous bookings exist. Please add a new booking", "info");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAllPackages = async () => {
+  try {
+    const res = await axios.get(
+      `${API_BASE}PlanPackage/GetPlanPackagesDetails`,
+      { headers: { Authorization: `Bearer ${token}` } }
     );
 
-    // Case 1: data exists (edit mode)
-    if (
-      response.status === 200 &&
-      Array.isArray(response.data) &&
-      response.data.length > 0
-    ) {
-      const converted = response.data.map((item) => ({
-        type: item.ServiceType || "Service",
-        name: item.ServiceName || "",
-        price: Number(item.Price || 0),
-        description: item.Description || "",
-        gstPercent: Number(item.GSTPercent || 0),
-        gstPrice: Number(item.GSTAmount || 0),
+    const packagesData = res.data.map((pkg) => {
+      // Convert IncludeID & IncludeNames into array of objects
+      const includeIds = pkg.IncludeID?.split(",") || [];
+      const includeNames = pkg.IncludeNames?.split(",") || [];
 
-        // API identifiers (keep for update)
-        _apiId: item.Id || null,
-        _bookingId: item.BookingId || null,
-        _bookingTrackId: item.BookingTrackID || null,
+      const includes = includeIds.map((id, idx) => ({
+        id,
+        name: includeNames[idx] || "",
       }));
 
-      setAddedItems(converted);
-      return; // --- STOP here
-    }
+      return {
+        id: pkg.PackageID,
+        name: pkg.PackageName,
+        categoryId: pkg.CategoryID,
+        categoryName: pkg.CategoryName,
+        subCategoryId: pkg.SubCategoryID,
+        subCategoryName: pkg.SubCategoryName,
+        description: pkg.Description,
+        price: pkg.Default_Price,
+        includes,
+      };
+    });
 
-    // Case 2: no data found (fresh new booking)
-    setAddedItems([]);
-  } catch (err) {
-    console.error("Failed to fetch booking data:", err);
-    // Swal.fire( "No Previous Booking", "No previous bookings exist. Please add a new booking", "info");
-  } finally {
-    setLoading(false);
+    setPackagesList(packagesData);
+    return packagesData;
+  } catch (error) {
+    console.error("Failed to load all packages", error);
+    return [];
   }
 };
 
@@ -93,6 +171,8 @@ const fetchBookingData = async () => {
     setGstPercent("");
     setGstPrice("");
     setEditIndex(null);
+    setSelectedPackage("");
+    setSelectedIncludes([]);
   };
 
   const handleAddOrSave = async () => {
@@ -109,6 +189,13 @@ const fetchBookingData = async () => {
       description: description.trim(),
       gstPercent: parseFloat(gstPercent),
       gstPrice: parseFloat(gstPrice) || 0,
+
+      // package-specific metadata
+      packageId: itemType === "Package" ? selectedPackage : null,
+      includes: itemType === "Package" ? [...selectedIncludes] : [],
+      isNewPackage:
+        itemType === "Package" &&
+        selectedPackage?.toString().startsWith("new-"),
     };
     // CASE 1: Editing an Existing API Item → CALL PUT
     if (editIndex !== null && addedItems[editIndex]?._apiId) {
@@ -161,7 +248,7 @@ const fetchBookingData = async () => {
         Swal.fire("Error", "Failed to update existing booking item", "error");
       }
 
-      return; 
+      return;
     }
     // CASE 2: Editing / Adding NEW item → LOCAL ONLY
     if (editIndex !== null) {
@@ -179,7 +266,17 @@ const fetchBookingData = async () => {
     const item = addedItems[index];
     setEditIndex(index);
     setItemType(item.type);
+    // ---- ADD in handleEditItem after setName(item.name) ----
+    if (item.type === "Package") {
+      setSelectedPackage(item.packageId || "");
+      setSelectedIncludes(item.includes ? [...item.includes] : []);
+    } else {
+      setSelectedPackage("");
+      setSelectedIncludes([]);
+    }
+
     setName(item.name);
+    setSelectedPackage("");
     setPrice(item.price);
     setDescription(item.description);
     setGstPercent(item.gstPercent);
@@ -221,7 +318,7 @@ const fetchBookingData = async () => {
           console.error(err);
           Swal.fire("Error", "Failed to delete item from server", "error");
         }
-        return; 
+        return;
       }
       // CASE 2: DELETE LOCAL UNSAVED ITEM
       setAddedItems((prev) => prev.filter((_, i) => i !== index));
@@ -294,63 +391,75 @@ const fetchBookingData = async () => {
     }
   };
 
+  // ---- REPLACE columns with this ----
   const columns = [
     {
       name: "Type",
-      selector: (row) => row.type,
+      selector: (row) => (row.isInclude ? "" : row.type),
       sortable: true,
+      width: "120px",
     },
     {
       name: "Name",
-      selector: (row) => row.name,
+      cell: (row) =>
+        row.isInclude ? (
+          <div style={{ paddingLeft: 1, color: "#444" }}>{row.includeName}</div>
+        ) : (
+          <div>{row.name}</div>
+        ),
       sortable: true,
       wrap: true,
+      grow: 2,
     },
     {
       name: "Price",
-      selector: (row) => row.price,
+      selector: (row) => (row.isInclude ? "" : row.price),
       sortable: true,
       right: true,
-      format: (row) => row.price.toFixed(2),
+      format: (row) => (row.isInclude ? "" : Number(row.price || 0).toFixed(2)),
     },
     {
       name: "GST %",
-      selector: (row) => row.gstPercent,
+      selector: (row) => (row.isInclude ? "" : row.gstPercent),
       right: true,
     },
     {
       name: "GST Price",
-      selector: (row) => row.gstPrice,
+      selector: (row) => (row.isInclude ? "" : row.gstPrice),
       right: true,
-      format: (row) => Number(row.gstPrice).toFixed(2),
+      format: (row) =>
+        row.isInclude ? "" : Number(row.gstPrice || 0).toFixed(2),
     },
     {
       name: "Description",
-      selector: (row) => row.description,
+      selector: (row) => (row.isInclude ? "" : row.description),
       wrap: true,
       grow: 2,
     },
     {
       name: "Actions",
-      cell: (row, index) => (
-        <div className="d-flex gap-2">
-          <button
-            className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-            onClick={() => handleEditItem(index)}
-            title="Edit"
-          >
-            <Icon icon="lucide:edit" />
-          </button>
+      cell: (row, index) =>
+        !row.isInclude ? (
+          <div className="d-flex gap-2">
+            {/* <button
+              className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+              onClick={() => handleEditItem(index && index)}
+              title="Edit"
+            >
+              <Icon icon="lucide:edit" />
+            </button> */}
 
-          <button
-            className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
-            onClick={() => handleRemoveItem(index)}
-            title="Delete"
-          >
-            <Icon icon="mingcute:delete-2-line" />
-          </button>
-        </div>
-      ),
+            <button
+              className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
+              onClick={() => handleRemoveItem(index && index)}
+              title="Delete"
+            >
+              <Icon icon="mingcute:delete-2-line" />
+            </button>
+          </div>
+        ) : (
+          ""
+        ),
       ignoreRowClick: true,
       allowOverflow: true,
       button: true,
@@ -367,6 +476,35 @@ const fetchBookingData = async () => {
     0
   );
   const grandTotal = subtotal + totalGst;
+
+  // ---- ADD BEFORE return(...) ----
+const flattenedRows = [];
+addedItems.forEach((item, idx) => {
+  // Main row
+  flattenedRows.push({
+    ...item,
+    __id: `item-${idx}`,
+    isInclude: false,
+  });
+
+  // Includes as separate rows (only for packages)
+  if (item.type === "Package" && Array.isArray(item.includes)) {
+ item.includes.forEach((incId, iIdx) => {
+  // Match by string because one might be number, other string
+  const incName =
+    includesList.find((inc) => inc.IncludeID.toString() === incId.toString())
+      ?.IncludeName || incId;
+  flattenedRows.push({
+    __id: `item-${idx}-inc-${iIdx}`,
+    isInclude: true,
+    includeName: incName,
+    parentIndex: idx,
+  });
+});
+
+  }
+});
+
 
   return (
     <div className="row gy-4">
@@ -386,21 +524,86 @@ const fetchBookingData = async () => {
                 >
                   <option value="Service">Service</option>
                   <option value="Spare Part">Spare Part</option>
-                  <option value="Spare Part">Package</option>
-                  <option value="Spare Part">New Package</option>
+                  <option value="Package">Package</option>
                 </select>
               </div>
+              {itemType !== "Package" && (
+                <div className="col-md-3">
+                  <label className="form-label">Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Item name"
+                  />
+                </div>
+              )}
 
-              <div className="col-md-3">
-                <label className="form-label">Name</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Item name"
-                />
-              </div>
+            {/* PACKAGE DROPDOWN visible only when itemType = Package */}
+{itemType === "Package" && (
+  <div className="col-md-3">
+    <label className="form-label">Select Package</label>
+    <CreatableSelect
+      className="react-select-container text-sm"
+      classNamePrefix="react-select"
+      isClearable
+      placeholder="Search or create package..."
+      value={
+        selectedPackage
+          ? {
+              value: selectedPackage,
+              label:
+                packagesList.find((p) => p.id == selectedPackage)?.name ||
+                selectedPackage,
+            }
+          : null
+      }
+      options={packagesList.map((pkg) => ({
+        value: pkg.id,
+        label: pkg.name,
+      }))}
+      /** When an existing package is selected */
+      onChange={(option) => {
+        if (option) {
+          const pkg = packagesList.find((p) => p.id == option.value);
+          setSelectedPackage(option.value);
+          setName(option.label);
+
+          // Populate includes from existing package
+          if (pkg?.includes && pkg.includes.length > 0) {
+            setSelectedIncludes(pkg.includes.map((inc) => inc.id));
+          } else {
+            setSelectedIncludes([]);
+          }
+        } else {
+          setSelectedPackage("");
+          setName("");
+          setSelectedIncludes([]);
+        }
+      }}
+      /** When user creates a new package */
+      onCreateOption={(inputValue) => {
+        const newId = `new-${Date.now()}`; // temporary local ID
+
+        const newPackage = {
+          id: newId,
+          name: inputValue,
+          includes: [],
+        };
+
+        // Add new package to list
+        setPackagesList((prev) => [...prev, newPackage]);
+
+        // Select newly created package
+        setSelectedPackage(newId);
+        setName(inputValue);
+        setSelectedIncludes([]);
+      }}
+    />
+  </div>
+)}
+
 
               <div className="col-md-2">
                 <label className="form-label">Price</label>
@@ -439,6 +642,34 @@ const fetchBookingData = async () => {
                   readOnly
                 />
               </div>
+              {itemType === "Package" &&
+                selectedPackage &&
+                selectedPackage.toString().startsWith("new-") && (
+                  <div className="col-md-12">
+                    <label className="form-label">Select Includes</label>
+
+                    <Select
+                      isMulti
+                      isSearchable
+                      closeMenuOnSelect={false}
+                      hideSelectedOptions={false}
+                      className="react-select-container text-sm"
+                      classNamePrefix="react-select"
+                      options={includesList.map((inc) => ({
+                        value: inc.IncludeID,
+                        label: inc.IncludeName,
+                      }))}
+                      value={includesList
+                        .filter((inc) => selectedIncludes.includes(inc.IncludeID))
+                        .map((inc) => ({ value: inc.IncludeID, label: inc.IncludeName }))}
+                      onChange={(selected) =>
+                        setSelectedIncludes(selected.map((s) => s.value))
+                      }
+                      components={{ Option: CheckboxOption }}
+                      placeholder="Select items included in package"
+                    />
+                  </div>
+                )}
 
               <div className="col-12">
                 <label className="form-label">Description</label>
@@ -482,7 +713,8 @@ const fetchBookingData = async () => {
             <h6>Added Services + Spare Parts</h6>
             <DataTable
               columns={columns}
-              data={addedItems}
+              data={flattenedRows}
+              // data={addedItems}
               pagination
               highlightOnHover
               responsive
