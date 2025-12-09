@@ -12,6 +12,10 @@ const BookServicesLayer = () => {
   const leadId = Id;
   const API_BASE = import.meta.env.VITE_APIURL;
   const token = localStorage.getItem("token");
+  const [dealersList, setDealersList] = useState([]);
+  const [selectedDealer, setSelectedDealer] = useState("");
+  const [companyPercent, setCompanyPercent] = useState("");
+  const [percentAmount, setPercentAmount] = useState("");
   const [addedItems, setAddedItems] = useState([]);
   const [itemType, setItemType] = useState("Service");
   const [name, setName] = useState("");
@@ -27,39 +31,9 @@ const BookServicesLayer = () => {
   // edit state
   const [editIndex, setEditIndex] = useState(null);
 
-useEffect(() => {
-  const fetchIncludes = async () => {
-    try {
-      const res = await axios.get(`${API_BASE}Includes`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      // Assuming API returns { data: [...] } or similar
-      setIncludesList(res.data.data || []);
-    } catch (error) {
-      console.error("Failed to load includes", error);
-    }
-  };
-
-  fetchIncludes();
-}, []);
-
-
-const CheckboxOption = (props) => {
-  return (
-    <components.Option {...props}>
-      <input
-        type="checkbox"
-        checked={props.isSelected} // let react-select handle selection
-        readOnly // important to prevent all being selected
-        style={{ marginRight: 8 }}
-      />
-      {props.label}
-    </components.Option>
-  );
-};
   useEffect(() => {
-  fetchAllPackages();
-}, []);
+    fetchAllPackages();
+  }, []);
 
   // keep gstPrice in sync when price or gstPercent changes
   useEffect(() => {
@@ -74,6 +48,20 @@ const CheckboxOption = (props) => {
     }
   }, [price, gstPercent]);
 
+useEffect(() => {
+  const p = parseFloat(price);
+  const cp = parseFloat(companyPercent);
+
+  if (!isNaN(p) && !isNaN(cp)) {
+    const amt = (p * cp) / 100;
+    // keep 2 decimal places
+    setPercentAmount(Number.isFinite(amt) ? amt.toFixed(2) : "");
+  } else {
+    setPercentAmount("");
+  }
+}, [price, companyPercent]);
+
+
   useEffect(() => {
     if (leadId) {
       fetchBookingData();
@@ -81,6 +69,45 @@ const CheckboxOption = (props) => {
       setAddedItems([]);
     }
   }, [leadId]);
+
+  useEffect(() => {
+    const fetchDealers = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}Dealer`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (res.data && Array.isArray(res.data)) {
+          setDealersList(res.data);
+        } else {
+          setDealersList([]);
+        }
+      } catch (error) {
+        console.error("Dealer List Failed:", error);
+        setDealersList([]);
+      }
+    };
+
+    fetchDealers();
+  }, []);
+
+  useEffect(() => {
+    const fetchIncludes = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}Includes`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        // Assuming API returns { data: [...] } or similar
+        setIncludesList(res.data.data || []);
+      } catch (error) {
+        console.error("Failed to load includes", error);
+      }
+    };
+
+    fetchIncludes();
+  }, []);
 
   const fetchBookingData = async () => {
     try {
@@ -124,44 +151,80 @@ const CheckboxOption = (props) => {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    const fetchDealers = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}api/Dealer`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (res.data && Array.isArray(res.data)) {
+          setDealersList(res.data);
+        } else {
+          setDealersList([]);
+        }
+      } catch (error) {
+        console.error("Dealer List Failed:", error);
+        setDealersList([]);
+      }
+    };
+
+    fetchDealers();
+  }, []);
 
   const fetchAllPackages = async () => {
-  try {
-    const res = await axios.get(
-      `${API_BASE}PlanPackage/GetPlanPackagesDetails`,
-      { headers: { Authorization: `Bearer ${token}` } }
+    try {
+      const res = await axios.get(
+        `${API_BASE}PlanPackage/GetPlanPackagesDetails`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const packagesData = res.data.map((pkg) => {
+        // Convert IncludeID & IncludeNames into array of objects
+        const includeIds = pkg.IncludeID?.split(",") || [];
+        const includeNames = pkg.IncludeNames?.split(",") || [];
+
+        const includes = includeIds.map((id, idx) => ({
+          id,
+          name: includeNames[idx] || "",
+        }));
+
+        return {
+          id: pkg.PackageID,
+          name: pkg.PackageName,
+          categoryId: pkg.CategoryID,
+          categoryName: pkg.CategoryName,
+          subCategoryId: pkg.SubCategoryID,
+          subCategoryName: pkg.SubCategoryName,
+          description: pkg.Description,
+          price: pkg.Default_Price,
+          includes,
+        };
+      });
+
+      setPackagesList(packagesData);
+      return packagesData;
+    } catch (error) {
+      console.error("Failed to load all packages", error);
+      return [];
+    }
+  };
+
+  const CheckboxOption = (props) => {
+    return (
+      <components.Option {...props}>
+        <input
+          type="checkbox"
+          checked={props.isSelected} // let react-select handle selection
+          readOnly // important to prevent all being selected
+          style={{ marginRight: 8 }}
+        />
+        {props.label}
+      </components.Option>
     );
-
-    const packagesData = res.data.map((pkg) => {
-      // Convert IncludeID & IncludeNames into array of objects
-      const includeIds = pkg.IncludeID?.split(",") || [];
-      const includeNames = pkg.IncludeNames?.split(",") || [];
-
-      const includes = includeIds.map((id, idx) => ({
-        id,
-        name: includeNames[idx] || "",
-      }));
-
-      return {
-        id: pkg.PackageID,
-        name: pkg.PackageName,
-        categoryId: pkg.CategoryID,
-        categoryName: pkg.CategoryName,
-        subCategoryId: pkg.SubCategoryID,
-        subCategoryName: pkg.SubCategoryName,
-        description: pkg.Description,
-        price: pkg.Default_Price,
-        includes,
-      };
-    });
-
-    setPackagesList(packagesData);
-    return packagesData;
-  } catch (error) {
-    console.error("Failed to load all packages", error);
-    return [];
-  }
-};
+  };
 
   const resetForm = () => {
     setItemType("Service");
@@ -478,33 +541,32 @@ const CheckboxOption = (props) => {
   const grandTotal = subtotal + totalGst;
 
   // ---- ADD BEFORE return(...) ----
-const flattenedRows = [];
-addedItems.forEach((item, idx) => {
-  // Main row
-  flattenedRows.push({
-    ...item,
-    __id: `item-${idx}`,
-    isInclude: false,
+  const flattenedRows = [];
+  addedItems.forEach((item, idx) => {
+    // Main row
+    flattenedRows.push({
+      ...item,
+      __id: `item-${idx}`,
+      isInclude: false,
+    });
+
+    // Includes as separate rows (only for packages)
+    if (item.type === "Package" && Array.isArray(item.includes)) {
+      item.includes.forEach((incId, iIdx) => {
+        // Match by string because one might be number, other string
+        const incName =
+          includesList.find(
+            (inc) => inc.IncludeID.toString() === incId.toString()
+          )?.IncludeName || incId;
+        flattenedRows.push({
+          __id: `item-${idx}-inc-${iIdx}`,
+          isInclude: true,
+          includeName: incName,
+          parentIndex: idx,
+        });
+      });
+    }
   });
-
-  // Includes as separate rows (only for packages)
-  if (item.type === "Package" && Array.isArray(item.includes)) {
- item.includes.forEach((incId, iIdx) => {
-  // Match by string because one might be number, other string
-  const incName =
-    includesList.find((inc) => inc.IncludeID.toString() === incId.toString())
-      ?.IncludeName || incId;
-  flattenedRows.push({
-    __id: `item-${idx}-inc-${iIdx}`,
-    isInclude: true,
-    includeName: incName,
-    parentIndex: idx,
-  });
-});
-
-  }
-});
-
 
   return (
     <div className="row gy-4">
@@ -515,6 +577,53 @@ addedItems.forEach((item, idx) => {
             <h6 className="mb-3">Add Service / Spare Part</h6>
 
             <div className="row g-3 align-items-end">
+              <div className="col-md-4">
+  <label className="form-label">Select Dealer</label>
+  <Select
+    className="react-select-container text-sm"
+    classNamePrefix="react-select"
+    isClearable
+    placeholder="Search Dealer..."
+    value={
+      selectedDealer
+        ? {
+            value: selectedDealer,
+            label:
+              dealersList.find((d) => d.DealerID === selectedDealer)?.FullName ||
+              "Unknown Dealer",
+          }
+        : null
+    }
+    options={dealersList.map((d) => ({
+      value: d.DealerID,
+      label: d.FullName,
+    }))}
+    onChange={(option) => {
+      setSelectedDealer(option ? option.value : "");
+    }}
+  />
+</div>
+ <div className="col-md-4">
+                <label className="form-label">Company Percent</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={companyPercent}
+                  onChange={(e) => setCompanyPercent(e.target.value)}
+                  placeholder="18"
+                />
+              </div>
+
+              <div className="col-md-4">
+                <label className="form-label">Percent Amount</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={percentAmount}
+                  readOnly
+                />
+              </div>
+
               <div className="col-md-2">
                 <label className="form-label">Select Type</label>
                 <select
@@ -540,70 +649,73 @@ addedItems.forEach((item, idx) => {
                 </div>
               )}
 
-            {/* PACKAGE DROPDOWN visible only when itemType = Package */}
-{itemType === "Package" && (
-  <div className="col-md-3">
-    <label className="form-label">Select Package</label>
-    <CreatableSelect
-      className="react-select-container text-sm"
-      classNamePrefix="react-select"
-      isClearable
-      placeholder="Search or create package..."
-      value={
-        selectedPackage
-          ? {
-              value: selectedPackage,
-              label:
-                packagesList.find((p) => p.id == selectedPackage)?.name ||
-                selectedPackage,
-            }
-          : null
-      }
-      options={packagesList.map((pkg) => ({
-        value: pkg.id,
-        label: pkg.name,
-      }))}
-      /** When an existing package is selected */
-      onChange={(option) => {
-        if (option) {
-          const pkg = packagesList.find((p) => p.id == option.value);
-          setSelectedPackage(option.value);
-          setName(option.label);
+              {/* PACKAGE DROPDOWN visible only when itemType = Package */}
+              {itemType === "Package" && (
+                <div className="col-md-3">
+                  <label className="form-label">Select Package</label>
+                  <CreatableSelect
+                    className="react-select-container text-sm"
+                    classNamePrefix="react-select"
+                    isClearable
+                    placeholder="Search or create package..."
+                    value={
+                      selectedPackage
+                        ? {
+                            value: selectedPackage,
+                            label:
+                              packagesList.find((p) => p.id == selectedPackage)
+                                ?.name || selectedPackage,
+                          }
+                        : null
+                    }
+                    options={packagesList.map((pkg) => ({
+                      value: pkg.id,
+                      label: pkg.name,
+                    }))}
+                    /** When an existing package is selected */
+                    onChange={(option) => {
+                      if (option) {
+                        const pkg = packagesList.find(
+                          (p) => p.id == option.value
+                        );
+                        setSelectedPackage(option.value);
+                        setName(option.label);
 
-          // Populate includes from existing package
-          if (pkg?.includes && pkg.includes.length > 0) {
-            setSelectedIncludes(pkg.includes.map((inc) => inc.id));
-          } else {
-            setSelectedIncludes([]);
-          }
-        } else {
-          setSelectedPackage("");
-          setName("");
-          setSelectedIncludes([]);
-        }
-      }}
-      /** When user creates a new package */
-      onCreateOption={(inputValue) => {
-        const newId = `new-${Date.now()}`; // temporary local ID
+                        // Populate includes from existing package
+                        if (pkg?.includes && pkg.includes.length > 0) {
+                          setSelectedIncludes(
+                            pkg.includes.map((inc) => inc.id)
+                          );
+                        } else {
+                          setSelectedIncludes([]);
+                        }
+                      } else {
+                        setSelectedPackage("");
+                        setName("");
+                        setSelectedIncludes([]);
+                      }
+                    }}
+                    /** When user creates a new package */
+                    onCreateOption={(inputValue) => {
+                      const newId = `new-${Date.now()}`; // temporary local ID
 
-        const newPackage = {
-          id: newId,
-          name: inputValue,
-          includes: [],
-        };
+                      const newPackage = {
+                        id: newId,
+                        name: inputValue,
+                        includes: [],
+                      };
 
-        // Add new package to list
-        setPackagesList((prev) => [...prev, newPackage]);
+                      // Add new package to list
+                      setPackagesList((prev) => [...prev, newPackage]);
 
-        // Select newly created package
-        setSelectedPackage(newId);
-        setName(inputValue);
-        setSelectedIncludes([]);
-      }}
-    />
-  </div>
-)}
-
+                      // Select newly created package
+                      setSelectedPackage(newId);
+                      setName(inputValue);
+                      setSelectedIncludes([]);
+                    }}
+                  />
+                </div>
+              )}
 
               <div className="col-md-2">
                 <label className="form-label">Price</label>
@@ -660,8 +772,13 @@ addedItems.forEach((item, idx) => {
                         label: inc.IncludeName,
                       }))}
                       value={includesList
-                        .filter((inc) => selectedIncludes.includes(inc.IncludeID))
-                        .map((inc) => ({ value: inc.IncludeID, label: inc.IncludeName }))}
+                        .filter((inc) =>
+                          selectedIncludes.includes(inc.IncludeID)
+                        )
+                        .map((inc) => ({
+                          value: inc.IncludeID,
+                          label: inc.IncludeName,
+                        }))}
                       onChange={(selected) =>
                         setSelectedIncludes(selected.map((s) => s.value))
                       }

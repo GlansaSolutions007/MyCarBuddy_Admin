@@ -29,8 +29,7 @@ const EmployeeLeadsReportLayer = ({
   useEffect(() => {
     const filtered = leads.filter(
       (lead) =>
-        (lead.LeadId &&
-          lead.LeadId.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (lead.Id && lead.Id.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (lead.Notes &&
           lead.Notes.toLowerCase().includes(searchTerm.toLowerCase()))
     );
@@ -42,7 +41,9 @@ const EmployeeLeadsReportLayer = ({
       setLoading(true);
       setError("");
 
-      let url = API_BASE + `Leads/FollowUpLeads?EmployeeId=${employeeId}`;
+      // let url = API_BASE + `Leads/FollowUpLeads?EmployeeId=${employeeId}`;
+      let url = API_BASE + `Leads/AssignedLeads?Emp_Assign=${employeeId}`;
+
       if (fromDate) {
         url += `&FromDate=${fromDate}`;
       }
@@ -58,9 +59,9 @@ const EmployeeLeadsReportLayer = ({
       });
 
       if (res.data && Array.isArray(res.data)) {
-      const sorted = [...res.data].sort(
-        (a, b) => new Date(b.Leadcreateddate) - new Date(a.Leadcreateddate)
-      );
+        const sorted = [...res.data].sort(
+          (a, b) => new Date(b.Leadcreateddate) - new Date(a.Leadcreateddate)
+        );
         setLeads(sorted);
         setFilteredLeads(sorted);
       } else {
@@ -77,14 +78,24 @@ const EmployeeLeadsReportLayer = ({
 
   const columns = [
     {
+      name: "Lead ID",
+      selector: (row) => row.Id || "-",
+      sortable: true,
+    },
+    {
       name: "Customer Name",
       selector: (row) => row.FullName || "-",
       sortable: true,
       wrap: true,
     },
     {
+      name: "Phone",
+      selector: (row) => row.PhoneNumber || "-",
+      sortable: true,
+    },
+    {
       name: "Created At",
-      selector: (row) => formatDate(row.Leadcreateddate) || "-",
+      selector: (row) => formatDate(row.CreatedDate) || "-",
       sortable: true,
       wrap: true,
     },
@@ -126,24 +137,24 @@ const EmployeeLeadsReportLayer = ({
       wrap: true,
     },
     ...(hasPermission("leadview_view")
-    ? [
-    {
-      name: "Action",
-      cell: (row) => (
-        <Link
-          to={`/lead-view/${row.LeadId}`}
-          className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-          title="View"
-        >
-          <Icon icon="lucide:eye" />
-        </Link>
-      ),
-      ignoreRowClick: true,
-      allowOverflow: true,
-      button: true,
-    },
-    ]
-    : []),
+      ? [
+          {
+            name: "Action",
+            cell: (row) => (
+              <Link
+                to={`/lead-view/${row.Id}`}
+                className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                title="View"
+              >
+                <Icon icon="lucide:eye" />
+              </Link>
+            ),
+            ignoreRowClick: true,
+            allowOverflow: true,
+            button: true,
+          },
+        ]
+      : []),
   ];
 
   function formatDate(dateStr) {
@@ -175,25 +186,23 @@ const EmployeeLeadsReportLayer = ({
                 />
               </form>
               <div className="d-flex align-items-center gap-3 flex-wrap">
-                
-                  <label className="text-sm fw-semibold">From:</label>
-                  <input
-                    type="date"
-                    id="fromDate"
-                    className="form-control w-auto"
-                    value={fromDate}
-                    onChange={(e) => setFromDate(e.target.value)}
-                  />
-                
-                   <label className="text-sm fw-semibold">To:</label>
-                  <input
-                    type="date"
-                    id="toDate"
-                    className="form-control w-auto"
-                    value={toDate}
-                    onChange={(e) => setToDate(e.target.value)}
-                  />
-               
+                <label className="text-sm fw-semibold">From:</label>
+                <input
+                  type="date"
+                  id="fromDate"
+                  className="form-control w-auto"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                />
+
+                <label className="text-sm fw-semibold">To:</label>
+                <input
+                  type="date"
+                  id="toDate"
+                  className="form-control w-auto"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                />
               </div>
             </div>
           </div>
