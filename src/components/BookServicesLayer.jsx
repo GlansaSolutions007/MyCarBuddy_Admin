@@ -34,6 +34,10 @@ const BookServicesLayer = () => {
   useEffect(() => {
     fetchAllPackages();
   }, []);
+  useEffect(() => {
+  setSelectedIncludes("");
+  setName("");
+}, [itemType]);
 
   // keep gstPrice in sync when price or gstPercent changes
   useEffect(() => {
@@ -47,19 +51,6 @@ const BookServicesLayer = () => {
       setGstPrice("");
     }
   }, [price, gstPercent]);
-
-  // useEffect(() => {
-  //   const p = parseFloat(price);
-  //   const cp = parseFloat(companyPercent);
-
-  //   if (!isNaN(p) && !isNaN(cp)) {
-  //     const amt = (p * cp) / 100;
-  //     // keep 2 decimal places
-  //     setPercentAmount(Number.isFinite(amt) ? amt.toFixed(2) : "");
-  //   } else {
-  //     setPercentAmount("");
-  //   }
-  // }, [price, companyPercent]);
 
   useEffect(() => {
     if (leadId) {
@@ -572,15 +563,49 @@ const BookServicesLayer = () => {
                   <option value="Package">Package</option>
                 </select>
               </div>
-              {itemType !== "Package" && (
+              {itemType === "Spare Part" && (
                 <div className="col-md-3">
-                  <label className="form-label">Name</label>
+                  <label className="form-label">Spare Part</label>
                   <input
                     type="text"
                     className="form-control"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Item name"
+                    placeholder="Enter Spare Name"
+                  />
+                </div>
+              )}
+
+              {itemType === "Service" && (
+                <div className="col-md-3">
+                  <label className="form-label">Select Service</label>
+                  <Select
+                    isSearchable
+                    className="react-select-container text-sm"
+                    classNamePrefix="react-select"
+                    placeholder="Search or create Service..."
+                    options={includesList.map((inc) => ({
+                      value: inc.IncludeID,
+                      label: inc.IncludeName,
+                    }))}
+                    value={
+                      selectedIncludes
+                        ? {
+                            value: selectedIncludes,
+                            label:
+                              includesList.find(
+                                (inc) => inc.IncludeID == selectedIncludes
+                              )?.IncludeName || "",
+                          }
+                        : null
+                    }
+                    onChange={(selected) => {
+                      const id = selected?.value;
+                      const label = selected?.label;
+
+                      setSelectedIncludes(id);
+                      setName(label);
+                    }}
                   />
                 </div>
               )}
@@ -720,7 +745,7 @@ const BookServicesLayer = () => {
                   value={companyPercent}
                   min={0}
                   onChange={(e) => {
-                    const cp = Math.max(0,e.target.value);
+                    const cp = Math.max(0, e.target.value);
                     setCompanyPercent(cp);
 
                     const amt =
