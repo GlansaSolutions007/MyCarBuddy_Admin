@@ -6,6 +6,8 @@ import Swal from "sweetalert2";
 import axios from "axios";
 import Select, { components } from "react-select";
 import CreatableSelect from "react-select/creatable";
+const employeeData = JSON.parse(localStorage.getItem("employeeData"));
+const userId = employeeData?.Id || 0;
 
 const BookServicesLayer = () => {
   const { Id } = useParams();
@@ -27,6 +29,7 @@ const BookServicesLayer = () => {
   const [selectedPackage, setSelectedPackage] = useState("");
   const [includesList, setIncludesList] = useState([]);
   const [selectedIncludes, setSelectedIncludes] = useState([]);
+  const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   // edit state
   const [editIndex, setEditIndex] = useState(null);
@@ -35,9 +38,9 @@ const BookServicesLayer = () => {
     fetchAllPackages();
   }, []);
   useEffect(() => {
-  setSelectedIncludes("");
-  setName("");
-}, [itemType]);
+    setSelectedIncludes("");
+    setName("");
+  }, [itemType]);
 
   // keep gstPrice in sync when price or gstPercent changes
   useEffect(() => {
@@ -192,6 +195,12 @@ const BookServicesLayer = () => {
     );
   };
 
+  const resetBookingForm = () => {
+    setSelectedDealer("");
+    setCompanyPercent("");
+    setPercentAmount("");
+  };
+
   const resetForm = () => {
     setItemType("Service");
     setName("");
@@ -199,12 +208,10 @@ const BookServicesLayer = () => {
     setDescription("");
     setGstPercent("");
     setGstPrice("");
+    setQuantity("");
     setEditIndex(null);
     setSelectedPackage("");
     setSelectedIncludes([]);
-    setSelectedDealer("");
-    setCompanyPercent("");
-    setPercentAmount("");
   };
 
   const handleAddOrSave = async () => {
@@ -214,6 +221,54 @@ const BookServicesLayer = () => {
     if (gstPercent === "" || isNaN(parseFloat(gstPercent)))
       return Swal.fire("Please enter valid GST %");
 
+    let finalIncludeID = selectedIncludes; // may change if new
+
+    // ⭐ CASE: Create NEW include before adding item
+    if (itemType === "Service" && selectedIncludes === "new") {
+      try {
+        const payload = {
+          IncludeName: name.trim(),
+          Description: description.trim(),
+          IncludePrice: parseFloat(price),
+          CategoryID: 14,
+          SubCategoryID: 0,
+          SkillID: 4,
+          CreatedBy: userId,
+          IsActive: true,
+        };
+
+        const resp = await axios.post(`${API_BASE}Includes`, payload, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (resp.status === 200 || resp.status === 201) {
+          const created = resp.data;
+
+          // save the new ID
+          finalIncludeID = created.IncludeID;
+
+          // update the dropdown
+          setIncludesList((prev) => [
+            ...prev,
+            {
+              IncludeID: created.IncludeID,
+              IncludeName: created.IncludeName,
+              IncludePrice: created.IncludePrice,
+            },
+          ]);
+
+          Swal.fire("Created!", "New service has been added", "success");
+        }
+      } catch (err) {
+        console.error(err);
+        return Swal.fire("Error", "Failed to create include", "error");
+      }
+    }
+
+    // ⭐ BUILD THE FINAL ITEM
     const updatedItem = {
       type: itemType,
       name: name.trim(),
@@ -225,6 +280,13 @@ const BookServicesLayer = () => {
       percentage: parseFloat(companyPercent),
       percentAmount: parseFloat(percentAmount),
 
+      includeId: itemType === "Service" ? finalIncludeID : null,
+      includeName:
+        itemType === "Service"
+          ? includesList.find((i) => i.IncludeID == finalIncludeID)
+              ?.IncludeName || name
+          : null,
+
       // package-specific metadata
       packageId: itemType === "Package" ? selectedPackage : null,
       includes: itemType === "Package" ? [...selectedIncludes] : [],
@@ -232,7 +294,8 @@ const BookServicesLayer = () => {
         itemType === "Package" &&
         selectedPackage?.toString().startsWith("new-"),
     };
-    // CASE 1: Editing an Existing API Item → CALL PUT
+
+    // CASE 1: Editing API item => PUT
     if (editIndex !== null && addedItems[editIndex]?._apiId) {
       const original = addedItems[editIndex];
 
@@ -266,7 +329,6 @@ const BookServicesLayer = () => {
         if (resp.status === 200) {
           Swal.fire("Updated!", "Item updated successfully", "success");
 
-          // update UI
           const copy = [...addedItems];
           copy[editIndex] = {
             ...updatedItem,
@@ -280,12 +342,13 @@ const BookServicesLayer = () => {
         }
       } catch (err) {
         console.error(err);
-        Swal.fire("Error", "Failed to update existing booking item", "error");
+        Swal.fire("Error", "Failed to update booking item", "error");
       }
 
       return;
     }
-    // CASE 2: Editing / Adding NEW item → LOCAL ONLY
+
+    // CASE 2: LOCAL add/edit
     if (editIndex !== null) {
       const copy = [...addedItems];
       copy[editIndex] = updatedItem;
@@ -377,9 +440,9 @@ const BookServicesLayer = () => {
           gstPercent: item.gstPercent,
           gstAmount: parseFloat(item.gstPrice),
           description: item.description,
-          dealerID: selectedDealer,
-          percentage: companyPercent,
-          our_Earnings: percentAmount,
+          dealerID: item.dealerID,
+          percentage: item.percentage,
+          our_Earnings: item.percentAmount,
         }));
 
       const payload = {
@@ -405,13 +468,12 @@ const BookServicesLayer = () => {
           title: "Success!",
           text: "Your booking has been created successfully.",
         });
-        // // Optionally reset the form or redirect
-        // setAddedItems([]);
         // Refresh booking list again
         await fetchBookingData();
-
         // Reset form
         resetForm();
+        setAddedItems([]);
+        resetBookingForm();
       } else {
         throw new Error(response.data?.message || "Failed to create booking");
       }
@@ -579,7 +641,7 @@ const BookServicesLayer = () => {
               {itemType === "Service" && (
                 <div className="col-md-3">
                   <label className="form-label">Select Service</label>
-                  <Select
+                  <CreatableSelect
                     isSearchable
                     className="react-select-container text-sm"
                     classNamePrefix="react-select"
@@ -590,26 +652,36 @@ const BookServicesLayer = () => {
                     }))}
                     value={
                       selectedIncludes
-                        ? {
-                            value: selectedIncludes,
-                            label:
-                              includesList.find(
-                                (inc) => inc.IncludeID == selectedIncludes
-                              )?.IncludeName || "",
-                          }
+                        ? selectedIncludes === "new"
+                          ? { value: "new", label: name } // new created
+                          : {
+                              value: selectedIncludes,
+                              label:
+                                includesList.find(
+                                  (i) => i.IncludeID == selectedIncludes
+                                )?.IncludeName || "",
+                            }
                         : null
                     }
                     onChange={(selected) => {
-                      const id = selected?.value;
-                      const label = selected?.label;
+                      if (!selected) {
+                        setSelectedIncludes("");
+                        setName("");
+                        return;
+                      }
 
-                      setSelectedIncludes(id);
-                      setName(label);
+                      if (selected.__isNew__) {
+                        // user clicked Create "X"
+                        setSelectedIncludes("new");
+                        setName(selected.label);
+                      } else {
+                        setSelectedIncludes(selected.value);
+                        setName(selected.label);
+                      }
                     }}
                   />
                 </div>
               )}
-
               {/* PACKAGE DROPDOWN visible only when itemType = Package */}
               {itemType === "Package" && (
                 <div className="col-md-3">
