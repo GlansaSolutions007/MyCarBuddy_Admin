@@ -990,9 +990,12 @@ const LeadViewLayer = () => {
                             className="form-control"
                             placeholder="e.g., John Doe"
                             value={personalFullName}
-                            onChange={(e) =>
-                              setPersonalFullName(e.target.value)
-                            }
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val.length <= 30) {
+                                setPersonalFullName(val);
+                              }
+                            }}
                           />
                         </div>
                         <div className="col-md-6">
@@ -1000,13 +1003,18 @@ const LeadViewLayer = () => {
                             Mobile No
                           </label>
                           <input
-                            type="text"
+                            type="tel"
                             className="form-control"
-                            placeholder="e.g., +1234567890"
+                            placeholder="Enter phone number"
                             value={personalMobileNo}
-                            onChange={(e) =>
-                              setPersonalMobileNo(e.target.value)
-                            }
+                            onChange={(e) => {
+                              let val = e.target.value;
+                              if (!/^\d*$/.test(val)) return;
+                              if (val.length > 10) return;
+                              if (val.length === 1 && !/[6-9]/.test(val))
+                                return;
+                              setPersonalMobileNo(val);
+                            }}
                           />
                         </div>
                         <div className="col-md-12">
@@ -1018,7 +1026,15 @@ const LeadViewLayer = () => {
                             className="form-control"
                             placeholder="e.g., john.doe@example.com"
                             value={personalEmail}
-                            onChange={(e) => setPersonalEmail(e.target.value)}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const emailRegex =
+                                /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,10}$/;
+                              if (val !== "" && !emailRegex.test(val)) {
+                                if (!/^[A-Za-z0-9@._-]*$/.test(val)) return;
+                              }
+                              setPersonalEmail(val);
+                            }}
                           />
                         </div>
 

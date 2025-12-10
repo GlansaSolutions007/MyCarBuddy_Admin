@@ -232,11 +232,21 @@ const AddLeadLayer = () => {
               className="form-control"
               placeholder="Enter phone number"
               value={formData.customerPhone}
-              onChange={handleChange}
+              onChange={(e) => {
+                let value = e.target.value.replace(/\D/g, "");
+                if (value.length > 10) value = value.slice(0, 10);
+                setFormData((prev) => ({ ...prev, customerPhone: value }));
+              }}
               required
             />
+            {formData.customerPhone &&
+              (!/^[6-9]/.test(formData.customerPhone[0]) ||
+                formData.customerPhone.length !== 10) && (
+                <small className="text-danger">
+                  Phone must be 10 digits and start with 6-9
+                </small>
+              )}
           </div>
-
           {/* Email */}
           <div className="col-md-6 mt-2">
             <label className="form-label text-sm fw-semibold text-primary-light mb-8">
@@ -248,8 +258,25 @@ const AddLeadLayer = () => {
               className="form-control"
               placeholder="Enter email address"
               value={formData.customerEmail}
-              onChange={handleChange}
+              onChange={(e) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  customerEmail: e.target.value,
+                }));
+              }}
+              onBlur={() => {
+                const email = formData.customerEmail;
+                const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; 
+                setFormData((prev) => ({
+                  ...prev,
+                  emailError:
+                    email && !regex.test(email) ? "Invalid email format" : "",
+                }));
+              }}
             />
+            {formData.emailError && (
+              <small className="text-danger">{formData.emailError}</small>
+            )}
           </div>
 
           {/* Address */}

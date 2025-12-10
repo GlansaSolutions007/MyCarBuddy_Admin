@@ -659,10 +659,8 @@ const BookServicesLayer = () => {
                   type="number"
                   className="form-control"
                   value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  // onChange={(e) =>
-                  //   setPrice(Math.max(0, Number(e.target.value)))
-                  // }
+                  min={0}
+                  onChange={(e) => setPrice(Math.max(0, e.target.value))}
                   placeholder="0.00"
                 />
               </div>
@@ -673,7 +671,8 @@ const BookServicesLayer = () => {
                   type="number"
                   className="form-control"
                   value={gstPercent}
-                  onChange={(e) => setGstPercent(e.target.value)}
+                  min={0}
+                  onChange={(e) => setGstPercent(Math.max(0, e.target.value))}
                 />
               </div>
 
@@ -719,8 +718,9 @@ const BookServicesLayer = () => {
                   type="number"
                   className="form-control"
                   value={companyPercent}
+                  min={0}
                   onChange={(e) => {
-                    const cp = e.target.value;
+                    const cp = Math.max(0,e.target.value);
                     setCompanyPercent(cp);
 
                     const amt =

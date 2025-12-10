@@ -101,41 +101,41 @@ const EmployeeLeadsReportLayer = ({
     },
     {
       name: "Status",
-      selector: (row) => row.Status || "-",
+      selector: (row) => row.LeadStatus || "-",
       sortable: true,
       wrap: true,
     },
     {
-      name: "Notes",
-      selector: (row) => row.Notes || "-",
+      name: "Description",
+      selector: (row) => row.Description || "-",
       sortable: false,
       wrap: true,
     },
-    {
-      name: "Updated At",
-      selector: (row) => formatDate(row.Created_At) || "-",
-      sortable: true,
-      wrap: true,
-    },
-    {
-      name: "Count",
-      selector: (row) => row.FollowUpCount || "-",
-      sortable: true,
-      wrap: true,
-    },
-    {
-      name: "Next Action",
-      selector: (row) => row.NextAction || "-",
-      sortable: true,
-      wrap: true,
-    },
-    {
-      name: "Next Follow Up ",
-      title: "Next Follow Up ",
-      selector: (row) => formatDate(row.NextFollowUp_Date) || "-",
-      sortable: true,
-      wrap: true,
-    },
+    // {
+    //   name: "Updated At",
+    //   selector: (row) => formatDate(row.Created_At) || "-",
+    //   sortable: true,
+    //   wrap: true,
+    // },
+    // {
+    //   name: "Count",
+    //   selector: (row) => row.FollowUpCount || "-",
+    //   sortable: true,
+    //   wrap: true,
+    // },
+    // {
+    //   name: "Next Action",
+    //   selector: (row) => row.NextAction || "-",
+    //   sortable: true,
+    //   wrap: true,
+    // },
+    // {
+    //   name: "Next Follow Up ",
+    //   title: "Next Follow Up ",
+    //   selector: (row) => formatDate(row.NextFollowUp_Date) || "-",
+    //   sortable: true,
+    //   wrap: true,
+    // },
     ...(hasPermission("leadview_view")
       ? [
           {
