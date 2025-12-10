@@ -14,8 +14,8 @@ const BookServicesLayer = () => {
   const token = localStorage.getItem("token");
   const [dealersList, setDealersList] = useState([]);
   const [selectedDealer, setSelectedDealer] = useState("");
-  const [companyPercent, setCompanyPercent] = useState("");
-  const [percentAmount, setPercentAmount] = useState("");
+  const [companyPercent, setCompanyPercent] = useState();
+  const [percentAmount, setPercentAmount] = useState();
   const [addedItems, setAddedItems] = useState([]);
   const [itemType, setItemType] = useState("Service");
   const [name, setName] = useState("");
@@ -48,19 +48,18 @@ const BookServicesLayer = () => {
     }
   }, [price, gstPercent]);
 
-useEffect(() => {
-  const p = parseFloat(price);
-  const cp = parseFloat(companyPercent);
+  // useEffect(() => {
+  //   const p = parseFloat(price);
+  //   const cp = parseFloat(companyPercent);
 
-  if (!isNaN(p) && !isNaN(cp)) {
-    const amt = (p * cp) / 100;
-    // keep 2 decimal places
-    setPercentAmount(Number.isFinite(amt) ? amt.toFixed(2) : "");
-  } else {
-    setPercentAmount("");
-  }
-}, [price, companyPercent]);
-
+  //   if (!isNaN(p) && !isNaN(cp)) {
+  //     const amt = (p * cp) / 100;
+  //     // keep 2 decimal places
+  //     setPercentAmount(Number.isFinite(amt) ? amt.toFixed(2) : "");
+  //   } else {
+  //     setPercentAmount("");
+  //   }
+  // }, [price, companyPercent]);
 
   useEffect(() => {
     if (leadId) {
@@ -89,7 +88,6 @@ useEffect(() => {
         setDealersList([]);
       }
     };
-
     fetchDealers();
   }, []);
 
@@ -99,7 +97,6 @@ useEffect(() => {
         const res = await axios.get(`${API_BASE}Includes`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        // Assuming API returns { data: [...] } or similar
         setIncludesList(res.data.data || []);
       } catch (error) {
         console.error("Failed to load includes", error);
@@ -151,28 +148,6 @@ useEffect(() => {
       setLoading(false);
     }
   };
-  useEffect(() => {
-    const fetchDealers = async () => {
-      try {
-        const res = await axios.get(`${API_BASE}api/Dealer`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (res.data && Array.isArray(res.data)) {
-          setDealersList(res.data);
-        } else {
-          setDealersList([]);
-        }
-      } catch (error) {
-        console.error("Dealer List Failed:", error);
-        setDealersList([]);
-      }
-    };
-
-    fetchDealers();
-  }, []);
 
   const fetchAllPackages = async () => {
     try {
@@ -236,6 +211,9 @@ useEffect(() => {
     setEditIndex(null);
     setSelectedPackage("");
     setSelectedIncludes([]);
+    setSelectedDealer("");
+    setCompanyPercent("");
+    setPercentAmount("");
   };
 
   const handleAddOrSave = async () => {
@@ -251,7 +229,10 @@ useEffect(() => {
       price: parseFloat(price),
       description: description.trim(),
       gstPercent: parseFloat(gstPercent),
-      gstPrice: parseFloat(gstPrice) || 0,
+      gstPrice: parseFloat(gstPrice),
+      dealerID: selectedDealer,
+      percentage: parseFloat(companyPercent),
+      percentAmount: parseFloat(percentAmount),
 
       // package-specific metadata
       packageId: itemType === "Package" ? selectedPackage : null,
@@ -329,7 +310,6 @@ useEffect(() => {
     const item = addedItems[index];
     setEditIndex(index);
     setItemType(item.type);
-    // ---- ADD in handleEditItem after setName(item.name) ----
     if (item.type === "Package") {
       setSelectedPackage(item.packageId || "");
       setSelectedIncludes(item.includes ? [...item.includes] : []);
@@ -406,10 +386,13 @@ useEffect(() => {
           gstPercent: item.gstPercent,
           gstAmount: parseFloat(item.gstPrice),
           description: item.description,
+          dealerID: selectedDealer,
+          percentage: companyPercent,
+          our_Earnings: percentAmount,
         }));
 
       const payload = {
-        createdBy: parseInt(localStorage.getItem("userId")) || 1,
+        createdBy: parseInt(localStorage.getItem("userId")),
         leadId: leadId,
         services: services,
       };
@@ -577,53 +560,6 @@ useEffect(() => {
             <h6 className="mb-3">Add Service / Spare Part</h6>
 
             <div className="row g-3 align-items-end">
-              <div className="col-md-4">
-  <label className="form-label">Select Dealer</label>
-  <Select
-    className="react-select-container text-sm"
-    classNamePrefix="react-select"
-    isClearable
-    placeholder="Search Dealer..."
-    value={
-      selectedDealer
-        ? {
-            value: selectedDealer,
-            label:
-              dealersList.find((d) => d.DealerID === selectedDealer)?.FullName ||
-              "Unknown Dealer",
-          }
-        : null
-    }
-    options={dealersList.map((d) => ({
-      value: d.DealerID,
-      label: d.FullName,
-    }))}
-    onChange={(option) => {
-      setSelectedDealer(option ? option.value : "");
-    }}
-  />
-</div>
- <div className="col-md-4">
-                <label className="form-label">Company Percent</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={companyPercent}
-                  onChange={(e) => setCompanyPercent(e.target.value)}
-                  placeholder="18"
-                />
-              </div>
-
-              <div className="col-md-4">
-                <label className="form-label">Percent Amount</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={percentAmount}
-                  readOnly
-                />
-              </div>
-
               <div className="col-md-2">
                 <label className="form-label">Select Type</label>
                 <select
@@ -738,10 +674,6 @@ useEffect(() => {
                   className="form-control"
                   value={gstPercent}
                   onChange={(e) => setGstPercent(e.target.value)}
-                  // onChange={(e) =>
-                  //   setGstPercent(Math.max(0, Number(e.target.value)))
-                  // }
-                  placeholder="18"
                 />
               </div>
 
@@ -751,6 +683,61 @@ useEffect(() => {
                   type="text"
                   className="form-control"
                   value={gstPrice}
+                  readOnly
+                />
+              </div>
+              <div className="col-md-4">
+                <label className="form-label">Select Dealer</label>
+                <Select
+                  className="react-select-container text-sm"
+                  classNamePrefix="react-select"
+                  isClearable
+                  placeholder="Search Dealer..."
+                  value={
+                    selectedDealer
+                      ? {
+                          value: selectedDealer,
+                          label:
+                            dealersList.find(
+                              (d) => d.DealerID === selectedDealer
+                            )?.FullName || "Unknown Dealer",
+                        }
+                      : null
+                  }
+                  options={dealersList.map((d) => ({
+                    value: d.DealerID,
+                    label: d.FullName,
+                  }))}
+                  onChange={(option) => {
+                    setSelectedDealer(option ? option.value : "");
+                  }}
+                />
+              </div>
+              <div className="col-md-4">
+                <label className="form-label">Company Percent</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={companyPercent}
+                  onChange={(e) => {
+                    const cp = e.target.value;
+                    setCompanyPercent(cp);
+
+                    const amt =
+                      ((Number(price) || 0) * (Number(cp) || 0)) / 100;
+                    setPercentAmount(amt.toFixed(2));
+                  }}
+                  placeholder="Enter Percentage"
+                />
+              </div>
+
+              <div className="col-md-4">
+                <label className="form-label">Percent Amount</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={percentAmount}
+                  placeholder="18"
                   readOnly
                 />
               </div>
