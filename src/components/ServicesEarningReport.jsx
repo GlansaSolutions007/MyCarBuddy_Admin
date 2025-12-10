@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
-
-// const API_BASE = import.meta.env.VITE_APIURL;
+import axios from "axios";
+const API_BASE = import.meta.env.VITE_APIURL;
 
 const ServicesEarningReport = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -11,92 +11,44 @@ const ServicesEarningReport = () => {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [serviceType, setServiceType] = useState("");
+  const [serviceData, setServiceData] = useState([]);
 
   const token = localStorage.getItem("token");
 
-  useEffect(() => {
-    setLoading(false);
-  }, []);
+  const fetchServiceData = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(
+        `${API_BASE}Supervisor/ServiceWiseReport`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      console.log("API Response:", response.data);
+      setServiceData(response.data);
+    } catch (error) {
+      console.error("Failed to fetch service earnings:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const dummyData = [
-    {
-      id: 1,
-      date: "2025-01-10",
-      serviceName: "Engine Oil Replacement",
-      garageName: "Prime Auto Garage",
-      type: "Service",
-      price: 1200,
-      gst: 216,
-      percent: 10,
-      ourEarnings: 336,
-    },
-    {
-      id: 2,
-      date: "2025-01-12",
-      serviceName: "Brake Pad Replacement",
-      garageName: "City Motors",
-      type: "Spare",
-      price: 1800,
-      gst: 324,
-      percent: 12,
-      ourEarnings: 540,
-    },
-    {
-      id: 3,
-      date: "2025-01-15",
-      serviceName: "Car Wash - Premium",
-      garageName: "Shine Hub",
-      type: "Service",
-      price: 500,
-      gst: 90,
-      percent: 8,
-      ourEarnings: 130,
-    },
-    {
-      id: 4,
-      date: "2025-01-10",
-      serviceName: "Engine Oil Replacement",
-      garageName: "Prime Auto Garage",
-      type: "Service",
-      price: 1200,
-      gst: 216,
-      percent: 10,
-      ourEarnings: 336,
-    },
-    {
-      id: 5,
-      date: "2025-01-12",
-      serviceName: "Brake Pad Replacement",
-      garageName: "City Motors",
-      type: "Spare",
-      price: 1800,
-      gst: 324,
-      percent: 12,
-      ourEarnings: 540,
-    },
-    {
-      id: 6,
-      date: "2025-01-15",
-      serviceName: "Car Wash - Premium",
-      garageName: "Shine Hub",
-      type: "Service",
-      price: 500,
-      gst: 90,
-      percent: 8,
-      ourEarnings: 130,
-    },
-  ];
+  useEffect(() => {
+    fetchServiceData();
+  }, []);
 
   const filters = [
     (item) =>
-      item.serviceName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.garageName.toLowerCase().includes(searchTerm.toLowerCase()),
+      item.ServiceName.includes(searchTerm) ||
+      item.GarageName.includes(searchTerm),
+    (item) => !serviceType || item.ServiceType === serviceType,
+    (item) => !fromDate || item.CreatedDate >= fromDate,
     (item) =>
-      !serviceType || item.type.toLowerCase() === serviceType.toLowerCase(),
-    (item) => !fromDate || item.date >= fromDate,
-    (item) => !toDate || item.date <= toDate,
+      !toDate ||
+      new Date(item.CreatedDate) <=
+        new Date(new Date(toDate).setHours(23, 59, 59, 999)),
   ];
-  const filteredData = dummyData.filter((item) =>
+  const filteredData = serviceData.filter((item) =>
     filters.every((fn) => fn(item))
   );
 
@@ -104,55 +56,59 @@ const ServicesEarningReport = () => {
     {
       name: "Date",
       selector: (row) =>
-        new Date(row.date).toLocaleDateString("en-GB", {
+        new Date(row.CreatedDate).toLocaleDateString("en-GB", {
           day: "2-digit",
           month: "2-digit",
           year: "numeric",
         }),
       sortable: true,
     },
-
+    {
+      name: "Service Type",
+      selector: (row) => row.ServiceType,
+      sortable: true,
+    },
     {
       name: "Service Name",
-      selector: (row) => row.serviceName,
+      selector: (row) => row.ServiceName,
       sortable: true,
     },
     {
       name: "Garage Name",
-      selector: (row) => row.garageName,
+      selector: (row) => row.GarageName,
       sortable: true,
     },
     {
       name: "Price",
-      selector: (row) => row.price,
+      selector: (row) => row.Price,
       sortable: true,
     },
     {
       name: "GST",
-      selector: (row) => row.gst,
+      selector: (row) => row.GST,
     },
     {
       name: "Our Percentage",
-      selector: (row) => row.percent,
+      selector: (row) => row.OurPercentage,
     },
     {
       name: "Our Earnings",
-      selector: (row) => row.ourEarnings,
+      selector: (row) => row.OurEarnings,
     },
 
-    {
-      name: "Actions",
-      cell: (row) => (
-        <div>
-          <Link
-            // to={`/emp-leads-report/${row.EmpId}`}
-            className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-          >
-            <Icon icon="lucide:eye" />
-          </Link>
-        </div>
-      ),
-    },
+    // {
+    //   name: "Actions",
+    //   cell: (row) => (
+    //     <div>
+    //       <Link
+    //         // to={`/emp-leads-report/${row.EmpId}`}
+    //         className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+    //       >
+    //         <Icon icon="lucide:eye" />
+    //       </Link>
+    //     </div>
+    //   ),
+    // },
   ];
 
   return (
@@ -182,6 +138,7 @@ const ServicesEarningReport = () => {
                     <option value="">All</option>
                     <option value="Service">Service</option>
                     <option value="Spare">Spare</option>
+                    <option value="Package">Package</option>
                   </select>
                 </div>
                 <div className="d-flex align-items-center gap-2">

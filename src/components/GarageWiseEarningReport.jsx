@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
+import axios from "axios";
 
 // const API_BASE = import.meta.env.VITE_APIURL;
 
@@ -10,111 +11,79 @@ function GarageWiseEarningReport() {
   const [loading, setLoading] = useState(true);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [garageData, setGarageData] = useState([]);
 
   const token = localStorage.getItem("token");
+  const API_BASE = import.meta.env.VITE_APIURL;
+
+  const fetchGarageEarnings = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(
+        `${API_BASE}Supervisor/GarageEarningsReport`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setGarageData(response.data);
+    } catch (error) {
+      console.error("Failed to fetch garage earnings:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    setLoading(false);
+    fetchGarageEarnings();
   }, []);
 
-  const garageWiseEarnings = [
-    {
-      garageName: "Prime Auto Care",
-      totalServices: 48,
-      totalRevenue: 125000,
-      totalGST: 22500,
-      totalOurEarnings: 15000,
-    },
-    {
-      garageName: "SpeedX Garage",
-      totalServices: 32,
-      totalRevenue: 82000,
-      totalGST: 14760,
-      totalOurEarnings: 9600,
-    },
-    {
-      garageName: "Metro Motors",
-      totalServices: 56,
-      totalRevenue: 143500,
-      totalGST: 25830,
-      totalOurEarnings: 17200,
-    },
-    {
-      garageName: "AutoFix Workshop",
-      totalServices: 27,
-      totalRevenue: 67500,
-      totalGST: 12150,
-      totalOurEarnings: 7800,
-    },
-    {
-      garageName: "City Car Care",
-      totalServices: 41,
-      totalRevenue: 113000,
-      totalGST: 20340,
-      totalOurEarnings: 13600,
-    },
-    {
-      garageName: "WheelMasters Garage",
-      totalServices: 22,
-      totalRevenue: 54000,
-      totalGST: 9720,
-      totalOurEarnings: 6600,
-    },
-    {
-      garageName: "ProMechanics",
-      totalServices: 35,
-      totalRevenue: 89000,
-      totalGST: 16020,
-      totalOurEarnings: 10600,
-    },
-  ];
   const filters = [
-    (item) => item.garageName.toLowerCase().includes(searchTerm.toLowerCase()),
+    (item) => item.GarageName.includes(searchTerm),
     (item) => !fromDate || item.date >= fromDate,
     (item) => !toDate || item.date <= toDate,
   ];
-  const filteredData = garageWiseEarnings.filter((item) =>
+  const filteredData = garageData.filter((item) =>
     filters.every((fn) => fn(item))
   );
 
   const columns = [
     {
       name: "Garage Name",
-      selector: (row) => row.garageName,
+      selector: (row) => row.GarageName,
       sortable: true,
     },
     {
       name: "Total Services",
-      selector: (row) => row.totalServices,
+      selector: (row) => row.TotalServices,
       sortable: true,
     },
     {
       name: "Total Revenue",
-      selector: (row) => row.totalRevenue,
+      selector: (row) => row.TotalRevenue,
       sortable: true,
     },
     {
       name: "Total GST",
-      selector: (row) => row.totalGST,
+      selector: (row) => row.TotalGST,
       sortable: true,
     },
     {
       name: "Total Our Earnings",
-      selector: (row) => row.totalOurEarnings,
+      selector: (row) => row.OurEarnings,
     },
-    {
-      name: "Actions",
-      cell: (row) => (
-        <div>
-          <Link
-            // to={`/emp-leads-report/${row.EmpId}`}
-            className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-          >
-            <Icon icon="lucide:eye" />
-          </Link>
-        </div>
-      ),
-    },
+    // {
+    //   name: "Actions",
+    //   cell: (row) => (
+    //     <div>
+    //       <Link
+    //         // to={`/emp-leads-report/${row.EmpId}`}
+    //         className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+    //       >
+    //         <Icon icon="lucide:eye" />
+    //       </Link>
+    //     </div>
+    //   ),
+    // },
   ];
 
   return (
