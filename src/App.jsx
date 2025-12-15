@@ -186,7 +186,7 @@ function App() {
           <Route exact path="/edit-blog/:BlogID" element={<AddBlogPage />} />
           <Route exact path="/roles" element={<RolePage />} />
           <Route exact path="/permission-pages" element={<PermissionPage />} />
-          <Route exact path="/view-profile" element={<ViewProfilePage />} />
+          <Route exact path="/profile-view" element={<ViewProfilePage />} />
           <Route exact path="/role-permission/:roleId" element={<RolePermissionPage />} />
           <Route exact path="/employees" element={<EmployeePage />} />
           <Route exact path="/add-employee" element={<EmployeeAddPage />} />
