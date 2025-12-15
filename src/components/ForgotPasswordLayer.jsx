@@ -49,7 +49,7 @@ const ForgotPasswordLayer = () => {
 
   return (
     <section className='auth bg-base d-flex flex-wrap login-bg'>
-
+      <div>Adding Password reset</div>
       
       <div className=' auth-right py-32 px-24 d-flex flex-column justify-content-center'>
         <div className='card max-w-464-px mx-auto w-100 p-5'>
