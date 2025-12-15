@@ -206,11 +206,6 @@ const EmployeeLeadsReportLayer = ({
               </div>
             </div>
           </div>
-          {error ? (
-            <div className="alert m-3 align-items-center fw-bold d-flex justify-content-center">
-              No leads available for selected date
-            </div>
-          ) : (
             <DataTable
               columns={columns}
               data={filteredLeads}
@@ -222,11 +217,10 @@ const EmployeeLeadsReportLayer = ({
               persistTableHead
               noDataComponent={
                 loading
-                  ? "Loading employee leads..."
-                  : "No employee leads available"
+                  ? "Loading employee lead Reports..."
+                  : "No employee lead Reports available"
               }
             />
-          )}
         </div>
       </div>
     </div>

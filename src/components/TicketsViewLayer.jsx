@@ -410,10 +410,6 @@ const TicketsViewLayer = () => {
               </Link>
             </div>
           </div>
-
-          {error ? (
-            <div className="alert alert-danger m-3">{error}</div>
-          ) : (
             <DataTable
               columns={columns}
               data={filteredTickets}
@@ -429,7 +425,6 @@ const TicketsViewLayer = () => {
               onChangePage={handlePageChange}
               onChangeRowsPerPage={handleRowsPerPageChange}
             />
-          )}
         </div>
       </div>
     </div>

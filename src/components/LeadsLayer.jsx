@@ -52,7 +52,11 @@ const LeadsLayer = () => {
   const columns = [
     {
       name: "Lead ID",
-      selector: (row) => row.Id || "-",
+      selector: (row) => (
+        <Link to={`/lead-view/${row.Id}`} className="text-primary">
+          {row.Id}
+        </Link>
+      ),
       sortable: true,
       wrap: true,
       width: "120px",
@@ -168,13 +172,12 @@ const LeadsLayer = () => {
   const filteredLeads = [...leads]
     .sort((a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate))
     .filter((lead) => {
-      // const filteredLeads = leads.filter((lead) => {
       if (
         lead.Platform === "Organic" ||
         lead.Platform === "Web" ||
-        lead.Platform === "App"
-      )
-        return false;
+        lead.Platform === "App" ||
+        lead.NextAction === "Lead Closed"
+      ) return false;
       const text = searchText.toLowerCase();
       const statusMatch =
         selectedStatus === "All" ||

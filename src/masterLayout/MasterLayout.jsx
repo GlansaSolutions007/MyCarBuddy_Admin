@@ -85,14 +85,7 @@ const MasterLayout = ({ children }) => {
     }
     return true; // Show if no permission defined
   };
-
-
-
-
   // console.log(userImage);x`
-
-
-
   useEffect(() => {
     const fetchProfileImage = async () => {
       try {
@@ -364,7 +357,7 @@ const MasterLayout = ({ children }) => {
       title: "Telecaller Assignment",
       icon: "hugeicons:user-check-02",
       children: [
-        { title: "Assign Bookings", to: "/telecaler-bookings", color: "text-warning-main", permission: "telecaler_booking_view", page: "Telecaler_Bookings" },
+        // { title: "Assign Bookings", to: "/telecaler-bookings", color: "text-warning-main", permission: "telecaler_booking_view", page: "Telecaler_Bookings" },
         // { title: "Telecaller Tickets", to: "/telecaler-tickets", color: "text-info-main", permission: "telecaler_ticket_view", page: "Telecaler_Tickets" },
         { title: "Assign Tickets", to: "/assign-tickets", color: "text-success-main", permission: "assigntickets_view", page: "Assign Tickets" },
         { title: "Assign Leads", to: "/assign-leads", color: "text-danger-main", permission: "assignleads_view", page: "Assign Leads" },
@@ -413,9 +406,16 @@ const MasterLayout = ({ children }) => {
         {
           title: "Today Pending Leads",
           to: "/todays-lead",
-          color: "text-warning-main",
+          color: "text-black",
           permission: "todayslead_view",
           page: "Today Pending Leads",
+        },
+        {
+          title: "Closed Leads",
+          to: "/closed-leads",
+          color: "text-warning-main",
+          permission: "closedleads_view",
+          page: "Closed Leads",
         },
       ],
     },

@@ -4,6 +4,7 @@ import DataTable from "react-data-table-component";
 import { Icon } from "@iconify/react";
 import Swal from "sweetalert2";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import Select, { components } from "react-select";
 import CreatableSelect from "react-select/creatable";
 const employeeData = JSON.parse(localStorage.getItem("employeeData"));
@@ -31,6 +32,7 @@ const BookServicesLayer = () => {
   const [selectedIncludes, setSelectedIncludes] = useState([]);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   // edit state
   const [editIndex, setEditIndex] = useState(null);
 
@@ -44,16 +46,18 @@ const BookServicesLayer = () => {
 
   // keep gstPrice in sync when price or gstPercent changes
   useEffect(() => {
-    const p = parseFloat(price);
-    const g = parseFloat(gstPercent);
-    if (!isNaN(p) && !isNaN(g)) {
-      const gst = (p * g) / 100;
-      // keep 2 decimal places
-      setGstPrice(Number.isFinite(gst) ? gst.toFixed(2) : "");
-    } else {
-      setGstPrice("");
-    }
-  }, [price, gstPercent]);
+    const p = Number(price) || 0;
+    const gstP = Number(gstPercent) || 0;
+    const compP = Number(companyPercent) || 0;
+
+    // GST Price
+    const gstAmt = (p * gstP) / 100;
+    setGstPrice(gstAmt ? gstAmt.toFixed(2) : "");
+
+    // Company Percent Amount
+    const percentAmt = (p * compP) / 100;
+    setPercentAmount(percentAmt ? percentAmt.toFixed(2) : "");
+  }, [price, gstPercent, companyPercent]);
 
   useEffect(() => {
     if (leadId) {
@@ -105,34 +109,34 @@ const BookServicesLayer = () => {
       setLoading(true);
 
       const response = await axios.get(
-        `${API_BASE}Supervisor/LeadId?LeadId=${leadId}`,
+        // `${API_BASE}Supervisor/LeadId?LeadId=${leadId}`,
+        `${API_BASE}Supervisor/SupervisorLeadId?LeadId=${leadId}`,
         { headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
+      const data = response.data || {};
 
-      // Case 1: data exists (edit mode)
-      if (
-        response.status === 200 &&
-        Array.isArray(response.data) &&
-        response.data.length > 0
-      ) {
-        const converted = response.data.map((item) => ({
-          type: item.ServiceType || "Service",
-          name: item.ServiceName || "",
-          price: Number(item.Price || 0),
-          description: item.Description || "",
-          gstPercent: Number(item.GSTPercent || 0),
-          gstPrice: Number(item.GSTAmount || 0),
+      const apiItems = [
+        ...(data.notConfirmed || []),
+        ...(data.confirmed || []),
+      ];
+      if (apiItems.length > 0) {
+        const converted = apiItems.map((item) => ({
+          type: item.serviceType || "Service",
+          name: item.serviceName || "",
+          price: Number(item.price || 0),
+          description: item.description || "",
+          gstPercent: Number(item.gstPercent || 0),
+          gstPrice: Number(item.gstAmount || 0),
 
           // API identifiers (keep for update)
-          _apiId: item.Id || null,
-          _bookingId: item.BookingId || null,
-          _bookingTrackId: item.BookingTrackID || null,
+          _apiId: item.leadId || null,
+          _bookingId: item.bookingID || null,
+          _bookingTrackId: item.bookingTrackID || null,
         }));
 
         setAddedItems(converted);
         return; // --- STOP here
       }
-
       // Case 2: no data found (fresh new booking)
       setAddedItems([]);
     } catch (err) {
@@ -220,6 +224,26 @@ const BookServicesLayer = () => {
       return Swal.fire("Please enter valid price");
     if (gstPercent === "" || isNaN(parseFloat(gstPercent)))
       return Swal.fire("Please enter valid GST %");
+    // Service specific
+    if (itemType === "Service" && !selectedIncludes)
+      return Swal.fire("Please select service");
+    // Spare part specific
+    if (itemType === "Spare Part" && !name.trim())
+      return Swal.fire("Please enter spare part name");
+    // Package specific
+    if (itemType === "Package" && !selectedPackage)
+      return Swal.fire("Please select package");
+    // GST Price (auto calculated)
+    if (!gstPrice || isNaN(parseFloat(gstPrice)))
+      return Swal.fire("GST price is required");
+    // Dealer
+    if (!selectedDealer) return Swal.fire("Please select dealer");
+    // Company Percent
+    if (companyPercent === "" || isNaN(parseFloat(companyPercent)))
+      return Swal.fire("Please enter company percent");
+    // Percent Amount (auto calculated)
+    if (!percentAmount || isNaN(parseFloat(percentAmount)))
+      return Swal.fire("Percent amount is required");
 
     let finalIncludeID = selectedIncludes; // may change if new
 
@@ -432,7 +456,7 @@ const BookServicesLayer = () => {
     try {
       // Transform addedItems to match API payload format
       const services = addedItems
-        .filter((item) => !item._apiId) // only new items
+        .filter((item) => !item._apiId)
         .map((item) => ({
           serviceType: item.type,
           serviceName: item.name,
@@ -467,6 +491,8 @@ const BookServicesLayer = () => {
           icon: "success",
           title: "Success!",
           text: "Your booking has been created successfully.",
+        }).then(() => {
+          navigate(-1);
         });
         // Refresh booking list again
         await fetchBookingData();
@@ -490,7 +516,6 @@ const BookServicesLayer = () => {
     }
   };
 
-  // ---- REPLACE columns with this ----
   const columns = [
     {
       name: "Type",
@@ -540,14 +565,13 @@ const BookServicesLayer = () => {
       cell: (row, index) =>
         !row.isInclude ? (
           <div className="d-flex gap-2">
-            {/* <button
+            <button
               className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
               onClick={() => handleEditItem(index && index)}
               title="Edit"
             >
               <Icon icon="lucide:edit" />
-            </button> */}
-
+            </button>
             <button
               className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
               onClick={() => handleRemoveItem(index && index)}
@@ -561,7 +585,6 @@ const BookServicesLayer = () => {
         ),
       ignoreRowClick: true,
       allowOverflow: true,
-      button: true,
     },
   ];
 
@@ -576,7 +599,6 @@ const BookServicesLayer = () => {
   );
   const grandTotal = subtotal + totalGst;
 
-  // ---- ADD BEFORE return(...) ----
   const flattenedRows = [];
   addedItems.forEach((item, idx) => {
     // Main row
@@ -671,7 +693,6 @@ const BookServicesLayer = () => {
                       }
 
                       if (selected.__isNew__) {
-                        // user clicked Create "X"
                         setSelectedIncludes("new");
                         setName(selected.label);
                       } else {
@@ -757,7 +778,7 @@ const BookServicesLayer = () => {
                   className="form-control"
                   value={price}
                   min={0}
-                  onChange={(e) => setPrice(Math.max(0, e.target.value))}
+                  onChange={(e) => setPrice(Number(e.target.value) || 0)}
                   placeholder="0.00"
                 />
               </div>
@@ -816,14 +837,9 @@ const BookServicesLayer = () => {
                   className="form-control"
                   value={companyPercent}
                   min={0}
-                  onChange={(e) => {
-                    const cp = Math.max(0, e.target.value);
-                    setCompanyPercent(cp);
-
-                    const amt =
-                      ((Number(price) || 0) * (Number(cp) || 0)) / 100;
-                    setPercentAmount(amt.toFixed(2));
-                  }}
+                  onChange={(e) =>
+                    setCompanyPercent(Number(e.target.value) || 0)
+                  }
                   placeholder="Enter Percentage"
                 />
               </div>
@@ -915,7 +931,6 @@ const BookServicesLayer = () => {
             <DataTable
               columns={columns}
               data={flattenedRows}
-              // data={addedItems}
               pagination
               highlightOnHover
               responsive
@@ -923,7 +938,6 @@ const BookServicesLayer = () => {
               persistTableHead
               noDataComponent="No items added yet"
             />
-
             {/* Totals */}
             {addedItems.length > 0 && (
               <div className="mt-3 p-3 border rounded bg-light">

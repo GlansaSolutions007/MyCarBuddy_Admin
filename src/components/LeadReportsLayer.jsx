@@ -121,12 +121,12 @@ const LeadReportsLayer = () => {
       sortable: true,
       width: "140px",
     },
-        {
+    {
       name: "Converted",
       selector: (row) => row.ConvertedCustomer,
       width: "120px",
     },
-     {
+    {
       name: "Interested",
       selector: (row) => row.Interested,
       width: "120px",
@@ -149,12 +149,12 @@ const LeadReportsLayer = () => {
     {
       name: "Not Connected",
       selector: (row) =>
-        (row.RingingButNotResponded) +
-        (row.Busy) +
-        (row.NotReachable) +
-        (row.SwitchedOff) +
-        (row.TemporaryOutofService) +
-        (row.DND),
+        row.RingingButNotResponded +
+        row.Busy +
+        row.NotReachable +
+        row.SwitchedOff +
+        row.TemporaryOutofService +
+        row.DND,
       sortable: true,
       width: "150px",
     },
@@ -233,25 +233,21 @@ const LeadReportsLayer = () => {
               </div>
             </div>
           </div>
-          {error ? (
-            <div className="alert m-3 align-items-center fw-bold d-flex justify-content-center">
-              No leads reports available for selected date
-            </div>
-          ) : (
-            <DataTable
-              columns={columns}
-              data={filteredLeads}
-              progressPending={loading}
-              pagination
-              highlightOnHover
-              responsive
-              striped
-              persistTableHead
-              noDataComponent={
-                loading ? "Loading leads..." : "No leads available"
-              }
-            />
-          )}
+          <DataTable
+            columns={columns}
+            data={filteredLeads}
+            progressPending={loading}
+            pagination
+            highlightOnHover
+            responsive
+            striped
+            persistTableHead
+            noDataComponent={
+              loading
+                ? "Loading leads..."
+                : "No leads reports available for selected date"
+            }
+          />
         </div>
       </div>
     </div>

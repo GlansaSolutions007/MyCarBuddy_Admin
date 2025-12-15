@@ -245,8 +245,6 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
     );
   });
 
-
-
   return (
     <div className="row gy-4">
       <div className="col-12">
@@ -334,9 +332,6 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
               </div>
             </div>
           </div>
-          {error ? (
-            <div className="alert alert-danger m-3">{error}</div>
-          ) : (
             <DataTable
               columns={columns}
               data={filteredData}
@@ -347,11 +342,9 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
               striped
               persistTableHead
               noDataComponent={
-                loading ? "Loading tickets..." : "No tickets available"
+                loading ? "Loading ticket Reports..." : "No ticket Reports available"
               }
-
             />
-          )}
         </div>
       </div>
     </div>

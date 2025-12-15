@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-import Swal from "sweetalert2";
 import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
@@ -8,19 +6,15 @@ import { usePermissions } from "../context/PermissionContext";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
-const OrganicLeadsLayer = () => {
+const ClosedLeadsLayer = () => {
   const { hasPermission } = usePermissions();
   const employeeData = JSON.parse(localStorage.getItem("employeeData"));
   const role = localStorage.getItem("role");
   const [leads, setLeads] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [platformFilter, setPlatformFilter] = useState("All");
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     fetchLeads();
@@ -28,8 +22,6 @@ const OrganicLeadsLayer = () => {
 
   const fetchLeads = async () => {
     setLoading(true);
-    setError("");
-
     try {
       let url;
       if (role === "Admin") {
@@ -43,55 +35,17 @@ const OrganicLeadsLayer = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      const organicOnly = Array.isArray(data)
+      const closedLeadsOnly = Array.isArray(data)
         ? data.filter(
             (lead) =>
-              (lead.Platform === "Organic" ||
-                lead.Platform === "Web" ||
-                lead.Platform === "App") &&
-              lead.NextAction !== "Lead Closed"
+              lead.NextAction === "Lead Closed"
           )
         : [];
-
-      setLeads(organicOnly);
+      setLeads(closedLeadsOnly);
     } catch (err) {
-      setError("Failed to fetch leads. Please try again.");
       console.error("Error fetching leads:", err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleBulkUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await axios.post(`${API_BASE}Leads/UploadExcel`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        onUploadProgress: (p) => {
-          const percent = Math.round((p.loaded / p.total) * 100);
-          setUploadProgress(percent);
-        },
-      });
-
-      if (res.status === 200) {
-        Swal.fire("Success", "Bulk Upload Completed", "success");
-        setUploading(false);
-        setUploadProgress(0);
-        fetchLeads();
-      }
-    } catch (error) {
-      console.error(error);
-      Swal.fire("Error", "Bulk Upload Failed", "error");
-      setUploading(false);
-      setUploadProgress(0);
     }
   };
 
@@ -99,7 +53,7 @@ const OrganicLeadsLayer = () => {
   const columns = [
     {
       name: "Lead ID",
-      selector: (row) => (
+       selector: (row) => (
         <Link to={`/lead-view/${row.Id}`} className="text-primary">
           {row.Id}
         </Link>
@@ -227,18 +181,16 @@ const OrganicLeadsLayer = () => {
         (!from || (leadDate && leadDate >= from)) &&
         (!to || (leadDate && leadDate <= to));
 
-      const platformMatch =
-        platformFilter === "All" || lead.Platform === platformFilter;
-
       return (
         dateMatch &&
-        platformMatch &&
-        (lead.Id?.toString().toLowerCase().includes(text) ||
+        ( lead.Id?.toString().toLowerCase().includes(text) ||
           lead.FullName?.toLowerCase().includes(text) ||
           lead.PhoneNumber?.toLowerCase().includes(text) ||
           lead.Email?.toLowerCase().includes(text) ||
           lead.City?.toLowerCase().includes(text) ||
-          lead.LeadStatus?.toLowerCase().includes(text))
+          lead.Platform?.toLowerCase().includes(text) ||
+          lead.FollowUpStatus?.toLowerCase().includes(text))
+          
       );
     })
     .sort((a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate));
@@ -277,93 +229,9 @@ const OrganicLeadsLayer = () => {
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
                 />
-                {/* <select
-                  className="form-control radius-8 px-14 py-6 text-sm w-auto"
-                  value={platformFilter}
-                  onChange={(e) => setPlatformFilter(e.target.value)}
-                >
-                  <option value="All">All</option>
-                  <option value="Organic">Organic</option>
-                  <option value="Web">Web</option>
-                  <option value="App">App</option>
-                </select> */}
-
-                <div className="position-relative d-inline-block">
-                  <select
-                    className="form-control radius-8 px-14 py-6 text-sm w-auto"
-                    value={platformFilter}
-                    onChange={(e) => setPlatformFilter(e.target.value)}
-                    style={{
-                      appearance: "none",
-                      WebkitAppearance: "none",
-                      MozAppearance: "none",
-                      paddingRight: "30px", // space for arrow
-                    }}
-                  >
-                    <option value="All">All</option>
-                    <option value="Organic">Organic</option>
-                    <option value="Web">Web</option>
-                    <option value="App">App</option>
-                  </select>
-                  <i
-                    className="bi bi-chevron-down"
-                    style={{
-                      position: "absolute",
-                      right: "10px",
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      pointerEvents: "none",
-                      fontSize: "14px",
-                      color: "#555",
-                    }}
-                  ></i>
-                </div>
-
-                <input
-                  type="file"
-                  accept=".xlsx, .xls"
-                  id="organicUpload"
-                  style={{ display: "none" }}
-                  onChange={handleBulkUpload}
-                />
-                {/* Bulk Upload button */}
-                {role === "Admin" && (
-                  <button
-                    type="button"
-                    className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
-                    onClick={() =>
-                      document.getElementById("organicUpload").click()
-                    }
-                    disabled={uploading}
-                  >
-                    <Icon
-                      icon="mdi:upload"
-                      className="icon text-xl line-height-1"
-                    />
-                    Bulk Upload
-                  </button>
-                )}
-                {hasPermission("createlead_add") && (
-                  <Link
-                    to="/create-lead"
-                    className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
-                  >
-                    <Icon
-                      icon="ic:baseline-plus"
-                      className="icon text-xl line-height-1"
-                    />
-                    Add Lead
-                  </Link>
-                )}
               </div>
             </div>
           </div>
-          {uploading && (
-            <div className="m-3">Uploading {uploadProgress}%...</div>
-          )}
-          {error ? (
-            <div className="alert alert-danger m-3">{error}</div>
-          ) : (
             <DataTable
               columns={columns}
               data={filteredLeads}
@@ -377,11 +245,12 @@ const OrganicLeadsLayer = () => {
                 loading ? "Loading leads..." : "No leads available"
               }
             />
-          )}
         </div>
       </div>
     </div>
   );
 };
 
-export default OrganicLeadsLayer;
+export default ClosedLeadsLayer;
+
+

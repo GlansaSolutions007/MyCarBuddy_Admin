@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { Accordion, Modal, Button } from "react-bootstrap";
 import { usePermissions } from "../context/PermissionContext";
@@ -41,18 +41,24 @@ const LeadViewLayer = () => {
   const [models, setModels] = useState([]);
   const [fuelTypes, setFuelTypes] = useState([]);
   const [filteredModels, setFilteredModels] = useState([]);
-
   // Personal Information States
   const [personalFullName, setPersonalFullName] = useState("");
   const [personalMobileNo, setPersonalMobileNo] = useState("");
   const [personalEmail, setPersonalEmail] = useState("");
   const [personalFullAddress, setPersonalFullAddress] = useState("");
-
   const [bookings, setBookings] = useState([]);
-  // Assign Supervisor States
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedSupervisor, setSelectedSupervisor] = useState(null);
   const [supervisors, setSupervisors] = useState([]);
+  const [inspectionDate, setInspectionDate] = useState("");
+  const [inspectionTime, setInspectionTime] = useState("");
+  const isLeadClosed = lead?.NextAction === "Lead Closed";
+  const vehicle = lead?.VehiclesDetails?.[0];
+  const isVehicleDataComplete =
+    vehicle?.BrandName && vehicle?.ModelName && vehicle?.FuelTypeName;
+  const hasAtLeastOneFollowUp =
+    Array.isArray(lead?.FollowUps) && lead.FollowUps.length > 0;
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchLead();
@@ -67,7 +73,6 @@ const LeadViewLayer = () => {
       setFilteredModels([]);
       return;
     }
-
     // if no brand selected -> show all models
     if (!carBrand) {
       setFilteredModels(models);
@@ -117,6 +122,8 @@ const LeadViewLayer = () => {
             ? { value: vehicle.FuelTypeID, label: vehicle.FuelTypeName }
             : null
         );
+        setCarKmDriven(vehicle.KmDriven || "");
+        setCarYearOfPurchase(vehicle.YearOfPurchase || "");
       }
     }
   }, [lead]);
@@ -210,8 +217,10 @@ const LeadViewLayer = () => {
         { headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
 
-      if (Array.isArray(res.data)) {
-        setBookings(res.data);
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        const customer = res.data[0];
+        const bookingsList = customer.Bookings || [];
+        setBookings(bookingsList);
       } else {
         setBookings([]);
       }
@@ -251,6 +260,12 @@ const LeadViewLayer = () => {
     }
   };
 
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: currentYear - 1979 }, (_, i) => {
+    const year = 1980 + i;
+    return { value: year, label: year.toString() };
+  });
+
   const handleWhatsapp = () => {
     let phone = lead?.PhoneNumber;
     const name = lead?.FullName;
@@ -271,6 +286,14 @@ const LeadViewLayer = () => {
     window.open(url, "_blank");
   };
 
+  const getTodayDate = () => {
+    return new Date().toISOString().split("T")[0];
+  };
+  const getMinTime = () => {
+    const now = new Date();
+    return now.toTimeString().slice(0, 5); // HH:mm
+  };
+  const isTodaySelected = inspectionDate === getTodayDate();
   // Handle Assign Supervisor
   const handleAssignSupervisor = async () => {
     if (!selectedSupervisor) {
@@ -281,7 +304,15 @@ const LeadViewLayer = () => {
       });
       return;
     }
-
+    if (inspectionDate === getTodayDate() && inspectionTime < getMinTime()) {
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid Time",
+        text: "Inspection time must be in the future.",
+      });
+      return;
+    }
+    const inspectionDateTime = `${inspectionDate}T${inspectionTime}`;
     try {
       const response = await fetch(`${API_BASE}Leads/AssignLeadsToSupervisor`, {
         method: "POST",
@@ -292,20 +323,21 @@ const LeadViewLayer = () => {
         body: JSON.stringify({
           leadIds: [leadId],
           supervisor_Assign: selectedSupervisor.value,
+          inspectionDateTime: inspectionDateTime,
         }),
       });
-
       if (!response.ok) {
         throw new Error("Failed to assign supervisor");
       }
-
       Swal.fire({
         icon: "success",
         title: "Supervisor Assigned",
         text: "Lead has been successfully assigned to the supervisor.",
       });
-
+      await fetchLead();
       setAssignModalOpen(false);
+      setInspectionDate("");
+      setInspectionTime("");
       setSelectedSupervisor(null);
     } catch (err) {
       console.error("Assign supervisor failed", err);
@@ -320,13 +352,14 @@ const LeadViewLayer = () => {
   // Handle Submit Car Details
   const handleSubmitCarDetails = async () => {
     if (!lead) return;
-
     const payload = {
       Id: lead.Id,
       RegistrationNumber: carRegistrationNumber,
       BrandID: carBrand?.value ?? null,
       ModelID: carModel?.value ?? null,
       FuelTypeID: carFuelType?.value ?? null,
+      KmDriven: carKmDriven || null,
+      YearOfPurchase: carYearOfPurchase ? String(carYearOfPurchase) : null,
     };
 
     try {
@@ -349,14 +382,7 @@ const LeadViewLayer = () => {
         title: "Car Details Saved",
         text: "Car details have been successfully saved.",
       });
-
-      // Reset car details form
-      setCarRegistrationNumber("");
-      setCarYearOfPurchase("");
-      setCarBrand(null);
-      setCarModel(null);
-      setCarKmDriven("");
-      setCarFuelType(null);
+      await fetchLead();
     } catch (err) {
       console.error("Car details save failed", err);
       Swal.fire({
@@ -394,14 +420,13 @@ const LeadViewLayer = () => {
       if (!response.ok) {
         throw new Error("Failed to update personal information");
       }
-
       // Update lead state with new personal info
       setLead((prev) => ({
         ...prev,
         FullName: personalFullName,
         PhoneNumber: personalMobileNo,
         Email: personalEmail,
-        City: personalFullAddress, // Full address stored as City
+        City: personalFullAddress,
       }));
 
       Swal.fire({
@@ -409,6 +434,7 @@ const LeadViewLayer = () => {
         title: "Personal Information Saved",
         text: "Personal information has been successfully saved.",
       });
+      await fetchLead();
     } catch (err) {
       console.error("Personal info save failed", err);
       Swal.fire({
@@ -479,7 +505,6 @@ const LeadViewLayer = () => {
         ? new Date(nextFollowUpDate).toISOString()
         : null;
     }
-
     // build payload exactly as you requested:
     const payload = {
       leadId: leadId,
@@ -490,11 +515,6 @@ const LeadViewLayer = () => {
       created_By: userId,
       type: callAnswered === "Not Ans" ? "Not Answered" : "Answered",
     };
-
-    // optional: log to console for debugging
-    // remove this line in production if you want
-    console.log("InsertLeadFollowUp payload:", payload);
-
     try {
       const response = await fetch(`${API_BASE}Leads/InsertLeadFollowUp`, {
         method: "POST",
@@ -515,7 +535,6 @@ const LeadViewLayer = () => {
         }
         throw new Error(`Failed to insert lead follow-up ${errText}`);
       }
-
       // add new entry to FollowUps immediately
       const newFollowUp = {
         Id: Date.now(), // temporary ID, replace with actual from response if available
@@ -541,7 +560,7 @@ const LeadViewLayer = () => {
         title: "Updated",
         text: "Lead status updated successfully.",
       });
-
+      await fetchLead();
       // Reset only the fields relevant to this form
       setCallAnswered("");
       setFollowUpStatus("");
@@ -560,7 +579,6 @@ const LeadViewLayer = () => {
       });
     }
   };
-
   // Clear opposite fields when callAnswered changes to prevent stale values
   useEffect(() => {
     if (callAnswered === "Ans") {
@@ -575,6 +593,23 @@ const LeadViewLayer = () => {
     }
   }, [callAnswered]);
 
+  const showVehicleDataRequiredAlert = () => {
+    Swal.fire({
+      icon: "warning",
+      title: "Vehicle Details Required",
+      text: "Car Brand, Model, and Fuel Type are required to proceed.",
+      confirmButtonText: "OK",
+    });
+  };
+
+  const showFollowUpRequiredAlert = () => {
+    Swal.fire({
+      icon: "warning",
+      title: "Follow-up Required",
+      text: "Needs at least one follow-up before proceeding.",
+      confirmButtonText: "OK",
+    });
+  };
   return (
     <>
       <div className="row gy-4 mt-3">
@@ -634,7 +669,7 @@ const LeadViewLayer = () => {
                   </li>
                   <li className="d-flex align-items-center gap-1 mb-12">
                     <span className="w-30 text-md fw-semibold text-primary-light">
-                      Created
+                      Created Date
                     </span>
                     <span className="w-70 text-secondary-light fw-medium">
                       :{" "}
@@ -645,7 +680,6 @@ const LeadViewLayer = () => {
                             year: "numeric",
                             hour: "2-digit",
                             minute: "2-digit",
-                            second: "2-digit",
                             hour12: true,
                           })
                         : "N/A"}
@@ -686,33 +720,91 @@ const LeadViewLayer = () => {
                   </li>
                   <li className="d-flex align-items-center gap-1 mb-12">
                     <span className="w-30 text-md fw-semibold text-primary-light">
+                      Payment Status
+                    </span>
+                    <span className="w-70 text-secondary-light fw-medium">
+                      : {lead?.PaymentStatus || "N/A"}
+                    </span>
+                  </li>
+                  <li className="d-flex align-items-center gap-1 mb-12">
+                    <span className="w-30 text-md fw-semibold text-primary-light">
+                      Payment Amount
+                    </span>
+                    <span className="w-70 text-secondary-light fw-medium">
+                      : {lead?.PaymentAmount || "N/A"}
+                    </span>
+                  </li>
+                  <li className="d-flex align-items-center gap-1 mb-12">
+                    <span className="w-30 text-md fw-semibold text-primary-light">
                       Supervisor Name
                     </span>
                     <span className="w-70 text-secondary-light fw-medium">
                       : {lead?.Assignments?.[0]?.SupervisorName || "N/A"}
                     </span>
                   </li>
+                  <li className="d-flex align-items-center gap-1 mb-12">
+                    <span className="w-30 text-md fw-semibold text-primary-light">
+                      Inspection Date
+                    </span>
+                    <span className="w-70 text-secondary-light fw-medium">
+                      :{" "}
+                      {lead?.InspectionDateTime
+                        ? new Date(lead.InspectionDateTime).toLocaleString(
+                            "en-IN",
+                            {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            }
+                          )
+                        : "N/A"}
+                    </span>
+                  </li>
                 </ul>
                 <div className="d-flex gap-2 mt-3">
                   <Link
-                    to="/leads"
+                    onClick={() => navigate(-1)}
                     className="btn btn-secondary btn-sm d-flex align-items-center justify-content-center gap-1"
                   >
                     <Icon icon="mdi:arrow-left" className="fs-5" />
                     Back
                   </Link>
-                  {!["Supervisor Head", "Supervisor"].includes(roleName) && (
-                    <button
-                      className="btn btn-primary-600 btn-sm d-flex align-items-center justify-content-center gap-1"
-                      onClick={() => setAssignModalOpen(true)}
-                    >
-                      <Icon icon="mdi:account-plus" className="fs-5" />
-                      Assign Supervisor
-                    </button>
-                  )}
-                  {hasPermission("bookservice_view") && (
+                  {!["Supervisor Head", "Supervisor"].includes(roleName) &&
+                    !isLeadClosed && (
+                      <button
+                        className="btn btn-primary-600 btn-sm d-flex align-items-center justify-content-center gap-1"
+                        onClick={() => {
+                          if (!isVehicleDataComplete) {
+                            showVehicleDataRequiredAlert();
+                            return;
+                          }
+                          if (!hasAtLeastOneFollowUp) {
+                            showFollowUpRequiredAlert();
+                            return;
+                          }
+                          setAssignModalOpen(true);
+                        }}
+                      >
+                        <Icon icon="mdi:account-plus" className="fs-5" />
+                        Assign Supervisor
+                      </button>
+                    )}
+                  {hasPermission("bookservice_view") && !isLeadClosed && (
                     <Link
                       to={`/book-service/${lead?.Id}`}
+                      onClick={(e) => {
+                        if (!isVehicleDataComplete) {
+                          e.preventDefault();
+                          showVehicleDataRequiredAlert();
+                        }
+                        if (!hasAtLeastOneFollowUp) {
+                          e.preventDefault();
+                          showFollowUpRequiredAlert();
+                        }
+                      }}
                       className="btn btn-secondary btn-sm d-flex align-items-center justify-content-center gap-1"
                     >
                       <Icon
@@ -738,10 +830,6 @@ const LeadViewLayer = () => {
                 <div className="alert alert-danger">{error}</div>
               ) : lead ? (
                 <>
-                  {/* Update Status */}
-                  {/* <h6 className="text-xl mb-16 border-bottom pb-2">
-                    Update Status
-                  </h6> */}
                   <div className="d-flex justify-content-between align-items-center">
                     <h6 className="card-title">Update Status</h6>
                     <Icon
@@ -768,6 +856,7 @@ const LeadViewLayer = () => {
                             value="Ans"
                             checked={callAnswered === "Ans"}
                             onChange={(e) => setCallAnswered(e.target.value)}
+                            disabled={isLeadClosed}
                           />
                           <label
                             className="form-check-label ms-1"
@@ -785,6 +874,7 @@ const LeadViewLayer = () => {
                             value="Not Ans"
                             checked={callAnswered === "Not Ans"}
                             onChange={(e) => setCallAnswered(e.target.value)}
+                            disabled={isLeadClosed}
                           />
                           <label
                             className="form-check-label ms-1"
@@ -933,7 +1023,7 @@ const LeadViewLayer = () => {
                             <option value="Lead Closed">Lead Closed</option>
                           </select>
                         </div>
-                        {nextAction && (
+                        {nextAction && nextAction !== "Lead Closed" && (
                           <div className="col-12">
                             <label className="form-label fw-semibold text-primary-light">
                               Next Follow-up Date
@@ -953,17 +1043,18 @@ const LeadViewLayer = () => {
                     )}
 
                     <div className="d-flex justify-content-end mt-3 gap-10">
-                      {hasPermission("createlead_add") && (
+                      {/* {hasPermission("createlead_add") && (
                         <Link
                           to="/create-lead"
                           className="btn btn-secondary px-20 btn-sm"
                         >
                           Add Lead
                         </Link>
-                      )}
+                      )} */}
                       <button
                         className="btn btn-primary-600 px-20 btn-sm"
                         onClick={handleSubmitStatus}
+                        disabled={isLeadClosed}
                       >
                         Submit
                       </button>
@@ -996,6 +1087,7 @@ const LeadViewLayer = () => {
                                 setPersonalFullName(val);
                               }
                             }}
+                            disabled={isLeadClosed}
                           />
                         </div>
                         <div className="col-md-6">
@@ -1015,6 +1107,7 @@ const LeadViewLayer = () => {
                                 return;
                               setPersonalMobileNo(val);
                             }}
+                            disabled={isLeadClosed}
                           />
                         </div>
                         <div className="col-md-12">
@@ -1035,6 +1128,7 @@ const LeadViewLayer = () => {
                               }
                               setPersonalEmail(val);
                             }}
+                            disabled={isLeadClosed}
                           />
                         </div>
 
@@ -1050,6 +1144,7 @@ const LeadViewLayer = () => {
                             onChange={(e) =>
                               setPersonalFullAddress(e.target.value)
                             }
+                            disabled={isLeadClosed}
                           />
                         </div>
                       </div>
@@ -1057,6 +1152,7 @@ const LeadViewLayer = () => {
                         <button
                           className="btn btn-primary-600 px-20 btn-sm"
                           onClick={handleSubmitPersonalInfo}
+                          disabled={isLeadClosed}
                         >
                           Save Information
                         </button>
@@ -1079,30 +1175,33 @@ const LeadViewLayer = () => {
                             placeholder="e.g., ABC-1234"
                             value={carRegistrationNumber}
                             onChange={(e) =>
-                              setCarRegistrationNumber(e.target.value)
+                              setCarRegistrationNumber(
+                                e.target.value.toUpperCase()
+                              )
                             }
+                            disabled={isLeadClosed}
                           />
                         </div>
                         <div className="col-md-6">
                           <label className="form-label fw-semibold text-primary-light">
-                            Fuel Type
+                            Km Driven 
                           </label>
-                          <Select
-                            options={fuelTypes.map((fuelType) => ({
-                              value: fuelType.FuelTypeID,
-                              label: fuelType.FuelTypeName,
-                            }))}
-                            value={carFuelType}
-                            onChange={setCarFuelType}
-                            placeholder="Select Fuel Type"
-                            className="react-select-container text-sm"
-                            isSearchable
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="e.g., 5000"
+                            value={carKmDriven}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/\D/g, "");
+                              setCarKmDriven(value);
+                            }}
+                            disabled={isLeadClosed}
                           />
                         </div>
 
                         <div className="col-md-6">
                           <label className="form-label fw-semibold text-primary-light">
-                            Brand
+                            Brand <span className="text-danger-600">*</span>
                           </label>
                           <Select
                             options={brands.map((brand) => ({
@@ -1114,11 +1213,12 @@ const LeadViewLayer = () => {
                             placeholder="Select Brand"
                             className="react-select-container text-sm"
                             isSearchable
+                            isDisabled={isLeadClosed}
                           />
                         </div>
                         <div className="col-md-6">
                           <label className="form-label fw-semibold text-primary-light">
-                            Model
+                            Model <span className="text-danger-600">*</span>
                           </label>
                           <Select
                             options={filteredModels.map((model) => ({
@@ -1130,32 +1230,73 @@ const LeadViewLayer = () => {
                             placeholder="Select Model"
                             className="react-select-container text-sm"
                             isSearchable
+                            isDisabled={isLeadClosed}
                           />
                         </div>
                         <div className="col-md-6">
                           <label className="form-label fw-semibold text-primary-light">
-                            Km Driven
+                            Fuel Type <span className="text-danger-600">*</span>
                           </label>
-                          <input
-                            type="number"
-                            className="form-control"
-                            placeholder="e.g., 50000"
-                            value={carKmDriven}
-                            onChange={(e) => setCarKmDriven(e.target.value)}
+                          <Select
+                            options={fuelTypes.map((fuelType) => ({
+                              value: fuelType.FuelTypeID,
+                              label: fuelType.FuelTypeName,
+                            }))}
+                            value={carFuelType}
+                            onChange={setCarFuelType}
+                            placeholder="Select Fuel Type"
+                            className="react-select-container text-sm"
+                            isSearchable
+                            menuPortalTarget={document.body}
+                            styles={{
+                              menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                              option: (base) => ({
+                                ...base,
+                                fontSize: "0.675rem",
+                              }),
+                              singleValue: (base) => ({
+                                ...base,
+                                fontSize: "0.675rem",
+                              }),
+                            }}
+                            isDisabled={isLeadClosed}
                           />
                         </div>
+
                         <div className="col-md-6">
                           <label className="form-label fw-semibold text-primary-light">
                             Year of Purchase
                           </label>
-                          <input
-                            type="number"
-                            className="form-control"
-                            placeholder="e.g., 2020"
-                            value={carYearOfPurchase}
-                            onChange={(e) =>
-                              setCarYearOfPurchase(e.target.value)
+                          <Select
+                            options={yearOptions}
+                            value={
+                              carYearOfPurchase
+                                ? {
+                                    value: carYearOfPurchase,
+                                    label: carYearOfPurchase.toString(),
+                                  }
+                                : null
                             }
+                            onChange={(selected) => {
+                              setCarYearOfPurchase(selected.value);
+                            }}
+                            placeholder="Select Year"
+                            className="react-select-container text-sm"
+                            isSearchable
+                            menuPortalTarget={document.body}
+                            styles={{
+                              menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                              option: (base) => ({
+                                ...base,
+                                fontSize: "0.675rem",
+                              }),
+                              singleValue: (base) => ({
+                                ...base,
+                                fontSize: "0.675rem",
+                              }),
+                              menuList: (base) => ({ ...base, maxHeight: 140 }),
+                            }}
+                            isDisabled={isLeadClosed}
                           />
                         </div>
                       </div>
@@ -1163,6 +1304,7 @@ const LeadViewLayer = () => {
                         <button
                           className="btn btn-primary-600 px-20 btn-sm"
                           onClick={handleSubmitCarDetails}
+                          disabled={isLeadClosed}
                         >
                           Save Car Details
                         </button>
@@ -1215,13 +1357,16 @@ const LeadViewLayer = () => {
                                   >
                                     <Icon icon="lucide:eye" />
                                   </Link>
-                                  <Link
-                                    to={`/book-service?bookingId=${b.BookingID}`}
-                                    className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                                    title="Edit"
-                                  >
-                                    <Icon icon="lucide:edit" />
-                                  </Link>
+                                  {b.PaymentStatus !== "Success" &&
+                                    !isLeadClosed && (
+                                      <Link
+                                        to={`/book-service/${b.LeadId}`}
+                                        className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                        title="Edit"
+                                      >
+                                        <Icon icon="lucide:edit" />
+                                      </Link>
+                                    )}
                                 </td>
                               </tr>
                             ))}
@@ -1240,13 +1385,13 @@ const LeadViewLayer = () => {
         <div className="col-lg-3">
           <div
             className="user-grid-card border pt-3 radius-16 bg-base d-flex flex-column w-100"
-            style={{ height: "810px" }}
+            style={{ height: "975px" }}
           >
             <div className="pb-24 ms-16 mb-24 me-16 flex-grow-1 d-flex flex-column">
               <h6 className="text-xl mb-16 border-bottom pb-2">Timeline</h6>
               <div
                 className="flex-grow-1 overflow-auto pe-0"
-                style={{ maxHeight: "725px", scrollbarWidth: "thin" }}
+                style={{ maxHeight: "925px", scrollbarWidth: "thin" }}
               >
                 {lead?.FollowUps && lead.FollowUps.length > 0 ? (
                   <ul className="mb-0 list-unstyled ps-0">
@@ -1260,60 +1405,63 @@ const LeadViewLayer = () => {
                           : new Date(b.Created_At);
                         return dateB - dateA;
                       })
-                      .map((item, idx) => (
-                        <li
-                          key={idx}
-                          className="mb-3 pb-3 border-bottom border-dashed last:border-0"
-                        >
-                          <div className="d-flex align-items-start gap-3">
-                            <span
-                              className={`badge rounded-pill px-3 py-2 fw-semibold text-white bg-orange`}
-                            >
-                              {item.Status}
-                            </span>
-                          </div>
-                          <div>
-                            <div className="text-sm text-secondary-light fw-medium">
-                              <strong>Updation Date: </strong>
-                              {item.Updated_At
-                                ? new Date(item.Updated_At).toLocaleString(
-                                    "en-IN",
-                                    {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                      hour12: true,
-                                    }
-                                  )
-                                : "-"}
+                      .map((item, idx) => {
+                        if (item.Status === null) return null;
+                        return (
+                          <li
+                            key={idx}
+                            className="mb-3 pb-3 border-bottom border-dashed last:border-0"
+                          >
+                            <div className="d-flex align-items-start gap-3">
+                              <span
+                                className={`badge rounded-pill px-3 py-2 fw-semibold text-white bg-orange`}
+                              >
+                                {item.Status}
+                              </span>
                             </div>
-                            <div className="text-sm text-secondary-light">
-                              <strong>Discussion Notes: </strong>
-                              {item.Notes || "-"}
-                            </div>
-                            {item.NextAction && (
-                              <div className="text-sm text-secondary-light">
-                                <strong>Next Action: </strong>
-                                {item.NextAction}
+                            <div>
+                              <div className="text-sm text-secondary-light fw-medium">
+                                <strong>Updation Date: </strong>
+                                {item.Updated_At
+                                  ? new Date(item.Updated_At).toLocaleString(
+                                      "en-IN",
+                                      {
+                                        day: "2-digit",
+                                        month: "short",
+                                        year: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        hour12: true,
+                                      }
+                                    )
+                                  : "-"}
                               </div>
-                            )}
-                            <div className="text-sm text-secondary-light">
-                              <strong>Next Follow-up Date: </strong>{" "}
-                              {item.NextFollowUp_Date
-                                ? new Date(
-                                    item.NextFollowUp_Date
-                                  ).toLocaleDateString()
-                                : "-"}
+                              <div className="text-sm text-secondary-light">
+                                <strong>Discussion Notes: </strong>
+                                {item.Notes || "-"}
+                              </div>
+                              {item.NextAction && (
+                                <div className="text-sm text-secondary-light">
+                                  <strong>Next Action: </strong>
+                                  {item.NextAction}
+                                </div>
+                              )}
+                              <div className="text-sm text-secondary-light">
+                                <strong>Next Follow-up Date: </strong>{" "}
+                                {item.NextFollowUp_Date
+                                  ? new Date(
+                                      item.NextFollowUp_Date
+                                    ).toLocaleDateString()
+                                  : "-"}
+                              </div>
+                              <div className="text-sm text-secondary-light">
+                                <strong>Updated By: </strong>
+                                {item.EmployeeName || "-"}
+                              </div>
                             </div>
-                            <div className="text-sm text-secondary-light">
-                              <strong>Updated By: </strong>
-                              {item.EmployeeName || "-"}
-                            </div>
-                          </div>
-                        </li>
-                      ))}
+                          </li>
+                        );
+                      })}
                   </ul>
                 ) : (
                   <p className="text-secondary-light mb-0">
@@ -1335,17 +1483,65 @@ const LeadViewLayer = () => {
           <Modal.Title className="h6 fw-bold">Assign Supervisor</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Select
-            options={supervisors}
-            value={selectedSupervisor}
-            onChange={setSelectedSupervisor}
-            placeholder="Select Supervisor"
-            className="react-select-container"
-            isSearchable
-          />
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Select Supervisor</label>
+            <Select
+              options={supervisors}
+              value={selectedSupervisor}
+              onChange={setSelectedSupervisor}
+              placeholder="Select Supervisor"
+              className="react-select-container"
+              isSearchable
+            />
+          </div>
+          <div className="row">
+            <div className="col-md-6 mb-3">
+              <label className="form-label fw-semibold">
+                Select Inspection Date
+              </label>
+              <input
+                type="date"
+                className="form-control"
+                value={inspectionDate}
+                min={getTodayDate()}
+                onChange={(e) => {
+                  const selectedDate = e.target.value;
+                  setInspectionDate(selectedDate);
+
+                  if (selectedDate === getTodayDate()) {
+                    const nowTime = getMinTime();
+                    if (inspectionTime && inspectionTime < nowTime) {
+                      setInspectionTime("");
+                    }
+                  }
+                }}
+              />
+            </div>
+
+            <div className="col-md-6 mb-3">
+              <label className="form-label fw-semibold">
+                Select Inspection Time
+              </label>
+              <input
+                type="time"
+                className="form-control"
+                value={inspectionTime}
+                min={isTodaySelected ? getMinTime() : undefined}
+                onChange={(e) => setInspectionTime(e.target.value)}
+              />
+            </div>
+          </div>
         </Modal.Body>
         <Modal.Footer className="justify-content-center">
-          <Button variant="secondary" onClick={() => setAssignModalOpen(false)}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setAssignModalOpen(false);
+              setInspectionDate("");
+              setInspectionTime("");
+              setSelectedSupervisor(null);
+            }}
+          >
             Cancel
           </Button>
           <Button variant="primary" onClick={handleAssignSupervisor}>
