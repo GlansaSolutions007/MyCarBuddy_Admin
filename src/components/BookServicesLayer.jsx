@@ -127,7 +127,9 @@ const BookServicesLayer = () => {
           description: item.description || "",
           gstPercent: Number(item.gstPercent || 0),
           gstPrice: Number(item.gstAmount || 0),
-
+          dealerID: item.dealerID || "",
+          companyPercent: Number(item.percentage || 0),
+          percentAmount: Number(item.our_Earnings || 0),
           // API identifiers (keep for update)
           _apiId: item.leadId || null,
           _bookingId: item.bookingID || null,
@@ -384,26 +386,43 @@ const BookServicesLayer = () => {
     resetForm();
   };
 
-  const handleEditItem = (index) => {
-    const item = addedItems[index];
-    setEditIndex(index);
-    setItemType(item.type);
-    if (item.type === "Package") {
-      setSelectedPackage(item.packageId || "");
-      setSelectedIncludes(item.includes ? [...item.includes] : []);
-    } else {
-      setSelectedPackage("");
-      setSelectedIncludes([]);
-    }
+const handleEditItem = (index) => {
+  const item = addedItems[index];
+  setEditIndex(index);
+  setItemType(item.type);
 
-    setName(item.name);
+  // Prefill Dealer & Percent Amount
+  setSelectedDealer(item.dealerID || "");
+  setCompanyPercent(item.companyPercent || 0);
+  setPercentAmount(item.percentAmount || 0);
+  if (item.type === "Service") {
+  // Find the service object from includesList
+  const selectedServiceObj = includesList.find(
+    (inc) => inc.IncludeID.toString() === item.includeId?.toString()
+  );
+  setSelectedIncludes(
+    selectedServiceObj
+      ? { value: selectedServiceObj.IncludeID, label: selectedServiceObj.IncludeName }
+      : null
+  );
+  setName(item.name || "");
+  setSelectedPackage("");
+  } else if (item.type === "Spare Part") {
+    setName(item.name || ""); 
+    setSelectedIncludes([]);
     setSelectedPackage("");
-    setPrice(item.price);
-    setDescription(item.description);
-    setGstPercent(item.gstPercent);
-    setGstPrice(item.gstPrice);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  } else if (item.type === "Package") {
+    setSelectedPackage(item.packageId || "");
+    setSelectedIncludes(item.includes ? [...item.includes] : []);
+    setName(item.name || "");
+  }
+  setPrice(item.price);
+  setDescription(item.description);
+  setGstPercent(item.gstPercent);
+  setGstPrice(item.gstPrice);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
 
   const handleRemoveItem = (index) => {
     const item = addedItems[index];
@@ -468,12 +487,20 @@ const BookServicesLayer = () => {
           percentage: item.percentage,
           our_Earnings: item.percentAmount,
         }));
+      // detect existing booking (from any existing item)
+      const existingBookingItem = addedItems.find((item) => item._bookingId);
 
       const payload = {
         createdBy: parseInt(localStorage.getItem("userId")),
         leadId: leadId,
         services: services,
       };
+
+      // ⭐ IF booking already exists → include booking details
+      if (existingBookingItem) {
+        payload.bookingID = existingBookingItem._bookingId;
+        payload.bookingTrackID = existingBookingItem._bookingTrackId;
+      }
 
       const response = await axios.post(
         `${API_BASE}Supervisor/InsertSupervisorBooking`,
@@ -644,7 +671,7 @@ const BookServicesLayer = () => {
                 >
                   <option value="Service">Service</option>
                   <option value="Spare Part">Spare Part</option>
-                  <option value="Package">Package</option>
+                  {/* <option value="Package">Package</option> */}
                 </select>
               </div>
               {itemType === "Spare Part" && (

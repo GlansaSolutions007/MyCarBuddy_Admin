@@ -47,6 +47,8 @@ const LeadViewLayer = () => {
   const [personalEmail, setPersonalEmail] = useState("");
   const [personalFullAddress, setPersonalFullAddress] = useState("");
   const [bookings, setBookings] = useState([]);
+  const [currentBookings, setCurrentBookings] = useState([]);
+  const [previousBookings, setPreviousBookings] = useState([]);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedSupervisor, setSelectedSupervisor] = useState(null);
   const [supervisors, setSupervisors] = useState([]);
@@ -58,6 +60,8 @@ const LeadViewLayer = () => {
     vehicle?.BrandName && vehicle?.ModelName && vehicle?.FuelTypeName;
   const hasAtLeastOneFollowUp =
     Array.isArray(lead?.FollowUps) && lead.FollowUps.length > 0;
+  const hasCurrentLeadBooking = currentBookings.length > 0;
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -220,7 +224,18 @@ const LeadViewLayer = () => {
       if (Array.isArray(res.data) && res.data.length > 0) {
         const customer = res.data[0];
         const bookingsList = customer.Bookings || [];
+        // setBookings(bookingsList);
+        const current = bookingsList
+          .filter((b) => b.LeadId === leadId)
+          .sort((a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate));
+
+        const previous = bookingsList
+          .filter((b) => b.LeadId !== leadId)
+          .sort((a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate));
+
         setBookings(bookingsList);
+        setCurrentBookings(current);
+        setPreviousBookings(previous);
       } else {
         setBookings([]);
       }
@@ -493,6 +508,14 @@ const LeadViewLayer = () => {
           title: "Select call outcome",
           text: "Please select a call outcome.",
         });
+        return;
+      }
+      if (callAnswered === "Ans" && callOutcome && !nextAction) {
+        Swal.fire(
+          "Missing Next Action",
+          "Please select Next Action before submitting.",
+          "warning"
+        );
         return;
       }
 
@@ -792,28 +815,30 @@ const LeadViewLayer = () => {
                         Assign Supervisor
                       </button>
                     )}
-                  {hasPermission("bookservice_view") && !isLeadClosed && (
-                    <Link
-                      to={`/book-service/${lead?.Id}`}
-                      onClick={(e) => {
-                        if (!isVehicleDataComplete) {
-                          e.preventDefault();
-                          showVehicleDataRequiredAlert();
-                        }
-                        if (!hasAtLeastOneFollowUp) {
-                          e.preventDefault();
-                          showFollowUpRequiredAlert();
-                        }
-                      }}
-                      className="btn btn-secondary btn-sm d-flex align-items-center justify-content-center gap-1"
-                    >
-                      <Icon
-                        icon="lucide:calendar-check"
-                        className="text-white"
-                      />{" "}
-                      Book Services
-                    </Link>
-                  )}
+                  {hasPermission("bookservice_view") &&
+                    !isLeadClosed &&
+                    !hasCurrentLeadBooking && (
+                      <Link
+                        to={`/book-service/${lead?.Id}`}
+                        onClick={(e) => {
+                          if (!isVehicleDataComplete) {
+                            e.preventDefault();
+                            showVehicleDataRequiredAlert();
+                          }
+                          if (!hasAtLeastOneFollowUp) {
+                            e.preventDefault();
+                            showFollowUpRequiredAlert();
+                          }
+                        }}
+                        className="btn btn-secondary btn-sm d-flex align-items-center justify-content-center gap-1"
+                      >
+                        <Icon
+                          icon="lucide:calendar-check"
+                          className="text-white"
+                        />{" "}
+                        Book Services
+                      </Link>
+                    )}
                 </div>
               </div>
             </div>
@@ -1054,7 +1079,10 @@ const LeadViewLayer = () => {
                       <button
                         className="btn btn-primary-600 px-20 btn-sm"
                         onClick={handleSubmitStatus}
-                        disabled={isLeadClosed}
+                        disabled={
+                          isLeadClosed ||
+                          (callAnswered === "Ans" && callOutcome && !nextAction)
+                        }
                       >
                         Submit
                       </button>
@@ -1184,7 +1212,7 @@ const LeadViewLayer = () => {
                         </div>
                         <div className="col-md-6">
                           <label className="form-label fw-semibold text-primary-light">
-                            Km Driven 
+                            Km Driven
                           </label>
                           <input
                             type="text"
@@ -1314,26 +1342,28 @@ const LeadViewLayer = () => {
                 </Accordion.Item>
               </Accordion>
               <Accordion className="mt-3">
-                <Accordion.Item eventKey="existing">
-                  <Accordion.Header>Existing Bookings</Accordion.Header>
+                <Accordion.Item eventKey="current">
+                  <Accordion.Header>
+                    Current Bookings ({currentBookings.length})
+                  </Accordion.Header>
                   <Accordion.Body>
-                    {bookings.length === 0 ? (
-                      <p className="text-muted">No previous bookings found.</p>
+                    {currentBookings.length === 0 ? (
+                      <p className="text-muted">No current bookings found.</p>
                     ) : (
                       <div className="table-responsive">
                         <table className="table table-bordered table-striped p-2 radius-16">
                           <thead className="form-label fw-semibold text-primary-light">
                             <tr>
-                              <th>ID</th>
+                              {/* <th>ID</th> */}
                               <th>Booking TrackID</th>
                               <th>Booking Date</th>
                               <th className="text-center">Action</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {bookings.map((b) => (
+                            {currentBookings.map((b) => (
                               <tr key={b.BookingID}>
-                                <td>{b.BookingID}</td>
+                                {/* <td>{b.BookingID}</td> */}
                                 <td>
                                   <Link
                                     to={`/view-booking/${b.BookingTrackID}`}
@@ -1357,16 +1387,73 @@ const LeadViewLayer = () => {
                                   >
                                     <Icon icon="lucide:eye" />
                                   </Link>
-                                  {b.PaymentStatus !== "Success" &&
-                                    !isLeadClosed && (
-                                      <Link
-                                        to={`/book-service/${b.LeadId}`}
-                                        className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                                        title="Edit"
-                                      >
-                                        <Icon icon="lucide:edit" />
-                                      </Link>
-                                    )}
+                                  {!isLeadClosed && (
+                                    <Link
+                                      to={`/book-service/${b.LeadId}`}
+                                      className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                      title="Edit"
+                                    >
+                                      <Icon icon="lucide:edit" />
+                                    </Link>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </Accordion.Body>
+                </Accordion.Item>
+
+                <Accordion.Item eventKey="previous">
+                  <Accordion.Header>
+                    Previous Bookings ({previousBookings.length})
+                  </Accordion.Header>
+                  <Accordion.Body>
+                    {previousBookings.length === 0 ? (
+                      <p className="text-muted">No previous bookings found.</p>
+                    ) : (
+                      <div className="table-responsive">
+                        <table className="table table-bordered table-striped p-2 radius-16">
+                          <thead className="form-label fw-semibold text-primary-light">
+                            <tr>
+                              {/* <th>ID</th> */}
+                              <th>Lead ID</th>
+                              <th>Booking TrackID</th>
+                              <th>Booking Date</th>
+                              <th className="text-center">View</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {previousBookings.map((b) => (
+                              <tr key={b.BookingID}>
+                                {/* <td>{b.BookingID}</td> */}
+                                <td>{b.LeadId}</td>
+                                <td>
+                                  <Link
+                                    to={`/view-booking/${b.BookingTrackID}`}
+                                    className="text-primary"
+                                  >
+                                    {b.BookingTrackID}
+                                  </Link>
+                                </td>
+                                <td>
+                                  {b.CreatedDate
+                                    ? new Date(
+                                        b.CreatedDate
+                                      ).toLocaleDateString("en-IN")
+                                    : "N/A"}
+                                </td>
+
+                                <td className="text-center">
+                                  <Link
+                                    to={`/booking-view/${b.BookingID}`}
+                                    className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                    title="View"
+                                  >
+                                    <Icon icon="lucide:eye" />
+                                  </Link>
                                 </td>
                               </tr>
                             ))}
