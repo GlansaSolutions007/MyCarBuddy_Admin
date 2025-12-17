@@ -249,25 +249,25 @@ const BookingLayer = () => {
     {
       name: "Booking date",
       selector: (row) => {
-        if (!row.BookingDate) return "";
-        const date = new Date(row.BookingDate);
+        if (!row.CreatedDate) return "";
+        const date = new Date(row.CreatedDate);
         return `${String(date.getDate()).padStart(2, "0")}/${String(
           date.getMonth() + 1
         ).padStart(2, "0")}/${date.getFullYear()}`;
       },
       width: "120px",
     },
-    {
-      name: "Time slot",
-      selector: (row) => row.TimeSlot,
-      width: "160px",
-    },
-    {
-      name: "Booking price",
-      selector: (row) =>
-        `₹${(row.TotalPrice + row.GSTAmount - row.CouponAmount).toFixed(2)}`,
-      width: "120px",
-    },
+    // {
+    //   name: "Time slot",
+    //   selector: (row) => row.TimeSlot,
+    //   width: "160px",
+    // },
+    // {
+    //   name: "Booking price",
+    //   selector: (row) =>
+    //     `₹${(row.TotalPrice + row.GSTAmount - row.CouponAmount).toFixed(2)}`,
+    //   width: "120px",
+    // },
     {
       name: "Customer name",
       selector: (row) => (
@@ -381,7 +381,7 @@ const BookingLayer = () => {
     {
       name: "Actions",
       cell: (row) => {
-        if (!row.BookingDate) return null;
+        // if (!row.BookingDate) return null;
         const bookingDate = new Date(row.BookingDate);
         const today = new Date();
         today.setHours(0, 0, 0, 0);

@@ -29,7 +29,8 @@ const BookServicesLayer = () => {
   const [packagesList, setPackagesList] = useState([]);
   const [selectedPackage, setSelectedPackage] = useState("");
   const [includesList, setIncludesList] = useState([]);
-  const [selectedIncludes, setSelectedIncludes] = useState([]);
+  // const [selectedIncludes, setSelectedIncludes] = useState([]);
+  const [selectedIncludes, setSelectedIncludes] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -39,9 +40,12 @@ const BookServicesLayer = () => {
   useEffect(() => {
     fetchAllPackages();
   }, []);
+
   useEffect(() => {
-    setSelectedIncludes("");
-    setName("");
+    if (editIndex === null) {
+      setSelectedIncludes(null);
+      setName("");
+    }
   }, [itemType]);
 
   // keep gstPrice in sync when price or gstPercent changes
@@ -123,6 +127,7 @@ const BookServicesLayer = () => {
         const converted = apiItems.map((item) => ({
           type: item.serviceType || "Service",
           name: item.serviceName || "",
+          serviceName: item.serviceName || "",
           price: Number(item.price || 0),
           description: item.description || "",
           gstPercent: Number(item.gstPercent || 0),
@@ -130,8 +135,9 @@ const BookServicesLayer = () => {
           dealerID: item.dealerID || "",
           companyPercent: Number(item.percentage || 0),
           percentAmount: Number(item.our_Earnings || 0),
+          status: item.status,
           // API identifiers (keep for update)
-          _apiId: item.leadId || null,
+          _apiId: item.id || null,
           _bookingId: item.bookingID || null,
           _bookingTrackId: item.bookingTrackID || null,
         }));
@@ -336,7 +342,10 @@ const BookServicesLayer = () => {
         gstPercent: updatedItem.gstPercent,
         gstAmount: updatedItem.gstPrice,
         description: updatedItem.description,
-        modifiedBy: parseInt(localStorage.getItem("userId")) || 1,
+        dealerID: updatedItem.dealerID,
+        percentage: updatedItem.percentage,
+        our_Earnings: updatedItem.percentAmount,
+        modifiedBy: parseInt(localStorage.getItem("userId")),
         isActive: true,
       };
 
@@ -386,47 +395,40 @@ const BookServicesLayer = () => {
     resetForm();
   };
 
-const handleEditItem = (index) => {
-  const item = addedItems[index];
-  setEditIndex(index);
-  setItemType(item.type);
-
-  // Prefill Dealer & Percent Amount
-  setSelectedDealer(item.dealerID || "");
-  setCompanyPercent(item.companyPercent || 0);
-  setPercentAmount(item.percentAmount || 0);
-  if (item.type === "Service") {
-  // Find the service object from includesList
-  const selectedServiceObj = includesList.find(
-    (inc) => inc.IncludeID.toString() === item.includeId?.toString()
-  );
-  setSelectedIncludes(
-    selectedServiceObj
-      ? { value: selectedServiceObj.IncludeID, label: selectedServiceObj.IncludeName }
-      : null
-  );
-  setName(item.name || "");
-  setSelectedPackage("");
-  } else if (item.type === "Spare Part") {
-    setName(item.name || ""); 
-    setSelectedIncludes([]);
-    setSelectedPackage("");
-  } else if (item.type === "Package") {
-    setSelectedPackage(item.packageId || "");
-    setSelectedIncludes(item.includes ? [...item.includes] : []);
-    setName(item.name || "");
-  }
-  setPrice(item.price);
-  setDescription(item.description);
-  setGstPercent(item.gstPercent);
-  setGstPrice(item.gstPrice);
-  window.scrollTo({ top: 0, behavior: "smooth" });
-};
-
+  const handleEditItem = (index) => {
+    const item = addedItems[index];
+    setEditIndex(index);
+    setItemType(item.type);
+    setSelectedDealer(item.dealerID);
+    setCompanyPercent(item.companyPercent);
+    setPercentAmount(item.percentAmount);
+    if (item.type === "Service") {
+      if (includesList.length === 0) {
+        setTimeout(() => handleEditItem(index), 0);
+        return;
+      }
+      const matched = includesList.find((inc) => inc.IncludeName === item.name);
+      setSelectedIncludes(
+        matched
+          ? { value: matched.IncludeID, label: matched.IncludeName }
+          : { value: item.name, label: item.name }
+      );
+      setName(item.name);
+      setSelectedPackage("");
+    } else if (item.type === "Spare Part") {
+      setName(item.name);
+      setSelectedIncludes(null);
+      setSelectedPackage("");
+    }
+    setPrice(item.price);
+    setDescription(item.description);
+    setGstPercent(item.gstPercent);
+    setGstPrice(item.gstPrice);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handleRemoveItem = (index) => {
     const item = addedItems[index];
-
     Swal.fire({
       title: "Are you sure?",
       text: "Do you want to remove this item?",
@@ -582,6 +584,11 @@ const handleEditItem = (index) => {
         row.isInclude ? "" : Number(row.gstPrice || 0).toFixed(2),
     },
     {
+      name: "Status",
+      selector: (row) => row.status,
+      right: true,
+    },
+    {
       name: "Description",
       selector: (row) => (row.isInclude ? "" : row.description),
       wrap: true,
@@ -699,31 +706,22 @@ const handleEditItem = (index) => {
                       value: inc.IncludeID,
                       label: inc.IncludeName,
                     }))}
-                    value={
-                      selectedIncludes
-                        ? selectedIncludes === "new"
-                          ? { value: "new", label: name } // new created
-                          : {
-                              value: selectedIncludes,
-                              label:
-                                includesList.find(
-                                  (i) => i.IncludeID == selectedIncludes
-                                )?.IncludeName || "",
-                            }
-                        : null
-                    }
+                    value={selectedIncludes}
                     onChange={(selected) => {
                       if (!selected) {
-                        setSelectedIncludes("");
+                        setSelectedIncludes(null);
                         setName("");
                         return;
                       }
 
                       if (selected.__isNew__) {
-                        setSelectedIncludes("new");
+                        setSelectedIncludes({
+                          value: "new",
+                          label: selected.label,
+                        });
                         setName(selected.label);
                       } else {
-                        setSelectedIncludes(selected.value);
+                        setSelectedIncludes(selected);
                         setName(selected.label);
                       }
                     }}
@@ -958,7 +956,9 @@ const handleEditItem = (index) => {
             <DataTable
               columns={columns}
               data={flattenedRows}
-              pagination
+              fixedHeader
+              fixedHeaderScrollHeight="420px"
+              // pagination
               highlightOnHover
               responsive
               striped
