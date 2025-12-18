@@ -15849,3 +15849,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 1;
   cursor: pointer;
 }
+
+/* Google Places Autocomplete styling fix */
+.pac-container {
+  width: 650px !important;
+  max-width: 95vw;
+  z-index: 9999 !important;
+}
+
+.pac-item {
+  white-space: normal !important;
+  line-height: 1.4;
+}
+
+.pac-item span {
+  white-space: normal !important;
+}

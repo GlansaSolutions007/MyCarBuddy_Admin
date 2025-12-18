@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { Icon } from "@iconify/react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -6,10 +6,13 @@ import { Accordion, Modal, Button } from "react-bootstrap";
 import { usePermissions } from "../context/PermissionContext";
 import axios from "axios";
 import Select from "react-select";
+import { Autocomplete, useJsApiLoader } from "@react-google-maps/api";
+import { useLayoutEffect } from "react";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
 const LeadViewLayer = () => {
+  const addressRef = useRef(null);
   const { hasPermission } = usePermissions();
   const token = localStorage.getItem("token");
   const { leadId } = useParams();
@@ -27,6 +30,7 @@ const LeadViewLayer = () => {
   const [discussionNotes, setDiscussionNotes] = useState("");
   const [nextAction, setNextAction] = useState("");
   const [nextFollowUpDate, setNextFollowUpDate] = useState("");
+  const [autocomplete, setAutocomplete] = useState(null);
 
   // Car Details States
   const [carRegistrationNumber, setCarRegistrationNumber] = useState("");
@@ -46,7 +50,8 @@ const LeadViewLayer = () => {
   const [personalMobileNo, setPersonalMobileNo] = useState("");
   const [personalEmail, setPersonalEmail] = useState("");
   const [personalFullAddress, setPersonalFullAddress] = useState("");
-  const [bookings, setBookings] = useState([]);
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
   const [currentBookings, setCurrentBookings] = useState([]);
   const [previousBookings, setPreviousBookings] = useState([]);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
@@ -162,6 +167,54 @@ const LeadViewLayer = () => {
       setLoading(false);
     }
   };
+  const onLoadAutocomplete = (auto) => {
+    setAutocomplete(auto);
+  };
+
+  const onPlaceChanged = () => {
+    if (!autocomplete) return;
+
+    const place = autocomplete.getPlace();
+
+    // ✅ Address
+    if (place?.formatted_address) {
+      setPersonalFullAddress(place.formatted_address);
+    }
+
+    // ✅ Latitude & Longitude
+    if (place?.geometry?.location) {
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+
+      setLatitude(lat);
+      setLongitude(lng);
+    }
+  };
+
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_KEY,
+    libraries: ["places"],
+  });
+
+  const isApiLoaded = useMemo(() => {
+    return (
+      isLoaded &&
+      window.google &&
+      window.google.maps &&
+      window.google.maps.places
+    );
+  }, [isLoaded]);
+
+  useLayoutEffect(() => {
+    if (!addressRef.current) return;
+
+    const el = addressRef.current;
+
+    requestAnimationFrame(() => {
+      el.style.height = "auto";
+      el.style.height = el.scrollHeight + "px";
+    });
+  }, [personalFullAddress]);
 
   // Fetch brands from API
   const fetchBrands = async () => {
@@ -676,7 +729,7 @@ const LeadViewLayer = () => {
                   </li>
                   <li className="d-flex align-items-center gap-1 mb-12">
                     <span className="w-30 text-md fw-semibold text-primary-light">
-                      City
+                      Address
                     </span>
                     <span className="w-70 text-secondary-light fw-medium">
                       : {lead?.City || "N/A"}
@@ -1094,9 +1147,10 @@ const LeadViewLayer = () => {
               )}
 
               {/* ------------------ Accordions ------------------ */}
-              <Accordion className="mt-3">
+              <Accordion defaultActiveKey="0" className="mt-3">
                 <Accordion.Item eventKey="0">
                   <Accordion.Header>Personal Information</Accordion.Header>
+
                   <Accordion.Body>
                     <div className="p-3 border radius-16 bg-light">
                       <div className="row g-3">
@@ -1107,13 +1161,10 @@ const LeadViewLayer = () => {
                           <input
                             type="text"
                             className="form-control"
-                            placeholder="e.g., John Doe"
                             value={personalFullName}
                             onChange={(e) => {
                               const val = e.target.value;
-                              if (val.length <= 30) {
-                                setPersonalFullName(val);
-                              }
+                              if (val.length <= 30) setPersonalFullName(val);
                             }}
                             disabled={isLeadClosed}
                           />
@@ -1125,7 +1176,6 @@ const LeadViewLayer = () => {
                           <input
                             type="tel"
                             className="form-control"
-                            placeholder="Enter phone number"
                             value={personalMobileNo}
                             onChange={(e) => {
                               let val = e.target.value;
@@ -1145,37 +1195,55 @@ const LeadViewLayer = () => {
                           <input
                             type="email"
                             className="form-control"
-                            placeholder="e.g., john.doe@example.com"
                             value={personalEmail}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              const emailRegex =
-                                /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,10}$/;
-                              if (val !== "" && !emailRegex.test(val)) {
-                                if (!/^[A-Za-z0-9@._-]*$/.test(val)) return;
-                              }
-                              setPersonalEmail(val);
-                            }}
+                            onChange={(e) => setPersonalEmail(e.target.value)}
                             disabled={isLeadClosed}
                           />
                         </div>
-
+                        {/* ✅ FULL ADDRESS */}
                         <div className="col-12">
                           <label className="form-label fw-semibold text-primary-light">
                             Full Address
                           </label>
+                          {isApiLoaded && (
+                            <Autocomplete
+                              onLoad={onLoadAutocomplete}
+                              onPlaceChanged={onPlaceChanged}
+                            >
+                              <input
+                                type="text"
+                                className="form-control mb-2"
+                                placeholder="Search address from Google"
+                                autoComplete="off"
+                                disabled={isLeadClosed}
+                              />
+                            </Autocomplete>
+                          )}
+
                           <textarea
+                            ref={addressRef}
                             className="form-control"
-                            rows={3}
-                            placeholder="Enter full address"
                             value={personalFullAddress}
-                            onChange={(e) =>
-                              setPersonalFullAddress(e.target.value)
-                            }
-                            disabled={isLeadClosed}
+                            onChange={(e) => {
+                              setPersonalFullAddress(e.target.value);
+                              e.target.style.height = "auto";
+                              e.target.style.height =
+                                e.target.scrollHeight + "px";
+                            }}
+                            style={{
+                              overflow: "hidden",
+                              resize: "none",
+                            }}
                           />
-                        </div>
+
+                          {latitude && longitude && (
+                            <p className="text-sm text-muted mt-1">
+                              Lat: {latitude} | Lng: {longitude}
+                            </p>
+                          )}
+                        </div>{" "}
                       </div>
+
                       <div className="d-flex justify-content-end mt-3 gap-10">
                         <button
                           className="btn btn-primary-600 px-20 btn-sm"
@@ -1188,6 +1256,7 @@ const LeadViewLayer = () => {
                     </div>
                   </Accordion.Body>
                 </Accordion.Item>
+
                 <Accordion.Item eventKey="1">
                   <Accordion.Header>Enter Car Details</Accordion.Header>
                   <Accordion.Body>
