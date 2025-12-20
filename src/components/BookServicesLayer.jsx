@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import Select, { components } from "react-select";
 import CreatableSelect from "react-select/creatable";
 const employeeData = JSON.parse(localStorage.getItem("employeeData"));
-const userId = employeeData?.Id || 0;
+const userId = employeeData?.Id;
 
 const BookServicesLayer = () => {
   const { Id } = useParams();
@@ -29,39 +29,30 @@ const BookServicesLayer = () => {
   const [packagesList, setPackagesList] = useState([]);
   const [selectedPackage, setSelectedPackage] = useState("");
   const [includesList, setIncludesList] = useState([]);
-  // const [selectedIncludes, setSelectedIncludes] = useState([]);
   const [selectedIncludes, setSelectedIncludes] = useState(null);
-  const [quantity, setQuantity] = useState(1);
+  //   const [timeSlots, setTimeSlots] = useState([]);
+  // const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  // edit state
-  const [editIndex, setEditIndex] = useState(null);
-
   useEffect(() => {
     fetchAllPackages();
   }, []);
 
   useEffect(() => {
-    if (editIndex === null) {
-      setSelectedIncludes(null);
-      setName("");
-    }
-  }, [itemType]);
-
-  // keep gstPrice in sync when price or gstPercent changes
-  useEffect(() => {
     const p = Number(price) || 0;
-    const gstP = Number(gstPercent) || 0;
-    const compP = Number(companyPercent) || 0;
 
-    // GST Price
-    const gstAmt = (p * gstP) / 100;
-    setGstPrice(gstAmt ? gstAmt.toFixed(2) : "");
+    // Re-sync GST
+    if (gstPercent !== "") {
+      const gstAmt = (p * Number(gstPercent)) / 100;
+      setGstPrice(Number(gstAmt.toFixed(2)));
+    }
 
-    // Company Percent Amount
-    const percentAmt = (p * compP) / 100;
-    setPercentAmount(percentAmt ? percentAmt.toFixed(2) : "");
-  }, [price, gstPercent, companyPercent]);
+    // Re-sync Company
+    if (companyPercent !== "") {
+      const compAmt = (p * Number(companyPercent)) / 100;
+      setPercentAmount(Number(compAmt.toFixed(2)));
+    }
+  }, [price]);
 
   useEffect(() => {
     if (leadId) {
@@ -108,6 +99,28 @@ const BookServicesLayer = () => {
     fetchIncludes();
   }, []);
 
+  //   useEffect(() => {
+  //   const fetchTimeSlots = async () => {
+  //     try {
+  //       const res = await axios.get(`${API_BASE}TimeSlot`, {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //       });
+
+  //       // sort by start time if needed
+  //       const sorted = (res.data || []).sort(
+  //         (a, b) => a.StartTime.localeCompare(b.StartTime)
+  //       );
+
+  //       setTimeSlots(sorted);
+  //     } catch (err) {
+  //       console.error("Failed to fetch time slots", err);
+  //       setTimeSlots([]);
+  //     }
+  //   };
+
+  //   fetchTimeSlots();
+  // }, []);
+
   const fetchBookingData = async () => {
     try {
       setLoading(true);
@@ -133,9 +146,13 @@ const BookServicesLayer = () => {
           gstPercent: Number(item.gstPercent || 0),
           gstPrice: Number(item.gstAmount || 0),
           dealerID: item.dealerID || "",
-          companyPercent: Number(item.percentage || 0),
+          // companyPercent: Number(item.percentage || 0),
+          percentage: Number(item.percentage || 0),
           percentAmount: Number(item.our_Earnings || 0),
           status: item.status,
+          includeId: item.serviceType === "Service" ? item.serviceId : null,
+          packageId: item.serviceType === "Package" ? item.serviceId : null,
+            isEditing: false,
           // API identifiers (keep for update)
           _apiId: item.id || null,
           _bookingId: item.bookingID || null,
@@ -220,40 +237,68 @@ const BookServicesLayer = () => {
     setDescription("");
     setGstPercent("");
     setGstPrice("");
-    setQuantity("");
-    setEditIndex(null);
     setSelectedPackage("");
-    setSelectedIncludes([]);
+    setSelectedIncludes(null);
+    setCompanyPercent(0);
+    setPercentAmount(0);
+    setGstPercent(0);
+    setGstPrice(0);
+  };
+  const handleGstPercentChange = (value) => {
+    const percent = Math.max(0, Number(value) || 0);
+    setGstPercent(percent);
+
+    const amt = (Number(price) * percent) / 100;
+    setGstPrice(Number(amt.toFixed(2)));
+  };
+
+  const handleGstAmountChange = (value) => {
+    const amt = Math.max(0, Number(value) || 0);
+    setGstPrice(amt);
+
+    if (!price) {
+      setGstPercent(0);
+      return;
+    }
+
+    const percent = (amt / Number(price)) * 100;
+    setGstPercent(Number(percent.toFixed(2)));
+  };
+
+  const handleCompanyPercentChange = (value) => {
+    const percent = Math.max(0, Number(value) || 0);
+    setCompanyPercent(percent);
+
+    const amt = (Number(price) * percent) / 100;
+    setPercentAmount(Number(amt.toFixed(2)));
+  };
+
+  const handleCompanyAmountChange = (value) => {
+    const amt = Math.max(0, Number(value) || 0);
+    setPercentAmount(amt);
+
+    if (!price) {
+      setCompanyPercent(0);
+      return;
+    }
+
+    const percent = (amt / Number(price)) * 100;
+    setCompanyPercent(Number(percent.toFixed(2)));
   };
 
   const handleAddOrSave = async () => {
     if (!name.trim()) return Swal.fire("Please enter name");
-    if (price === "" || isNaN(parseFloat(price)))
-      return Swal.fire("Please enter valid price");
-    if (gstPercent === "" || isNaN(parseFloat(gstPercent)))
-      return Swal.fire("Please enter valid GST %");
-    // Service specific
     if (itemType === "Service" && !selectedIncludes)
       return Swal.fire("Please select service");
-    // Spare part specific
     if (itemType === "Spare Part" && !name.trim())
       return Swal.fire("Please enter spare part name");
-    // Package specific
     if (itemType === "Package" && !selectedPackage)
       return Swal.fire("Please select package");
-    // GST Price (auto calculated)
-    if (!gstPrice || isNaN(parseFloat(gstPrice)))
-      return Swal.fire("GST price is required");
-    // Dealer
-    if (!selectedDealer) return Swal.fire("Please select dealer");
-    // Company Percent
-    if (companyPercent === "" || isNaN(parseFloat(companyPercent)))
-      return Swal.fire("Please enter company percent");
-    // Percent Amount (auto calculated)
-    if (!percentAmount || isNaN(parseFloat(percentAmount)))
-      return Swal.fire("Percent amount is required");
-
-    let finalIncludeID = selectedIncludes; // may change if new
+    let finalIncludeID =
+      selectedIncludes && typeof selectedIncludes === "object"
+        ? selectedIncludes.value
+        : selectedIncludes;
+    // may change if new
 
     // ⭐ CASE: Create NEW include before adding item
     if (itemType === "Service" && selectedIncludes === "new") {
@@ -304,15 +349,15 @@ const BookServicesLayer = () => {
     const updatedItem = {
       type: itemType,
       name: name.trim(),
-      price: parseFloat(price),
+      price: Number(price) || 0,
       description: description.trim(),
-      gstPercent: parseFloat(gstPercent),
-      gstPrice: parseFloat(gstPrice),
+      gstPercent: Number(gstPercent) || 0,
+      gstPrice: Number(gstPrice) || 0,
       dealerID: selectedDealer,
-      percentage: parseFloat(companyPercent),
-      percentAmount: parseFloat(percentAmount),
-
-      includeId: itemType === "Service" ? finalIncludeID : null,
+      percentage: Number(companyPercent) || 0,
+      percentAmount: Number(percentAmount) || 0,
+      isEditing: false,
+      includeId: itemType === "Service" ? Number(finalIncludeID) || 0 : 0,
       includeName:
         itemType === "Service"
           ? includesList.find((i) => i.IncludeID == finalIncludeID)
@@ -326,106 +371,67 @@ const BookServicesLayer = () => {
         itemType === "Package" &&
         selectedPackage?.toString().startsWith("new-"),
     };
-
-    // CASE 1: Editing API item => PUT
-    if (editIndex !== null && addedItems[editIndex]?._apiId) {
-      const original = addedItems[editIndex];
-
-      const payload = {
-        id: original._apiId,
-        bookingId: original._bookingId,
-        bookingTrackID: original._bookingTrackId,
-        leadId: leadId,
-        serviceType: updatedItem.type,
-        serviceName: updatedItem.name,
-        price: updatedItem.price,
-        gstPercent: updatedItem.gstPercent,
-        gstAmount: updatedItem.gstPrice,
-        description: updatedItem.description,
-        dealerID: updatedItem.dealerID,
-        percentage: updatedItem.percentage,
-        our_Earnings: updatedItem.percentAmount,
-        modifiedBy: parseInt(localStorage.getItem("userId")),
-        isActive: true,
-      };
-
-      try {
-        const resp = await axios.put(
-          `${API_BASE}Supervisor/UpdateSupervisorBooking`,
-          payload,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (resp.status === 200) {
-          Swal.fire("Updated!", "Item updated successfully", "success");
-
-          const copy = [...addedItems];
-          copy[editIndex] = {
-            ...updatedItem,
-            _apiId: original._apiId,
-            _bookingId: original._bookingId,
-            _bookingTrackId: original._bookingTrackId,
-          };
-
-          setAddedItems(copy);
-          resetForm();
-        }
-      } catch (err) {
-        console.error(err);
-        Swal.fire("Error", "Failed to update booking item", "error");
-      }
-
-      return;
-    }
-
-    // CASE 2: LOCAL add/edit
-    if (editIndex !== null) {
-      const copy = [...addedItems];
-      copy[editIndex] = updatedItem;
-      setAddedItems(copy);
-    } else {
-      setAddedItems((prev) => [...prev, updatedItem]);
-    }
-
+    setAddedItems((prev) => [...prev, updatedItem]);
     resetForm();
   };
 
   const handleEditItem = (index) => {
-    const item = addedItems[index];
-    setEditIndex(index);
-    setItemType(item.type);
-    setSelectedDealer(item.dealerID);
-    setCompanyPercent(item.companyPercent);
-    setPercentAmount(item.percentAmount);
-    if (item.type === "Service") {
-      if (includesList.length === 0) {
-        setTimeout(() => handleEditItem(index), 0);
-        return;
-      }
-      const matched = includesList.find((inc) => inc.IncludeName === item.name);
-      setSelectedIncludes(
-        matched
-          ? { value: matched.IncludeID, label: matched.IncludeName }
-          : { value: item.name, label: item.name }
+  setAddedItems((prev) =>
+    prev.map((row, i) =>
+      i === index
+        ? { ...row, isEditing: true }
+        : { ...row, isEditing: false }
+    )
+  );
+};
+
+const handleSaveRow = async (index) => {
+  const row = addedItems[index];
+
+  try {
+    // 🔹 API UPDATE (existing item)
+    if (row._apiId) {
+      const payload = {
+        id: row._apiId,
+        bookingId: row._bookingId,
+        bookingTrackID: row._bookingTrackId,
+        leadId: leadId,
+        serviceType: row.type,
+        serviceName: row.name,
+        price: row.price,
+        gstPercent: row.gstPercent,
+        gstAmount: row.gstPrice,
+        description: row.description,
+        dealerID: row.dealerID,
+        percentage: row.percentage,
+        our_Earnings: row.percentAmount,
+        modifiedBy: parseInt(localStorage.getItem("userId")),
+        isActive: true,
+      };
+
+      await axios.put(
+        `${API_BASE}Supervisor/UpdateSupervisorBooking`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
-      setName(item.name);
-      setSelectedPackage("");
-    } else if (item.type === "Spare Part") {
-      setName(item.name);
-      setSelectedIncludes(null);
-      setSelectedPackage("");
     }
-    setPrice(item.price);
-    setDescription(item.description);
-    setGstPercent(item.gstPercent);
-    setGstPrice(item.gstPrice);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+    setAddedItems((prev) =>
+      prev.map((r, i) =>
+        i === index ? { ...r, isEditing: false } : r
+      )
+    );
+
+    Swal.fire("Saved", "Item updated successfully", "success");
+  } catch (err) {
+    console.error(err);
+    Swal.fire("Error", "Failed to save changes", "error");
+  }
+};
 
   const handleRemoveItem = (index) => {
     const item = addedItems[index];
@@ -449,12 +455,7 @@ const BookServicesLayer = () => {
 
           if (response.status === 200) {
             Swal.fire("Deleted!", "Item removed successfully.", "success");
-
-            // Remove from UI
             setAddedItems((prev) => prev.filter((_, i) => i !== index));
-
-            // If user was editing this item → reset form
-            if (editIndex === index) resetForm();
           }
         } catch (err) {
           console.error(err);
@@ -464,7 +465,6 @@ const BookServicesLayer = () => {
       }
       // CASE 2: DELETE LOCAL UNSAVED ITEM
       setAddedItems((prev) => prev.filter((_, i) => i !== index));
-      if (editIndex === index) resetForm();
       Swal.fire("Removed", "Item removed", "success");
     });
   };
@@ -473,28 +473,42 @@ const BookServicesLayer = () => {
     if (addedItems.length === 0)
       return Swal.fire("Error", "No items to submit", "error");
     if (!leadId) return Swal.fire("Error", "Lead ID is required", "error");
+    // if (!selectedTimeSlot)
+    //   return Swal.fire("Error", "Please select a time slot", "error");
 
     try {
       // Transform addedItems to match API payload format
       const services = addedItems
         .filter((item) => !item._apiId)
-        .map((item) => ({
-          serviceType: item.type,
-          serviceName: item.name,
-          price: item.price,
-          gstPercent: item.gstPercent,
-          gstAmount: parseFloat(item.gstPrice),
-          description: item.description,
-          dealerID: item.dealerID,
-          percentage: item.percentage,
-          our_Earnings: item.percentAmount,
-        }));
+        .map((item) => {
+          let serviceId = 0;
+
+          if (item.type === "Service") {
+            serviceId = Number(item.includeId);
+          } else if (item.type === "Package") {
+            serviceId = Number(item.packageId);
+          }
+          return {
+            serviceType: item.type,
+            serviceName: item.name || "",
+            price: Number(item.price) || 0,
+            gstPercent: Number(item.gstPercent) || 0,
+            gstAmount: Number(item.gstPrice) || 0,
+            description: item.description || "",
+            dealerID: Number(item.dealerID) || 0,
+            percentage: Number(item.percentage) || 0,
+            our_Earnings: Number(item.percentAmount) || 0,
+            serviceId: serviceId, // ✅ FIXED
+          };
+        });
+
       // detect existing booking (from any existing item)
       const existingBookingItem = addedItems.find((item) => item._bookingId);
 
       const payload = {
         createdBy: parseInt(localStorage.getItem("userId")),
         leadId: leadId,
+        // timeSlotId: selectedTimeSlot,
         services: services,
       };
 
@@ -529,6 +543,7 @@ const BookServicesLayer = () => {
         resetForm();
         setAddedItems([]);
         resetBookingForm();
+        // setSelectedTimeSlot("");
       } else {
         throw new Error(response.data?.message || "Failed to create booking");
       }
@@ -544,7 +559,16 @@ const BookServicesLayer = () => {
       });
     }
   };
-
+  const updateTableRow = (index, updates) => {
+    setAddedItems((prev) => {
+      const copy = [...prev];
+      copy[index] = {
+        ...copy[index],
+        ...updates,
+      };
+      return copy;
+    });
+  };
   const columns = [
     {
       name: "Type",
@@ -566,60 +590,247 @@ const BookServicesLayer = () => {
     },
     {
       name: "Price",
-      selector: (row) => (row.isInclude ? "" : row.price),
-      sortable: true,
-      right: true,
-      format: (row) => (row.isInclude ? "" : Number(row.price || 0).toFixed(2)),
+      cell: (row, index) => (
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          value={row.price}
+          min={0}
+          onChange={(e) => {
+            const price = Number(e.target.value) || 0;
+
+            const gstPrice =
+              row.gstPercent !== ""
+                ? (price * Number(row.gstPercent)) / 100
+                : 0;
+
+            const percentAmount =
+              row.percentage !== ""
+                ? (price * Number(row.percentage)) / 100
+                : 0;
+
+            updateTableRow(index, {
+              price,
+              gstPrice: Number(gstPrice.toFixed(2)),
+              percentAmount: Number(percentAmount.toFixed(2)),
+            });
+          }}
+          disabled={!row.isEditing}
+        />
+      ),
+      width: "120px",
     },
+
     {
       name: "GST %",
-      selector: (row) => (row.isInclude ? "" : row.gstPercent),
-      right: true,
+      cell: (row, index) => (
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          value={row.gstPercent}
+          min={0}
+          onChange={(e) => {
+            const percent = Math.max(0, Number(e.target.value) || 0);
+            const gstPrice = (Number(row.price) * percent) / 100;
+
+            updateTableRow(index, {
+              gstPercent: percent,
+              gstPrice: Number(gstPrice.toFixed(2)),
+            });
+          }}
+          disabled={!row.isEditing}
+        />
+      ),
+      width: "120px",
+    },
+
+    {
+      name: "GST Amount",
+      cell: (row, index) => (
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          value={row.gstPrice}
+          min={0}
+          onChange={(e) => {
+            const gstAmt = Math.max(0, Number(e.target.value) || 0);
+
+            const gstPercent =
+              row.price > 0 ? (gstAmt / Number(row.price)) * 100 : 0;
+
+            updateTableRow(index, {
+              gstPrice: gstAmt,
+              gstPercent: Number(gstPercent.toFixed(2)),
+            });
+          }}
+          disabled={!row.isEditing}
+        />
+      ),
+      width: "120px",
+    },
+
+    {
+      name: "Company %",
+      cell: (row, index) => (
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          value={row.percentage}
+          min={0}
+          onChange={(e) => {
+            const percent = Math.max(0, Number(e.target.value) || 0);
+            const amt = (Number(row.price) * percent) / 100;
+
+            updateTableRow(index, {
+              percentage: percent,
+              percentAmount: Number(amt.toFixed(2)),
+            });
+          }}
+          disabled={!row.isEditing}
+        />
+      ),
+      width: "120px",
     },
     {
-      name: "GST Price",
-      selector: (row) => (row.isInclude ? "" : row.gstPrice),
-      right: true,
-      format: (row) =>
-        row.isInclude ? "" : Number(row.gstPrice || 0).toFixed(2),
+      name: "% Amount",
+      cell: (row, index) => (
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          value={row.percentAmount}
+          min={0}
+          onChange={(e) => {
+            const amt = Math.max(0, Number(e.target.value) || 0);
+
+            const percent = row.price > 0 ? (amt / Number(row.price)) * 100 : 0;
+
+            updateTableRow(index, {
+              percentAmount: amt,
+              percentage: Number(percent.toFixed(2)),
+            });
+          }}
+          disabled={!row.isEditing}
+        />
+      ),
+      width: "120px",
     },
+{
+  name: "Select Dealer",
+  cell: (row, index) => (
+    <div className="position-relative overflow-visible w-100">
+      <Select
+      isDisabled={!row.isEditing}
+        className="react-select-container text-sm"
+        classNamePrefix="react-select"
+        isClearable
+        menuPortalTarget={document.body}
+        menuPosition="fixed"
+
+        value={
+          row.dealerID
+            ? {
+                value: row.dealerID,
+                label:
+                  dealersList.find((d) => d.DealerID === row.dealerID)
+                    ?.FullName || "Unknown Dealer",
+              }
+            : null
+        }
+        options={dealersList.map((d) => ({
+          value: d.DealerID,
+          label: d.FullName,
+        }))}
+
+        onChange={(opt) =>
+          updateTableRow(index, { dealerID: opt ? opt.value : "" })
+        }
+
+        styles={{
+          container: (base) => ({
+            ...base,
+            minWidth: 200,
+            fontSize: "0.75rem",
+          }),
+          control: (base) => ({
+            ...base,
+            height: 32,
+          }),
+          valueContainer: (base) => ({
+            ...base,
+            padding: "0 6px",
+          }),
+          input: (base) => ({
+            ...base,
+            margin: 0,
+            padding: 0,
+          }),
+          option: (base) => ({
+            ...base,
+            fontSize: "0.75rem",
+            padding: "4px 8px",
+           
+          }),
+          menuPortal: (base) => ({
+            ...base,
+            zIndex: 1080,
+          }),
+        }}
+      />
+    </div>
+  ),
+  minWidth: "200px",
+},
+
+
     {
       name: "Status",
       selector: (row) => row.status,
-      right: true,
+      center: true,
+      width: "120px",
     },
     {
       name: "Description",
       selector: (row) => (row.isInclude ? "" : row.description),
       wrap: true,
-      grow: 2,
+      width: "120px",
     },
     {
-      name: "Actions",
-      cell: (row, index) =>
-        !row.isInclude ? (
-          <div className="d-flex gap-2">
-            <button
-              className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-              onClick={() => handleEditItem(index && index)}
-              title="Edit"
-            >
-              <Icon icon="lucide:edit" />
-            </button>
-            <button
-              className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
-              onClick={() => handleRemoveItem(index && index)}
-              title="Delete"
-            >
-              <Icon icon="mingcute:delete-2-line" />
-            </button>
-          </div>
-        ) : (
-          ""
-        ),
-      ignoreRowClick: true,
-      allowOverflow: true,
-    },
+  name: "Actions",
+  cell: (row, index) =>
+    !row.isInclude ? (
+      <div className="d-flex gap-2">
+        {!row.isEditing && (
+          <button
+            className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+            onClick={() => handleEditItem(index)}
+            title="Edit"
+          >
+            edit
+          </button>
+        )}
+        {row.isEditing && (
+          <button
+            className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+            onClick={() => handleSaveRow(index)}
+            title="Save"
+          >
+            save
+          </button>
+        )}
+        {!row.isEditing && (
+          <button
+            className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
+            onClick={() => handleRemoveItem(index)}
+            title="Delete"
+          >
+            <Icon icon="mingcute:delete-2-line" />
+          </button>
+        )}
+      </div>
+    ) : null,
+  ignoreRowClick: true,
+  allowOverflow: true,
+}
   ];
 
   // totals
@@ -815,68 +1026,18 @@ const BookServicesLayer = () => {
                   className="form-control"
                   value={gstPercent}
                   min={0}
-                  onChange={(e) => setGstPercent(Math.max(0, e.target.value))}
+                  onChange={(e) => handleGstPercentChange(e.target.value)}
                 />
               </div>
 
               <div className="col-md-3">
                 <label className="form-label">GST Price</label>
                 <input
-                  type="text"
-                  className="form-control"
-                  value={gstPrice}
-                  readOnly
-                />
-              </div>
-              <div className="col-md-4">
-                <label className="form-label">Select Dealer</label>
-                <Select
-                  className="react-select-container text-sm"
-                  classNamePrefix="react-select"
-                  isClearable
-                  placeholder="Search Dealer..."
-                  value={
-                    selectedDealer
-                      ? {
-                          value: selectedDealer,
-                          label:
-                            dealersList.find(
-                              (d) => d.DealerID === selectedDealer
-                            )?.FullName || "Unknown Dealer",
-                        }
-                      : null
-                  }
-                  options={dealersList.map((d) => ({
-                    value: d.DealerID,
-                    label: d.FullName,
-                  }))}
-                  onChange={(option) => {
-                    setSelectedDealer(option ? option.value : "");
-                  }}
-                />
-              </div>
-              <div className="col-md-4">
-                <label className="form-label">Company Percent</label>
-                <input
                   type="number"
                   className="form-control"
-                  value={companyPercent}
+                  value={gstPrice}
                   min={0}
-                  onChange={(e) =>
-                    setCompanyPercent(Number(e.target.value) || 0)
-                  }
-                  placeholder="Enter Percentage"
-                />
-              </div>
-
-              <div className="col-md-4">
-                <label className="form-label">Percent Amount</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={percentAmount}
-                  placeholder="18"
-                  readOnly
+                  onChange={(e) => handleGstAmountChange(e.target.value)}
                 />
               </div>
               {itemType === "Package" &&
@@ -925,46 +1086,30 @@ const BookServicesLayer = () => {
               </div>
 
               <div className="col-12 d-flex gap-2 justify-content-end">
-                {editIndex !== null ? (
-                  <>
-                    <button
-                      className="btn btn-secondary py-2 px-3"
-                      onClick={resetForm}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="btn btn-primary py-2 px-3"
-                      onClick={handleAddOrSave}
-                    >
-                      Save Changes
-                    </button>
-                  </>
-                ) : (
                   <button
                     className="btn btn-primary py-2 px-3"
                     onClick={handleAddOrSave}
                   >
                     Add Item
                   </button>
-                )}
               </div>
             </div>
-
             {/* SINGLE TABLE FOR BOTH */}
-            <h6>Added Services + Spare Parts</h6>
-            <DataTable
-              columns={columns}
-              data={flattenedRows}
-              fixedHeader
-              fixedHeaderScrollHeight="420px"
-              // pagination
-              highlightOnHover
-              responsive
-              striped
-              persistTableHead
-              noDataComponent="No items added yet"
-            />
+            <div className="editable-table">
+              <h6>Added Services + Spare Parts</h6>
+              <DataTable
+                columns={columns}
+                data={flattenedRows}
+                fixedHeader
+                fixedHeaderScrollHeight="420px"
+                // pagination
+                highlightOnHover
+                responsive
+                striped
+                persistTableHead
+                noDataComponent="No items added yet"
+              />
+            </div>
             {/* Totals */}
             {addedItems.length > 0 && (
               <div className="mt-3 p-3 border rounded bg-light">
@@ -984,6 +1129,47 @@ const BookServicesLayer = () => {
               </div>
             )}
 
+            {/* Time Slot Selection */}
+            {/* {addedItems.length > 0 && (
+  <div className="row mt-3 align-items-center">
+    <div className="col-md-4">
+      <label className="form-label fw-semibold mb-0">
+        Select Expected Service Time Slot
+      </label>
+    </div>
+
+    <div className="col-md-8">
+      <Select
+        className="react-select-container text-sm"
+        classNamePrefix="react-select"
+        placeholder="Select time slot..."
+        isClearable
+        options={timeSlots.map((slot) => ({
+          value: slot.TimeSlotID,
+          label: `${slot.StartTime} - ${slot.EndTime}`,
+        }))}
+        value={
+          selectedTimeSlot
+            ? {
+                value: selectedTimeSlot,
+                label: (() => {
+                  const slot = timeSlots.find(
+                    (t) => t.TimeSlotID === selectedTimeSlot
+                  );
+                  return slot
+                    ? `${slot.StartTime} - ${slot.EndTime}`
+                    : "";
+                })(),
+              }
+            : null
+        }
+        onChange={(option) =>
+          setSelectedTimeSlot(option ? option.value : "")
+        }
+      />
+    </div>
+  </div>
+)} */}
             {/* Submit Button */}
             {addedItems.length > 0 && (
               <div className="d-flex justify-content-center mt-3">

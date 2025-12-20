@@ -148,34 +148,34 @@ const ViewProfileLayer = () => {
       const adminPayload  = new FormData();
 
       // 🔹 ADMIN UPDATE
-      if (role === "Admin") {
-        adminPayload .append("AdminID", formData.userId);
-        adminPayload .append("FullName", formData.FullName);
+      // if (role === "Admin") {
+      //   adminPayload .append("AdminID", formData.userId);
+      //   adminPayload .append("FullName", formData.FullName);
 
-        // send password only if user typed it
-        if (formData.Password) {
-          adminPayload .append("Password", formData.Password);
-        }
+      //   // send password only if user typed it
+      //   if (formData.Password) {
+      //     adminPayload .append("Password", formData.Password);
+      //   }
 
-        if (file) {
-          adminPayload .append("ProfileImage1", file);
-        }
+      //   if (file) {
+      //     adminPayload .append("ProfileImage1", file);
+      //   }
 
-        const res = await axios.put(`${baseURL}Auth/update-admin`, adminPayload , {
-        });
+      //   const res = await axios.put(`${baseURL}Auth/update-admin`, adminPayload , {
+      //   });
 
-        if (res.status === 200) {
-          Swal.fire({
-            icon: "success",
-            title: "Success",
-            text: "Admin profile updated successfully!",
-          }).then(() => {
-            fetchProfile();
-          });
-        }
-      }
+      //   if (res.status === 200) {
+      //     Swal.fire({
+      //       icon: "success",
+      //       title: "Success",
+      //       text: "Admin profile updated successfully!",
+      //     }).then(() => {
+      //       fetchProfile();
+      //     });
+      //   }
+      // }
       // 🔹 EMPLOYEE UPDATE
-      if (role === "Employee") {
+      // if (role === "Employee") {
         if (!formData.FullName.trim()) {
           Swal.fire("Error", "Full Name is required", "error");
           return;
@@ -224,7 +224,7 @@ const ViewProfileLayer = () => {
             fetchProfile
           );
         }
-      }
+      // }
     } catch (err) {
       console.error("Update error:", err);
       Swal.fire({
@@ -316,7 +316,7 @@ const ViewProfileLayer = () => {
                         />
                       </div>
                     </div>
-                    {formData.role === "Employee" && (
+                    {/* {formData.role === "Employee" && ( */}
                       <>
                         <div className="col-sm-6">
                           <div className="mb-20">
@@ -377,7 +377,6 @@ const ViewProfileLayer = () => {
                           </div>
                         </div>
                       </>
-                    )}
 
                     <div className="col-sm-6">
                       <div className="mb-20">

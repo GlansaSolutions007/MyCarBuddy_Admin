@@ -15865,3 +15865,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .pac-item span {
   white-space: normal !important;
 }
+/* Override Bootstrap ONLY inside editable table */
+.editable-table .form-control.form-control-sm[type="number"] {
+  height: 32px;
+  font-size: 0.675rem;
+  -moz-appearance: textfield;
+}
+
+/* Remove arrows - Chrome, Edge, Safari */
+.editable-table
+  .form-control.form-control-sm[type="number"]::-webkit-outer-spin-button,
+.editable-table
+  .form-control.form-control-sm[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+

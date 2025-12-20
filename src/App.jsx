@@ -101,6 +101,7 @@ import ExplanationsAddPage from "./pages/ExplanationsAddPage";
 import GarageWiseEarningReportPage from "./pages/GarageWiseEarningReportPage";
 import ServicesEarningReportPage from "./pages/ServicesEarningReportPage";
 import ClosedLeadsPage from "./pages/ClosedLeadsPage";
+import RevenueReporstPage from "./pages/RevenueReportsPage";
 
 function App() {
   return (
@@ -228,6 +229,7 @@ function App() {
           <Route exact path='/add-explanations' element={<ExplanationsAddPage/>} />
           <Route exact path='/services-earning-report' element={<ServicesEarningReportPage/>} />
           <Route exact path='/garage-earning-report' element={<GarageWiseEarningReportPage/>} />
+          <Route exact path='/revenue-reports' element={<RevenueReporstPage/>} />
         </Route>
 
         {/* //extra  pages */}

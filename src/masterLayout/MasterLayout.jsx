@@ -428,6 +428,8 @@ const MasterLayout = ({ children }) => {
         { title: "Booking Reports", to: "/booking-reports", color: "text-success-main", permission: "bookingreports_view", page: "Booking Reports" },
         { title: "Services Earning Report", to: "/services-earning-report", color: "text-danger-main", permission: "servicesearningreport_view", page: "Services Earning Report" },
         { title: "Garage Earning Report", to: "/garage-earning-report", color: "text-primary-600", permission: "garageearningreport_view", page: "Garage Earning Report" },
+        { title: "Revenue Reports", to: "/revenue-reports", color: "text-primary-600", permission: "revenuereports_view", page: "Revenue Reports" },
+
       ],
     },
     // {

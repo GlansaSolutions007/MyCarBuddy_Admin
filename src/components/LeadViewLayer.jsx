@@ -52,13 +52,12 @@ const LeadViewLayer = () => {
   const [personalFullAddress, setPersonalFullAddress] = useState("");
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
+  const [bookings, setBookings] = useState([]);
   const [currentBookings, setCurrentBookings] = useState([]);
   const [previousBookings, setPreviousBookings] = useState([]);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
-  const [selectedSupervisor, setSelectedSupervisor] = useState(null);
-  const [supervisors, setSupervisors] = useState([]);
-  const [inspectionDate, setInspectionDate] = useState("");
-  const [inspectionTime, setInspectionTime] = useState("");
+  const [selectedSupervisorHead, setSelectedSupervisorHead] = useState(null);
+  const [supervisorHeads, setSupervisorHeads] = useState([]);
   const isLeadClosed = lead?.NextAction === "Lead Closed";
   const vehicle = lead?.VehiclesDetails?.[0];
   const isVehicleDataComplete =
@@ -74,7 +73,7 @@ const LeadViewLayer = () => {
     fetchBrands();
     fetchModels();
     fetchFuelTypes();
-    fetchSupervisors();
+    fetchSupervisorHeads();
   }, [leadId]);
 
   useEffect(() => {
@@ -283,8 +282,10 @@ const LeadViewLayer = () => {
           .sort((a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate));
 
         const previous = bookingsList
+
           .filter((b) => b.LeadId !== leadId)
           .sort((a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate));
+          console.log("previous", previous)
 
         setBookings(bookingsList);
         setCurrentBookings(current);
@@ -298,11 +299,11 @@ const LeadViewLayer = () => {
     }
   };
 
-  // Fetch supervisors
-  const fetchSupervisors = async () => {
+  // Fetch supervisorHeads
+  const fetchSupervisorHeads = async () => {
     try {
       const res = await axios.get(`${API_BASE}Employee`, {
-        // Assuming Employee endpoint for supervisors
+        // Assuming Employee endpoint for supervisorHeads
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -313,18 +314,18 @@ const LeadViewLayer = () => {
       const supervisorList = employees
         .filter(
           (emp) =>
-            emp.DepartmentName?.toLowerCase() === "supervisor" ||
-            emp.RoleName?.toLowerCase() === "supervisor"
+            emp.DepartmentName === "supervisor" ||
+            emp.RoleName === "Supervisor Head"
         )
         .map((emp) => ({
           value: emp.Id,
           label: `${emp.Name} (${emp.PhoneNumber || "N/A"})`,
         }));
 
-      setSupervisors(supervisorList);
+      setSupervisorHeads(supervisorList);
     } catch (error) {
-      console.error("Failed to fetch supervisors:", error);
-      setSupervisors([]);
+      console.error("Failed to fetch supervisorHeads:", error);
+      setSupervisorHeads([]);
     }
   };
 
@@ -353,18 +354,17 @@ const LeadViewLayer = () => {
     )}`;
     window.open(url, "_blank");
   };
-
-  const getTodayDate = () => {
-    return new Date().toISOString().split("T")[0];
-  };
-  const getMinTime = () => {
-    const now = new Date();
-    return now.toTimeString().slice(0, 5); // HH:mm
-  };
-  const isTodaySelected = inspectionDate === getTodayDate();
   // Handle Assign Supervisor
   const handleAssignSupervisor = async () => {
-    if (!selectedSupervisor) {
+      if (currentBookings === 0) {
+    Swal.fire({
+      icon: "warning",
+      title: "Assignment Not Allowed",
+      text: "Supervisor cannot be assigned when current bookings are 0.",
+    });
+    return;
+  }
+    if (!selectedSupervisorHead) {
       Swal.fire({
         icon: "warning",
         title: "Select Supervisor",
@@ -372,17 +372,8 @@ const LeadViewLayer = () => {
       });
       return;
     }
-    if (inspectionDate === getTodayDate() && inspectionTime < getMinTime()) {
-      Swal.fire({
-        icon: "warning",
-        title: "Invalid Time",
-        text: "Inspection time must be in the future.",
-      });
-      return;
-    }
-    const inspectionDateTime = `${inspectionDate}T${inspectionTime}`;
     try {
-      const response = await fetch(`${API_BASE}Leads/AssignLeadsToSupervisor`, {
+      const response = await fetch(`${API_BASE}Leads/AssignLeadsToSupervisorHead`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -390,8 +381,7 @@ const LeadViewLayer = () => {
         },
         body: JSON.stringify({
           leadIds: [leadId],
-          supervisor_Assign: selectedSupervisor.value,
-          inspectionDateTime: inspectionDateTime,
+          supervisor_Head: selectedSupervisorHead.value,
         }),
       });
       if (!response.ok) {
@@ -404,9 +394,7 @@ const LeadViewLayer = () => {
       });
       await fetchLead();
       setAssignModalOpen(false);
-      setInspectionDate("");
-      setInspectionTime("");
-      setSelectedSupervisor(null);
+      setSelectedSupervisorHead(null);
     } catch (err) {
       console.error("Assign supervisor failed", err);
       Swal.fire({
@@ -816,27 +804,6 @@ const LeadViewLayer = () => {
                     </span>
                     <span className="w-70 text-secondary-light fw-medium">
                       : {lead?.Assignments?.[0]?.SupervisorName || "N/A"}
-                    </span>
-                  </li>
-                  <li className="d-flex align-items-center gap-1 mb-12">
-                    <span className="w-30 text-md fw-semibold text-primary-light">
-                      Inspection Date
-                    </span>
-                    <span className="w-70 text-secondary-light fw-medium">
-                      :{" "}
-                      {lead?.InspectionDateTime
-                        ? new Date(lead.InspectionDateTime).toLocaleString(
-                            "en-IN",
-                            {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: true,
-                            }
-                          )
-                        : "N/A"}
                     </span>
                   </li>
                 </ul>
@@ -1642,50 +1609,13 @@ const LeadViewLayer = () => {
           <div className="mb-3">
             <label className="form-label fw-semibold">Select Supervisor</label>
             <Select
-              options={supervisors}
-              value={selectedSupervisor}
-              onChange={setSelectedSupervisor}
+              options={supervisorHeads}
+              value={selectedSupervisorHead}
+              onChange={setSelectedSupervisorHead}
               placeholder="Select Supervisor"
               className="react-select-container"
               isSearchable
             />
-          </div>
-          <div className="row">
-            <div className="col-md-6 mb-3">
-              <label className="form-label fw-semibold">
-                Select Inspection Date
-              </label>
-              <input
-                type="date"
-                className="form-control"
-                value={inspectionDate}
-                min={getTodayDate()}
-                onChange={(e) => {
-                  const selectedDate = e.target.value;
-                  setInspectionDate(selectedDate);
-
-                  if (selectedDate === getTodayDate()) {
-                    const nowTime = getMinTime();
-                    if (inspectionTime && inspectionTime < nowTime) {
-                      setInspectionTime("");
-                    }
-                  }
-                }}
-              />
-            </div>
-
-            <div className="col-md-6 mb-3">
-              <label className="form-label fw-semibold">
-                Select Inspection Time
-              </label>
-              <input
-                type="time"
-                className="form-control"
-                value={inspectionTime}
-                min={isTodaySelected ? getMinTime() : undefined}
-                onChange={(e) => setInspectionTime(e.target.value)}
-              />
-            </div>
           </div>
         </Modal.Body>
         <Modal.Footer className="justify-content-center">
@@ -1693,9 +1623,7 @@ const LeadViewLayer = () => {
             variant="secondary"
             onClick={() => {
               setAssignModalOpen(false);
-              setInspectionDate("");
-              setInspectionTime("");
-              setSelectedSupervisor(null);
+              setSelectedSupervisorHeadHead(null);
             }}
           >
             Cancel

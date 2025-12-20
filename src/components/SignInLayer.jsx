@@ -38,11 +38,17 @@ const SignInLayer = () => {
       const data = response.data;
       localStorage.setItem("token", data.token);
       localStorage.setItem("userId", data.id);
-      localStorage.setItem("role", data.role);
+      
       localStorage.setItem("roleId", data.roleID);
+      if(data.roleID == 1){
+        localStorage.setItem("role", 'Admin');
+      }
+      else{
+        localStorage.setItem("role", data.role);
+      }
 
       localStorage.setItem("name", data.name);
-
+      localStorage.removeItem("employeeData");
       // If role is Employee, fetch additional employee data
       if (data.role === "Employee") {
         try {
