@@ -30,7 +30,8 @@ const BookServicesLayer = () => {
   const [selectedPackage, setSelectedPackage] = useState("");
   const [includesList, setIncludesList] = useState([]);
   const [selectedIncludes, setSelectedIncludes] = useState(null);
-  //   const [timeSlots, setTimeSlots] = useState([]);
+  // const [serviceDate, setServiceDate] = useState("");
+  // const [timeSlots, setTimeSlots] = useState([]);
   // const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -99,34 +100,32 @@ const BookServicesLayer = () => {
     fetchIncludes();
   }, []);
 
-  //   useEffect(() => {
-  //   const fetchTimeSlots = async () => {
-  //     try {
-  //       const res = await axios.get(`${API_BASE}TimeSlot`, {
-  //         headers: { Authorization: `Bearer ${token}` },
-  //       });
+  useEffect(() => {
+    const fetchTimeSlots = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}TimeSlot`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-  //       // sort by start time if needed
-  //       const sorted = (res.data || []).sort(
-  //         (a, b) => a.StartTime.localeCompare(b.StartTime)
-  //       );
+        // sort by start time if needed
+        const sorted = (res.data || []).sort((a, b) =>
+          a.StartTime.localeCompare(b.StartTime)
+        );
 
-  //       setTimeSlots(sorted);
-  //     } catch (err) {
-  //       console.error("Failed to fetch time slots", err);
-  //       setTimeSlots([]);
-  //     }
-  //   };
+        setTimeSlots(sorted);
+      } catch (err) {
+        console.error("Failed to fetch time slots", err);
+        setTimeSlots([]);
+      }
+    };
 
-  //   fetchTimeSlots();
-  // }, []);
+    fetchTimeSlots();
+  }, []);
 
   const fetchBookingData = async () => {
     try {
       setLoading(true);
-
       const response = await axios.get(
-        // `${API_BASE}Supervisor/LeadId?LeadId=${leadId}`,
         `${API_BASE}Supervisor/SupervisorLeadId?LeadId=${leadId}`,
         { headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
@@ -152,7 +151,7 @@ const BookServicesLayer = () => {
           status: item.status,
           includeId: item.serviceType === "Service" ? item.serviceId : null,
           packageId: item.serviceType === "Package" ? item.serviceId : null,
-            isEditing: false,
+          isEditing: false,
           // API identifiers (keep for update)
           _apiId: item.id || null,
           _bookingId: item.bookingID || null,
@@ -376,62 +375,58 @@ const BookServicesLayer = () => {
   };
 
   const handleEditItem = (index) => {
-  setAddedItems((prev) =>
-    prev.map((row, i) =>
-      i === index
-        ? { ...row, isEditing: true }
-        : { ...row, isEditing: false }
-    )
-  );
-};
-
-const handleSaveRow = async (index) => {
-  const row = addedItems[index];
-
-  try {
-    // 🔹 API UPDATE (existing item)
-    if (row._apiId) {
-      const payload = {
-        id: row._apiId,
-        bookingId: row._bookingId,
-        bookingTrackID: row._bookingTrackId,
-        leadId: leadId,
-        serviceType: row.type,
-        serviceName: row.name,
-        price: row.price,
-        gstPercent: row.gstPercent,
-        gstAmount: row.gstPrice,
-        description: row.description,
-        dealerID: row.dealerID,
-        percentage: row.percentage,
-        our_Earnings: row.percentAmount,
-        modifiedBy: parseInt(localStorage.getItem("userId")),
-        isActive: true,
-      };
-
-      await axios.put(
-        `${API_BASE}Supervisor/UpdateSupervisorBooking`,
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-    }
     setAddedItems((prev) =>
-      prev.map((r, i) =>
-        i === index ? { ...r, isEditing: false } : r
+      prev.map((row, i) =>
+        i === index ? { ...row, isEditing: true } : { ...row, isEditing: false }
       )
     );
+  };
 
-    Swal.fire("Saved", "Item updated successfully", "success");
-  } catch (err) {
-    console.error(err);
-    Swal.fire("Error", "Failed to save changes", "error");
-  }
-};
+  const handleSaveRow = async (index) => {
+    const row = addedItems[index];
+
+    try {
+      // 🔹 API UPDATE (existing item)
+      if (row._apiId) {
+        const payload = {
+          id: row._apiId,
+          bookingId: row._bookingId,
+          bookingTrackID: row._bookingTrackId,
+          leadId: leadId,
+          serviceType: row.type,
+          serviceName: row.name,
+          price: row.price,
+          gstPercent: row.gstPercent,
+          gstAmount: row.gstPrice,
+          description: row.description,
+          dealerID: row.dealerID,
+          percentage: row.percentage,
+          our_Earnings: row.percentAmount,
+          modifiedBy: parseInt(localStorage.getItem("userId")),
+          isActive: true,
+        };
+
+        await axios.put(
+          `${API_BASE}Supervisor/UpdateSupervisorBooking`,
+          payload,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      }
+      setAddedItems((prev) =>
+        prev.map((r, i) => (i === index ? { ...r, isEditing: false } : r))
+      );
+
+      Swal.fire("Saved", "Item updated successfully", "success");
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Error", "Failed to save changes", "error");
+    }
+  };
 
   const handleRemoveItem = (index) => {
     const item = addedItems[index];
@@ -473,6 +468,8 @@ const handleSaveRow = async (index) => {
     if (addedItems.length === 0)
       return Swal.fire("Error", "No items to submit", "error");
     if (!leadId) return Swal.fire("Error", "Lead ID is required", "error");
+    //   if (!serviceDate)
+    // return Swal.fire("Error", "Please select service date", "error");
     // if (!selectedTimeSlot)
     //   return Swal.fire("Error", "Please select a time slot", "error");
 
@@ -509,6 +506,7 @@ const handleSaveRow = async (index) => {
         createdBy: parseInt(localStorage.getItem("userId")),
         leadId: leadId,
         // timeSlotId: selectedTimeSlot,
+        // serviceDate: serviceDate,
         services: services,
       };
 
@@ -544,6 +542,7 @@ const handleSaveRow = async (index) => {
         setAddedItems([]);
         resetBookingForm();
         // setSelectedTimeSlot("");
+        // setServiceDate("");
       } else {
         throw new Error(response.data?.message || "Failed to create booking");
       }
@@ -559,6 +558,70 @@ const handleSaveRow = async (index) => {
       });
     }
   };
+ const handleConfirmBooking = async () => {
+  // collect only saved items
+  const ids = addedItems
+    .filter((item) => item._apiId) // only existing booking items
+    .map((item) => item._apiId);
+
+  if (ids.length === 0) {
+    return Swal.fire(
+      "No Items",
+      "Please submit booking before confirming.",
+      "warning"
+    );
+  }
+
+  // 🔔 PRE-CONFIRMATION ALERT
+  const result = await Swal.fire({
+    title: "Please Check Before Confirmation",
+    text:"Please check the data before confirmation, as this will be sent directly to the customer.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, Confirm",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#0d9488", 
+    cancelButtonColor: "#6b7280",
+  });
+
+  if (!result.isConfirmed) return;
+
+  const payload = {
+    ids: ids,
+    supervisorId: userId,
+  };
+
+  try {
+    const res = await axios.post(
+      `${API_BASE}Leads/confirm-booking-addons-by-supervisor`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (res.status === 200) {
+      Swal.fire(
+        "Confirmed",
+        "Booking has been confirmed successfully",
+        "success"
+      ).then(() => {
+        navigate(-1);
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    Swal.fire(
+      "Error",
+      error.response?.data?.message || "Failed to confirm booking",
+      "error"
+    );
+  }
+};
+
   const updateTableRow = (index, updates) => {
     setAddedItems((prev) => {
       const copy = [...prev];
@@ -575,6 +638,7 @@ const handleSaveRow = async (index) => {
       selector: (row) => (row.isInclude ? "" : row.type),
       sortable: true,
       width: "120px",
+      fixed: true,
     },
     {
       name: "Name",
@@ -586,6 +650,7 @@ const handleSaveRow = async (index) => {
         ),
       sortable: true,
       wrap: true,
+      fixed: true,
       grow: 2,
     },
     {
@@ -714,79 +779,73 @@ const handleSaveRow = async (index) => {
       ),
       width: "120px",
     },
-{
-  name: "Select Dealer",
-  cell: (row, index) => (
-    <div className="position-relative overflow-visible w-100">
-      <Select
-      isDisabled={!row.isEditing}
-        className="react-select-container text-sm"
-        classNamePrefix="react-select"
-        isClearable
-        menuPortalTarget={document.body}
-        menuPosition="fixed"
-
-        value={
-          row.dealerID
-            ? {
-                value: row.dealerID,
-                label:
-                  dealersList.find((d) => d.DealerID === row.dealerID)
-                    ?.FullName || "Unknown Dealer",
-              }
-            : null
-        }
-        options={dealersList.map((d) => ({
-          value: d.DealerID,
-          label: d.FullName,
-        }))}
-
-        onChange={(opt) =>
-          updateTableRow(index, { dealerID: opt ? opt.value : "" })
-        }
-
-        styles={{
-          container: (base) => ({
-            ...base,
-            minWidth: 200,
-            fontSize: "0.75rem",
-          }),
-          control: (base) => ({
-            ...base,
-            height: 32,
-          }),
-          valueContainer: (base) => ({
-            ...base,
-            padding: "0 6px",
-          }),
-          input: (base) => ({
-            ...base,
-            margin: 0,
-            padding: 0,
-          }),
-          option: (base) => ({
-            ...base,
-            fontSize: "0.75rem",
-            padding: "4px 8px",
-           
-          }),
-          menuPortal: (base) => ({
-            ...base,
-            zIndex: 1080,
-          }),
-        }}
-      />
-    </div>
-  ),
-  minWidth: "200px",
-},
-
-
+    {
+      name: "Select Dealer",
+      cell: (row, index) => (
+        <div className="position-relative overflow-visible w-100">
+          <Select
+            isDisabled={!row.isEditing}
+            className="react-select-container text-sm"
+            classNamePrefix="react-select"
+            isClearable
+            menuPortalTarget={document.body}
+            menuPosition="fixed"
+            value={
+              row.dealerID
+                ? {
+                    value: row.dealerID,
+                    label:
+                      dealersList.find((d) => d.DealerID === row.dealerID)
+                        ?.FullName || "Unknown Dealer",
+                  }
+                : null
+            }
+            options={dealersList.map((d) => ({
+              value: d.DealerID,
+              label: d.FullName,
+            }))}
+            onChange={(opt) =>
+              updateTableRow(index, { dealerID: opt ? opt.value : "" })
+            }
+            styles={{
+              container: (base) => ({
+                ...base,
+                minWidth: 200,
+                fontSize: "0.75rem",
+              }),
+              control: (base) => ({
+                ...base,
+                height: 32,
+              }),
+              valueContainer: (base) => ({
+                ...base,
+                padding: "0 6px",
+              }),
+              input: (base) => ({
+                ...base,
+                margin: 0,
+                padding: 0,
+              }),
+              option: (base) => ({
+                ...base,
+                fontSize: "0.75rem",
+                padding: "4px 8px",
+              }),
+              menuPortal: (base) => ({
+                ...base,
+                zIndex: 1080,
+              }),
+            }}
+          />
+        </div>
+      ),
+      minWidth: "200px",
+    },
     {
       name: "Status",
       selector: (row) => row.status,
-      center: true,
-      width: "120px",
+      right: true,
+      width: "130px",
     },
     {
       name: "Description",
@@ -795,42 +854,42 @@ const handleSaveRow = async (index) => {
       width: "120px",
     },
     {
-  name: "Actions",
-  cell: (row, index) =>
-    !row.isInclude ? (
-      <div className="d-flex gap-2">
-        {!row.isEditing && (
-          <button
-            className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-            onClick={() => handleEditItem(index)}
-            title="Edit"
-          >
-            edit
-          </button>
-        )}
-        {row.isEditing && (
-          <button
-            className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-            onClick={() => handleSaveRow(index)}
-            title="Save"
-          >
-            save
-          </button>
-        )}
-        {!row.isEditing && (
-          <button
-            className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
-            onClick={() => handleRemoveItem(index)}
-            title="Delete"
-          >
-            <Icon icon="mingcute:delete-2-line" />
-          </button>
-        )}
-      </div>
-    ) : null,
-  ignoreRowClick: true,
-  allowOverflow: true,
-}
+      name: "Actions",
+      cell: (row, index) =>
+        !row.isInclude ? (
+          <div className="d-flex gap-2">
+            {!row.isEditing && (
+              <button
+                className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                onClick={() => handleEditItem(index)}
+                title="Edit"
+              >
+                edit
+              </button>
+            )}
+            {row.isEditing && (
+              <button
+                className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                onClick={() => handleSaveRow(index)}
+                title="Save"
+              >
+                save
+              </button>
+            )}
+            {!row.isEditing && (
+              <button
+                className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                onClick={() => handleRemoveItem(index)}
+                title="Delete"
+              >
+                <Icon icon="mingcute:delete-2-line" />
+              </button>
+            )}
+          </div>
+        ) : null,
+      ignoreRowClick: true,
+      allowOverflow: true,
+    },
   ];
 
   // totals
@@ -1086,12 +1145,12 @@ const handleSaveRow = async (index) => {
               </div>
 
               <div className="col-12 d-flex gap-2 justify-content-end">
-                  <button
-                    className="btn btn-primary py-2 px-3"
-                    onClick={handleAddOrSave}
-                  >
-                    Add Item
-                  </button>
+                <button
+                  className="btn btn-primary py-2 px-3"
+                  onClick={handleAddOrSave}
+                >
+                  Add Item
+                </button>
               </div>
             </div>
             {/* SINGLE TABLE FOR BOTH */}
@@ -1128,56 +1187,85 @@ const handleSaveRow = async (index) => {
                 </div>
               </div>
             )}
-
-            {/* Time Slot Selection */}
+            {/* Service Date & Time Slot Selection */}
             {/* {addedItems.length > 0 && (
-  <div className="row mt-3 align-items-center">
-    <div className="col-md-4">
-      <label className="form-label fw-semibold mb-0">
-        Select Expected Service Time Slot
-      </label>
-    </div>
+              <div className="row mt-3 align-items-center g-3">
+                
+                <div className="col-md-6">
+                  <div className="row align-items-center g-2">
+                    <div className="col-auto">
+                      <label className="form-label fw-semibold mb-0">
+                        Service Date
+                      </label>
+                    </div>
+                    <div className="col">
+                      <input
+                        type="date"
+                        className="form-control"
+                        value={serviceDate}
+                        onChange={(e) => setServiceDate(e.target.value)}
+                        min={new Date().toISOString().split("T")[0]}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="col-md-6">
+                  <div className="row align-items-center g-2">
+                    <div className="col-auto">
+                      <label className="form-label fw-semibold mb-0">
+                        Time Slot
+                      </label>
+                    </div>
+                    <div className="col">
+                      <Select
+                        className="react-select-container text-sm"
+                        classNamePrefix="react-select"
+                        placeholder="Select time slot..."
+                        isClearable
+                        options={timeSlots.map((slot) => ({
+                          value: slot.TimeSlotID,
+                          label: `${slot.StartTime} - ${slot.EndTime}`,
+                        }))}
+                        value={
+                          selectedTimeSlot
+                            ? {
+                                value: selectedTimeSlot,
+                                label: (() => {
+                                  const slot = timeSlots.find(
+                                    (t) => t.TimeSlotID === selectedTimeSlot
+                                  );
+                                  return slot
+                                    ? `${slot.StartTime} - ${slot.EndTime}`
+                                    : "";
+                                })(),
+                              }
+                            : null
+                        }
+                        onChange={(option) =>
+                          setSelectedTimeSlot(option ? option.value : "")
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )} */}
 
-    <div className="col-md-8">
-      <Select
-        className="react-select-container text-sm"
-        classNamePrefix="react-select"
-        placeholder="Select time slot..."
-        isClearable
-        options={timeSlots.map((slot) => ({
-          value: slot.TimeSlotID,
-          label: `${slot.StartTime} - ${slot.EndTime}`,
-        }))}
-        value={
-          selectedTimeSlot
-            ? {
-                value: selectedTimeSlot,
-                label: (() => {
-                  const slot = timeSlots.find(
-                    (t) => t.TimeSlotID === selectedTimeSlot
-                  );
-                  return slot
-                    ? `${slot.StartTime} - ${slot.EndTime}`
-                    : "";
-                })(),
-              }
-            : null
-        }
-        onChange={(option) =>
-          setSelectedTimeSlot(option ? option.value : "")
-        }
-      />
-    </div>
-  </div>
-)} */}
-            {/* Submit Button */}
+            {/* Submit & Confirm Button */}
             {addedItems.length > 0 && (
-              <div className="d-flex justify-content-center mt-3">
+              <div className="d-flex justify-content-center gap-3 mt-3">
                 <button
-                  className="btn btn-primary-600 radius-8 px-10 py-4 d-flex align-items-center gap-2"
+                  className="btn btn-primary-600 radius-8 px-10 py-4"
                   onClick={handleSubmit}
                 >
-                  Submit
+                  Submit Booking
+                </button>
+
+                <button
+                  className="btn btn-primary-700 radius-8 px-10 py-4"
+                  onClick={handleConfirmBooking}
+                >
+                  Confirm Booking
                 </button>
               </div>
             )}

@@ -354,9 +354,8 @@ const LeadViewLayer = () => {
     )}`;
     window.open(url, "_blank");
   };
-  // Handle Assign Supervisor
-  const handleAssignSupervisor = async () => {
-      if (currentBookings === 0) {
+ const handleAssignSupervisor = async () => {
+  if (currentBookings === 0) {
     Swal.fire({
       icon: "warning",
       title: "Assignment Not Allowed",
@@ -364,46 +363,60 @@ const LeadViewLayer = () => {
     });
     return;
   }
-    if (!selectedSupervisorHead) {
-      Swal.fire({
-        icon: "warning",
-        title: "Select Supervisor",
-        text: "Please select a supervisor to assign.",
-      });
-      return;
-    }
-    try {
-      const response = await fetch(`${API_BASE}Leads/AssignLeadsToSupervisorHead`, {
+
+  if (!selectedSupervisorHead) {
+    Swal.fire({
+      icon: "warning",
+      title: "Select Supervisor",
+      text: "Please select a supervisor to assign.",
+    });
+    return;
+  }
+
+  // ✅ collect booking IDs
+  const bookingIds = currentBookings.map(b => b.BookingID);
+  try {
+    const response = await fetch(
+      `${API_BASE}Supervisor/AssignToSupervisorHead`,
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          leadIds: [leadId],
-          supervisor_Head: selectedSupervisorHead.value,
+          bookingIds: bookingIds,
+          supervisorHeadId: selectedSupervisorHead.value,
+          assignedDate: new Date().toISOString().split("T")[0],
+          assignStatus: "Assign",
+          createdBy: parseInt(localStorage.getItem("userId")),
         }),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to assign supervisor");
       }
-      Swal.fire({
-        icon: "success",
-        title: "Supervisor Assigned",
-        text: "Lead has been successfully assigned to the supervisor.",
-      });
-      await fetchLead();
-      setAssignModalOpen(false);
-      setSelectedSupervisorHead(null);
-    } catch (err) {
-      console.error("Assign supervisor failed", err);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Failed to assign supervisor. Please try again.",
-      });
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to assign supervisor");
     }
-  };
+
+    Swal.fire({
+      icon: "success",
+      title: "Supervisor Assigned",
+      text: "Bookings assigned successfully.",
+    });
+
+    await fetchLead();
+    setAssignModalOpen(false);
+    setSelectedSupervisorHead(null);
+
+  } catch (err) {
+    console.error("Assign supervisor failed", err);
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Failed to assign supervisor. Please try again.",
+    });
+  }
+};
 
   // Handle Submit Car Details
   const handleSubmitCarDetails = async () => {
@@ -459,6 +472,8 @@ const LeadViewLayer = () => {
       PhoneNumber: personalMobileNo,
       Email: personalEmail,
       City: personalFullAddress,
+      Latitude: latitude,
+      Longitude: longitude,
     };
 
     try {
@@ -1390,7 +1405,6 @@ const LeadViewLayer = () => {
                         <table className="table table-bordered table-striped p-2 radius-16">
                           <thead className="form-label fw-semibold text-primary-light">
                             <tr>
-                              {/* <th>ID</th> */}
                               <th>Booking TrackID</th>
                               <th>Booking Date</th>
                               <th className="text-center">Action</th>
@@ -1399,10 +1413,9 @@ const LeadViewLayer = () => {
                           <tbody>
                             {currentBookings.map((b) => (
                               <tr key={b.BookingID}>
-                                {/* <td>{b.BookingID}</td> */}
                                 <td>
                                   <Link
-                                    to={`/view-booking/${b.BookingTrackID}`}
+                                    to={`/booking-view/${b.BookingID}`}
                                     className="text-primary"
                                   >
                                     {b.BookingTrackID}
@@ -1623,7 +1636,7 @@ const LeadViewLayer = () => {
             variant="secondary"
             onClick={() => {
               setAssignModalOpen(false);
-              setSelectedSupervisorHeadHead(null);
+              setSelectedSupervisorHead(null);
             }}
           >
             Cancel
