@@ -4,12 +4,14 @@ import axios from "axios";
 import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
+import { usePermissions } from "../context/PermissionContext"
 
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 const PaymentsListLayer = () => {
+  const { hasPermission } = usePermissions();
   const [payments, setPayments] = useState([]);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -101,7 +103,7 @@ const PaymentsListLayer = () => {
     { name: "S.No", selector: (_, index) => index + 1, width: "60px" },
     {
       name: "Booking ID", selector: (row) => (
-        <Link to={`/view-booking/${row.BookingID}`} className="text-primary">
+        <Link to={`/booking-view/${row.BookingID}`} className="text-primary">
           {row.BookingTrackID}
         </Link>
       ), width: "150px"
@@ -213,7 +215,7 @@ const PaymentsListLayer = () => {
           )}
 
           {/* Refund */}
-          {row.IsRefunded && (
+          {row.IsRefunded && hasPermission("refunds_edit") &&(
             <button
               onClick={() => handleRefund(row)}
               className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
@@ -348,6 +350,7 @@ const PaymentsListLayer = () => {
               {/* 📅 Date Range */}
               <input
                 type="date"
+                placeholder="DD-MM-YYYY"
                 className="form-control flex-shrink-0"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
@@ -355,6 +358,7 @@ const PaymentsListLayer = () => {
               />
               <input
                 type="date"
+                placeholder="DD-MM-YYYY"
                 className="form-control flex-shrink-0"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}

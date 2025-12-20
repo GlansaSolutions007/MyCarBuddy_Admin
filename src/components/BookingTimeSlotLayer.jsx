@@ -6,8 +6,10 @@ import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
 import useFormError from "../hook/useFormError";
 import FormError from "./FormError";
+import { usePermissions } from "../context/PermissionContext";
 
 const BookingTimeSlotLayer = () => {
+  const { hasPermission } = usePermissions();
   const [formData, setFormData] = useState({
     TsID: "",
     StartTime: "",
@@ -50,7 +52,7 @@ const BookingTimeSlotLayer = () => {
     }
   };
 
-  // 🔁 Validation: Ensure 1-hour minimum and no overlapping
+  //  Validation: Ensure 1-hour minimum and no overlapping
   const isTimeConflict = (newStart, newEnd, existingSlots, editingID = null) => {
     const toMinutes = (timeStr) => {
       const [h, m] = timeStr.split(":").map(Number);
@@ -241,18 +243,22 @@ const BookingTimeSlotLayer = () => {
       name: "Actions",
       cell: (row) => (
         <div className="d-flex gap-2">
+          {hasPermission("bookingtimeslot_edit") && (
           <Link
             onClick={() => handleEdit(row)}
             className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
           >
             <Icon icon="lucide:edit" />
           </Link>
+          )}
+          {hasPermission("bookingtimeslot_delete") && (
           <Link
             onClick={() => handleDelete(row.TsID)}
             className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
           >
             <Icon icon="lucide:trash" />
           </Link>
+          )}
         </div>
       ),
     },
@@ -263,6 +269,7 @@ const BookingTimeSlotLayer = () => {
       <div className="col-xxl-4 col-lg-4">
         <div className="card h-100 p-0">
           <div className="card-body p-24">
+            { (hasPermission("bookingtimeslot_add") || hasPermission("bookingtimeslot_edit")) && (
             <form onSubmit={handleSubmit} className="form" noValidate>
               <div className="mb-10">
                 <label className="text-sm fw-semibold text-primary-light mb-8">
@@ -321,6 +328,7 @@ const BookingTimeSlotLayer = () => {
                 {formData.TsID ? "Update Time Slot" : "Add Time Slot"}
               </button>
             </form>
+            )}
           </div>
         </div>
       </div>

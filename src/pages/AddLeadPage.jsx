@@ -18,6 +18,3 @@ const AddLeadPage = () => {
 };
 
 export default AddLeadPage;
-
-
-AddLeadLayer

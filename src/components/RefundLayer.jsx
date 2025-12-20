@@ -4,8 +4,10 @@ import DataTable from "react-data-table-component";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import * as XLSX from "xlsx";
+import { usePermissions } from "../context/PermissionContext";
 
 const RefundLayer = () => {
+  const { hasPermission } = usePermissions();
   const [bookings, setBookings] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -41,7 +43,7 @@ const RefundLayer = () => {
     {
       name: "Booking ID",
       selector: (row) => (
-        <Link to={`/view-booking/${row.BookingID}`} className="text-primary">
+        <Link to={`/booking-view/${row.BookingID}`} className="text-primary">
           {row.BookingTrackID}
         </Link>
       ),
@@ -117,11 +119,13 @@ const RefundLayer = () => {
       },
       width: "150px",
     },
+    ...(hasPermission("bookingview_view")
+    ? [
     {
       name: "Actions",
       cell: (row) => (
         <Link
-          to={`/view-booking/${row.BookingID}`}
+          to={`/booking-view/${row.BookingID}`}
           className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
           title="View"
         >
@@ -129,6 +133,8 @@ const RefundLayer = () => {
         </Link>
       ),
     },
+    ]
+    : []),
   ];
 
   const filteredBookings = bookings.filter((booking) => {
@@ -199,6 +205,7 @@ const RefundLayer = () => {
               {/* 📅 Date Filters */}
               <input
                 type="date"
+                placeholder="DD-MM-YYYY"
                 className="form-control flex-shrink-0"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
@@ -206,6 +213,7 @@ const RefundLayer = () => {
               />
               <input
                 type="date"
+                placeholder="DD-MM-YYYY"
                 className="form-control flex-shrink-0"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}

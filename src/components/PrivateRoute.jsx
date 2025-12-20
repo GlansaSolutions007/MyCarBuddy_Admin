@@ -16,14 +16,14 @@ import { usePermissions } from "../context/PermissionContext";
 const PrivateRoute = () => {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role"); // e.g., "Admin" or "User"
-  const { hasPermission } = usePermissions();
+  const { hasPermission, loading } = usePermissions();
   const location = useLocation();
 
   // 🚫 Not logged in → redirect
   if (!token) {
     return <Navigate to="/sign-in" />;
   }
-
+  
   // ✅ Public routes that don't need protection
   const path = location.pathname.replace(/^\/+/, "");
   const basePath = path.split("/")[0];
@@ -31,7 +31,7 @@ const PrivateRoute = () => {
   if (publicPaths.includes(basePath)) {
     return <Outlet />;
   }
-
+  if (loading) return <Outlet />;
   // ✅ Admins can access everything
   if (role?.toLowerCase() === "admin") {
     return <Outlet />;

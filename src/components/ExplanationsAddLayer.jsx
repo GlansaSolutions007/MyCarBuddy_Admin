@@ -7,7 +7,7 @@ import { Icon } from "@iconify/react";
 import { usePermissions } from "../context/PermissionContext";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
-const FaqsAddLayer = () => {
+const ExplanationsAddLayer = () => {
   const { hasPermission } = usePermissions();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -33,7 +33,7 @@ const FaqsAddLayer = () => {
       const categoriesData = await fetchAllCategories();
 
       if (isEditMode) {
-        await fetchFaq(editId, packagesData, categoriesData);
+        await fetchExplanation(editId, packagesData, categoriesData);
       }
     };
     loadData();
@@ -84,15 +84,15 @@ const FaqsAddLayer = () => {
     }
   };
 
-  const fetchFaq = async (id, packagesData, categoriesData) => {
+  const fetchExplanation = async (id, packagesData, categoriesData) => {
     try {
-      const res = await axios.get(`${API_BASE}FAQS?Id=${id}`, {
+      const res = await axios.get(`${API_BASE}Explanations?Id=${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       const faq = Array.isArray(res.data) ? res.data[0] : res.data;
       if (!faq) {
-        Swal.fire("Error", "No FAQ found", "error");
+        Swal.fire("Error", "No Explanations found", "error");
         return;
       }
 
@@ -120,12 +120,12 @@ const FaqsAddLayer = () => {
         setSelectedCategory(null);
       }
     } catch (error) {
-      console.error("Failed to load FAQ", error);
-      Swal.fire("Error", "Failed to load FAQ", "error");
+      console.error("Failed to load Explanations", error);
+      Swal.fire("Error", "Failed to load Explanations", "error");
     }
   };
 
-  const handleAddFaq = () => {
+  const handleAddExpplanation = () => {
     if (
       faqType === "category" &&
       (!selectedCategory || !question.trim() || !answer.trim())
@@ -140,7 +140,7 @@ const FaqsAddLayer = () => {
       Swal.fire("Error", "Please fill package, question, and answer", "error");
       return;
     }
-    const newFaq = {
+    const newExplanation = {
       faqType,
       categoryId: selectedCategory?.value || null,
       categoryName: selectedCategory?.label || "",
@@ -149,20 +149,20 @@ const FaqsAddLayer = () => {
       question: question.trim(),
       answer: answer.trim(),
     };
-    setFaqs([...faqs, newFaq]);
+    setFaqs([...faqs, newExplanation]);
     setQuestion("");
     setAnswer("");
     setSelectedCategory(null);
     setSelectedPackage(null);
   };
 
-  const handleRemoveFaq = (index) => {
+  const handleRemoveExplanation = (index) => {
     setFaqs(faqs.filter((_, i) => i !== index));
   };
 
-  const handleSaveFaqs = async () => {
+  const handleSaveExplannation = async () => {
     if (faqs.length === 0) {
-      Swal.fire("Error", "No FAQs to save", "error");
+      Swal.fire("Error", "No Explanations to save", "error");
       return;
     }
 
@@ -197,27 +197,27 @@ const FaqsAddLayer = () => {
         const payload = {
           type: group.faqType, // "category" or "package"
           packageID: group.id, // categoryID OR packageID
-          faQs: group.faqs,
+          explanation: group.faqs,
         };
 
-        await axios.post(`${API_BASE}FAQS`, payload, {
+        await axios.post(`${API_BASE}Explanations`, payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
       }
 
-      Swal.fire("Success", "FAQs saved successfully", "success");
+      Swal.fire("Success", "Explanations saved successfully", "success");
       setFaqs([]);
       setSelectedCategory(null);
       setSelectedPackage(null);
     } catch (error) {
-      console.error("Failed to save FAQs", error);
-      Swal.fire("Error", "Failed to save FAQs", "error");
+      console.error("Failed to save Explanations", error);
+      Swal.fire("Error", "Failed to save Explanations", "error");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpdateFaq = async () => {
+  const handleUpdateExplanation = async () => {
     if (
       (faqType === "package" && !selectedPackage) ||
       (faqType === "category" && !selectedCategory) ||
@@ -241,15 +241,15 @@ const FaqsAddLayer = () => {
             : selectedCategory?.value,
       };
 
-      await axios.put(`${API_BASE}FAQS`, payload, {
+      await axios.put(`${API_BASE}Explanations`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      Swal.fire("Success", "FAQ updated successfully", "success");
-      navigate("/faqs");
+      Swal.fire("Success", "Explanations updated successfully", "success");
+      navigate("/explanations");
     } catch (error) {
-      console.error("Failed to update FAQ", error);
-      Swal.fire("Error", "Failed to update FAQ", "error");
+      console.error("Failed to update Explanations", error);
+      Swal.fire("Error", "Failed to update Explanations", "error");
     } finally {
       setLoading(false);
     }
@@ -280,7 +280,7 @@ const FaqsAddLayer = () => {
       cell: (row, index) => (
         <button
           className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
-          onClick={() => handleRemoveFaq(index)}
+          onClick={() => handleRemoveExplanation(index)}
         >
           <Icon icon="mingcute:delete-2-line" />
         </button>
@@ -307,7 +307,7 @@ const FaqsAddLayer = () => {
                       className="form-check-input"
                       style={{ accentColor: "black" }}
                     />
-                    Add FAQ for Category
+                    Add Explanations for Category
                   </label>
                   <label className="form-label d-flex align-items-center gap-2 col-6">
                     <input
@@ -318,7 +318,7 @@ const FaqsAddLayer = () => {
                       onChange={(e) => setFaqType(e.target.value)}
                       className="form-check-input"
                     />
-                    Add FAQ for Package
+                    Add Explanations for Package
                   </label>
                 </div>
               </div>
@@ -372,25 +372,25 @@ const FaqsAddLayer = () => {
                   placeholder="Enter answer"
                 />
               </div>
-              {!isEditMode && hasPermission("faqs_add") && (
+              {!isEditMode && hasPermission("explanations_add") && (
                 <div className="col-12 d-flex justify-content-end mb-10">
                   <button
                     className="btn btn-primary radius-8 px-14 py-2 d-flex align-items-center"
-                    onClick={handleAddFaq}
+                    onClick={handleAddExpplanation}
                   >
                     <Icon icon="ic:baseline-plus" />
                     Add
                   </button>
                 </div>
               )}
-              {isEditMode && hasPermission("faqs_edit") && (
+              {isEditMode && hasPermission("explanations_edit") && (
                 <div className="col-12 d-flex justify-content-center mb-10">
                   <button
                     className="btn btn-primary-600 radius-8 px-10 py-4 d-flex align-items-center gap-2"
-                    onClick={handleUpdateFaq}
+                    onClick={handleUpdateExplanation}
                     disabled={loading}
                   >
-                    {loading ? "Updating..." : "Update FAQ"}
+                    {loading ? "Updating..." : "Update Explanations"}
                   </button>
                 </div>
               )}
@@ -406,17 +406,17 @@ const FaqsAddLayer = () => {
                   responsive
                   striped
                   persistTableHead
-                  noDataComponent="No FAQs added yet"
+                  noDataComponent="No Explanations added yet"
                 />
                 {faqs.length > 0 && (
                   <div className="d-flex justify-content-center mt-3">
-                    {hasPermission("faqs_add") && (
+                    {hasPermission("explanations_add") && (
                       <button
                         className="btn btn-primary-600 radius-8 px-10 py-4 d-flex align-items-center gap-2"
-                        onClick={handleSaveFaqs}
+                        onClick={handleSaveExplannation}
                         disabled={loading}
                       >
-                        {loading ? "Saving..." : "Save FAQs"}
+                        {loading ? "Saving..." : "Save Explanations"}
                       </button>
                     )}
                   </div>
@@ -430,4 +430,4 @@ const FaqsAddLayer = () => {
   );
 };
 
-export default FaqsAddLayer;
+export default ExplanationsAddLayer;

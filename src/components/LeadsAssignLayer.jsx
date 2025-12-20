@@ -14,19 +14,18 @@ const LeadsAssignLayer = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
-
-  const userDetails = JSON.parse(localStorage.getItem("employeeData") || "{}");
+  const userDetails = JSON.parse(localStorage.getItem("employeeData"));
 
   const [departments, setDepartments] = useState([]);
   const [departmentHeads, setDepartmentHeads] = useState([]);
   const [leads, setLeads] = useState([]);
-  const [leadCount, setLeadCount] = useState("");
+  const [leadCount, setLeadCount] = useState();
   const [loading, setLoading] = useState(false);
   const [employees, setEmployees] = useState([]);
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
+  const [platformFilter, setPlatformFilter] = useState("All");
   const [filteredLeads, setFilteredLeads] = useState([]);
   const [formData, setFormData] = useState({
     selectedDepartment: null,
@@ -34,31 +33,62 @@ const LeadsAssignLayer = () => {
     employees: [],
   });
   const [error, setError] = useState("");
-
   // ===== FETCH LEADS =====
   const fetchLeads = async () => {
     setLoading(true);
     setError("");
 
     try {
-      const response = await fetch(`${API_BASE}ServiceLeads/FacebookLeads`);
+      const response = await fetch(`${API_BASE}Leads`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
       const mappedData = data.map((lead) => ({
         Id: lead.Id,
-        LeadTrackId: lead.Id.toString(),
+        LeadTrackId: lead.Id,
         CustomerName: lead.FullName || "",
         PhoneNumber: lead.PhoneNumber || "",
         Email: lead.Email || "",
         City: lead.City || "",
+        Platform: lead.Platform || "",
         CreatedDate: lead.CreatedDate,
         StatusName: lead.LeadStatus || "Not Assigned",
-        Description: "Lead from Facebook",
+        Description: lead.Description,
         TrackingHistory: [{ StatusName: lead.LeadStatus || "Not Assigned" }],
+        IsAssigned_Head: lead.IsAssigned_Head,
+        IsAssigned_Emp: lead.IsAssigned_Emp,
+        Head_Assign: lead.Head_Assign,
+        Emp_Assign: lead.Emp_Assign,
       }));
-      setLeads(mappedData);
+
+      // Filter based on role
+      let filteredData = mappedData;
+      if (role === "Admin") {
+        // Show unassigned leads (null or 0)
+        filteredData = mappedData.filter(
+          (lead) =>
+            (lead.IsAssigned_Head == null || lead.IsAssigned_Head == 0) &&
+            (lead.IsAssigned_Emp == null || lead.IsAssigned_Emp == 0)
+        );
+      } else if (userDetails?.Is_Head === 1) {
+        // Show leads assigned to this head and not assigned to employee
+        filteredData = mappedData.filter(
+          (lead) =>
+            lead.Head_Assign === userDetails.Id &&
+            (lead.IsAssigned_Emp == null || lead.IsAssigned_Emp == 0)
+        );
+      } else {
+        // Employee: Show leads assigned to this employee
+        filteredData = mappedData.filter(
+          (lead) => lead.Emp_Assign === userDetails.Id
+        );
+      }
+      filteredData = [...filteredData].sort(
+        (a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate)
+      );
+
+      setLeads(filteredData);
     } catch (err) {
       setError("Failed to fetch leads. Please try again.");
       console.error("Error fetching leads:", err);
@@ -92,15 +122,24 @@ const LeadsAssignLayer = () => {
         (lead) => lead.CreatedDate && new Date(lead.CreatedDate) <= to
       );
     }
-    if (statusFilter !== "All") {
-      filtered = filtered.filter((lead) => {
-        const leadStatus = lead.StatusName || "Not Assigned";
-        return leadStatus.toLowerCase() === statusFilter.toLowerCase();
-      });
+    if (platformFilter !== "All") {
+      if (platformFilter === "Others") {
+        filtered = filtered.filter(
+          (lead) =>
+            lead.Platform &&
+            !["web", "app", "organic"].includes(lead.Platform.toLowerCase())
+        );
+      } else {
+        filtered = filtered.filter(
+          (lead) =>
+            lead.Platform &&
+            lead.Platform.toLowerCase() === platformFilter.toLowerCase()
+        );
+      }
     }
     setFilteredLeads(filtered);
     setSelectedLeads([]);
-  }, [leads, fromDate, toDate, statusFilter]);
+  }, [leads, fromDate, toDate, platformFilter]);
 
   // ===== FETCH FUNCTIONS =====
   const fetchDepartments = async () => {
@@ -109,8 +148,12 @@ const LeadsAssignLayer = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data?.status && Array.isArray(res.data.data)) {
+        const supportDepts = res.data.data.filter(
+          (dept) => dept.DepartmentName?.trim().toLowerCase() === "support"
+        );
+
         setDepartments(
-          res.data.data.map((dept) => ({
+          supportDepts.map((dept) => ({
             value: dept.DeptId,
             label: dept.DepartmentName,
           }))
@@ -202,36 +245,118 @@ const LeadsAssignLayer = () => {
       if (!formData.selectedDepartment)
         return Swal.fire("Warning", "Please select a department", "warning");
       if (!formData.selectedHead)
-        return Swal.fire("Warning", "Please select a department head", "warning");
+        return Swal.fire(
+          "Warning",
+          "Please select a department head",
+          "warning"
+        );
     }
 
+    let selectedLeadIds = [];
     if (selectedLeads.length > 0) {
-      // Use selected leads
+      selectedLeadIds = selectedLeads;
     } else {
       if (!leadCount || leadCount <= 0)
-        return Swal.fire("Warning", "Please enter a valid lead count or select leads", "warning");
-      if (leads.length === 0)
+        return Swal.fire(
+          "Warning",
+          "Please enter a valid lead count or select leads",
+          "warning"
+        );
+      if (filteredLeads.length === 0)
         return Swal.fire("Info", "No unassigned leads available", "info");
 
-      // Select first leadCount leads for assignment (dummy implementation)
+      // Select first leadCount leads
+      selectedLeadIds = filteredLeads
+        .slice(0, leadCount)
+        .map((l) => getLeadId(l));
     }
 
-    // Simulate assignment
-    setLoading(true);
-    setTimeout(() => {
-      Swal.fire("Success", "Leads assigned successfully!", "success").then(() => {
-        // Refresh data
-        fetchLeads();
-        setSelectedLeads([]);
-        setLoading(false);
-      });
-    }, 1000);
+    try {
+      setLoading(true);
+
+      if (role === "Admin") {
+        // Assign to head
+        const payload = {
+          leadIds: selectedLeadIds,
+          head_Assign: formData.selectedHead.value,
+        };
+        await axios.post(`${API_BASE}Leads/AssignLeadsToHead`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else if (userDetails?.Is_Head === 1) {
+        const empList = formData.employees;
+
+        if (empList.length === 0) {
+          return Swal.fire(
+            "Warning",
+            "Please select at least one employee",
+            "warning"
+          );
+        }
+        if (empList.length > selectedLeadIds.length) {
+          return Swal.fire({
+            icon: "warning",
+            title: "Invalid Assignment",
+            text: "Number of selected employees cannot be greater than number of leads.",
+          });
+        }
+
+        const totalLeads = selectedLeadIds.length;
+        const totalEmployees = empList.length;
+
+        const baseCount = Math.floor(totalLeads / totalEmployees);
+        const remainder = totalLeads % totalEmployees;
+
+        let leadIndex = 0;
+
+        for (let i = 0; i < empList.length; i++) {
+          const emp = empList[i];
+
+          // First `remainder` employees get +1 lead
+          const assignCount = i < remainder ? baseCount + 1 : baseCount;
+
+          const leadsForEmp = selectedLeadIds.slice(
+            leadIndex,
+            leadIndex + assignCount
+          );
+
+          if (leadsForEmp.length === 0) break;
+
+          const payload = {
+            leadIds: leadsForEmp,
+            emp_Assign: emp.id,
+          };
+
+          await axios.post(`${API_BASE}Leads/AssignLeadsToEmployee`, payload, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          leadIndex += assignCount;
+        }
+      }
+
+      Swal.fire("Success", "Leads assigned successfully!", "success").then(
+        () => {
+          fetchLeads();
+          setSelectedLeads([]);
+          setLeadCount("");
+          setFormData((prev) => ({ ...prev, employees: [] }));
+        }
+      );
+    } catch (error) {
+      console.error("Failed to assign leads:", error);
+      Swal.fire("Error", "Failed to assign leads", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Auto-select first N leads when leadCount changes
   useEffect(() => {
     if (leadCount > 0 && filteredLeads.length > 0) {
-      const autoSelected = filteredLeads.slice(0, leadCount).map((l) => getLeadId(l));
+      const autoSelected = filteredLeads
+        .slice(0, leadCount)
+        .map((l) => getLeadId(l));
       setSelectedLeads(autoSelected);
     } else {
       setSelectedLeads([]);
@@ -255,12 +380,14 @@ const LeadsAssignLayer = () => {
                   if (e.target.checked) {
                     setSelectedLeads((prev) => [...prev, leadId]);
                   } else {
-                    setSelectedLeads((prev) => prev.filter((id) => id !== leadId));
+                    setSelectedLeads((prev) =>
+                      prev.filter((id) => id !== leadId)
+                    );
                   }
                 }}
               />
             ),
-            width: "60px",
+            width: "80px",
             ignoreRowClick: true,
           },
         ]
@@ -286,6 +413,10 @@ const LeadsAssignLayer = () => {
       selector: (row) => row.City || "-",
     },
     {
+      name: "Platform",
+      selector: (row) => row.Platform || "-",
+    },
+    {
       name: "Created Date",
       cell: (row) => (
         <span>
@@ -301,41 +432,10 @@ const LeadsAssignLayer = () => {
       wrap: true,
     },
     {
-      name: "Lead Status",
-      cell: (row) => {
-        let status = row?.TrackingHistory?.[0]?.StatusName ?? "-";
-        if (!status || status === "-") status = "Not Assigned";
-
-        const colorMap = {
-          New: "#F57C00",
-          Contacted: "#F7AE21",
-          Qualified: "#28A745",
-          Lost: "#E34242",
-          "Not Assigned": "#BFBFBF",
-        };
-
-        const color = colorMap[status] || "#6c757d";
-
-        return (
-          <span className="fw-semibold d-flex align-items-center">
-            <span
-              className="rounded-circle d-inline-block me-1"
-              style={{
-                width: "8px",
-                height: "8px",
-                backgroundColor: color,
-              }}
-            ></span>
-            <span style={{ color }}>{status}</span>
-          </span>
-        );
-      },
-      wrap: true,
-    },
-    {
       name: "Description",
       selector: (row) => row.Description,
       wrap: true,
+      width: "200px",
     },
     {
       name: "Actions",
@@ -367,7 +467,10 @@ const LeadsAssignLayer = () => {
                 <label className="form-label fw-semibold">
                   Total Unassigned Leads :{" "}
                 </label>
-                <span className="fw-bold text-primary fs-5" style={{ marginLeft: "20px" }}>
+                <span
+                  className="fw-bold text-primary fs-5"
+                  style={{ marginLeft: "20px" }}
+                >
                   {filteredLeads.length}
                 </span>
               </div>
@@ -375,15 +478,32 @@ const LeadsAssignLayer = () => {
                 <label className="form-label fw-semibold">
                   Selected Leads :{" "}
                 </label>
-                <span className="fw-bold text-primary fs-5" style={{ marginLeft: "20px" }}>
+                <span
+                  className="fw-bold text-primary fs-5"
+                  style={{ marginLeft: "20px" }}
+                >
                   {selectedLeads.length}
                 </span>
               </div>
             </div>
             <div className="col-md-6 d-flex gap-2 align-items-center mr-20 flex-wrap justify-content-end">
+              <label className="text-sm fw-semibold">Platform:</label>
+              <select
+                className="form-select radius-8 px-10 py-1 text-sm w-auto"
+                value={platformFilter}
+                onChange={(e) => setPlatformFilter(e.target.value)}
+                style={{ textAlign: "center", minWidth: "110px" }}
+              >
+                <option value="All">All</option>
+                <option value="Web">Web</option>
+                <option value="App">App</option>
+                <option value="Organic">Organic</option>
+                <option value="Others">Others</option>
+              </select>
               <label className="text-sm fw-semibold">From:</label>
               <input
                 type="date"
+                placeholder="DD-MM-YYYY"
                 className="form-control radius-8 px-14 py-6 text-sm w-auto"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
@@ -391,22 +511,11 @@ const LeadsAssignLayer = () => {
               <label className="text-sm fw-semibold">To:</label>
               <input
                 type="date"
+                placeholder="DD-MM-YYYY"
                 className="form-control radius-8 px-14 py-6 text-sm w-auto"
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
               />
-              <select
-                className="form-select radius-8 px-14 py- text-sm w-auto"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                style={{ textAlign: "center", minWidth: "150px" }}
-              >
-                <option value="All">All</option>
-                <option value="New">New</option>
-                <option value="Contacted">Contacted</option>
-                <option value="Qualified">Qualified</option>
-                <option value="Lost">Lost</option>
-              </select>
             </div>
           </div>
         )}
@@ -415,7 +524,9 @@ const LeadsAssignLayer = () => {
           {hasPermission("assignleads_edit") && role === "Admin" ? (
             <>
               <div className="col-md-4">
-                <label className="form-label fw-semibold mb-1">Department</label>
+                <label className="form-label fw-semibold mb-1">
+                  Department
+                </label>
                 <Select
                   options={departments}
                   value={formData.selectedDepartment}
@@ -426,7 +537,9 @@ const LeadsAssignLayer = () => {
                 />
               </div>
               <div className="col-md-4">
-                <label className="form-label fw-semibold mb-1">Department Head</label>
+                <label className="form-label fw-semibold mb-1">
+                  Department Head
+                </label>
                 <Select
                   options={departmentHeads}
                   value={formData.selectedHead}
@@ -440,7 +553,8 @@ const LeadsAssignLayer = () => {
                 />
               </div>
             </>
-          ) : userDetails?.Is_Head === 1 && hasPermission("assignleads_edit") ? (
+          ) : userDetails?.Is_Head === 1 &&
+            hasPermission("assignleads_edit") ? (
             <div className="col-sm-8 mt-2">
               <label className="form-label fw-semibold">
                 Employee Name <span className="text-danger">*</span>{" "}
@@ -464,42 +578,46 @@ const LeadsAssignLayer = () => {
               />
             </div>
           ) : null}
-          {(role === "Admin" || userDetails?.Is_Head === 1) && hasPermission("assignleads_edit") && (
-            <>
-              <div className="col-md-2 position-relative min-h-90">
-                <label className="form-label fw-semibold mb-1">Lead Count</label>
-                <input
-                  type="number"
-                  className={`form-control ${
-                    leadCount > filteredLeads.length ? "border-danger" : ""
-                  }`}
-                  placeholder="Enter count"
-                  value={leadCount}
-                  min={1}
-                  max={filteredLeads.length}
-                  onChange={(e) => setLeadCount(Number(e.target.value))}
-                />
-                {leadCount > filteredLeads.length && (
-                  <small
-                    className="text-danger position-absolute"
-                    style={{ bottom: "-18px", fontSize: "12px" }}
+          {(role === "Admin" || userDetails?.Is_Head === 1) &&
+            hasPermission("assignleads_edit") && (
+              <>
+                <div className="col-md-2 position-relative min-h-90">
+                  <label className="form-label fw-semibold mb-1">
+                    Lead Count
+                  </label>
+                  <input
+                    type="number"
+                    className={`form-control ${
+                      leadCount > filteredLeads.length ? "border-danger" : ""
+                    }`}
+                    placeholder="Enter count"
+                    value={leadCount}
+                    min={1}
+                    max={filteredLeads.length}
+                    onChange={(e) => setLeadCount(Number(e.target.value))}
+                  />
+                  {leadCount > filteredLeads.length && (
+                    <small
+                      className="text-danger position-absolute"
+                      style={{ bottom: "-18px", fontSize: "12px" }}
+                    >
+                      Entered count exceeds total leads
+                    </small>
+                  )}
+                </div>
+                <div className="col-md-2">
+                  <button
+                    type="button"
+                    className="btn btn-primary-600 radius-8 px-14 py-6 text-sm w-100"
+                    onClick={handleAssign}
+                    // disabled={loading}
+                    disabled={formData.employees.length > selectedLeads.length}
                   >
-                    Entered count exceeds total leads
-                  </small>
-                )}
-              </div>
-              <div className="col-md-2">
-                <button
-                  type="button"
-                  className="btn btn-primary-600 radius-8 px-14 py-6 text-sm w-100"
-                  onClick={handleAssign}
-                  disabled={loading}
-                >
-                  {loading ? "Assigning..." : "Assign Leads"}
-                </button>
-              </div>
-            </>
-          )}
+                    {loading ? "Assigning..." : "Assign Leads"}
+                  </button>
+                </div>
+              </>
+            )}
         </div>
 
         <div className="col-12 mt-4">
@@ -520,7 +638,9 @@ const LeadsAssignLayer = () => {
                 striped
                 persistTableHead
                 noDataComponent={
-                  loading ? "Loading leads..." : role === "Employee"
+                  loading
+                    ? "Loading leads..."
+                    : role === "Employee"
                     ? "No assigned leads available"
                     : "No unassigned leads available"
                 }

@@ -15813,3 +15813,71 @@ html[data-theme="dark"] .sidebar-logo {
 .rdt_TableCol{
   font-weight: 900;
 }
+
+input[type="date"] {
+  position: relative;
+  color: transparent;
+  text-transform: uppercase;
+}
+
+/* Show placeholder text */
+input[type="date"]::before {
+  content: attr(placeholder);
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6c757d;
+  pointer-events: none;
+  text-transform: uppercase;
+  font-weight: 100;
+   font-size: 0.8rem !important;
+  opacity: 0.55; 
+}
+
+/* Hide placeholder when focused or when a value is selected */
+input[type="date"]:focus::before,
+input[type="date"]:not(:placeholder-shown)::before {
+  content: '';
+}
+
+/* optional: remove browser date icon if needed */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 8px;
+  color: transparent;
+  opacity: 1;
+  cursor: pointer;
+}
+
+/* Google Places Autocomplete styling fix */
+.pac-container {
+  width: 650px !important;
+  max-width: 95vw;
+  z-index: 9999 !important;
+}
+
+.pac-item {
+  white-space: normal !important;
+  line-height: 1.4;
+}
+
+.pac-item span {
+  white-space: normal !important;
+}
+/* Override Bootstrap ONLY inside editable table */
+.editable-table .form-control.form-control-sm[type="number"] {
+  height: 32px;
+  font-size: 0.675rem;
+  -moz-appearance: textfield;
+}
+
+/* Remove arrows - Chrome, Edge, Safari */
+.editable-table
+  .form-control.form-control-sm[type="number"]::-webkit-outer-spin-button,
+.editable-table
+  .form-control.form-control-sm[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+

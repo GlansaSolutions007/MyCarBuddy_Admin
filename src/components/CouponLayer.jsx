@@ -4,10 +4,12 @@ import { Icon } from "@iconify/react";
 import Swal from "sweetalert2";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { usePermissions } from "../context/PermissionContext";
 
 const API_BASE = "https://api.mycarsbuddy.com/api/Coupons";
 
 const CouponsPage = () => {
+  const { hasPermission } = usePermissions();
   const [coupons, setCoupons] = useState([]);
   const [formData, setFormData] = useState({
     CouponID: null,
@@ -154,12 +156,14 @@ const CouponsPage = () => {
       name: "Actions",
       cell: (row, index) => (
         <div className="d-flex gap-2">
+          {hasPermission("coupons_edit") && (
           <Link
             onClick={() => handleEdit(row, index)}
             className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
           >
             <Icon icon="lucide:edit" />
           </Link>
+          )}
         </div>
       ),
     },
@@ -169,6 +173,7 @@ const CouponsPage = () => {
     <div className="row gy-4 mt-2">
       <div className="col-lg-4">
         <div className="card p-3">
+          { (hasPermission("coupons_add") || hasPermission("coupons_edit")) && (
           <form onSubmit={handleSubmit}>
 
             <div className="mb-3">
@@ -244,6 +249,7 @@ const CouponsPage = () => {
               {editIndex !== null ? "Update" : "Add"} Coupon
             </button>
           </form>
+          )}
         </div>
       </div>
 

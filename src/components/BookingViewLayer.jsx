@@ -1027,7 +1027,7 @@ const BookingViewLayer = () => {
                   Bookings
                 </button>
               </li>
-              {bookingData &&
+              {/* {bookingData &&
                 bookingData.BookingStatus !== "Cancelled" &&
                 bookingData.BookingStatus !== "Failed" &&
                 bookingData.BookingStatus !== "Completed" && (
@@ -1040,7 +1040,7 @@ const BookingViewLayer = () => {
                       Add Service
                     </button>
                   </li>
-                )}
+                )} */}
               {/* You might want a payment tab here to view past payments */}
               {/* <li className='nav-item'><button className='nav-link' data-bs-toggle='pill' data-bs-target='#payment'>Payments</button></li> */}
             </ul>

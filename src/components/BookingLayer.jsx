@@ -6,8 +6,40 @@ import Select from "react-select";
 import axios from "axios";
 import Swal from "sweetalert2";
 import * as XLSX from "xlsx";
+import { usePermissions } from "../context/PermissionContext";
+
+// Helper function to convert various time formats into 12-hour AM/PM format
+const formatTime = (timeStr) => {
+  if (!timeStr) return "";
+  const raw = timeStr.toString().trim();
+
+  // If already includes AM/PM, try to normalize spacing and return as-is
+  if (/\b(AM|PM)\b/i.test(raw)) {
+    const match = raw.match(/^(\d{1,2})(?::(\d{1,2}))?\s*(AM|PM)$/i);
+    if (match) {
+      const hour = parseInt(match[1], 10);
+      const minute = match[2] ? parseInt(match[2], 10) : 0;
+      const period = match[3].toUpperCase();
+      const hh = (hour % 12) || 12;
+      const mm = minute.toString().padStart(2, '0');
+      return `${hh}:${mm} ${period}`;
+    }
+    return raw.replace(/am/i, 'AM').replace(/pm/i, 'PM');
+  }
+
+  // Extract HH and MM from formats like HH:MM or HH:MM:SS or even just HH
+  const match = raw.match(/^(\d{1,2})(?::(\d{1,2}))?(?::\d{1,2})?/);
+  if (!match) return raw;
+  const hour24 = parseInt(match[1], 10);
+  const minute = match[2] ? parseInt(match[2], 10) : 0;
+  if (Number.isNaN(hour24) || Number.isNaN(minute)) return raw;
+  const period = hour24 >= 12 ? 'PM' : 'AM';
+  const hour12 = (hour24 % 12) || 12;
+  return `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
+};
 
 const BookingLayer = () => {
+  const { hasPermission } = usePermissions();
   const [bookings, setBookings] = useState([]);
   const [technicians, setTechnicians] = useState([]);
   const [searchText, setSearchText] = useState("");
@@ -20,6 +52,7 @@ const BookingLayer = () => {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [status, setStatus] = useState("all");
+    const [timeSlots, setTimeSlots] = useState([]);
 
   // New states for Supervisor Assignment
   const [supervisors, setSupervisors] = useState([]);
@@ -35,6 +68,7 @@ const BookingLayer = () => {
     fetchTechnicians();
     fetchBookings();
     fetchSupervisors(); // Fetch supervisors on component mount
+    getTimeSlotOptions(); // Fetch time slots on component mount
   }, []);
 
   useEffect(() => {
@@ -120,7 +154,12 @@ const BookingLayer = () => {
 
     const slots = booking.TimeSlot?.split(",").map((s) => s.trim()) || [];
     if (slots.length === 1) {
-      setSelectedTimeSlot({ value: slots[0], label: slots[0] });
+      const slot = slots[0];
+      const [start, end] = slot.split(" - ");
+      setSelectedTimeSlot({
+        value: slot,
+        label: `${formatTime(start)} - ${formatTime(end)}`
+      });
     } else {
       setSelectedTimeSlot(null);
     }
@@ -222,46 +261,77 @@ const BookingLayer = () => {
 
 
 
-  const getTimeSlotOptions = () => {
-    if (!selectedBooking || !selectedBooking.TimeSlot) return [];
-    return selectedBooking.TimeSlot.split(",").map((slot) => ({
-      value: slot.trim(),
-      label: slot.trim(),
-    }));
-  };
+  // const getTimeSlotOptions = () => {
+  //   if (!selectedBooking || !selectedBooking.TimeSlot) return [];
+  //   return selectedBooking.TimeSlot.split(",").map((slot) => ({
+  //     value: slot.trim(),
+  //     label: slot.trim(),
+  //   }));
+
+
+  // };
+
+
+    const getTimeSlotOptions = async () => {
+      try {
+        const response = await axios.get(`${API_BASE}TimeSlot`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setTimeSlots(
+          response.data
+            .filter((slot) => slot.IsActive ?? slot.Status ?? slot.status) // Only active slots
+            .sort((a, b) => {
+              const [aHour, aMinute] = (a.StartTime || a.startTime).split(":").map(Number);
+              const [bHour, bMinute] = (b.StartTime || b.startTime).split(":").map(Number);
+              return aHour * 60 + aMinute - (bHour * 60 + bMinute);
+            })
+            .map((slot) => ({
+              value: `${slot.StartTime || slot.startTime} - ${slot.EndTime || slot.endTime}`,
+              label: `${formatTime(slot.StartTime || slot.startTime)} - ${formatTime(slot.EndTime || slot.endTime)}`,
+            }))
+        );
+
+      } catch (err) {
+        console.error("Error fetching time slots:", err);
+      }
+    };
 
   const columns = [
+    ...(hasPermission("bookingview_view")
+    ? [
     {
       name: "Booking id",
       selector: (row) => (
-        <Link to={`/view-booking/${row.BookingID}`} className="text-primary">
+        <Link to={`/booking-view/${row.BookingID}`} className="text-primary">
           {row.BookingTrackID}
         </Link>
       ),
       width: "150px",
     },
+      ]
+    : []),
     {
       name: "Booking date",
       selector: (row) => {
-        if (!row.BookingDate) return "";
-        const date = new Date(row.BookingDate);
+        if (!row.CreatedDate) return "";
+        const date = new Date(row.CreatedDate);
         return `${String(date.getDate()).padStart(2, "0")}/${String(
           date.getMonth() + 1
         ).padStart(2, "0")}/${date.getFullYear()}`;
       },
       width: "120px",
     },
-    {
-      name: "Time slot",
-      selector: (row) => row.TimeSlot,
-      width: "160px",
-    },
-    {
-      name: "Booking price",
-      selector: (row) =>
-        `₹${(row.TotalPrice + row.GSTAmount - row.CouponAmount).toFixed(2)}`,
-      width: "120px",
-    },
+    // {
+    //   name: "Time slot",
+    //   selector: (row) => row.TimeSlot,
+    //   width: "160px",
+    // },
+    // {
+    //   name: "Booking price",
+    //   selector: (row) =>
+    //     `₹${(row.TotalPrice + row.GSTAmount - row.CouponAmount).toFixed(2)}`,
+    //   width: "120px",
+    // },
     {
       name: "Customer name",
       selector: (row) => (
@@ -375,7 +445,7 @@ const BookingLayer = () => {
     {
       name: "Actions",
       cell: (row) => {
-        if (!row.BookingDate) return null;
+        // if (!row.BookingDate) return null;
         const bookingDate = new Date(row.BookingDate);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -384,7 +454,7 @@ const BookingLayer = () => {
         return (
           <div className="d-flex gap-2 align-items-center">
             <Link
-              to={`/view-booking/${row.BookingID}`}
+              to={`/booking-view/${row.BookingID}`}
               className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
               title="View"
             >
@@ -500,6 +570,7 @@ const BookingLayer = () => {
               <input
                 type="date"
                 className="form-control flex-shrink-0"
+                placeholder="DD-MM-YYYY"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 style={{ minWidth: "120px", flex: "1 1 130px" }}
@@ -507,6 +578,7 @@ const BookingLayer = () => {
               <input
                 type="date"
                 className="form-control flex-shrink-0"
+                placeholder="DD-MM-YYYY"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 style={{ minWidth: "120px", flex: "1 1 130px" }}
@@ -628,20 +700,27 @@ const BookingLayer = () => {
 
                 {/* Time Slot Selection */}
                 <div className="mb-3">
-                  {selectedBooking?.TimeSlot?.split(",").length === 1 ? (
+                  {/* {selectedBooking?.TimeSlot?.split(",").length === 1 ? (
                     <Select
                       value={selectedTimeSlot}
                       isDisabled
                       styles={singleSlotStyle}
                     />
                   ) : (
-                    <Select
-                      options={getTimeSlotOptions()}
+                   <Select
+                      options={timeSlots}
                       value={selectedTimeSlot}
                       onChange={(val) => setSelectedTimeSlot(val)}
                       placeholder="Select TimeSlot"
                     />
-                  )}
+                  )} */}
+
+                   <Select
+                      options={timeSlots}
+                      value={selectedTimeSlot}
+                      onChange={(val) => setSelectedTimeSlot(val)}
+                      placeholder="Select TimeSlot"
+                    />
                 </div>
 
                 {/* Technician or Supervisor Selection based on assignType */}

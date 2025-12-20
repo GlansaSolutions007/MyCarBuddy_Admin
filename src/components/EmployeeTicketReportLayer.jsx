@@ -245,8 +245,6 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
     );
   });
 
-
-
   return (
     <div className="row gy-4">
       <div className="col-12">
@@ -302,6 +300,7 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
                 <label className="text-sm fw-semibold">From:</label>
                 <input
                   type="date"
+                  placeholder="DD-MM-YYYY"
                   className="form-control radius-8 px-14 py-6 text-sm w-auto"
                   value={fromDate}
                   onChange={(e) => setFromDate(e.target.value)}
@@ -309,6 +308,7 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
                 <label className="text-sm fw-semibold">To:</label>
                 <input
                   type="date"
+                  placeholder="DD-MM-YYYY"
                   className="form-control radius-8 px-14 py-6 text-sm w-auto"
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
@@ -332,9 +332,6 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
               </div>
             </div>
           </div>
-          {error ? (
-            <div className="alert alert-danger m-3">{error}</div>
-          ) : (
             <DataTable
               columns={columns}
               data={filteredData}
@@ -345,11 +342,9 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
               striped
               persistTableHead
               noDataComponent={
-                loading ? "Loading tickets..." : "No tickets available"
+                loading ? "Loading ticket Reports..." : "No ticket Reports available"
               }
-
             />
-          )}
         </div>
       </div>
     </div>

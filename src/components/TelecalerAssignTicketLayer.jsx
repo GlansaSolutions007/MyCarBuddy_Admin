@@ -564,6 +564,7 @@ const TelecalerAssignTicketLayer = () => {
             <label className="text-sm fw-semibold">From:</label>
             <input
               type="date"
+              placeholder="DD-MM-YYYY"
               className="form-control radius-8 px-14 py-6 text-sm w-auto"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
@@ -571,6 +572,7 @@ const TelecalerAssignTicketLayer = () => {
             <label className="text-sm fw-semibold">To:</label>
             <input
               type="date"
+              placeholder="DD-MM-YYYY"
               className="form-control radius-8 px-14 py-6 text-sm w-auto"
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}

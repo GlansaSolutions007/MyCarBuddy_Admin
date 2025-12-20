@@ -4,8 +4,11 @@ import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
 import { Icon } from "@iconify/react";
+import { usePermissions } from "../context/PermissionContext";
+
 
 const LeaveListLayer = () => {
+  const { hasPermission } = usePermissions();
   const [leaves, setLeaves] = useState([]);
   const [technicians, setTechnicians] = useState([]);
   const [filterTechnicianID, setFilterTechnicianID] = useState("");
@@ -84,6 +87,8 @@ const LeaveListLayer = () => {
         );
       }
     },
+    ...(hasPermission("leavelist_edit")
+    ? [
     {
       name: "Actions",
       cell: (row) => (
@@ -92,6 +97,8 @@ const LeaveListLayer = () => {
         </Link>
       )
     }
+      ]
+    : []),
   ];
 
   return (

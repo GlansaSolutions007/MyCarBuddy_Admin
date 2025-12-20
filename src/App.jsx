@@ -86,11 +86,22 @@ import EmpTicketViewPage from "./pages/EmpTicketViewPage";
 import DeptWiseTicketReportPage from "./pages/DeptWiseTicketReportPage";
 import LeadsPage from "./pages/LeadsPage";
 import AddLeadPage from "./pages/AddLeadPage";
-import ViewLeadPage from "./pages/ViewLeadPage";
+import OrganicLeadsPage from "./pages/OrganicLeadsPage";
 import FaqsPage from "./pages/FaqsPage";
 import FaqsAddPage from "./pages/FaqsAddPage";
+import LeadsAssignPage from "./pages/LeadsAssignPage";
+import LeadViewPage from "./pages/LeadViewPage";
+import LeadReportsPage from "./pages/LeadReportsPage";
 import BookingReportPage from "./pages/BookingReportPage"
-import BookingReportsSortingPage from "./pages/BookingReportsSortingPage"
+import EmployeeLeadsReportPage from "./pages/EmployeeLeadsReportPage";
+import TodayLeadsPage from "./pages/TodayLeadsPage";
+import BookServicesPage from "./pages/BookSevicesPage";
+import ExplanationsPage from "./pages/ExplanationsPage";
+import ExplanationsAddPage from "./pages/ExplanationsAddPage";
+import GarageWiseEarningReportPage from "./pages/GarageWiseEarningReportPage";
+import ServicesEarningReportPage from "./pages/ServicesEarningReportPage";
+import ClosedLeadsPage from "./pages/ClosedLeadsPage";
+import RevenueReporstPage from "./pages/RevenueReportsPage";
 
 function App() {
   return (
@@ -147,7 +158,7 @@ function App() {
           <Route exact path='/add-service-plan-price' element={<ServicePlanPriceAddPage />} />
           <Route exact path='/edit-service-plan-price/:PlanPackagePriceID' element={<ServicePlanPriceEditPage />} />
 
-          <Route path="/view-booking/:bookingId" element={<BookingViewPage />} />
+          <Route path="/booking-view/:bookingId" element={<BookingViewPage />} />
           {/* <Route path="/booking/assign-technician/:bookingId" element={<AssignTechnician />} /> */}
 
           <Route exact path='/payments' element={<PaymentListPage />} />
@@ -165,7 +176,7 @@ function App() {
           <Route exact path='/leave-list' element={<LeaveListPage />} />
           <Route exact path='/leave-edit/:LeaveID' element={<LeaveEditPage />} />
           <Route exact path='/notification-templates' element={<NotificationTemplatesPage />} />
-          <Route exact path='/reason' element={<ReasonPage />} />
+          <Route exact path='/reasons' element={<ReasonPage />} />
           <Route exact path='/policy' element={<PolicyPage />} />
           <Route exact path='/seo' element={<SeoPage />} />
           <Route exact path='/add-seo' element={<SeoAddPage />} />
@@ -176,7 +187,7 @@ function App() {
           <Route exact path="/edit-blog/:BlogID" element={<AddBlogPage />} />
           <Route exact path="/roles" element={<RolePage />} />
           <Route exact path="/permission-pages" element={<PermissionPage />} />
-          <Route exact path="/view-profile" element={<ViewProfilePage />} />
+          <Route exact path="/profile-view" element={<ViewProfilePage />} />
           <Route exact path="/role-permission/:roleId" element={<RolePermissionPage />} />
           <Route exact path="/employees" element={<EmployeePage />} />
           <Route exact path="/add-employee" element={<EmployeeAddPage />} />
@@ -187,11 +198,11 @@ function App() {
           <Route exact path='/dept-employee-reports/:deptId' element={<DeptEmployeePage />} />
           <Route exact path='/view-employee-report/:id' element={<EmpTicketViewPage />} />
           <Route exact path='/leads' element={<LeadsPage />} />
-          <Route exact path='/add-lead' element={<AddLeadPage />} />
-          <Route exact path='/view-lead' element={<ViewLeadPage />} />
+          <Route exact path='/create-lead' element={<AddLeadPage />} />
+          <Route exact path='/organic-leads' element={<OrganicLeadsPage />} />
           <Route exact path='/departments' element={<DepartmentsPage />} />
           <Route exact path="/contacts" element={<Contacts />} />
-          <Route exact path="/DealerServicePrice" element={<DealerServiceP />} />
+          <Route exact path="/dealer-service-price" element={<DealerServiceP />} />
           <Route exact path='/add-tickets' element={<TicketsAddPage />} />
           <Route exact path='/edit-tickets/:TicketID' element={<TicketsAddPage />} />
           <Route exact path='/refunds' element={<RefundPage />} />
@@ -205,7 +216,20 @@ function App() {
           <Route exact path='/supervisor-assign-bookings' element={<SupervisorAssignBookingPage />} />
           <Route exact path='/faqs' element={<FaqsPage />} />
           <Route exact path='/add-faqs' element={<FaqsAddPage />} />
-
+          <Route exact path='/assign-leads' element={<LeadsAssignPage />} />
+          <Route exact path='/lead-view/:leadId' element={<LeadViewPage />} />
+          <Route exact path='/lead-reports' element={<LeadReportsPage />} />
+          <Route exact path="/emp-leads-report/:employeeId" element={<EmployeeLeadsReportPage />} />
+          <Route exact path="/todays-lead" element={<TodayLeadsPage />} />
+          <Route exact path="/closed-leads" element={<ClosedLeadsPage />} />
+          <Route exact path="/book-service" element={<BookServicesPage />} />
+          <Route exact path="/book-service/:Id" element={<BookServicesPage />} />
+          <Route exact path='/booking-reports' element={<BookingReportPage/>} />
+          <Route exact path='/explanations' element={<ExplanationsPage/>} />
+          <Route exact path='/add-explanations' element={<ExplanationsAddPage/>} />
+          <Route exact path='/services-earning-report' element={<ServicesEarningReportPage/>} />
+          <Route exact path='/garage-earning-report' element={<GarageWiseEarningReportPage/>} />
+          <Route exact path='/revenue-reports' element={<RevenueReporstPage/>} />
         </Route>
 
         {/* //extra  pages */}
@@ -228,7 +252,6 @@ function App() {
           path='/notification-alert'
           element={<NotificationAlertPage />}
         />
-        <Route exact path='/booking-reports' element={<BookingReportPage />} />
       </Routes>
     </BrowserRouter>
   );

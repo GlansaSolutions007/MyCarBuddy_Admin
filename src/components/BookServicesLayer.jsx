@@ -1,0 +1,1191 @@
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import DataTable from "react-data-table-component";
+import { Icon } from "@iconify/react";
+import Swal from "sweetalert2";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import Select, { components } from "react-select";
+import CreatableSelect from "react-select/creatable";
+const employeeData = JSON.parse(localStorage.getItem("employeeData"));
+const userId = employeeData?.Id;
+
+const BookServicesLayer = () => {
+  const { Id } = useParams();
+  const leadId = Id;
+  const API_BASE = import.meta.env.VITE_APIURL;
+  const token = localStorage.getItem("token");
+  const [dealersList, setDealersList] = useState([]);
+  const [selectedDealer, setSelectedDealer] = useState("");
+  const [companyPercent, setCompanyPercent] = useState();
+  const [percentAmount, setPercentAmount] = useState();
+  const [addedItems, setAddedItems] = useState([]);
+  const [itemType, setItemType] = useState("Service");
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+  const [description, setDescription] = useState("");
+  const [gstPercent, setGstPercent] = useState("");
+  const [gstPrice, setGstPrice] = useState("");
+  const [packagesList, setPackagesList] = useState([]);
+  const [selectedPackage, setSelectedPackage] = useState("");
+  const [includesList, setIncludesList] = useState([]);
+  const [selectedIncludes, setSelectedIncludes] = useState(null);
+  //   const [timeSlots, setTimeSlots] = useState([]);
+  // const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  useEffect(() => {
+    fetchAllPackages();
+  }, []);
+
+  useEffect(() => {
+    const p = Number(price) || 0;
+
+    // Re-sync GST
+    if (gstPercent !== "") {
+      const gstAmt = (p * Number(gstPercent)) / 100;
+      setGstPrice(Number(gstAmt.toFixed(2)));
+    }
+
+    // Re-sync Company
+    if (companyPercent !== "") {
+      const compAmt = (p * Number(companyPercent)) / 100;
+      setPercentAmount(Number(compAmt.toFixed(2)));
+    }
+  }, [price]);
+
+  useEffect(() => {
+    if (leadId) {
+      fetchBookingData();
+    } else {
+      setAddedItems([]);
+    }
+  }, [leadId]);
+
+  useEffect(() => {
+    const fetchDealers = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}Dealer`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (res.data && Array.isArray(res.data)) {
+          setDealersList(res.data);
+        } else {
+          setDealersList([]);
+        }
+      } catch (error) {
+        console.error("Dealer List Failed:", error);
+        setDealersList([]);
+      }
+    };
+    fetchDealers();
+  }, []);
+
+  useEffect(() => {
+    const fetchIncludes = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}Includes`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setIncludesList(res.data.data || []);
+      } catch (error) {
+        console.error("Failed to load includes", error);
+      }
+    };
+
+    fetchIncludes();
+  }, []);
+
+  //   useEffect(() => {
+  //   const fetchTimeSlots = async () => {
+  //     try {
+  //       const res = await axios.get(`${API_BASE}TimeSlot`, {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //       });
+
+  //       // sort by start time if needed
+  //       const sorted = (res.data || []).sort(
+  //         (a, b) => a.StartTime.localeCompare(b.StartTime)
+  //       );
+
+  //       setTimeSlots(sorted);
+  //     } catch (err) {
+  //       console.error("Failed to fetch time slots", err);
+  //       setTimeSlots([]);
+  //     }
+  //   };
+
+  //   fetchTimeSlots();
+  // }, []);
+
+  const fetchBookingData = async () => {
+    try {
+      setLoading(true);
+
+      const response = await axios.get(
+        // `${API_BASE}Supervisor/LeadId?LeadId=${leadId}`,
+        `${API_BASE}Supervisor/SupervisorLeadId?LeadId=${leadId}`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+      const data = response.data || {};
+
+      const apiItems = [
+        ...(data.notConfirmed || []),
+        ...(data.confirmed || []),
+      ];
+      if (apiItems.length > 0) {
+        const converted = apiItems.map((item) => ({
+          type: item.serviceType || "Service",
+          name: item.serviceName || "",
+          serviceName: item.serviceName || "",
+          price: Number(item.price || 0),
+          description: item.description || "",
+          gstPercent: Number(item.gstPercent || 0),
+          gstPrice: Number(item.gstAmount || 0),
+          dealerID: item.dealerID || "",
+          // companyPercent: Number(item.percentage || 0),
+          percentage: Number(item.percentage || 0),
+          percentAmount: Number(item.our_Earnings || 0),
+          status: item.status,
+          includeId: item.serviceType === "Service" ? item.serviceId : null,
+          packageId: item.serviceType === "Package" ? item.serviceId : null,
+            isEditing: false,
+          // API identifiers (keep for update)
+          _apiId: item.id || null,
+          _bookingId: item.bookingID || null,
+          _bookingTrackId: item.bookingTrackID || null,
+        }));
+
+        setAddedItems(converted);
+        return; // --- STOP here
+      }
+      // Case 2: no data found (fresh new booking)
+      setAddedItems([]);
+    } catch (err) {
+      console.error("Failed to fetch booking data:", err);
+      // Swal.fire( "No Previous Booking", "No previous bookings exist. Please add a new booking", "info");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAllPackages = async () => {
+    try {
+      const res = await axios.get(
+        `${API_BASE}PlanPackage/GetPlanPackagesDetails`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const packagesData = res.data.map((pkg) => {
+        // Convert IncludeID & IncludeNames into array of objects
+        const includeIds = pkg.IncludeID?.split(",") || [];
+        const includeNames = pkg.IncludeNames?.split(",") || [];
+
+        const includes = includeIds.map((id, idx) => ({
+          id,
+          name: includeNames[idx] || "",
+        }));
+
+        return {
+          id: pkg.PackageID,
+          name: pkg.PackageName,
+          categoryId: pkg.CategoryID,
+          categoryName: pkg.CategoryName,
+          subCategoryId: pkg.SubCategoryID,
+          subCategoryName: pkg.SubCategoryName,
+          description: pkg.Description,
+          price: pkg.Default_Price,
+          includes,
+        };
+      });
+
+      setPackagesList(packagesData);
+      return packagesData;
+    } catch (error) {
+      console.error("Failed to load all packages", error);
+      return [];
+    }
+  };
+
+  const CheckboxOption = (props) => {
+    return (
+      <components.Option {...props}>
+        <input
+          type="checkbox"
+          checked={props.isSelected} // let react-select handle selection
+          readOnly // important to prevent all being selected
+          style={{ marginRight: 8 }}
+        />
+        {props.label}
+      </components.Option>
+    );
+  };
+
+  const resetBookingForm = () => {
+    setSelectedDealer("");
+    setCompanyPercent("");
+    setPercentAmount("");
+  };
+
+  const resetForm = () => {
+    setItemType("Service");
+    setName("");
+    setPrice("");
+    setDescription("");
+    setGstPercent("");
+    setGstPrice("");
+    setSelectedPackage("");
+    setSelectedIncludes(null);
+    setCompanyPercent(0);
+    setPercentAmount(0);
+    setGstPercent(0);
+    setGstPrice(0);
+  };
+  const handleGstPercentChange = (value) => {
+    const percent = Math.max(0, Number(value) || 0);
+    setGstPercent(percent);
+
+    const amt = (Number(price) * percent) / 100;
+    setGstPrice(Number(amt.toFixed(2)));
+  };
+
+  const handleGstAmountChange = (value) => {
+    const amt = Math.max(0, Number(value) || 0);
+    setGstPrice(amt);
+
+    if (!price) {
+      setGstPercent(0);
+      return;
+    }
+
+    const percent = (amt / Number(price)) * 100;
+    setGstPercent(Number(percent.toFixed(2)));
+  };
+
+  const handleCompanyPercentChange = (value) => {
+    const percent = Math.max(0, Number(value) || 0);
+    setCompanyPercent(percent);
+
+    const amt = (Number(price) * percent) / 100;
+    setPercentAmount(Number(amt.toFixed(2)));
+  };
+
+  const handleCompanyAmountChange = (value) => {
+    const amt = Math.max(0, Number(value) || 0);
+    setPercentAmount(amt);
+
+    if (!price) {
+      setCompanyPercent(0);
+      return;
+    }
+
+    const percent = (amt / Number(price)) * 100;
+    setCompanyPercent(Number(percent.toFixed(2)));
+  };
+
+  const handleAddOrSave = async () => {
+    if (!name.trim()) return Swal.fire("Please enter name");
+    if (itemType === "Service" && !selectedIncludes)
+      return Swal.fire("Please select service");
+    if (itemType === "Spare Part" && !name.trim())
+      return Swal.fire("Please enter spare part name");
+    if (itemType === "Package" && !selectedPackage)
+      return Swal.fire("Please select package");
+    let finalIncludeID =
+      selectedIncludes && typeof selectedIncludes === "object"
+        ? selectedIncludes.value
+        : selectedIncludes;
+    // may change if new
+
+    // ⭐ CASE: Create NEW include before adding item
+    if (itemType === "Service" && selectedIncludes === "new") {
+      try {
+        const payload = {
+          IncludeName: name.trim(),
+          Description: description.trim(),
+          IncludePrice: parseFloat(price),
+          CategoryID: 14,
+          SubCategoryID: 0,
+          SkillID: 4,
+          CreatedBy: userId,
+          IsActive: true,
+        };
+
+        const resp = await axios.post(`${API_BASE}Includes`, payload, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (resp.status === 200 || resp.status === 201) {
+          const created = resp.data;
+
+          // save the new ID
+          finalIncludeID = created.IncludeID;
+
+          // update the dropdown
+          setIncludesList((prev) => [
+            ...prev,
+            {
+              IncludeID: created.IncludeID,
+              IncludeName: created.IncludeName,
+              IncludePrice: created.IncludePrice,
+            },
+          ]);
+
+          Swal.fire("Created!", "New service has been added", "success");
+        }
+      } catch (err) {
+        console.error(err);
+        return Swal.fire("Error", "Failed to create include", "error");
+      }
+    }
+
+    // ⭐ BUILD THE FINAL ITEM
+    const updatedItem = {
+      type: itemType,
+      name: name.trim(),
+      price: Number(price) || 0,
+      description: description.trim(),
+      gstPercent: Number(gstPercent) || 0,
+      gstPrice: Number(gstPrice) || 0,
+      dealerID: selectedDealer,
+      percentage: Number(companyPercent) || 0,
+      percentAmount: Number(percentAmount) || 0,
+      isEditing: false,
+      includeId: itemType === "Service" ? Number(finalIncludeID) || 0 : 0,
+      includeName:
+        itemType === "Service"
+          ? includesList.find((i) => i.IncludeID == finalIncludeID)
+              ?.IncludeName || name
+          : null,
+
+      // package-specific metadata
+      packageId: itemType === "Package" ? selectedPackage : null,
+      includes: itemType === "Package" ? [...selectedIncludes] : [],
+      isNewPackage:
+        itemType === "Package" &&
+        selectedPackage?.toString().startsWith("new-"),
+    };
+    setAddedItems((prev) => [...prev, updatedItem]);
+    resetForm();
+  };
+
+  const handleEditItem = (index) => {
+  setAddedItems((prev) =>
+    prev.map((row, i) =>
+      i === index
+        ? { ...row, isEditing: true }
+        : { ...row, isEditing: false }
+    )
+  );
+};
+
+const handleSaveRow = async (index) => {
+  const row = addedItems[index];
+
+  try {
+    // 🔹 API UPDATE (existing item)
+    if (row._apiId) {
+      const payload = {
+        id: row._apiId,
+        bookingId: row._bookingId,
+        bookingTrackID: row._bookingTrackId,
+        leadId: leadId,
+        serviceType: row.type,
+        serviceName: row.name,
+        price: row.price,
+        gstPercent: row.gstPercent,
+        gstAmount: row.gstPrice,
+        description: row.description,
+        dealerID: row.dealerID,
+        percentage: row.percentage,
+        our_Earnings: row.percentAmount,
+        modifiedBy: parseInt(localStorage.getItem("userId")),
+        isActive: true,
+      };
+
+      await axios.put(
+        `${API_BASE}Supervisor/UpdateSupervisorBooking`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+    }
+    setAddedItems((prev) =>
+      prev.map((r, i) =>
+        i === index ? { ...r, isEditing: false } : r
+      )
+    );
+
+    Swal.fire("Saved", "Item updated successfully", "success");
+  } catch (err) {
+    console.error(err);
+    Swal.fire("Error", "Failed to save changes", "error");
+  }
+};
+
+  const handleRemoveItem = (index) => {
+    const item = addedItems[index];
+    Swal.fire({
+      title: "Are you sure?",
+      text: "Do you want to remove this item?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, remove",
+    }).then(async (result) => {
+      if (!result.isConfirmed) return;
+      // CASE 1: DELETE FROM API (existing booking item)
+      if (item._apiId) {
+        try {
+          const response = await axios.delete(
+            `${API_BASE}Supervisor/Id?id=${item._apiId}`,
+            {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            }
+          );
+
+          if (response.status === 200) {
+            Swal.fire("Deleted!", "Item removed successfully.", "success");
+            setAddedItems((prev) => prev.filter((_, i) => i !== index));
+          }
+        } catch (err) {
+          console.error(err);
+          Swal.fire("Error", "Failed to delete item from server", "error");
+        }
+        return;
+      }
+      // CASE 2: DELETE LOCAL UNSAVED ITEM
+      setAddedItems((prev) => prev.filter((_, i) => i !== index));
+      Swal.fire("Removed", "Item removed", "success");
+    });
+  };
+
+  const handleSubmit = async () => {
+    if (addedItems.length === 0)
+      return Swal.fire("Error", "No items to submit", "error");
+    if (!leadId) return Swal.fire("Error", "Lead ID is required", "error");
+    // if (!selectedTimeSlot)
+    //   return Swal.fire("Error", "Please select a time slot", "error");
+
+    try {
+      // Transform addedItems to match API payload format
+      const services = addedItems
+        .filter((item) => !item._apiId)
+        .map((item) => {
+          let serviceId = 0;
+
+          if (item.type === "Service") {
+            serviceId = Number(item.includeId);
+          } else if (item.type === "Package") {
+            serviceId = Number(item.packageId);
+          }
+          return {
+            serviceType: item.type,
+            serviceName: item.name || "",
+            price: Number(item.price) || 0,
+            gstPercent: Number(item.gstPercent) || 0,
+            gstAmount: Number(item.gstPrice) || 0,
+            description: item.description || "",
+            dealerID: Number(item.dealerID) || 0,
+            percentage: Number(item.percentage) || 0,
+            our_Earnings: Number(item.percentAmount) || 0,
+            serviceId: serviceId, // ✅ FIXED
+          };
+        });
+
+      // detect existing booking (from any existing item)
+      const existingBookingItem = addedItems.find((item) => item._bookingId);
+
+      const payload = {
+        createdBy: parseInt(localStorage.getItem("userId")),
+        leadId: leadId,
+        // timeSlotId: selectedTimeSlot,
+        services: services,
+      };
+
+      // ⭐ IF booking already exists → include booking details
+      if (existingBookingItem) {
+        payload.bookingID = existingBookingItem._bookingId;
+        payload.bookingTrackID = existingBookingItem._bookingTrackId;
+      }
+
+      const response = await axios.post(
+        `${API_BASE}Supervisor/InsertSupervisorBooking`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        Swal.fire({
+          icon: "success",
+          title: "Success!",
+          text: "Your booking has been created successfully.",
+        }).then(() => {
+          navigate(-1);
+        });
+        // Refresh booking list again
+        await fetchBookingData();
+        // Reset form
+        resetForm();
+        setAddedItems([]);
+        resetBookingForm();
+        // setSelectedTimeSlot("");
+      } else {
+        throw new Error(response.data?.message || "Failed to create booking");
+      }
+    } catch (error) {
+      console.error("API Error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to submit booking. Please try again.",
+      });
+    }
+  };
+  const updateTableRow = (index, updates) => {
+    setAddedItems((prev) => {
+      const copy = [...prev];
+      copy[index] = {
+        ...copy[index],
+        ...updates,
+      };
+      return copy;
+    });
+  };
+  const columns = [
+    {
+      name: "Type",
+      selector: (row) => (row.isInclude ? "" : row.type),
+      sortable: true,
+      width: "120px",
+    },
+    {
+      name: "Name",
+      cell: (row) =>
+        row.isInclude ? (
+          <div style={{ paddingLeft: 1, color: "#444" }}>{row.includeName}</div>
+        ) : (
+          <div>{row.name}</div>
+        ),
+      sortable: true,
+      wrap: true,
+      grow: 2,
+    },
+    {
+      name: "Price",
+      cell: (row, index) => (
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          value={row.price}
+          min={0}
+          onChange={(e) => {
+            const price = Number(e.target.value) || 0;
+
+            const gstPrice =
+              row.gstPercent !== ""
+                ? (price * Number(row.gstPercent)) / 100
+                : 0;
+
+            const percentAmount =
+              row.percentage !== ""
+                ? (price * Number(row.percentage)) / 100
+                : 0;
+
+            updateTableRow(index, {
+              price,
+              gstPrice: Number(gstPrice.toFixed(2)),
+              percentAmount: Number(percentAmount.toFixed(2)),
+            });
+          }}
+          disabled={!row.isEditing}
+        />
+      ),
+      width: "120px",
+    },
+
+    {
+      name: "GST %",
+      cell: (row, index) => (
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          value={row.gstPercent}
+          min={0}
+          onChange={(e) => {
+            const percent = Math.max(0, Number(e.target.value) || 0);
+            const gstPrice = (Number(row.price) * percent) / 100;
+
+            updateTableRow(index, {
+              gstPercent: percent,
+              gstPrice: Number(gstPrice.toFixed(2)),
+            });
+          }}
+          disabled={!row.isEditing}
+        />
+      ),
+      width: "120px",
+    },
+
+    {
+      name: "GST Amount",
+      cell: (row, index) => (
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          value={row.gstPrice}
+          min={0}
+          onChange={(e) => {
+            const gstAmt = Math.max(0, Number(e.target.value) || 0);
+
+            const gstPercent =
+              row.price > 0 ? (gstAmt / Number(row.price)) * 100 : 0;
+
+            updateTableRow(index, {
+              gstPrice: gstAmt,
+              gstPercent: Number(gstPercent.toFixed(2)),
+            });
+          }}
+          disabled={!row.isEditing}
+        />
+      ),
+      width: "120px",
+    },
+
+    {
+      name: "Company %",
+      cell: (row, index) => (
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          value={row.percentage}
+          min={0}
+          onChange={(e) => {
+            const percent = Math.max(0, Number(e.target.value) || 0);
+            const amt = (Number(row.price) * percent) / 100;
+
+            updateTableRow(index, {
+              percentage: percent,
+              percentAmount: Number(amt.toFixed(2)),
+            });
+          }}
+          disabled={!row.isEditing}
+        />
+      ),
+      width: "120px",
+    },
+    {
+      name: "% Amount",
+      cell: (row, index) => (
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          value={row.percentAmount}
+          min={0}
+          onChange={(e) => {
+            const amt = Math.max(0, Number(e.target.value) || 0);
+
+            const percent = row.price > 0 ? (amt / Number(row.price)) * 100 : 0;
+
+            updateTableRow(index, {
+              percentAmount: amt,
+              percentage: Number(percent.toFixed(2)),
+            });
+          }}
+          disabled={!row.isEditing}
+        />
+      ),
+      width: "120px",
+    },
+{
+  name: "Select Dealer",
+  cell: (row, index) => (
+    <div className="position-relative overflow-visible w-100">
+      <Select
+      isDisabled={!row.isEditing}
+        className="react-select-container text-sm"
+        classNamePrefix="react-select"
+        isClearable
+        menuPortalTarget={document.body}
+        menuPosition="fixed"
+
+        value={
+          row.dealerID
+            ? {
+                value: row.dealerID,
+                label:
+                  dealersList.find((d) => d.DealerID === row.dealerID)
+                    ?.FullName || "Unknown Dealer",
+              }
+            : null
+        }
+        options={dealersList.map((d) => ({
+          value: d.DealerID,
+          label: d.FullName,
+        }))}
+
+        onChange={(opt) =>
+          updateTableRow(index, { dealerID: opt ? opt.value : "" })
+        }
+
+        styles={{
+          container: (base) => ({
+            ...base,
+            minWidth: 200,
+            fontSize: "0.75rem",
+          }),
+          control: (base) => ({
+            ...base,
+            height: 32,
+          }),
+          valueContainer: (base) => ({
+            ...base,
+            padding: "0 6px",
+          }),
+          input: (base) => ({
+            ...base,
+            margin: 0,
+            padding: 0,
+          }),
+          option: (base) => ({
+            ...base,
+            fontSize: "0.75rem",
+            padding: "4px 8px",
+           
+          }),
+          menuPortal: (base) => ({
+            ...base,
+            zIndex: 1080,
+          }),
+        }}
+      />
+    </div>
+  ),
+  minWidth: "200px",
+},
+
+
+    {
+      name: "Status",
+      selector: (row) => row.status,
+      center: true,
+      width: "120px",
+    },
+    {
+      name: "Description",
+      selector: (row) => (row.isInclude ? "" : row.description),
+      wrap: true,
+      width: "120px",
+    },
+    {
+  name: "Actions",
+  cell: (row, index) =>
+    !row.isInclude ? (
+      <div className="d-flex gap-2">
+        {!row.isEditing && (
+          <button
+            className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+            onClick={() => handleEditItem(index)}
+            title="Edit"
+          >
+            edit
+          </button>
+        )}
+        {row.isEditing && (
+          <button
+            className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+            onClick={() => handleSaveRow(index)}
+            title="Save"
+          >
+            save
+          </button>
+        )}
+        {!row.isEditing && (
+          <button
+            className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
+            onClick={() => handleRemoveItem(index)}
+            title="Delete"
+          >
+            <Icon icon="mingcute:delete-2-line" />
+          </button>
+        )}
+      </div>
+    ) : null,
+  ignoreRowClick: true,
+  allowOverflow: true,
+}
+  ];
+
+  // totals
+  const subtotal = addedItems.reduce(
+    (acc, it) => acc + (Number(it.price) || 0),
+    0
+  );
+  const totalGst = addedItems.reduce(
+    (acc, it) => acc + (Number(it.gstPrice) || 0),
+    0
+  );
+  const grandTotal = subtotal + totalGst;
+
+  const flattenedRows = [];
+  addedItems.forEach((item, idx) => {
+    // Main row
+    flattenedRows.push({
+      ...item,
+      __id: `item-${idx}`,
+      isInclude: false,
+    });
+
+    // Includes as separate rows (only for packages)
+    if (item.type === "Package" && Array.isArray(item.includes)) {
+      item.includes.forEach((incId, iIdx) => {
+        // Match by string because one might be number, other string
+        const incName =
+          includesList.find(
+            (inc) => inc.IncludeID.toString() === incId.toString()
+          )?.IncludeName || incId;
+        flattenedRows.push({
+          __id: `item-${idx}-inc-${iIdx}`,
+          isInclude: true,
+          includeName: incName,
+          parentIndex: idx,
+        });
+      });
+    }
+  });
+
+  return (
+    <div className="row gy-4">
+      <div className="col-12">
+        <div className="card overflow-hidden p-3">
+          <div className="card-body">
+            {/* SINGLE FORM */}
+            <h6 className="mb-3">Add Service / Spare Part</h6>
+
+            <div className="row g-3 align-items-end">
+              <div className="col-md-2">
+                <label className="form-label">Select Type</label>
+                <select
+                  className="form-select"
+                  value={itemType}
+                  onChange={(e) => setItemType(e.target.value)}
+                >
+                  <option value="Service">Service</option>
+                  <option value="Spare Part">Spare Part</option>
+                  {/* <option value="Package">Package</option> */}
+                </select>
+              </div>
+              {itemType === "Spare Part" && (
+                <div className="col-md-3">
+                  <label className="form-label">Spare Part</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter Spare Name"
+                  />
+                </div>
+              )}
+
+              {itemType === "Service" && (
+                <div className="col-md-3">
+                  <label className="form-label">Select Service</label>
+                  <CreatableSelect
+                    isSearchable
+                    className="react-select-container text-sm"
+                    classNamePrefix="react-select"
+                    placeholder="Search or create Service..."
+                    options={includesList.map((inc) => ({
+                      value: inc.IncludeID,
+                      label: inc.IncludeName,
+                    }))}
+                    value={selectedIncludes}
+                    onChange={(selected) => {
+                      if (!selected) {
+                        setSelectedIncludes(null);
+                        setName("");
+                        return;
+                      }
+
+                      if (selected.__isNew__) {
+                        setSelectedIncludes({
+                          value: "new",
+                          label: selected.label,
+                        });
+                        setName(selected.label);
+                      } else {
+                        setSelectedIncludes(selected);
+                        setName(selected.label);
+                      }
+                    }}
+                  />
+                </div>
+              )}
+              {/* PACKAGE DROPDOWN visible only when itemType = Package */}
+              {itemType === "Package" && (
+                <div className="col-md-3">
+                  <label className="form-label">Select Package</label>
+                  <CreatableSelect
+                    className="react-select-container text-sm"
+                    classNamePrefix="react-select"
+                    isClearable
+                    placeholder="Search or create package..."
+                    value={
+                      selectedPackage
+                        ? {
+                            value: selectedPackage,
+                            label:
+                              packagesList.find((p) => p.id == selectedPackage)
+                                ?.name || selectedPackage,
+                          }
+                        : null
+                    }
+                    options={packagesList.map((pkg) => ({
+                      value: pkg.id,
+                      label: pkg.name,
+                    }))}
+                    /** When an existing package is selected */
+                    onChange={(option) => {
+                      if (option) {
+                        const pkg = packagesList.find(
+                          (p) => p.id == option.value
+                        );
+                        setSelectedPackage(option.value);
+                        setName(option.label);
+
+                        // Populate includes from existing package
+                        if (pkg?.includes && pkg.includes.length > 0) {
+                          setSelectedIncludes(
+                            pkg.includes.map((inc) => inc.id)
+                          );
+                        } else {
+                          setSelectedIncludes([]);
+                        }
+                      } else {
+                        setSelectedPackage("");
+                        setName("");
+                        setSelectedIncludes([]);
+                      }
+                    }}
+                    /** When user creates a new package */
+                    onCreateOption={(inputValue) => {
+                      const newId = `new-${Date.now()}`; // temporary local ID
+
+                      const newPackage = {
+                        id: newId,
+                        name: inputValue,
+                        includes: [],
+                      };
+
+                      // Add new package to list
+                      setPackagesList((prev) => [...prev, newPackage]);
+
+                      // Select newly created package
+                      setSelectedPackage(newId);
+                      setName(inputValue);
+                      setSelectedIncludes([]);
+                    }}
+                  />
+                </div>
+              )}
+
+              <div className="col-md-2">
+                <label className="form-label">Price</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={price}
+                  min={0}
+                  onChange={(e) => setPrice(Number(e.target.value) || 0)}
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div className="col-md-2">
+                <label className="form-label">GST %</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={gstPercent}
+                  min={0}
+                  onChange={(e) => handleGstPercentChange(e.target.value)}
+                />
+              </div>
+
+              <div className="col-md-3">
+                <label className="form-label">GST Price</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={gstPrice}
+                  min={0}
+                  onChange={(e) => handleGstAmountChange(e.target.value)}
+                />
+              </div>
+              {itemType === "Package" &&
+                selectedPackage &&
+                selectedPackage.toString().startsWith("new-") && (
+                  <div className="col-md-12">
+                    <label className="form-label">Select Includes</label>
+
+                    <Select
+                      isMulti
+                      isSearchable
+                      closeMenuOnSelect={false}
+                      hideSelectedOptions={false}
+                      className="react-select-container text-sm"
+                      classNamePrefix="react-select"
+                      options={includesList.map((inc) => ({
+                        value: inc.IncludeID,
+                        label: inc.IncludeName,
+                      }))}
+                      value={includesList
+                        .filter((inc) =>
+                          selectedIncludes.includes(inc.IncludeID)
+                        )
+                        .map((inc) => ({
+                          value: inc.IncludeID,
+                          label: inc.IncludeName,
+                        }))}
+                      onChange={(selected) =>
+                        setSelectedIncludes(selected.map((s) => s.value))
+                      }
+                      components={{ Option: CheckboxOption }}
+                      placeholder="Select items included in package"
+                    />
+                  </div>
+                )}
+
+              <div className="col-12">
+                <label className="form-label">Description</label>
+                <textarea
+                  className="form-control"
+                  rows={2}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Short description"
+                />
+              </div>
+
+              <div className="col-12 d-flex gap-2 justify-content-end">
+                  <button
+                    className="btn btn-primary py-2 px-3"
+                    onClick={handleAddOrSave}
+                  >
+                    Add Item
+                  </button>
+              </div>
+            </div>
+            {/* SINGLE TABLE FOR BOTH */}
+            <div className="editable-table">
+              <h6>Added Services + Spare Parts</h6>
+              <DataTable
+                columns={columns}
+                data={flattenedRows}
+                fixedHeader
+                fixedHeaderScrollHeight="420px"
+                // pagination
+                highlightOnHover
+                responsive
+                striped
+                persistTableHead
+                noDataComponent="No items added yet"
+              />
+            </div>
+            {/* Totals */}
+            {addedItems.length > 0 && (
+              <div className="mt-3 p-3 border rounded bg-light">
+                <div className="d-flex justify-content-between">
+                  <div>Subtotal</div>
+                  <div>₹{subtotal.toFixed(2)}</div>
+                </div>
+                <div className="d-flex justify-content-between">
+                  <div>Total GST</div>
+                  <div>₹{totalGst.toFixed(2)}</div>
+                </div>
+                <hr />
+                <div className="d-flex justify-content-between fw-bold">
+                  <div>Grand Total</div>
+                  <div>₹{grandTotal.toFixed(2)}</div>
+                </div>
+              </div>
+            )}
+
+            {/* Time Slot Selection */}
+            {/* {addedItems.length > 0 && (
+  <div className="row mt-3 align-items-center">
+    <div className="col-md-4">
+      <label className="form-label fw-semibold mb-0">
+        Select Expected Service Time Slot
+      </label>
+    </div>
+
+    <div className="col-md-8">
+      <Select
+        className="react-select-container text-sm"
+        classNamePrefix="react-select"
+        placeholder="Select time slot..."
+        isClearable
+        options={timeSlots.map((slot) => ({
+          value: slot.TimeSlotID,
+          label: `${slot.StartTime} - ${slot.EndTime}`,
+        }))}
+        value={
+          selectedTimeSlot
+            ? {
+                value: selectedTimeSlot,
+                label: (() => {
+                  const slot = timeSlots.find(
+                    (t) => t.TimeSlotID === selectedTimeSlot
+                  );
+                  return slot
+                    ? `${slot.StartTime} - ${slot.EndTime}`
+                    : "";
+                })(),
+              }
+            : null
+        }
+        onChange={(option) =>
+          setSelectedTimeSlot(option ? option.value : "")
+        }
+      />
+    </div>
+  </div>
+)} */}
+            {/* Submit Button */}
+            {addedItems.length > 0 && (
+              <div className="d-flex justify-content-center mt-3">
+                <button
+                  className="btn btn-primary-600 radius-8 px-10 py-4 d-flex align-items-center gap-2"
+                  onClick={handleSubmit}
+                >
+                  Submit
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default BookServicesLayer;

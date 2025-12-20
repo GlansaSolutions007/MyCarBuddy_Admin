@@ -9,6 +9,7 @@ import FormError from "./FormError"; // form errors
 import { usePermissions } from "../context/PermissionContext";
 
 const StateLayer = () => {
+  const { hasPermission } = usePermissions();
     const [formData, setFormData] = useState({
       StateID: "",
       StateName: "",

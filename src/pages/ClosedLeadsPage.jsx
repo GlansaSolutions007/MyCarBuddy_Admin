@@ -1,20 +1,20 @@
 import MasterLayout from "../masterLayout/MasterLayout";
 import Breadcrumb from "../components/Breadcrumb";
-import LeadsLayer from "../components/LeadsLayer"
+import ClosedLeadsLayer from "../components/ClosedLeadsLayer"
 
-const LeadsPage = () => {
+const ClosedLeadsPage = () => {
   return (
     <>
       {/* MasterLayout */}
       <MasterLayout>
         {/* Breadcrumb */}
-        <Breadcrumb title='Social Leads' />
+        <Breadcrumb title='Closed Leads' />
 
-        {/* LeadsLayer */}
-        <LeadsLayer />
+        {/* ClosedLeadsLayer */}
+        <ClosedLeadsLayer />
       </MasterLayout>
     </>
   );
 };
 
-export default LeadsPage;
+export default ClosedLeadsPage;

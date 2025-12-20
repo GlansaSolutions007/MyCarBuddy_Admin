@@ -1,21 +1,26 @@
 import { useEffect, useState } from "react";
+import axios from "axios";
+import Swal from "sweetalert2";
 import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { usePermissions } from "../context/PermissionContext";
+
 const API_BASE = import.meta.env.VITE_APIURL;
 
-const LeadsLayer = () => {
+const OrganicLeadsLayer = () => {
+  const { hasPermission } = usePermissions();
   const employeeData = JSON.parse(localStorage.getItem("employeeData"));
   const role = localStorage.getItem("role");
-  const { hasPermission } = usePermissions();
   const [leads, setLeads] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("All");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [platformFilter, setPlatformFilter] = useState("All");
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     fetchLeads();
@@ -38,13 +43,55 @@ const LeadsLayer = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      // setLeads(data);
-      setLeads(Array.isArray(data) ? data : []);
+      const organicOnly = Array.isArray(data)
+        ? data.filter(
+            (lead) =>
+              (lead.Platform === "Organic" ||
+                lead.Platform === "Web" ||
+                lead.Platform === "App") &&
+              lead.NextAction !== "Lead Closed"
+          )
+        : [];
+
+      setLeads(organicOnly);
     } catch (err) {
       setError("Failed to fetch leads. Please try again.");
       console.error("Error fetching leads:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBulkUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await axios.post(`${API_BASE}Leads/UploadExcel`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        onUploadProgress: (p) => {
+          const percent = Math.round((p.loaded / p.total) * 100);
+          setUploadProgress(percent);
+        },
+      });
+
+      if (res.status === 200) {
+        Swal.fire("Success", "Bulk Upload Completed", "success");
+        setUploading(false);
+        setUploadProgress(0);
+        fetchLeads();
+      }
+    } catch (error) {
+      console.error(error);
+      Swal.fire("Error", "Bulk Upload Failed", "error");
+      setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -112,7 +159,7 @@ const LeadsLayer = () => {
       width: "120px",
     },
     {
-      name: "Updated At",
+      name: "Updated Date",
       selector: (row) => {
         if (!row.Updated_At) return "-";
         const date = new Date(row.Updated_At);
@@ -147,60 +194,54 @@ const LeadsLayer = () => {
       wrap: true,
       width: "150px",
     },
-    {
-      name: "Action",
-      cell: (row) => (
-        <div className="d-flex gap-2">
-          {hasPermission("leadview_view") && (
-            <Link
-              to={`/lead-view/${row.Id}`}
-              className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-              title="View"
-            >
-              <Icon icon="lucide:eye" />
-            </Link>
-          )}
-        </div>
-      ),
-      ignoreRowClick: true,
-      allowOverflow: true,
-      button: true,
-    },
+    ...(hasPermission("leadview_view")
+      ? [
+          {
+            name: "Action",
+            cell: (row) => (
+              <Link
+                to={`/lead-view/${row.Id}`}
+                className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                title="View"
+              >
+                <Icon icon="lucide:eye" />
+              </Link>
+            ),
+            ignoreRowClick: true,
+            allowOverflow: true,
+            button: true,
+          },
+        ]
+      : []),
   ];
 
-  // Filter
-  const filteredLeads = [...leads]
-    .sort((a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate))
+  let filteredLeads = leads
     .filter((lead) => {
-      if (
-        lead.Platform === "Organic" ||
-        lead.Platform === "Web" ||
-        lead.Platform === "App" ||
-        lead.NextAction === "Lead Closed"
-      ) return false;
       const text = searchText.toLowerCase();
-      const statusMatch =
-        selectedStatus === "All" ||
-        lead.LeadStatus?.toLowerCase() === selectedStatus.toLowerCase();
 
-      // Date filtering
       const leadDate = lead.CreatedDate ? new Date(lead.CreatedDate) : null;
       const from = fromDate ? new Date(fromDate + "T00:00:00") : null;
       const to = toDate ? new Date(toDate + "T23:59:59") : null;
+
       const dateMatch =
         (!from || (leadDate && leadDate >= from)) &&
         (!to || (leadDate && leadDate <= to));
 
+      const platformMatch =
+        platformFilter === "All" || lead.Platform === platformFilter;
+
       return (
-        statusMatch &&
         dateMatch &&
-        (lead.FullName?.toLowerCase().includes(text) ||
+        platformMatch &&
+        (lead.Id?.toString().toLowerCase().includes(text) ||
+          lead.FullName?.toLowerCase().includes(text) ||
           lead.PhoneNumber?.toLowerCase().includes(text) ||
           lead.Email?.toLowerCase().includes(text) ||
           lead.City?.toLowerCase().includes(text) ||
           lead.LeadStatus?.toLowerCase().includes(text))
       );
-    });
+    })
+    .sort((a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate));
 
   return (
     <div className="row gy-4">
@@ -223,43 +264,103 @@ const LeadsLayer = () => {
                 <label className="text-sm fw-semibold">From:</label>
                 <input
                   type="date"
-                  className="form-control radius-8 px-14 py-6 text-sm w-auto"
                   placeholder="DD-MM-YYYY"
+                  className="custom-date form-control radius-8 px-14 py-6 text-sm w-auto"
                   value={fromDate}
                   onChange={(e) => setFromDate(e.target.value)}
                 />
                 <label className="text-sm fw-semibold">To:</label>
                 <input
                   type="date"
-                  className="form-control radius-8 px-14 py-6 text-sm w-auto"
                   placeholder="DD-MM-YYYY"
+                  className="custom-date form-control radius-8 px-14 py-6 text-sm w-auto"
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
                 />
-                <select
-                  className="form-select radius-8 px-14 py-6 text-sm w-auto min-w-150"
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
+                {/* <select
+                  className="form-control radius-8 px-14 py-6 text-sm w-auto"
+                  value={platformFilter}
+                  onChange={(e) => setPlatformFilter(e.target.value)}
                 >
                   <option value="All">All</option>
-                  <option value="CREATED">Created</option>
-                  <option value="CONTACTED">Contacted</option>
-                  <option value="QUALIFIED">Qualified</option>
-                  <option value="CLOSED">Closed</option>
-                </select>
-                {/* {hasPermission("todayslead_view") &&
-                  roleName === "Employee" && (
-                    <Link
-                      to="/todays-lead"
-                      className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
-                    >
-                      <Icon className="icon text-xl line-height-1" />
-                      Today Assigned Leads
-                    </Link>
-                  )} */}
+                  <option value="Organic">Organic</option>
+                  <option value="Web">Web</option>
+                  <option value="App">App</option>
+                </select> */}
+
+                <div className="position-relative d-inline-block">
+                  <select
+                    className="form-control radius-8 px-14 py-6 text-sm w-auto"
+                    value={platformFilter}
+                    onChange={(e) => setPlatformFilter(e.target.value)}
+                    style={{
+                      appearance: "none",
+                      WebkitAppearance: "none",
+                      MozAppearance: "none",
+                      paddingRight: "30px", // space for arrow
+                    }}
+                  >
+                    <option value="All">All</option>
+                    <option value="Organic">Organic</option>
+                    <option value="Web">Web</option>
+                    <option value="App">App</option>
+                  </select>
+                  <i
+                    className="bi bi-chevron-down"
+                    style={{
+                      position: "absolute",
+                      right: "10px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      pointerEvents: "none",
+                      fontSize: "14px",
+                      color: "#555",
+                    }}
+                  ></i>
+                </div>
+
+                <input
+                  type="file"
+                  accept=".xlsx, .xls"
+                  id="organicUpload"
+                  style={{ display: "none" }}
+                  onChange={handleBulkUpload}
+                />
+                {/* Bulk Upload button */}
+                {role === "Admin" && (
+                  <button
+                    type="button"
+                    className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
+                    onClick={() =>
+                      document.getElementById("organicUpload").click()
+                    }
+                    disabled={uploading}
+                  >
+                    <Icon
+                      icon="mdi:upload"
+                      className="icon text-xl line-height-1"
+                    />
+                    Bulk Upload
+                  </button>
+                )}
+                {hasPermission("createlead_add") && (
+                  <Link
+                    to="/create-lead"
+                    className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
+                  >
+                    <Icon
+                      icon="ic:baseline-plus"
+                      className="icon text-xl line-height-1"
+                    />
+                    Add Lead
+                  </Link>
+                )}
               </div>
             </div>
           </div>
+          {uploading && (
+            <div className="m-3">Uploading {uploadProgress}%...</div>
+          )}
           {error ? (
             <div className="alert alert-danger m-3">{error}</div>
           ) : (
@@ -283,4 +384,4 @@ const LeadsLayer = () => {
   );
 };
 
-export default LeadsLayer;
+export default OrganicLeadsLayer;

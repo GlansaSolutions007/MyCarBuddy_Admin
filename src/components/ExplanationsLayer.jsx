@@ -6,11 +6,11 @@ import DataTable from "react-data-table-component";
 import { usePermissions } from "../context/PermissionContext";
 import Swal from "sweetalert2";
 
-const FaqsLayer = () => {
+const ExplanationsLayer = () => {
   const { hasPermission } = usePermissions();
   const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(true);
-  const [faqData, setFaqData] = useState([]);
+  const [explanationData, setExplanationData] = useState([]);
 
   const API_BASE = `${import.meta.env.VITE_APIURL}`;
   const token = localStorage.getItem("token");
@@ -21,12 +21,12 @@ const FaqsLayer = () => {
 
   const fetchFaqs = async () => {
     try {
-      const res = await axios.get(`${API_BASE}FAQS/Packages`, {
+      const res = await axios.get(`${API_BASE}Explanations/Packages`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setFaqData(res.data);
+      setExplanationData(res.data);
     } catch (error) {
-      console.error("Failed to load FAQs", error);
+      console.error("Failed to load Explanation", error);
     } finally {
       setLoading(false);
     }
@@ -45,22 +45,22 @@ const FaqsLayer = () => {
 
     if (result.isConfirmed) {
       try {
-        await axios.delete(`${API_BASE}FAQS/DeleteFAQ/${faqId}`, {
+        await axios.delete(`${API_BASE}Explanations/DeleteExplanation/${faqId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        Swal.fire("Deleted!", "FAQ has been deleted.", "success");
+        Swal.fire("Deleted!", "Explanation has been deleted.", "success");
         fetchFaqs();
       } catch (error) {
-        console.error("Failed to delete FAQ", error);
-        Swal.fire("Error", "Failed to delete FAQ", "error");
+        console.error("Failed to delete Explanation", error);
+        Swal.fire("Error", "Failed to delete Explanation", "error");
       }
     }
   };
 
   const faqs = [];
   // ------- 1) PACKAGE FAQS -------
-  if (faqData?.PackageFAQS && Array.isArray(faqData.PackageFAQS)) {
-    faqData.PackageFAQS.forEach((pkg) => {
+  if (explanationData?.PackageFAQS && Array.isArray(explanationData.PackageFAQS)) {
+    explanationData.PackageFAQS.forEach((pkg) => {
       if (Array.isArray(pkg.FAQS)) {
         pkg.FAQS.forEach((faq, index) => {
           faqs.push({
@@ -75,8 +75,8 @@ const FaqsLayer = () => {
     });
   }
   // ------- 2) CATEGORY FAQS -------
-  if (faqData?.CategoryFAQS && Array.isArray(faqData.CategoryFAQS)) {
-    faqData.CategoryFAQS.forEach((cat) => {
+  if (explanationData?.CategoryFAQS && Array.isArray(explanationData.CategoryFAQS)) {
+    explanationData.CategoryFAQS.forEach((cat) => {
       if (Array.isArray(cat.FAQS)) {
         cat.FAQS.forEach((faq, index) => {
           faqs.push({
@@ -121,15 +121,15 @@ const FaqsLayer = () => {
       name: "Actions",
       cell: (row) => (
         <div>
-          {hasPermission("faqs_edit") && (
+          {hasPermission("explanations_edit") && (
             <Link
-              to={`/add-faqs?id=${row.id}`}
+              to={`/add-explanations?id=${row.id}`}
               className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
             >
               <Icon icon="lucide:edit" />
             </Link>
           )}
-          {hasPermission("faqs_delete") && (
+          {hasPermission("explanations_delete") && (
             <button
               className="w-32-px h-32-px me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
               onClick={() => handleDeleteFaq(row.id)}
@@ -144,12 +144,12 @@ const FaqsLayer = () => {
   ];
 
   // Filter FAQs based on search text
-  const filteredFaqs = faqs.filter((faq) => {
+  const filteredExplanations = faqs.filter((exp) => {
     const text = searchText.toLowerCase();
     return (
-      faq.package.toLowerCase().includes(text) ||
-      faq.question.toLowerCase().includes(text) ||
-      faq.Answer.toLowerCase().includes(text)
+      exp.package.toLowerCase().includes(text) ||
+      exp.question.toLowerCase().includes(text) ||
+      exp.Answer.toLowerCase().includes(text)
     );
   });
 
@@ -173,7 +173,7 @@ const FaqsLayer = () => {
                 <input
                   type="text"
                   className="form-control ps-5"
-                  placeholder="Search FAQs"
+                  placeholder="Search Explanation"
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
                   style={{
@@ -189,16 +189,16 @@ const FaqsLayer = () => {
               </form>
 
               {/* Add FAQ Button */}
-              {hasPermission("faqs_add") && (
+              {hasPermission("explanations_add") && (
                 <Link
-                  to={"/add-faqs"}
+                  to={"/add-explanations"}
                   className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
                 >
                   <Icon
                     icon="ic:baseline-plus"
                     className="icon text-xl line-height-1"
                   />
-                  Add Faq
+                  Add Explanation
                 </Link>
               )}
             </div>
@@ -206,14 +206,14 @@ const FaqsLayer = () => {
 
           <DataTable
             columns={columns}
-            data={filteredFaqs}
+            data={filteredExplanations}
             progressPending={loading}
             pagination
             highlightOnHover
             responsive
             striped
             persistTableHead
-            noDataComponent={loading ? "Loading FAQs..." : "No FAQs available"}
+            noDataComponent={loading ? "Loading Explanations..." : "No Explanations available"}
           />
         </div>
       </div>
@@ -221,4 +221,4 @@ const FaqsLayer = () => {
   );
 };
 
-export default FaqsLayer;
+export default ExplanationsLayer;

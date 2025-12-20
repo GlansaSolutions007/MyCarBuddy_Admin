@@ -2,53 +2,108 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+
+const normalizeImagePath = (path) => {
+  if (!path) return null;
+  return path.replace(/\\/g, "/");
+};
 
 const ViewProfileLayer = () => {
   const baseURL = import.meta.env.VITE_APIURL;
   const API_IMAGE = import.meta.env.VITE_APIURL_IMAGE;
-  const navigate = useNavigate();
-
   const [formData, setFormData] = useState({
-    AdminID: 2, // fixed ID for now
+    userId: null,
+    role: "",
     FullName: "",
-    PasswordHash: "",
+    Email: "",
+    Password: "",
     confirmPassword: "",
     ProfileImage1: "",
+    PhoneNumber: "",
+    Address: "",
+    DepartmentName: "",
+    RoleName: "",
+    RoleId: null,
+    DeptId: null,
+    DesignationId: null,
+    ReportingTo: null,
+    Status: true,
   });
-
   const [imagePreview, setImagePreview] = useState(
     "/assets/images/user-grid/user-grid-img13.png" // default placeholder
   );
   const [file, setFile] = useState(null);
 
-  // Fetch admin details
-  useEffect(() => {
-    const fetchAdmin = async () => {
-      try {
-        const res = await axios.get(
-          `${baseURL}Auth/adminid?adminid=${formData.AdminID}`
-        );
+  const fetchProfile = async () => {
+    try {
+      const role = localStorage.getItem("role");
+      const userId = localStorage.getItem("userId");
+
+      if (!role || !userId) return;
+
+      if (role === "Employee") {
+        const res = await axios.get(`${baseURL}Employee/Id?Id=${userId}`);
         const data = res.data[0];
 
-        setFormData({
-          AdminID: data.AdminID,
+        setFormData((prev) => ({
+          ...prev,
+          userId: data.Id,
+          role: "Employee",
+
+          FullName: data.Name,
+          Email: data.Email,
+          PhoneNumber: data.PhoneNumber,
+          Address: data.Address,
+
+          DepartmentName: data.DepartmentName,
+          RoleName: data.RoleName,
+
+          // 🔐 store required backend values
+          RoleId: data.RoleId,
+          DeptId: data.DeptId,
+          DesignationId: data.Designation_Id,
+          ReportingTo: data.Reporting_To,
+          Status: data.Status,
+
+          Password: "",
+          confirmPassword: "",
+          ProfileImage1: data.ProfileImage,
+        }));
+
+        if (data.ProfileImage) {
+  const fixedPath = normalizeImagePath(data.ProfileImage);
+  setImagePreview(`${API_IMAGE}${fixedPath}`);
+}
+
+      }
+
+      if (role === "Admin") {
+        const res = await axios.get(`${baseURL}Auth/adminid?adminid=${userId}`);
+        const data = res.data[0];
+
+        setFormData((prev) => ({
+          ...prev,
+          userId: data.AdminID,
+          role: "Admin",
           FullName: data.FullName,
           Email: data.Email,
-          PasswordHash: "", // don’t pre-fill password
+          Password: "",
+          confirmPassword: "",
           ProfileImage1: data.ProfileImage,
-        });
+        }));
 
-        // show old image if available
         if (data.ProfileImage) {
           setImagePreview(`${API_IMAGE}${data.ProfileImage}`);
         }
-      } catch (err) {
-        console.error("Error fetching admin:", err);
       }
-    };
+    } catch (err) {
+      console.error("Profile fetch error:", err);
+    }
+  };
 
-    fetchAdmin();
+  useEffect(() => {
+    fetchProfile();
   }, []);
 
   // Handle input changes
@@ -72,9 +127,14 @@ const ViewProfileLayer = () => {
     }
   };
 
+  const isValidPhoneNumber = (phone) => {
+    const phoneRegex = /^[6-9]\d{9}$/;
+    return phoneRegex.test(phone);
+  };
+
   // Save / Update Admin
   const handleSave = async () => {
-    if (formData.PasswordHash !== formData.confirmPassword) {
+    if (formData.Password !== formData.confirmPassword) {
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -84,36 +144,87 @@ const ViewProfileLayer = () => {
     }
 
     try {
-      const payload = new FormData();
-      payload.append("AdminID", formData.AdminID);
-      payload.append("FullName", formData.FullName);
-      payload.append("PasswordHash", formData.PasswordHash);
-      if (file) {
-        payload.append("ProfileImage1", file);
-      }
+      const role = localStorage.getItem("role"); // Admin | Employee
+      const adminPayload  = new FormData();
 
-      const res = await axios.put(`${baseURL}Auth/update-admin`, payload, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      // 🔹 ADMIN UPDATE
+      // if (role === "Admin") {
+      //   adminPayload .append("AdminID", formData.userId);
+      //   adminPayload .append("FullName", formData.FullName);
 
-      const result = res.data;
-      if (res.status === 200) {
-        Swal.fire({
-          icon: "success",
-          title: "Success",
-          text: "Profile updated successfully!",
-        }).then(() => {
-          navigate("/dashboard"); // redirect after success
+      //   // send password only if user typed it
+      //   if (formData.Password) {
+      //     adminPayload .append("Password", formData.Password);
+      //   }
+
+      //   if (file) {
+      //     adminPayload .append("ProfileImage1", file);
+      //   }
+
+      //   const res = await axios.put(`${baseURL}Auth/update-admin`, adminPayload , {
+      //   });
+
+      //   if (res.status === 200) {
+      //     Swal.fire({
+      //       icon: "success",
+      //       title: "Success",
+      //       text: "Admin profile updated successfully!",
+      //     }).then(() => {
+      //       fetchProfile();
+      //     });
+      //   }
+      // }
+      // 🔹 EMPLOYEE UPDATE
+      // if (role === "Employee") {
+        if (!formData.FullName.trim()) {
+          Swal.fire("Error", "Full Name is required", "error");
+          return;
+        }
+
+        if (!isValidPhoneNumber(formData.PhoneNumber)) {
+          Swal.fire("Error", "Enter valid phone number", "error");
+          return;
+        }
+
+        if (!formData.Address.trim()) {
+          Swal.fire("Error", "Address is required", "error");
+          return;
+        }
+
+        const payload = new FormData();
+
+        // 🔹 user-editable
+        payload.append("Id", formData.userId);
+        payload.append("Name", formData.FullName);
+        payload.append("Email", formData.Email);
+        payload.append("PhoneNumber", formData.PhoneNumber);
+        payload.append("Address", formData.Address);
+        payload.append("RoleName", formData.RoleName); 
+
+        // 🔐 backend-required (hidden)
+        payload.append("RoleId", formData.RoleId);
+        payload.append("DeptId", formData.DeptId);
+        payload.append("Designation_Id", formData.DesignationId);
+        payload.append("Reporting_To", formData.ReportingTo);
+        payload.append("Status", formData.Status);
+        // optional
+        if (formData.Password) {
+          payload.append("Password", formData.Password);
+        }
+
+        if (file) {
+          payload.append("ProfileImage1", file);
+        }
+
+        const res = await axios.put(`${baseURL}Employee`, payload, {
         });
-      } else {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: result.message || "Update failed!",
-        });
-      }
+
+        if (res.status === 200) {
+          Swal.fire("Success", "Profile updated successfully", "success").then(
+            fetchProfile
+          );
+        }
+      // }
     } catch (err) {
       console.error("Update error:", err);
       Swal.fire({
@@ -205,6 +316,67 @@ const ViewProfileLayer = () => {
                         />
                       </div>
                     </div>
+                    {/* {formData.role === "Employee" && ( */}
+                      <>
+                        <div className="col-sm-6">
+                          <div className="mb-20">
+                            <label className="form-label">Phone Number</label>
+                            <input
+                              type="tel"
+                              maxLength={10}
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              className="form-control radius-8"
+                              name="PhoneNumber"
+                              value={formData.PhoneNumber}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, "");
+                                setFormData({
+                                  ...formData,
+                                  PhoneNumber: value,
+                                });
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="col-sm-6">
+                          <div className="mb-20">
+                            <label className="form-label">Role</label>
+                            <input
+                              type="text"
+                              className="form-control radius-8"
+                              value={formData.RoleName}
+                              readOnly
+                            />
+                          </div>
+                        </div>
+
+                        <div className="col-sm-6">
+                          <div className="mb-20">
+                            <label className="form-label">Department</label>
+                            <input
+                              type="text"
+                              className="form-control radius-8"
+                              value={formData.DepartmentName}
+                              readOnly
+                            />
+                          </div>
+                        </div>
+
+                        <div className="col-sm-12">
+                          <div className="mb-20">
+                            <label className="form-label">Address</label>
+                            <textarea
+                              className="form-control radius-8"
+                              rows="2"
+                              name="Address"
+                              value={formData.Address}
+                              onChange={handleChange}
+                            />
+                          </div>
+                        </div>
+                      </>
 
                     <div className="col-sm-6">
                       <div className="mb-20">
@@ -214,8 +386,8 @@ const ViewProfileLayer = () => {
                         <input
                           type="password"
                           className="form-control radius-8"
-                          name="PasswordHash"
-                          value={formData.PasswordHash}
+                          name="Password"
+                          value={formData.Password}
                           onChange={handleChange}
                           placeholder="Enter password"
                         />

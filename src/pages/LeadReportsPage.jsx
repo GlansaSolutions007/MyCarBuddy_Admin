@@ -1,20 +1,23 @@
 import MasterLayout from "../masterLayout/MasterLayout";
 import Breadcrumb from "../components/Breadcrumb";
-import LeadsLayer from "../components/LeadsLayer"
+import LeadReportsLayer from "../components/LeadReportsLayer";
 
-const LeadsPage = () => {
+const LeadReportsPage = () => {
   return (
     <>
       {/* MasterLayout */}
       <MasterLayout>
         {/* Breadcrumb */}
-        <Breadcrumb title='Social Leads' />
+        <Breadcrumb title='Lead Reports' />
 
-        {/* LeadsLayer */}
-        <LeadsLayer />
+        {/* LeadReportsLayer */}
+        <LeadReportsLayer />
+
       </MasterLayout>
     </>
   );
 };
 
-export default LeadsPage;
+export default LeadReportsPage;
+
+

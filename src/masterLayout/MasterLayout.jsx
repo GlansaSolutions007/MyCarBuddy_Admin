@@ -11,6 +11,7 @@ import axios from "axios";
 // import CrytoJS from "crypto-js";
 
 const MasterLayout = ({ children }) => {
+
   let [sidebarActive, seSidebarActive] = useState(false);
   let [mobileMenu, setMobileMenu] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -84,14 +85,7 @@ const MasterLayout = ({ children }) => {
     }
     return true; // Show if no permission defined
   };
-
-
-
-
   // console.log(userImage);x`
-
-
-
   useEffect(() => {
     const fetchProfileImage = async () => {
       try {
@@ -302,11 +296,11 @@ const MasterLayout = ({ children }) => {
       title: "Customer Details",
       icon: "flowbite:users-group-outline",
       children: [
-        { title: "Customers", to: "/customers", color: "text-primary-600", permission: "customer_view", page: "Customers" },
-        { title: "Bookings", to: "/bookings", color: "text-warning-main", permission: "booking_view", page: "Bookings" },
-        { title: "Refunds", to: "/refunds", color: "text-black", permission: "refund_view", page: "Refunds" },
-        { title: "Payments", to: "/payments", color: "text-info-main", permission: "payment_view", page: "Payments" },
-        { title: "Tickets", to: "/tickets", color: "text-info-danger", permission: "ticket_view", page: "Tickets" },
+        { title: "Customers", to: "/customers", color: "text-primary-600", permission: "customers_view", page: "Customers" },
+        { title: "Bookings", to: "/bookings", color: "text-warning-main", permission: "bookings_view", page: "Bookings" },
+        { title: "Refunds", to: "/refunds", color: "text-black", permission: "refunds_view", page: "Refunds" },
+        { title: "Payments", to: "/payments", color: "text-info-main", permission: "payments_view", page: "Payments" },
+        { title: "Tickets", to: "/tickets", color: "text-info-danger", permission: "tickets_view", page: "Tickets" },
       ],
     },
     {
@@ -357,23 +351,72 @@ const MasterLayout = ({ children }) => {
           permission: "employees_view",
           page: "Employees",
         },
-        {
-          title: "Leads",
-          to: "/leads",
-          color: "text-info-danger",
-          permission: "leads_view",
-          page: "Leads",
-        },
       ],
     },
     {
       title: "Telecaller Assignment",
       icon: "hugeicons:user-check-02",
       children: [
-        { title: "Assign Bookings", to: "/telecaler-bookings", color: "text-warning-main", permission: "telecaler_booking_view", page: "Telecaler_Bookings" },
+        // { title: "Assign Bookings", to: "/telecaler-bookings", color: "text-warning-main", permission: "telecaler_booking_view", page: "Telecaler_Bookings" },
         // { title: "Telecaller Tickets", to: "/telecaler-tickets", color: "text-info-main", permission: "telecaler_ticket_view", page: "Telecaler_Tickets" },
         { title: "Assign Tickets", to: "/assign-tickets", color: "text-success-main", permission: "assigntickets_view", page: "Assign Tickets" },
+        { title: "Assign Leads", to: "/assign-leads", color: "text-danger-main", permission: "assignleads_view", page: "Assign Leads" },
         // { title: "Employee Tickets", to: "/employee-tickets", color: "text-danger-main", permission: "employee_ticket_view", page: "Employee_Tickets" },
+      ],
+    },
+    {
+      title: "Digital Marketing",
+      icon: "mdi:bullhorn-outline",
+      children: [
+        { title: "SEO", to: "/seo", color: "text-info-main", permission: "seo_view", page: "SEO" },
+        {
+          title: "FAQs",
+          to: "/faqs",
+          color: "text-primary-600",
+          permission: "faqs_view",
+          page: "FAQs",
+        },
+        {
+          title: "Explanations",
+          to: "/explanations",
+          color: "text-warning-main",
+          permission: "explanations_view",
+          page: "Explanations",
+        },
+      ],
+    },
+    {
+      title: "Support",
+      icon: "mdi:headset-mic",
+      children: [
+        {
+          title: "Social Leads",
+          to: "/leads",
+          color: "text-info-danger",
+          permission: "leads_view",
+          page: "Social Leads",
+        },
+        {
+          title: "Organic Leads",
+          to: "/organic-leads",
+          color: "text-success-main",
+          permission: "organicleads_view",
+          page: "Organic Leads",
+        },
+        {
+          title: "Today Pending Leads",
+          to: "/todays-lead",
+          color: "text-black",
+          permission: "todayslead_view",
+          page: "Today Pending Leads",
+        },
+        {
+          title: "Closed Leads",
+          to: "/closed-leads",
+          color: "text-warning-main",
+          permission: "closedleads_view",
+          page: "Closed Leads",
+        },
       ],
     },
     {
@@ -381,7 +424,12 @@ const MasterLayout = ({ children }) => {
       icon: "ion:document-text-outline",
       children: [
         { title: "Ticket Reports", to: "/ticket-reports", color: "text-warning-main", permission: "ticketreports_view", page: "Ticket Reports" },
+        { title: "Lead Reports", to: "/lead-reports", color: "text-info-main", permission: "leadreports_view", page: "Lead Reports" },
         { title: "Booking Reports", to: "/booking-reports", color: "text-success-main", permission: "bookingreports_view", page: "Booking Reports" },
+        { title: "Services Earning Report", to: "/services-earning-report", color: "text-danger-main", permission: "servicesearningreport_view", page: "Services Earning Report" },
+        { title: "Garage Earning Report", to: "/garage-earning-report", color: "text-primary-600", permission: "garageearningreport_view", page: "Garage Earning Report" },
+        { title: "Revenue Reports", to: "/revenue-reports", color: "text-primary-600", permission: "revenuereports_view", page: "Revenue Reports" },
+
       ],
     },
     // {
@@ -444,10 +492,10 @@ const MasterLayout = ({ children }) => {
       children: [
         {
           title: "Time Slots",
-          to: "/booking-time-slot",
+          to: "/booking-time-slot", 
           color: "text-primary-600",
-          permission: "time_slot_view",
-          page: "Time_Slot",
+          permission: "bookingtimeslot_view",
+          page: "Booking Time Slot",
         },
       ],
     },
@@ -455,14 +503,14 @@ const MasterLayout = ({ children }) => {
       title: "Coupons",
       icon: "ion:card-outline",
       children: [
-        { title: "Coupons", to: "/coupons", color: "text-primary-600", permission: "coupon_view", page: "Coupon" },
+        { title: "Coupons", to: "/coupons", color: "text-primary-600", permission: "coupons_view", page: "Coupons" },
       ],
     },
     {
       title: "Leave Management",
       icon: "ion:document-text-outline",
       children: [
-        { title: "Leaves", to: "/leave-list", color: "text-primary-600", permission: "leave_view", page: "Leave" },
+        { title: "Leaves", to: "/leave-list", color: "text-primary-600", permission: "leavelist_view", page: "Leave List" },
       ],
     },
     {
@@ -474,7 +522,7 @@ const MasterLayout = ({ children }) => {
       title: "Contacts",
       icon: "flowbite:address-book-outline",
       children: [
-        { title: "Contacts", to: "/contacts", color: "text-primary-600", permission: "contact_view", page: "Contact" },
+        { title: "Contacts", to: "/contacts", color: "text-primary-600", permission: "contacts_view", page: "Contacts" },
       ],
     },
     {
@@ -483,24 +531,10 @@ const MasterLayout = ({ children }) => {
       children: [
         {
           title: "Dealer Service Price",
-          to: "/DealerServicePrice",
+          to: "/dealer-service-price",
           color: "text-primary-600",
-          permission: "dealer_service_price_view",
-          page: "Dealer_Service_Price",
-        },
-      ],
-    },
-    {
-      title: "Digital Marketing",
-      icon: "mdi:bullhorn-outline",
-      children: [
-        { title: "SEO", to: "/seo", color: "text-info-main", permission: "seo_view", page: "SEO" },
-        {
-          title: "FAQs",
-          to: "/faqs",
-          color: "text-primary-600",
-          permission: "faqs_view",
-          page: "FAQs",
+          permission: "dealerserviceprice_view",
+          page: "Dealer Service Price",
         },
       ],
     },
@@ -508,28 +542,28 @@ const MasterLayout = ({ children }) => {
       title: "Settings",
       icon: "material-symbols:settings-outline-rounded",
       children: [
-        { title: "Reasons", to: "/reason", color: "text-primary-600", permission: "reason_view", page: "Reason" },
+        { title: "Reasons", to: "/reasons", color: "text-primary-600", permission: "reasons_view", page: "Reasons" },
         {
           title: "Notification Templates",
           to: "/notification-templates",
           color: "text-warning-main",
-          permission: "notification_template_view",
-          page: "Notification_Template",
+          permission: "notificationtemplates_view",
+          page: "Notification Template",
         },
         {
           title: "Notifications",
           to: "/notifications",
           color: "text-info-main",
-          permission: "notification_view",
-          page: "Notification",
+          permission: "notifications_view",
+          page: "Notifications",
         },
-        { title: "Role", to: "/roles", color: "text-info-main", permission: "role_view", page: "Role" },
+        { title: "Roles", to: "/roles", color: "text-info-main", permission: "roles_view", page: "Roles" },
         {
           title: "Permission Pages",
           to: "/permission-pages",
           color: "text-info-main",
-          permission: "permission_page_view",
-          page: "Permission_Page",
+          permission: "permissionpages_view",
+          page: "Permission Pages",
         },
       ],
     },
@@ -1044,7 +1078,7 @@ const MasterLayout = ({ children }) => {
                       <li>
                         <Link
                           className="dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-primary d-flex align-items-center gap-3"
-                          to="/view-profile"
+                          to="/profile-view"
                         >
                           <Icon
                             icon="solar:user-linear"
