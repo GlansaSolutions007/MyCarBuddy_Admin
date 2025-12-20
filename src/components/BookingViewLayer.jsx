@@ -78,7 +78,8 @@ const BookingViewLayer = () => {
       description: "",
       gstPercent: "",
       gstAmount: "",
-      totalAmount: ""
+      totalAmount: "",
+      qty: ""
     }
 
   ]);
@@ -439,13 +440,18 @@ const BookingViewLayer = () => {
         if (service.id === id) {
           const updatedService = { ...service, [field]: value };
 
-          // Parse values safely
           const price = parseFloat(updatedService.price) || 0;
           const gstPercent = parseFloat(updatedService.gstPercent) || 0;
+          const qty = parseInt(updatedService.qty) || 0; // stored but not used in amount calc
 
-          // Auto-calculate GST Amount and Total
-          const gstAmount = (price * gstPercent) / 100;
-          const totalAmount = price + gstAmount;
+          // Base amount is now only price
+          const baseAmount = price;
+
+          // GST calculated on base price only
+          const gstAmount = (baseAmount * gstPercent) / 100;
+
+          // Total = price + gst only (no qty multiplication)
+          const totalAmount = baseAmount + gstAmount;
 
           updatedService.gstAmount = gstAmount.toFixed(2);
           updatedService.totalAmount = totalAmount.toFixed(2);
@@ -478,6 +484,7 @@ const BookingViewLayer = () => {
       addOns: previewServices.map((item) => ({
         serviceName: item.name,
         servicePrice: Number(item.price),
+        quantity: Number(item.qty),
         description: item.description || "",
         gstPercent: Number(item.gstPercent || 0),
         gstPrice: Number(item.gstAmount || 0),
@@ -540,6 +547,7 @@ const BookingViewLayer = () => {
       addOns: valid.map(item => ({
         serviceName: item.name,
         servicePrice: Number(item.price),
+        quantity: Number(item.qty),
         description: item.description || "",
         gstPercent: Number(item.gstPercent || 0),
         gstPrice: Number(item.gstAmount || 0),
@@ -562,6 +570,7 @@ const BookingViewLayer = () => {
           name: "",
           bodyPart: "",
           price: "",
+          qty: "",
           gstPercent: "",
           gstAmount: "",
           totalAmount: "",
@@ -609,6 +618,7 @@ const BookingViewLayer = () => {
         id: item.AddOnID,
         name: item.ServiceName,
         price: item.ServicePrice,
+        qty: item.Quantity,
         description: item.Description,
         gstPercent: item.GSTPercent,
         gstAmount: item.GSTPrice,
@@ -1186,7 +1196,7 @@ const BookingViewLayer = () => {
                                           className="list-group-item position-relative d-flex justify-content-between align-items-center flex-wrap"
                                         >
                                           <div className="me-3 ms-4">
-                                            <strong className="text-dark">{addon.ServiceName}</strong>
+                                            <strong className="text-dark">{addon.ServiceName} (qty-{addon.Quantity || 0})</strong>
                                             <p className="mb-0 text-muted small">
                                               {addon.Description || "No description available"}
                                             </p>
@@ -1339,7 +1349,20 @@ const BookingViewLayer = () => {
                       </div>
 
                       <div className="row mb-3">
-                        <div className="col-md-4">
+                        <div className="col-md-3">
+                          <label className="form-label fw-semibold">
+                            Qty <span className="text-danger">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            placeholder="Enter Qty"
+                            value={service.qty}
+                            required
+                            onChange={(e) => handleServiceChange(service.id, "qty", e.target.value)}
+                          />
+                        </div>
+                        <div className="col-md-3">
                           <label className="form-label fw-semibold">
                             Service Price <span className="text-danger">*</span>
                           </label>
@@ -1352,7 +1375,7 @@ const BookingViewLayer = () => {
                             onChange={(e) => handleServiceChange(service.id, "price", e.target.value)}
                           />
                         </div>
-                        <div className="col-md-4">
+                        <div className="col-md-3">
                           <label className="form-label fw-semibold">GST %</label>
                           <input
                             type="number"
@@ -1362,7 +1385,7 @@ const BookingViewLayer = () => {
                             onChange={(e) => handleServiceChange(service.id, "gstPercent", e.target.value)}
                           />
                         </div>
-                        <div className="col-md-4">
+                        <div className="col-md-3">
                           <label className="form-label fw-semibold">GST Amount</label>
                           <input
                             type="number"
@@ -1372,16 +1395,6 @@ const BookingViewLayer = () => {
                             onChange={(e) => handleServiceChange(service.id, "gstAmount", e.target.value)}
                           />
                         </div>
-                        {/* <div className="col-md-3">
-                          <label className="form-label fw-semibold">Total Amount</label>
-                          <input
-                            type="number"
-                            className="form-control"
-                            placeholder="Total Amount"
-                            value={service.totalAmount}
-                            onChange={(e) => handleServiceChange(service.id, "totalAmount", e.target.value)}
-                          />
-                        </div> */}
                       </div>
                     </div>
                   ))}
@@ -1431,6 +1444,7 @@ const BookingViewLayer = () => {
                             <th style={{ padding: "6px 10px" }}>S.N</th>
                             <th style={{ padding: "6px 10px" }}>Service Name</th>
                             <th style={{ padding: "6px 10px" }}>Spare Part</th>
+                            <th style={{ padding: "6px 10px" }}>Qty</th>
                             <th style={{ padding: "6px 10px" }}>Price</th>
                             <th style={{ padding: "6px 10px" }}>GST%</th>
                             <th style={{ padding: "6px 10px" }}>GST ₹</th>
@@ -1439,7 +1453,7 @@ const BookingViewLayer = () => {
                           </tr>
                         </thead>
 
-                        <tbody style={{ fontSize: "14px" }}>
+                        <tbody style={{ fontSize: "14px", textAlign: "center" }}>
                           {previewServices.map((srv, idx) => (
                             <tr key={idx}>
                               <td style={{ padding: "6px 10px" }}>{idx + 1}</td>
@@ -1457,6 +1471,7 @@ const BookingViewLayer = () => {
                               </td>
 
                               <td style={{ padding: "6px 10px" }}>{srv.bodyPart}</td>
+                              <td style={{ padding: "6px 10px" }}>{srv.qty}</td>
                               <td style={{ padding: "6px 10px" }}>₹{srv.price ?? 0}</td>
                               <td style={{ padding: "6px 10px" }}>{srv.gstPercent}%</td>
                               <td style={{ padding: "6px 10px" }}>₹{srv.gstAmount ?? 0}</td>

@@ -90,6 +90,7 @@ import ViewLeadPage from "./pages/ViewLeadPage";
 import FaqsPage from "./pages/FaqsPage";
 import FaqsAddPage from "./pages/FaqsAddPage";
 import BookingReportPage from "./pages/BookingReportPage"
+import BookingReportsSortingPage from "./pages/BookingReportsSortingPage"
 
 function App() {
   return (
@@ -104,10 +105,10 @@ function App() {
         <Route exact path='/reset-password' element={<SignInPage />} />
         <Route exact path='/reset-password/:token' element={<ResetPasswordPage />} />
 
-      <Route exact path='/index' element={<HomePageTen />} />
-          <Route exact path='/dashboard' element={<HomePageTen />} />
+        <Route exact path='/index' element={<HomePageTen />} />
+        <Route exact path='/dashboard' element={<HomePageTen />} />
         <Route element={<PrivateRoute />}>
-          
+
           <Route exact path='/states' element={<StatePage />} />
           <Route exact path='/cities' element={<CityPage />} />
           <Route exact path='/distributors' element={<DistributorPage />} />
@@ -214,7 +215,8 @@ function App() {
         <Route exact path='/access-denied' element={<AccessDeniedPage />} />
         <Route exact path='/maintenance' element={<MaintenancePage />} />
         <Route exact path='/blank-page' element={<BlankPagePage />} />
-
+        <Route path="/booking-sorting-page" element={<BookingReportsSortingPage />} />
+        
         <Route
           exact
           path='/marketplace-details'
@@ -226,7 +228,7 @@ function App() {
           path='/notification-alert'
           element={<NotificationAlertPage />}
         />
-        <Route exact path='/booking-reports' element={<BookingReportPage/>} />
+        <Route exact path='/booking-reports' element={<BookingReportPage />} />
       </Routes>
     </BrowserRouter>
   );
