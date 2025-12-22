@@ -1,8 +1,8 @@
 import { Icon } from "@iconify/react";
 import { useState, useEffect } from "react";
-import Accordion from 'react-bootstrap/Accordion';
-import axios from 'axios';
-import { useParams } from "react-router-dom";
+import Accordion from "react-bootstrap/Accordion";
+import axios from "axios";
+import { Link, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import Select from "react-select";
 
@@ -21,11 +21,11 @@ const formatTime = (timeStr) => {
       const hour = parseInt(match[1], 10);
       const minute = match[2] ? parseInt(match[2], 10) : 0;
       const period = match[3].toUpperCase();
-      const hh = (hour % 12) || 12;
-      const mm = minute.toString().padStart(2, '0');
+      const hh = hour % 12 || 12;
+      const mm = minute.toString().padStart(2, "0");
       return `${hh}:${mm} ${period}`;
     }
-    return raw.replace(/am/i, 'AM').replace(/pm/i, 'PM');
+    return raw.replace(/am/i, "AM").replace(/pm/i, "PM");
   }
 
   // Extract HH and MM from formats like HH:MM or HH:MM:SS or even just HH
@@ -34,9 +34,9 @@ const formatTime = (timeStr) => {
   const hour24 = parseInt(match[1], 10);
   const minute = match[2] ? parseInt(match[2], 10) : 0;
   if (Number.isNaN(hour24) || Number.isNaN(minute)) return raw;
-  const period = hour24 >= 12 ? 'PM' : 'AM';
-  const hour12 = (hour24 % 12) || 12;
-  return `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
+  const period = hour24 >= 12 ? "PM" : "AM";
+  const hour12 = hour24 % 12 || 12;
+  return `${hour12}:${minute.toString().padStart(2, "0")} ${period}`;
 };
 
 // Helper function to format timeslot string with flexible dash and spacing
@@ -57,7 +57,8 @@ const BookingViewLayer = () => {
   const [technicians, setTechnicians] = useState([]);
   const [timeSlots, setTimeSlots] = useState([]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
-  const [selectedReassignTimeSlot, setSelectedReassignTimeSlot] = useState(null);
+  const [selectedReassignTimeSlot, setSelectedReassignTimeSlot] =
+    useState(null);
   const token = localStorage.getItem("token");
   const roleId = localStorage.getItem("roleId");
   const [previewServices, setPreviewServices] = useState([]);
@@ -78,20 +79,22 @@ const BookingViewLayer = () => {
       description: "",
       gstPercent: "",
       gstAmount: "",
-      totalAmount: ""
-    }
-
+      totalAmount: "",
+    },
   ]);
 
   const { bookingId } = useParams();
 
   const fetchBookingData = async () => {
     try {
-      const res = await axios.get(`${API_BASE}Bookings/BookingId?Id=${bookingId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await axios.get(
+        `${API_BASE}Bookings/BookingId?Id=${bookingId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setBookingData(res.data[0]);
       console.log("Booking Data:", res.data[0]);
     } catch (error) {
@@ -137,8 +140,14 @@ const BookingViewLayer = () => {
   const getSelectedTimeSlotOptions = () => {
     if (!bookingData || !bookingData.TimeSlot) return [];
     const raw = bookingData.TimeSlot.toString();
-    const parts = raw.split(',').map((p) => p.trim()).filter(Boolean);
-    return parts.map((p) => ({ value: p, label: p.includes(' - ') ? formatTimeSlot(p) : p }));
+    const parts = raw
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+    return parts.map((p) => ({
+      value: p,
+      label: p.includes(" - ") ? formatTimeSlot(p) : p,
+    }));
   };
 
   useEffect(() => {
@@ -150,10 +159,10 @@ const BookingViewLayer = () => {
     fetchTempServices();
   }, [bookingId]);
 
-
   const fetchSupervisors = async () => {
     try {
-      const res = await axios.get(`${API_BASE}Employee`, { // Assuming Employee endpoint for supervisors
+      const res = await axios.get(`${API_BASE}Employee`, {
+        // Assuming Employee endpoint for supervisors
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -196,26 +205,32 @@ const BookingViewLayer = () => {
 
     const result = await Swal.fire({
       title: "Confirm Reschedule",
-      text: `Are you sure you want to reschedule to ${newDate} at ${formatTimeSlot(selectedTimeSlot)}?`,
+      text: `Are you sure you want to reschedule to ${newDate} at ${formatTimeSlot(
+        selectedTimeSlot
+      )}?`,
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, reschedule it!"
+      confirmButtonText: "Yes, reschedule it!",
     });
 
     if (!result.isConfirmed) return;
 
     try {
-      await axios.post(`${API_BASE}Reschedules`, {
-        bookingID: bookingId,
-        reason: reason,
-        oldSchedule: bookingData.BookingDate,
-        newSchedule: newDate,
-        timeSlot: selectedTimeSlot,
-        requestedBy: localStorage.getItem("userId") || 1, // Using localStorage for userId
-        Status: ''
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post(
+        `${API_BASE}Reschedules`,
+        {
+          bookingID: bookingId,
+          reason: reason,
+          oldSchedule: bookingData.BookingDate,
+          newSchedule: newDate,
+          timeSlot: selectedTimeSlot,
+          requestedBy: localStorage.getItem("userId") || 1, // Using localStorage for userId
+          Status: "",
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       Swal.fire({
         icon: "success",
         title: "Success",
@@ -275,7 +290,6 @@ const BookingViewLayer = () => {
         Role: "technician",
         AssignedBy: localStorage.getItem("userId"),
       };
-
     } else if (assignType === "supervisor") {
       if (!selectedSupervisor) {
         Swal.fire({
@@ -304,7 +318,11 @@ const BookingViewLayer = () => {
         Swal.fire({
           icon: "success",
           title: "Success",
-          text: res.data.message || `${assignType === "technician" ? "Technician" : "Supervisor"} assigned successfully`,
+          text:
+            res.data.message ||
+            `${
+              assignType === "technician" ? "Technician" : "Supervisor"
+            } assigned successfully`,
         });
 
         setSelectedTechnician(null);
@@ -317,7 +335,11 @@ const BookingViewLayer = () => {
         Swal.fire({
           icon: "error",
           title: "Error",
-          text: res.data.message || `${assignType === "technician" ? "Technician" : "Supervisor"} assignment failed.`,
+          text:
+            res.data.message ||
+            `${
+              assignType === "technician" ? "Technician" : "Supervisor"
+            } assignment failed.`,
         });
       }
     } catch (error) {
@@ -325,11 +347,12 @@ const BookingViewLayer = () => {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: error.response?.data?.message || `Failed to assign ${assignType}. Please try again.`,
+        text:
+          error.response?.data?.message ||
+          `Failed to assign ${assignType}. Please try again.`,
       });
     }
   };
-
 
   const handleCancel = async () => {
     const result = await Swal.fire({
@@ -339,18 +362,26 @@ const BookingViewLayer = () => {
       showCancelButton: true,
       confirmButtonColor: "#d33",
       cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, cancel it!"
+      confirmButtonText: "Yes, cancel it!",
     });
 
     if (!result.isConfirmed) return;
 
     try {
-      await axios.post(`${API_BASE}Bookings/Cancel`, {
-        BookingID: bookingId
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      Swal.fire("Cancelled!", "Booking has been cancelled successfully.", "success");
+      await axios.post(
+        `${API_BASE}Bookings/Cancel`,
+        {
+          BookingID: bookingId,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      Swal.fire(
+        "Cancelled!",
+        "Booking has been cancelled successfully.",
+        "success"
+      );
       fetchBookingData(); // Refresh booking data
     } catch (error) {
       Swal.fire("Error", "Failed to cancel booking.", "error");
@@ -359,70 +390,88 @@ const BookingViewLayer = () => {
   };
 
   const handleRefund = async (payment) => {
-    const amountPaid = bookingData.TotalPrice + bookingData.GSTAmount - (bookingData.CouponAmount || 0);
+    const amountPaid =
+      bookingData.TotalPrice +
+      bookingData.GSTAmount -
+      (bookingData.CouponAmount || 0);
     const refundedAmount = parseFloat(payment.RefundAmount) || 0;
     const remaining = amountPaid - refundedAmount;
 
     if (remaining <= 0) {
-      Swal.fire('Notification', 'Your full amount has already been refunded.', 'info');
+      Swal.fire(
+        "Notification",
+        "Your full amount has already been refunded.",
+        "info"
+      );
       return;
     }
 
     const { value: refundAmount } = await Swal.fire({
-      title: 'Enter Refund Amount',
-      input: 'number',
+      title: "Enter Refund Amount",
+      input: "number",
       inputLabel: `Refund Amount (Max: ₹${remaining.toFixed(2)})`,
       inputValue: remaining.toFixed(2),
       inputAttributes: {
         min: 0,
         max: remaining,
-        step: '0.01'
+        step: "0.01",
       },
       inputValidator: (value) => {
         const num = parseFloat(value);
         if (isNaN(num) || num <= 0) {
-          return 'Please enter a valid positive amount!';
+          return "Please enter a valid positive amount!";
         }
         if (num > remaining) {
-          return 'Refund amount cannot exceed the remaining amount!';
+          return "Refund amount cannot exceed the remaining amount!";
         }
       },
       showCancelButton: true,
-      confirmButtonText: 'Refund',
-      cancelButtonText: 'Cancel'
+      confirmButtonText: "Refund",
+      cancelButtonText: "Cancel",
     });
 
     if (!refundAmount) return;
 
     try {
-      const res = await axios.post(`${API_BASE}Refund/Refund`, {
-        amount: parseFloat(refundAmount),
-        bookingId: bookingData.BookingID,
-        // paymentId: payment.TransactionID      // Uncomment if you need to send TransactionID
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axios.post(
+        `${API_BASE}Refund/Refund`,
+        {
+          amount: parseFloat(refundAmount),
+          bookingId: bookingData.BookingID,
+          // paymentId: payment.TransactionID      // Uncomment if you need to send TransactionID
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (res.data.success) {
-        Swal.fire('Success', 'Refund processed successfully!', 'success');
+        Swal.fire("Success", "Refund processed successfully!", "success");
         fetchBookingData(); // Refresh data after refund
       } else {
-        Swal.fire('Error', res.data.message || 'Failed to process refund.', 'error');
+        Swal.fire(
+          "Error",
+          res.data.message || "Failed to process refund.",
+          "error"
+        );
       }
     } catch (error) {
-      console.error('Refund error:', error);
-      Swal.fire('Error', 'Failed to process refund.', 'error');
+      console.error("Refund error:", error);
+      Swal.fire("Error", "Failed to process refund.", "error");
     }
   };
 
-  const filteredTechnicians = technicians.filter(tech => {
-    return bookingData && bookingData.TechID ? tech.value !== bookingData.TechID : true;
+  const filteredTechnicians = technicians.filter((tech) => {
+    return bookingData && bookingData.TechID
+      ? tech.value !== bookingData.TechID
+      : true;
   });
 
-  const filteredSupervisors = supervisors.filter(sup => {
-    return bookingData && bookingData.SupervisorID ? sup.value !== bookingData.SupervisorID : true;
+  const filteredSupervisors = supervisors.filter((sup) => {
+    return bookingData && bookingData.SupervisorID
+      ? sup.value !== bookingData.SupervisorID
+      : true;
   });
-
 
   // Handler for adding a new service input block
   const handleAddServiceBlock = () => {
@@ -457,7 +506,6 @@ const BookingViewLayer = () => {
     );
   };
 
-
   // Handler for removing a service input block
   const handleFinalSubmit = (id) => {
     setServicesToAdd(servicesToAdd.filter((s) => s.id !== id));
@@ -465,7 +513,6 @@ const BookingViewLayer = () => {
 
   // Handler for submitting all added services
   const handleSubmitAllServices = async () => {
-
     const supervisorId = bookingData?.SupervisorID; // FIX
     if (!previewServices.length) {
       Swal.fire("Error", "No services added.", "error");
@@ -486,7 +533,6 @@ const BookingViewLayer = () => {
       })),
     };
 
-
     try {
       const res = await axios.post(
         `${API_BASE}Supervisor/add-temp-addons`,
@@ -499,32 +545,33 @@ const BookingViewLayer = () => {
       );
 
       Swal.fire("Success", "Add-ons added successfully!", "success");
-
     } catch (error) {
       console.error("Error submitting spare parts:", error);
       Swal.fire("Error", "Failed to submit add-ons.", "error");
     }
   };
 
-
-
   // Calculate the grand total of all services
   const calculateGrandTotal = () => {
-    return servicesToAdd.reduce((sum, service) => {
-      const total = parseFloat(service.totalAmount) || 0;
-      return sum + total;
-    }, 0).toFixed(2);
+    return servicesToAdd
+      .reduce((sum, service) => {
+        const total = parseFloat(service.totalAmount) || 0;
+        return sum + total;
+      }, 0)
+      .toFixed(2);
   };
 
   // Calculate Add Service total dynamically
   const addServiceTotal = bookingData?.BookingAddOns
-    ? bookingData.BookingAddOns.reduce((sum, item) => sum + (item.TotalPrice || 0), 0)
+    ? bookingData.BookingAddOns.reduce(
+        (sum, item) => sum + (item.TotalPrice || 0),
+        0
+      )
     : 0;
-
 
   const handleAddLocalService = async () => {
     const valid = servicesToAdd.filter(
-      s => s.name && s.price && Number(s.price) > 0
+      (s) => s.name && s.price && Number(s.price) > 0
     );
 
     if (valid.length === 0) {
@@ -537,20 +584,20 @@ const BookingViewLayer = () => {
     const payload = {
       bookingID: Number(bookingId),
       supervisorID: supervisorId,
-      addOns: valid.map(item => ({
+      addOns: valid.map((item) => ({
         serviceName: item.name,
         servicePrice: Number(item.price),
         description: item.description || "",
         gstPercent: Number(item.gstPercent || 0),
         gstPrice: Number(item.gstAmount || 0),
         totalPrice: Number(item.totalAmount || item.price),
-        type: item.bodyPart || "SparePart"
-      }))
+        type: item.bodyPart || "SparePart",
+      })),
     };
 
     try {
       await axios.post(`${API_BASE}Supervisor/add-temp-addons`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       Swal.fire("Success", "Service added successfully!", "success");
@@ -565,8 +612,8 @@ const BookingViewLayer = () => {
           gstPercent: "",
           gstAmount: "",
           totalAmount: "",
-          description: ""
-        }
+          description: "",
+        },
       ]);
 
       fetchTempServices();
@@ -578,17 +625,13 @@ const BookingViewLayer = () => {
     }
   };
 
-
   const fetchServiceTypes = async () => {
     try {
       const res = await axios.get(`${API_BASE}Supervisor/ServiceTypes`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      setServiceTypes(
-        Array.isArray(res.data) ? res.data : []
-      );
-
+      setServiceTypes(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error("Failed to load service types", error);
     }
@@ -597,27 +640,28 @@ const BookingViewLayer = () => {
   const fetchTempServices = async () => {
     try {
       const res = await axios.get(`${API_BASE}Supervisor/TempServices`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       // Filter only services related to current booking
       const temp = Array.isArray(res.data)
-        ? res.data.filter(item => item.BookingID == bookingId)
+        ? res.data.filter((item) => item.BookingID == bookingId)
         : [];
 
-      setPreviewServices(temp.map(item => ({
-        id: item.AddOnID,
-        name: item.ServiceName,
-        price: item.ServicePrice,
-        description: item.Description,
-        gstPercent: item.GSTPercent,
-        gstAmount: item.GSTPrice,
-        totalAmount: item.TotalPrice,
-        bodyPart: item.Type
-      })));
+      setPreviewServices(
+        temp.map((item) => ({
+          id: item.AddOnID,
+          name: item.ServiceName,
+          price: item.ServicePrice,
+          description: item.Description,
+          gstPercent: item.GSTPercent,
+          gstAmount: item.GSTPrice,
+          totalAmount: item.TotalPrice,
+          bodyPart: item.Type,
+        }))
+      );
 
       console.log("Fetched Temp Services:", temp);
-
     } catch (error) {
       console.error("Failed to load temp services", error);
     }
@@ -636,9 +680,12 @@ const BookingViewLayer = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          await axios.delete(`${API_BASE}Supervisor/TempAddOnService?addOnId=${id}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          await axios.delete(
+            `${API_BASE}Supervisor/TempAddOnService?addOnId=${id}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
 
           // Remove from UI
           setPreviewServices((prev) => prev.filter((s) => s.id !== id));
@@ -675,7 +722,11 @@ const BookingViewLayer = () => {
         fetchBookingData();
         fetchTempServices();
       } else {
-        Swal.fire("Error", response.data.message || "Something went wrong", "error");
+        Swal.fire(
+          "Error",
+          response.data.message || "Something went wrong",
+          "error"
+        );
       }
     } catch (error) {
       console.error("Final Submit Error:", error);
@@ -683,9 +734,8 @@ const BookingViewLayer = () => {
     }
   };
 
-
   return (
-    <div className='row gy-4 mt-3'>
+    <div className="row gy-4 mt-3">
       {/* Left Profile + Billing Summary (Vertical Stack) */}
       <div className="col-lg-4">
         {/* Profile Card */}
@@ -706,7 +756,9 @@ const BookingViewLayer = () => {
                     className="border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover"
                   />
                 )}
-                <h6 className="mb-0 mt-16">{bookingData.CustomerName || "N/A"}</h6>
+                <h6 className="mb-0 mt-16">
+                  {bookingData.CustomerName || "N/A"}
+                </h6>
               </div>
 
               <div className="mt-24">
@@ -740,8 +792,12 @@ const BookingViewLayer = () => {
                   {/* If both are missing */}
                   {!bookingData.TechFullName && !bookingData.SupervisorName ? (
                     <li className="d-flex align-items-center gap-1 mb-12">
-                      <span className="w-50 text-md fw-semibold text-primary-light">Assigned To</span>
-                      <span className="w-70 text-secondary-light fw-medium">: N/A</span>
+                      <span className="w-50 text-md fw-semibold text-primary-light">
+                        Assigned To
+                      </span>
+                      <span className="w-70 text-secondary-light fw-medium">
+                        : N/A
+                      </span>
                     </li>
                   ) : (
                     <>
@@ -836,14 +892,15 @@ const BookingViewLayer = () => {
                         Reschedule
                       </button>
                       {/* BUTTON 1 — your current condition, but ONLY when roleId !== "8" */}
-                      {roleId !== "8" && (bookingData.TechID || bookingData.SupervisorID) && (
-                        <button
-                          className="btn btn-info btn-sm"
-                          onClick={() => handleAssignClick()}
-                        >
-                          Reassign
-                        </button>
-                      )}
+                      {roleId !== "8" &&
+                        (bookingData.TechID || bookingData.SupervisorID) && (
+                          <button
+                            className="btn btn-info btn-sm"
+                            onClick={() => handleAssignClick()}
+                          >
+                            Reassign
+                          </button>
+                        )}
 
                       {/* BUTTON 2 — only for roleId = "8" AND TechID available */}
                       {roleId === "8" && bookingData.TechID && (
@@ -854,8 +911,12 @@ const BookingViewLayer = () => {
                           Reassign
                         </button>
                       )}
-
-
+                      <Link
+                        to={`/book-service/${bookingData?.LeadId}`}
+                        className="btn btn-info btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
+                        title="Edit"
+                      >Add Services
+                      </Link>
                     </div>
                   )}
 
@@ -879,8 +940,10 @@ const BookingViewLayer = () => {
                       {timeSlots
                         .filter((slot) => slot.IsActive)
                         .sort((a, b) => {
-                          const [aHour, aMinute] = a.StartTime.split(":").map(Number);
-                          const [bHour, bMinute] = b.StartTime.split(":").map(Number);
+                          const [aHour, aMinute] =
+                            a.StartTime.split(":").map(Number);
+                          const [bHour, bMinute] =
+                            b.StartTime.split(":").map(Number);
                           return aHour * 60 + aMinute - (bHour * 60 + bMinute);
                         })
                         .map((slot) => (
@@ -888,7 +951,8 @@ const BookingViewLayer = () => {
                             key={slot.TsID}
                             value={`${slot.StartTime} - ${slot.EndTime}`}
                           >
-                            {formatTime(slot.StartTime)} - {formatTime(slot.EndTime)}
+                            {formatTime(slot.StartTime)} -{" "}
+                            {formatTime(slot.EndTime)}
                           </option>
                         ))}
                     </select>
@@ -929,36 +993,41 @@ const BookingViewLayer = () => {
             {/* Header with Billing Summary + Payment Status */}
             <div className="d-flex justify-content-between align-items-center mb-3">
               <h6 className="fw-bold text-primary mb-0">Billing Summary</h6>
-              {bookingData?.Payments?.length > 0 && (() => {
-                const rawStatus = bookingData.Payments[0].PaymentStatus || "-";
-                const status = rawStatus === "Success" ? "Paid" : rawStatus;
+              {bookingData?.Payments?.length > 0 &&
+                (() => {
+                  const rawStatus =
+                    bookingData.Payments[0].PaymentStatus || "-";
+                  const status = rawStatus === "Success" ? "Paid" : rawStatus;
 
-                // Color map like your sample code
-                const colorMap = {
-                  Paid: "#28A745",        // Green
-                  Pending: "#F57C00",     // Orange
-                  Refunded: "#25878F",    // Teal-blue
-                  Failed: "#E34242",      // Red
-                  "-": "#BFBFBF",         // Grey
-                };
+                  // Color map like your sample code
+                  const colorMap = {
+                    Paid: "#28A745", // Green
+                    Pending: "#F57C00", // Orange
+                    Refunded: "#25878F", // Teal-blue
+                    Failed: "#E34242", // Red
+                    "-": "#BFBFBF", // Grey
+                  };
 
-                const color = colorMap[status] || "#6c757d";
+                  const color = colorMap[status] || "#6c757d";
 
-                return (
-                  <span className="fw-semibold d-flex align-items-center" style={{ fontSize: "13px", fontWeight: 500 }}>
+                  return (
                     <span
-                      className="rounded-circle d-inline-block me-1"
-                      style={{
-                        width: "10px",
-                        height: "10px",
-                        backgroundColor: color,
-                      }}
-                    ></span>
+                      className="fw-semibold d-flex align-items-center"
+                      style={{ fontSize: "13px", fontWeight: 500 }}
+                    >
+                      <span
+                        className="rounded-circle d-inline-block me-1"
+                        style={{
+                          width: "10px",
+                          height: "10px",
+                          backgroundColor: color,
+                        }}
+                      ></span>
 
-                    <span style={{ color }}>{status}</span>
-                  </span>
-                );
-              })()}
+                      <span style={{ color }}>{status}</span>
+                    </span>
+                  );
+                })()}
             </div>
 
             {/* Billing Summary Details */}
@@ -975,14 +1044,18 @@ const BookingViewLayer = () => {
                 </li>
 
                 <li className="list-group-item d-flex justify-content-between">
-                  <span className="fw-semibold text-secondary">Add Service Amount</span>
+                  <span className="fw-semibold text-secondary">
+                    Add Service Amount
+                  </span>
                   <span>₹{Number(addServiceTotal).toFixed(2)}</span>
                 </li>
 
                 {bookingData.CouponAmount ? (
                   <li className="list-group-item d-flex justify-content-between">
                     <span className="fw-semibold text-secondary">Coupon</span>
-                    <span>- ₹{Number(bookingData.CouponAmount || 0).toFixed(2)}</span>
+                    <span>
+                      - ₹{Number(bookingData.CouponAmount || 0).toFixed(2)}
+                    </span>
                   </li>
                 ) : null}
 
@@ -992,9 +1065,9 @@ const BookingViewLayer = () => {
                     ₹
                     {Number(
                       (bookingData.TotalPrice || 0) +
-                      (bookingData.GSTAmount || 0) +
-                      addServiceTotal -
-                      (bookingData.CouponAmount || 0)
+                        (bookingData.GSTAmount || 0) +
+                        addServiceTotal -
+                        (bookingData.CouponAmount || 0)
                     ).toFixed(2)}
                   </span>
                 </li>
@@ -1006,14 +1079,17 @@ const BookingViewLayer = () => {
         </div>
       </div>
 
-
       {/* Right Tabs Content */}
-      <div className='col-lg-8'>
-        <div className='card h-100'>
-          <div className='card-body p-24'>
-            <ul className='nav border-gradient-tab nav-pills mb-20'>
-              <li className='nav-item'>
-                <button className='nav-link active' data-bs-toggle='pill' data-bs-target='#booking'>
+      <div className="col-lg-8">
+        <div className="card h-100">
+          <div className="card-body p-24">
+            <ul className="nav border-gradient-tab nav-pills mb-20">
+              <li className="nav-item">
+                <button
+                  className="nav-link active"
+                  data-bs-toggle="pill"
+                  data-bs-target="#booking"
+                >
                   Bookings
                 </button>
               </li>
@@ -1036,11 +1112,13 @@ const BookingViewLayer = () => {
             </ul>
 
             <div className="tab-content">
-
               {/* ====================== BOOKINGS TAB ====================== */}
               <div className="tab-pane fade show active" id="booking">
                 {bookingData ? (
-                  <Accordion defaultActiveKey="0" className="styled-booking-accordion">
+                  <Accordion
+                    defaultActiveKey="0"
+                    className="styled-booking-accordion"
+                  >
                     <Accordion.Item
                       eventKey="0"
                       key={bookingData.BookingID}
@@ -1050,23 +1128,28 @@ const BookingViewLayer = () => {
                         <div className="d-flex flex-column w-100">
                           <div className="d-flex justify-content-between align-items-center w-100">
                             <div className="d-flex align-items-center gap-3">
-                              <Icon icon="mdi:calendar-check" className="text-primary fs-4" />
+                              <Icon
+                                icon="mdi:calendar-check"
+                                className="text-primary fs-4"
+                              />
                               <div>
                                 <h6 className="mb-0 text-dark fw-bold">
                                   Booking #{bookingData.BookingTrackID}
                                 </h6>
                                 <small className="text-muted">
-                                  Scheduled: {bookingData.BookingDate} ({bookingData.TimeSlot})
+                                  Scheduled: {bookingData.BookingDate} (
+                                  {bookingData.TimeSlot})
                                 </small>
                               </div>
                             </div>
                             <span
-                              className={`badge px-3 py-1 rounded-pill ${bookingData.BookingStatus === "Completed"
-                                ? "bg-success"
-                                : bookingData.BookingStatus === "Confirmed"
+                              className={`badge px-3 py-1 rounded-pill ${
+                                bookingData.BookingStatus === "Completed"
+                                  ? "bg-success"
+                                  : bookingData.BookingStatus === "Confirmed"
                                   ? "bg-primary"
                                   : "bg-warning text-dark"
-                                }`}
+                              }`}
                             >
                               {bookingData.BookingStatus}
                             </span>
@@ -1076,13 +1159,14 @@ const BookingViewLayer = () => {
 
                       <Accordion.Body className="bg-white">
                         <div className="container-fluid">
-
                           {/* ============= Packages Section ============= */}
                           {bookingData?.Packages?.length > 0 && (
                             <Accordion defaultActiveKey="pkg1" className="mb-4">
                               <Accordion.Item eventKey="pkg1">
                                 <Accordion.Header>
-                                  <h6 className="text-success fw-bold mb-0">📦 Packages</h6>
+                                  <h6 className="text-success fw-bold mb-0">
+                                    📦 Packages
+                                  </h6>
                                 </Accordion.Header>
 
                                 <Accordion.Body>
@@ -1094,38 +1178,54 @@ const BookingViewLayer = () => {
                                     }}
                                   >
                                     <ul className="list-group list-group-flush">
-                                      {bookingData.Packages.map((pkg, index) => (
-                                        <li
-                                          key={pkg.PackageID || index}
-                                          className="list-group-item border rounded-3 shadow-sm mb-2 bg-light"
-                                        >
-                                          <div className="d-flex justify-content-between align-items-start">
-                                            <div>
-                                              <strong className="text-dark">{pkg.PackageName}</strong>
-                                              {pkg.Category?.SubCategories?.[0]?.Includes?.length > 0 && (
-                                                <ul className="text-muted small ps-3 mb-0">
-                                                  {pkg.Category.SubCategories[0].Includes.map((inc) => (
-                                                    <li key={inc.IncludeID}>{inc.IncludeName}</li>
-                                                  ))}
-                                                </ul>
-                                              )}
-                                            </div>
+                                      {bookingData.Packages.map(
+                                        (pkg, index) => (
+                                          <li
+                                            key={pkg.PackageID || index}
+                                            className="list-group-item border rounded-3 shadow-sm mb-2 bg-light"
+                                          >
+                                            <div className="d-flex justify-content-between align-items-start">
+                                              <div>
+                                                <strong className="text-dark">
+                                                  {pkg.PackageName}
+                                                </strong>
+                                                {pkg.Category
+                                                  ?.SubCategories?.[0]?.Includes
+                                                  ?.length > 0 && (
+                                                  <ul className="text-muted small ps-3 mb-0">
+                                                    {pkg.Category.SubCategories[0].Includes.map(
+                                                      (inc) => (
+                                                        <li key={inc.IncludeID}>
+                                                          {inc.IncludeName}
+                                                        </li>
+                                                      )
+                                                    )}
+                                                  </ul>
+                                                )}
+                                              </div>
 
-                                            <span className="badge bg-success-subtle text-success border border-success">
-                                              ⏱ Duration:{" "}
-                                              {pkg.EstimatedDurationMinutes >= 60
-                                                ? (() => {
-                                                  const hours = Math.floor(pkg.EstimatedDurationMinutes / 60);
-                                                  const minutes = pkg.EstimatedDurationMinutes % 60;
-                                                  return minutes === 0
-                                                    ? `${hours} hr`
-                                                    : `${hours} hr ${minutes} mins`;
-                                                })()
-                                                : `${pkg.EstimatedDurationMinutes} mins`}
-                                            </span>
-                                          </div>
-                                        </li>
-                                      ))}
+                                              <span className="badge bg-success-subtle text-success border border-success">
+                                                ⏱ Duration:{" "}
+                                                {pkg.EstimatedDurationMinutes >=
+                                                60
+                                                  ? (() => {
+                                                      const hours = Math.floor(
+                                                        pkg.EstimatedDurationMinutes /
+                                                          60
+                                                      );
+                                                      const minutes =
+                                                        pkg.EstimatedDurationMinutes %
+                                                        60;
+                                                      return minutes === 0
+                                                        ? `${hours} hr`
+                                                        : `${hours} hr ${minutes} mins`;
+                                                    })()
+                                                  : `${pkg.EstimatedDurationMinutes} mins`}
+                                              </span>
+                                            </div>
+                                          </li>
+                                        )
+                                      )}
                                     </ul>
                                   </div>
                                 </Accordion.Body>
@@ -1133,13 +1233,14 @@ const BookingViewLayer = () => {
                             </Accordion>
                           )}
 
-
                           {/* ============= Additional Services ============= */}
                           {bookingData?.AddonServices?.length > 0 && (
                             <Accordion defaultActiveKey="1" className="mb-4">
                               <Accordion.Item eventKey="1">
                                 <Accordion.Header>
-                                  <h6 className="text-primary fw-bold mb-0">🛠️ Additional Services</h6>
+                                  <h6 className="text-primary fw-bold mb-0">
+                                    🛠️ Additional Services
+                                  </h6>
                                 </Accordion.Header>
                                 <Accordion.Body>
                                   <div
@@ -1147,22 +1248,31 @@ const BookingViewLayer = () => {
                                     style={{ maxHeight: "300px" }}
                                   >
                                     <ul className="list-group list-group-flush">
-                                      {bookingData.AddonServices.map((addon, index) => (
-                                        <li
-                                          key={index}
-                                          className="list-group-item d-flex justify-content-between align-items-center flex-wrap"
-                                        >
-                                          <div>
-                                            <strong className="text-dark">{addon.ServiceName}</strong>
-                                            {addon.Description && (
-                                              <p className="mb-0 text-muted small">{addon.Description}</p>
-                                            )}
-                                          </div>
-                                          <span className="badge bg-secondary rounded-pill">
-                                            ₹{Number(addon.ServicePrice).toFixed(2)}
-                                          </span>
-                                        </li>
-                                      ))}
+                                      {bookingData.AddonServices.map(
+                                        (addon, index) => (
+                                          <li
+                                            key={index}
+                                            className="list-group-item d-flex justify-content-between align-items-center flex-wrap"
+                                          >
+                                            <div>
+                                              <strong className="text-dark">
+                                                {addon.ServiceName}
+                                              </strong>
+                                              {addon.Description && (
+                                                <p className="mb-0 text-muted small">
+                                                  {addon.Description}
+                                                </p>
+                                              )}
+                                            </div>
+                                            <span className="badge bg-secondary rounded-pill">
+                                              ₹
+                                              {Number(
+                                                addon.ServicePrice
+                                              ).toFixed(2)}
+                                            </span>
+                                          </li>
+                                        )
+                                      )}
                                     </ul>
                                   </div>
                                 </Accordion.Body>
@@ -1175,49 +1285,71 @@ const BookingViewLayer = () => {
                             <Accordion defaultActiveKey="2" className="mb-4">
                               <Accordion.Item eventKey="2">
                                 <Accordion.Header>
-                                  <h6 className="text-warning fw-bold mb-0">🔧 Added Services</h6>
+                                  <h6 className="text-warning fw-bold mb-0">
+                                    🔧 Added Services
+                                  </h6>
                                 </Accordion.Header>
                                 <Accordion.Body>
-                                  <div className="overflow-auto" style={{ maxHeight: "300px" }}>
+                                  <div
+                                    className="overflow-auto"
+                                    style={{ maxHeight: "300px" }}
+                                  >
                                     <ul className="list-group list-group-flush">
-                                      {bookingData.BookingAddOns.map((addon, index) => (
-                                        <li
-                                          key={addon.AddOnID || index}
-                                          className="list-group-item position-relative d-flex justify-content-between align-items-center flex-wrap"
-                                        >
-                                          <div className="me-3 ms-4">
-                                            <strong className="text-dark">{addon.ServiceName}</strong>
-                                            <p className="mb-0 text-muted small">
-                                              {addon.Description || "No description available"}
-                                            </p>
-                                            <small className="text-secondary">
-                                              Added on:{" "}
-                                              {addon.CreatedDate
-                                                ? new Date(addon.CreatedDate).toLocaleString()
-                                                : "N/A"}
-                                            </small>
-                                          </div>
-
-                                          <div className="text-end">
-                                            {addon.ServicePrice && (
-                                              <div className="fw-semibold text-dark">
-                                                ₹{Number(addon.ServicePrice).toFixed(2)}
-                                              </div>
-                                            )}
-                                            {addon.GSTPrice && (
-                                              <small className="text-muted d-block">
-                                                GST: ₹{Number(addon.GSTPrice).toFixed(2)} ({addon.GSTPercent || 0}
-                                                %)
+                                      {bookingData.BookingAddOns.map(
+                                        (addon, index) => (
+                                          <li
+                                            key={addon.AddOnID || index}
+                                            className="list-group-item position-relative d-flex justify-content-between align-items-center flex-wrap"
+                                          >
+                                            <div className="me-3 ms-4">
+                                              <strong className="text-dark">
+                                                {addon.ServiceName}
+                                              </strong>
+                                              <p className="mb-0 text-muted small">
+                                                {addon.Description ||
+                                                  "No description available"}
+                                              </p>
+                                              <small className="text-secondary">
+                                                Added on:{" "}
+                                                {addon.CreatedDate
+                                                  ? new Date(
+                                                      addon.CreatedDate
+                                                    ).toLocaleString()
+                                                  : "N/A"}
                                               </small>
-                                            )}
-                                            {addon.TotalPrice && (
-                                              <div className="fw-semibold text-primary">
-                                                Total: ₹{Number(addon.TotalPrice).toFixed(2)}
-                                              </div>
-                                            )}
-                                          </div>
-                                        </li>
-                                      ))}
+                                            </div>
+
+                                            <div className="text-end">
+                                              {addon.ServicePrice && (
+                                                <div className="fw-semibold text-dark">
+                                                  ₹
+                                                  {Number(
+                                                    addon.ServicePrice
+                                                  ).toFixed(2)}
+                                                </div>
+                                              )}
+                                              {addon.GSTPrice && (
+                                                <small className="text-muted d-block">
+                                                  GST: ₹
+                                                  {Number(
+                                                    addon.GSTPrice
+                                                  ).toFixed(2)}{" "}
+                                                  ({addon.GSTPercent || 0}
+                                                  %)
+                                                </small>
+                                              )}
+                                              {addon.TotalPrice && (
+                                                <div className="fw-semibold text-primary">
+                                                  Total: ₹
+                                                  {Number(
+                                                    addon.TotalPrice
+                                                  ).toFixed(2)}
+                                                </div>
+                                              )}
+                                            </div>
+                                          </li>
+                                        )
+                                      )}
                                     </ul>
                                   </div>
                                 </Accordion.Body>
@@ -1225,13 +1357,14 @@ const BookingViewLayer = () => {
                             </Accordion>
                           )}
 
-
                           {/* ============= Location Map ============= */}
                           {bookingData?.Latitude && bookingData?.Longitude && (
                             <Accordion defaultActiveKey="3">
                               <Accordion.Item eventKey="3">
                                 <Accordion.Header>
-                                  <h6 className="text-info fw-bold mb-0">🗺️ Location</h6>
+                                  <h6 className="text-info fw-bold mb-0">
+                                    🗺️ Location
+                                  </h6>
                                 </Accordion.Header>
                                 <Accordion.Body>
                                   <div
@@ -1265,7 +1398,8 @@ const BookingViewLayer = () => {
               <div className="tab-pane fade" id="addservice">
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <h6 className="fw-bold fs-5 text-primary-600">
-                    Add Services for Booking #{bookingData?.BookingTrackID || "N/A"}
+                    Add Services for Booking #
+                    {bookingData?.BookingTrackID || "N/A"}
                   </h6>
                   {/* <button
                     className="btn btn-success btn-sm mx-4 px-3"
@@ -1285,7 +1419,10 @@ const BookingViewLayer = () => {
                   }}
                 >
                   {servicesToAdd.map((service, index) => (
-                    <div key={service.id} className="border rounded p-3 mb-3 bg-light">
+                    <div
+                      key={service.id}
+                      className="border rounded p-3 mb-3 bg-light"
+                    >
                       <div className="row mb-1">
                         <div className="col-md-4">
                           <label className="form-label fw-semibold">
@@ -1297,7 +1434,13 @@ const BookingViewLayer = () => {
                             placeholder="Enter service name"
                             value={service.name}
                             required
-                            onChange={(e) => handleServiceChange(service.id, "name", e.target.value)}
+                            onChange={(e) =>
+                              handleServiceChange(
+                                service.id,
+                                "name",
+                                e.target.value
+                              )
+                            }
                           />
                         </div>
 
@@ -1310,14 +1453,20 @@ const BookingViewLayer = () => {
                             className="form-select"
                             required
                             value={service.bodyPart}
-                            onChange={(e) => handleServiceChange(service.id, "bodyPart", e.target.value)}
+                            onChange={(e) =>
+                              handleServiceChange(
+                                service.id,
+                                "bodyPart",
+                                e.target.value
+                              )
+                            }
                           >
                             <option value="" disabled hidden>
                               Select body part
                             </option>
 
                             {serviceTypes
-                              .filter((item) => item.IsActive)   // show only active
+                              .filter((item) => item.IsActive) // show only active
                               .map((item) => (
                                 <option key={item.Id} value={item.ServiceName}>
                                   {item.ServiceName}
@@ -1327,13 +1476,21 @@ const BookingViewLayer = () => {
                         </div>
 
                         <div className="col-md-4">
-                          <label className="form-label fw-semibold">Service Description</label>
+                          <label className="form-label fw-semibold">
+                            Service Description
+                          </label>
                           <textarea
                             className="form-control"
                             rows="1"
                             placeholder="Short description"
                             value={service.description}
-                            onChange={(e) => handleServiceChange(service.id, "description", e.target.value)}
+                            onChange={(e) =>
+                              handleServiceChange(
+                                service.id,
+                                "description",
+                                e.target.value
+                              )
+                            }
                           ></textarea>
                         </div>
                       </div>
@@ -1349,27 +1506,49 @@ const BookingViewLayer = () => {
                             placeholder="Enter price"
                             value={service.price}
                             required
-                            onChange={(e) => handleServiceChange(service.id, "price", e.target.value)}
+                            onChange={(e) =>
+                              handleServiceChange(
+                                service.id,
+                                "price",
+                                e.target.value
+                              )
+                            }
                           />
                         </div>
                         <div className="col-md-4">
-                          <label className="form-label fw-semibold">GST %</label>
+                          <label className="form-label fw-semibold">
+                            GST %
+                          </label>
                           <input
                             type="number"
                             className="form-control"
                             placeholder="Enter GST %"
                             value={service.gstPercent}
-                            onChange={(e) => handleServiceChange(service.id, "gstPercent", e.target.value)}
+                            onChange={(e) =>
+                              handleServiceChange(
+                                service.id,
+                                "gstPercent",
+                                e.target.value
+                              )
+                            }
                           />
                         </div>
                         <div className="col-md-4">
-                          <label className="form-label fw-semibold">GST Amount</label>
+                          <label className="form-label fw-semibold">
+                            GST Amount
+                          </label>
                           <input
                             type="number"
                             className="form-control"
                             placeholder="GST Amount"
                             value={service.gstAmount}
-                            onChange={(e) => handleServiceChange(service.id, "gstAmount", e.target.value)}
+                            onChange={(e) =>
+                              handleServiceChange(
+                                service.id,
+                                "gstAmount",
+                                e.target.value
+                              )
+                            }
                           />
                         </div>
                         {/* <div className="col-md-3">
@@ -1392,7 +1571,11 @@ const BookingViewLayer = () => {
                   <h6 className="fw-semibold mb-0 text-secondary">
                     Total Amount:{" "}
                     <span className="text-success fs-5">
-                      ₹{servicesToAdd.reduce((sum, s) => sum + Number(s.totalAmount || 0), 0)}
+                      ₹
+                      {servicesToAdd.reduce(
+                        (sum, s) => sum + Number(s.totalAmount || 0),
+                        0
+                      )}
                     </span>
                   </h6>
                   <button
@@ -1403,7 +1586,6 @@ const BookingViewLayer = () => {
                     Add
                   </button>
                 </div>
-
 
                 {previewServices.length > 0 && (
                   <>
@@ -1429,12 +1611,16 @@ const BookingViewLayer = () => {
                         >
                           <tr>
                             <th style={{ padding: "6px 10px" }}>S.N</th>
-                            <th style={{ padding: "6px 10px" }}>Service Name</th>
+                            <th style={{ padding: "6px 10px" }}>
+                              Service Name
+                            </th>
                             <th style={{ padding: "6px 10px" }}>Spare Part</th>
                             <th style={{ padding: "6px 10px" }}>Price</th>
                             <th style={{ padding: "6px 10px" }}>GST%</th>
                             <th style={{ padding: "6px 10px" }}>GST ₹</th>
-                            <th style={{ padding: "6px 10px" }}>Total Amount</th>
+                            <th style={{ padding: "6px 10px" }}>
+                              Total Amount
+                            </th>
                             <th style={{ padding: "6px 10px" }}>Action</th>
                           </tr>
                         </thead>
@@ -1456,13 +1642,26 @@ const BookingViewLayer = () => {
                                 {srv.name}
                               </td>
 
-                              <td style={{ padding: "6px 10px" }}>{srv.bodyPart}</td>
-                              <td style={{ padding: "6px 10px" }}>₹{srv.price ?? 0}</td>
-                              <td style={{ padding: "6px 10px" }}>{srv.gstPercent}%</td>
-                              <td style={{ padding: "6px 10px" }}>₹{srv.gstAmount ?? 0}</td>
-                              <td style={{ padding: "6px 10px" }}>₹{srv.totalAmount ?? 0}</td>
+                              <td style={{ padding: "6px 10px" }}>
+                                {srv.bodyPart}
+                              </td>
+                              <td style={{ padding: "6px 10px" }}>
+                                ₹{srv.price ?? 0}
+                              </td>
+                              <td style={{ padding: "6px 10px" }}>
+                                {srv.gstPercent}%
+                              </td>
+                              <td style={{ padding: "6px 10px" }}>
+                                ₹{srv.gstAmount ?? 0}
+                              </td>
+                              <td style={{ padding: "6px 10px" }}>
+                                ₹{srv.totalAmount ?? 0}
+                              </td>
 
-                              <td className="text-center" style={{ padding: "6px 10px" }}>
+                              <td
+                                className="text-center"
+                                style={{ padding: "6px 10px" }}
+                              >
                                 <button
                                   className="btn btn-sm btn-outline-danger d-flex justify-content-center align-items-center mx-auto"
                                   style={{
@@ -1472,7 +1671,9 @@ const BookingViewLayer = () => {
                                     padding: 0,
                                     fontSize: "14px",
                                   }}
-                                  onClick={() => handleDeleteTempService(srv.id)}
+                                  onClick={() =>
+                                    handleDeleteTempService(srv.id)
+                                  }
                                 >
                                   <i className="bi bi-trash"></i>
                                 </button>
@@ -1487,7 +1688,11 @@ const BookingViewLayer = () => {
                     <div className="d-flex justify-content-end align-items-center mt-3 gap-3">
                       <button
                         className="btn btn-primary-600 fw-semibold d-flex justify-content-center align-items-center"
-                        style={{ width: "100px", height: "35px", fontSize: "15px" }}
+                        style={{
+                          width: "100px",
+                          height: "35px",
+                          fontSize: "15px",
+                        }}
                         onClick={handleFinalSubmitToMain}
                       >
                         Submit
@@ -1507,8 +1712,11 @@ const BookingViewLayer = () => {
           className="modal fade show d-block"
           style={{ background: "#00000080" }}
         >
-          <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: "500px", width: "90%" }}>
-            <div className="modal-content" >
+          <div
+            className="modal-dialog modal-dialog-centered"
+            style={{ maxWidth: "500px", width: "90%" }}
+          >
+            <div className="modal-content">
               <div className="modal-header">
                 <h6 className="modal-title">Assign</h6>
                 <button
@@ -1536,7 +1744,10 @@ const BookingViewLayer = () => {
                       }}
                       style={{ width: "18px", height: "18px", margin: 0 }}
                     />
-                    <label htmlFor="assignTech" className="form-check-label mb-0">
+                    <label
+                      htmlFor="assignTech"
+                      className="form-check-label mb-0"
+                    >
                       Technician
                     </label>
                   </div>
@@ -1553,7 +1764,10 @@ const BookingViewLayer = () => {
                         }}
                         style={{ width: "18px", height: "18px", margin: 0 }}
                       />
-                      <label htmlFor="assignSup" className="form-check-label mb-0">
+                      <label
+                        htmlFor="assignSup"
+                        className="form-check-label mb-0"
+                      >
                         Supervisor
                       </label>
                     </div>
@@ -1567,7 +1781,10 @@ const BookingViewLayer = () => {
                     value={selectedReassignTimeSlot}
                     onChange={(val) => setSelectedReassignTimeSlot(val)}
                     placeholder="Select Time Slot"
-                    isDisabled={!getSelectedTimeSlotOptions().length || getSelectedTimeSlotOptions().length <= 1}
+                    isDisabled={
+                      !getSelectedTimeSlotOptions().length ||
+                      getSelectedTimeSlotOptions().length <= 1
+                    }
                   />
                 </div>
 

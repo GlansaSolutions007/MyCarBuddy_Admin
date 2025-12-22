@@ -111,6 +111,36 @@ const LeadsLayer = () => {
       wrap: true,
       width: "120px",
     },
+        {
+      name: "Lead Category",
+      cell: (row) => {
+        if (!row.BookingAddOns || row.BookingAddOns.length === 0) {
+          return <span>-</span>;
+        }
+        return (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+            {row.BookingAddOns.map((addon) => (
+              <span
+                key={addon.AddOnId}
+                className={`  ${addon.Type === "Inspection" ? "" : ""}`}
+              >
+                {addon.ServiceName}
+              </span>
+            ))}
+          </div>
+        );
+      },
+      sortable: false,
+      wrap: true,
+      minWidth: "200px",
+    },
+     {
+      name: "Description",
+      selector: (row) => row.Description || "-",
+      sortable: true,
+      wrap: true,
+      width: "150px",
+    },
     {
       name: "Updated At",
       selector: (row) => {

@@ -9,7 +9,7 @@ import Select, { components } from "react-select";
 import CreatableSelect from "react-select/creatable";
 const employeeData = JSON.parse(localStorage.getItem("employeeData"));
 const userId = employeeData?.Id;
-const role = localStorage.getItem("role")
+const role = localStorage.getItem("role");
 
 const BookServicesLayer = () => {
   const { Id } = useParams();
@@ -34,8 +34,10 @@ const BookServicesLayer = () => {
   // const [serviceDate, setServiceDate] = useState("");
   // const [timeSlots, setTimeSlots] = useState([]);
   // const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
+  const hasNewItem = addedItems.some((item) => !item._apiId);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
   useEffect(() => {
     fetchAllPackages();
   }, []);
@@ -531,7 +533,8 @@ const BookServicesLayer = () => {
         Swal.fire({
           icon: "success",
           title: "Success!",
-          text: "Your booking has been created successfully.",
+          // text: "Your booking has been created successfully.",
+          text: "Services have been successfully added to this booking.",
         }).then(() => {
           navigate(-1);
         });
@@ -729,117 +732,118 @@ const BookServicesLayer = () => {
       ),
       width: "120px",
     },
-      ...(employeeData?.RoleName === "Supervisor Head" || role === "Admin"
-    ? [
-    {
-      name: "Company %",
-      cell: (row, index) => (
-        <input
-          type="number"
-          className="form-control form-control-sm"
-          value={row.percentage}
-          min={0}
-          onChange={(e) => {
-            const percent = Math.max(0, Number(e.target.value) || 0);
-            const amt = (Number(row.price) * percent) / 100;
+    ...(employeeData?.RoleName === "Supervisor Head" || role === "Admin"
+      ? [
+          {
+            name: "Company %",
+            cell: (row, index) => (
+              <input
+                type="number"
+                className="form-control form-control-sm"
+                value={row.percentage}
+                min={0}
+                onChange={(e) => {
+                  const percent = Math.max(0, Number(e.target.value) || 0);
+                  const amt = (Number(row.price) * percent) / 100;
 
-            updateTableRow(index, {
-              percentage: percent,
-              percentAmount: Number(amt.toFixed(2)),
-            });
-          }}
-          disabled={!row.isEditing}
-        />
-      ),
-      width: "120px",
-    },
-    {
-      name: "% Amount",
-      cell: (row, index) => (
-        <input
-          type="number"
-          className="form-control form-control-sm"
-          value={row.percentAmount}
-          min={0}
-          onChange={(e) => {
-            const amt = Math.max(0, Number(e.target.value) || 0);
+                  updateTableRow(index, {
+                    percentage: percent,
+                    percentAmount: Number(amt.toFixed(2)),
+                  });
+                }}
+                disabled={!row.isEditing}
+              />
+            ),
+            width: "120px",
+          },
+          {
+            name: "% Amount",
+            cell: (row, index) => (
+              <input
+                type="number"
+                className="form-control form-control-sm"
+                value={row.percentAmount}
+                min={0}
+                onChange={(e) => {
+                  const amt = Math.max(0, Number(e.target.value) || 0);
 
-            const percent = row.price > 0 ? (amt / Number(row.price)) * 100 : 0;
+                  const percent =
+                    row.price > 0 ? (amt / Number(row.price)) * 100 : 0;
 
-            updateTableRow(index, {
-              percentAmount: amt,
-              percentage: Number(percent.toFixed(2)),
-            });
-          }}
-          disabled={!row.isEditing}
-        />
-      ),
-      width: "120px",
-    },
-    {
-      name: "Select Dealer",
-      cell: (row, index) => (
-        <div className="position-relative overflow-visible w-100">
-          <Select
-            isDisabled={!row.isEditing}
-            className="react-select-container text-sm"
-            classNamePrefix="react-select"
-            isClearable
-            menuPortalTarget={document.body}
-            menuPosition="fixed"
-            value={
-              row.dealerID
-                ? {
-                    value: row.dealerID,
-                    label:
-                      dealersList.find((d) => d.DealerID === row.dealerID)
-                        ?.FullName || "Unknown Dealer",
+                  updateTableRow(index, {
+                    percentAmount: amt,
+                    percentage: Number(percent.toFixed(2)),
+                  });
+                }}
+                disabled={!row.isEditing}
+              />
+            ),
+            width: "120px",
+          },
+          {
+            name: "Select Dealer",
+            cell: (row, index) => (
+              <div className="position-relative overflow-visible w-100">
+                <Select
+                  isDisabled={!row.isEditing}
+                  className="react-select-container text-sm"
+                  classNamePrefix="react-select"
+                  isClearable
+                  menuPortalTarget={document.body}
+                  menuPosition="fixed"
+                  value={
+                    row.dealerID
+                      ? {
+                          value: row.dealerID,
+                          label:
+                            dealersList.find((d) => d.DealerID === row.dealerID)
+                              ?.FullName || "Unknown Dealer",
+                        }
+                      : null
                   }
-                : null
-            }
-            options={dealersList.map((d) => ({
-              value: d.DealerID,
-              label: d.FullName,
-            }))}
-            onChange={(opt) =>
-              updateTableRow(index, { dealerID: opt ? opt.value : "" })
-            }
-            styles={{
-              container: (base) => ({
-                ...base,
-                minWidth: 200,
-                fontSize: "0.75rem",
-              }),
-              control: (base) => ({
-                ...base,
-                height: 32,
-              }),
-              valueContainer: (base) => ({
-                ...base,
-                padding: "0 6px",
-              }),
-              input: (base) => ({
-                ...base,
-                margin: 0,
-                padding: 0,
-              }),
-              option: (base) => ({
-                ...base,
-                fontSize: "0.75rem",
-                padding: "4px 8px",
-              }),
-              menuPortal: (base) => ({
-                ...base,
-                zIndex: 1080,
-              }),
-            }}
-          />
-        </div>
-      ),
-      minWidth: "200px",
-    },
-    ]
-    : []),
+                  options={dealersList.map((d) => ({
+                    value: d.DealerID,
+                    label: d.FullName,
+                  }))}
+                  onChange={(opt) =>
+                    updateTableRow(index, { dealerID: opt ? opt.value : "" })
+                  }
+                  styles={{
+                    container: (base) => ({
+                      ...base,
+                      minWidth: 200,
+                      fontSize: "0.75rem",
+                    }),
+                    control: (base) => ({
+                      ...base,
+                      height: 32,
+                    }),
+                    valueContainer: (base) => ({
+                      ...base,
+                      padding: "0 6px",
+                    }),
+                    input: (base) => ({
+                      ...base,
+                      margin: 0,
+                      padding: 0,
+                    }),
+                    option: (base) => ({
+                      ...base,
+                      fontSize: "0.75rem",
+                      padding: "4px 8px",
+                    }),
+                    menuPortal: (base) => ({
+                      ...base,
+                      zIndex: 1080,
+                    }),
+                  }}
+                />
+              </div>
+            ),
+            minWidth: "200px",
+          },
+        ]
+      : []),
     {
       name: "Status",
       selector: (row) => row.status,
@@ -857,24 +861,28 @@ const BookServicesLayer = () => {
       cell: (row, index) =>
         !row.isInclude ? (
           <div className="d-flex gap-2">
-            {!row.isEditing &&(employeeData?.RoleName === "Supervisor Head" || role === "Admin") && (
-              <button
-                className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                onClick={() => handleEditItem(index)}
-                title="Edit"
-              >
-                edit
-              </button>
-            )}
-            {row.isEditing && (employeeData?.RoleName === "Supervisor Head" || role === "Admin") && (
-              <button
-                className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                onClick={() => handleSaveRow(index)}
-                title="Save"
-              >
-                save
-              </button>
-            )}
+            {!row.isEditing &&
+              (employeeData?.RoleName === "Supervisor Head" ||
+                role === "Admin") && (
+                <button
+                  className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                  onClick={() => handleEditItem(index)}
+                  title="Edit"
+                >
+                  edit
+                </button>
+              )}
+            {row.isEditing &&
+              (employeeData?.RoleName === "Supervisor Head" ||
+                role === "Admin") && (
+                <button
+                  className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                  onClick={() => handleSaveRow(index)}
+                  title="Save"
+                >
+                  save
+                </button>
+              )}
             {!row.isEditing && (
               <button
                 className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
@@ -1266,16 +1274,23 @@ const BookServicesLayer = () => {
                 >
                   Submit Booking
                 </button>
-               {(employeeData?.RoleName === "Supervisor Head" || role === "Admin") && (
-                <button
-                  className="btn btn-primary-700 radius-8 px-10 py-4"
-                  onClick={handleConfirmBooking}
-                >
-                  Confirm Booking
-                </button>
-               )}
+                {(employeeData?.RoleName === "Supervisor Head" ||
+                  role === "Admin") && (
+                  <button
+                    className="btn btn-primary-700 radius-8 px-10 py-4"
+                    onClick={handleConfirmBooking}
+                    disabled={hasNewItem}
+                  >
+                    Confirm Booking
+                  </button>
+                )}
               </div>
             )}
+            {hasNewItem && (
+                  <div className="text-danger text-center mt-2 fw-semibold">
+                    You’ve added new items. Please submit them first to proceed with booking confirmation.
+                  </div>
+                )}
           </div>
         </div>
       </div>

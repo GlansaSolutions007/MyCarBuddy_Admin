@@ -65,6 +65,7 @@ const LeadViewLayer = () => {
   const hasAtLeastOneFollowUp =
     Array.isArray(lead?.FollowUps) && lead.FollowUps.length > 0;
   const hasCurrentLeadBooking = currentBookings.length > 0;
+  const isCustomerConverted = lead?.CustID !== null;
 
   const navigate = useNavigate();
 
@@ -285,7 +286,7 @@ const LeadViewLayer = () => {
 
           .filter((b) => b.LeadId !== leadId)
           .sort((a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate));
-          console.log("previous", previous)
+        console.log("previous", previous);
 
         setBookings(bookingsList);
         setCurrentBookings(current);
@@ -354,69 +355,68 @@ const LeadViewLayer = () => {
     )}`;
     window.open(url, "_blank");
   };
- const handleAssignSupervisor = async () => {
-  if (currentBookings === 0) {
-    Swal.fire({
-      icon: "warning",
-      title: "Assignment Not Allowed",
-      text: "Supervisor cannot be assigned when current bookings are 0.",
-    });
-    return;
-  }
-
-  if (!selectedSupervisorHead) {
-    Swal.fire({
-      icon: "warning",
-      title: "Select Supervisor",
-      text: "Please select a supervisor to assign.",
-    });
-    return;
-  }
-
-  // ✅ collect booking IDs
-  const bookingIds = currentBookings.map(b => b.BookingID);
-  try {
-    const response = await fetch(
-      `${API_BASE}Supervisor/AssignToSupervisorHead`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          bookingIds: bookingIds,
-          supervisorHeadId: selectedSupervisorHead.value,
-          assignedDate: new Date().toISOString().split("T")[0],
-          assignStatus: "Assign",
-          createdBy: parseInt(localStorage.getItem("userId")),
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to assign supervisor");
+  const handleAssignSupervisor = async () => {
+    if (currentBookings === 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "Assignment Not Allowed",
+        text: "Supervisor cannot be assigned when current bookings are 0.",
+      });
+      return;
     }
 
-    Swal.fire({
-      icon: "success",
-      title: "Supervisor Assigned",
-      text: "Bookings assigned successfully.",
-    });
+    if (!selectedSupervisorHead) {
+      Swal.fire({
+        icon: "warning",
+        title: "Select Supervisor",
+        text: "Please select a supervisor to assign.",
+      });
+      return;
+    }
 
-    await fetchLead();
-    setAssignModalOpen(false);
-    setSelectedSupervisorHead(null);
+    // ✅ collect booking IDs
+    const bookingIds = currentBookings.map((b) => b.BookingID);
+    try {
+      const response = await fetch(
+        `${API_BASE}Supervisor/AssignToSupervisorHead`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            bookingIds: bookingIds,
+            supervisorHeadId: selectedSupervisorHead.value,
+            assignedDate: new Date().toISOString().split("T")[0],
+            assignStatus: "Assign",
+            createdBy: parseInt(localStorage.getItem("userId")),
+          }),
+        }
+      );
 
-  } catch (err) {
-    console.error("Assign supervisor failed", err);
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "Failed to assign supervisor. Please try again.",
-    });
-  }
-};
+      if (!response.ok) {
+        throw new Error("Failed to assign supervisor");
+      }
+
+      Swal.fire({
+        icon: "success",
+        title: "Supervisor Assigned",
+        text: "Bookings assigned successfully.",
+      });
+
+      await fetchLead();
+      setAssignModalOpen(false);
+      setSelectedSupervisorHead(null);
+    } catch (err) {
+      console.error("Assign supervisor failed", err);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to assign supervisor. Please try again.",
+      });
+    }
+  };
 
   // Handle Submit Car Details
   const handleSubmitCarDetails = async () => {
@@ -680,6 +680,35 @@ const LeadViewLayer = () => {
       confirmButtonText: "OK",
     });
   };
+  const handleConvertCustomer = async () => {
+  try {
+    const response = await axios.post(
+      `${API_BASE}/Leads/ConvertLead`,
+      {
+        params: {
+          leadId: lead.LeadId,
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    Swal.fire({
+      icon: "success",
+      title: "Converted",
+      text: "Lead has been successfully converted to customer.",
+    });
+  } catch (error) {
+    Swal.fire({
+      icon: "error",
+      title: "Conversion Failed",
+      text:
+        error?.response?.data?.message ||
+        "Unable to convert lead. Please try again.",
+    });
+  }
+};
 
   const showFollowUpRequiredAlert = () => {
     Swal.fire({
@@ -831,7 +860,8 @@ const LeadViewLayer = () => {
                     Back
                   </Link>
                   {!["Supervisor Head", "Supervisor"].includes(roleName) &&
-                    !isLeadClosed && (
+                    !isLeadClosed &&
+                    currentBookings?.length > 0 && (
                       <button
                         className="btn btn-primary-600 btn-sm d-flex align-items-center justify-content-center gap-1"
                         onClick={() => {
@@ -1392,127 +1422,152 @@ const LeadViewLayer = () => {
                   </Accordion.Body>
                 </Accordion.Item>
               </Accordion>
-              <Accordion className="mt-3">
-                <Accordion.Item eventKey="current">
-                  <Accordion.Header>
-                    Current Bookings ({currentBookings.length})
-                  </Accordion.Header>
-                  <Accordion.Body>
-                    {currentBookings.length === 0 ? (
-                      <p className="text-muted">No current bookings found.</p>
-                    ) : (
-                      <div className="table-responsive">
-                        <table className="table table-bordered table-striped p-2 radius-16">
-                          <thead className="form-label fw-semibold text-primary-light">
-                            <tr>
-                              <th>Booking TrackID</th>
-                              <th>Booking Date</th>
-                              <th className="text-center">Action</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {currentBookings.map((b) => (
-                              <tr key={b.BookingID}>
-                                <td>
-                                  <Link
-                                    to={`/booking-view/${b.BookingID}`}
-                                    className="text-primary"
-                                  >
-                                    {b.BookingTrackID}
-                                  </Link>
-                                </td>
-                                <td>
-                                  {b.CreatedDate
-                                    ? new Date(
-                                        b.CreatedDate
-                                      ).toLocaleDateString("en-IN")
-                                    : "N/A"}
-                                </td>
-                                <td className="text-center">
-                                  <Link
-                                    to={`/booking-view/${b.BookingID}`}
-                                    className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                                    title="View"
-                                  >
-                                    <Icon icon="lucide:eye" />
-                                  </Link>
-                                  {!isLeadClosed && (
-                                    <Link
-                                      to={`/book-service/${b.LeadId}`}
-                                      className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                                      title="Edit"
-                                    >
-                                      <Icon icon="lucide:edit" />
-                                    </Link>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </Accordion.Body>
-                </Accordion.Item>
 
-                <Accordion.Item eventKey="previous">
-                  <Accordion.Header>
-                    Previous Bookings ({previousBookings.length})
-                  </Accordion.Header>
-                  <Accordion.Body>
-                    {previousBookings.length === 0 ? (
-                      <p className="text-muted">No previous bookings found.</p>
-                    ) : (
-                      <div className="table-responsive">
-                        <table className="table table-bordered table-striped p-2 radius-16">
-                          <thead className="form-label fw-semibold text-primary-light">
-                            <tr>
-                              {/* <th>ID</th> */}
-                              <th>Lead ID</th>
-                              <th>Booking TrackID</th>
-                              <th>Booking Date</th>
-                              <th className="text-center">View</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {previousBookings.map((b) => (
-                              <tr key={b.BookingID}>
-                                {/* <td>{b.BookingID}</td> */}
-                                <td>{b.LeadId}</td>
-                                <td>
-                                  <Link
-                                    to={`/view-booking/${b.BookingTrackID}`}
-                                    className="text-primary"
-                                  >
-                                    {b.BookingTrackID}
-                                  </Link>
-                                </td>
-                                <td>
-                                  {b.CreatedDate
-                                    ? new Date(
-                                        b.CreatedDate
-                                      ).toLocaleDateString("en-IN")
-                                    : "N/A"}
-                                </td>
+              {/* ================= CUSTOMER NOT CONVERTED ================= */}
+              {!isCustomerConverted ? (
+                <div className="alert alert-warning d-flex justify-content-between align-items-center mt-3">
+                  <span className="fw-semibold">
+                    This lead is not yet converted to a customer. Please confirm
+                    conversion.
+                  </span>
 
-                                <td className="text-center">
-                                  <Link
-                                    to={`/booking-view/${b.BookingID}`}
-                                    className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                                    title="View"
-                                  >
-                                    <Icon icon="lucide:eye" />
-                                  </Link>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </Accordion.Body>
-                </Accordion.Item>
-              </Accordion>
+                  <button
+                    className="btn btn-primary-600 px-20 btn-sm"
+                    onClick={handleConvertCustomer}
+                     disabled={isLeadClosed}
+                  >
+                    Converted
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <Accordion className="mt-3">
+                    <Accordion.Item eventKey="current">
+                      <Accordion.Header>
+                        Current Bookings ({currentBookings.length})
+                      </Accordion.Header>
+                      <Accordion.Body>
+                        {currentBookings.length === 0 ? (
+                          <p className="text-muted">
+                            No current bookings found.
+                          </p>
+                        ) : (
+                          <div className="table-responsive">
+                            <table className="table table-bordered table-striped p-2 radius-16">
+                              <thead className="form-label fw-semibold text-primary-light">
+                                <tr>
+                                  <th>Booking TrackID</th>
+                                  <th>Booking Date</th>
+                                  <th className="text-center">Action</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {currentBookings.map((b) => (
+                                  <tr key={b.BookingID}>
+                                    <td>
+                                      <Link
+                                        to={`/booking-view/${b.BookingID}`}
+                                        className="text-primary"
+                                      >
+                                        {b.BookingTrackID}
+                                      </Link>
+                                    </td>
+                                    <td>
+                                      {b.CreatedDate
+                                        ? new Date(
+                                            b.CreatedDate
+                                          ).toLocaleDateString("en-IN")
+                                        : "N/A"}
+                                    </td>
+                                    <td className="text-center">
+                                      <Link
+                                        to={`/booking-view/${b.BookingID}`}
+                                        className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                        title="View"
+                                      >
+                                        <Icon icon="lucide:eye" />
+                                      </Link>
+                                      {!isLeadClosed && (
+                                        <Link
+                                          to={`/book-service/${b.LeadId}`}
+                                          className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                          title="Edit"
+                                        >
+                                          <Icon icon="lucide:edit" />
+                                        </Link>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </Accordion.Body>
+                    </Accordion.Item>
+
+                    <Accordion.Item eventKey="previous">
+                      <Accordion.Header>
+                        Previous Bookings ({previousBookings.length})
+                      </Accordion.Header>
+                      <Accordion.Body>
+                        {previousBookings.length === 0 ? (
+                          <p className="text-muted">
+                            No previous bookings found.
+                          </p>
+                        ) : (
+                          <div className="table-responsive">
+                            <table className="table table-bordered table-striped p-2 radius-16">
+                              <thead className="form-label fw-semibold text-primary-light">
+                                <tr>
+                                  {/* <th>ID</th> */}
+                                  <th>Lead ID</th>
+                                  <th>Booking TrackID</th>
+                                  <th>Booking Date</th>
+                                  <th className="text-center">View</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {previousBookings.map((b) => (
+                                  <tr key={b.BookingID}>
+                                    {/* <td>{b.BookingID}</td> */}
+                                    <td>{b.LeadId}</td>
+                                    <td>
+                                      <Link
+                                        to={`/view-booking/${b.BookingTrackID}`}
+                                        className="text-primary"
+                                      >
+                                        {b.BookingTrackID}
+                                      </Link>
+                                    </td>
+                                    <td>
+                                      {b.CreatedDate
+                                        ? new Date(
+                                            b.CreatedDate
+                                          ).toLocaleDateString("en-IN")
+                                        : "N/A"}
+                                    </td>
+
+                                    <td className="text-center">
+                                      <Link
+                                        to={`/booking-view/${b.BookingID}`}
+                                        className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                        title="View"
+                                      >
+                                        <Icon icon="lucide:eye" />
+                                      </Link>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </Accordion.Body>
+                    </Accordion.Item>
+                  </Accordion>
+                </>
+              )}
             </div>
           </div>
         </div>
