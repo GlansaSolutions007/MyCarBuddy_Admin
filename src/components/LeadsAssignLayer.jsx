@@ -75,7 +75,7 @@ const LeadsAssignLayer = () => {
         // Show leads assigned to this head and not assigned to employee
         filteredData = mappedData.filter(
           (lead) =>
-            lead.Head_Assign === userDetails.Id &&
+            Number(lead.Head_Assign) === Number(userDetails.Id) &&
             (lead.IsAssigned_Emp == null || lead.IsAssigned_Emp == 0)
         );
       } else {

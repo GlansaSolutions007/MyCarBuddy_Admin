@@ -9,6 +9,7 @@ import Select, { components } from "react-select";
 import CreatableSelect from "react-select/creatable";
 const employeeData = JSON.parse(localStorage.getItem("employeeData"));
 const userId = employeeData?.Id;
+const role = localStorage.getItem("role")
 
 const BookServicesLayer = () => {
   const { Id } = useParams();
@@ -100,27 +101,26 @@ const BookServicesLayer = () => {
     fetchIncludes();
   }, []);
 
-  useEffect(() => {
-    const fetchTimeSlots = async () => {
-      try {
-        const res = await axios.get(`${API_BASE}TimeSlot`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+  // useEffect(() => {
+  //   const fetchTimeSlots = async () => {
+  //     try {
+  //       const res = await axios.get(`${API_BASE}TimeSlot`, {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //       });
+  //       // sort by start time if needed
+  //       const sorted = (res.data || []).sort((a, b) =>
+  //         a.StartTime.localeCompare(b.StartTime)
+  //       );
 
-        // sort by start time if needed
-        const sorted = (res.data || []).sort((a, b) =>
-          a.StartTime.localeCompare(b.StartTime)
-        );
+  //       setTimeSlots(sorted);
+  //     } catch (err) {
+  //       console.error("Failed to fetch time slots", err);
+  //       setTimeSlots([]);
+  //     }
+  //   };
 
-        setTimeSlots(sorted);
-      } catch (err) {
-        console.error("Failed to fetch time slots", err);
-        setTimeSlots([]);
-      }
-    };
-
-    fetchTimeSlots();
-  }, []);
+  //   fetchTimeSlots();
+  // }, []);
 
   const fetchBookingData = async () => {
     try {
@@ -558,69 +558,65 @@ const BookServicesLayer = () => {
       });
     }
   };
- const handleConfirmBooking = async () => {
-  // collect only saved items
-  const ids = addedItems
-    .filter((item) => item._apiId) // only existing booking items
-    .map((item) => item._apiId);
+  const handleConfirmBooking = async () => {
+    // collect only saved items
+    const ids = addedItems
+      .filter((item) => item._apiId) // only existing booking items
+      .map((item) => item._apiId);
 
-  if (ids.length === 0) {
-    return Swal.fire(
-      "No Items",
-      "Please submit booking before confirming.",
-      "warning"
-    );
-  }
-
-  // 🔔 PRE-CONFIRMATION ALERT
-  const result = await Swal.fire({
-    title: "Please Check Before Confirmation",
-    text:"Please check the data before confirmation, as this will be sent directly to the customer.",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "Yes, Confirm",
-    cancelButtonText: "Cancel",
-    confirmButtonColor: "#0d9488", 
-    cancelButtonColor: "#6b7280",
-  });
-
-  if (!result.isConfirmed) return;
-
-  const payload = {
-    ids: ids,
-    supervisorId: userId,
-  };
-
-  try {
-    const res = await axios.post(
-      `${API_BASE}Leads/confirm-booking-addons-by-supervisor`,
-      payload,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    if (res.status === 200) {
-      Swal.fire(
-        "Confirmed",
-        "Booking has been confirmed successfully",
-        "success"
-      ).then(() => {
-        navigate(-1);
-      });
+    if (ids.length === 0) {
+      return Swal.fire(
+        "No Items",
+        "Please submit booking before confirming.",
+        "warning"
+      );
     }
-  } catch (error) {
-    console.error(error);
-    Swal.fire(
-      "Error",
-      error.response?.data?.message || "Failed to confirm booking",
-      "error"
-    );
-  }
-};
+
+    // 🔔 PRE-CONFIRMATION ALERT
+    const result = await Swal.fire({
+      title: "Please Check Before Confirmation",
+      text: "Please check the data before confirmation, as this will be sent directly to the customer.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Confirm",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#0d9488",
+      cancelButtonColor: "#6b7280",
+    });
+    if (!result.isConfirmed) return;
+    const payload = {
+      ids: ids,
+      supervisorId: userId,
+    };
+    try {
+      const res = await axios.post(
+        `${API_BASE}Leads/confirm-booking-addons-by-supervisor`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (res.status === 200) {
+        Swal.fire(
+          "Confirmed",
+          "Booking has been confirmed successfully",
+          "success"
+        ).then(() => {
+          navigate(-1);
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      Swal.fire(
+        "Error",
+        error.response?.data?.message || "Failed to confirm booking",
+        "error"
+      );
+    }
+  };
 
   const updateTableRow = (index, updates) => {
     setAddedItems((prev) => {
@@ -733,7 +729,8 @@ const BookServicesLayer = () => {
       ),
       width: "120px",
     },
-
+      ...(employeeData?.RoleName === "Supervisor Head" || role === "Admin"
+    ? [
     {
       name: "Company %",
       cell: (row, index) => (
@@ -841,6 +838,8 @@ const BookServicesLayer = () => {
       ),
       minWidth: "200px",
     },
+    ]
+    : []),
     {
       name: "Status",
       selector: (row) => row.status,
@@ -858,7 +857,7 @@ const BookServicesLayer = () => {
       cell: (row, index) =>
         !row.isInclude ? (
           <div className="d-flex gap-2">
-            {!row.isEditing && (
+            {!row.isEditing &&(employeeData?.RoleName === "Supervisor Head" || role === "Admin") && (
               <button
                 className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
                 onClick={() => handleEditItem(index)}
@@ -867,7 +866,7 @@ const BookServicesLayer = () => {
                 edit
               </button>
             )}
-            {row.isEditing && (
+            {row.isEditing && (employeeData?.RoleName === "Supervisor Head" || role === "Admin") && (
               <button
                 className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
                 onClick={() => handleSaveRow(index)}
@@ -994,6 +993,13 @@ const BookServicesLayer = () => {
                         setSelectedIncludes(selected);
                         setName(selected.label);
                       }
+                    }}
+                    styles={{
+                      menuList: (base) => ({
+                        ...base,
+                        maxHeight: 5 * 38,
+                        overflowY: "auto",
+                      }),
                     }}
                   />
                 </div>
@@ -1260,13 +1266,14 @@ const BookServicesLayer = () => {
                 >
                   Submit Booking
                 </button>
-
+               {(employeeData?.RoleName === "Supervisor Head" || role === "Admin") && (
                 <button
                   className="btn btn-primary-700 radius-8 px-10 py-4"
                   onClick={handleConfirmBooking}
                 >
                   Confirm Booking
                 </button>
+               )}
               </div>
             )}
           </div>
