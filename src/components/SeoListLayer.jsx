@@ -11,6 +11,7 @@ const SeoListLayer = () => {
   const [seoList, setSeoList] = useState([]);
   const [expandedRows, setExpandedRows] = useState(new Set());
   const token = localStorage.getItem("token");
+  const [searchText, setSearchText] = useState("");
 
   const fetchSeo = async () => {
     try {
@@ -95,23 +96,37 @@ const SeoListLayer = () => {
       wrap: true,
     },
     ...(hasPermission("seo_edit")
-    ? [
-    {
-      name: "Actions",
-      cell: (row) => (
-        <div className="d-flex gap-2">
-          <Link
-            to={`/edit-seo/${row.seo_id}`}
-            className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-          >
-            <Icon icon="lucide:edit" />
-          </Link>
-        </div>
-      ),
-    },
-    ]
-    : []),
+      ? [
+        {
+          name: "Actions",
+          cell: (row) => (
+            <div className="d-flex gap-2">
+              <Link
+                to={`/edit-seo/${row.seo_id}`}
+                className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+              >
+                <Icon icon="lucide:edit" />
+              </Link>
+            </div>
+          ),
+        },
+      ]
+      : []),
   ];
+
+  const filteredSeoList = React.useMemo(() => {
+    if (!searchText) return seoList;
+
+    const text = searchText.toLowerCase();
+
+    return seoList.filter((item) =>
+      item.page_slug?.toLowerCase().includes(text) ||
+      item.seo_title?.toLowerCase().includes(text) ||
+      item.seo_description?.toLowerCase().includes(text) ||
+      item.seo_keywords?.toLowerCase().includes(text)
+    );
+  }, [searchText, seoList]);
+
 
   return (
     <div className="row gy-4">
@@ -122,23 +137,48 @@ const SeoListLayer = () => {
 
         <div className="chat-main card overflow-hidden p-3">
           <div className="card-header border-bottom bg-base pt-0 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between">
-            <div className="d-flex align-items-center flex-wrap gap-3"></div>
+            {/* <div className="d-flex align-items-center flex-wrap gap-3"></div> */}
+            {/* Search Input */}
+            <form
+              className="navbar-search flex-shrink-1 position-relative"
+              style={{ minWidth: "400px", maxWidth: "500px" }}
+            >
+              <input
+                type="text"
+                className="form-control ps-5"
+                placeholder="Search SEO's"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                style={{
+                  width: "100%",
+                }}
+              />
+              <Icon
+                icon="ion:search-outline"
+                className="position-absolute top-50 start-0 translate-middle-y ms-2 text-muted"
+                width="20"
+                height="20"
+              />
+            </form>
+
             {hasPermission("seo_add") && (
-            <Link to="/add-seo" className="btn btn-primary-600 radius-8 px-14 py-6 text-sm">
-              <Icon icon="ic:baseline-plus" className="icon text-xl line-height-1" />
-              Add Seo
-            </Link>
+              <Link to="/add-seo" className="btn btn-primary-600 radius-8 px-14 py-6 text-sm">
+                <Icon icon="ic:baseline-plus" className="icon text-xl line-height-1" />
+                Add Seo
+              </Link>
             )}
           </div>
           <DataTable
             columns={columns}
-            data={seoList}
+            data={filteredSeoList}
             pagination
             highlightOnHover
             responsive
             striped
             persistTableHead
-            noDataComponent="No Seo available"
+            noDataComponent={
+              searchText ? "No matching SEO records" : "No Seo available"
+            }
           />
         </div>
       </div>

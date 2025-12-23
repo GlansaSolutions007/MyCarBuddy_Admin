@@ -682,18 +682,18 @@ const LeadViewLayer = () => {
   };
   const handleConvertCustomer = async () => {
   try {
-    const response = await axios.post(
+    await axios.post(
       `${API_BASE}/Leads/ConvertLead`,
+      null, 
       {
         params: {
-          leadId: lead.LeadId,
+          leadId: lead.Id,
         },
         headers: {
           Authorization: `Bearer ${token}`,
         },
       }
     );
-
     Swal.fire({
       icon: "success",
       title: "Converted",
@@ -709,6 +709,7 @@ const LeadViewLayer = () => {
     });
   }
 };
+
 
   const showFollowUpRequiredAlert = () => {
     Swal.fire({
@@ -1427,14 +1428,12 @@ const LeadViewLayer = () => {
               {!isCustomerConverted ? (
                 <div className="alert alert-warning d-flex justify-content-between align-items-center mt-3">
                   <span className="fw-semibold">
-                    This lead is not yet converted to a customer. Please confirm
-                    conversion.
+                    This lead has not yet been converted to a customer. Please confirm the conversion to proceed with booking.
                   </span>
-
                   <button
                     className="btn btn-primary-600 px-20 btn-sm"
                     onClick={handleConvertCustomer}
-                     disabled={isLeadClosed}
+                    disabled={isLeadClosed}
                   >
                     Converted
                   </button>

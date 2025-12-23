@@ -17,6 +17,7 @@ const BookServicesLayer = () => {
   const API_BASE = import.meta.env.VITE_APIURL;
   const token = localStorage.getItem("token");
   const [dealersList, setDealersList] = useState([]);
+  const [bookingData, setBookingData] = useState(null);
   const [selectedDealer, setSelectedDealer] = useState("");
   const [companyPercent, setCompanyPercent] = useState();
   const [percentAmount, setPercentAmount] = useState();
@@ -31,11 +32,12 @@ const BookServicesLayer = () => {
   const [selectedPackage, setSelectedPackage] = useState("");
   const [includesList, setIncludesList] = useState([]);
   const [selectedIncludes, setSelectedIncludes] = useState(null);
-  // const [serviceDate, setServiceDate] = useState("");
-  // const [timeSlots, setTimeSlots] = useState([]);
-  // const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
+  const [serviceDate, setServiceDate] = useState("");
+  const [timeSlots, setTimeSlots] = useState([]);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
   const hasNewItem = addedItems.some((item) => !item._apiId);
   const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -103,26 +105,26 @@ const BookServicesLayer = () => {
     fetchIncludes();
   }, []);
 
-  // useEffect(() => {
-  //   const fetchTimeSlots = async () => {
-  //     try {
-  //       const res = await axios.get(`${API_BASE}TimeSlot`, {
-  //         headers: { Authorization: `Bearer ${token}` },
-  //       });
-  //       // sort by start time if needed
-  //       const sorted = (res.data || []).sort((a, b) =>
-  //         a.StartTime.localeCompare(b.StartTime)
-  //       );
+  useEffect(() => {
+    const fetchTimeSlots = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}TimeSlot`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        // sort by start time if needed
+        const sorted = (res.data || []).sort((a, b) =>
+          a.StartTime.localeCompare(b.StartTime)
+        );
 
-  //       setTimeSlots(sorted);
-  //     } catch (err) {
-  //       console.error("Failed to fetch time slots", err);
-  //       setTimeSlots([]);
-  //     }
-  //   };
+        setTimeSlots(sorted);
+      } catch (err) {
+        console.error("Failed to fetch time slots", err);
+        setTimeSlots([]);
+      }
+    };
 
-  //   fetchTimeSlots();
-  // }, []);
+    fetchTimeSlots();
+  }, []);
 
   const fetchBookingData = async () => {
     try {
@@ -132,6 +134,10 @@ const BookServicesLayer = () => {
         { headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
       const data = response.data || {};
+      setBookingData({
+        bookingDate: data.bookingDate,
+        assignedTimeSlot: data.assignedTimeSlot,
+      });
 
       const apiItems = [
         ...(data.notConfirmed || []),
@@ -147,10 +153,10 @@ const BookServicesLayer = () => {
           gstPercent: Number(item.gstPercent || 0),
           gstPrice: Number(item.gstAmount || 0),
           dealerID: item.dealerID || "",
-          // companyPercent: Number(item.percentage || 0),
           percentage: Number(item.percentage || 0),
           percentAmount: Number(item.our_Earnings || 0),
           status: item.status,
+          labourCharge: Number(item.labourCharge || 0),
           includeId: item.serviceType === "Service" ? item.serviceId : null,
           packageId: item.serviceType === "Package" ? item.serviceId : null,
           isEditing: false,
@@ -167,7 +173,6 @@ const BookServicesLayer = () => {
       setAddedItems([]);
     } catch (err) {
       console.error("Failed to fetch booking data:", err);
-      // Swal.fire( "No Previous Booking", "No previous bookings exist. Please add a new booking", "info");
     } finally {
       setLoading(false);
     }
@@ -357,6 +362,7 @@ const BookServicesLayer = () => {
       dealerID: selectedDealer,
       percentage: Number(companyPercent) || 0,
       percentAmount: Number(percentAmount) || 0,
+      labourCharge: 0,
       isEditing: false,
       includeId: itemType === "Service" ? Number(finalIncludeID) || 0 : 0,
       includeName:
@@ -404,6 +410,7 @@ const BookServicesLayer = () => {
           dealerID: row.dealerID,
           percentage: row.percentage,
           our_Earnings: row.percentAmount,
+          labourCharges: row.labourCharge,
           modifiedBy: parseInt(localStorage.getItem("userId")),
           isActive: true,
         };
@@ -470,11 +477,18 @@ const BookServicesLayer = () => {
     if (addedItems.length === 0)
       return Swal.fire("Error", "No items to submit", "error");
     if (!leadId) return Swal.fire("Error", "Lead ID is required", "error");
-    //   if (!serviceDate)
-    // return Swal.fire("Error", "Please select service date", "error");
-    // if (!selectedTimeSlot)
-    //   return Swal.fire("Error", "Please select a time slot", "error");
+    if (
+      bookingData?.bookingDate === null &&
+      bookingData?.assignedTimeSlot === null
+    ) {
+      if (!serviceDate) {
+        return Swal.fire("Error", "Please select service date", "error");
+      }
 
+      if (!selectedTimeSlot) {
+        return Swal.fire("Error", "Please select a time slot", "error");
+      }
+    }
     try {
       // Transform addedItems to match API payload format
       const services = addedItems
@@ -497,7 +511,9 @@ const BookServicesLayer = () => {
             dealerID: Number(item.dealerID) || 0,
             percentage: Number(item.percentage) || 0,
             our_Earnings: Number(item.percentAmount) || 0,
-            serviceId: serviceId, // ✅ FIXED
+            labourCharges: Number(item.labourCharge) || 0,
+            serviceId: serviceId,
+            isUserClicked: false,
           };
         });
 
@@ -507,11 +523,8 @@ const BookServicesLayer = () => {
       const payload = {
         createdBy: parseInt(localStorage.getItem("userId")),
         leadId: leadId,
-        // timeSlotId: selectedTimeSlot,
-        // serviceDate: serviceDate,
         services: services,
       };
-
       // ⭐ IF booking already exists → include booking details
       if (existingBookingItem) {
         payload.bookingID = existingBookingItem._bookingId;
@@ -530,22 +543,50 @@ const BookServicesLayer = () => {
       );
 
       if (response.status === 200 || response.status === 201) {
+        const { bookingId } = response.data;
+
+        // 🔹 Send booking date & time ONLY if they were null before
+        if (
+          bookingData?.bookingDate === null &&
+          bookingData?.assignedTimeSlot === null
+        ) {
+          const slotObj = timeSlots.find(
+            (t) => t.TimeSlotID === selectedTimeSlot
+          );
+
+          await axios.post(
+            `${API_BASE}Supervisor/Booking`,
+            {
+              bookingID: bookingId,
+              bookingDate: serviceDate,
+              assignedTimeSlot: slotObj
+                ? `${slotObj.StartTime} - ${slotObj.EndTime}`
+                : "",
+            },
+
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+        }
+
         Swal.fire({
           icon: "success",
           title: "Success!",
-          // text: "Your booking has been created successfully.",
           text: "Services have been successfully added to this booking.",
         }).then(() => {
           navigate(-1);
         });
-        // Refresh booking list again
+
         await fetchBookingData();
-        // Reset form
         resetForm();
         setAddedItems([]);
         resetBookingForm();
-        // setSelectedTimeSlot("");
-        // setServiceDate("");
+        setSelectedTimeSlot("");
+        setServiceDate("");
       } else {
         throw new Error(response.data?.message || "Failed to create booking");
       }
@@ -781,6 +822,26 @@ const BookServicesLayer = () => {
             width: "120px",
           },
           {
+            name: "Labor Charges",
+            cell: (row, index) => (
+              <input
+                type="number"
+                className="form-control form-control-sm"
+                value={row.labourCharge || 0}
+                min={0}
+                onChange={(e) => {
+                  const labourCharge = Math.max(0, Number(e.target.value) || 0);
+
+                  updateTableRow(index, {
+                    labourCharge,
+                  });
+                }}
+                disabled={!row.isEditing}
+              />
+            ),
+            width: "140px",
+          },
+          {
             name: "Select Dealer",
             cell: (row, index) => (
               <div className="position-relative overflow-visible w-100">
@@ -900,14 +961,14 @@ const BookServicesLayer = () => {
   ];
 
   // totals
-  const subtotal = addedItems.reduce(
-    (acc, it) => acc + (Number(it.price) || 0),
-    0
-  );
-  const totalGst = addedItems.reduce(
-    (acc, it) => acc + (Number(it.gstPrice) || 0),
-    0
-  );
+  const subtotal = addedItems.reduce((sum, item) => {
+    return sum + (Number(item.price) || 0) + (Number(item.labourCharge) || 0);
+  }, 0);
+
+  const totalGst = addedItems.reduce((sum, item) => {
+    return sum + (Number(item.gstPrice) || 0);
+  }, 0);
+
   const grandTotal = subtotal + totalGst;
 
   const flattenedRows = [];
@@ -936,7 +997,8 @@ const BookServicesLayer = () => {
       });
     }
   });
-
+  const isScheduleAlreadySet =
+    bookingData?.bookingDate !== null && bookingData?.assignedTimeSlot !== null;
   return (
     <div className="row gy-4">
       <div className="col-12">
@@ -1202,9 +1264,9 @@ const BookServicesLayer = () => {
               </div>
             )}
             {/* Service Date & Time Slot Selection */}
-            {/* {addedItems.length > 0 && (
+            {addedItems.length > 0 && (
               <div className="row mt-3 align-items-center g-3">
-                
+                {/* ---------- Service Date ---------- */}
                 <div className="col-md-6">
                   <div className="row align-items-center g-2">
                     <div className="col-auto">
@@ -1212,17 +1274,35 @@ const BookServicesLayer = () => {
                         Service Date
                       </label>
                     </div>
+
                     <div className="col">
-                      <input
-                        type="date"
-                        className="form-control"
-                        value={serviceDate}
-                        onChange={(e) => setServiceDate(e.target.value)}
-                        min={new Date().toISOString().split("T")[0]}
-                      />
+                      {isScheduleAlreadySet ? (
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={
+                            bookingData?.bookingDate
+                              ? new Date(
+                                  bookingData.bookingDate
+                                ).toLocaleDateString("en-IN")
+                              : "—"
+                          }
+                          readOnly
+                        />
+                      ) : (
+                        <input
+                          type="date"
+                          className="form-control"
+                          value={serviceDate}
+                          onChange={(e) => setServiceDate(e.target.value)}
+                          min={new Date().toISOString().split("T")[0]}
+                        />
+                      )}
                     </div>
                   </div>
                 </div>
+
+                {/* ---------- Time Slot ---------- */}
                 <div className="col-md-6">
                   <div className="row align-items-center g-2">
                     <div className="col-auto">
@@ -1230,41 +1310,74 @@ const BookServicesLayer = () => {
                         Time Slot
                       </label>
                     </div>
+
                     <div className="col">
-                      <Select
-                        className="react-select-container text-sm"
-                        classNamePrefix="react-select"
-                        placeholder="Select time slot..."
-                        isClearable
-                        options={timeSlots.map((slot) => ({
-                          value: slot.TimeSlotID,
-                          label: `${slot.StartTime} - ${slot.EndTime}`,
-                        }))}
-                        value={
-                          selectedTimeSlot
-                            ? {
-                                value: selectedTimeSlot,
-                                label: (() => {
-                                  const slot = timeSlots.find(
-                                    (t) => t.TimeSlotID === selectedTimeSlot
-                                  );
-                                  return slot
-                                    ? `${slot.StartTime} - ${slot.EndTime}`
-                                    : "";
-                                })(),
-                              }
-                            : null
-                        }
-                        onChange={(option) =>
-                          setSelectedTimeSlot(option ? option.value : "")
-                        }
-                      />
+                      {isScheduleAlreadySet ? (
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={(() => {
+                            if (!bookingData?.assignedTimeSlot) return "—";
+
+                            // case 1: already string
+                            if (
+                              typeof bookingData.assignedTimeSlot === "string"
+                            ) {
+                              return bookingData.assignedTimeSlot;
+                            }
+
+                            // case 2: slots not loaded yet
+                            if (timeSlots.length === 0) {
+                              return "Loading time slot...";
+                            }
+
+                            // case 3: ID → label
+                            const slot = timeSlots.find(
+                              (t) =>
+                                t.TimeSlotID === bookingData.assignedTimeSlot
+                            );
+
+                            return slot
+                              ? `${slot.StartTime} - ${slot.EndTime}`
+                              : "—";
+                          })()}
+                          readOnly
+                        />
+                      ) : (
+                        <Select
+                          className="react-select-container text-sm"
+                          classNamePrefix="react-select"
+                          placeholder="Select time slot..."
+                          isClearable
+                          options={timeSlots.map((slot) => ({
+                            value: slot.TimeSlotID,
+                            label: `${slot.StartTime} - ${slot.EndTime}`,
+                          }))}
+                          value={
+                            selectedTimeSlot
+                              ? {
+                                  value: selectedTimeSlot,
+                                  label: (() => {
+                                    const slot = timeSlots.find(
+                                      (t) => t.TimeSlotID === selectedTimeSlot
+                                    );
+                                    return slot
+                                      ? `${slot.StartTime} - ${slot.EndTime}`
+                                      : "";
+                                  })(),
+                                }
+                              : null
+                          }
+                          onChange={(option) =>
+                            setSelectedTimeSlot(option ? option.value : "")
+                          }
+                        />
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
-            )} */}
-
+            )}
             {/* Submit & Confirm Button */}
             {addedItems.length > 0 && (
               <div className="d-flex justify-content-center gap-3 mt-3">
@@ -1287,10 +1400,11 @@ const BookServicesLayer = () => {
               </div>
             )}
             {hasNewItem && (
-                  <div className="text-danger text-center mt-2 fw-semibold">
-                    You’ve added new items. Please submit them first to proceed with booking confirmation.
-                  </div>
-                )}
+              <div className="text-danger text-center mt-2 fw-semibold">
+                You’ve added new items. Please submit them first to proceed with
+                booking confirmation.
+              </div>
+            )}
           </div>
         </div>
       </div>
