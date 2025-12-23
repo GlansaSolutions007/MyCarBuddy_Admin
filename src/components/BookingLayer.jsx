@@ -20,11 +20,11 @@ const formatTime = (timeStr) => {
       const hour = parseInt(match[1], 10);
       const minute = match[2] ? parseInt(match[2], 10) : 0;
       const period = match[3].toUpperCase();
-      const hh = (hour % 12) || 12;
-      const mm = minute.toString().padStart(2, '0');
+      const hh = hour % 12 || 12;
+      const mm = minute.toString().padStart(2, "0");
       return `${hh}:${mm} ${period}`;
     }
-    return raw.replace(/am/i, 'AM').replace(/pm/i, 'PM');
+    return raw.replace(/am/i, "AM").replace(/pm/i, "PM");
   }
 
   // Extract HH and MM from formats like HH:MM or HH:MM:SS or even just HH
@@ -33,9 +33,9 @@ const formatTime = (timeStr) => {
   const hour24 = parseInt(match[1], 10);
   const minute = match[2] ? parseInt(match[2], 10) : 0;
   if (Number.isNaN(hour24) || Number.isNaN(minute)) return raw;
-  const period = hour24 >= 12 ? 'PM' : 'AM';
-  const hour12 = (hour24 % 12) || 12;
-  return `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
+  const period = hour24 >= 12 ? "PM" : "AM";
+  const hour12 = hour24 % 12 || 12;
+  return `${hour12}:${minute.toString().padStart(2, "0")} ${period}`;
 };
 
 const BookingLayer = () => {
@@ -52,7 +52,7 @@ const BookingLayer = () => {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [status, setStatus] = useState("all");
-    const [timeSlots, setTimeSlots] = useState([]);
+  const [timeSlots, setTimeSlots] = useState([]);
 
   // New states for Supervisor Assignment
   const [supervisors, setSupervisors] = useState([]);
@@ -158,7 +158,7 @@ const BookingLayer = () => {
       const [start, end] = slot.split(" - ");
       setSelectedTimeSlot({
         value: slot,
-        label: `${formatTime(start)} - ${formatTime(end)}`
+        label: `${formatTime(start)} - ${formatTime(end)}`,
       });
     } else {
       setSelectedTimeSlot(null);
@@ -231,7 +231,9 @@ const BookingLayer = () => {
           title: "Success",
           text:
             res.data.message ||
-            `${assignType === "technician" ? "Technician" : "Supervisor"} assigned successfully`,
+            `${
+              assignType === "technician" ? "Technician" : "Supervisor"
+            } assigned successfully`,
         });
         fetchBookings();
         setAssignModalOpen(false);
@@ -244,7 +246,9 @@ const BookingLayer = () => {
           title: "Error",
           text:
             res.data.message ||
-            `Failed to assign ${assignType === "technician" ? "technician" : "supervisor"}`,
+            `Failed to assign ${
+              assignType === "technician" ? "technician" : "supervisor"
+            }`,
         });
       }
     } catch (error) {
@@ -259,8 +263,6 @@ const BookingLayer = () => {
     }
   };
 
-
-
   // const getTimeSlotOptions = () => {
   //   if (!selectedBooking || !selectedBooking.TimeSlot) return [];
   //   return selectedBooking.TimeSlot.split(",").map((slot) => ({
@@ -268,64 +270,77 @@ const BookingLayer = () => {
   //     label: slot.trim(),
   //   }));
 
-
   // };
 
-
-    const getTimeSlotOptions = async () => {
-      try {
-        const response = await axios.get(`${API_BASE}TimeSlot`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setTimeSlots(
-          response.data
-            .filter((slot) => slot.IsActive ?? slot.Status ?? slot.status) // Only active slots
-            .sort((a, b) => {
-              const [aHour, aMinute] = (a.StartTime || a.startTime).split(":").map(Number);
-              const [bHour, bMinute] = (b.StartTime || b.startTime).split(":").map(Number);
-              return aHour * 60 + aMinute - (bHour * 60 + bMinute);
-            })
-            .map((slot) => ({
-              value: `${slot.StartTime || slot.startTime} - ${slot.EndTime || slot.endTime}`,
-              label: `${formatTime(slot.StartTime || slot.startTime)} - ${formatTime(slot.EndTime || slot.endTime)}`,
-            }))
-        );
-
-      } catch (err) {
-        console.error("Error fetching time slots:", err);
-      }
-    };
+  const getTimeSlotOptions = async () => {
+    try {
+      const response = await axios.get(`${API_BASE}TimeSlot`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setTimeSlots(
+        response.data
+          .filter((slot) => slot.IsActive ?? slot.Status ?? slot.status) // Only active slots
+          .sort((a, b) => {
+            const [aHour, aMinute] = (a.StartTime || a.startTime)
+              .split(":")
+              .map(Number);
+            const [bHour, bMinute] = (b.StartTime || b.startTime)
+              .split(":")
+              .map(Number);
+            return aHour * 60 + aMinute - (bHour * 60 + bMinute);
+          })
+          .map((slot) => ({
+            value: `${slot.StartTime || slot.startTime} - ${
+              slot.EndTime || slot.endTime
+            }`,
+            label: `${formatTime(
+              slot.StartTime || slot.startTime
+            )} - ${formatTime(slot.EndTime || slot.endTime)}`,
+          }))
+      );
+    } catch (err) {
+      console.error("Error fetching time slots:", err);
+    }
+  };
 
   const columns = [
     ...(hasPermission("bookingview_view")
-    ? [
-    {
-      name: "Booking id",
-      selector: (row) => (
-        <Link to={`/booking-view/${row.BookingID}`} className="text-primary">
-          {row.BookingTrackID}
-        </Link>
-      ),
-      width: "150px",
-    },
-      ]
-    : []),
+      ? [
+          {
+            name: "Booking id",
+            selector: (row) => (
+              <Link
+                to={`/booking-view/${row.BookingID}`}
+                className="text-primary"
+              >
+                {row.BookingTrackID}
+              </Link>
+            ),
+            width: "150px",
+          },
+        ]
+      : []),
     {
       name: "Booking date",
       selector: (row) => {
-        if (!row.CreatedDate) return "";
-        const date = new Date(row.CreatedDate);
+        const rawDate = row.BookingDate || row.CreatedDate;
+        if (!rawDate) return "-";
+
+        const date = new Date(rawDate);
+        if (isNaN(date)) return "-";
+
         return `${String(date.getDate()).padStart(2, "0")}/${String(
           date.getMonth() + 1
         ).padStart(2, "0")}/${date.getFullYear()}`;
       },
       width: "120px",
     },
-    // {
-    //   name: "Time slot",
-    //   selector: (row) => row.TimeSlot,
-    //   width: "160px",
-    // },
+    {
+      name: "Time slot",
+      selector: (row) =>
+  row.TimeSlot || row.AssignedTimeSlot || "-",
+      width: "160px",
+    },
     // {
     //   name: "Booking price",
     //   selector: (row) =>
@@ -336,8 +351,12 @@ const BookingLayer = () => {
       name: "Customer name",
       selector: (row) => (
         <>
-          <span className="fw-bold">{row.CustFullName}</span> <br />
-          {row.CustPhoneNumber || ""}
+          <span className="fw-bold">
+            {" "}
+            {row.CustFullName || row.CustomerName || "-"}
+          </span>{" "}
+          <br />
+          {row.CustPhoneNumber ||row.PhoneNumber || ""}
         </>
       ),
       width: "150px",
@@ -376,11 +395,11 @@ const BookingLayer = () => {
 
         // Define colors similar to Ticket Status
         const colorMap = {
-          Pending: "#F57C00",        // Orange
-          Confirmed: "#28A745",      // Green
-          Cancelled: "#E34242",      // Red
-          Completed: "#25878F",      // Teal-blue
-          Rejected: "#E34242",       // Red
+          Pending: "#F57C00", // Orange
+          Confirmed: "#28A745", // Green
+          Cancelled: "#E34242", // Red
+          Completed: "#25878F", // Teal-blue
+          Rejected: "#E34242", // Red
           "Not Assigned": "#BFBFBF", // Grey
         };
 
@@ -416,10 +435,10 @@ const BookingLayer = () => {
 
         // Color mapping (consistent with your badge logic)
         const colorMap = {
-          Paid: "#28A745",       // Green
-          Pending: "#F7AE21",    // Yellow/Orange
-          Failed: "#E34242",     // Red
-          Refunded: "#25878F",   // Teal-blue
+          Paid: "#28A745", // Green
+          Pending: "#F7AE21", // Yellow/Orange
+          Failed: "#E34242", // Red
+          Refunded: "#25878F", // Teal-blue
           "Not Paid": "#BFBFBF", // Grey
         };
 
@@ -460,13 +479,13 @@ const BookingLayer = () => {
             >
               <Icon icon="lucide:eye" />
             </Link>
-            {isFutureOrToday &&
+            {/* {isFutureOrToday &&
               row.BookingStatus.toLowerCase() === "pending" &&
-              (
-                row.SupervisorID === null ||
+              (row.SupervisorID === null ||
                 row.SupervisorID === 0 ||
-                (row.SupervisorID !== null && row.SupervisorID !== 0 && roleId === "8")
-              ) && (
+                (row.SupervisorID !== null &&
+                  row.SupervisorID !== 0 &&
+                  roleId === "8")) && ( */}
                 <Link
                   onClick={() => handleAssignClick(row)}
                   className="w-32-px h-32-px bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center"
@@ -474,9 +493,7 @@ const BookingLayer = () => {
                 >
                   <Icon icon="mdi:account-cog-outline" />
                 </Link>
-              )
-            }
-
+              {/* )} */}
           </div>
         );
       },
@@ -487,9 +504,13 @@ const BookingLayer = () => {
   const filteredBookings = bookings.filter((booking) => {
     const matchesSearch =
       booking.CustFullName?.toLowerCase().includes(searchText.toLowerCase()) ||
-      booking.CustPhoneNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
+      booking.CustPhoneNumber?.toLowerCase().includes(
+        searchText.toLowerCase()
+      ) ||
       booking.TechFullName?.toLowerCase().includes(searchText.toLowerCase()) ||
-      booking.TechPhoneNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
+      booking.TechPhoneNumber?.toLowerCase().includes(
+        searchText.toLowerCase()
+      ) ||
       booking.BookingTrackID?.toLowerCase().includes(searchText.toLowerCase());
 
     const bookingDate = new Date(booking.BookingDate);
@@ -503,7 +524,8 @@ const BookingLayer = () => {
       (!maxPrice || price <= parseFloat(maxPrice));
 
     const matchesStatus =
-      status === "all" || booking.BookingStatus.toLowerCase() === status.toLowerCase();
+      status === "all" ||
+      booking.BookingStatus.toLowerCase() === status.toLowerCase();
 
     return matchesSearch && matchesDate && matchesPrice && matchesStatus;
   });
@@ -544,7 +566,10 @@ const BookingLayer = () => {
               }}
             >
               {/* Search */}
-              <form className="navbar-search flex-grow-1 flex-shrink-1" style={{ minWidth: "180px" }}>
+              <form
+                className="navbar-search flex-grow-1 flex-shrink-1"
+                style={{ minWidth: "180px" }}
+              >
                 <div className="position-relative">
                   <input
                     type="text"
@@ -625,14 +650,19 @@ const BookingLayer = () => {
                 <Icon icon="mdi:microsoft-excel" width="20" height="20" />
               </button>
             </div>
-
           </div>
           <DataTable
             columns={columns}
             data={filteredBookings}
             pagination
             paginationPerPage={10}
-            paginationRowsPerPageOptions={[10, 25, 50, 100, filteredBookings.length]}
+            paginationRowsPerPageOptions={[
+              10,
+              25,
+              50,
+              100,
+              filteredBookings.length,
+            ]}
             highlightOnHover
             responsive
             striped
@@ -644,8 +674,14 @@ const BookingLayer = () => {
 
       {/* Assign Technician/Supervisor Modal */}
       {assignModalOpen && (
-        <div className="modal fade show d-block" style={{ background: "#00000080" }}>
-          <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: "500px", width: "90%" }}>
+        <div
+          className="modal fade show d-block"
+          style={{ background: "#00000080" }}
+        >
+          <div
+            className="modal-dialog modal-dialog-centered"
+            style={{ maxWidth: "500px", width: "90%" }}
+          >
             <div className="modal-content">
               <div className="modal-header">
                 <h6 className="modal-title">Assign</h6>
@@ -675,7 +711,10 @@ const BookingLayer = () => {
                       style={{ width: "18px", height: "18px", margin: 0 }}
                       disabled={false} // always enabled
                     />
-                    <label htmlFor="assignTech" className="form-check-label mb-0">
+                    <label
+                      htmlFor="assignTech"
+                      className="form-check-label mb-0"
+                    >
                       Technician
                     </label>
                   </div>
@@ -691,7 +730,10 @@ const BookingLayer = () => {
                         onChange={() => setAssignType("supervisor")}
                         style={{ width: "18px", height: "18px", margin: 0 }}
                       />
-                      <label htmlFor="assignSup" className="form-check-label mb-0">
+                      <label
+                        htmlFor="assignSup"
+                        className="form-check-label mb-0"
+                      >
                         Supervisor
                       </label>
                     </div>
@@ -715,12 +757,12 @@ const BookingLayer = () => {
                     />
                   )} */}
 
-                   <Select
-                      options={timeSlots}
-                      value={selectedTimeSlot}
-                      onChange={(val) => setSelectedTimeSlot(val)}
-                      placeholder="Select TimeSlot"
-                    />
+                  <Select
+                    options={timeSlots}
+                    value={selectedTimeSlot}
+                    onChange={(val) => setSelectedTimeSlot(val)}
+                    placeholder="Select TimeSlot"
+                  />
                 </div>
 
                 {/* Technician or Supervisor Selection based on assignType */}

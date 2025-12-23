@@ -555,7 +555,7 @@ const BookServicesLayer = () => {
 // );
 const slotObj = selectedTimeSlot;
 
-          await axios.post(
+          await axios.put(
             `${API_BASE}Supervisor/Booking`,
             {
               bookingID: bookingId,
