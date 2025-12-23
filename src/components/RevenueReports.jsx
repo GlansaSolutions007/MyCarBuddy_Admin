@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import DataTable from "react-data-table-component";
 import axios from "axios";
+import { Link } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
@@ -27,8 +28,10 @@ const RevenueReports = () => {
       let endpoint = "";
       if (reportType === "garage") {
         endpoint = "Supervisor/GarageEarningsReport";
-      } else {
+      } else if (reportType === "service") {
         endpoint = "Supervisor/ServiceWiseReport";
+      } else if (reportType === "booking") {
+        endpoint = "Leads/dealer-summary";
       }
 
       const response = await axios.get(`${API_BASE}${endpoint}`, {
@@ -62,23 +65,36 @@ const RevenueReports = () => {
       );
     }
 
-    // SERVICE WISE
+    if (reportType === "service") {
+      return (
+        (!searchTerm ||
+          item.ServiceName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.GarageName?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        (!serviceType || item.ServiceType === serviceType) &&
+        (!fromDate || item.CreatedDate >= fromDate) &&
+        (!toDate ||
+          new Date(item.CreatedDate) <=
+            new Date(new Date(toDate).setHours(23, 59, 59, 999)))
+      );
+    }
+    // BOOKING REPORTS
     return (
-      (!searchTerm ||
-        item.ServiceName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.GarageName?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (!serviceType || item.ServiceType === serviceType) &&
-      (!fromDate || item.CreatedDate >= fromDate) &&
-      (!toDate ||
-        new Date(item.CreatedDate) <=
-          new Date(new Date(toDate).setHours(23, 59, 59, 999)))
+      !searchTerm ||
+      item.BookingTrackID?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.CustFullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.LeadId.includes(searchTerm) ||
+      item.CustPhoneNumber?.includes(searchTerm)
     );
   });
 
   // ---------------- COLUMNS ----------------
   const garageColumns = [
     { name: "Garage Name", selector: (r) => r.GarageName, sortable: true },
-    { name: "Total Services", selector: (r) => r.TotalServices, sortable: true },
+    {
+      name: "Total Services",
+      selector: (r) => r.TotalServices,
+      sortable: true,
+    },
     { name: "Total Revenue", selector: (r) => r.TotalRevenue, sortable: true },
     { name: "Total GST", selector: (r) => r.TotalGST, sortable: true },
     { name: "Our Earnings", selector: (r) => r.OurEarnings },
@@ -87,8 +103,7 @@ const RevenueReports = () => {
   const serviceColumns = [
     {
       name: "Date",
-      selector: (r) =>
-        new Date(r.CreatedDate).toLocaleDateString("en-GB"),
+      selector: (r) => new Date(r.CreatedDate).toLocaleDateString("en-GB"),
       sortable: true,
     },
     { name: "Service Type", selector: (r) => r.ServiceType, sortable: true },
@@ -99,9 +114,64 @@ const RevenueReports = () => {
     { name: "Our %", selector: (r) => r.OurPercentage },
     { name: "Our Earnings", selector: (r) => r.OurEarnings },
   ];
+  const bookingColumns = [
+    {
+      name: "Booking ID",
+      selector: (r) => (
+        <Link to={`/booking-view/${r.BookingID}`} className="text-primary">
+          {r.BookingTrackID}
+        </Link>
+      ),
+      sortable: true,
+      width: "180px",
+    },
+    {
+      name: "Lead ID",
+      selector: (r) => (
+        <Link to={`/lead-view/${r.LeadId}`} className="text-primary">
+          {r.LeadId}
+        </Link>
+      ),
+    },
+    {
+      name: "Customer Name",
+      selector: (r) => r.CustFullName,
+      sortable: true,
+    },
+    {
+      name: "Phone",
+      selector: (r) => r.CustPhoneNumber,
+    },
+    {
+      name: "Email",
+      selector: (r) => r.CustEmail,
+    },
+    {
+      name: "Total Services",
+      selector: (r) => r.TotalServices,
+      sortable: true,
+    },
+    {
+      name: "Total Revenue",
+      selector: (r) => r.TotalRevenue,
+      sortable: true,
+    },
+    {
+      name: "GST",
+      selector: (r) => r.TotalGST,
+    },
+    {
+      name: "Our Earnings",
+      selector: (r) => r.OurEarnings,
+    },
+  ];
 
   const columns =
-    reportType === "garage" ? garageColumns : serviceColumns;
+    reportType === "garage"
+      ? garageColumns
+      : reportType === "service"
+      ? serviceColumns
+      : bookingColumns;
 
   // ---------------- UI ----------------
   return (
@@ -110,12 +180,9 @@ const RevenueReports = () => {
         <div className="card overflow-hidden p-3">
           <div className="card-header">
             <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
-
               {/* REPORT TYPE */}
               <div className="d-flex align-items-center gap-2">
-                <label className="form-label mb-0 fw-semibold">
-                  Report:
-                </label>
+                <label className="form-label mb-0 fw-semibold">Report:</label>
                 <select
                   className="form-select"
                   value={reportType}
@@ -123,6 +190,7 @@ const RevenueReports = () => {
                 >
                   <option value="garage">Garage Wise</option>
                   <option value="service">Service Wise</option>
+                  <option value="booking">Booking Reports</option>
                 </select>
               </div>
 

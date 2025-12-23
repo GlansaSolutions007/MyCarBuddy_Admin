@@ -63,6 +63,7 @@ const BookingViewLayer = () => {
   const roleId = localStorage.getItem("roleId");
   const [previewServices, setPreviewServices] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
+  const [isPaid, setIsPaid] = useState(false);
 
   // NEW STATES FOR SUPERVISOR/TECHNICIAN SELECTION
   const [assignType, setAssignType] = useState("technician"); // 'technician' | 'supervisor'
@@ -84,6 +85,10 @@ const BookingViewLayer = () => {
   ]);
 
   const { bookingId } = useParams();
+
+  useEffect(() => {
+  setIsPaid(!!bookingData?.Payments);
+}, [bookingData]);
 
   const fetchBookingData = async () => {
     try {
@@ -773,6 +778,32 @@ const BookingViewLayer = () => {
       Swal.fire("Error", "Failed to generate final invoice.", "error");
     }
   };
+  const handleConfirmPayment = async () => {
+  try {
+    const payload = {
+      bookingID: bookingData.BookingID,
+      amount:
+        bookingData.BookingAddOns?.reduce(
+          (sum, item) => sum + Number(item.TotalPrice || 0),
+          0
+        ) || 0,
+    };
+
+    const res = await axios.post(`${API_BASE}Leads/MarkBookingPaid`, 
+      payload
+    );
+
+    if (res?.data?.success) {
+      Swal.fire("Success", "Payment confirmed successfully", "success");
+      setIsPaid(true);
+    } else {
+      Swal.fire("Error", "Payment confirmation failed", "error");
+    }
+  } catch (err) {
+    Swal.fire("Error", "Something went wrong", "error");
+  }
+};
+
 
   return (
     <div className="row gy-4 mt-3">
@@ -1122,14 +1153,14 @@ const BookingViewLayer = () => {
       <div className="col-lg-8">
         <div className="card h-100">
           <div className="card-body p-24">
-            <div className="d-flex justify-content-end mb-3">
+            {/* <div className="d-flex justify-content-end mb-3">
               <button
                 className="btn btn-primary"
                 onClick={handleGenerateFinalInvoice}
               >
                 Final Invoice
               </button>
-            </div>
+            </div> */}
             <ul className="nav border-gradient-tab nav-pills mb-20">
               <li className="nav-item">
                 <button
@@ -1140,6 +1171,30 @@ const BookingViewLayer = () => {
                   Bookings
                 </button>
               </li>
+
+              {/* Push button to the end */}
+              <li className="nav-item ms-auto m-1 d-flex gap-2">
+                {/* Show Confirm Payment only if not paid */}
+                {!isPaid && (
+                  <button
+                    className="btn btn-warning btn-sm d-inline-flex align-items-center"
+                    onClick={handleConfirmPayment}
+                  >
+                    Confirm Payment
+                  </button>
+                )}
+
+                {/* Show Generate Invoice only if paid */}
+                {isPaid && (
+                  <button
+                    className="btn btn-info btn-sm d-inline-flex align-items-center"
+                    onClick={handleGenerateFinalInvoice}
+                  >
+                    Generate Invoice
+                  </button>
+                )}
+              </li>
+
               {/* {bookingData &&
                 bookingData.BookingStatus !== "Cancelled" &&
                 bookingData.BookingStatus !== "Failed" &&
@@ -1349,29 +1404,31 @@ const BookingViewLayer = () => {
                                       style={{ zIndex: 2 }}
                                     >
                                       <tr>
+                                        <th style={{ width: "130px" }}>Type</th>
                                         <th style={{ width: "180px" }}>
                                           Service Name
                                         </th>
-                                        <th style={{ width: "180px" }}>
+                                        <th style={{ width: "200px" }}>
                                           Description
                                         </th>
-                                        <th style={{ width: "150px" }}>
-                                          Booking Date
+                                        <th style={{ width: "160px" }}>
+                                          Created Date
                                         </th>
+
                                         <th
-                                          style={{ width: "100px" }}
+                                          style={{ width: "120px" }}
                                           className="text-end"
                                         >
-                                          Price (₹)
+                                          Base Price
                                         </th>
                                         <th
-                                          style={{ width: "100px" }}
+                                          style={{ width: "90px" }}
                                           className="text-end"
                                         >
                                           GST %
                                         </th>
                                         <th
-                                          style={{ width: "100px" }}
+                                          style={{ width: "120px" }}
                                           className="text-end"
                                         >
                                           GST Amt.
@@ -1380,7 +1437,26 @@ const BookingViewLayer = () => {
                                           style={{ width: "150px" }}
                                           className="text-end"
                                         >
-                                          Total (₹)
+                                          Labour Charges (₹)
+                                        </th>
+                                        <th
+                                          style={{ width: "120px" }}
+                                          className="text-end"
+                                        >
+                                          Company %
+                                        </th>
+                                        <th
+                                          style={{ width: "160px" }}
+                                          className="text-end"
+                                        >
+                                          Our Earnings (₹)
+                                        </th>
+
+                                        <th
+                                          style={{ width: "140px" }}
+                                          className="text-end"
+                                        >
+                                          Total Amt
                                         </th>
                                       </tr>
                                     </thead>
@@ -1389,12 +1465,14 @@ const BookingViewLayer = () => {
                                       {bookingData.BookingAddOns.map(
                                         (addon, index) => (
                                           <tr key={addon.AddOnID || index}>
-                                            <td className="fw-semibold">
-                                              {addon.ServiceName}
+                                            <td className="normal">
+                                              {addon.ServiceType || "—"}
                                             </td>
-
+                                            <td className="normal">
+                                              {addon.ServiceName || "—"}
+                                            </td>
                                             <td
-                                              className="text-muted small"
+                                              className=" normal"
                                               style={{
                                                 whiteSpace: "normal",
                                                 wordBreak: "break-word",
@@ -1402,33 +1480,43 @@ const BookingViewLayer = () => {
                                             >
                                               {addon.Description || "—"}
                                             </td>
-
-                                            <td className="small">
+                                            <td className="normal">
                                               {addon.CreatedDate
                                                 ? new Date(
                                                     addon.CreatedDate
                                                   ).toLocaleString("en-IN")
                                                 : "—"}
                                             </td>
-
                                             <td className="text-end">
                                               ₹
                                               {Number(
                                                 addon.ServicePrice || 0
                                               ).toFixed(2)}
                                             </td>
-
                                             <td className="text-end">
-                                              {addon.GSTPercent || 0}%
+                                              {addon.GSTPercent ?? 0}%
                                             </td>
-
                                             <td className="text-end">
                                               ₹
                                               {Number(
                                                 addon.GSTPrice || 0
                                               ).toFixed(2)}
                                             </td>
-
+                                            <td className="text-end">
+                                              ₹
+                                              {Number(
+                                                addon.LabourCharges || 0
+                                              ).toFixed(2)}
+                                            </td>
+                                            <td className="text-end">
+                                              {addon.Percentage ?? "0"}
+                                            </td>
+                                            <td className="text-end">
+                                              ₹
+                                              {Number(
+                                                addon.Our_Earnings || 0
+                                              ).toFixed(2)}
+                                            </td>
                                             <td className="text-end fw-bold text-primary">
                                               ₹
                                               {Number(
