@@ -734,6 +734,38 @@ const BookingViewLayer = () => {
     }
   };
 
+  const handleGenerateFinalInvoice = async () => {
+    if (!bookingData || !bookingData.LeadId) {
+      Swal.fire("Error", "Booking data not available.", "error");
+      return;
+    }
+
+    try {
+      const res = await axios.post(
+        `${API_BASE}Leads/GenerateFinalInvoice`,
+        {
+          bookingId: bookingData.BookingID,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res.data.success) {
+        Swal.fire("Success", "Final Invoice generated successfully!", "success");
+        // Optionally, if the response includes a URL, you can open it
+        // if (res.data.invoiceUrl) {
+        //   window.open(res.data.invoiceUrl, '_blank');
+        // }
+      } else {
+        Swal.fire("Error", res.data.message || "Failed to generate invoice.", "error");
+      }
+    } catch (error) {
+      console.error("Generate Final Invoice Error:", error);
+      Swal.fire("Error", "Failed to generate final invoice.", "error");
+    }
+  };
+
   return (
     <div className="row gy-4 mt-3">
       {/* Left Profile + Billing Summary (Vertical Stack) */}
@@ -1083,6 +1115,11 @@ const BookingViewLayer = () => {
       <div className="col-lg-8">
         <div className="card h-100">
           <div className="card-body p-24">
+            <div className="d-flex justify-content-end mb-3">
+              <button className="btn btn-primary" onClick={handleGenerateFinalInvoice}>
+                Final Invoice
+              </button>
+            </div>
             <ul className="nav border-gradient-tab nav-pills mb-20">
               <li className="nav-item">
                 <button
