@@ -752,13 +752,21 @@ const BookingViewLayer = () => {
       );
 
       if (res.data.success) {
-        Swal.fire("Success", "Final Invoice generated successfully!", "success");
+        Swal.fire(
+          "Success",
+          "Final Invoice generated successfully!",
+          "success"
+        );
         // Optionally, if the response includes a URL, you can open it
         // if (res.data.invoiceUrl) {
         //   window.open(res.data.invoiceUrl, '_blank');
         // }
       } else {
-        Swal.fire("Error", res.data.message || "Failed to generate invoice.", "error");
+        Swal.fire(
+          "Error",
+          res.data.message || "Failed to generate invoice.",
+          "error"
+        );
       }
     } catch (error) {
       console.error("Generate Final Invoice Error:", error);
@@ -947,7 +955,8 @@ const BookingViewLayer = () => {
                         to={`/book-service/${bookingData?.LeadId}`}
                         className="btn btn-info btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
                         title="Edit"
-                      >Add Services
+                      >
+                        Add Services
                       </Link>
                     </div>
                   )}
@@ -1116,7 +1125,10 @@ const BookingViewLayer = () => {
         <div className="card h-100">
           <div className="card-body p-24">
             <div className="d-flex justify-content-end mb-3">
-              <button className="btn btn-primary" onClick={handleGenerateFinalInvoice}>
+              <button
+                className="btn btn-primary"
+                onClick={handleGenerateFinalInvoice}
+              >
                 Final Invoice
               </button>
             </div>
@@ -1316,82 +1328,85 @@ const BookingViewLayer = () => {
                               </Accordion.Item>
                             </Accordion>
                           )}
+                          
 
-                          {/* ============= Supervisor Added Services ============= */}
                           {bookingData?.BookingAddOns?.length > 0 && (
-                            <Accordion defaultActiveKey="2" className="mb-4">
-                              <Accordion.Item eventKey="2">
-                                <Accordion.Header>
-                                  <h6 className="text-warning fw-bold mb-0">
-                                    🔧 Added Services
-                                  </h6>
-                                </Accordion.Header>
-                                <Accordion.Body>
-                                  <div
-                                    className="overflow-auto"
-                                    style={{ maxHeight: "300px" }}
-                                  >
-                                    <ul className="list-group list-group-flush">
+                            <div className="card mb-4 mt-4">
+                              <div className="card-body p-0">
+                                <div
+                                  className="table-responsive"
+                                  style={{ maxHeight: "300px" }}
+                                >
+                                  <table className="table table-sm table-striped table-hover align-middle mb-0">
+                                    <thead className="table-light sticky-top">
+                                      <tr>
+                                        {/* <th>#</th> */}
+                                        <th>Service Name</th>
+                                        <th>Description</th>
+                                        <th>Added On</th>
+                                        <th className="text-end">Price (₹)</th>
+                                        <th className="text-end">GST %</th>
+                                        <th className="text-end">GST Amt.</th>
+                                        <th className="text-end">Total (₹)</th>
+                                      </tr>
+                                    </thead>
+
+                                    <tbody>
                                       {bookingData.BookingAddOns.map(
                                         (addon, index) => (
-                                          <li
-                                            key={addon.AddOnID || index}
-                                            className="list-group-item position-relative d-flex justify-content-between align-items-center flex-wrap"
-                                          >
-                                            <div className="me-3 ms-4">
-                                              <strong className="text-dark">
-                                                {addon.ServiceName}
-                                              </strong>
-                                              <p className="mb-0 text-muted small">
-                                                {addon.Description ||
-                                                  "No description available"}
-                                              </p>
-                                              <small className="text-secondary">
-                                                Added on:{" "}
-                                                {addon.CreatedDate
-                                                  ? new Date(
-                                                      addon.CreatedDate
-                                                    ).toLocaleString()
-                                                  : "N/A"}
-                                              </small>
-                                            </div>
+                                          <tr key={addon.AddOnID || index}>
+                                            {/* <td>{index + 1}</td> */}
 
-                                            <div className="text-end">
-                                              {addon.ServicePrice && (
-                                                <div className="fw-semibold text-dark">
-                                                  ₹
-                                                  {Number(
+                                            <td className="fw-semibold">
+                                              {addon.ServiceName}
+                                            </td>
+
+                                            <td className="text-muted small">
+                                              {addon.Description || "—"}
+                                            </td>
+
+                                            <td className="small">
+                                              {addon.CreatedDate
+                                                ? new Date(
+                                                    addon.CreatedDate
+                                                  ).toLocaleString("en-IN")
+                                                : "—"}
+                                            </td>
+
+                                            <td className="text-end">
+                                              {addon.ServicePrice
+                                                ? `₹${Number(
                                                     addon.ServicePrice
-                                                  ).toFixed(2)}
-                                                </div>
-                                              )}
-                                              {addon.GSTPrice && (
-                                                <small className="text-muted d-block">
-                                                  GST: ₹
-                                                  {Number(
+                                                  ).toFixed(2)}`
+                                                : "—"}
+                                            </td>
+                                            <td className="text-end text-muted">
+                                              {addon.GSTPrice
+                                                ? `${addon.GSTPercent || 0}%`
+                                                : "—"}
+                                            </td>
+                                            <td className="text-end text-muted">
+                                              {addon.GSTPrice
+                                                ? `₹${Number(
                                                     addon.GSTPrice
-                                                  ).toFixed(2)}{" "}
-                                                  ({addon.GSTPercent || 0}
-                                                  %)
-                                                </small>
-                                              )}
-                                              {addon.TotalPrice && (
-                                                <div className="fw-semibold text-primary">
-                                                  Total: ₹
-                                                  {Number(
+                                                  ).toFixed(2)}`
+                                                : "—"}
+                                            </td>
+                                            <td className="text-end fw-bold text-primary">
+                                              {addon.TotalPrice
+                                                ? `₹${Number(
                                                     addon.TotalPrice
-                                                  ).toFixed(2)}
-                                                </div>
-                                              )}
-                                            </div>
-                                          </li>
+                                                  ).toFixed(2)}`
+                                                : "—"}
+                                            </td>
+                                          </tr>
                                         )
                                       )}
-                                    </ul>
-                                  </div>
-                                </Accordion.Body>
-                              </Accordion.Item>
-                            </Accordion>
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            </div>
                           )}
 
                           {/* ============= Location Map ============= */}
@@ -1428,314 +1443,6 @@ const BookingViewLayer = () => {
                   </Accordion>
                 ) : (
                   <p>Loading booking details...</p>
-                )}
-              </div>
-
-              {/* ====================== ADD SERVICE TAB ====================== */}
-              <div className="tab-pane fade" id="addservice">
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h6 className="fw-bold fs-5 text-primary-600">
-                    Add Services for Booking #
-                    {bookingData?.BookingTrackID || "N/A"}
-                  </h6>
-                  {/* <button
-                    className="btn btn-success btn-sm mx-4 px-3"
-                    onClick={handleAddServiceBlock}
-                    title="Add Service"
-                  >
-                    <i className="bi bi-plus-circle mx-1"></i> Add
-                  </button> */}
-                </div>
-
-                <div
-                  className="scrollable-services-container"
-                  style={{
-                    maxHeight: "670px",
-                    overflowY: servicesToAdd.length > 2 ? "auto" : "visible",
-                    paddingRight: "6px",
-                  }}
-                >
-                  {servicesToAdd.map((service, index) => (
-                    <div
-                      key={service.id}
-                      className="border rounded p-3 mb-3 bg-light"
-                    >
-                      <div className="row mb-1">
-                        <div className="col-md-4">
-                          <label className="form-label fw-semibold">
-                            Service Name <span className="text-danger">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Enter service name"
-                            value={service.name}
-                            required
-                            onChange={(e) =>
-                              handleServiceChange(
-                                service.id,
-                                "name",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </div>
-
-                        <div className="col-md-4">
-                          <label className="form-label fw-semibold">
-                            Spare parts <span className="text-danger">*</span>
-                          </label>
-
-                          <select
-                            className="form-select"
-                            required
-                            value={service.bodyPart}
-                            onChange={(e) =>
-                              handleServiceChange(
-                                service.id,
-                                "bodyPart",
-                                e.target.value
-                              )
-                            }
-                          >
-                            <option value="" disabled hidden>
-                              Select body part
-                            </option>
-
-                            {serviceTypes
-                              .filter((item) => item.IsActive) // show only active
-                              .map((item) => (
-                                <option key={item.Id} value={item.ServiceName}>
-                                  {item.ServiceName}
-                                </option>
-                              ))}
-                          </select>
-                        </div>
-
-                        <div className="col-md-4">
-                          <label className="form-label fw-semibold">
-                            Service Description
-                          </label>
-                          <textarea
-                            className="form-control"
-                            rows="1"
-                            placeholder="Short description"
-                            value={service.description}
-                            onChange={(e) =>
-                              handleServiceChange(
-                                service.id,
-                                "description",
-                                e.target.value
-                              )
-                            }
-                          ></textarea>
-                        </div>
-                      </div>
-
-                      <div className="row mb-3">
-                        <div className="col-md-4">
-                          <label className="form-label fw-semibold">
-                            Service Price <span className="text-danger">*</span>
-                          </label>
-                          <input
-                            type="number"
-                            className="form-control"
-                            placeholder="Enter price"
-                            value={service.price}
-                            required
-                            onChange={(e) =>
-                              handleServiceChange(
-                                service.id,
-                                "price",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </div>
-                        <div className="col-md-4">
-                          <label className="form-label fw-semibold">
-                            GST %
-                          </label>
-                          <input
-                            type="number"
-                            className="form-control"
-                            placeholder="Enter GST %"
-                            value={service.gstPercent}
-                            onChange={(e) =>
-                              handleServiceChange(
-                                service.id,
-                                "gstPercent",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </div>
-                        <div className="col-md-4">
-                          <label className="form-label fw-semibold">
-                            GST Amount
-                          </label>
-                          <input
-                            type="number"
-                            className="form-control"
-                            placeholder="GST Amount"
-                            value={service.gstAmount}
-                            onChange={(e) =>
-                              handleServiceChange(
-                                service.id,
-                                "gstAmount",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </div>
-                        {/* <div className="col-md-3">
-                          <label className="form-label fw-semibold">Total Amount</label>
-                          <input
-                            type="number"
-                            className="form-control"
-                            placeholder="Total Amount"
-                            value={service.totalAmount}
-                            onChange={(e) => handleServiceChange(service.id, "totalAmount", e.target.value)}
-                          />
-                        </div> */}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Total + Submit */}
-                <div className="d-flex justify-content-end align-items-center mt-3 gap-3">
-                  <h6 className="fw-semibold mb-0 text-secondary">
-                    Total Amount:{" "}
-                    <span className="text-success fs-5">
-                      ₹
-                      {servicesToAdd.reduce(
-                        (sum, s) => sum + Number(s.totalAmount || 0),
-                        0
-                      )}
-                    </span>
-                  </h6>
-                  <button
-                    className="btn btn-primary fw-semibold d-flex justify-content-center align-items-center"
-                    style={{ width: "80px", height: "35px", fontSize: "15px" }}
-                    onClick={handleAddLocalService}
-                  >
-                    Add
-                  </button>
-                </div>
-
-                {previewServices.length > 0 && (
-                  <>
-                    {/* Table Data */}
-                    <div
-                      style={{
-                        maxHeight: "415px",
-                        overflowY: "auto",
-                        border: "1px solid #dee2e6",
-                        marginTop: "10px",
-                      }}
-                    >
-                      <table className="table table-striped table-hover table-bordered mt-2 text-sm align-middle">
-                        <thead
-                          style={{
-                            position: "sticky",
-                            top: 0,
-                            background: "#f1f3f5",
-                            zIndex: 5,
-                            whiteSpace: "nowrap",
-                            fontSize: "14px",
-                          }}
-                        >
-                          <tr>
-                            <th style={{ padding: "6px 10px" }}>S.N</th>
-                            <th style={{ padding: "6px 10px" }}>
-                              Service Name
-                            </th>
-                            <th style={{ padding: "6px 10px" }}>Spare Part</th>
-                            <th style={{ padding: "6px 10px" }}>Price</th>
-                            <th style={{ padding: "6px 10px" }}>GST%</th>
-                            <th style={{ padding: "6px 10px" }}>GST ₹</th>
-                            <th style={{ padding: "6px 10px" }}>
-                              Total Amount
-                            </th>
-                            <th style={{ padding: "6px 10px" }}>Action</th>
-                          </tr>
-                        </thead>
-
-                        <tbody style={{ fontSize: "14px" }}>
-                          {previewServices.map((srv, idx) => (
-                            <tr key={idx}>
-                              <td style={{ padding: "6px 10px" }}>{idx + 1}</td>
-
-                              <td
-                                style={{
-                                  maxWidth: "150px",
-                                  whiteSpace: "nowrap",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                  padding: "6px 10px",
-                                }}
-                              >
-                                {srv.name}
-                              </td>
-
-                              <td style={{ padding: "6px 10px" }}>
-                                {srv.bodyPart}
-                              </td>
-                              <td style={{ padding: "6px 10px" }}>
-                                ₹{srv.price ?? 0}
-                              </td>
-                              <td style={{ padding: "6px 10px" }}>
-                                {srv.gstPercent}%
-                              </td>
-                              <td style={{ padding: "6px 10px" }}>
-                                ₹{srv.gstAmount ?? 0}
-                              </td>
-                              <td style={{ padding: "6px 10px" }}>
-                                ₹{srv.totalAmount ?? 0}
-                              </td>
-
-                              <td
-                                className="text-center"
-                                style={{ padding: "6px 10px" }}
-                              >
-                                <button
-                                  className="btn btn-sm btn-outline-danger d-flex justify-content-center align-items-center mx-auto"
-                                  style={{
-                                    width: "28px",
-                                    height: "28px",
-                                    borderRadius: "6px",
-                                    padding: 0,
-                                    fontSize: "14px",
-                                  }}
-                                  onClick={() =>
-                                    handleDeleteTempService(srv.id)
-                                  }
-                                >
-                                  <i className="bi bi-trash"></i>
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Submit Button */}
-                    <div className="d-flex justify-content-end align-items-center mt-3 gap-3">
-                      <button
-                        className="btn btn-primary-600 fw-semibold d-flex justify-content-center align-items-center"
-                        style={{
-                          width: "100px",
-                          height: "35px",
-                          fontSize: "15px",
-                        }}
-                        onClick={handleFinalSubmitToMain}
-                      >
-                        Submit
-                      </button>
-                    </div>
-                  </>
                 )}
               </div>
             </div>

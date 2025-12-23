@@ -434,6 +434,10 @@ const BookServicesLayer = () => {
           labourCharges: row.labourCharge,
           modifiedBy: parseInt(localStorage.getItem("userId")),
           isActive: true,
+           includes:
+    row.type === "Package" && Array.isArray(row.includes)
+      ? row.includes.join(",")
+      : "",
         };
 
         await axios.put(
@@ -535,6 +539,10 @@ const BookServicesLayer = () => {
             labourCharges: Number(item.labourCharge) || 0,
             serviceId: serviceId,
             isUserClicked: false,
+            includes:
+        item.type === "Package" && Array.isArray(item.includes)
+          ? item.includes.join(",")
+          : "",
           };
         });
 
