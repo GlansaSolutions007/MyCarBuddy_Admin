@@ -1029,9 +1029,8 @@ const BookingViewLayer = () => {
         </div>
 
         {/* Billing Summary Card (below profile) */}
-        <div className="card border-0 shadow-sm radius-16 bg-white mt-3">
+        {/* <div className="card border-0 shadow-sm radius-16 bg-white mt-3">
           <div className="card-body">
-            {/* Header with Billing Summary + Payment Status */}
             <div className="d-flex justify-content-between align-items-center mb-3">
               <h6 className="fw-bold text-primary mb-0">Billing Summary</h6>
               {bookingData?.Payments?.length > 0 &&
@@ -1071,7 +1070,6 @@ const BookingViewLayer = () => {
                 })()}
             </div>
 
-            {/* Billing Summary Details */}
             {bookingData ? (
               <ul className="list-group list-group-flush">
                 <li className="list-group-item d-flex justify-content-between">
@@ -1117,7 +1115,7 @@ const BookingViewLayer = () => {
               <p className="text-muted mb-0">Loading summary...</p>
             )}
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Right Tabs Content */}
@@ -1328,26 +1326,64 @@ const BookingViewLayer = () => {
                               </Accordion.Item>
                             </Accordion>
                           )}
-                          
 
                           {bookingData?.BookingAddOns?.length > 0 && (
                             <div className="card mb-4 mt-4">
                               <div className="card-body p-0">
                                 <div
                                   className="table-responsive"
-                                  style={{ maxHeight: "300px" }}
+                                  style={{
+                                    maxHeight: "320px",
+                                    overflowY: "auto",
+                                    overflowX: "auto",
+                                    whiteSpace: "nowrap",
+                                  }}
                                 >
-                                  <table className="table table-sm table-striped table-hover align-middle mb-0">
-                                    <thead className="table-light sticky-top">
+                                  <table
+                                    className="table table-sm table-striped table-hover align-middle mb-0"
+                                    style={{
+                                      tableLayout: "fixed",
+                                      minWidth: "1200px",
+                                    }}
+                                  >
+                                    <thead
+                                      className="table-light sticky-top"
+                                      style={{ zIndex: 2 }}
+                                    >
                                       <tr>
-                                        {/* <th>#</th> */}
-                                        <th>Service Name</th>
-                                        <th>Description</th>
-                                        <th>Added On</th>
-                                        <th className="text-end">Price (₹)</th>
-                                        <th className="text-end">GST %</th>
-                                        <th className="text-end">GST Amt.</th>
-                                        <th className="text-end">Total (₹)</th>
+                                        <th style={{ width: "180px" }}>
+                                          Service Name
+                                        </th>
+                                        <th style={{ width: "180px" }}>
+                                          Description
+                                        </th>
+                                        <th style={{ width: "150px" }}>
+                                          Booking Date
+                                        </th>
+                                        <th
+                                          style={{ width: "100px" }}
+                                          className="text-end"
+                                        >
+                                          Price (₹)
+                                        </th>
+                                        <th
+                                          style={{ width: "100px" }}
+                                          className="text-end"
+                                        >
+                                          GST %
+                                        </th>
+                                        <th
+                                          style={{ width: "100px" }}
+                                          className="text-end"
+                                        >
+                                          GST Amt.
+                                        </th>
+                                        <th
+                                          style={{ width: "150px" }}
+                                          className="text-end"
+                                        >
+                                          Total (₹)
+                                        </th>
                                       </tr>
                                     </thead>
 
@@ -1355,13 +1391,17 @@ const BookingViewLayer = () => {
                                       {bookingData.BookingAddOns.map(
                                         (addon, index) => (
                                           <tr key={addon.AddOnID || index}>
-                                            {/* <td>{index + 1}</td> */}
-
                                             <td className="fw-semibold">
                                               {addon.ServiceName}
                                             </td>
 
-                                            <td className="text-muted small">
+                                            <td
+                                              className="text-muted small"
+                                              style={{
+                                                whiteSpace: "normal",
+                                                wordBreak: "break-word",
+                                              }}
+                                            >
                                               {addon.Description || "—"}
                                             </td>
 
@@ -1374,30 +1414,28 @@ const BookingViewLayer = () => {
                                             </td>
 
                                             <td className="text-end">
-                                              {addon.ServicePrice
-                                                ? `₹${Number(
-                                                    addon.ServicePrice
-                                                  ).toFixed(2)}`
-                                                : "—"}
+                                              ₹
+                                              {Number(
+                                                addon.ServicePrice || 0
+                                              ).toFixed(2)}
                                             </td>
-                                            <td className="text-end text-muted">
-                                              {addon.GSTPrice
-                                                ? `${addon.GSTPercent || 0}%`
-                                                : "—"}
+
+                                            <td className="text-end">
+                                              {addon.GSTPercent || 0}%
                                             </td>
-                                            <td className="text-end text-muted">
-                                              {addon.GSTPrice
-                                                ? `₹${Number(
-                                                    addon.GSTPrice
-                                                  ).toFixed(2)}`
-                                                : "—"}
+
+                                            <td className="text-end">
+                                              ₹
+                                              {Number(
+                                                addon.GSTPrice || 0
+                                              ).toFixed(2)}
                                             </td>
+
                                             <td className="text-end fw-bold text-primary">
-                                              {addon.TotalPrice
-                                                ? `₹${Number(
-                                                    addon.TotalPrice
-                                                  ).toFixed(2)}`
-                                                : "—"}
+                                              ₹
+                                              {Number(
+                                                addon.TotalPrice || 0
+                                              ).toFixed(2)}
                                             </td>
                                           </tr>
                                         )
