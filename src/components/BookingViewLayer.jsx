@@ -763,9 +763,9 @@ const BookingViewLayer = () => {
         // }
       } else {
         Swal.fire(
-          "Error",
+          "success",
           res.data.message || "Failed to generate invoice.",
-          "error"
+          "success"
         );
       }
     } catch (error) {
