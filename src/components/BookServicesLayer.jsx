@@ -28,10 +28,11 @@ const BookServicesLayer = () => {
   const [description, setDescription] = useState("");
   const [gstPercent, setGstPercent] = useState("");
   const [gstPrice, setGstPrice] = useState("");
-  const [packagesList, setPackagesList] = useState([]);
-  const [selectedPackage, setSelectedPackage] = useState("");
   const [includesList, setIncludesList] = useState([]);
-  const [selectedIncludes, setSelectedIncludes] = useState(null);
+  const [packagesList, setPackagesList] = useState([]);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [selectedIncludes, setSelectedIncludes] = useState([]);
+  const [isExistingPackage, setIsExistingPackage] = useState(false);
   const [serviceDate, setServiceDate] = useState("");
   const [timeSlots, setTimeSlots] = useState([]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
@@ -300,6 +301,26 @@ const BookServicesLayer = () => {
       return Swal.fire("Please enter spare part name");
     if (itemType === "Package" && !selectedPackage)
       return Swal.fire("Please select package");
+
+    // 🔒 BLOCK include modification for EXISTING package
+    if (itemType === "Package" && isExistingPackage) {
+      const pkg = packagesList.find((p) => p.id == selectedPackage);
+
+      const originalIncludes = pkg?.includes?.map((i) => Number(i.id)) || [];
+
+      const isSame =
+        originalIncludes.length === selectedIncludes.length &&
+        originalIncludes.every((id) => selectedIncludes.includes(id));
+
+      if (!isSame) {
+        return Swal.fire(
+          "Not Allowed",
+          "You cannot modify includes of an existing package.",
+          "warning"
+        );
+      }
+    }
+
     let finalIncludeID =
       selectedIncludes && typeof selectedIncludes === "object"
         ? selectedIncludes.value
@@ -550,10 +571,10 @@ const BookServicesLayer = () => {
           bookingData?.bookingDate === null &&
           bookingData?.assignedTimeSlot === null
         ) {
-//          const slotObj = timeSlots.find(
-//   (t) => Number(t.TimeSlotID) === Number(selectedTimeSlot)
-// );
-const slotObj = selectedTimeSlot;
+          //          const slotObj = timeSlots.find(
+          //   (t) => Number(t.TimeSlotID) === Number(selectedTimeSlot)
+          // );
+          const slotObj = selectedTimeSlot;
 
           await axios.put(
             `${API_BASE}Supervisor/Booking`,
@@ -999,8 +1020,8 @@ const slotObj = selectedTimeSlot;
       });
     }
   });
- const isScheduleAlreadySet =
-  !!bookingData?.bookingDate && !!bookingData?.assignedTimeSlot;
+  const isScheduleAlreadySet =
+    !!bookingData?.bookingDate && !!bookingData?.assignedTimeSlot;
   return (
     <div className="row gy-4">
       <div className="col-12">
@@ -1100,31 +1121,60 @@ const slotObj = selectedTimeSlot;
                       label: pkg.name,
                     }))}
                     /** When an existing package is selected */
-                    onChange={(option) => {
-                      if (option) {
-                        const pkg = packagesList.find(
-                          (p) => p.id == option.value
-                        );
-                        setSelectedPackage(option.value);
-                        setName(option.label);
+                    // onChange={(option) => {
+                    //   if (option) {
+                    //     const pkg = packagesList.find(
+                    //       (p) => p.id == option.value
+                    //     );
+                    //     setSelectedPackage(option.value);
+                    //     setName(option.label);
 
-                        // Populate includes from existing package
-                        if (pkg?.includes && pkg.includes.length > 0) {
-                          setSelectedIncludes(
-                            pkg.includes.map((inc) => inc.id)
-                          );
-                        } else {
-                          setSelectedIncludes([]);
-                        }
-                      } else {
-                        setSelectedPackage("");
+                    //     // Populate includes from existing package
+                    //     if (pkg?.includes && pkg.includes.length > 0) {
+                    //       setSelectedIncludes(
+                    //         pkg.includes.map((inc) => Number(inc.id))
+                    //       );
+                    //     } else {
+                    //       setSelectedIncludes([]);
+                    //     }
+                    //   } else {
+                    //     setSelectedPackage("");
+                    //     setName("");
+                    //     setSelectedIncludes([]);
+                    //   }
+                    // }}
+                    onChange={(option) => {
+                      if (!option) {
+                        setSelectedPackage(null);
                         setName("");
+                        setSelectedIncludes([]);
+                        setIsExistingPackage(false);
+                        return;
+                      }
+
+                      const pkg = packagesList.find(
+                        (p) => p.id == option.value
+                      );
+
+                      setSelectedPackage(option.value);
+                      setName(option.label);
+
+                      if (pkg) {
+                        // ⭐ EXISTING PACKAGE
+                        setIsExistingPackage(true);
+
+                        setSelectedIncludes(
+                          pkg.includes?.map((inc) => Number(inc.id)) || []
+                        );
+                      } else {
+                        // ⭐ NEW PACKAGE (fallback)
+                        setIsExistingPackage(false);
                         setSelectedIncludes([]);
                       }
                     }}
                     /** When user creates a new package */
                     onCreateOption={(inputValue) => {
-                      const newId = `new-${Date.now()}`; // temporary local ID
+                      const newId = `new-${Date.now()}`;
 
                       const newPackage = {
                         id: newId,
@@ -1132,13 +1182,21 @@ const slotObj = selectedTimeSlot;
                         includes: [],
                       };
 
-                      // Add new package to list
                       setPackagesList((prev) => [...prev, newPackage]);
 
-                      // Select newly created package
                       setSelectedPackage(newId);
                       setName(inputValue);
+
+                      // ⭐ NEW PACKAGE = editable includes
+                      setIsExistingPackage(false);
                       setSelectedIncludes([]);
+                    }}
+                     styles={{
+                      menuList: (base) => ({
+                        ...base,
+                        maxHeight: 5 * 38,
+                        overflowY: "auto",
+                      }),
                     }}
                   />
                 </div>
@@ -1178,36 +1236,38 @@ const slotObj = selectedTimeSlot;
                 />
               </div>
               {itemType === "Package" && selectedPackage && (
-                  <div className="col-md-12">
-                    <label className="form-label">Select Includes</label>
+                <div className="col-md-12">
+                  <label className="form-label">Select Includes</label>
 
-                    <Select
-                      isMulti
-                      isSearchable
-                      closeMenuOnSelect={false}
-                      hideSelectedOptions={false}
-                      className="react-select-container text-sm"
-                      classNamePrefix="react-select"
-                      options={includesList.map((inc) => ({
+                  <Select
+                    isMulti
+                    isSearchable={!isExistingPackage}
+                    isDisabled={isExistingPackage}
+                    closeMenuOnSelect={!isExistingPackage}
+                    hideSelectedOptions={false}
+                    className="react-select-container text-sm"
+                    classNamePrefix="react-select"
+                    options={includesList.map((inc) => ({
+                      value: inc.IncludeID,
+                      label: inc.IncludeName,
+                    }))}
+                    value={includesList
+                      .filter((inc) =>
+                        selectedIncludes.includes(Number(inc.IncludeID))
+                      )
+                      .map((inc) => ({
                         value: inc.IncludeID,
                         label: inc.IncludeName,
                       }))}
-                      value={includesList
-                        .filter((inc) =>
-                          selectedIncludes.includes(inc.IncludeID)
-                        )
-                        .map((inc) => ({
-                          value: inc.IncludeID,
-                          label: inc.IncludeName,
-                        }))}
-                      onChange={(selected) =>
-                        setSelectedIncludes(selected.map((s) => s.value))
-                      }
-                      components={{ Option: CheckboxOption }}
-                      placeholder="Select items included in package"
-                    />
-                  </div>
-                )}
+                    onChange={(selected) => {
+                      if (isExistingPackage) return;
+                      setSelectedIncludes(selected.map((s) => Number(s.value)));
+                    }}
+                    components={{ Option: CheckboxOption }}
+                    placeholder="Select items included in package"
+                  />
+                </div>
+              )}
 
               <div className="col-12">
                 <label className="form-label">Description</label>
@@ -1353,10 +1413,10 @@ const slotObj = selectedTimeSlot;
                             label: `${slot.StartTime} - ${slot.EndTime}`,
                           }))}
                           menuPlacement="auto"
-menuPortalTarget={document.body}
-styles={{
-  menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-}}
+                          menuPortalTarget={document.body}
+                          styles={{
+                            menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                          }}
                           // value={
                           //   selectedTimeSlot
                           //     ? {
@@ -1373,7 +1433,7 @@ styles={{
                           //     : null
                           // }
                           value={selectedTimeSlot}
-                         onChange={(option) => setSelectedTimeSlot(option)}
+                          onChange={(option) => setSelectedTimeSlot(option)}
                         />
                       )}
                     </div>
