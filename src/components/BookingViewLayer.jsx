@@ -1333,10 +1333,8 @@ const BookingViewLayer = () => {
                                 <div
                                   className="table-responsive"
                                   style={{
-                                    maxHeight: "320px",
-                                    overflowY: "auto",
+                                    maxHeight: "620px",
                                     overflowX: "auto",
-                                    whiteSpace: "nowrap",
                                   }}
                                 >
                                   <table
