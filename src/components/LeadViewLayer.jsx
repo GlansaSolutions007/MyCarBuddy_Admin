@@ -681,35 +681,30 @@ const LeadViewLayer = () => {
     });
   };
   const handleConvertCustomer = async () => {
-  try {
-    await axios.post(
-      `${API_BASE}/Leads/ConvertLead`,
-      null, 
-      {
+    try {
+      await axios.post(`${API_BASE}/Leads/ConvertLead`, null, {
         params: {
           leadId: lead.Id,
         },
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      }
-    );
-    Swal.fire({
-      icon: "success",
-      title: "Converted",
-      text: "Lead has been successfully converted to customer.",
-    });
-  } catch (error) {
-    Swal.fire({
-      icon: "error",
-      title: "Conversion Failed",
-      text:
-        error?.response?.data?.message ||
-        "Unable to convert lead. Please try again.",
-    });
-  }
-};
-
+      });
+      Swal.fire({
+        icon: "success",
+        title: "Converted",
+        text: "Lead has been successfully converted to customer.",
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Conversion Failed",
+        text:
+          error?.response?.data?.message ||
+          "Unable to convert lead. Please try again.",
+      });
+    }
+  };
 
   const showFollowUpRequiredAlert = () => {
     Swal.fire({
@@ -1428,7 +1423,8 @@ const LeadViewLayer = () => {
               {!isCustomerConverted ? (
                 <div className="alert alert-warning d-flex justify-content-between align-items-center mt-3">
                   <span className="fw-semibold">
-                    This lead has not yet been converted to a customer. Please confirm the conversion to proceed with booking.
+                    This lead has not yet been converted to a customer. Please
+                    confirm the conversion to proceed with booking.
                   </span>
                   <button
                     className="btn btn-primary-600 px-20 btn-sm"
@@ -1583,20 +1579,16 @@ const LeadViewLayer = () => {
                 className="flex-grow-1 overflow-auto pe-0"
                 style={{ maxHeight: "925px", scrollbarWidth: "thin" }}
               >
-                {lead?.FollowUps && lead.FollowUps.length > 0 ? (
+                {lead?.TrackingHistory && lead.TrackingHistory.length > 0 ? (
                   <ul className="mb-0 list-unstyled ps-0">
-                    {[...lead.FollowUps]
+                    {[...lead.TrackingHistory]
                       .sort((a, b) => {
-                        const dateA = a.Updated_At
-                          ? new Date(a.Updated_At)
-                          : new Date(a.Created_At);
-                        const dateB = b.Updated_At
-                          ? new Date(b.Updated_At)
-                          : new Date(b.Created_At);
+                        const dateA = new Date(a.CreatedDate);
+                        const dateB = new Date(b.CreatedDate);
                         return dateB - dateA;
                       })
                       .map((item, idx) => {
-                        if (item.Status === null) return null;
+                        if (!item.StatusName) return null;
                         return (
                           <li
                             key={idx}
@@ -1606,14 +1598,14 @@ const LeadViewLayer = () => {
                               <span
                                 className={`badge rounded-pill px-3 py-2 fw-semibold text-white bg-orange`}
                               >
-                                {item.Status}
+                                {item.StatusName}
                               </span>
                             </div>
                             <div>
                               <div className="text-sm text-secondary-light fw-medium">
-                                <strong>Updation Date: </strong>
-                                {item.Updated_At
-                                  ? new Date(item.Updated_At).toLocaleString(
+                                <strong>Created Date: </strong>
+                                {item.CreatedDate
+                                  ? new Date(item.CreatedDate).toLocaleString(
                                       "en-IN",
                                       {
                                         day: "2-digit",
@@ -1627,22 +1619,8 @@ const LeadViewLayer = () => {
                                   : "-"}
                               </div>
                               <div className="text-sm text-secondary-light">
-                                <strong>Discussion Notes: </strong>
-                                {item.Notes || "-"}
-                              </div>
-                              {item.NextAction && (
-                                <div className="text-sm text-secondary-light">
-                                  <strong>Next Action: </strong>
-                                  {item.NextAction}
-                                </div>
-                              )}
-                              <div className="text-sm text-secondary-light">
-                                <strong>Next Follow-up Date: </strong>{" "}
-                                {item.NextFollowUp_Date
-                                  ? new Date(
-                                      item.NextFollowUp_Date
-                                    ).toLocaleDateString()
-                                  : "-"}
+                                <strong>Description: </strong>
+                                {item.Description || "-"}
                               </div>
                               <div className="text-sm text-secondary-light">
                                 <strong>Updated By: </strong>
@@ -1655,7 +1633,7 @@ const LeadViewLayer = () => {
                   </ul>
                 ) : (
                   <p className="text-secondary-light mb-0">
-                    No follow-ups available
+                    No tracking history available
                   </p>
                 )}
               </div>

@@ -34,7 +34,7 @@ const BookServicesLayer = () => {
   const [selectedIncludes, setSelectedIncludes] = useState(null);
   const [serviceDate, setServiceDate] = useState("");
   const [timeSlots, setTimeSlots] = useState([]);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
   const hasNewItem = addedItems.some((item) => !item._apiId);
   const [loading, setLoading] = useState(false);
 
@@ -550,18 +550,20 @@ const BookServicesLayer = () => {
           bookingData?.bookingDate === null &&
           bookingData?.assignedTimeSlot === null
         ) {
-          const slotObj = timeSlots.find(
-            (t) => t.TimeSlotID === selectedTimeSlot
-          );
+//          const slotObj = timeSlots.find(
+//   (t) => Number(t.TimeSlotID) === Number(selectedTimeSlot)
+// );
+const slotObj = selectedTimeSlot;
 
           await axios.post(
             `${API_BASE}Supervisor/Booking`,
             {
               bookingID: bookingId,
               bookingDate: serviceDate,
-              assignedTimeSlot: slotObj
-                ? `${slotObj.StartTime} - ${slotObj.EndTime}`
-                : "",
+              assignedTimeSlot: slotObj?.label || "",
+              // assignedTimeSlot: slotObj
+              //   ? `${slotObj.StartTime} - ${slotObj.EndTime}`
+              //   : "",
             },
 
             {
@@ -997,8 +999,8 @@ const BookServicesLayer = () => {
       });
     }
   });
-  const isScheduleAlreadySet =
-    bookingData?.bookingDate !== null && bookingData?.assignedTimeSlot !== null;
+ const isScheduleAlreadySet =
+  !!bookingData?.bookingDate && !!bookingData?.assignedTimeSlot;
   return (
     <div className="row gy-4">
       <div className="col-12">
@@ -1017,7 +1019,7 @@ const BookServicesLayer = () => {
                 >
                   <option value="Service">Service</option>
                   <option value="Spare Part">Spare Part</option>
-                  {/* <option value="Package">Package</option> */}
+                  <option value="Package">Package</option>
                 </select>
               </div>
               {itemType === "Spare Part" && (
@@ -1175,9 +1177,7 @@ const BookServicesLayer = () => {
                   onChange={(e) => handleGstAmountChange(e.target.value)}
                 />
               </div>
-              {itemType === "Package" &&
-                selectedPackage &&
-                selectedPackage.toString().startsWith("new-") && (
+              {itemType === "Package" && selectedPackage && (
                   <div className="col-md-12">
                     <label className="form-label">Select Includes</label>
 
@@ -1325,7 +1325,6 @@ const BookServicesLayer = () => {
                             ) {
                               return bookingData.assignedTimeSlot;
                             }
-
                             // case 2: slots not loaded yet
                             if (timeSlots.length === 0) {
                               return "Loading time slot...";
@@ -1353,24 +1352,28 @@ const BookServicesLayer = () => {
                             value: slot.TimeSlotID,
                             label: `${slot.StartTime} - ${slot.EndTime}`,
                           }))}
-                          value={
-                            selectedTimeSlot
-                              ? {
-                                  value: selectedTimeSlot,
-                                  label: (() => {
-                                    const slot = timeSlots.find(
-                                      (t) => t.TimeSlotID === selectedTimeSlot
-                                    );
-                                    return slot
-                                      ? `${slot.StartTime} - ${slot.EndTime}`
-                                      : "";
-                                  })(),
-                                }
-                              : null
-                          }
-                          onChange={(option) =>
-                            setSelectedTimeSlot(option ? option.value : "")
-                          }
+                          menuPlacement="auto"
+menuPortalTarget={document.body}
+styles={{
+  menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+}}
+                          // value={
+                          //   selectedTimeSlot
+                          //     ? {
+                          //         value: selectedTimeSlot,
+                          //         label: (() => {
+                          //           const slot = timeSlots.find(
+                          //             (t) => t.TimeSlotID === selectedTimeSlot
+                          //           );
+                          //           return slot
+                          //             ? `${slot.StartTime} - ${slot.EndTime}`
+                          //             : "";
+                          //         })(),
+                          //       }
+                          //     : null
+                          // }
+                          value={selectedTimeSlot}
+                         onChange={(option) => setSelectedTimeSlot(option)}
                         />
                       )}
                     </div>
