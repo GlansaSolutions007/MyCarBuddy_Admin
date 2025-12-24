@@ -778,32 +778,59 @@ const BookingViewLayer = () => {
       Swal.fire("Error", "Failed to generate final invoice.", "error");
     }
   };
+
   const handleConfirmPayment = async () => {
   try {
+    if (!bookingData) {
+      Swal.fire("Error", "Booking data not available", "error");
+      return;
+    }
+
+    // ✅ SAME TOTAL AS BILLING SUMMARY
+      const billingTotalAmount = Number(
+  (bookingData?.TotalPrice || 0) +
+    (bookingData?.GSTAmount || 0) +
+    (bookingData?.LabourCharges || 0) -
+    (bookingData?.CouponAmount || 0)
+).toFixed(2);
+
+    // 🔔 CONFIRMATION POPUP (PUT THIS HERE)
+    const result = await Swal.fire({
+      title: "Confirm Payment",
+      text: `Total Amount: ₹${billingTotalAmount}`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Confirm",
+      cancelButtonText: "Cancel",
+    });
+
+    // ❌ If user clicks Cancel → STOP
+    if (!result.isConfirmed) return;
+
+    // ✅ API CALL ONLY AFTER CONFIRM
     const payload = {
       bookingID: bookingData.BookingID,
-      amount:
-        bookingData.BookingAddOns?.reduce(
-          (sum, item) => sum + Number(item.TotalPrice || 0),
-          0
-        ) || 0,
+      amount: Number(billingTotalAmount),
     };
 
-    const res = await axios.post(`${API_BASE}Leads/MarkBookingPaid`, 
-      payload
+    const res = await axios.post(
+      `${API_BASE}Leads/MarkBookingPaid`,
+      payload,
+      { headers: { Authorization: `Bearer ${token}` } }
     );
 
     if (res?.data?.success) {
       Swal.fire("Success", "Payment confirmed successfully", "success");
       setIsPaid(true);
+      fetchBookingData();
     } else {
       Swal.fire("Error", "Payment confirmation failed", "error");
     }
   } catch (err) {
+    console.error(err);
     Swal.fire("Error", "Something went wrong", "error");
   }
 };
-
 
   return (
     <div className="row gy-4 mt-3">
@@ -1060,7 +1087,7 @@ const BookingViewLayer = () => {
         </div>
 
         {/* Billing Summary Card (below profile) */}
-        {/* <div className="card border-0 shadow-sm radius-16 bg-white mt-3">
+        <div className="card border-0 shadow-sm radius-16 bg-white mt-3">
           <div className="card-body">
             <div className="d-flex justify-content-between align-items-center mb-3">
               <h6 className="fw-bold text-primary mb-0">Billing Summary</h6>
@@ -1115,9 +1142,9 @@ const BookingViewLayer = () => {
 
                 <li className="list-group-item d-flex justify-content-between">
                   <span className="fw-semibold text-secondary">
-                    Add Service Amount
+                    Labour Charges
                   </span>
-                  <span>₹{Number(addServiceTotal).toFixed(2)}</span>
+                  <span>₹{Number(bookingData.LabourCharges || 0).toFixed(2)}</span>
                 </li>
 
                 {bookingData.CouponAmount ? (
@@ -1136,7 +1163,7 @@ const BookingViewLayer = () => {
                     {Number(
                       (bookingData.TotalPrice || 0) +
                         (bookingData.GSTAmount || 0) +
-                        addServiceTotal -
+                        (bookingData.LabourCharges || 0) -
                         (bookingData.CouponAmount || 0)
                     ).toFixed(2)}
                   </span>
@@ -1146,7 +1173,7 @@ const BookingViewLayer = () => {
               <p className="text-muted mb-0">Loading summary...</p>
             )}
           </div>
-        </div> */}
+        </div>
       </div>
 
       {/* Right Tabs Content */}

@@ -78,12 +78,20 @@ const RevenueReports = () => {
       );
     }
     // BOOKING REPORTS
+    // BOOKING REPORTS
     return (
-      !searchTerm ||
-      item.BookingTrackID?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.CustFullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.LeadId.includes(searchTerm) ||
-      item.CustPhoneNumber?.includes(searchTerm)
+      // SEARCH
+      (!searchTerm ||
+        item.BookingTrackID?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.CustFullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.LeadId?.includes(searchTerm) ||
+        item.CustPhoneNumber?.includes(searchTerm)) &&
+      (!fromDate ||
+        new Date(item.BookingDate) >=
+          new Date(new Date(fromDate).setHours(0, 0, 0, 0))) &&
+      (!toDate ||
+        new Date(item.BookingDate) <=
+          new Date(new Date(toDate).setHours(23, 59, 59, 999)))
     );
   });
 
@@ -132,6 +140,14 @@ const RevenueReports = () => {
           {r.LeadId}
         </Link>
       ),
+    },
+    {
+      name: "Booking Date",
+      selector: (r) =>
+        r.BookingDate
+          ? new Date(r.BookingDate).toLocaleDateString("en-GB")
+          : "-",
+      sortable: true,
     },
     {
       name: "Customer Name",

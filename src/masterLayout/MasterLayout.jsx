@@ -426,10 +426,8 @@ const MasterLayout = ({ children }) => {
         { title: "Ticket Reports", to: "/ticket-reports", color: "text-warning-main", permission: "ticketreports_view", page: "Ticket Reports" },
         { title: "Lead Reports", to: "/lead-reports", color: "text-info-main", permission: "leadreports_view", page: "Lead Reports" },
         { title: "Booking Reports", to: "/booking-reports", color: "text-success-main", permission: "bookingreports_view", page: "Booking Reports" },
-        { title: "Services Earning Report", to: "/services-earning-report", color: "text-danger-main", permission: "servicesearningreport_view", page: "Services Earning Report" },
-        { title: "Garage Earning Report", to: "/garage-earning-report", color: "text-primary-600", permission: "garageearningreport_view", page: "Garage Earning Report" },
+        // { title: "Services Earning Report", to: "/services-earning-report", color: "text-danger-main", permission: "servicesearningreport_view", page: "Services Earning Report" },
         { title: "Revenue Reports", to: "/revenue-reports", color: "text-primary-600", permission: "revenuereports_view", page: "Revenue Reports" },
-
       ],
     },
     // {
@@ -446,6 +444,7 @@ const MasterLayout = ({ children }) => {
         { title: "Brand", to: "/vehicle-brand", color: "text-primary-600", permission: "vehiclebrand_view", page: "Vehicle Brand" },
         { title: "Model", to: "/vehicle-model", color: "text-warning-main", permission: "vehiclemodel_view", page: "Vehicle Model" },
         { title: "Fuel", to: "/vehicle-fuel", color: "text-info-main", permission: "vehiclefuel_view", page: "Vehicle Fuel" },
+        { title: "Invoice Formate", to: "/invoice-formate", color: "text-primary-600", permission: "invoiceformate_view", page: "Invoice Formate" },
       ],
     },
     {

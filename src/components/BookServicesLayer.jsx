@@ -413,6 +413,10 @@ const BookServicesLayer = () => {
 
   const handleSaveRow = async (index) => {
     const row = addedItems[index];
+    const bookingType =
+  row.status?.toLowerCase() === "confirmed"
+    ? "Confirm"
+    : "NotConfirm";
 
     try {
       // 🔹 API UPDATE (existing item)
@@ -434,11 +438,9 @@ const BookServicesLayer = () => {
           labourCharges: row.labourCharge,
           modifiedBy: parseInt(localStorage.getItem("userId")),
           isActive: true,
-           includes:
-    row.type === "Package" && Array.isArray(row.includes)
-      ? row.includes.join(",")
-      : "",
-        };
+          type: bookingType,
+          includes: row.type === "Package" && Array.isArray(row.includes)
+              ? row.includes.join(",") : "", };
 
         await axios.put(
           `${API_BASE}Supervisor/UpdateSupervisorBooking`,
@@ -554,7 +556,7 @@ const BookServicesLayer = () => {
         leadId: leadId,
         services: services,
       };
-      // ⭐ IF booking already exists → include booking details
+      //  IF booking already exists → include booking details
       if (existingBookingItem) {
         payload.bookingID = existingBookingItem._bookingId;
         payload.bookingTrackID = existingBookingItem._bookingTrackId;
@@ -573,15 +575,11 @@ const BookServicesLayer = () => {
 
       if (response.status === 200 || response.status === 201) {
         const { bookingId } = response.data;
-
         // 🔹 Send booking date & time ONLY if they were null before
         if (
           bookingData?.bookingDate === null &&
           bookingData?.assignedTimeSlot === null
         ) {
-          //          const slotObj = timeSlots.find(
-          //   (t) => Number(t.TimeSlotID) === Number(selectedTimeSlot)
-          // );
           const slotObj = selectedTimeSlot;
 
           await axios.put(
@@ -590,9 +588,6 @@ const BookServicesLayer = () => {
               bookingID: bookingId,
               bookingDate: serviceDate,
               assignedTimeSlot: slotObj?.label || "",
-              // assignedTimeSlot: slotObj
-              //   ? `${slotObj.StartTime} - ${slotObj.EndTime}`
-              //   : "",
             },
 
             {
@@ -1128,29 +1123,6 @@ const BookServicesLayer = () => {
                       value: pkg.id,
                       label: pkg.name,
                     }))}
-                    /** When an existing package is selected */
-                    // onChange={(option) => {
-                    //   if (option) {
-                    //     const pkg = packagesList.find(
-                    //       (p) => p.id == option.value
-                    //     );
-                    //     setSelectedPackage(option.value);
-                    //     setName(option.label);
-
-                    //     // Populate includes from existing package
-                    //     if (pkg?.includes && pkg.includes.length > 0) {
-                    //       setSelectedIncludes(
-                    //         pkg.includes.map((inc) => Number(inc.id))
-                    //       );
-                    //     } else {
-                    //       setSelectedIncludes([]);
-                    //     }
-                    //   } else {
-                    //     setSelectedPackage("");
-                    //     setName("");
-                    //     setSelectedIncludes([]);
-                    //   }
-                    // }}
                     onChange={(option) => {
                       if (!option) {
                         setSelectedPackage(null);
@@ -1168,14 +1140,12 @@ const BookServicesLayer = () => {
                       setName(option.label);
 
                       if (pkg) {
-                        // ⭐ EXISTING PACKAGE
                         setIsExistingPackage(true);
-
                         setSelectedIncludes(
                           pkg.includes?.map((inc) => Number(inc.id)) || []
                         );
                       } else {
-                        // ⭐ NEW PACKAGE (fallback)
+                        //  NEW PACKAGE (fallback)
                         setIsExistingPackage(false);
                         setSelectedIncludes([]);
                       }
@@ -1189,12 +1159,9 @@ const BookServicesLayer = () => {
                         name: inputValue,
                         includes: [],
                       };
-
                       setPackagesList((prev) => [...prev, newPackage]);
-
                       setSelectedPackage(newId);
                       setName(inputValue);
-
                       // ⭐ NEW PACKAGE = editable includes
                       setIsExistingPackage(false);
                       setSelectedIncludes([]);
