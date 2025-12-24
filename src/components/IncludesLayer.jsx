@@ -118,7 +118,7 @@ const IncludesLayer = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationErrors = validate(formData, ["IncludeID", "IsActive"]);
+    const validationErrors = validate(formData, ["IncludeID", "IsActive" ,"SubCategoryID"]);
     if (Object.keys(validationErrors).length > 0) return;
 
     setIsSubmitting(true);
