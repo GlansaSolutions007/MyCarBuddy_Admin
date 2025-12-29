@@ -158,21 +158,46 @@ const OrganicLeadsLayer = () => {
       wrap: true,
       width: "120px",
     },
+    // {
+    //   name: "Lead Category",
+    //   cell: (row) => {
+    //     if (!row.BookingAddOns || row.BookingAddOns.length === 0) {
+    //       return <span>-</span>;
+    //     }
+    //     return (
+    //       <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+    //         {row.BookingAddOns.map((addon) => (
+    //           <span
+    //             key={addon.AddOnId}
+    //             className={`  ${addon.Type === "Inspection" ? "" : ""}`}
+    //           >
+    //             {addon.ServiceName}
+    //           </span>
+    //         ))}
+    //       </div>
+    //     );
+    //   },
+    //   sortable: false,
+    //   wrap: true,
+    //   minWidth: "200px",
+    // },
     {
       name: "Lead Category",
       cell: (row) => {
-        if (!row.BookingAddOns || row.BookingAddOns.length === 0) {
+        if (
+          !row.BookingAddOns ||
+          row.BookingAddOns.length === 0 ||
+          !row.BookingAddOns.some((addon) => addon.IsUserClicked === true)
+        ) {
           return <span>-</span>;
         }
+
         return (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-            {row.BookingAddOns.map((addon) => (
-              <span
-                key={addon.AddOnId}
-                className={`  ${addon.Type === "Inspection" ? "" : ""}`}
-              >
-                {addon.ServiceName}
-              </span>
+            {row.BookingAddOns.filter(
+              (addon) => addon.IsUserClicked === true
+            ).map((addon) => (
+              <span key={addon.AddOnId}>{addon.ServiceName}</span>
             ))}
           </div>
         );
@@ -181,7 +206,7 @@ const OrganicLeadsLayer = () => {
       wrap: true,
       minWidth: "200px",
     },
-     {
+    {
       name: "Description",
       selector: (row) => row.Description || "-",
       sortable: true,

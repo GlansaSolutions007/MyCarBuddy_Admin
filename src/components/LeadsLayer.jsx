@@ -111,22 +111,23 @@ const LeadsLayer = () => {
       wrap: true,
       width: "120px",
     },
-        {
+    {
       name: "Lead Category",
       cell: (row) => {
-        if (!row.BookingAddOns || row.BookingAddOns.length === 0) {
+        if (
+          !row.BookingAddOns ||
+          row.BookingAddOns.length === 0 ||
+          !row.BookingAddOns.some((addon) => addon.IsUserClicked === true)
+        ) {
           return <span>-</span>;
         }
+
         return (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-            {row.BookingAddOns.map((addon) => (
-              <span
-                key={addon.AddOnId}
-                className={`  ${addon.Type === "Inspection" ? "" : ""}`}
-              >
-                {addon.ServiceName}
-              </span>
-            ))}
+            {row.BookingAddOns.filter((addon) => addon.IsUserClicked === true) 
+              .map((addon) => (
+                <span key={addon.AddOnId}>{addon.ServiceName}</span>
+              ))}
           </div>
         );
       },
@@ -134,7 +135,7 @@ const LeadsLayer = () => {
       wrap: true,
       minWidth: "200px",
     },
-     {
+    {
       name: "Description",
       selector: (row) => row.Description || "-",
       sortable: true,
@@ -207,7 +208,8 @@ const LeadsLayer = () => {
         lead.Platform === "Web" ||
         lead.Platform === "App" ||
         lead.NextAction === "Lead Closed"
-      ) return false;
+      )
+        return false;
       const text = searchText.toLowerCase();
       const statusMatch =
         selectedStatus === "All" ||

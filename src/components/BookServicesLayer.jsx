@@ -147,13 +147,6 @@ const BookServicesLayer = () => {
       ];
       if (apiItems.length > 0) {
         const converted = apiItems.map((item) => {
-          //           if (item.serviceType === "Package") {
-          //   baseItem.packageId = item.serviceId;
-          //   baseItem.includes = Array.isArray(item.includes)
-          //     ? item.includes.map(i => i.includeID)
-          //     : [];
-          // }
-
           const baseItem = {
             type: item.serviceType || "Service",
             name: item.serviceName || "",

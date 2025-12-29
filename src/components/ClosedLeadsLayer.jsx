@@ -36,10 +36,7 @@ const ClosedLeadsLayer = () => {
       }
       const data = await response.json();
       const closedLeadsOnly = Array.isArray(data)
-        ? data.filter(
-            (lead) =>
-              lead.NextAction === "Lead Closed"
-          )
+        ? data.filter((lead) => lead.NextAction === "Lead Closed")
         : [];
       setLeads(closedLeadsOnly);
     } catch (err) {
@@ -53,7 +50,7 @@ const ClosedLeadsLayer = () => {
   const columns = [
     {
       name: "Lead ID",
-       selector: (row) => (
+      selector: (row) => (
         <Link to={`/lead-view/${row.Id}`} className="text-primary">
           {row.Id}
         </Link>
@@ -112,21 +109,23 @@ const ClosedLeadsLayer = () => {
       wrap: true,
       width: "120px",
     },
-        {
+    {
       name: "Lead Category",
       cell: (row) => {
-        if (!row.BookingAddOns || row.BookingAddOns.length === 0) {
+        if (
+          !row.BookingAddOns ||
+          row.BookingAddOns.length === 0 ||
+          !row.BookingAddOns.some((addon) => addon.IsUserClicked === true)
+        ) {
           return <span>-</span>;
         }
+
         return (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-            {row.BookingAddOns.map((addon) => (
-              <span
-                key={addon.AddOnId}
-                className={`  ${addon.Type === "Inspection" ? "" : ""}`}
-              >
-                {addon.ServiceName}
-              </span>
+            {row.BookingAddOns.filter(
+              (addon) => addon.IsUserClicked === true
+            ).map((addon) => (
+              <span key={addon.AddOnId}>{addon.ServiceName}</span>
             ))}
           </div>
         );
@@ -135,7 +134,7 @@ const ClosedLeadsLayer = () => {
       wrap: true,
       minWidth: "200px",
     },
-     {
+    {
       name: "Description",
       selector: (row) => row.Description || "-",
       sortable: true,
@@ -213,14 +212,13 @@ const ClosedLeadsLayer = () => {
 
       return (
         dateMatch &&
-        ( lead.Id?.toString().toLowerCase().includes(text) ||
+        (lead.Id?.toString().toLowerCase().includes(text) ||
           lead.FullName?.toLowerCase().includes(text) ||
           lead.PhoneNumber?.toLowerCase().includes(text) ||
           lead.Email?.toLowerCase().includes(text) ||
           lead.City?.toLowerCase().includes(text) ||
           lead.Platform?.toLowerCase().includes(text) ||
           lead.FollowUpStatus?.toLowerCase().includes(text))
-          
       );
     })
     .sort((a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate));
@@ -262,19 +260,19 @@ const ClosedLeadsLayer = () => {
               </div>
             </div>
           </div>
-            <DataTable
-              columns={columns}
-              data={filteredLeads}
-              progressPending={loading}
-              pagination
-              highlightOnHover
-              responsive
-              striped
-              persistTableHead
-              noDataComponent={
-                loading ? "Loading leads..." : "No leads available"
-              }
-            />
+          <DataTable
+            columns={columns}
+            data={filteredLeads}
+            progressPending={loading}
+            pagination
+            highlightOnHover
+            responsive
+            striped
+            persistTableHead
+            noDataComponent={
+              loading ? "Loading leads..." : "No leads available"
+            }
+          />
         </div>
       </div>
     </div>
@@ -282,5 +280,3 @@ const ClosedLeadsLayer = () => {
 };
 
 export default ClosedLeadsLayer;
-
-
