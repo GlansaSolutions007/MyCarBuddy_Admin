@@ -1297,15 +1297,19 @@ const BookServicesLayer = () => {
   ];
 
   // totals
-  const subtotal = addedItems.reduce((sum, item) => {
-    return sum + (Number(item.price) || 0) + (Number(item.labourCharge) || 0);
+  const itemTotal = addedItems.reduce((sum, item) => {
+    return sum + (Number(item.price) || 0);
   }, 0);
 
   const totalGst = addedItems.reduce((sum, item) => {
     return sum + (Number(item.gstPrice) || 0);
   }, 0);
 
-  const grandTotal = subtotal + totalGst;
+  const labourTotal = addedItems.reduce((sum, item) => {
+    return sum + (Number(item.labourCharge) || 0);
+  }, 0);
+
+  const grandTotal = itemTotal + labourTotal + totalGst;
 
   const flattenedRows = [];
   addedItems.forEach((item, idx) => {
@@ -1672,8 +1676,12 @@ const BookServicesLayer = () => {
             {addedItems.length > 0 && (
               <div className="mt-3 p-3 border rounded bg-light">
                 <div className="d-flex justify-content-between">
-                  <div>Subtotal</div>
-                  <div>₹{subtotal.toFixed(2)}</div>
+                  <div>Items Subtotal</div>
+                  <div>₹{itemTotal.toFixed(2)}</div>
+                </div>
+                <div className="d-flex justify-content-between">
+                  <div>Labour Charges</div>
+                  <div>₹{labourTotal.toFixed(2)}</div>
                 </div>
                 <div className="d-flex justify-content-between">
                   <div>Total GST</div>
