@@ -742,35 +742,35 @@ const BookingViewLayer = () => {
 
   const handleGenerateFinalInvoice = async () => {
 
-    navigate(`/invoice-view/${bookingData.BookingID}`);
+    // navigate(`/invoice-view/${bookingData.BookingID}`);
 
-    // if (!bookingData || !bookingData.LeadId) {
-    //   Swal.fire("Error", "Booking data not available.", "error");
-    //   return;
-    // }
+    if (!bookingData || !bookingData.LeadId) {
+      Swal.fire("Error", "Booking data not available.", "error");
+      return;
+    }
 
-    // try {
-    //   const res = await axios.post(
-    //     `${API_BASE}Leads/GenerateFinalInvoice`,
-    //     {
-    //       bookingId: bookingData.BookingID,
-    //     },
-    //     {
-    //       headers: { Authorization: `Bearer ${token}` },
-    //     }
-    //   );
+    try {
+      const res = await axios.post(
+        `${API_BASE}Leads/GenerateFinalInvoice`,
+        {
+          bookingId: bookingData.BookingID,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-    //   Swal.fire(
-    //     "Success",
-    //     res.data.message || "Failed to generate invoice.",
-    //     "success"
-    //   );
-    //    navigate(`/invoice-view/${bookingData.BookingID}`);
+      Swal.fire(
+        "Success",
+        res.data.message || "Failed to generate invoice.",
+        "success"
+      );
+       navigate(`/invoice-view/${bookingData.BookingID}`);
 
-    // } catch (error) {
-    //   console.error("Generate Final Invoice Error:", error);
-    //   Swal.fire("Error", "Failed to generate final invoice.", "error");
-    // }
+    } catch (error) {
+      console.error("Generate Final Invoice Error:", error);
+      Swal.fire("Error", "Failed to generate final invoice.", "error");
+    }
   };
 
   const handleConfirmPayment = async () => {
