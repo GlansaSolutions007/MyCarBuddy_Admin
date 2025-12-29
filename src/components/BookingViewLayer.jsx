@@ -2,7 +2,7 @@ import { Icon } from "@iconify/react";
 import { useState, useEffect } from "react";
 import Accordion from "react-bootstrap/Accordion";
 import axios from "axios";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import Select from "react-select";
 
@@ -85,6 +85,7 @@ const BookingViewLayer = () => {
   ]);
 
   const { bookingId } = useParams();
+  const navigate = useNavigate();
 
   useEffect(() => {
   setIsPaid(!!bookingData?.Payments);
@@ -740,43 +741,36 @@ const BookingViewLayer = () => {
   };
 
   const handleGenerateFinalInvoice = async () => {
-    if (!bookingData || !bookingData.LeadId) {
-      Swal.fire("Error", "Booking data not available.", "error");
-      return;
-    }
 
-    try {
-      const res = await axios.post(
-        `${API_BASE}Leads/GenerateFinalInvoice`,
-        {
-          bookingId: bookingData.BookingID,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+    navigate(`/invoice-view/${bookingData.BookingID}`);
 
-      if (res.data.success) {
-        Swal.fire(
-          "Success",
-          "Final Invoice generated successfully!",
-          "success"
-        );
-        // Optionally, if the response includes a URL, you can open it
-        // if (res.data.invoiceUrl) {
-        //   window.open(res.data.invoiceUrl, '_blank');
-        // }
-      } else {
-        Swal.fire(
-          "success",
-          res.data.message || "Failed to generate invoice.",
-          "success"
-        );
-      }
-    } catch (error) {
-      console.error("Generate Final Invoice Error:", error);
-      Swal.fire("Error", "Failed to generate final invoice.", "error");
-    }
+    // if (!bookingData || !bookingData.LeadId) {
+    //   Swal.fire("Error", "Booking data not available.", "error");
+    //   return;
+    // }
+
+    // try {
+    //   const res = await axios.post(
+    //     `${API_BASE}Leads/GenerateFinalInvoice`,
+    //     {
+    //       bookingId: bookingData.BookingID,
+    //     },
+    //     {
+    //       headers: { Authorization: `Bearer ${token}` },
+    //     }
+    //   );
+
+    //   Swal.fire(
+    //     "Success",
+    //     res.data.message || "Failed to generate invoice.",
+    //     "success"
+    //   );
+    //    navigate(`/invoice-view/${bookingData.BookingID}`);
+
+    // } catch (error) {
+    //   console.error("Generate Final Invoice Error:", error);
+    //   Swal.fire("Error", "Failed to generate final invoice.", "error");
+    // }
   };
 
   const handleConfirmPayment = async () => {
@@ -1435,9 +1429,7 @@ const BookingViewLayer = () => {
                                         <th style={{ width: "180px" }}>
                                           Service Name
                                         </th>
-                                        <th style={{ width: "200px" }}>
-                                          Description
-                                        </th>
+                                       
                                         <th style={{ width: "160px" }}>
                                           Created Date
                                         </th>
@@ -1485,6 +1477,9 @@ const BookingViewLayer = () => {
                                         >
                                           Total Amt
                                         </th>
+                                        <th style={{ width: "200px" }}>
+                                          Description
+                                        </th>
                                       </tr>
                                     </thead>
 
@@ -1496,17 +1491,22 @@ const BookingViewLayer = () => {
                                               {addon.ServiceType || "—"}
                                             </td>
                                             <td className="normal">
-                                              {addon.ServiceName || "—"}
+                                              <div>
+                                                <strong className="text-dark">
+                                                  {addon.ServiceName || "—"}
+                                                </strong>
+                                                {addon.Includes && Array.isArray(addon.Includes) && addon.Includes.length > 0 && (
+                                                  <ul className="text-muted small ps-3 mb-0 mt-2">
+                                                    {addon.Includes.map((inc) => (
+                                                      <li key={inc.IncludeID || inc.id}>
+                                                        {inc.IncludeName || inc.name}
+                                                      </li>
+                                                    ))}
+                                                  </ul>
+                                                )}
+                                              </div>
                                             </td>
-                                            <td
-                                              className=" normal"
-                                              style={{
-                                                whiteSpace: "normal",
-                                                wordBreak: "break-word",
-                                              }}
-                                            >
-                                              {addon.Description || "—"}
-                                            </td>
+                                           
                                             <td className="normal">
                                               {addon.CreatedDate
                                                 ? new Date(
@@ -1549,6 +1549,15 @@ const BookingViewLayer = () => {
                                               {Number(
                                                 addon.TotalPrice || 0
                                               ).toFixed(2)}
+                                            </td>
+                                            <td
+                                              className=" normal"
+                                              style={{
+                                                whiteSpace: "normal",
+                                                wordBreak: "break-word",
+                                              }}
+                                            >
+                                              {addon.Description || "—"}
                                             </td>
                                           </tr>
                                         )

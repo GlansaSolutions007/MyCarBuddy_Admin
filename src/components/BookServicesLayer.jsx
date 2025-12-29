@@ -33,6 +33,7 @@ const BookServicesLayer = () => {
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [selectedIncludes, setSelectedIncludes] = useState([]);
   const [isExistingPackage, setIsExistingPackage] = useState(false);
+  const [selectedServices, setSelectedServices] = useState([]);
   const [serviceDate, setServiceDate] = useState("");
   const [timeSlots, setTimeSlots] = useState([]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
@@ -145,27 +146,47 @@ const BookServicesLayer = () => {
         ...(data.confirmed || []),
       ];
       if (apiItems.length > 0) {
-        const converted = apiItems.map((item) => ({
-          type: item.serviceType || "Service",
-          name: item.serviceName || "",
-          serviceName: item.serviceName || "",
-          price: Number(item.price || 0),
-          description: item.description || "",
-          gstPercent: Number(item.gstPercent || 0),
-          gstPrice: Number(item.gstAmount || 0),
-          dealerID: item.dealerID || "",
-          percentage: Number(item.percentage || 0),
-          percentAmount: Number(item.our_Earnings || 0),
-          status: item.status,
-          labourCharge: Number(item.labourCharge || 0),
-          includeId: item.serviceType === "Service" ? item.serviceId : null,
-          packageId: item.serviceType === "Package" ? item.serviceId : null,
-          isEditing: false,
-          // API identifiers (keep for update)
-          _apiId: item.id || null,
-          _bookingId: item.bookingID || null,
-          _bookingTrackId: item.bookingTrackID || null,
-        }));
+        const converted = apiItems.map((item) => {
+          const baseItem = {
+            type: item.serviceType || "Service",
+            name: item.serviceName || "",
+            serviceName: item.serviceName || "",
+            price: Number(item.price || 0),
+            description: item.description || "",
+            gstPercent: Number(item.gstPercent || 0),
+            gstPrice: Number(item.gstAmount || 0),
+            dealerID: item.dealerID || "",
+            percentage: Number(item.percentage || 0),
+            percentAmount: Number(item.our_Earnings || 0),
+            status: item.status,
+            labourCharge: Number(item.labourCharge || 0),
+            includeId: item.serviceType === "Service" ? item.serviceId : null,
+            packageId: item.serviceType === "Package" ? item.serviceId : null,
+            isEditing: false,
+            // API identifiers (keep for update)
+            _apiId: item.id || null,
+            _bookingId: item.bookingID || null,
+            _bookingTrackId: item.bookingTrackID || null,
+          };
+
+          // Handle service_group: reconstruct serviceGroupServices from includes
+          if (item.serviceType === "service_group") {
+            const mainServiceId = item.serviceId;
+            const includeIds = item.includes ? item.includes.split(",").map(id => id.trim()).filter(id => id) : [];
+            
+            // Build serviceGroupServices array: main service first, then includes
+            const allServiceIds = [mainServiceId, ...includeIds];
+            baseItem.serviceGroupServices = allServiceIds.map(id => {
+              const service = includesList.find(inc => inc.IncludeID == id);
+              return {
+                id: Number(id),
+                name: service ? service.IncludeName : `Service ${id}`
+              };
+            });
+          }
+
+          return baseItem;
+        });
 
         setAddedItems(converted);
         return; // --- STOP here
@@ -246,6 +267,7 @@ const BookServicesLayer = () => {
     setGstPrice("");
     setSelectedPackage("");
     setSelectedIncludes(null);
+    setSelectedServices([]);
     setCompanyPercent(0);
     setPercentAmount(0);
     setGstPercent(0);
@@ -301,6 +323,59 @@ const BookServicesLayer = () => {
       return Swal.fire("Please enter spare part name");
     if (itemType === "Package" && !selectedPackage)
       return Swal.fire("Please select package");
+    if (itemType === "Package" && selectedPackage && !isExistingPackage && (!selectedIncludes || selectedIncludes.length === 0))
+      return Swal.fire("Please select at least one include for the package");
+    if (itemType === "service_group" && (!selectedServices || selectedServices.length === 0))
+      return Swal.fire("Please select at least one service for service group");
+
+    // ⭐ CASE: Create NEW package before adding item
+    let finalPackageId = selectedPackage;
+    if (itemType === "Package" && selectedPackage && selectedPackage.toString().startsWith("new-")) {
+      try {
+        if (!selectedIncludes || selectedIncludes.length === 0) {
+          return Swal.fire("Error", "Please select at least one include for the package", "error");
+        }
+
+        const payload = new FormData();
+        payload.append("PackageName", name.trim());
+        payload.append("CategoryID", "14");
+        payload.append("SubCategoryID", "59");
+        payload.append("Default_Price", "0");
+        payload.append("TotalPrice", "0");
+        payload.append("IsActive", "true");
+        payload.append("IncludeID", selectedIncludes.join(","));
+        payload.append("EstimatedDurationMinutes", "0");
+        payload.append("CreatedBy", userId?.toString() || "0");
+
+        const resp = await axios.post(`${API_BASE}PlanPackage/InsertPlanPackage`, payload, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (resp.status === 200 || resp.status === 201) {
+          const created = resp.data;
+          
+          // Get the new package ID from response (handle different response formats)
+          finalPackageId = created?.PackageID || created?.packageID || created?.id || created?.data?.PackageID;
+          
+          if (!finalPackageId) {
+            console.error("Package creation response:", created);
+            return Swal.fire("Error", "Package created but ID not found in response", "error");
+          }
+
+          // Refresh packages list to get complete data from server
+          await fetchAllPackages();
+          setSelectedPackage(finalPackageId);
+
+          Swal.fire("Created!", "New package has been created", "success");
+        }
+      } catch (err) {
+        console.error(err);
+        return Swal.fire("Error", "Failed to create package: " + (err.response?.data?.message || err.message), "error");
+      }
+    }
 
     // 🔒 BLOCK include modification for EXISTING package
     if (itemType === "Package" && isExistingPackage) {
@@ -327,7 +402,7 @@ const BookServicesLayer = () => {
         : selectedIncludes;
     // may change if new
 
-    // ⭐ CASE: Create NEW include before adding item
+    // ⭐ CASE: Create NEW include before adding item (for Service type)
     if (itemType === "Service" && selectedIncludes === "new") {
       try {
         const payload = {
@@ -372,6 +447,82 @@ const BookServicesLayer = () => {
       }
     }
 
+    // ⭐ CASE: Create NEW services for service_group
+    let processedSelectedServices = selectedServices || [];
+    if (itemType === "service_group" && selectedServices && selectedServices.length > 0) {
+      const newServices = selectedServices.filter(s => s.__isNew__);
+      
+      if (newServices.length > 0) {
+        try {
+          // Create all new services
+          const createPromises = newServices.map(async (newService) => {
+            const payload = {
+              IncludeName: newService.label.trim(),
+              Description: description.trim() || "",
+              IncludePrice: parseFloat(price) || 0,
+              CategoryID: 14,
+              SubCategoryID: 0,
+              SkillID: 4,
+              CreatedBy: userId,
+              IsActive: true,
+            };
+
+            const resp = await axios.post(`${API_BASE}Includes`, payload, {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            });
+
+            if (resp.status === 200 || resp.status === 201) {
+              const created = resp.data;
+              
+              // Update the dropdown
+              setIncludesList((prev) => [
+                ...prev,
+                {
+                  IncludeID: created.IncludeID,
+                  IncludeName: created.IncludeName,
+                  IncludePrice: created.IncludePrice,
+                },
+              ]);
+
+              return {
+                oldLabel: newService.label,
+                newValue: {
+                  value: created.IncludeID,
+                  label: created.IncludeName,
+                },
+                created: created,
+              };
+            }
+            return null;
+          });
+
+          const results = await Promise.all(createPromises);
+          
+          // Replace new services with created ones in selectedServices
+          processedSelectedServices = selectedServices.map(service => {
+            if (service.__isNew__) {
+              const result = results.find(r => r && r.oldLabel === service.label);
+              if (result) {
+                return result.newValue;
+              }
+            }
+            return service;
+          });
+
+          // Update state with processed services
+          setSelectedServices(processedSelectedServices);
+
+          Swal.fire("Created!", `${newServices.length} new service(s) have been added`, "success");
+        } catch (err) {
+          console.error(err);
+          return Swal.fire("Error", "Failed to create one or more services", "error");
+        }
+      }
+    }
+
     // ⭐ BUILD THE FINAL ITEM
     const updatedItem = {
       type: itemType,
@@ -393,11 +544,15 @@ const BookServicesLayer = () => {
           : null,
 
       // package-specific metadata
-      packageId: itemType === "Package" ? selectedPackage : null,
+      packageId: itemType === "Package" ? finalPackageId : null,
       includes: itemType === "Package" ? [...selectedIncludes] : [],
-      isNewPackage:
-        itemType === "Package" &&
-        selectedPackage?.toString().startsWith("new-"),
+      isNewPackage: false, // Package is already created if it was new
+
+      // service_group-specific metadata
+      serviceGroupServices: itemType === "service_group" ? processedSelectedServices.map(s => ({
+        id: Number(s.value),
+        name: s.label
+      })) : [],
     };
     setAddedItems((prev) => [...prev, updatedItem]);
     resetForm();
@@ -421,6 +576,27 @@ const BookServicesLayer = () => {
     try {
       // 🔹 API UPDATE (existing item)
       if (row._apiId) {
+        let includes = "";
+        let serviceId = 0;
+
+        if (row.type === "Package" && Array.isArray(row.includes)) {
+          includes = row.includes.join(",");
+          serviceId = Number(row.packageId);
+        } else if (row.type === "service_group" && row.serviceGroupServices) {
+          // For service_group: first service is main, rest go to includes
+          const serviceGroupServices = row.serviceGroupServices || [];
+          if (serviceGroupServices.length > 0) {
+            serviceId = Number(serviceGroupServices[0].id);
+            const includeIds = serviceGroupServices
+              .slice(1)
+              .map(s => s.id)
+              .join(",");
+            includes = includeIds;
+          }
+        } else if (row.type === "Service") {
+          serviceId = Number(row.includeId);
+        }
+
         const payload = {
           id: row._apiId,
           bookingId: row._bookingId,
@@ -439,8 +615,9 @@ const BookServicesLayer = () => {
           modifiedBy: parseInt(localStorage.getItem("userId")),
           isActive: true,
           type: bookingType,
-          includes: row.type === "Package" && Array.isArray(row.includes)
-              ? row.includes.join(",") : "", };
+          includes: includes,
+          serviceId: serviceId,
+        };
 
         await axios.put(
           `${API_BASE}Supervisor/UpdateSupervisorBooking`,
@@ -527,7 +704,47 @@ const BookServicesLayer = () => {
             serviceId = Number(item.includeId);
           } else if (item.type === "Package") {
             serviceId = Number(item.packageId);
+          } else if (item.type === "service_group") {
+            // For service_group: first service is the main service
+            if (item.serviceGroupServices && item.serviceGroupServices.length > 0) {
+              serviceId = Number(item.serviceGroupServices[0].id);
+            }
           }
+
+          // Handle service_group payload format
+          if (item.type === "service_group") {
+            const serviceGroupServices = item.serviceGroupServices || [];
+            if (serviceGroupServices.length === 0) {
+              // Skip if no services selected (shouldn't happen due to validation)
+              return null;
+            }
+
+            // First service is the main service
+            const mainService = serviceGroupServices[0];
+            // Remaining services go into includes
+            const includeIds = serviceGroupServices
+              .slice(1)
+              .map(s => s.id)
+              .join(",");
+
+            return {
+              serviceType: "service_group",
+              serviceId: Number(mainService.id),
+              serviceName: mainService.name,
+              price: Number(item.price) || 0,
+              gstPercent: Number(item.gstPercent) || 0,
+              gstAmount: Number(item.gstPrice) || 0,
+              description: item.description || "",
+              dealerID: Number(item.dealerID) || 0,
+              percentage: Number(item.percentage) || 0,
+              our_Earnings: Number(item.percentAmount) || 0,
+              labourCharges: Number(item.labourCharge) || 0,
+              isUserClicked: false,
+              includes: includeIds,
+            };
+          }
+
+          // Regular Service, Package, or Spare Part
           return {
             serviceType: item.type,
             serviceName: item.name || "",
@@ -546,7 +763,8 @@ const BookServicesLayer = () => {
           ? item.includes.join(",")
           : "",
           };
-        });
+        })
+        .filter(item => item !== null); // Remove any null items (shouldn't happen, but safety check)
 
       // detect existing booking (from any existing item)
       const existingBookingItem = addedItems.find((item) => item._bookingId);
@@ -1022,6 +1240,19 @@ const BookServicesLayer = () => {
         });
       });
     }
+
+    // Service group includes as separate rows (remaining services after the first one)
+    if (item.type === "service_group" && Array.isArray(item.serviceGroupServices) && item.serviceGroupServices.length > 1) {
+      // Skip the first service (it's the main service), show the rest
+      item.serviceGroupServices.slice(1).forEach((service, sIdx) => {
+        flattenedRows.push({
+          __id: `item-${idx}-service-${sIdx}`,
+          isInclude: true,
+          includeName: service.name || `Service ${service.id}`,
+          parentIndex: idx,
+        });
+      });
+    }
   });
   const isScheduleAlreadySet =
     !!bookingData?.bookingDate && !!bookingData?.assignedTimeSlot;
@@ -1039,11 +1270,26 @@ const BookServicesLayer = () => {
                 <select
                   className="form-select"
                   value={itemType}
-                  onChange={(e) => setItemType(e.target.value)}
+                  onChange={(e) => {
+                    setItemType(e.target.value);
+                    // Clear service_group specific state when switching types
+                    if (e.target.value !== "service_group") {
+                      setSelectedServices([]);
+                    }
+                    // Clear other type-specific states
+                    if (e.target.value !== "Package") {
+                      setSelectedPackage(null);
+                      setSelectedIncludes([]);
+                    }
+                    if (e.target.value !== "Service") {
+                      setSelectedIncludes(null);
+                    }
+                  }}
                 >
                   <option value="Service">Service</option>
                   <option value="Spare Part">Spare Part</option>
                   <option value="Package">Package</option>
+                  <option value="service_group">Service Group</option>
                 </select>
               </div>
               {itemType === "Spare Part" && (
@@ -1241,6 +1487,48 @@ const BookServicesLayer = () => {
                     components={{ Option: CheckboxOption }}
                     placeholder="Select items included in package"
                   />
+                </div>
+              )}
+
+              {itemType === "service_group" && (
+                <div className="col-md-12">
+                  <label className="form-label">Select Services (Multiple) <span className="text-danger">*</span></label>
+                  <CreatableSelect
+                    isMulti
+                    isSearchable
+                    closeMenuOnSelect={false}
+                    hideSelectedOptions={false}
+                    className="react-select-container text-sm"
+                    classNamePrefix="react-select"
+                    options={includesList.map((inc) => ({
+                      value: inc.IncludeID,
+                      label: inc.IncludeName,
+                    }))}
+                    value={selectedServices}
+                    onChange={(selected) => {
+                      setSelectedServices(selected || []);
+                      // Set name to first selected service name
+                      if (selected && selected.length > 0) {
+                        setName(selected[0].label);
+                      } else {
+                        setName("");
+                      }
+                    }}
+                    components={{ Option: CheckboxOption }}
+                    placeholder="Search or create services for group..."
+                    styles={{
+                      menuList: (base) => ({
+                        ...base,
+                        maxHeight: 5 * 38,
+                        overflowY: "auto",
+                      }),
+                    }}
+                  />
+                  {selectedServices.length > 0 && (
+                    <small className="text-muted d-block mt-1">
+                      First service ({selectedServices[0].label}) will be the main service. Others will be included.
+                    </small>
+                  )}
                 </div>
               )}
 

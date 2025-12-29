@@ -50,6 +50,7 @@ import ServicePlanPriceAddPage from "./pages/ServicePlanPriceAddPage";
 import ServicePlanPriceEditPage from "./pages/ServicePlanPriceEditPage";
 import PaymentListPage from "./pages/PaymentListPage";
 import InvoicePreviewPage from "./pages/InvoicePreviewPage";
+import InvoiceViewPage from "./pages/InvoiceViewPage";
 import BookingTimeSlotPage from "./pages/BookingTimeSlotPage";
 import CouponPage from "./pages/CouponPage";
 import SkillPage from "./pages/SkillPage";
@@ -163,6 +164,7 @@ function App() {
 
           <Route exact path='/payments' element={<PaymentListPage />} />
           <Route exact path='/invoice-preview/:PaymentID' element={<InvoicePreviewPage />} />
+          <Route exact path='/invoice-view/:bookingId' element={<InvoiceViewPage />} />
 
           <Route exact path='/tickets' element={<TicketsPage />} />
           <Route exact path='/tickets/:ticketId' element={<TicketInnerPage />} />
