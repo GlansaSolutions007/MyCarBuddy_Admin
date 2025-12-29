@@ -147,6 +147,13 @@ const BookServicesLayer = () => {
       ];
       if (apiItems.length > 0) {
         const converted = apiItems.map((item) => {
+          //           if (item.serviceType === "Package") {
+          //   baseItem.packageId = item.serviceId;
+          //   baseItem.includes = Array.isArray(item.includes)
+          //     ? item.includes.map(i => i.includeID)
+          //     : [];
+          // }
+
           const baseItem = {
             type: item.serviceType || "Service",
             name: item.serviceName || "",
@@ -170,19 +177,59 @@ const BookServicesLayer = () => {
           };
 
           // Handle service_group: reconstruct serviceGroupServices from includes
+          // if (item.serviceType === "service_group") {
+          //   const mainServiceId = item.serviceId;
+          //   const includeIds = item.includes ? item.includes.split(",").map(id => id.trim()).filter(id => id) : [];
+
+          //   // Build serviceGroupServices array: main service first, then includes
+          //   const allServiceIds = [mainServiceId, ...includeIds];
+          //   baseItem.serviceGroupServices = allServiceIds.map(id => {
+          //     const service = includesList.find(inc => inc.IncludeID == id);
+          //     return {
+          //       id: Number(id),
+          //       name: service ? service.IncludeName : `Service ${id}`
+          //     };
+          //   });
+          // }
           if (item.serviceType === "service_group") {
-            const mainServiceId = item.serviceId;
-            const includeIds = item.includes ? item.includes.split(",").map(id => id.trim()).filter(id => id) : [];
-            
-            // Build serviceGroupServices array: main service first, then includes
-            const allServiceIds = [mainServiceId, ...includeIds];
-            baseItem.serviceGroupServices = allServiceIds.map(id => {
-              const service = includesList.find(inc => inc.IncludeID == id);
-              return {
-                id: Number(id),
-                name: service ? service.IncludeName : `Service ${id}`
-              };
-            });
+            const services = [];
+
+            // main service
+            if (item.serviceId) {
+              const main = includesList.find(
+                (inc) => inc.IncludeID == item.serviceId
+              );
+              services.push({
+                id: item.serviceId,
+                name: main?.IncludeName || item.serviceName,
+              });
+            } else {
+              // fallback if serviceId is null (confirmed case)
+              services.push({
+                id: 0,
+                name: item.serviceName,
+              });
+            }
+
+            // includes come as ARRAY
+            if (Array.isArray(item.includes)) {
+              item.includes.forEach((inc) => {
+                services.push({
+                  id: inc.includeID,
+                  name: inc.includeName,
+                });
+              });
+            }
+
+            baseItem.serviceGroupServices = services;
+          }
+          if (item.serviceType === "Package") {
+            baseItem.packageId = item.serviceId;
+
+            // normalize includes → [160, 163]
+            baseItem.includes = Array.isArray(item.includes)
+              ? item.includes.map((i) => i.includeID)
+              : [];
           }
 
           return baseItem;
@@ -323,17 +370,33 @@ const BookServicesLayer = () => {
       return Swal.fire("Please enter spare part name");
     if (itemType === "Package" && !selectedPackage)
       return Swal.fire("Please select package");
-    if (itemType === "Package" && selectedPackage && !isExistingPackage && (!selectedIncludes || selectedIncludes.length === 0))
+    if (
+      itemType === "Package" &&
+      selectedPackage &&
+      !isExistingPackage &&
+      (!selectedIncludes || selectedIncludes.length === 0)
+    )
       return Swal.fire("Please select at least one include for the package");
-    if (itemType === "service_group" && (!selectedServices || selectedServices.length === 0))
+    if (
+      itemType === "service_group" &&
+      (!selectedServices || selectedServices.length === 0)
+    )
       return Swal.fire("Please select at least one service for service group");
 
     // ⭐ CASE: Create NEW package before adding item
     let finalPackageId = selectedPackage;
-    if (itemType === "Package" && selectedPackage && selectedPackage.toString().startsWith("new-")) {
+    if (
+      itemType === "Package" &&
+      selectedPackage &&
+      selectedPackage.toString().startsWith("new-")
+    ) {
       try {
         if (!selectedIncludes || selectedIncludes.length === 0) {
-          return Swal.fire("Error", "Please select at least one include for the package", "error");
+          return Swal.fire(
+            "Error",
+            "Please select at least one include for the package",
+            "error"
+          );
         }
 
         const payload = new FormData();
@@ -347,22 +410,34 @@ const BookServicesLayer = () => {
         payload.append("EstimatedDurationMinutes", "0");
         payload.append("CreatedBy", userId?.toString() || "0");
 
-        const resp = await axios.post(`${API_BASE}PlanPackage/InsertPlanPackage`, payload, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const resp = await axios.post(
+          `${API_BASE}PlanPackage/InsertPlanPackage`,
+          payload,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         if (resp.status === 200 || resp.status === 201) {
           const created = resp.data;
-          
+
           // Get the new package ID from response (handle different response formats)
-          finalPackageId = created?.PackageID || created?.packageID || created?.id || created?.data?.PackageID;
-          
+          finalPackageId =
+            created?.PackageID ||
+            created?.packageID ||
+            created?.id ||
+            created?.data?.PackageID;
+
           if (!finalPackageId) {
             console.error("Package creation response:", created);
-            return Swal.fire("Error", "Package created but ID not found in response", "error");
+            return Swal.fire(
+              "Error",
+              "Package created but ID not found in response",
+              "error"
+            );
           }
 
           // Refresh packages list to get complete data from server
@@ -373,7 +448,12 @@ const BookServicesLayer = () => {
         }
       } catch (err) {
         console.error(err);
-        return Swal.fire("Error", "Failed to create package: " + (err.response?.data?.message || err.message), "error");
+        return Swal.fire(
+          "Error",
+          "Failed to create package: " +
+            (err.response?.data?.message || err.message),
+          "error"
+        );
       }
     }
 
@@ -449,9 +529,13 @@ const BookServicesLayer = () => {
 
     // ⭐ CASE: Create NEW services for service_group
     let processedSelectedServices = selectedServices || [];
-    if (itemType === "service_group" && selectedServices && selectedServices.length > 0) {
-      const newServices = selectedServices.filter(s => s.__isNew__);
-      
+    if (
+      itemType === "service_group" &&
+      selectedServices &&
+      selectedServices.length > 0
+    ) {
+      const newServices = selectedServices.filter((s) => s.__isNew__);
+
       if (newServices.length > 0) {
         try {
           // Create all new services
@@ -476,7 +560,7 @@ const BookServicesLayer = () => {
 
             if (resp.status === 200 || resp.status === 201) {
               const created = resp.data;
-              
+
               // Update the dropdown
               setIncludesList((prev) => [
                 ...prev,
@@ -500,11 +584,13 @@ const BookServicesLayer = () => {
           });
 
           const results = await Promise.all(createPromises);
-          
+
           // Replace new services with created ones in selectedServices
-          processedSelectedServices = selectedServices.map(service => {
+          processedSelectedServices = selectedServices.map((service) => {
             if (service.__isNew__) {
-              const result = results.find(r => r && r.oldLabel === service.label);
+              const result = results.find(
+                (r) => r && r.oldLabel === service.label
+              );
               if (result) {
                 return result.newValue;
               }
@@ -515,10 +601,18 @@ const BookServicesLayer = () => {
           // Update state with processed services
           setSelectedServices(processedSelectedServices);
 
-          Swal.fire("Created!", `${newServices.length} new service(s) have been added`, "success");
+          Swal.fire(
+            "Created!",
+            `${newServices.length} new service(s) have been added`,
+            "success"
+          );
         } catch (err) {
           console.error(err);
-          return Swal.fire("Error", "Failed to create one or more services", "error");
+          return Swal.fire(
+            "Error",
+            "Failed to create one or more services",
+            "error"
+          );
         }
       }
     }
@@ -549,10 +643,13 @@ const BookServicesLayer = () => {
       isNewPackage: false, // Package is already created if it was new
 
       // service_group-specific metadata
-      serviceGroupServices: itemType === "service_group" ? processedSelectedServices.map(s => ({
-        id: Number(s.value),
-        name: s.label
-      })) : [],
+      serviceGroupServices:
+        itemType === "service_group"
+          ? processedSelectedServices.map((s) => ({
+              id: Number(s.value),
+              name: s.label,
+            }))
+          : [],
     };
     setAddedItems((prev) => [...prev, updatedItem]);
     resetForm();
@@ -569,9 +666,7 @@ const BookServicesLayer = () => {
   const handleSaveRow = async (index) => {
     const row = addedItems[index];
     const bookingType =
-  row.status?.toLowerCase() === "confirmed"
-    ? "Confirm"
-    : "NotConfirm";
+      row.status?.toLowerCase() === "confirmed" ? "Confirm" : "NotConfirm";
 
     try {
       // 🔹 API UPDATE (existing item)
@@ -589,7 +684,7 @@ const BookServicesLayer = () => {
             serviceId = Number(serviceGroupServices[0].id);
             const includeIds = serviceGroupServices
               .slice(1)
-              .map(s => s.id)
+              .map((s) => s.id)
               .join(",");
             includes = includeIds;
           }
@@ -706,7 +801,10 @@ const BookServicesLayer = () => {
             serviceId = Number(item.packageId);
           } else if (item.type === "service_group") {
             // For service_group: first service is the main service
-            if (item.serviceGroupServices && item.serviceGroupServices.length > 0) {
+            if (
+              item.serviceGroupServices &&
+              item.serviceGroupServices.length > 0
+            ) {
               serviceId = Number(item.serviceGroupServices[0].id);
             }
           }
@@ -724,7 +822,7 @@ const BookServicesLayer = () => {
             // Remaining services go into includes
             const includeIds = serviceGroupServices
               .slice(1)
-              .map(s => s.id)
+              .map((s) => s.id)
               .join(",");
 
             return {
@@ -759,12 +857,12 @@ const BookServicesLayer = () => {
             serviceId: serviceId,
             isUserClicked: false,
             includes:
-        item.type === "Package" && Array.isArray(item.includes)
-          ? item.includes.join(",")
-          : "",
+              item.type === "Package" && Array.isArray(item.includes)
+                ? item.includes.join(",")
+                : "",
           };
         })
-        .filter(item => item !== null); // Remove any null items (shouldn't happen, but safety check)
+        .filter((item) => item !== null); // Remove any null items (shouldn't happen, but safety check)
 
       // detect existing booking (from any existing item)
       const existingBookingItem = addedItems.find((item) => item._bookingId);
@@ -805,7 +903,8 @@ const BookServicesLayer = () => {
             {
               bookingID: bookingId,
               bookingDate: serviceDate,
-              assignedTimeSlot: slotObj?.label || "",
+              TimeSlot: slotObj?.label || "",
+              // assignedTimeSlot: slotObj?.label || "",
             },
 
             {
@@ -1242,7 +1341,11 @@ const BookServicesLayer = () => {
     }
 
     // Service group includes as separate rows (remaining services after the first one)
-    if (item.type === "service_group" && Array.isArray(item.serviceGroupServices) && item.serviceGroupServices.length > 1) {
+    if (
+      item.type === "service_group" &&
+      Array.isArray(item.serviceGroupServices) &&
+      item.serviceGroupServices.length > 1
+    ) {
       // Skip the first service (it's the main service), show the rest
       item.serviceGroupServices.slice(1).forEach((service, sIdx) => {
         flattenedRows.push({
@@ -1412,7 +1515,7 @@ const BookServicesLayer = () => {
                       setIsExistingPackage(false);
                       setSelectedIncludes([]);
                     }}
-                     styles={{
+                    styles={{
                       menuList: (base) => ({
                         ...base,
                         maxHeight: 5 * 38,
@@ -1492,7 +1595,10 @@ const BookServicesLayer = () => {
 
               {itemType === "service_group" && (
                 <div className="col-md-12">
-                  <label className="form-label">Select Services (Multiple) <span className="text-danger">*</span></label>
+                  <label className="form-label">
+                    Select Services (Multiple){" "}
+                    <span className="text-danger">*</span>
+                  </label>
                   <CreatableSelect
                     isMulti
                     isSearchable
@@ -1526,7 +1632,8 @@ const BookServicesLayer = () => {
                   />
                   {selectedServices.length > 0 && (
                     <small className="text-muted d-block mt-1">
-                      First service ({selectedServices[0].label}) will be the main service. Others will be included.
+                      First service ({selectedServices[0].label}) will be the
+                      main service. Others will be included.
                     </small>
                   )}
                 </div>

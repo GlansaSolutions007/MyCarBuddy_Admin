@@ -1006,7 +1006,7 @@ const BookingViewLayer = () => {
                       <Link
                         to={`/book-service/${bookingData?.LeadId}`}
                         className="btn btn-info btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
-                        title="Edit"
+                        title="Add"
                       >
                         Add Services
                       </Link>
