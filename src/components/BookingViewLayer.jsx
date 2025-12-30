@@ -88,8 +88,8 @@ const BookingViewLayer = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-  setIsPaid(!!bookingData?.Payments);
-}, [bookingData]);
+    setIsPaid(!!bookingData?.Payments);
+  }, [bookingData]);
 
   const fetchBookingData = async () => {
     try {
@@ -741,7 +741,6 @@ const BookingViewLayer = () => {
   };
 
   const handleGenerateFinalInvoice = async () => {
-
     // navigate(`/invoice-view/${bookingData.BookingID}`);
 
     if (!bookingData || !bookingData.LeadId) {
@@ -765,8 +764,7 @@ const BookingViewLayer = () => {
         res.data.message || "Failed to generate invoice.",
         "success"
       );
-       navigate(`/invoice-view/${bookingData.BookingID}`);
-
+      navigate(`/invoice-view/${bookingData.BookingID}`);
     } catch (error) {
       console.error("Generate Final Invoice Error:", error);
       Swal.fire("Error", "Failed to generate final invoice.", "error");
@@ -774,301 +772,193 @@ const BookingViewLayer = () => {
   };
 
   const handleConfirmPayment = async () => {
-  try {
-    if (!bookingData) {
-      Swal.fire("Error", "Booking data not available", "error");
-      return;
-    }
-
-    // ✅ SAME TOTAL AS BILLING SUMMARY
+    try {
+      if (!bookingData) {
+        Swal.fire("Error", "Booking data not available", "error");
+        return;
+      }
+      // ✅ SAME TOTAL AS BILLING SUMMARY
       const billingTotalAmount = Number(
-  (bookingData?.TotalPrice || 0) +
-    (bookingData?.GSTAmount || 0) +
-    (bookingData?.LabourCharges || 0) -
-    (bookingData?.CouponAmount || 0)
-).toFixed(2);
+        (bookingData?.TotalPrice || 0) +
+          (bookingData?.GSTAmount || 0) +
+          (bookingData?.LabourCharges || 0) -
+          (bookingData?.CouponAmount || 0)
+      ).toFixed(2);
 
-    // 🔔 CONFIRMATION POPUP (PUT THIS HERE)
-    const result = await Swal.fire({
-      title: "Confirm Payment",
-      text: `Total Amount: ₹${billingTotalAmount}`,
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Confirm",
-      cancelButtonText: "Cancel",
-    });
+      // 🔔 CONFIRMATION POPUP (PUT THIS HERE)
+      const result = await Swal.fire({
+        title: "Confirm Payment",
+        text: `Total Amount: ₹${billingTotalAmount}`,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Confirm",
+        cancelButtonText: "Cancel",
+      });
 
-    // ❌ If user clicks Cancel → STOP
-    if (!result.isConfirmed) return;
+      // ❌ If user clicks Cancel → STOP
+      if (!result.isConfirmed) return;
 
-    // ✅ API CALL ONLY AFTER CONFIRM
-    const payload = {
-      bookingID: bookingData.BookingID,
-      amount: Number(billingTotalAmount),
-    };
+      // ✅ API CALL ONLY AFTER CONFIRM
+      const payload = {
+        bookingID: bookingData.BookingID,
+        amount: Number(billingTotalAmount),
+      };
 
-    const res = await axios.post(
-      `${API_BASE}Leads/MarkBookingPaid`,
-      payload,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+      const res = await axios.post(
+        `${API_BASE}Leads/MarkBookingPaid`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    if (res?.data?.success) {
-      Swal.fire("Success", "Payment confirmed successfully", "success");
-      setIsPaid(true);
-      fetchBookingData();
-    } else {
-      Swal.fire("Error", "Payment confirmation failed", "error");
+      if (res?.data?.success) {
+        Swal.fire("Success", "Payment confirmed successfully", "success");
+        setIsPaid(true);
+        fetchBookingData();
+      } else {
+        Swal.fire("Error", "Payment confirmation failed", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Error", "Something went wrong", "error");
     }
-  } catch (err) {
-    console.error(err);
-    Swal.fire("Error", "Something went wrong", "error");
-  }
-};
+  };
 
   return (
     <div className="row gy-4 mt-3">
-      {/* Left Profile + Billing Summary (Vertical Stack) */}
-      <div className="col-lg-4">
-        {/* Profile Card */}
-        <div className="user-grid-card position-relative border radius-16 overflow-hidden bg-base mb-3">
-          {bookingData ? (
-            <div className="pb-24 ms-16 mb-24 me-16">
-              <div className="text-center border border-top-0 border-start-0 border-end-0">
-                {bookingData.ProfileImage ? (
-                  <img
-                    src={`${API_IMAGE}${bookingData.ProfileImage}`}
-                    alt="Profile"
-                    className="border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover"
-                  />
-                ) : (
-                  <img
-                    src="/assets/images/user-grid/user-grid-img14.png"
-                    alt="Default"
-                    className="border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover"
-                  />
-                )}
-                <h6 className="mb-0 mt-16">
-                  {bookingData.CustomerName || "N/A"}
-                </h6>
-              </div>
+      {/* Right Tabs Content */}
+      <div className="col-lg-12">
+        <div className="card h-100">
+          <div className="card-body p-24">
+            {bookingData ? (
+              <Accordion className="mb-3">
+                <Accordion.Item eventKey="0">
+                  <Accordion.Header>
+                    <h6 className="mb-2 fw-bold text-primary">
+                      👤 Personal Information
+                    </h6>
+                  </Accordion.Header>
 
-              <div className="mt-24">
-                <h6 className="text-xl mb-16">Personal Info</h6>
-                <ul>
-                  <li className="d-flex align-items-center gap-1 mb-12">
-                    <span className="w-50 text-md fw-semibold text-primary-light">
-                      Full Name
-                    </span>
-                    <span className="w-70 text-secondary-light fw-medium">
-                      : {bookingData.CustomerName || "N/A"}
-                    </span>
-                  </li>
-                  <li className="d-flex align-items-center gap-1 mb-12">
-                    <span className="w-50 text-md fw-semibold text-primary-light">
-                      Phone Number
-                    </span>
-                    <span className="w-70 text-secondary-light fw-medium">
-                      : {bookingData.PhoneNumber}
-                    </span>
-                  </li>
-                  <li className="d-flex align-items-center gap-1 mb-12">
-                    <span className="w-50 text-md fw-semibold text-primary-light">
-                      Vehicle
-                    </span>
-                    <span className="w-70 text-secondary-light fw-medium">
-                      : {bookingData.VehicleNumber}
-                    </span>
-                  </li>
+                  <Accordion.Body>
+                    <div className="row g-4 align-items-start">
+                      {/* ================= IMAGE ================= */}
+                      <div className="col-lg-3 col-md-4 col-12 text-center">
+                        <div className="pb-3">
+                          {bookingData.ProfileImage ? (
+                            <img
+                              src={`${API_IMAGE}${bookingData.ProfileImage}`}
+                              alt="User"
+                              className="border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover"
+                            />
+                          ) : (
+                            <img
+                              src="/assets/images/user-grid/user-grid-img14.png"
+                              alt="Default User"
+                              className="border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover"
+                            />
+                          )}
+                        </div>
+                      </div>
 
-                  {/* If both are missing */}
-                  {!bookingData.TechFullName && !bookingData.SupervisorName ? (
-                    <li className="d-flex align-items-center gap-1 mb-12">
-                      <span className="w-50 text-md fw-semibold text-primary-light">
-                        Assigned To
-                      </span>
-                      <span className="w-70 text-secondary-light fw-medium">
-                        : N/A
-                      </span>
-                    </li>
-                  ) : (
-                    <>
-                      {/* Technician Details */}
-                      {bookingData.TechFullName && (
-                        <>
+                      {/* ================= PERSONAL INFO ================= */}
+                      <div className="col-lg-9 col-md-8 col-12">
+                        <ul className="mb-0">
                           <li className="d-flex align-items-center gap-1 mb-12">
-                            <span className="w-50 text-md fw-semibold text-primary-light">
-                              Technician Name
+                            <span className="w-50 fw-semibold text-primary-light">
+                              Customer Name
                             </span>
-                            <span className="w-70 text-secondary-light fw-medium">
-                              : {bookingData.TechFullName}
+                            <span className="w-70 text-secondary-light fw-bold">
+                              : {bookingData.CustomerName || "N/A"}
                             </span>
                           </li>
-                          {bookingData.TechPhoneNumber && (
-                            <li className="d-flex align-items-center gap-1 mb-12">
-                              <span className="w-50 text-md fw-semibold text-primary-light">
-                                Technician Number
-                              </span>
-                              <span className="w-70 text-secondary-light fw-medium">
-                                : {bookingData.TechPhoneNumber}
-                              </span>
-                            </li>
-                          )}
-                        </>
-                      )}
 
-                      {/* Supervisor Details */}
-                      {bookingData.SupervisorName && (
-                        <>
                           <li className="d-flex align-items-center gap-1 mb-12">
-                            <span className="w-50 text-md fw-semibold text-primary-light">
-                              Supervisor Name
+                            <span className="w-50 fw-semibold text-primary-light">
+                              Phone Number
                             </span>
-                            <span className="w-70 text-secondary-light fw-medium">
-                              : {bookingData.SupervisorName}
+                            <span className="w-70 text-secondary-light fw-bold">
+                              : {bookingData.PhoneNumber || "—"}
                             </span>
                           </li>
-                          {bookingData.SupervisorPhoneNumber && (
+
+                          <li className="d-flex align-items-center gap-1 mb-12">
+                            <span className="w-50 fw-semibold text-primary-light">
+                              Vehicle Number
+                            </span>
+                            <span className="w-70 text-secondary-light fw-bold">
+                              : {bookingData.VehicleNumber || "—"}
+                            </span>
+                          </li>
+
+                          {/* Assigned To */}
+                          {!bookingData.TechFullName &&
+                          !bookingData.SupervisorName ? (
                             <li className="d-flex align-items-center gap-1 mb-12">
-                              <span className="w-50 text-md fw-semibold text-primary-light">
-                                Supervisor Number
+                              <span className="w-50 fw-semibold text-primary-light">
+                                Assigned To
                               </span>
-                              <span className="w-70 text-secondary-light fw-medium">
-                                : {bookingData.SupervisorPhoneNumber}
+                              <span className="w-70 text-secondary-light fw-bold">
+                                : N/A
                               </span>
                             </li>
+                          ) : (
+                            <>
+                              {bookingData.TechFullName && (
+                                <>
+                                  <li className="d-flex align-items-center gap-1 mb-12">
+                                    <span className="w-50 fw-semibold text-primary-light">
+                                      Technician
+                                    </span>
+                                    <span className="w-70 text-secondary-light fw-bold">
+                                      : {bookingData.TechFullName}
+                                    </span>
+                                  </li>
+
+                                  {bookingData.TechPhoneNumber && (
+                                    <li className="d-flex align-items-center gap-1 mb-12">
+                                      <span className="w-50 fw-semibold text-primary-light">
+                                        Technician Number
+                                      </span>
+                                      <span className="w-70 text-secondary-light fw-bold">
+                                        : {bookingData.TechPhoneNumber}
+                                      </span>
+                                    </li>
+                                  )}
+                                </>
+                              )}
+
+                              {bookingData.SupervisorName && (
+                                <>
+                                  <li className="d-flex align-items-center gap-1 mb-12">
+                                    <span className="w-50 fw-semibold text-primary-light">
+                                      Supervisor
+                                    </span>
+                                    <span className="w-70 text-secondary-light fw-bold">
+                                      : {bookingData.SupervisorName}
+                                    </span>
+                                  </li>
+
+                                  {bookingData.SupervisorPhoneNumber && (
+                                    <li className="d-flex align-items-center gap-1 mb-12">
+                                      <span className="w-50 fw-semibold text-primary-light">
+                                        Supervisor Number
+                                      </span>
+                                      <span className="w-70 text-secondary-light fw-bold">
+                                        : {bookingData.SupervisorPhoneNumber}
+                                      </span>
+                                    </li>
+                                  )}
+                                </>
+                              )}
+                            </>
                           )}
-                        </>
-                      )}
-                    </>
-                  )}
-                </ul>
-
-                {/* Invoice and Refund buttons */}
-                {bookingData.Payments &&
-                  bookingData.Payments[0] &&
-                  (bookingData.Payments[0].FolderPath ||
-                    bookingData.Payments[0].IsRefunded) && (
-                    <div className="d-flex gap-2 mt-3">
-                      {bookingData.Payments[0].FolderPath && (
-                        <a
-                          href={bookingData.Payments[0].FolderPath}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="btn btn-warning btn-sm"
-                        >
-                          Invoice
-                        </a>
-                      )}
-                      {bookingData.Payments[0].IsRefunded && (
-                        <button
-                          onClick={() => handleRefund(bookingData.Payments[0])}
-                          className="btn btn-danger btn-sm"
-                        >
-                          Refund
-                        </button>
-                      )}
+                        </ul>
+                      </div>
                     </div>
-                  )}
-
-                {/* Reschedule & Reassign Buttons */}
-                {bookingData &&
-                  !["Completed", "Cancelled", "Refunded"].includes(
-                    bookingData.BookingStatus
-                  ) && (
-                    <div className="d-flex gap-2 mt-3">
-                      <button
-                        className="btn btn-warning btn-sm"
-                        onClick={() => setShowReschedule(!showReschedule)}
-                      >
-                        Reschedule
-                      </button>
-                      {/* BUTTON 1 — your current condition, but ONLY when roleId !== "8" */}
-                      {roleId !== "8" &&
-                        (bookingData.TechID || bookingData.SupervisorID) && (
-                          <button
-                            className="btn btn-info btn-sm"
-                            onClick={() => handleAssignClick()}
-                          >
-                            Reassign
-                          </button>
-                        )}
-
-                      {/* BUTTON 2 — only for roleId = "8" AND TechID available */}
-                      {roleId === "8" && bookingData.TechID && (
-                        <button
-                          className="btn btn-info btn-sm"
-                          onClick={() => handleAssignClick()}
-                        >
-                          Reassign
-                        </button>
-                      )}
-                      <Link
-                        to={`/book-service/${bookingData?.LeadId}`}
-                        className="btn btn-info btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
-                        title="Add"
-                      >
-                        Add Services
-                      </Link>
-                    </div>
-                  )}
-
-                {/* Reschedule Form */}
-                {showReschedule && (
-                  <div className="mt-3">
-                    <label className="form-label mt-2">Reschedule Date :</label>
-                    <input
-                      type="date"
-                      className="form-control mb-2"
-                      value={newDate}
-                      onChange={(e) => setNewDate(e.target.value)}
-                    />
-                    <label className="form-label mt-2">Time Slots :</label>
-                    <select
-                      className="form-select mb-2"
-                      value={selectedTimeSlot}
-                      onChange={(e) => setSelectedTimeSlot(e.target.value)}
-                    >
-                      <option value="">Select a time slot</option>
-                      {timeSlots
-                        .filter((slot) => slot.IsActive)
-                        .sort((a, b) => {
-                          const [aHour, aMinute] =
-                            a.StartTime.split(":").map(Number);
-                          const [bHour, bMinute] =
-                            b.StartTime.split(":").map(Number);
-                          return aHour * 60 + aMinute - (bHour * 60 + bMinute);
-                        })
-                        .map((slot) => (
-                          <option
-                            key={slot.TsID}
-                            value={`${slot.StartTime} - ${slot.EndTime}`}
-                          >
-                            {formatTime(slot.StartTime)} -{" "}
-                            {formatTime(slot.EndTime)}
-                          </option>
-                        ))}
-                    </select>
-                    <label className="form-label mt-2">Reschedule Reason</label>
-                    <textarea
-                      className="form-control"
-                      placeholder="Reason"
-                      value={reason}
-                      onChange={(e) => setReason(e.target.value)}
-                    ></textarea>
-                    <button
-                      className="btn btn-primary btn-sm mt-3"
-                      onClick={handleReschedule}
-                    >
-                      Submit Reschedule
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="pb-24 ms-16 mb-24 me-16">
-              <div className="text-center border border-top-0 border-start-0 border-end-0">
+                  </Accordion.Body>
+                </Accordion.Item>
+              </Accordion>
+            ) : (
+              <div className="pb-24 ms-16 mb-24 me-16 text-center">
                 <img
                   src="/assets/images/user-grid/user-grid-img14.png"
                   alt="Default User"
@@ -1076,104 +966,168 @@ const BookingViewLayer = () => {
                 />
                 <h6 className="mb-0 mt-16">Loading...</h6>
               </div>
-            </div>
-          )}
+            )}
+            {/* ================= CAR PICKUP / DROP ACCORDION ================= */}
+<div className="accordion mb-3" id="carPickupDropAccordion">
+  <div className="accordion-item border radius-16">
+    <h2 className="accordion-header" id="headingPickupDrop">
+      <button
+        className="accordion-button collapsed fw-semibold gap-2"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#collapsePickupDrop"
+        aria-expanded="false"
+        aria-controls="collapsePickupDrop"
+      >
+         <i className="bi bi-car-front-fill "></i>
+        <span className="fw-semibold text-primary">Car Pickup & Drop Details</span>
+      </button>
+    </h2>
+
+    <div
+      id="collapsePickupDrop"
+      className="accordion-collapse collapse"
+      aria-labelledby="headingPickupDrop"
+      data-bs-parent="#carPickupDropAccordion"
+    >
+      <div className="accordion-body">
+        <div className="row g-3">
+
+          {/* Pickup Date */}
+          <div className="col-md-3">
+            <label className="form-label fw-bold">
+              Pickup Date
+            </label>
+            <input
+              type="date"
+              className="form-control"
+            />
+          </div>
+
+          {/* Pickup Time */}
+          <div className="col-md-3">
+            <label className="form-label fw-bold">
+              Pickup Time
+            </label>
+            <input
+              type="time"
+              className="form-control"
+            />
+          </div>
+
+          {/* Drop Date */}
+          <div className="col-md-3">
+            <label className="form-label fw-bold">
+              Drop Date
+            </label>
+            <input
+              type="date"
+              className="form-control"
+            />
+          </div>
+
+          {/* Drop Time */}
+          <div className="col-md-3">
+            <label className="form-label fw-bold">
+              Drop Time
+            </label>
+            <input
+              type="time"
+              className="form-control"
+            />
+          </div>
+
         </div>
 
-        {/* Billing Summary Card (below profile) */}
-        <div className="card border-0 shadow-sm radius-16 bg-white mt-3">
-          <div className="card-body">
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h6 className="fw-bold text-primary mb-0">Billing Summary</h6>
-              {bookingData?.Payments?.length > 0 &&
-                (() => {
-                  const rawStatus =
-                    bookingData.Payments[0].PaymentStatus || "-";
-                  const status = rawStatus === "Success" ? "Paid" : rawStatus;
-
-                  // Color map like your sample code
-                  const colorMap = {
-                    Paid: "#28A745", // Green
-                    Pending: "#F57C00", // Orange
-                    Refunded: "#25878F", // Teal-blue
-                    Failed: "#E34242", // Red
-                    "-": "#BFBFBF", // Grey
-                  };
-
-                  const color = colorMap[status] || "#6c757d";
-
-                  return (
-                    <span
-                      className="fw-semibold d-flex align-items-center"
-                      style={{ fontSize: "13px", fontWeight: 500 }}
-                    >
-                      <span
-                        className="rounded-circle d-inline-block me-1"
-                        style={{
-                          width: "10px",
-                          height: "10px",
-                          backgroundColor: color,
-                        }}
-                      ></span>
-
-                      <span style={{ color }}>{status}</span>
-                    </span>
-                  );
-                })()}
-            </div>
-
-            {bookingData ? (
-              <ul className="list-group list-group-flush">
-                <li className="list-group-item d-flex justify-content-between">
-                  <span className="fw-semibold text-secondary">Price</span>
-                  <span>₹{Number(bookingData.TotalPrice || 0).toFixed(2)}</span>
-                </li>
-
-                <li className="list-group-item d-flex justify-content-between">
-                  <span className="fw-semibold text-secondary">GST</span>
-                  <span>₹{Number(bookingData.GSTAmount || 0).toFixed(2)}</span>
-                </li>
-
-                <li className="list-group-item d-flex justify-content-between">
-                  <span className="fw-semibold text-secondary">
-                    Labour Charges
-                  </span>
-                  <span>₹{Number(bookingData.LabourCharges || 0).toFixed(2)}</span>
-                </li>
-
-                {bookingData.CouponAmount ? (
-                  <li className="list-group-item d-flex justify-content-between">
-                    <span className="fw-semibold text-secondary">Coupon</span>
-                    <span>
-                      - ₹{Number(bookingData.CouponAmount || 0).toFixed(2)}
-                    </span>
-                  </li>
-                ) : null}
-
-                <li className="list-group-item d-flex justify-content-between border-top mt-2 pt-2">
-                  <span className="fw-bold text-dark">Total Amount</span>
-                  <span className="fw-bold text-success">
-                    ₹
-                    {Number(
-                      (bookingData.TotalPrice || 0) +
-                        (bookingData.GSTAmount || 0) +
-                        (bookingData.LabourCharges || 0) -
-                        (bookingData.CouponAmount || 0)
-                    ).toFixed(2)}
-                  </span>
-                </li>
-              </ul>
-            ) : (
-              <p className="text-muted mb-0">Loading summary...</p>
-            )}
-          </div>
+        {/* Action buttons (optional for now) */}
+        <div className="d-flex justify-content-center gap-2 mt-4">
+          <button className="btn btn-primary btn-sm">
+            Submit Details
+          </button>
+          
         </div>
       </div>
+    </div>
+  </div>
+</div>
 
-      {/* Right Tabs Content */}
-      <div className="col-lg-8">
-        <div className="card h-100">
-          <div className="card-body p-24">
+            {/* ================= RESCHEDULE SECTION ================= */}
+            {showReschedule && bookingData && (
+              <div className="card border radius-16 mb-3">
+                <div className="card-body p-24">
+                  <h6 className="fw-bold mb-3 text-primary">
+                    Reschedule Booking
+                  </h6>
+
+                  <div className="row g-3">
+                    <div className="col-md-4">
+                      <label className="form-label">Reschedule Date</label>
+                      <input
+                        type="date"
+                        className="form-control"
+                        value={newDate}
+                        onChange={(e) => setNewDate(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="col-md-4">
+                      <label className="form-label">Time Slot</label>
+                      <select
+                        className="form-select"
+                        value={selectedTimeSlot}
+                        onChange={(e) => setSelectedTimeSlot(e.target.value)}
+                      >
+                        <option value="">Select a time slot</option>
+                        {timeSlots
+                          .filter((slot) => slot.IsActive)
+                          .sort((a, b) => {
+                            const [aH, aM] = a.StartTime.split(":").map(Number);
+                            const [bH, bM] = b.StartTime.split(":").map(Number);
+                            return aH * 60 + aM - (bH * 60 + bM);
+                          })
+                          .map((slot) => (
+                            <option
+                              key={slot.TsID}
+                              value={`${slot.StartTime} - ${slot.EndTime}`}
+                            >
+                              {formatTime(slot.StartTime)} -{" "}
+                              {formatTime(slot.EndTime)}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
+                    <div className="col-md-4">
+                      <label className="form-label">Reason</label>
+                      <textarea
+                        className="form-control"
+                        rows="1"
+                        placeholder="Enter reason"
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-3 d-flex justify-content-center gap-2">
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={handleReschedule}
+                    >
+                      Submit Reschedule
+                    </button>
+
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => setShowReschedule(false)}
+                    >
+                      Cancel Reschedule
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* <div className="d-flex justify-content-end mb-3">
               <button
                 className="btn btn-primary"
@@ -1195,25 +1149,77 @@ const BookingViewLayer = () => {
 
               {/* Push button to the end */}
               <li className="nav-item ms-auto m-1 d-flex gap-2">
-                {/* Show Confirm Payment only if not paid */}
-                {!isPaid && (
-                  <button
-                    className="btn btn-warning btn-sm d-inline-flex align-items-center"
-                    onClick={handleConfirmPayment}
-                  >
-                    Confirm Payment
-                  </button>
-                )}
+                {/* Invoice and Refund buttons */}
+                {bookingData &&
+                  bookingData.Payments &&
+                  bookingData.Payments[0] &&
+                  (bookingData.Payments[0].FolderPath ||
+                    bookingData.Payments[0].IsRefunded) && (
+                    <div className="d-flex gap-2">
+                      {/* {bookingData.Payments[0].FolderPath && (
+                        <a
+                          href={bookingData.Payments[0].FolderPath}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-warning btn-sm"
+                        >
+                          Invoice
+                        </a>
+                      )} */}
 
-                {/* Show Generate Invoice only if paid */}
-                {isPaid && (
-                  <button
-                    className="btn btn-info btn-sm d-inline-flex align-items-center"
-                    onClick={handleGenerateFinalInvoice}
-                  >
-                    Generate Invoice
-                  </button>
-                )}
+                      {bookingData.Payments[0].IsRefunded && (
+                        <button
+                          onClick={() => handleRefund(bookingData.Payments[0])}
+                          className="btn btn-danger btn-sm"
+                        >
+                          Refund
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                {/* Reschedule & Reassign Buttons */}
+                {bookingData &&
+                  !["Completed", "Cancelled", "Refunded"].includes(
+                    bookingData.BookingStatus
+                  ) && (
+                    <div className="d-flex gap-2 flex-wrap">
+                      <button
+                        className="btn btn-warning btn-sm d-inline-flex align-items-center"
+                        onClick={() => setShowReschedule(!showReschedule)}
+                      >
+                        Reschedule
+                      </button>
+
+                      {/* BUTTON 1 — your current condition, but ONLY when roleId !== "8" */}
+                      {roleId !== "8" &&
+                        (bookingData.TechID || bookingData.SupervisorID) && (
+                          <button
+                            className="btn btn-info btn-sm d-inline-flex align-items-center"
+                            onClick={() => handleAssignClick()}
+                          >
+                            Reassign
+                          </button>
+                        )}
+
+                      {/* BUTTON 2 — only for roleId = "8" AND TechID available */}
+                      {roleId === "8" && bookingData.TechID && (
+                        <button
+                          className="btn btn-info btn-sm d-inline-flex align-items-center"
+                          onClick={() => handleAssignClick()}
+                        >
+                          Reassign
+                        </button>
+                      )}
+                    </div>
+                  )}
+                <Link
+                  to={`/book-service/${bookingData?.LeadId}`}
+                  className="btn btn-info btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
+                  title="Add"
+                >
+                  Add/Edit Services
+                </Link>
               </li>
 
               {/* {bookingData &&
@@ -1238,9 +1244,7 @@ const BookingViewLayer = () => {
               {/* ====================== BOOKINGS TAB ====================== */}
               <div className="tab-pane fade show active" id="booking">
                 {bookingData ? (
-                  <Accordion
-                    defaultActiveKey="0"
-                    className="styled-booking-accordion"
+                  <Accordion defaultActiveKey="0" className="styled-booking-accordion"
                   >
                     <Accordion.Item
                       eventKey="0"
@@ -1265,6 +1269,45 @@ const BookingViewLayer = () => {
                                 </small>
                               </div>
                             </div>
+                            <div className="d-flex align-items-center gap-2 flex-wrap">
+                             {bookingData?.Payments?.length > 0 &&
+  (() => {
+    const rawStatus =
+      bookingData.Payments?.[0]?.PaymentStatus || "-";
+    const status =
+      rawStatus === "Success" ? "Paid" : rawStatus;
+
+    const colorMap = {
+      Paid: "#28A745",
+      Pending: "#F57C00",
+      Refunded: "#25878F",
+      Failed: "#E34242",
+      "-": "#BFBFBF",
+    };
+
+    const color = colorMap[status] || "#6c757d";
+
+    return (
+      <span
+        className="fw-semibold d-flex align-items-center"
+        style={{ fontSize: "13px" }}
+      >
+        <span
+          className="badge"
+          style={{
+            backgroundColor: color,
+            fontSize: "11px",
+            fontWeight: 500,
+            padding: "4px 10px",
+            borderRadius: "12px",
+          }}
+        >
+          {status}
+        </span>
+      </span>
+    );
+  })()}
+
                             <span
                               className={`badge px-3 py-1 rounded-pill ${
                                 bookingData.BookingStatus === "Completed"
@@ -1276,6 +1319,7 @@ const BookingViewLayer = () => {
                             >
                               {bookingData.BookingStatus}
                             </span>
+                            </div>
                           </div>
                         </div>
                       </Accordion.Header>
@@ -1297,7 +1341,7 @@ const BookingViewLayer = () => {
                                     className="overflow-auto"
                                     style={{
                                       maxHeight: "300px",
-                                      paddingRight: "6px",
+                                      paddingRight: "3px",
                                     }}
                                   >
                                     <ul className="list-group list-group-flush">
@@ -1409,7 +1453,7 @@ const BookingViewLayer = () => {
                                 <div
                                   className="table-responsive"
                                   style={{
-                                    maxHeight: "620px",
+                                    maxHeight: "800px",
                                     overflowX: "auto",
                                   }}
                                 >
@@ -1425,20 +1469,24 @@ const BookingViewLayer = () => {
                                       style={{ zIndex: 2 }}
                                     >
                                       <tr>
-                                        <th style={{ width: "130px" }}>Type</th>
+                                        <th style={{ width: "100px" }}>Type</th>
                                         <th style={{ width: "180px" }}>
                                           Service Name
                                         </th>
-                                       
-                                        <th style={{ width: "160px" }}>
-                                          Created Date
+                                        <th style={{ width: "100px" }}>
+                                          Date
                                         </th>
-
+                                        <th
+                                          style={{ width: "100px" }}
+                                          className="text-end"
+                                        >
+                                          Base Price
+                                        </th>
                                         <th
                                           style={{ width: "120px" }}
                                           className="text-end"
                                         >
-                                          Base Price
+                                          Labour Chg.
                                         </th>
                                         <th
                                           style={{ width: "90px" }}
@@ -1447,39 +1495,34 @@ const BookingViewLayer = () => {
                                           GST %
                                         </th>
                                         <th
-                                          style={{ width: "120px" }}
+                                          style={{ width: "100px" }}
                                           className="text-end"
                                         >
                                           GST Amt.
                                         </th>
                                         <th
-                                          style={{ width: "150px" }}
+                                          style={{ width: "100px" }}
                                           className="text-end"
                                         >
-                                          Labour Charges (₹)
+                                          Our %
                                         </th>
                                         <th
-                                          style={{ width: "120px" }}
+                                          style={{ width: "100px" }}
                                           className="text-end"
                                         >
-                                          Company %
-                                        </th>
-                                        <th
-                                          style={{ width: "160px" }}
-                                          className="text-end"
-                                        >
-                                          Our Earnings (₹)
+                                          Our Amt.
                                         </th>
 
                                         <th
-                                          style={{ width: "140px" }}
+                                          style={{ width: "100px" }}
                                           className="text-end"
                                         >
                                           Total Amt
                                         </th>
-                                        <th style={{ width: "200px" }}>
+                                        {/* <th style={{ width: "200px" }}
+                                        className="text-center">
                                           Description
-                                        </th>
+                                        </th> */}
                                       </tr>
                                     </thead>
 
@@ -1495,23 +1538,35 @@ const BookingViewLayer = () => {
                                                 <strong className="text-dark">
                                                   {addon.ServiceName || "—"}
                                                 </strong>
-                                                {addon.Includes && Array.isArray(addon.Includes) && addon.Includes.length > 0 && (
-                                                  <ul className="text-muted small ps-3 mb-0 mt-2">
-                                                    {addon.Includes.map((inc) => (
-                                                      <li key={inc.IncludeID || inc.id}>
-                                                        {inc.IncludeName || inc.name}
-                                                      </li>
-                                                    ))}
-                                                  </ul>
-                                                )}
+                                                {addon.Includes &&
+                                                  Array.isArray(
+                                                    addon.Includes
+                                                  ) &&
+                                                  addon.Includes.length > 0 && (
+                                                    <ul className="text-muted small ps-3 mb-0 mt-2">
+                                                      {addon.Includes.map(
+                                                        (inc) => (
+                                                          <li
+                                                            key={
+                                                              inc.IncludeID ||
+                                                              inc.id
+                                                            }
+                                                          >
+                                                            {inc.IncludeName ||
+                                                              inc.name}
+                                                          </li>
+                                                        )
+                                                      )}
+                                                    </ul>
+                                                  )}
                                               </div>
                                             </td>
-                                           
+
                                             <td className="normal">
                                               {addon.CreatedDate
                                                 ? new Date(
                                                     addon.CreatedDate
-                                                  ).toLocaleString("en-IN")
+                                                  ).toLocaleDateString("en-IN")
                                                 : "—"}
                                             </td>
                                             <td className="text-end">
@@ -1521,18 +1576,18 @@ const BookingViewLayer = () => {
                                               ).toFixed(2)}
                                             </td>
                                             <td className="text-end">
+                                              ₹
+                                              {Number(
+                                                addon.LabourCharges || 0
+                                              ).toFixed(2)}
+                                            </td>
+                                            <td className="text-end">
                                               {addon.GSTPercent ?? 0}%
                                             </td>
                                             <td className="text-end">
                                               ₹
                                               {Number(
                                                 addon.GSTPrice || 0
-                                              ).toFixed(2)}
-                                            </td>
-                                            <td className="text-end">
-                                              ₹
-                                              {Number(
-                                                addon.LabourCharges || 0
                                               ).toFixed(2)}
                                             </td>
                                             <td className="text-end">
@@ -1557,7 +1612,7 @@ const BookingViewLayer = () => {
                                                 wordBreak: "break-word",
                                               }}
                                             >
-                                              {addon.Description || "—"}
+                                              {/* {addon.Description || "—"} */}
                                             </td>
                                           </tr>
                                         )
@@ -1568,7 +1623,120 @@ const BookingViewLayer = () => {
                               </div>
                             </div>
                           )}
+                          <div className="d-flex justify-content-between align-items-center mb-2 mt-2">
+                            <h6 className="fw-bold mb-0">Billing Summary</h6>
+                            {/* {bookingData?.Payments?.length > 0 &&
+                              (() => {
+                                const rawStatus =
+                                  bookingData.Payments?.[0]?.PaymentStatus ||
+                                  "-";
+                                const status =
+                                  rawStatus === "Success" ? "Paid" : rawStatus;
 
+                                // Color map like your sample code
+                                const colorMap = {
+                                  Paid: "#28A745", // Green
+                                  Pending: "#F57C00", // Orange
+                                  Refunded: "#25878F", // Teal-blue
+                                  Failed: "#E34242", // Red
+                                  "-": "#BFBFBF", // Grey
+                                };
+
+                                const color = colorMap[status] || "#6c757d";
+
+                                return (
+                                  <span
+                                    className="fw-semibold d-flex align-items-center"
+                                    style={{
+                                      fontSize: "13px",
+                                      fontWeight: 500,
+                                    }}
+                                  >
+                                    <span
+                                      className="rounded-circle d-inline-block me-1"
+                                      style={{
+                                        width: "10px",
+                                        height: "10px",
+                                        backgroundColor: color,
+                                      }}
+                                    ></span>
+
+                                    <span style={{ color }}>{status}</span>
+                                  </span>
+                                );
+                              })()} */}
+                          </div>
+
+                          {bookingData ? (
+                            <ul className="list-group list-group-flush">
+                              <li className="list-group-item d-flex justify-content-between">
+                                <span className="fw-semibold text-secondary">
+                                  Base Price
+                                </span>
+                                <span>
+                                  ₹
+                                  {Number(bookingData.TotalPrice || 0).toFixed(
+                                    2
+                                  )}
+                                </span>
+                              </li>
+                              <li className="list-group-item d-flex justify-content-between">
+                                <span className="fw-semibold text-secondary">
+                                  Labour Charges
+                                </span>
+                                <span>
+                                  ₹
+                                  {Number(
+                                    bookingData.LabourCharges || 0
+                                  ).toFixed(2)}
+                                </span>
+                              </li>
+                              <li className="list-group-item d-flex justify-content-between">
+                                <span className="fw-semibold text-secondary">
+                                  GST Total
+                                </span>
+                                <span>
+                                  ₹
+                                  {Number(bookingData.GSTAmount || 0).toFixed(
+                                    2
+                                  )}
+                                </span>
+                              </li>
+
+                              {bookingData.CouponAmount ? (
+                                <li className="list-group-item d-flex justify-content-between">
+                                  <span className="fw-semibold text-secondary">
+                                    Coupon
+                                  </span>
+                                  <span>
+                                    - ₹
+                                    {Number(
+                                      bookingData.CouponAmount || 0
+                                    ).toFixed(2)}
+                                  </span>
+                                </li>
+                              ) : null}
+
+                              <li className="list-group-item d-flex justify-content-between border-top mt-2 pt-2">
+                                <span className="fw-bold text-dark">
+                                  Total Amount
+                                </span>
+                                <span className="fw-bold text-success">
+                                  ₹
+                                  {Number(
+                                    (bookingData.TotalPrice || 0) +
+                                      (bookingData.GSTAmount || 0) +
+                                      (bookingData.LabourCharges || 0) -
+                                      (bookingData.CouponAmount || 0)
+                                  ).toFixed(2)}
+                                </span>
+                              </li>
+                            </ul>
+                          ) : (
+                            <p className="text-muted mb-0">
+                              Loading summary...
+                            </p>
+                          )}
                           {/* ============= Location Map ============= */}
                           {bookingData?.Latitude && bookingData?.Longitude && (
                             <Accordion defaultActiveKey="3">
@@ -1606,6 +1774,28 @@ const BookingViewLayer = () => {
                 )}
               </div>
             </div>
+            <div className="d-flex justify-content-center gap-2 mt-3">
+  {/* Show Confirm Payment only if not paid */}
+  {!isPaid && (
+    <button
+      className="btn btn-warning btn-sm d-inline-flex align-items-center"
+      onClick={handleConfirmPayment}
+    >
+      Confirm Payment
+    </button>
+  )}
+
+  {/* Show Generate Invoice only if paid */}
+  {isPaid && (
+    <button
+      className="btn btn-info btn-sm d-inline-flex align-items-center"
+      onClick={handleGenerateFinalInvoice}
+    >
+      Generate Invoice
+    </button>
+  )}
+</div>
+
           </div>
         </div>
       </div>

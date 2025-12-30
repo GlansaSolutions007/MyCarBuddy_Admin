@@ -50,6 +50,8 @@ const LeadViewLayer = () => {
   const [personalMobileNo, setPersonalMobileNo] = useState("");
   const [personalEmail, setPersonalEmail] = useState("");
   const [personalFullAddress, setPersonalFullAddress] = useState("");
+  const [gstNumber, setGstNumber] = useState("");
+  const [gstName, setGstName] = useState("");
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
   const [bookings, setBookings] = useState([]);
@@ -66,6 +68,7 @@ const LeadViewLayer = () => {
     Array.isArray(lead?.FollowUps) && lead.FollowUps.length > 0;
   const hasCurrentLeadBooking = currentBookings.length > 0;
   const isCustomerConverted = lead?.CustID !== null;
+  const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
   const navigate = useNavigate();
 
@@ -111,7 +114,8 @@ const LeadViewLayer = () => {
       setPersonalMobileNo(lead.PhoneNumber || "");
       setPersonalEmail(lead.Email || "");
       setPersonalFullAddress(lead.City || ""); // Full address comes from City field
-
+      setGstNumber(lead.GSTNumber || "");
+      setGstName(lead.GSTName || "");
       // Prefill Car Details if available
       if (lead.VehiclesDetails && lead.VehiclesDetails.length > 0) {
         const vehicle = lead.VehiclesDetails[0];
@@ -471,6 +475,8 @@ const LeadViewLayer = () => {
       FullName: personalFullName,
       PhoneNumber: personalMobileNo,
       Email: personalEmail,
+      GSTNumber: gstNumber,
+      GSTName: gstName,
       City: personalFullAddress,
       Latitude: latitude,
       Longitude: longitude,
@@ -498,8 +504,9 @@ const LeadViewLayer = () => {
         PhoneNumber: personalMobileNo,
         Email: personalEmail,
         City: personalFullAddress,
+        GSTNumber: gstNumber,
+        GSTName: gstName,
       }));
-
       Swal.fire({
         icon: "success",
         title: "Personal Information Saved",
@@ -1171,8 +1178,12 @@ const LeadViewLayer = () => {
                             className="form-control"
                             value={personalFullName}
                             onChange={(e) => {
-                              const val = e.target.value;
-                              if (val.length <= 30) setPersonalFullName(val);
+                              let val = e.target.value;
+                              if (val.length <= 30) {
+                                val =
+                                  val.charAt(0).toUpperCase() + val.slice(1);
+                                setPersonalFullName(val);
+                              }
                             }}
                             disabled={isLeadClosed}
                           />
@@ -1208,6 +1219,56 @@ const LeadViewLayer = () => {
                             disabled={isLeadClosed}
                           />
                         </div>
+                        <div className="col-md-6">
+                          <label className="form-label fw-semibold text-primary-light">
+                            GST Name
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={gstName}
+                            onChange={(e) => {
+                              let val = e.target.value;
+                              if (val.length > 0) {
+                                val =
+                                  val.charAt(0).toUpperCase() + val.slice(1);
+                              }
+                              setGstName(val);
+                            }}
+                            placeholder="Enter GST Name"
+                            disabled={isLeadClosed}
+                          />
+                        </div>
+                        <div className="col-md-6">
+                          <label className="form-label fw-semibold text-primary-light">
+                            GST Number
+                          </label>
+                          <input
+                            type="text"
+                            className={`form-control ${
+                              gstNumber && !GST_REGEX.test(gstNumber)
+                                ? "is-invalid"
+                                : ""
+                            }`}
+                            value={gstNumber}
+                            onChange={(e) => {
+                              let val = e.target.value.toUpperCase();
+                              val = val.replace(/[^A-Z0-9]/g, ""); // allow only alphanumeric
+                              if (val.length <= 15) {
+                                setGstNumber(val);
+                              }
+                            }}
+                            placeholder="Enter GST Number"
+                            maxLength={15}
+                            disabled={isLeadClosed}
+                          />
+
+                          {gstNumber && !GST_REGEX.test(gstNumber) && (
+                            <div className="invalid-feedback">
+                              Enter a valid 15-character GST Number
+                            </div>
+                          )}
+                        </div>
                         {/* ✅ FULL ADDRESS */}
                         <div className="col-12">
                           <label className="form-label fw-semibold text-primary-light">
@@ -1224,6 +1285,17 @@ const LeadViewLayer = () => {
                                 placeholder="Search address from Google"
                                 autoComplete="off"
                                 disabled={isLeadClosed}
+                                onChange={(e) => {
+                                  let val = e.target.value;
+                                  if (val.length > 0) {
+                                    val = val.replace(
+                                      /^(\s*)(\S)/,
+                                      (_, space, char) =>
+                                        space + char.toUpperCase()
+                                    );
+                                  }
+                                  e.target.value = val;
+                                }}
                               />
                             </Autocomplete>
                           )}
@@ -1233,7 +1305,14 @@ const LeadViewLayer = () => {
                             className="form-control"
                             value={personalFullAddress}
                             onChange={(e) => {
-                              setPersonalFullAddress(e.target.value);
+                              let val = e.target.value;
+                              if (val.length > 0) {
+                                val = val.replace(
+                                  /^(\s*)(\S)/,
+                                  (_, space, char) => space + char.toUpperCase()
+                                );
+                              }
+                              setPersonalFullAddress(val);
                               e.target.style.height = "auto";
                               e.target.style.height =
                                 e.target.scrollHeight + "px";
@@ -1242,8 +1321,8 @@ const LeadViewLayer = () => {
                               overflow: "hidden",
                               resize: "none",
                             }}
+                            disabled={isLeadClosed}
                           />
-
                           {latitude && longitude && (
                             <p className="text-sm text-muted mt-1">
                               Lat: {latitude} | Lng: {longitude}
