@@ -870,6 +870,45 @@ const BookingViewLayer = () => {
     }
   };
 
+  const handleSubmitPickupDetails = async () => {
+    if (!pickupDate || !pickupTime || !dropDate || !dropTime) {
+      Swal.fire("Validation", "Please fill all pickup and drop details", "warning");
+      return;
+    }
+
+    const payload = {
+      bookingID: bookingData.BookingID,
+      leadId: bookingData.LeadId,
+      pickupDate,
+      pickupTime: pickupTime + ":00",
+      deliveryDate: dropDate,
+      deliveryTime: dropTime + ":00",
+    };
+
+    try {
+      const res = await axios.post(
+        `${API_BASE}Supervisor/SavePickupDeliveryTime`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.data.success || res.status === 200) {
+        Swal.fire("Success", "Pickup and Drop details saved successfully!", "success");
+        // Reset form
+        setPickupDate("");
+        setPickupTime("");
+        setDropDate("");
+        setDropTime("");
+        fetchBookingData(); // Refresh booking data
+      } else {
+        Swal.fire("Error", res.data.message || "Failed to save details", "error");
+      }
+    } catch (error) {
+      console.error("Error saving pickup details:", error);
+      Swal.fire("Error", "Failed to save pickup and delivery details", "error");
+    }
+  };
+
   const isPastTimeToday = (selectedTime) => {
     const now = new Date();
     const [h, m] = selectedTime.split(":");
@@ -1145,7 +1184,7 @@ const BookingViewLayer = () => {
 
                     {/* Action buttons */}
                     <div className="d-flex justify-content-center gap-2 mt-4">
-                      <button className="btn btn-primary btn-sm">
+                      <button className="btn btn-primary btn-sm" onClick={handleSubmitPickupDetails}>
                         Submit Details
                       </button>
                     </div>
