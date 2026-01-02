@@ -36,6 +36,7 @@ const BookServicesLayer = () => {
   const [isExistingPackage, setIsExistingPackage] = useState(false);
   const [selectedServices, setSelectedServices] = useState([]);
   const [serviceDate, setServiceDate] = useState("");
+  const [quantity, setQuantity] = useState(1);
   const [timeSlots, setTimeSlots] = useState([]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
   const hasNewItem = addedItems.some((item) => !item._apiId);
@@ -172,8 +173,8 @@ const BookServicesLayer = () => {
             _bookingTrackId: item.bookingTrackID || null,
           };
 
-          // Handle service_group: reconstruct serviceGroupServices from includes
-          // if (item.serviceType === "service_group") {
+          // Handle Service Group: reconstruct serviceGroupServices from includes
+          // if (item.serviceType === "Service Group") {
           //   const mainServiceId = item.serviceId;
           //   const includeIds = item.includes ? item.includes.split(",").map(id => id.trim()).filter(id => id) : [];
 
@@ -187,7 +188,7 @@ const BookServicesLayer = () => {
           //     };
           //   });
           // }
-          if (item.serviceType === "service_group") {
+          if (item.serviceType === "Service Group") {
             const services = [];
 
             // main service
@@ -306,6 +307,7 @@ const BookServicesLayer = () => {
     // setItemType("Service");
     setName("");
     setPrice("");
+    setQuantity(1);
     setDescription("");
     setGstPercent(18);
     setGstPrice(0);
@@ -369,6 +371,8 @@ const BookServicesLayer = () => {
       return Swal.fire("Please select service");
     if (itemType === "Spare Part" && !name.trim())
       return Swal.fire("Please enter spare part name");
+    if (!quantity || quantity < 1)
+      return Swal.fire("Quantity must be at least 1");
     if (itemType === "Package" && !selectedPackage)
       return Swal.fire("Please select package");
     if (
@@ -379,7 +383,7 @@ const BookServicesLayer = () => {
     )
       return Swal.fire("Please select at least one include for the package");
     if (
-      itemType === "service_group" &&
+      itemType === "Service Group" &&
       (!selectedServices || selectedServices.length === 0)
     )
       return Swal.fire("Please select at least one service for service group");
@@ -528,10 +532,10 @@ const BookServicesLayer = () => {
       }
     }
 
-    // ⭐ CASE: Create NEW services for service_group
+    // ⭐ CASE: Create NEW services for Service Group
     let processedSelectedServices = selectedServices || [];
     if (
-      itemType === "service_group" &&
+      itemType === "Service Group" &&
       selectedServices &&
       selectedServices.length > 0
     ) {
@@ -617,15 +621,24 @@ const BookServicesLayer = () => {
         }
       }
     }
+    const p = Number(price) || 0;
+    const q = Number(quantity) || 1;
+    const labour = 0; // labour is 0 when adding
+    const gstP = Number(gstPercent) || 0;
 
-    // ⭐ BUILD THE FINAL ITEM
+    const baseTotal = p * q;
+    const taxableAmount = baseTotal + labour;
+    const gstAmount = (taxableAmount * gstP) / 100;
+    //  BUILD THE FINAL ITEM
     const updatedItem = {
       type: itemType,
       name: name.trim(),
       price: Number(price) || 0,
+      quantity: Number(quantity),
+      baseTotal: Number(baseTotal.toFixed(2)),
       description: description.trim(),
-      gstPercent: Number(gstPercent) || 0,
-      gstPrice: Number(gstPrice) || 0,
+      gstPercent: gstP,
+      gstPrice: Number(gstAmount.toFixed(2)),
       dealerID: selectedDealer,
       percentage: Number(companyPercent) || 0,
       percentAmount: Number(percentAmount) || 0,
@@ -643,9 +656,9 @@ const BookServicesLayer = () => {
       includes: itemType === "Package" ? [...selectedIncludes] : [],
       isNewPackage: false, // Package is already created if it was new
 
-      // service_group-specific metadata
+      // Service Group-specific metadata
       serviceGroupServices:
-        itemType === "service_group"
+        itemType === "Service Group"
           ? processedSelectedServices.map((s) => ({
               id: Number(s.value),
               name: s.label,
@@ -678,8 +691,8 @@ const BookServicesLayer = () => {
         if (row.type === "Package" && Array.isArray(row.includes)) {
           includes = row.includes.join(",");
           serviceId = Number(row.packageId);
-        } else if (row.type === "service_group" && row.serviceGroupServices) {
-          // For service_group: first service is main, rest go to includes
+        } else if (row.type === "Service Group" && row.serviceGroupServices) {
+          // For Service Group: first service is main, rest go to includes
           const serviceGroupServices = row.serviceGroupServices || [];
           if (serviceGroupServices.length > 0) {
             serviceId = Number(serviceGroupServices[0].id);
@@ -701,6 +714,8 @@ const BookServicesLayer = () => {
           serviceType: row.type,
           serviceName: row.name,
           price: row.price,
+          quantity: row.quantity,
+          baseTotal: row.baseTotal,
           gstPercent: row.gstPercent,
           gstAmount: row.gstPrice,
           description: row.description,
@@ -797,8 +812,8 @@ const BookServicesLayer = () => {
             serviceId = Number(item.includeId);
           } else if (item.type === "Package") {
             serviceId = Number(item.packageId);
-          } else if (item.type === "service_group") {
-            // For service_group: first service is the main service
+          } else if (item.type === "Service Group") {
+            // For Service Group: first service is the main service
             if (
               item.serviceGroupServices &&
               item.serviceGroupServices.length > 0
@@ -807,8 +822,8 @@ const BookServicesLayer = () => {
             }
           }
 
-          // Handle service_group payload format
-          if (item.type === "service_group") {
+          // Handle Service Group payload format
+          if (item.type === "Service Group") {
             const serviceGroupServices = item.serviceGroupServices || [];
             if (serviceGroupServices.length === 0) {
               // Skip if no services selected (shouldn't happen due to validation)
@@ -824,10 +839,15 @@ const BookServicesLayer = () => {
               .join(",");
 
             return {
-              serviceType: "service_group",
+              serviceType: "Service Group",
               serviceId: Number(mainService.id),
               serviceName: mainService.name,
-              price: Number(item.price) || 0,
+              // price: Number(item.price) || 0,
+              price: (Number(item.price) || 0) * (Number(item.quantity) || 1),
+              quantity: Number(item.quantity) || 1,
+              // baseTotal:
+              //   (Number(item.price) || 0) * (Number(item.quantity) || 1),
+              basePrice: Number(item.price) || 0,
               gstPercent: Number(item.gstPercent) || 0,
               gstAmount: Number(item.gstPrice) || 0,
               description: item.description || "",
@@ -844,7 +864,11 @@ const BookServicesLayer = () => {
           return {
             serviceType: item.type,
             serviceName: item.name || "",
-            price: Number(item.price) || 0,
+            // price: Number(item.price) || 0,
+            price: (Number(item.price) || 0) * (Number(item.quantity) || 1),
+            quantity: Number(item.quantity) || 1,
+            basePrice: Number(item.price) || 0,
+            // baseTotal: (Number(item.price) || 0) * (Number(item.quantity) || 1),
             gstPercent: Number(item.gstPercent) || 0,
             gstAmount: Number(item.gstPrice) || 0,
             description: item.description || "",
@@ -920,6 +944,7 @@ const BookServicesLayer = () => {
         });
 
         await fetchBookingData();
+        setIsTimeSlotLocked(true);
         resetForm();
         setAddedItems([]);
         resetBookingForm();
@@ -1041,8 +1066,10 @@ const BookServicesLayer = () => {
           min={0}
           onChange={(e) => {
             const price = Number(e.target.value) || 0;
+            const quantity = Number(row.quantity) || 1;
 
-            const baseAmount = price + (Number(row.labourCharge) || 0);
+            const baseTotal = price * quantity;
+            const baseAmount = baseTotal + (Number(row.labourCharge) || 0);
 
             const gstPrice =
               row.gstPercent !== ""
@@ -1056,6 +1083,7 @@ const BookServicesLayer = () => {
 
             updateTableRow(index, {
               price,
+              baseTotal,
               gstPrice: Number(gstPrice.toFixed(2)),
               percentAmount: Number(percentAmount.toFixed(2)),
             });
@@ -1066,7 +1094,81 @@ const BookServicesLayer = () => {
       width: "120px",
     },
     {
-      name: "Labor Charges",
+      name: "Qty",
+      cell: (row, index) => (
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          min={1}
+          value={row.quantity === "" ? "" : row.quantity}
+          disabled={!row.isEditing}
+          onChange={(e) => {
+            const val = e.target.value;
+
+            if (val === "") {
+              updateTableRow(index, { quantity: "" });
+              return;
+            }
+
+            const quantity = Number(val);
+            if (isNaN(quantity) || quantity < 1) return;
+
+            const baseTotal = (Number(row.price) || 0) * quantity;
+            const baseAmount = baseTotal + (Number(row.labourCharge) || 0);
+
+            const gstPrice =
+              row.gstPercent !== ""
+                ? (baseAmount * Number(row.gstPercent)) / 100
+                : 0;
+
+            updateTableRow(index, {
+              quantity,
+              baseTotal,
+              gstPrice: Number(gstPrice.toFixed(2)),
+            });
+          }}
+          onBlur={() => {
+            if (row.quantity === "") {
+              const quantity = 1;
+
+              const baseTotal = (Number(row.price) || 0) * quantity;
+              const baseAmount = baseTotal + (Number(row.labourCharge) || 0);
+
+              const gstPrice =
+                row.gstPercent !== ""
+                  ? (baseAmount * Number(row.gstPercent)) / 100
+                  : 0;
+
+              updateTableRow(index, {
+                quantity,
+                baseTotal,
+                gstPrice: Number(gstPrice.toFixed(2)),
+              });
+            }
+          }}
+        />
+      ),
+      width: "100px",
+    },
+    {
+      name: "Base Total",
+      cell: (row) => {
+        const baseTotal =
+          (Number(row.price) || 0) * (Number(row.quantity) || 1);
+
+        return (
+          <input
+            type="number"
+            className="form-control form-control-sm"
+            value={baseTotal.toFixed(2)}
+            disabled
+          />
+        );
+      },
+      width: "140px",
+    },
+    {
+      name: "Labour Charges",
       cell: (row, index) => (
         <input
           type="number"
@@ -1076,7 +1178,10 @@ const BookServicesLayer = () => {
           onChange={(e) => {
             const labourCharge = Math.max(0, Number(e.target.value) || 0);
 
-            const baseAmount = (Number(row.price) || 0) + labourCharge;
+            const baseTotal =
+              (Number(row.price) || 0) * (Number(row.quantity) || 1);
+
+            const baseAmount = baseTotal + labourCharge;
 
             const gstPrice =
               row.gstPercent !== ""
@@ -1085,6 +1190,7 @@ const BookServicesLayer = () => {
 
             updateTableRow(index, {
               labourCharge,
+              baseTotal,
               gstPrice: Number(gstPrice.toFixed(2)),
             });
           }}
@@ -1104,13 +1210,16 @@ const BookServicesLayer = () => {
           onChange={(e) => {
             const percent = Math.max(0, Number(e.target.value) || 0);
 
-            const baseAmount =
-              (Number(row.price) || 0) + (Number(row.labourCharge) || 0);
+            const baseTotal =
+              (Number(row.price) || 0) * (Number(row.quantity) || 1);
+
+            const baseAmount = baseTotal + (Number(row.labourCharge) || 0);
 
             const gstPrice = (baseAmount * percent) / 100;
 
             updateTableRow(index, {
               gstPercent: percent,
+              baseTotal,
               gstPrice: Number(gstPrice.toFixed(2)),
             });
           }}
@@ -1125,22 +1234,34 @@ const BookServicesLayer = () => {
         <input
           type="number"
           className="form-control form-control-sm"
-          value={row.gstPrice}
           min={0}
+          value={row.gstPrice === "" ? "" : row.gstPrice}
+          disabled={!row.isEditing}
           onChange={(e) => {
-            const gstAmt = Math.max(0, Number(e.target.value) || 0);
-
-            const baseAmount =
-              (Number(row.price) || 0) + (Number(row.labourCharge) || 0);
-
+            const val = e.target.value;
+            if (val === "") {
+              updateTableRow(index, { gstPrice: "" });
+              return;
+            }
+            const gstAmt = Number(val);
+            if (isNaN(gstAmt) || gstAmt < 0) return;
+            const quantity = Number(row.quantity) || 1;
+            const price = Number(row.price) || 0;
+            const labour = Number(row.labourCharge) || 0;
+            const baseTotal = price * quantity;
+            const baseAmount = baseTotal + labour;
             const gstPercent = baseAmount > 0 ? (gstAmt / baseAmount) * 100 : 0;
-
             updateTableRow(index, {
               gstPrice: gstAmt,
               gstPercent: Number(gstPercent.toFixed(2)),
+              baseTotal,
             });
           }}
-          disabled={!row.isEditing}
+          onBlur={() => {
+            if (row.gstPrice === "") {
+              updateTableRow(index, { gstPrice: 0 });
+            }
+          }}
         />
       ),
       width: "120px",
@@ -1157,7 +1278,13 @@ const BookServicesLayer = () => {
                 min={0}
                 onChange={(e) => {
                   const percent = Math.max(0, Number(e.target.value) || 0);
-                  const amt = (Number(row.price) * percent) / 100;
+
+                  const base =
+                    (Number(row.baseTotal) || 0) +
+                    (Number(row.labourCharge) || 0) +
+                    (Number(row.gstPrice) || 0);
+
+                  const amt = (base * percent) / 100;
 
                   updateTableRow(index, {
                     percentage: percent,
@@ -1180,8 +1307,12 @@ const BookServicesLayer = () => {
                 onChange={(e) => {
                   const amt = Math.max(0, Number(e.target.value) || 0);
 
-                  const percent =
-                    row.price > 0 ? (amt / Number(row.price)) * 100 : 0;
+                  const base =
+                    (Number(row.baseTotal) || 0) +
+                    (Number(row.labourCharge) || 0) +
+                    (Number(row.gstPrice) || 0);
+
+                  const percent = base > 0 ? (amt / base) * 100 : 0;
 
                   updateTableRow(index, {
                     percentAmount: amt,
@@ -1312,18 +1443,21 @@ const BookServicesLayer = () => {
     },
   ];
 
-  // totals
-  const itemTotal = addedItems.reduce((sum, item) => {
-    return sum + (Number(item.price) || 0);
-  }, 0);
+  // Totals with quantity
+  const itemTotal = addedItems.reduce(
+    (sum, item) => sum + (Number(item.baseTotal) || 0),
+    0
+  );
 
-  const totalGst = addedItems.reduce((sum, item) => {
-    return sum + (Number(item.gstPrice) || 0);
-  }, 0);
+  const labourTotal = addedItems.reduce(
+    (sum, item) => sum + (Number(item.labourCharge) || 0),
+    0
+  );
 
-  const labourTotal = addedItems.reduce((sum, item) => {
-    return sum + (Number(item.labourCharge) || 0);
-  }, 0);
+  const totalGst = addedItems.reduce(
+    (sum, item) => sum + (Number(item.gstPrice) || 0),
+    0
+  );
 
   const grandTotal = itemTotal + labourTotal + totalGst;
 
@@ -1355,7 +1489,7 @@ const BookServicesLayer = () => {
 
     // Service group includes as separate rows (remaining services after the first one)
     if (
-      item.type === "service_group" &&
+      item.type === "Service Group" &&
       Array.isArray(item.serviceGroupServices) &&
       item.serviceGroupServices.length > 1
     ) {
@@ -1389,8 +1523,8 @@ const BookServicesLayer = () => {
                   onChange={(e) => {
                     resetForm();
                     setItemType(e.target.value);
-                    // Clear service_group specific state when switching types
-                    if (e.target.value !== "service_group") {
+                    // Clear Service Group specific state when switching types
+                    if (e.target.value !== "Service Group") {
                       setSelectedServices([]);
                     }
                     // Clear other type-specific states
@@ -1406,7 +1540,7 @@ const BookServicesLayer = () => {
                   <option value="Service">Service</option>
                   <option value="Spare Part">Spare Part</option>
                   <option value="Package">Package</option>
-                  <option value="service_group">Service Group</option>
+                  <option value="Service Group">Service Group</option>
                 </select>
               </div>
               {itemType === "Spare Part" && (
@@ -1438,7 +1572,7 @@ const BookServicesLayer = () => {
                     isSearchable
                     className="react-select-container text-sm"
                     classNamePrefix="react-select"
-                    placeholder="Search or create Service..."
+                    placeholder="Search Services..."
                     options={includesList.map((inc) => ({
                       value: inc.IncludeID,
                       label: inc.IncludeName,
@@ -1480,7 +1614,7 @@ const BookServicesLayer = () => {
                     className="react-select-container text-sm"
                     classNamePrefix="react-select"
                     isClearable
-                    placeholder="Search or create package..."
+                    placeholder="Search packages..."
                     value={
                       selectedPackage
                         ? {
@@ -1537,7 +1671,7 @@ const BookServicesLayer = () => {
                       setPackagesList((prev) => [...prev, newPackage]);
                       setSelectedPackage(newId);
                       setName(inputValue);
-                      // ⭐ NEW PACKAGE = editable includes
+                      // NEW PACKAGE = editable includes
                       setIsExistingPackage(false);
                       setSelectedIncludes([]);
                       setPrice(0);
@@ -1553,7 +1687,7 @@ const BookServicesLayer = () => {
                 </div>
               )}
 
-              <div className="col-md-2">
+              <div className="col-md-3">
                 <label className="form-label">Price</label>
                 <input
                   type="number"
@@ -1564,7 +1698,30 @@ const BookServicesLayer = () => {
                   placeholder="0.00"
                 />
               </div>
-
+              <div className="col-md-2">
+                <label className="form-label">Quantity</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  min={1}
+                  value={quantity === "" ? "" : quantity}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "") {
+                      setQuantity("");
+                      return;
+                    }
+                    const num = Number(val);
+                    if (isNaN(num) || num < 1) return;
+                    setQuantity(num);
+                  }}
+                  onBlur={() => {
+                    if (quantity === "") {
+                      setQuantity(1);
+                    }
+                  }}
+                />
+              </div>
               <div className="col-md-2">
                 <label className="form-label">GST %</label>
                 <input
@@ -1576,7 +1733,7 @@ const BookServicesLayer = () => {
                 />
               </div>
 
-              <div className="col-md-3">
+              {/* <div className="col-md-2">
                 <label className="form-label">GST Price</label>
                 <input
                   type="number"
@@ -1585,7 +1742,7 @@ const BookServicesLayer = () => {
                   min={0}
                   onChange={(e) => handleGstAmountChange(e.target.value)}
                 />
-              </div>
+              </div> */}
               {itemType === "Package" && selectedPackage && (
                 <div className="col-md-12">
                   <label className="form-label">Select Includes</label>
@@ -1620,7 +1777,7 @@ const BookServicesLayer = () => {
                 </div>
               )}
 
-              {itemType === "service_group" && (
+              {itemType === "Service Group" && (
                 <div className="col-md-12">
                   <label className="form-label">
                     Select Services (Multiple){" "}
@@ -1824,21 +1981,6 @@ const BookServicesLayer = () => {
                           styles={{
                             menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                           }}
-                          // value={
-                          //   selectedTimeSlot
-                          //     ? {
-                          //         value: selectedTimeSlot,
-                          //         label: (() => {
-                          //           const slot = timeSlots.find(
-                          //             (t) => t.TimeSlotID === selectedTimeSlot
-                          //           );
-                          //           return slot
-                          //             ? `${slot.StartTime} - ${slot.EndTime}`
-                          //             : "";
-                          //         })(),
-                          //       }
-                          //     : null
-                          // }
                           value={selectedTimeSlot}
                           onChange={(option) => setSelectedTimeSlot(option)}
                         />

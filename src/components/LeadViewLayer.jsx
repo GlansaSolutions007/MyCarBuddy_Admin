@@ -1608,7 +1608,7 @@ const LeadViewLayer = () => {
                                     <td>{b.LeadId}</td>
                                     <td>
                                       <Link
-                                        to={`/view-booking/${b.BookingTrackID}`}
+                                        to={`/booking-view/${b.BookingID}`}
                                         className="text-primary"
                                       >
                                         {b.BookingTrackID}

@@ -66,10 +66,25 @@ const BookingViewLayer = () => {
   const [isPaid, setIsPaid] = useState(false);
 
   // NEW STATES FOR SUPERVISOR/TECHNICIAN SELECTION
-  const [assignType, setAssignType] = useState("technician"); // 'technician' | 'supervisor'
-  const [selectedSupervisor, setSelectedSupervisor] = useState(null); // Used for reassigning a supervisor
-  const [supervisors, setSupervisors] = useState([]); // To store supervisor list
+  const [assignType, setAssignType] = useState("technician");
+  const [selectedSupervisor, setSelectedSupervisor] = useState(null);
+  const [supervisors, setSupervisors] = useState([]);
+  const [pickupDate, setPickupDate] = useState("");
+  const [pickupTime, setPickupTime] = useState("");
+  const [dropDate, setDropDate] = useState("");
+  const [dropTime, setDropTime] = useState("");
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentMode, setPaymentMode] = useState("");
+  const [payAmount, setPayAmount] = useState("");
+  const [isDiscountApplicable, setIsDiscountApplicable] = useState(false);
+  const [discountAmount, setDiscountAmount] = useState("");
 
+  const today = new Date().toISOString().split("T")[0];
+  const nowTime = new Date().toTimeString().slice(0, 5); // HH:mm
+  const finalPayAmount = Math.max(
+    Number(payAmount || 0) - Number(discountAmount || 0),
+    0
+  );
   // State for dynamically adding services
   const [servicesToAdd, setServicesToAdd] = useState([
     {
@@ -771,37 +786,70 @@ const BookingViewLayer = () => {
     }
   };
 
+  const closePaymentModal = () => {
+    setShowPaymentModal(false);
+    setPaymentMode("");
+    setPayAmount("");
+    setIsDiscountApplicable(false);
+    setDiscountAmount("");
+  };
+
+  const totalAmount =
+    (bookingData?.TotalPrice || 0) +
+    (bookingData?.GSTAmount || 0) +
+    (bookingData?.LabourCharges || 0) -
+    (bookingData?.CouponAmount || 0);
+
+  const alreadyPaid = bookingData?.PaidAmount || 0;
+  const remainingAmount = Math.max(totalAmount - alreadyPaid, 0);
+
   const handleConfirmPayment = async () => {
     try {
-      if (!bookingData) {
-        Swal.fire("Error", "Booking data not available", "error");
+      if (!paymentMode) {
+        Swal.fire("Validation", "Please select payment mode", "warning");
         return;
       }
-      // ✅ SAME TOTAL AS BILLING SUMMARY
-      const billingTotalAmount = Number(
-        (bookingData?.TotalPrice || 0) +
-          (bookingData?.GSTAmount || 0) +
-          (bookingData?.LabourCharges || 0) -
-          (bookingData?.CouponAmount || 0)
-      ).toFixed(2);
+      if (!payAmount || payAmount <= 0) {
+        Swal.fire("Validation", "Enter valid amount", "warning");
+        return;
+      }
+      if (isDiscountApplicable) {
+        if (!discountAmount || discountAmount <= 0) {
+          Swal.fire("Validation", "Enter valid discount amount", "warning");
+          return;
+        }
 
-      // 🔔 CONFIRMATION POPUP (PUT THIS HERE)
-      const result = await Swal.fire({
-        title: "Confirm Payment",
-        text: `Total Amount: ₹${billingTotalAmount}`,
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonText: "Confirm",
-        cancelButtonText: "Cancel",
-      });
+        if (discountAmount > payAmount) {
+          Swal.fire(
+            "Validation",
+            "Discount cannot exceed entered amount",
+            "warning"
+          );
+          return;
+        }
+      }
+      if (payAmount > remainingAmount) {
+        Swal.fire(
+          "Validation",
+          "Amount cannot exceed remaining balance",
+          "warning"
+        );
+        return;
+      }
+      if (finalPayAmount <= 0) {
+        Swal.fire(
+          "Validation",
+          "Final payable amount must be greater than zero",
+          "warning"
+        );
+        return;
+      }
 
-      // ❌ If user clicks Cancel → STOP
-      if (!result.isConfirmed) return;
-
-      // ✅ API CALL ONLY AFTER CONFIRM
       const payload = {
         bookingID: bookingData.BookingID,
-        amount: Number(billingTotalAmount),
+        amount: finalPayAmount,
+        paymentMode,
+        discountAmount: isDiscountApplicable ? discountAmount : 0,
       };
 
       const res = await axios.post(
@@ -812,8 +860,9 @@ const BookingViewLayer = () => {
 
       if (res?.data?.success) {
         Swal.fire("Success", "Payment confirmed successfully", "success");
+        setShowPaymentModal(false); // ✅ close modal
         setIsPaid(true);
-        fetchBookingData();
+        fetchBookingData(); // ✅ refresh booking
       } else {
         Swal.fire("Error", "Payment confirmation failed", "error");
       }
@@ -821,6 +870,15 @@ const BookingViewLayer = () => {
       console.error(err);
       Swal.fire("Error", "Something went wrong", "error");
     }
+  };
+
+  const isPastTimeToday = (selectedTime) => {
+    const now = new Date();
+    const [h, m] = selectedTime.split(":");
+    const selected = new Date();
+    selected.setHours(h, m, 0, 0);
+
+    return selected < now;
   };
 
   return (
@@ -864,40 +922,47 @@ const BookingViewLayer = () => {
                         <ul className="mb-0">
                           <li className="d-flex align-items-center gap-1 mb-12">
                             <span className="w-50 fw-semibold text-primary-light">
-                              Customer Name
+                              Customer Name :
                             </span>
                             <span className="w-70 text-secondary-light fw-bold">
-                              : {bookingData.CustomerName || "N/A"}
+                              {bookingData.CustomerName || "N/A"}
                             </span>
                           </li>
 
                           <li className="d-flex align-items-center gap-1 mb-12">
                             <span className="w-50 fw-semibold text-primary-light">
-                              Phone Number
+                              Phone Number :
                             </span>
                             <span className="w-70 text-secondary-light fw-bold">
-                              : {bookingData.PhoneNumber || "—"}
+                              {bookingData.PhoneNumber || "—"}
                             </span>
                           </li>
 
                           <li className="d-flex align-items-center gap-1 mb-12">
                             <span className="w-50 fw-semibold text-primary-light">
-                              Vehicle Number
+                              Vehicle Number :
                             </span>
                             <span className="w-70 text-secondary-light fw-bold">
-                              : {bookingData.VehicleNumber || "—"}
+                              {bookingData.VehicleNumber || "—"}
                             </span>
                           </li>
-
+                          <li className="d-flex align-items-center gap-1 mb-12">
+                            <span className="w-50 fw-semibold text-primary-light">
+                              Full Address :
+                            </span>
+                            <span className="w-70 text-secondary-light fw-bold">
+                              {bookingData.FullAddress || "—"}
+                            </span>
+                          </li>
                           {/* Assigned To */}
                           {!bookingData.TechFullName &&
                           !bookingData.SupervisorName ? (
                             <li className="d-flex align-items-center gap-1 mb-12">
                               <span className="w-50 fw-semibold text-primary-light">
-                                Assigned To
+                                Assigned To :
                               </span>
                               <span className="w-70 text-secondary-light fw-bold">
-                                : N/A
+                                N/A
                               </span>
                             </li>
                           ) : (
@@ -906,20 +971,20 @@ const BookingViewLayer = () => {
                                 <>
                                   <li className="d-flex align-items-center gap-1 mb-12">
                                     <span className="w-50 fw-semibold text-primary-light">
-                                      Technician
+                                      Technician :
                                     </span>
                                     <span className="w-70 text-secondary-light fw-bold">
-                                      : {bookingData.TechFullName}
+                                      {bookingData.TechFullName}
                                     </span>
                                   </li>
 
                                   {bookingData.TechPhoneNumber && (
                                     <li className="d-flex align-items-center gap-1 mb-12">
                                       <span className="w-50 fw-semibold text-primary-light">
-                                        Technician Number
+                                        Technician Number :
                                       </span>
                                       <span className="w-70 text-secondary-light fw-bold">
-                                        : {bookingData.TechPhoneNumber}
+                                        {bookingData.TechPhoneNumber}
                                       </span>
                                     </li>
                                   )}
@@ -930,20 +995,20 @@ const BookingViewLayer = () => {
                                 <>
                                   <li className="d-flex align-items-center gap-1 mb-12">
                                     <span className="w-50 fw-semibold text-primary-light">
-                                      Supervisor
+                                      Supervisor :
                                     </span>
                                     <span className="w-70 text-secondary-light fw-bold">
-                                      : {bookingData.SupervisorName}
+                                      {bookingData.SupervisorName}
                                     </span>
                                   </li>
 
                                   {bookingData.SupervisorPhoneNumber && (
                                     <li className="d-flex align-items-center gap-1 mb-12">
                                       <span className="w-50 fw-semibold text-primary-light">
-                                        Supervisor Number
+                                        Supervisor Number :
                                       </span>
                                       <span className="w-70 text-secondary-light fw-bold">
-                                        : {bookingData.SupervisorPhoneNumber}
+                                        {bookingData.SupervisorPhoneNumber}
                                       </span>
                                     </li>
                                   )}
@@ -968,89 +1033,128 @@ const BookingViewLayer = () => {
               </div>
             )}
             {/* ================= CAR PICKUP / DROP ACCORDION ================= */}
-<div className="accordion mb-3" id="carPickupDropAccordion">
-  <div className="accordion-item border radius-16">
-    <h2 className="accordion-header" id="headingPickupDrop">
-      <button
-        className="accordion-button collapsed fw-semibold gap-2"
-        type="button"
-        data-bs-toggle="collapse"
-        data-bs-target="#collapsePickupDrop"
-        aria-expanded="false"
-        aria-controls="collapsePickupDrop"
-      >
-         <i className="bi bi-car-front-fill "></i>
-        <span className="fw-semibold text-primary">Car Pickup & Drop Details</span>
-      </button>
-    </h2>
+            <div className="accordion mb-3" id="carPickupDropAccordion">
+              <div className="accordion-item border radius-16">
+                <h2 className="accordion-header" id="headingPickupDrop">
+                  <button
+                    className="accordion-button collapsed fw-semibold gap-2"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#collapsePickupDrop"
+                    aria-expanded="false"
+                    aria-controls="collapsePickupDrop"
+                  >
+                    <i className="bi bi-car-front-fill"></i>
+                    <span className="fw-semibold text-primary">
+                      Car Pickup & Drop Details
+                    </span>
+                  </button>
+                </h2>
 
-    <div
-      id="collapsePickupDrop"
-      className="accordion-collapse collapse"
-      aria-labelledby="headingPickupDrop"
-      data-bs-parent="#carPickupDropAccordion"
-    >
-      <div className="accordion-body">
-        <div className="row g-3">
+                <div
+                  id="collapsePickupDrop"
+                  className="accordion-collapse collapse"
+                  aria-labelledby="headingPickupDrop"
+                  data-bs-parent="#carPickupDropAccordion"
+                >
+                  <div className="accordion-body">
+                    <div className="row g-3">
+                      {/* Pickup Date */}
+                      <div className="col-md-3">
+                        <label className="form-label fw-bold">
+                          Pickup Date
+                        </label>
+                        <input
+                          type="date"
+                          className="form-control"
+                          min={today}
+                          value={pickupDate}
+                          onChange={(e) => {
+                            setPickupDate(e.target.value);
+                            setPickupTime("");
+                            setDropDate("");
+                            setDropTime("");
+                          }}
+                        />
+                      </div>
 
-          {/* Pickup Date */}
-          <div className="col-md-3">
-            <label className="form-label fw-bold">
-              Pickup Date
-            </label>
-            <input
-              type="date"
-              className="form-control"
-            />
-          </div>
+                      {/* Pickup Time */}
+                      <div className="col-md-3">
+                        <label className="form-label fw-bold">
+                          Pickup Time
+                        </label>
+                        <input
+                          type="time"
+                          className="form-control"
+                          value={pickupTime}
+                          min={pickupDate === today ? nowTime : undefined}
+                          disabled={!pickupDate}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (
+                              pickupDate === today &&
+                              isPastTimeToday(value)
+                            ) {
+                              return;
+                            }
+                            setPickupTime(value);
+                            setDropTime("");
+                          }}
+                        />
+                      </div>
 
-          {/* Pickup Time */}
-          <div className="col-md-3">
-            <label className="form-label fw-bold">
-              Pickup Time
-            </label>
-            <input
-              type="time"
-              className="form-control"
-            />
-          </div>
+                      {/* Drop Date */}
+                      <div className="col-md-3">
+                        <label className="form-label fw-bold">Drop Date</label>
+                        <input
+                          type="date"
+                          className="form-control"
+                          min={pickupDate || today}
+                          value={dropDate}
+                          onChange={(e) => {
+                            setDropDate(e.target.value);
+                            setDropTime("");
+                          }}
+                          disabled={!pickupDate}
+                        />
+                      </div>
 
-          {/* Drop Date */}
-          <div className="col-md-3">
-            <label className="form-label fw-bold">
-              Drop Date
-            </label>
-            <input
-              type="date"
-              className="form-control"
-            />
-          </div>
+                      {/* Drop Time */}
+                      <div className="col-md-3">
+                        <label className="form-label fw-bold">Drop Time</label>
+                        <input
+                          type="time"
+                          className="form-control"
+                          value={dropTime}
+                          disabled={!pickupDate || !pickupTime}
+                          min={
+                            pickupDate === dropDate
+                              ? pickupTime ||
+                                (pickupDate === today ? nowTime : undefined)
+                              : undefined
+                          }
+                          onChange={(e) => {
+                            const value = e.target.value;
 
-          {/* Drop Time */}
-          <div className="col-md-3">
-            <label className="form-label fw-bold">
-              Drop Time
-            </label>
-            <input
-              type="time"
-              className="form-control"
-            />
-          </div>
+                            if (pickupDate === dropDate && value < pickupTime) {
+                              return;
+                            }
+                            setDropTime(value);
+                          }}
+                        />
+                      </div>
+                    </div>
 
-        </div>
-
-        {/* Action buttons (optional for now) */}
-        <div className="d-flex justify-content-center gap-2 mt-4">
-          <button className="btn btn-primary btn-sm">
-            Submit Details
-          </button>
-          
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
+                    {/* Action buttons */}
+                    <div className="d-flex justify-content-center gap-2 mt-4">
+                      <button className="btn btn-primary btn-sm">
+                        Submit Details
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
             {/* ================= RESCHEDULE SECTION ================= */}
             {showReschedule && bookingData && (
               <div className="card border radius-16 mb-3">
@@ -1065,8 +1169,12 @@ const BookingViewLayer = () => {
                       <input
                         type="date"
                         className="form-control"
+                        min={today}
                         value={newDate}
-                        onChange={(e) => setNewDate(e.target.value)}
+                        onChange={(e) => {
+                          setNewDate(e.target.value);
+                          // setSelectedTimeSlot(""); // reset time slot if date changes
+                        }}
                       />
                     </div>
 
@@ -1076,10 +1184,25 @@ const BookingViewLayer = () => {
                         className="form-select"
                         value={selectedTimeSlot}
                         onChange={(e) => setSelectedTimeSlot(e.target.value)}
+                        disabled={!newDate}
                       >
                         <option value="">Select a time slot</option>
+
                         {timeSlots
-                          .filter((slot) => slot.IsActive)
+                          .filter((slot) => {
+                            if (!slot.IsActive) return false;
+
+                            if (newDate !== today) return true;
+
+                            const now = new Date();
+                            const [h, m] =
+                              slot.StartTime.split(":").map(Number);
+
+                            const slotTime = new Date();
+                            slotTime.setHours(h, m, 0, 0);
+
+                            return slotTime > now;
+                          })
                           .sort((a, b) => {
                             const [aH, aM] = a.StartTime.split(":").map(Number);
                             const [bH, bM] = b.StartTime.split(":").map(Number);
@@ -1244,7 +1367,9 @@ const BookingViewLayer = () => {
               {/* ====================== BOOKINGS TAB ====================== */}
               <div className="tab-pane fade show active" id="booking">
                 {bookingData ? (
-                  <Accordion defaultActiveKey="0" className="styled-booking-accordion"
+                  <Accordion
+                    defaultActiveKey="0"
+                    className="styled-booking-accordion"
                   >
                     <Accordion.Item
                       eventKey="0"
@@ -1270,55 +1395,58 @@ const BookingViewLayer = () => {
                               </div>
                             </div>
                             <div className="d-flex align-items-center gap-2 flex-wrap">
-                             {bookingData?.Payments?.length > 0 &&
-  (() => {
-    const rawStatus =
-      bookingData.Payments?.[0]?.PaymentStatus || "-";
-    const status =
-      rawStatus === "Success" ? "Paid" : rawStatus;
+                              {bookingData?.Payments?.length > 0 &&
+                                (() => {
+                                  const rawStatus =
+                                    bookingData.Payments?.[0]?.PaymentStatus ||
+                                    "-";
+                                  const status =
+                                    rawStatus === "Success"
+                                      ? "Paid"
+                                      : rawStatus;
 
-    const colorMap = {
-      Paid: "#28A745",
-      Pending: "#F57C00",
-      Refunded: "#25878F",
-      Failed: "#E34242",
-      "-": "#BFBFBF",
-    };
+                                  const colorMap = {
+                                    Paid: "#28A745",
+                                    Pending: "#F57C00",
+                                    Refunded: "#25878F",
+                                    Failed: "#E34242",
+                                    "-": "#BFBFBF",
+                                  };
 
-    const color = colorMap[status] || "#6c757d";
+                                  const color = colorMap[status] || "#6c757d";
 
-    return (
-      <span
-        className="fw-semibold d-flex align-items-center"
-        style={{ fontSize: "13px" }}
-      >
-        <span
-          className="badge"
-          style={{
-            backgroundColor: color,
-            fontSize: "11px",
-            fontWeight: 500,
-            padding: "4px 10px",
-            borderRadius: "12px",
-          }}
-        >
-          {status}
-        </span>
-      </span>
-    );
-  })()}
+                                  return (
+                                    <span
+                                      className="fw-semibold d-flex align-items-center"
+                                      style={{ fontSize: "13px" }}
+                                    >
+                                      <span
+                                        className="badge"
+                                        style={{
+                                          backgroundColor: color,
+                                          fontSize: "11px",
+                                          fontWeight: 500,
+                                          padding: "4px 10px",
+                                          borderRadius: "12px",
+                                        }}
+                                      >
+                                        {status}
+                                      </span>
+                                    </span>
+                                  );
+                                })()}
 
-                            <span
-                              className={`badge px-3 py-1 rounded-pill ${
-                                bookingData.BookingStatus === "Completed"
-                                  ? "bg-success"
-                                  : bookingData.BookingStatus === "Confirmed"
-                                  ? "bg-primary"
-                                  : "bg-warning text-dark"
-                              }`}
-                            >
-                              {bookingData.BookingStatus}
-                            </span>
+                              <span
+                                className={`badge px-3 py-1 rounded-pill ${
+                                  bookingData.BookingStatus === "Completed"
+                                    ? "bg-success"
+                                    : bookingData.BookingStatus === "Confirmed"
+                                    ? "bg-primary"
+                                    : "bg-warning text-dark"
+                                }`}
+                              >
+                                {bookingData.BookingStatus}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -1473,9 +1601,7 @@ const BookingViewLayer = () => {
                                         <th style={{ width: "180px" }}>
                                           Service Name
                                         </th>
-                                        <th style={{ width: "100px" }}>
-                                          Date
-                                        </th>
+                                        <th style={{ width: "100px" }}>Date</th>
                                         <th
                                           style={{ width: "100px" }}
                                           className="text-end"
@@ -1775,27 +1901,30 @@ const BookingViewLayer = () => {
               </div>
             </div>
             <div className="d-flex justify-content-center gap-2 mt-3">
-  {/* Show Confirm Payment only if not paid */}
-  {!isPaid && (
-    <button
-      className="btn btn-warning btn-sm d-inline-flex align-items-center"
-      onClick={handleConfirmPayment}
-    >
-      Confirm Payment
-    </button>
-  )}
+              {/* Show Confirm Payment only if not paid */}
+              {!isPaid && (
+                <button
+                  className="btn btn-primary-600 btn-sm"
+                  onClick={() => {
+                    setPaymentMode("");
+                    setPayAmount(remainingAmount);
+                    setShowPaymentModal(true);
+                  }}
+                >
+                  Enter Payment
+                </button>
+              )}
 
-  {/* Show Generate Invoice only if paid */}
-  {isPaid && (
-    <button
-      className="btn btn-info btn-sm d-inline-flex align-items-center"
-      onClick={handleGenerateFinalInvoice}
-    >
-      Generate Invoice
-    </button>
-  )}
-</div>
-
+              {/* Show Generate Invoice only if paid */}
+              {isPaid && (
+                <button
+                  className="btn btn-info btn-sm d-inline-flex align-items-center"
+                  onClick={handleGenerateFinalInvoice}
+                >
+                  Generate Invoice
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1920,7 +2049,7 @@ const BookingViewLayer = () => {
                   Cancel
                 </button>
                 <button
-                  className="btn btn-primary"
+                  className="btn btn-primary btn-sm"
                   onClick={handleAssignConfirm}
                   disabled={
                     !selectedReassignTimeSlot ||
@@ -1929,6 +2058,143 @@ const BookingViewLayer = () => {
                   }
                 >
                   Assign
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showPaymentModal && (
+        <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <div className="modal-dialog modal-md modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header justify-content-center">
+                <h6 className="modal-title">Enter Payment Details</h6>
+                {/* <button
+                  type="button"
+                  className="btn-close"
+                  onClick={closePaymentModal}
+                /> */}
+              </div>
+
+              <div className="modal-body">
+                {/* Payment Mode */}
+                <div className="mb-3">
+                  <label className="form-label fw-semibold">Payment Mode</label>
+                  <select
+                    className="form-select"
+                    value={paymentMode}
+                    onChange={(e) => setPaymentMode(e.target.value)}
+                  >
+                    <option value="">Select payment mode</option>
+                    <option value="Cash">Cash</option>
+                    <option value="UPI">UPI</option>
+                    <option value="Card">Card</option>
+                    <option value="NetBanking">Net Banking</option>
+                  </select>
+                </div>
+
+                {/* Amount Details */}
+                <div className="border rounded p-3 bg-light mb-3">
+                  <div className="d-flex justify-content-between">
+                    <span>Total Amount</span>
+                    <strong>₹{totalAmount.toFixed(2)}</strong>
+                  </div>
+                  <div className="d-flex justify-content-between">
+                    <span>Already Paid</span>
+                    <strong>₹{alreadyPaid.toFixed(2)}</strong>
+                  </div>
+                  <div className="d-flex justify-content-between text-success">
+                    <span>Remaining</span>
+                    <strong>₹{remainingAmount.toFixed(2)}</strong>
+                  </div>
+                </div>
+                {/* Discount Section */}
+                <div className="mb-3">
+                  <div className="form-check d-flex align-items-center gap-2">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id="discountApplicable"
+                      checked={isDiscountApplicable}
+                      onChange={(e) => {
+                        setIsDiscountApplicable(e.target.checked);
+                        if (!e.target.checked) {
+                          setDiscountAmount("");
+                        }
+                      }}
+                    />
+                    <label
+                      className="form-check-label fw-semibold"
+                      htmlFor="discountApplicable"
+                    >
+                      {" "}
+                      Is Discount Applicable
+                    </label>
+                  </div>
+                </div>
+
+                {isDiscountApplicable && (
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">
+                      Enter Discount Amount
+                    </label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      min={0}
+                      max={remainingAmount}
+                      value={discountAmount}
+                      onChange={(e) =>
+                        setDiscountAmount(Math.max(0, Number(e.target.value)))
+                      }
+                      placeholder="Enter discount amount"
+                    />
+                  </div>
+                )}
+                {isDiscountApplicable && (
+                  <div className="border rounded p-2 bg-warning-subtle mb-3">
+                    <div className="d-flex justify-content-between">
+                      <span className="fw-semibold">Final Payable</span>
+                      <strong>
+                        ₹
+                        {Math.max(
+                          Number(payAmount || 0) - Number(discountAmount || 0),
+                          0
+                        ).toFixed(2)}
+                      </strong>
+                    </div>
+                  </div>
+                )}
+                {/* Pay Amount */}
+                <div className="mb-3">
+                  <label className="form-label fw-semibold">Enter Final Amount</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    min={1}
+                    max={remainingAmount}
+                    value={payAmount}
+                    onChange={(e) =>
+                      setPayAmount(Math.max(0, Number(e.target.value)))
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="modal-footer justify-content-center">
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={closePaymentModal}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  className="btn btn-primary-600 btn-sm"
+                  onClick={handleConfirmPayment}
+                >
+                  Confirm Payment
                 </button>
               </div>
             </div>
