@@ -263,45 +263,45 @@ const BookingLayer = () => {
     }
   };
 
-  // const getTimeSlotOptions = () => {
-  //   if (!selectedBooking || !selectedBooking.TimeSlot) return [];
-  //   return selectedBooking.TimeSlot.split(",").map((slot) => ({
-  //     value: slot.trim(),
-  //     label: slot.trim(),
-  //   }));
-
-  // };
-
-  const getTimeSlotOptions = async () => {
-    try {
-      const response = await axios.get(`${API_BASE}TimeSlot`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setTimeSlots(
-        response.data
-          .filter((slot) => slot.IsActive ?? slot.Status ?? slot.status) // Only active slots
-          .sort((a, b) => {
-            const [aHour, aMinute] = (a.StartTime || a.startTime)
-              .split(":")
-              .map(Number);
-            const [bHour, bMinute] = (b.StartTime || b.startTime)
-              .split(":")
-              .map(Number);
-            return aHour * 60 + aMinute - (bHour * 60 + bMinute);
-          })
-          .map((slot) => ({
-            value: `${slot.StartTime || slot.startTime} - ${
-              slot.EndTime || slot.endTime
-            }`,
-            label: `${formatTime(
-              slot.StartTime || slot.startTime
-            )} - ${formatTime(slot.EndTime || slot.endTime)}`,
-          }))
-      );
-    } catch (err) {
-      console.error("Error fetching time slots:", err);
-    }
+  const getTimeSlotOptions = () => {
+    if (!selectedBooking || !selectedBooking.TimeSlot) return [];
+    return selectedBooking.TimeSlot.split(",").map((slot) => ({
+      value: slot.trim(),
+      label: slot.trim(),
+    }));
+    console.log("selected", )
   };
+
+  // const getTimeSlotOptions = async () => {
+  //   try {
+  //     const response = await axios.get(`${API_BASE}TimeSlot`, {
+  //       headers: { Authorization: `Bearer ${token}` },
+  //     });
+  //     setTimeSlots(
+  //       response.data
+  //         .filter((slot) => slot.IsActive ?? slot.Status ?? slot.status) // Only active slots
+  //         .sort((a, b) => {
+  //           const [aHour, aMinute] = (a.StartTime || a.startTime)
+  //             .split(":")
+  //             .map(Number);
+  //           const [bHour, bMinute] = (b.StartTime || b.startTime)
+  //             .split(":")
+  //             .map(Number);
+  //           return aHour * 60 + aMinute - (bHour * 60 + bMinute);
+  //         })
+  //         .map((slot) => ({
+  //           value: `${slot.StartTime || slot.startTime} - ${
+  //             slot.EndTime || slot.endTime
+  //           }`,
+  //           label: `${formatTime(
+  //             slot.StartTime || slot.startTime
+  //           )} - ${formatTime(slot.EndTime || slot.endTime)}`,
+  //         }))
+  //     );
+  //   } catch (err) {
+  //     console.error("Error fetching time slots:", err);
+  //   }
+  // };
 
   const columns = [
     ...(hasPermission("bookingview_view")
@@ -742,7 +742,7 @@ const BookingLayer = () => {
 
                 {/* Time Slot Selection */}
                 <div className="mb-3">
-                  {/* {selectedBooking?.TimeSlot?.split(",").length === 1 ? (
+                  {selectedBooking?.TimeSlot?.split(",").length === 1 ? (
                     <Select
                       value={selectedTimeSlot}
                       isDisabled
@@ -750,19 +750,19 @@ const BookingLayer = () => {
                     />
                   ) : (
                    <Select
-                      options={timeSlots}
+                      options={getTimeSlotOptions()}
                       value={selectedTimeSlot}
                       onChange={(val) => setSelectedTimeSlot(val)}
                       placeholder="Select TimeSlot"
                     />
-                  )} */}
+                  )}
 
-                  <Select
+                  {/* <Select
                     options={timeSlots}
                     value={selectedTimeSlot}
                     onChange={(val) => setSelectedTimeSlot(val)}
                     placeholder="Select TimeSlot"
-                  />
+                  /> */}
                 </div>
 
                 {/* Technician or Supervisor Selection based on assignType */}

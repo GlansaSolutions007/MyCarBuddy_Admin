@@ -39,7 +39,7 @@ const BookServicesLayer = () => {
   const [serviceDate, setServiceDate] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [timeSlots, setTimeSlots] = useState([]);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
   const [isTimeSlotLocked, setIsTimeSlotLocked] = useState(false);
   const [loading, setLoading] = useState(false);
   const hasNewItem = addedItems.some((item) => !item._apiId);
@@ -804,9 +804,9 @@ const BookServicesLayer = () => {
         return Swal.fire("Error", "Please select service date", "error");
       }
 
-      if (!selectedTimeSlot) {
-        return Swal.fire("Error", "Please select a time slot", "error");
-      }
+      if (!Array.isArray(selectedTimeSlot) || selectedTimeSlot.length === 0) {
+  return Swal.fire("Error", "Please select at least one time slot", "error");
+}
     }
     try {
       // Transform addedItems to match API payload format
@@ -917,15 +917,15 @@ const BookServicesLayer = () => {
       if (response.status === 200 || response.status === 201) {
         const { bookingId } = response.data;
         // 🔹 Send booking date & time ONLY if they were null before
-        if (bookingData?.bookingDate === null && !bookingData?.timeSlot) {
-          const slotObj = selectedTimeSlot;
+      if (!bookingData?.timeSlot) {
+  const timeSlotString = selectedTimeSlot.map(slot => slot.label).join(",");
 
           await axios.put(
             `${API_BASE}Supervisor/Booking`,
             {
               bookingID: bookingId,
               bookingDate: serviceDate,
-              TimeSlot: slotObj?.label || "",
+              TimeSlot: timeSlotString
             },
 
             {
@@ -950,7 +950,7 @@ const BookServicesLayer = () => {
         resetForm();
         setAddedItems([]);
         resetBookingForm();
-        setSelectedTimeSlot("");
+        setSelectedTimeSlot([]);
         setServiceDate("");
       } else {
         throw new Error(response.data?.message || "Failed to create booking");
@@ -1988,7 +1988,7 @@ const BookServicesLayer = () => {
 
                             // case 3: ID → label
                             const slot = timeSlots.find(
-                              (t) => t.TimeSlotID === bookingData.timeSlot
+                              (t) => t.TsID === bookingData.timeSlot
                             );
 
                             return slot
@@ -1999,22 +1999,25 @@ const BookServicesLayer = () => {
                         />
                       ) : (
                         <Select
-                          className="react-select-container text-sm"
-                          classNamePrefix="react-select"
-                          placeholder="Select time slot..."
-                          isClearable
-                          options={timeSlots.map((slot) => ({
-                            value: slot.TimeSlotID,
-                            label: `${slot.StartTime} - ${slot.EndTime}`,
-                          }))}
-                          menuPlacement="auto"
-                          menuPortalTarget={document.body}
-                          styles={{
-                            menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                          }}
-                          value={selectedTimeSlot}
-                          onChange={(option) => setSelectedTimeSlot(option)}
-                        />
+  isMulti
+  className="react-select-container text-sm"
+  classNamePrefix="react-select"
+  placeholder="Select time slots..."
+  isClearable
+  closeMenuOnSelect={false}
+  options={timeSlots.map((slot) => ({
+    value: slot.TsID,
+    label: `${slot.StartTime} - ${slot.EndTime}`,
+  }))}
+  menuPlacement="auto"
+  menuPortalTarget={document.body}
+  styles={{
+    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+  }}
+  value={selectedTimeSlot}
+  onChange={(options) => setSelectedTimeSlot(options || [])}
+/>
+
                       )}
                     </div>
                   </div>
