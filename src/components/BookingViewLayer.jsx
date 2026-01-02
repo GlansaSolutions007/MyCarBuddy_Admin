@@ -56,7 +56,7 @@ const BookingViewLayer = () => {
   const [selectedTechnician, setSelectedTechnician] = useState(null);
   const [technicians, setTechnicians] = useState([]);
   const [timeSlots, setTimeSlots] = useState([]);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
   const [selectedReassignTimeSlot, setSelectedReassignTimeSlot] =
     useState(null);
   const token = localStorage.getItem("token");
@@ -219,16 +219,14 @@ const BookingViewLayer = () => {
       Swal.fire("Error", "Please select a new date.", "error");
       return;
     }
-    if (!selectedTimeSlot) {
-      Swal.fire("Error", "Please select a time slot.", "error");
+    if (!selectedTimeSlot || selectedTimeSlot.length === 0) {
+      Swal.fire("Error", "Please select at least one time slot.", "error");
       return;
     }
 
     const result = await Swal.fire({
       title: "Confirm Reschedule",
-      text: `Are you sure you want to reschedule to ${newDate} at ${formatTimeSlot(
-        selectedTimeSlot
-      )}?`,
+      text: `Are you sure you want to reschedule to ${newDate} at ${selectedTimeSlot.map(formatTimeSlot).join(', ')}?`,
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
@@ -246,7 +244,7 @@ const BookingViewLayer = () => {
           reason: reason,
           oldSchedule: bookingData.BookingDate,
           newSchedule: newDate,
-          timeSlot: selectedTimeSlot,
+          timeSlot: selectedTimeSlot.join(','),
           requestedBy: localStorage.getItem("userId") || 1, // Using localStorage for userId
           Status: "",
         },
@@ -1180,15 +1178,9 @@ const BookingViewLayer = () => {
 
                     <div className="col-md-4">
                       <label className="form-label">Time Slot</label>
-                      <select
-                        className="form-select"
-                        value={selectedTimeSlot}
-                        onChange={(e) => setSelectedTimeSlot(e.target.value)}
-                        disabled={!newDate}
-                      >
-                        <option value="">Select a time slot</option>
-
-                        {timeSlots
+                      <Select
+                        isMulti
+                        options={timeSlots
                           .filter((slot) => {
                             if (!slot.IsActive) return false;
 
@@ -1208,16 +1200,22 @@ const BookingViewLayer = () => {
                             const [bH, bM] = b.StartTime.split(":").map(Number);
                             return aH * 60 + aM - (bH * 60 + bM);
                           })
-                          .map((slot) => (
-                            <option
-                              key={slot.TsID}
-                              value={`${slot.StartTime} - ${slot.EndTime}`}
-                            >
-                              {formatTime(slot.StartTime)} -{" "}
-                              {formatTime(slot.EndTime)}
-                            </option>
-                          ))}
-                      </select>
+                          .map((slot) => ({
+                            value: `${slot.StartTime} - ${slot.EndTime}`,
+                            label: `${formatTime(slot.StartTime)} - ${formatTime(slot.EndTime)}`,
+                          }))}
+                        value={selectedTimeSlot.map((val) => ({
+                          value: val,
+                          label: formatTimeSlot(val),
+                        }))}
+                        onChange={(selectedOptions) =>
+                          setSelectedTimeSlot(
+                            selectedOptions ? selectedOptions.map((opt) => opt.value) : []
+                          )
+                        }
+                        placeholder="Select time slots"
+                        isDisabled={!newDate}
+                      />
                     </div>
 
                     <div className="col-md-4">

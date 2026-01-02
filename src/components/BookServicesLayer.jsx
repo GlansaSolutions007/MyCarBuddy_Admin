@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { Icon } from "@iconify/react";
@@ -7,6 +7,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Select, { components } from "react-select";
 import CreatableSelect from "react-select/creatable";
+import PropTypes from "prop-types";
 const employeeData = JSON.parse(localStorage.getItem("employeeData"));
 const userId = employeeData?.Id;
 const role = localStorage.getItem("role");
@@ -28,7 +29,7 @@ const BookServicesLayer = () => {
   const [description, setDescription] = useState("");
   const [gstPercent, setGstPercent] = useState(18);
   const [gstPrice, setGstPrice] = useState("");
-  const [labourCharge, setLabourCharge] = useState(0);
+  const labourCharge = 0;
   const [includesList, setIncludesList] = useState([]);
   const [packagesList, setPackagesList] = useState([]);
   const [selectedPackage, setSelectedPackage] = useState(null);
@@ -39,8 +40,9 @@ const BookServicesLayer = () => {
   const [quantity, setQuantity] = useState(1);
   const [timeSlots, setTimeSlots] = useState([]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
-  const hasNewItem = addedItems.some((item) => !item._apiId);
+  const [isTimeSlotLocked, setIsTimeSlotLocked] = useState(false);
   const [loading, setLoading] = useState(false);
+  const hasNewItem = addedItems.some((item) => !item._apiId);
 
   const navigate = useNavigate();
 
@@ -59,12 +61,14 @@ const BookServicesLayer = () => {
       setGstPrice(Number(gstAmt.toFixed(2)));
     }
 
-    // ❗ Company still applies ONLY on base price
+    // ✅ Company percent calculated on total price + labour + gst
     if (companyPercent !== "") {
-      const compAmt = (basePrice * Number(companyPercent)) / 100;
+      const gst = Number(gstPrice) || 0;
+      const companyBase = basePrice + labour + gst;
+      const compAmt = (companyBase * Number(companyPercent)) / 100;
       setPercentAmount(Number(compAmt.toFixed(2)));
     }
-  }, [price, labourCharge]);
+  }, [price, labourCharge, gstPrice]);
 
   useEffect(() => {
     if (leadId) {
@@ -156,6 +160,8 @@ const BookServicesLayer = () => {
             name: item.serviceName || "",
             serviceName: item.serviceName || "",
             price: Number(item.price || 0),
+            quantity: Number(item.quantity || 1),
+            basePrice: Number(item.basePrice || 0),
             description: item.description || "",
             gstPercent: Number(item.gstPercent || 0),
             gstPrice: Number(item.gstAmount || 0),
@@ -163,7 +169,7 @@ const BookServicesLayer = () => {
             percentage: Number(item.percentage || 0),
             percentAmount: Number(item.our_Earnings || 0),
             status: item.status,
-            labourCharge: Number(item.labourCharge || 0),
+            labourCharge: Number(item.labourCharges || 0),
             includeId: item.serviceType === "Service" ? item.serviceId : null,
             packageId: item.serviceType === "Package" ? item.serviceId : null,
             isEditing: false,
@@ -633,7 +639,8 @@ const BookServicesLayer = () => {
     const updatedItem = {
       type: itemType,
       name: name.trim(),
-      price: Number(price) || 0,
+      basePrice: Number(price) || 0,
+      price: Number(baseTotal.toFixed(2)),
       quantity: Number(quantity),
       baseTotal: Number(baseTotal.toFixed(2)),
       description: description.trim(),
@@ -713,9 +720,9 @@ const BookServicesLayer = () => {
           leadId: leadId,
           serviceType: row.type,
           serviceName: row.name,
-          price: row.price,
+          basePrice: Number(row.basePrice) || 0,
           quantity: row.quantity,
-          baseTotal: row.baseTotal,
+          price: Number(row.price) || 0,
           gstPercent: row.gstPercent,
           gstAmount: row.gstPrice,
           description: row.description,
@@ -842,12 +849,10 @@ const BookServicesLayer = () => {
               serviceType: "Service Group",
               serviceId: Number(mainService.id),
               serviceName: mainService.name,
-              // price: Number(item.price) || 0,
-              price: (Number(item.price) || 0) * (Number(item.quantity) || 1),
+              basePrice: Number(item.basePrice) || 0,
               quantity: Number(item.quantity) || 1,
-              // baseTotal:
-              //   (Number(item.price) || 0) * (Number(item.quantity) || 1),
-              basePrice: Number(item.price) || 0,
+              price:
+                (Number(item.basePrice) || 0) * (Number(item.quantity) || 1),
               gstPercent: Number(item.gstPercent) || 0,
               gstAmount: Number(item.gstPrice) || 0,
               description: item.description || "",
@@ -864,11 +869,9 @@ const BookServicesLayer = () => {
           return {
             serviceType: item.type,
             serviceName: item.name || "",
-            // price: Number(item.price) || 0,
-            price: (Number(item.price) || 0) * (Number(item.quantity) || 1),
+            basePrice: Number(item.basePrice) || 0,
             quantity: Number(item.quantity) || 1,
-            basePrice: Number(item.price) || 0,
-            // baseTotal: (Number(item.price) || 0) * (Number(item.quantity) || 1),
+            price: (Number(item.basePrice) || 0) * (Number(item.quantity) || 1),
             gstPercent: Number(item.gstPercent) || 0,
             gstAmount: Number(item.gstPrice) || 0,
             description: item.description || "",
@@ -923,7 +926,6 @@ const BookServicesLayer = () => {
               bookingID: bookingId,
               bookingDate: serviceDate,
               TimeSlot: slotObj?.label || "",
-              // timeSlot: slotObj?.label || "",
             },
 
             {
@@ -1035,7 +1037,7 @@ const BookServicesLayer = () => {
       return copy;
     });
   };
-  const columns = [
+    const columns = [
     {
       name: "Type",
       selector: (row) => (row.isInclude ? "" : row.type),
@@ -1057,38 +1059,58 @@ const BookServicesLayer = () => {
       grow: 2,
     },
     {
-      name: "Price",
+      name: "Base Price",
       cell: (row, index) => (
         <input
           type="number"
           className="form-control form-control-sm"
-          value={row.price}
           min={0}
+          value={row.basePrice === "" ? "" : row.basePrice}
+          disabled={!row.isEditing}
           onChange={(e) => {
-            const price = Number(e.target.value) || 0;
-            const quantity = Number(row.quantity) || 1;
+            const val = e.target.value;
 
-            const baseTotal = price * quantity;
-            const baseAmount = baseTotal + (Number(row.labourCharge) || 0);
+            // allow empty while typing
+            if (val === "") {
+              updateTableRow(index, { basePrice: "" });
+              return;
+            }
+
+            const basePrice = Number(val);
+            if (isNaN(basePrice) || basePrice < 0) return;
+
+            const quantity = Number(row.quantity) || 1;
+            const labour = Number(row.labourCharge) || 0;
+
+            const baseTotal = basePrice * quantity;
+            const baseAmount = baseTotal + labour;
 
             const gstPrice =
               row.gstPercent !== ""
                 ? (baseAmount * Number(row.gstPercent)) / 100
                 : 0;
 
-            const percentAmount =
-              row.percentage !== ""
-                ? (price * Number(row.percentage)) / 100
-                : 0;
-
             updateTableRow(index, {
-              price,
+              basePrice,
               baseTotal,
+              price: baseTotal,
               gstPrice: Number(gstPrice.toFixed(2)),
-              percentAmount: Number(percentAmount.toFixed(2)),
             });
           }}
-          disabled={!row.isEditing}
+          onBlur={() => {
+            if (row.basePrice === "") {
+              const basePrice = 0;
+              const quantity = Number(row.quantity) || 1;
+
+              const baseTotal = basePrice * quantity;
+
+              updateTableRow(index, {
+                basePrice,
+                baseTotal,
+                price: baseTotal,
+              });
+            }
+          }}
         />
       ),
       width: "120px",
@@ -1113,7 +1135,7 @@ const BookServicesLayer = () => {
             const quantity = Number(val);
             if (isNaN(quantity) || quantity < 1) return;
 
-            const baseTotal = (Number(row.price) || 0) * quantity;
+            const baseTotal = (Number(row.basePrice) || 0) * quantity;
             const baseAmount = baseTotal + (Number(row.labourCharge) || 0);
 
             const gstPrice =
@@ -1124,6 +1146,7 @@ const BookServicesLayer = () => {
             updateTableRow(index, {
               quantity,
               baseTotal,
+              price: baseTotal,
               gstPrice: Number(gstPrice.toFixed(2)),
             });
           }}
@@ -1131,7 +1154,7 @@ const BookServicesLayer = () => {
             if (row.quantity === "") {
               const quantity = 1;
 
-              const baseTotal = (Number(row.price) || 0) * quantity;
+              const baseTotal = (Number(row.basePrice) || 0) * quantity;
               const baseAmount = baseTotal + (Number(row.labourCharge) || 0);
 
               const gstPrice =
@@ -1151,21 +1174,16 @@ const BookServicesLayer = () => {
       width: "100px",
     },
     {
-      name: "Base Total",
-      cell: (row) => {
-        const baseTotal =
-          (Number(row.price) || 0) * (Number(row.quantity) || 1);
-
-        return (
-          <input
-            type="number"
-            className="form-control form-control-sm"
-            value={baseTotal.toFixed(2)}
-            disabled
-          />
-        );
-      },
-      width: "140px",
+      name: "Total Price",
+      cell: (row) => (
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          value={Number(row.basePrice * row.quantity).toFixed(2)}
+          disabled
+        />
+      ),
+      width: "120px",
     },
     {
       name: "Labour Charges",
@@ -1179,7 +1197,7 @@ const BookServicesLayer = () => {
             const labourCharge = Math.max(0, Number(e.target.value) || 0);
 
             const baseTotal =
-              (Number(row.price) || 0) * (Number(row.quantity) || 1);
+              (Number(row.basePrice) || 0) * (Number(row.quantity) || 1);
 
             const baseAmount = baseTotal + labourCharge;
 
@@ -1211,7 +1229,7 @@ const BookServicesLayer = () => {
             const percent = Math.max(0, Number(e.target.value) || 0);
 
             const baseTotal =
-              (Number(row.price) || 0) * (Number(row.quantity) || 1);
+              (Number(row.basePrice) || 0) * (Number(row.quantity) || 1);
 
             const baseAmount = baseTotal + (Number(row.labourCharge) || 0);
 
@@ -1220,6 +1238,7 @@ const BookServicesLayer = () => {
             updateTableRow(index, {
               gstPercent: percent,
               baseTotal,
+              price: baseTotal,
               gstPrice: Number(gstPrice.toFixed(2)),
             });
           }}
@@ -1246,9 +1265,8 @@ const BookServicesLayer = () => {
             const gstAmt = Number(val);
             if (isNaN(gstAmt) || gstAmt < 0) return;
             const quantity = Number(row.quantity) || 1;
-            const price = Number(row.price) || 0;
+            const baseTotal = (Number(row.basePrice) || 0) * quantity;
             const labour = Number(row.labourCharge) || 0;
-            const baseTotal = price * quantity;
             const baseAmount = baseTotal + labour;
             const gstPercent = baseAmount > 0 ? (gstAmt / baseAmount) * 100 : 0;
             updateTableRow(index, {
@@ -1279,12 +1297,15 @@ const BookServicesLayer = () => {
                 onChange={(e) => {
                   const percent = Math.max(0, Number(e.target.value) || 0);
 
-                  const base =
-                    (Number(row.baseTotal) || 0) +
-                    (Number(row.labourCharge) || 0) +
-                    (Number(row.gstPrice) || 0);
+                  const basePrice = Number(row.basePrice) || 0;
+                  const quantity = Number(row.quantity) || 1;
+                  const labour = Number(row.labourCharge) || 0;
+                  const gst = Number(row.gstPrice) || 0;
 
-                  const amt = (base * percent) / 100;
+                  const totalPrice = basePrice * quantity;
+                  const companyBase = totalPrice + labour + gst;
+
+                  const amt = (companyBase * percent) / 100;
 
                   updateTableRow(index, {
                     percentage: percent,
@@ -1307,12 +1328,16 @@ const BookServicesLayer = () => {
                 onChange={(e) => {
                   const amt = Math.max(0, Number(e.target.value) || 0);
 
-                  const base =
-                    (Number(row.baseTotal) || 0) +
-                    (Number(row.labourCharge) || 0) +
-                    (Number(row.gstPrice) || 0);
+                  const basePrice = Number(row.basePrice) || 0;
+                  const quantity = Number(row.quantity) || 1;
+                  const labour = Number(row.labourCharge) || 0;
+                  const gst = Number(row.gstPrice) || 0;
 
-                  const percent = base > 0 ? (amt / base) * 100 : 0;
+                  const totalPrice = basePrice * quantity;
+                  const companyBase = totalPrice + labour + gst;
+
+                  const percent =
+                    companyBase > 0 ? (amt / companyBase) * 100 : 0;
 
                   updateTableRow(index, {
                     percentAmount: amt,
@@ -1443,21 +1468,27 @@ const BookServicesLayer = () => {
     },
   ];
 
-  // Totals with quantity
-  const itemTotal = addedItems.reduce(
-    (sum, item) => sum + (Number(item.baseTotal) || 0),
-    0
-  );
+  const itemTotal = addedItems.reduce((sum, item) => {
+    const basePrice = Number(item.basePrice) || 0;
+    const quantity = Number(item.quantity) || 1;
+    return sum + basePrice * quantity;
+  }, 0);
 
-  const labourTotal = addedItems.reduce(
-    (sum, item) => sum + (Number(item.labourCharge) || 0),
-    0
-  );
+  const labourTotal = addedItems.reduce((sum, item) => {
+    return sum + (Number(item.labourCharge) || 0);
+  }, 0);
 
-  const totalGst = addedItems.reduce(
-    (sum, item) => sum + (Number(item.gstPrice) || 0),
-    0
-  );
+  const totalGst = addedItems.reduce((sum, item) => {
+    const basePrice = Number(item.basePrice) || 0;
+    const quantity = Number(item.quantity) || 1;
+    const labour = Number(item.labourCharge) || 0;
+    const gstPercent = Number(item.gstPercent) || 0;
+
+    const taxableAmount = basePrice * quantity + labour;
+    const gstAmount = (taxableAmount * gstPercent) / 100;
+
+    return sum + gstAmount;
+  }, 0);
 
   const grandTotal = itemTotal + labourTotal + totalGst;
 
