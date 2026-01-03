@@ -1646,6 +1646,18 @@ const BookingViewLayer = () => {
                                           Base Price
                                         </th>
                                         <th
+                                          style={{ width: "100px" }}
+                                          className="text-end"
+                                        >
+                                          Qty
+                                        </th>
+                                        <th
+                                          style={{ width: "100px" }}
+                                          className="text-end"
+                                        >
+                                          Total Price
+                                        </th>
+                                        <th
                                           style={{ width: "120px" }}
                                           className="text-end"
                                         >
@@ -1733,13 +1745,19 @@ const BookingViewLayer = () => {
                                                 : "—"}
                                             </td>
                                             <td className="text-end">
-                                              ₹
+                                              {Number(
+                                                addon.BasePrice || 0
+                                              ).toFixed(2)}
+                                            </td>
+                                            <td className="text-end">
+                                              {addon.Quantity ?? "1"}
+                                            </td>
+                                            <td className="text-end">
                                               {Number(
                                                 addon.ServicePrice || 0
                                               ).toFixed(2)}
                                             </td>
                                             <td className="text-end">
-                                              ₹
                                               {Number(
                                                 addon.LabourCharges || 0
                                               ).toFixed(2)}
@@ -1748,22 +1766,19 @@ const BookingViewLayer = () => {
                                               {addon.GSTPercent ?? 0}%
                                             </td>
                                             <td className="text-end">
-                                              ₹
                                               {Number(
                                                 addon.GSTPrice || 0
                                               ).toFixed(2)}
                                             </td>
                                             <td className="text-end">
-                                              {addon.Percentage ?? "0"}
+                                              {addon.Percentage ?? "0"}%
                                             </td>
                                             <td className="text-end">
-                                              ₹
                                               {Number(
                                                 addon.Our_Earnings || 0
                                               ).toFixed(2)}
                                             </td>
                                             <td className="text-end fw-bold text-primary">
-                                              ₹
                                               {Number(
                                                 addon.TotalPrice || 0
                                               ).toFixed(2)}

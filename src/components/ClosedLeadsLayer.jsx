@@ -3,6 +3,7 @@ import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { usePermissions } from "../context/PermissionContext";
+import * as XLSX from "xlsx";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
@@ -44,6 +45,78 @@ const ClosedLeadsLayer = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const exportToExcel = () => {
+    // Prepare data for export (exclude Action column)
+    const exportData = filteredLeads.map((lead) => ({
+      "Lead ID": lead.Id,
+      "Customer Name": lead.FullName || "-",
+      "Phone Number": lead.PhoneNumber || "-",
+      Email: lead.Email || "-",
+      "Created Date": lead.CreatedDate
+        ? new Date(lead.CreatedDate).toLocaleString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+        : "-",
+      City: lead.City || "-",
+      Platform: lead.Platform || "-",
+      "Lead Category":
+        lead.BookingAddOns?.filter((addon) => addon.IsUserClicked === true)
+          .map((addon) => addon.ServiceName)
+          .join(", ") || "-",
+      Description: lead.Description || "-",
+      "Updated Date": lead.Updated_At
+        ? new Date(lead.Updated_At).toLocaleString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+        : "-",
+      "Lead Status": lead.FollowUpStatus || "No FollowUp Yet",
+      "Next FollowUp": lead.NextFollowUp_Date || "-",
+      "Next Action": lead.NextAction || "-",
+    }));
+
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(exportData);
+
+    // Auto-size columns
+    const colWidths = [
+      { wch: 10 }, // Lead ID
+      { wch: 20 }, // Customer Name
+      { wch: 15 }, // Phone Number
+      { wch: 25 }, // Email
+      { wch: 15 }, // Created Date
+      { wch: 15 }, // City
+      { wch: 10 }, // Platform
+      { wch: 25 }, // Lead Category
+      { wch: 20 }, // Description
+      { wch: 15 }, // Updated Date
+      { wch: 15 }, // Lead Status
+      { wch: 15 }, // Next FollowUp
+      { wch: 15 }, // Next Action
+    ];
+    ws["!cols"] = colWidths;
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, "Closed Leads");
+
+    // Generate filename with timestamp
+    const now = new Date();
+    const timestamp = now
+      .toISOString()
+      .slice(0, 19)
+      .replace(/:/g, "")
+      .replace(/-/g, "")
+      .replace("T", "_");
+    const filename = `closed_leads_export_${timestamp}.xlsx`;
+
+    // Save file
+    XLSX.writeFile(wb, filename);
   };
 
   // DataTable Columns
@@ -257,6 +330,13 @@ const ClosedLeadsLayer = () => {
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
                 />
+                <button
+                  className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                  onClick={exportToExcel}
+                  title="Export to Excel"
+                >
+                  <Icon icon="mdi:microsoft-excel" width="22" height="22" />
+                </button>
               </div>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { Icon } from "@iconify/react";
 import DataTable from "react-data-table-component";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import * as XLSX from "xlsx";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
@@ -53,6 +54,87 @@ const RevenueReports = () => {
     setServiceType("");
     fetchReportData();
   }, [reportType]);
+
+  const exportToExcel = () => {
+    let exportData = [];
+    let sheetName = "";
+    let filename = "";
+
+    if (reportType === "garage") {
+      exportData = filteredData.map((item) => ({
+        "Garage Name": item.GarageName || "-",
+        "Total Services": item.TotalServices || 0,
+        "Total Revenue": item.TotalRevenue || 0,
+        "Total GST": item.TotalGST || 0,
+        "Our Earnings": item.OurEarnings || 0,
+      }));
+      sheetName = "Garage Earnings";
+      filename = `garage_earnings_export_${new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace(/:/g, "")
+        .replace(/-/g, "")
+        .replace("T", "_")}.xlsx`;
+    } else if (reportType === "service") {
+      exportData = filteredData.map((item) => ({
+        Date: item.CreatedDate
+          ? new Date(item.CreatedDate).toLocaleDateString("en-GB")
+          : "-",
+        "Service Type": item.ServiceType || "-",
+        "Service Name": item.ServiceName || "-",
+        "Garage Name": item.GarageName || "-",
+        Price: item.Price || 0,
+        GST: item.GST || 0,
+        "Our %": item.OurPercentage || 0,
+        "Our Earnings": item.OurEarnings || 0,
+      }));
+      sheetName = "Service Wise Report";
+      filename = `service_wise_export_${new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace(/:/g, "")
+        .replace(/-/g, "")
+        .replace("T", "_")}.xlsx`;
+    } else if (reportType === "booking") {
+      exportData = filteredData.map((item) => ({
+        "Booking ID": item.BookingTrackID || "-",
+        "Lead ID": item.LeadId || "-",
+        "Booking Date": item.BookingDate
+          ? new Date(item.BookingDate).toLocaleDateString("en-GB")
+          : "-",
+        "Customer Name": item.CustFullName || "-",
+        Phone: item.CustPhoneNumber || "-",
+        Email: item.CustEmail || "-",
+        "Total Services": item.TotalServices || 0,
+        "Total Revenue": item.TotalRevenue || 0,
+        GST: item.TotalGST || 0,
+        "Our Earnings": item.OurEarnings || 0,
+      }));
+      sheetName = "Booking Reports";
+      filename = `booking_reports_export_${new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace(/:/g, "")
+        .replace(/-/g, "")
+        .replace("T", "_")}.xlsx`;
+    }
+
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(exportData);
+
+    // Auto-size columns
+    const colWidths = Array(Object.keys(exportData[0] || {}).length).fill({
+      wch: 15,
+    });
+    ws["!cols"] = colWidths;
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+    // Save file
+    XLSX.writeFile(wb, filename);
+  };
 
   // ---------------- FILTER DATA ----------------
   const filteredData = data.filter((item) => {
@@ -197,6 +279,7 @@ const RevenueReports = () => {
           <div className="card-header">
             <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
               {/* REPORT TYPE */}
+              <div className="d-flex align-items-center gap-3">
               <div className="d-flex align-items-center gap-2">
                 <label className="form-label mb-0 fw-semibold">Report:</label>
                 <select
@@ -211,7 +294,7 @@ const RevenueReports = () => {
               </div>
 
               {/* SEARCH */}
-              <div className="navbar-search">
+              <div className="navbar-search" style={{ width: "120px", maxWidth: "100%"}}>
                 <input
                   type="text"
                   className="form-control"
@@ -221,43 +304,54 @@ const RevenueReports = () => {
                 />
                 <Icon icon="ion:search-outline" className="icon" />
               </div>
-
-              {/* SERVICE TYPE FILTER */}
-              {reportType === "service" && (
-                <div className="d-flex align-items-center gap-2">
-                  <label className="form-label mb-0">Type:</label>
-                  <select
-                    className="form-control"
-                    value={serviceType}
-                    onChange={(e) => setServiceType(e.target.value)}
-                  >
-                    <option value="">All</option>
-                    <option value="Service">Service</option>
-                    <option value="Spare">Spare</option>
-                    <option value="Package">Package</option>
-                  </select>
-                </div>
-              )}
-
-              {/* DATE FILTERS */}
-              <div className="d-flex align-items-center gap-2">
-                <label className="form-label mb-0">From:</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                />
               </div>
+              <div className="d-flex flex-wrap align-items-center gap-3">
+                {/* SERVICE TYPE FILTER */}
+                {reportType === "service" && (
+                  <div className="d-flex align-items-center gap-2">
+                    <label className="form-label mb-0">Type:</label>
+                    <select
+                      className="form-control"
+                      value={serviceType}
+                      onChange={(e) => setServiceType(e.target.value)}
+                    >
+                      <option value="">All</option>
+                      <option value="Service">Service</option>
+                      <option value="Spare">Spare</option>
+                      <option value="Package">Package</option>
+                    </select>
+                  </div>
+                )}
 
-              <div className="d-flex align-items-center gap-2">
-                <label className="form-label mb-0">To:</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  value={toDate}
-                  onChange={(e) => setToDate(e.target.value)}
-                />
+                {/* DATE FILTERS */}
+                <div className="d-flex align-items-center gap-2">
+                  <label className="form-label mb-0">From:</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={fromDate}
+                    onChange={(e) => setFromDate(e.target.value)}
+                  />
+                </div>
+
+                <div className="d-flex align-items-center gap-2">
+                  <label className="form-label mb-0">To:</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={toDate}
+                    onChange={(e) => setToDate(e.target.value)}
+                  />
+                </div>
+
+                {/* EXPORT BUTTON */}
+                <button
+                  className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                  onClick={exportToExcel}
+                  title="Export to Excel"
+                >
+                  <Icon icon="mdi:microsoft-excel" width="22" height="22" />
+                </button>
               </div>
             </div>
           </div>
