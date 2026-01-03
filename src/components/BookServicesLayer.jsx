@@ -29,18 +29,17 @@ const BookServicesLayer = () => {
   const [description, setDescription] = useState("");
   const [gstPercent, setGstPercent] = useState(18);
   const [gstPrice, setGstPrice] = useState("");
-  const labourCharge = 0;
-  const [includesList, setIncludesList] = useState([]);
-  const [packagesList, setPackagesList] = useState([]);
-  const [selectedPackage, setSelectedPackage] = useState(null);
-  const [selectedIncludes, setSelectedIncludes] = useState([]);
-  const [isExistingPackage, setIsExistingPackage] = useState(false);
-  const [selectedServices, setSelectedServices] = useState([]);
-  const [serviceDate, setServiceDate] = useState("");
-  const [quantity, setQuantity] = useState(1);
-  const [timeSlots, setTimeSlots] = useState([]);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
-  const [isTimeSlotLocked, setIsTimeSlotLocked] = useState(false);
+const labourCharge = 0;
+const [includesList, setIncludesList] = useState([]);
+const [packagesList, setPackagesList] = useState([]);
+const [selectedPackage, setSelectedPackage] = useState(null);
+const [selectedIncludes, setSelectedIncludes] = useState([]);
+const [isExistingPackage, setIsExistingPackage] = useState(false);
+const [selectedServices, setSelectedServices] = useState([]);
+const [serviceDate, setServiceDate] = useState("");
+const [quantity, setQuantity] = useState(1);
+const [timeSlots, setTimeSlots] = useState([]);
+const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
   const [loading, setLoading] = useState(false);
   const hasNewItem = addedItems.some((item) => !item._apiId);
 
@@ -51,24 +50,17 @@ const BookServicesLayer = () => {
   }, []);
 
   useEffect(() => {
-    const basePrice = Number(price) || 0;
-    const labour = Number(labourCharge) || 0;
-    const taxableAmount = basePrice + labour;
-
-    // ✅ Re-sync GST (price + labour)
-    if (gstPercent !== "") {
-      const gstAmt = (taxableAmount * Number(gstPercent)) / 100;
-      setGstPrice(Number(gstAmt.toFixed(2)));
-    }
-
     // ✅ Company percent calculated on total price + labour + gst
     if (companyPercent !== "") {
-      const gst = Number(gstPrice) || 0;
+      const basePrice = Number(price) || 0;
+      const labour = Number(labourCharge) || 0;
+      const taxableAmount = basePrice + labour;
+      const gst = gstPercent !== "" ? (taxableAmount * Number(gstPercent)) / 100 : 0;
       const companyBase = basePrice + labour + gst;
       const compAmt = (companyBase * Number(companyPercent)) / 100;
       setPercentAmount(Number(compAmt.toFixed(2)));
     }
-  }, [price, labourCharge, gstPrice]);
+  }, [price, labourCharge, gstPercent, companyPercent]);
 
   useEffect(() => {
     if (leadId) {
@@ -301,6 +293,11 @@ const BookServicesLayer = () => {
         {props.label}
       </components.Option>
     );
+  };
+
+  CheckboxOption.propTypes = {
+    isSelected: PropTypes.bool.isRequired,
+    label: PropTypes.string.isRequired,
   };
 
   const resetBookingForm = () => {
@@ -946,7 +943,6 @@ const BookServicesLayer = () => {
         });
 
         await fetchBookingData();
-        setIsTimeSlotLocked(true);
         resetForm();
         setAddedItems([]);
         resetBookingForm();
@@ -1090,11 +1086,14 @@ const BookServicesLayer = () => {
                 ? (baseAmount * Number(row.gstPercent)) / 100
                 : 0;
 
+            const percentAmount = Number(((baseTotal + labour + gstPrice) * Number(row.percentage) / 100).toFixed(2));
+
             updateTableRow(index, {
               basePrice,
               baseTotal,
               price: baseTotal,
               gstPrice: Number(gstPrice.toFixed(2)),
+              percentAmount,
             });
           }}
           onBlur={() => {
@@ -1143,11 +1142,14 @@ const BookServicesLayer = () => {
                 ? (baseAmount * Number(row.gstPercent)) / 100
                 : 0;
 
+            const percentAmount = Number(((baseTotal + (Number(row.labourCharge) || 0) + gstPrice) * Number(row.percentage) / 100).toFixed(2));
+
             updateTableRow(index, {
               quantity,
               baseTotal,
               price: baseTotal,
               gstPrice: Number(gstPrice.toFixed(2)),
+              percentAmount,
             });
           }}
           onBlur={() => {
@@ -1206,10 +1208,13 @@ const BookServicesLayer = () => {
                 ? (baseAmount * Number(row.gstPercent)) / 100
                 : 0;
 
+            const percentAmount = Number(((baseTotal + labourCharge + gstPrice) * Number(row.percentage) / 100).toFixed(2));
+
             updateTableRow(index, {
               labourCharge,
               baseTotal,
               gstPrice: Number(gstPrice.toFixed(2)),
+              percentAmount,
             });
           }}
           disabled={!row.isEditing}
@@ -1235,11 +1240,14 @@ const BookServicesLayer = () => {
 
             const gstPrice = (baseAmount * percent) / 100;
 
+            const percentAmount = Number(((baseTotal + (Number(row.labourCharge) || 0) + gstPrice) * Number(row.percentage) / 100).toFixed(2));
+
             updateTableRow(index, {
               gstPercent: percent,
               baseTotal,
               price: baseTotal,
               gstPrice: Number(gstPrice.toFixed(2)),
+              percentAmount
             });
           }}
           disabled={!row.isEditing}
