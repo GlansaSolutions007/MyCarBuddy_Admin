@@ -29,17 +29,17 @@ const BookServicesLayer = () => {
   const [description, setDescription] = useState("");
   const [gstPercent, setGstPercent] = useState(18);
   const [gstPrice, setGstPrice] = useState("");
-const labourCharge = 0;
-const [includesList, setIncludesList] = useState([]);
-const [packagesList, setPackagesList] = useState([]);
-const [selectedPackage, setSelectedPackage] = useState(null);
-const [selectedIncludes, setSelectedIncludes] = useState([]);
-const [isExistingPackage, setIsExistingPackage] = useState(false);
-const [selectedServices, setSelectedServices] = useState([]);
-const [serviceDate, setServiceDate] = useState("");
-const [quantity, setQuantity] = useState(1);
-const [timeSlots, setTimeSlots] = useState([]);
-const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
+  const labourCharge = 0;
+  const [includesList, setIncludesList] = useState([]);
+  const [packagesList, setPackagesList] = useState([]);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [selectedIncludes, setSelectedIncludes] = useState([]);
+  const [isExistingPackage, setIsExistingPackage] = useState(false);
+  const [selectedServices, setSelectedServices] = useState([]);
+  const [serviceDate, setServiceDate] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [timeSlots, setTimeSlots] = useState([]);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
   const [loading, setLoading] = useState(false);
   const hasNewItem = addedItems.some((item) => !item._apiId);
 
@@ -55,7 +55,8 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
       const basePrice = Number(price) || 0;
       const labour = Number(labourCharge) || 0;
       const taxableAmount = basePrice + labour;
-      const gst = gstPercent !== "" ? (taxableAmount * Number(gstPercent)) / 100 : 0;
+      const gst =
+        gstPercent !== "" ? (taxableAmount * Number(gstPercent)) / 100 : 0;
       const companyBase = basePrice + labour + gst;
       const compAmt = (companyBase * Number(companyPercent)) / 100;
       setPercentAmount(Number(compAmt.toFixed(2)));
@@ -802,8 +803,12 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
       }
 
       if (!Array.isArray(selectedTimeSlot) || selectedTimeSlot.length === 0) {
-  return Swal.fire("Error", "Please select at least one time slot", "error");
-}
+        return Swal.fire(
+          "Error",
+          "Please select at least one time slot",
+          "error"
+        );
+      }
     }
     try {
       // Transform addedItems to match API payload format
@@ -914,15 +919,17 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
       if (response.status === 200 || response.status === 201) {
         const { bookingId } = response.data;
         // 🔹 Send booking date & time ONLY if they were null before
-      if (!bookingData?.timeSlot) {
-  const timeSlotString = selectedTimeSlot.map(slot => slot.label).join(",");
+        if (!bookingData?.timeSlot) {
+          const timeSlotString = selectedTimeSlot
+            .map((slot) => slot.label)
+            .join(",");
 
           await axios.put(
             `${API_BASE}Supervisor/Booking`,
             {
               bookingID: bookingId,
               bookingDate: serviceDate,
-              TimeSlot: timeSlotString
+              TimeSlot: timeSlotString,
             },
 
             {
@@ -1033,7 +1040,7 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
       return copy;
     });
   };
-    const columns = [
+  const columns = [
     {
       name: "Type",
       selector: (row) => (row.isInclude ? "" : row.type),
@@ -1086,7 +1093,12 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
                 ? (baseAmount * Number(row.gstPercent)) / 100
                 : 0;
 
-            const percentAmount = Number(((baseTotal + labour + gstPrice) * Number(row.percentage) / 100).toFixed(2));
+            const percentAmount = Number(
+              (
+                ((baseTotal + labour + gstPrice) * Number(row.percentage)) /
+                100
+              ).toFixed(2)
+            );
 
             updateTableRow(row.addedItemsIndex, {
               basePrice,
@@ -1142,7 +1154,13 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
                 ? (baseAmount * Number(row.gstPercent)) / 100
                 : 0;
 
-            const percentAmount = Number(((baseTotal + (Number(row.labourCharge) || 0) + gstPrice) * Number(row.percentage) / 100).toFixed(2));
+            const percentAmount = Number(
+              (
+                ((baseTotal + (Number(row.labourCharge) || 0) + gstPrice) *
+                  Number(row.percentage)) /
+                100
+              ).toFixed(2)
+            );
 
             updateTableRow(row.addedItemsIndex, {
               quantity,
@@ -1208,7 +1226,13 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
                 ? (baseAmount * Number(row.gstPercent)) / 100
                 : 0;
 
-            const percentAmount = Number(((baseTotal + labourCharge + gstPrice) * Number(row.percentage) / 100).toFixed(2));
+            const percentAmount = Number(
+              (
+                ((baseTotal + labourCharge + gstPrice) *
+                  Number(row.percentage)) /
+                100
+              ).toFixed(2)
+            );
 
             updateTableRow(row.addedItemsIndex, {
               labourCharge,
@@ -1240,14 +1264,20 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
 
             const gstPrice = (baseAmount * percent) / 100;
 
-            const percentAmount = Number(((baseTotal + (Number(row.labourCharge) || 0) + gstPrice) * Number(row.percentage) / 100).toFixed(2));
+            const percentAmount = Number(
+              (
+                ((baseTotal + (Number(row.labourCharge) || 0) + gstPrice) *
+                  Number(row.percentage)) /
+                100
+              ).toFixed(2)
+            );
 
             updateTableRow(row.addedItemsIndex, {
               gstPercent: percent,
               baseTotal,
               price: baseTotal,
               gstPrice: Number(gstPrice.toFixed(2)),
-              percentAmount
+              percentAmount,
             });
           }}
           disabled={!row.isEditing}
@@ -1383,7 +1413,9 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
                     label: d.FullName,
                   }))}
                   onChange={(opt) =>
-                    updateTableRow(row.addedItemsIndex, { dealerID: opt ? opt.value : "" })
+                    updateTableRow(row.addedItemsIndex, {
+                      dealerID: opt ? opt.value : "",
+                    })
                   }
                   styles={{
                     container: (base) => ({
@@ -2008,25 +2040,26 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
                         />
                       ) : (
                         <Select
-  isMulti
-  className="react-select-container text-sm"
-  classNamePrefix="react-select"
-  placeholder="Select time slots..."
-  isClearable
-  closeMenuOnSelect={false}
-  options={timeSlots.map((slot) => ({
-    value: slot.TsID,
-    label: `${slot.StartTime} - ${slot.EndTime}`,
-  }))}
-  menuPlacement="auto"
-  menuPortalTarget={document.body}
-  styles={{
-    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-  }}
-  value={selectedTimeSlot}
-  onChange={(options) => setSelectedTimeSlot(options || [])}
-/>
-
+                          isMulti
+                          className="react-select-container text-sm"
+                          classNamePrefix="react-select"
+                          placeholder="Select time slots..."
+                          isClearable
+                          closeMenuOnSelect={false}
+                          options={timeSlots.map((slot) => ({
+                            value: slot.TsID,
+                            label: `${slot.StartTime} - ${slot.EndTime}`,
+                          }))}
+                          menuPlacement="auto"
+                          menuPortalTarget={document.body}
+                          styles={{
+                            menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                          }}
+                          value={selectedTimeSlot}
+                          onChange={(options) =>
+                            setSelectedTimeSlot(options || [])
+                          }
+                        />
                       )}
                     </div>
                   </div>

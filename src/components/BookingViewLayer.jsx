@@ -1649,7 +1649,7 @@ const BookingViewLayer = () => {
                                           style={{ width: "100px" }}
                                           className="text-end"
                                         >
-                                          Qty
+                                          Quantity
                                         </th>
                                         <th
                                           style={{ width: "100px" }}
