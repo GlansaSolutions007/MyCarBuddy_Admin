@@ -1056,7 +1056,7 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
     },
     {
       name: "Base Price",
-      cell: (row, index) => (
+      cell: (row) => (
         <input
           type="number"
           className="form-control form-control-sm"
@@ -1068,7 +1068,7 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
 
             // allow empty while typing
             if (val === "") {
-              updateTableRow(index, { basePrice: "" });
+              updateTableRow(row.addedItemsIndex, { basePrice: "" });
               return;
             }
 
@@ -1088,7 +1088,7 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
 
             const percentAmount = Number(((baseTotal + labour + gstPrice) * Number(row.percentage) / 100).toFixed(2));
 
-            updateTableRow(index, {
+            updateTableRow(row.addedItemsIndex, {
               basePrice,
               baseTotal,
               price: baseTotal,
@@ -1103,7 +1103,7 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
 
               const baseTotal = basePrice * quantity;
 
-              updateTableRow(index, {
+              updateTableRow(row.addedItemsIndex, {
                 basePrice,
                 baseTotal,
                 price: baseTotal,
@@ -1127,7 +1127,7 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
             const val = e.target.value;
 
             if (val === "") {
-              updateTableRow(index, { quantity: "" });
+              updateTableRow(row.addedItemsIndex, { quantity: "" });
               return;
             }
 
@@ -1144,7 +1144,7 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
 
             const percentAmount = Number(((baseTotal + (Number(row.labourCharge) || 0) + gstPrice) * Number(row.percentage) / 100).toFixed(2));
 
-            updateTableRow(index, {
+            updateTableRow(row.addedItemsIndex, {
               quantity,
               baseTotal,
               price: baseTotal,
@@ -1164,7 +1164,7 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
                   ? (baseAmount * Number(row.gstPercent)) / 100
                   : 0;
 
-              updateTableRow(index, {
+              updateTableRow(row.addedItemsIndex, {
                 quantity,
                 baseTotal,
                 gstPrice: Number(gstPrice.toFixed(2)),
@@ -1210,7 +1210,7 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
 
             const percentAmount = Number(((baseTotal + labourCharge + gstPrice) * Number(row.percentage) / 100).toFixed(2));
 
-            updateTableRow(index, {
+            updateTableRow(row.addedItemsIndex, {
               labourCharge,
               baseTotal,
               gstPrice: Number(gstPrice.toFixed(2)),
@@ -1242,7 +1242,7 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
 
             const percentAmount = Number(((baseTotal + (Number(row.labourCharge) || 0) + gstPrice) * Number(row.percentage) / 100).toFixed(2));
 
-            updateTableRow(index, {
+            updateTableRow(row.addedItemsIndex, {
               gstPercent: percent,
               baseTotal,
               price: baseTotal,
@@ -1267,7 +1267,7 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
           onChange={(e) => {
             const val = e.target.value;
             if (val === "") {
-              updateTableRow(index, { gstPrice: "" });
+              updateTableRow(row.addedItemsIndex, { gstPrice: "" });
               return;
             }
             const gstAmt = Number(val);
@@ -1277,7 +1277,7 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
             const labour = Number(row.labourCharge) || 0;
             const baseAmount = baseTotal + labour;
             const gstPercent = baseAmount > 0 ? (gstAmt / baseAmount) * 100 : 0;
-            updateTableRow(index, {
+            updateTableRow(row.addedItemsIndex, {
               gstPrice: gstAmt,
               gstPercent: Number(gstPercent.toFixed(2)),
               baseTotal,
@@ -1285,7 +1285,7 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
           }}
           onBlur={() => {
             if (row.gstPrice === "") {
-              updateTableRow(index, { gstPrice: 0 });
+              updateTableRow(row.addedItemsIndex, { gstPrice: 0 });
             }
           }}
         />
@@ -1315,7 +1315,7 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
 
                   const amt = (companyBase * percent) / 100;
 
-                  updateTableRow(index, {
+                  updateTableRow(row.addedItemsIndex, {
                     percentage: percent,
                     percentAmount: Number(amt.toFixed(2)),
                   });
@@ -1347,7 +1347,7 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
                   const percent =
                     companyBase > 0 ? (amt / companyBase) * 100 : 0;
 
-                  updateTableRow(index, {
+                  updateTableRow(row.addedItemsIndex, {
                     percentAmount: amt,
                     percentage: Number(percent.toFixed(2)),
                   });
@@ -1383,7 +1383,7 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
                     label: d.FullName,
                   }))}
                   onChange={(opt) =>
-                    updateTableRow(index, { dealerID: opt ? opt.value : "" })
+                    updateTableRow(row.addedItemsIndex, { dealerID: opt ? opt.value : "" })
                   }
                   styles={{
                     container: (base) => ({
@@ -1443,7 +1443,7 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
                 role === "Admin") && (
                 <button
                   className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                  onClick={() => handleEditItem(index)}
+                  onClick={() => handleEditItem(row.addedItemsIndex)}
                   title="Edit"
                 >
                   edit
@@ -1454,7 +1454,7 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
                 role === "Admin") && (
                 <button
                   className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                  onClick={() => handleSaveRow(index)}
+                  onClick={() => handleSaveRow(row.addedItemsIndex)}
                   title="Save"
                 >
                   save
@@ -1463,7 +1463,7 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
             {!row.isEditing && (
               <button
                 className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                onClick={() => handleRemoveItem(index)}
+                onClick={() => handleRemoveItem(row.addedItemsIndex)}
                 title="Delete"
               >
                 <Icon icon="mingcute:delete-2-line" />
@@ -1507,6 +1507,7 @@ const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
       ...item,
       __id: `item-${idx}`,
       isInclude: false,
+      addedItemsIndex: idx,
     });
 
     // Includes as separate rows (only for packages)
