@@ -754,35 +754,71 @@ const BookingViewLayer = () => {
   };
 
   const handleGenerateFinalInvoice = async () => {
-    // navigate(`/invoice-view/${bookingData.BookingID}`);
-
-    if (!bookingData || !bookingData.LeadId) {
-      Swal.fire("Error", "Booking data not available.", "error");
-      return;
-    }
-
-    try {
-      const res = await axios.post(
-        `${API_BASE}Leads/GenerateFinalInvoice`,
-        {
-          bookingId: bookingData.BookingID,
+  if (!bookingData?.BookingID) {
+    Swal.fire("Error", "Booking data not available.", "error");
+    return;
+  }
+  try {
+    const res = await axios.post(
+      `${API_BASE}Leads/GenerateFinalInvoice`,
+      {
+        bookingID: bookingData.BookingID,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      }
+    );
+    Swal.fire(
+      "Success",
+      res.data?.message || "Final Invoice generated successfully.",
+      "success"
+    );
+    navigate(`/invoice-view/${bookingData.BookingID}`);
+  } catch (error) {
+    console.error("Generate Invoice Error:", error);
 
-      Swal.fire(
-        "Success",
-        res.data.message || "Failed to generate invoice.",
-        "success"
-      );
-      navigate(`/invoice-view/${bookingData.BookingID}`);
-    } catch (error) {
-      console.error("Generate Final Invoice Error:", error);
-      Swal.fire("Error", "Failed to generate final invoice.", "error");
-    }
-  };
+    Swal.fire(
+      "Error",
+      error?.response?.data?.message || "Failed to generate Final invoice.",
+      "error"
+    );
+  }
+};
+  const handleGenerateEstimationInvoice = async () => {
+  if (!bookingData?.BookingID) {
+    Swal.fire("Error", "Booking data not available.", "error");
+    return;
+  }
+  try {
+    const res = await axios.post(
+      `${API_BASE}Leads/GenerateEstimationInvoice`,
+      {
+        bookingID: bookingData.BookingID,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    Swal.fire(
+      "Success",
+      res.data?.message || "Estimation Invoice generated successfully.",
+      "success"
+    );
+    navigate(`/invoice-view/${bookingData.BookingID}`);
+  } catch (error) {
+    console.error("Generate Invoice Error:", error);
+    Swal.fire(
+      "Error",
+      error?.response?.data?.message || "Failed to generate Estimation invoice.",
+      "error"
+    );
+  }
+};
+
 
   const closePaymentModal = () => {
     setShowPaymentModal(false);
@@ -802,73 +838,85 @@ const BookingViewLayer = () => {
   const remainingAmount = Math.max(totalAmount - alreadyPaid, 0);
 
   const handleConfirmPayment = async () => {
-    try {
-      if (!paymentMode) {
-        Swal.fire("Validation", "Please select payment mode", "warning");
-        return;
-      }
-      if (!payAmount || payAmount <= 0) {
-        Swal.fire("Validation", "Enter valid amount", "warning");
-        return;
-      }
-      if (isDiscountApplicable) {
-        if (!discountAmount || discountAmount <= 0) {
-          Swal.fire("Validation", "Enter valid discount amount", "warning");
-          return;
-        }
-
-        if (discountAmount > payAmount) {
-          Swal.fire(
-            "Validation",
-            "Discount cannot exceed entered amount",
-            "warning"
-          );
-          return;
-        }
-      }
-      if (payAmount > remainingAmount) {
-        Swal.fire(
-          "Validation",
-          "Amount cannot exceed remaining balance",
-          "warning"
-        );
-        return;
-      }
-      if (finalPayAmount <= 0) {
-        Swal.fire(
-          "Validation",
-          "Final payable amount must be greater than zero",
-          "warning"
-        );
-        return;
-      }
-
-      const payload = {
-        bookingID: bookingData.BookingID,
-        amount: finalPayAmount,
-        paymentMode,
-        discountAmount: isDiscountApplicable ? discountAmount : 0,
-      };
-
-      const res = await axios.post(
-        `${API_BASE}Leads/MarkBookingPaid`,
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (res?.data?.success) {
-        Swal.fire("Success", "Payment confirmed successfully", "success");
-        setShowPaymentModal(false); // ✅ close modal
-        setIsPaid(true);
-        fetchBookingData(); // ✅ refresh booking
-      } else {
-        Swal.fire("Error", "Payment confirmation failed", "error");
-      }
-    } catch (err) {
-      console.error(err);
-      Swal.fire("Error", "Something went wrong", "error");
+  try {
+    if (!paymentMode) {
+      Swal.fire("Validation", "Please select payment mode", "warning");
+      return;
     }
-  };
+
+    if (!payAmount || payAmount <= 0) {
+      Swal.fire("Validation", "Enter valid amount", "warning");
+      return;
+    }
+
+    if (isDiscountApplicable) {
+      if (!discountAmount || discountAmount <= 0) {
+        Swal.fire("Validation", "Enter valid discount amount", "warning");
+        return;
+      }
+
+      if (discountAmount > payAmount) {
+        Swal.fire(
+          "Validation",
+          "Discount cannot exceed entered amount",
+          "warning"
+        );
+        return;
+      }
+    }
+
+    if (payAmount > remainingAmount) {
+      Swal.fire(
+        "Validation",
+        "Amount cannot exceed remaining balance",
+        "warning"
+      );
+      return;
+    }
+
+    const finalAmount =
+      Number(payAmount || 0) - Number(discountAmount || 0);
+
+    if (finalAmount <= 0) {
+      Swal.fire(
+        "Validation",
+        "Final payable amount must be greater than zero",
+        "warning"
+      );
+      return;
+    }
+
+    // ✅ NEW PAYLOAD
+    const payload = {
+      bookingID: bookingData.BookingID,
+      amountPaid: finalAmount,
+      paymentMode,               // ex: Cash / UPI / Card
+      paymentStatus: "Success",  // 🔒 static
+      paymentType: "Static",     // 🔒 static
+    };
+
+    const res = await axios.post(
+      `${API_BASE}Payments/InsertBookingAddOnsPayment`,
+      payload,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    if (res?.data?.status) {
+      Swal.fire("Success", "Payment confirmed successfully", "success");
+      setShowPaymentModal(false);
+      setIsPaid(true);
+      fetchBookingData(); // refresh booking & payments
+    } else {
+      Swal.fire("Error", "Payment confirmation failed", "error");
+    }
+  } catch (err) {
+    console.error("Payment Error:", err);
+    Swal.fire("Error", "Something went wrong", "error");
+  }
+};
+
 
   const handleSubmitPickupDetails = async () => {
     if (!pickupDate || !pickupTime || !dropDate || !dropTime) {
@@ -1966,6 +2014,12 @@ const BookingViewLayer = () => {
                   Enter Payment
                 </button>
               )}
+              <button
+                  className="btn btn-info btn-sm d-inline-flex align-items-center"
+                  onClick={handleGenerateEstimationInvoice}
+                >
+                  Generate Estimation Invoice
+                </button>
 
               {/* Show Generate Invoice only if paid */}
               {isPaid && (
@@ -1973,7 +2027,7 @@ const BookingViewLayer = () => {
                   className="btn btn-info btn-sm d-inline-flex align-items-center"
                   onClick={handleGenerateFinalInvoice}
                 >
-                  Generate Invoice
+                  Generate Final Invoice
                 </button>
               )}
             </div>
