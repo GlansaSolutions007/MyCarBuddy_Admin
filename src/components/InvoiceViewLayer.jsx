@@ -35,20 +35,19 @@ const InvoiceViewLayer = () => {
     }
   };
   const INV_STATIC = "https://api.mycarsbuddy.com";
-  
 
   const activeInvoice = bookingData?.Invoices?.find(
     (inv) => inv.IsActive === true
   );
+  const activeInvoiceType = activeInvoice?.InvoiceType;
 
   const invoicePdfUrl = activeInvoice?.FolderPath
     ? `${INV_STATIC}/Invoices/${activeInvoice.FolderPath.split("\\").pop()}`
     : null;
 
-    const invoiceNumber = activeInvoice?.FolderPath
-  ? activeInvoice.FolderPath.split("\\").pop().replace(".pdf", "")
-  : null;
-
+  const invoiceNumber = activeInvoice?.FolderPath
+    ? activeInvoice.FolderPath.split("\\").pop().replace(".pdf", "")
+    : null;
 
   const handlePrint = () => {
     if (invoicePdfUrl) {
@@ -138,28 +137,31 @@ const InvoiceViewLayer = () => {
         </button>
 
         <div className="d-flex gap-2">
-          <button
-            className="btn btn-success-600 d-inline-flex align-items-center gap-2"
-            onClick={handleSendEstimatedInvoice}
-          >
-            <Icon icon="mdi:email-send-outline" />
-            <span>Send Estimation Invoice</span>
-          </button>
-          <button
-            className="btn btn-success-600 d-inline-flex align-items-center gap-2"
-            onClick={handleSendFinalInvoice}
-          >
-            <Icon icon="mdi:email-send-outline" />
-            <span>Send Final Invoice</span>
-          </button>
-
-          <button
+          {activeInvoiceType === "Estimation" && (
+            <button
+              className="btn btn-warning d-inline-flex align-items-center gap-2"
+              onClick={handleSendEstimatedInvoice}
+            >
+              <Icon icon="mdi:email-send-outline" />
+              <span>Send Estimation Invoice</span>
+            </button>
+          )}
+          {activeInvoiceType === "Final" && (
+            <button
+              className="btn btn-success-600 d-inline-flex align-items-center gap-2"
+              onClick={handleSendFinalInvoice}
+            >
+              <Icon icon="mdi:email-send-outline" />
+              <span>Send Final Invoice</span>
+            </button>
+          )}
+          {/* <button
             className="btn btn-primary d-inline-flex align-items-center gap-2"
             onClick={handlePrint}
           >
             <Icon icon="mdi:printer" />
             <span>Print Invoice</span>
-          </button>
+          </button> */}
         </div>
       </div>
 

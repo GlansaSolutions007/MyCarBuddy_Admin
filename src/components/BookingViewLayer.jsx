@@ -226,7 +226,9 @@ const BookingViewLayer = () => {
 
     const result = await Swal.fire({
       title: "Confirm Reschedule",
-      text: `Are you sure you want to reschedule to ${newDate} at ${selectedTimeSlot.map(formatTimeSlot).join(', ')}?`,
+      text: `Are you sure you want to reschedule to ${newDate} at ${selectedTimeSlot
+        .map(formatTimeSlot)
+        .join(", ")}?`,
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
@@ -244,7 +246,7 @@ const BookingViewLayer = () => {
           reason: reason,
           oldSchedule: bookingData.BookingDate,
           newSchedule: newDate,
-          timeSlot: selectedTimeSlot.join(','),
+          timeSlot: selectedTimeSlot.join(","),
           requestedBy: localStorage.getItem("userId") || 1, // Using localStorage for userId
           Status: "",
         },
@@ -754,71 +756,71 @@ const BookingViewLayer = () => {
   };
 
   const handleGenerateFinalInvoice = async () => {
-  if (!bookingData?.BookingID) {
-    Swal.fire("Error", "Booking data not available.", "error");
-    return;
-  }
-  try {
-    const res = await axios.post(
-      `${API_BASE}Leads/GenerateFinalInvoice`,
-      {
-        bookingID: bookingData.BookingID,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
+    if (!bookingData?.BookingID) {
+      Swal.fire("Error", "Booking data not available.", "error");
+      return;
+    }
+    try {
+      const res = await axios.post(
+        `${API_BASE}Leads/GenerateFinalInvoice`,
+        {
+          bookingID: bookingData.BookingID,
         },
-      }
-    );
-    Swal.fire(
-      "Success",
-      res.data?.message || "Final Invoice generated successfully.",
-      "success"
-    );
-    navigate(`/invoice-view/${bookingData.BookingID}`);
-  } catch (error) {
-    console.error("Generate Invoice Error:", error);
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      Swal.fire(
+        "Success",
+        res.data?.message || "Final Invoice generated successfully.",
+        "success"
+      );
+      navigate(`/invoice-view/${bookingData.BookingID}`);
+    } catch (error) {
+      console.error("Generate Invoice Error:", error);
 
-    Swal.fire(
-      "Error",
-      error?.response?.data?.message || "Failed to generate Final invoice.",
-      "error"
-    );
-  }
-};
+      Swal.fire(
+        "Error",
+        error?.response?.data?.message || "Failed to generate Final invoice.",
+        "error"
+      );
+    }
+  };
   const handleGenerateEstimationInvoice = async () => {
-  if (!bookingData?.BookingID) {
-    Swal.fire("Error", "Booking data not available.", "error");
-    return;
-  }
-  try {
-    const res = await axios.post(
-      `${API_BASE}Leads/GenerateEstimationInvoice`,
-      {
-        bookingID: bookingData.BookingID,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
+    if (!bookingData?.BookingID) {
+      Swal.fire("Error", "Booking data not available.", "error");
+      return;
+    }
+    try {
+      const res = await axios.post(
+        `${API_BASE}Leads/GenerateEstimationInvoice`,
+        {
+          bookingID: bookingData.BookingID,
         },
-      }
-    );
-    Swal.fire(
-      "Success",
-      res.data?.message || "Estimation Invoice generated successfully.",
-      "success"
-    );
-    navigate(`/invoice-view/${bookingData.BookingID}`);
-  } catch (error) {
-    console.error("Generate Invoice Error:", error);
-    Swal.fire(
-      "Error",
-      error?.response?.data?.message || "Failed to generate Estimation invoice.",
-      "error"
-    );
-  }
-};
-
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      Swal.fire(
+        "Success",
+        res.data?.message || "Estimation Invoice generated successfully.",
+        "success"
+      );
+      navigate(`/invoice-view/${bookingData.BookingID}`);
+    } catch (error) {
+      console.error("Generate Invoice Error:", error);
+      Swal.fire(
+        "Error",
+        error?.response?.data?.message ||
+          "Failed to generate Estimation invoice.",
+        "error"
+      );
+    }
+  };
 
   const closePaymentModal = () => {
     setShowPaymentModal(false);
@@ -834,93 +836,102 @@ const BookingViewLayer = () => {
     (bookingData?.LabourCharges || 0) -
     (bookingData?.CouponAmount || 0);
 
-  const alreadyPaid = bookingData?.PaidAmount || 0;
+  // const alreadyPaid = bookingData?.PaidAmount || 0;
+  const alreadyPaid = (bookingData?.Payments || [])
+    .filter(
+      (payment) => payment.PaymentStatus === "Success" && !payment.IsRefunded
+    )
+    .reduce((sum, payment) => {
+      return sum + Number(payment.AmountPaid || 0);
+    }, 0);
   const remainingAmount = Math.max(totalAmount - alreadyPaid, 0);
 
   const handleConfirmPayment = async () => {
-  try {
-    if (!paymentMode) {
-      Swal.fire("Validation", "Please select payment mode", "warning");
-      return;
-    }
-
-    if (!payAmount || payAmount <= 0) {
-      Swal.fire("Validation", "Enter valid amount", "warning");
-      return;
-    }
-
-    if (isDiscountApplicable) {
-      if (!discountAmount || discountAmount <= 0) {
-        Swal.fire("Validation", "Enter valid discount amount", "warning");
+    try {
+      if (!paymentMode) {
+        Swal.fire("Validation", "Please select payment mode", "warning");
         return;
       }
 
-      if (discountAmount > payAmount) {
+      if (!payAmount || payAmount <= 0) {
+        Swal.fire("Validation", "Enter valid amount", "warning");
+        return;
+      }
+
+      if (isDiscountApplicable) {
+        if (!discountAmount || discountAmount <= 0) {
+          Swal.fire("Validation", "Enter valid discount amount", "warning");
+          return;
+        }
+
+        if (discountAmount > payAmount) {
+          Swal.fire(
+            "Validation",
+            "Discount cannot exceed entered amount",
+            "warning"
+          );
+          return;
+        }
+      }
+
+      if (payAmount > remainingAmount) {
         Swal.fire(
           "Validation",
-          "Discount cannot exceed entered amount",
+          "Amount cannot exceed remaining balance",
           "warning"
         );
         return;
       }
-    }
 
-    if (payAmount > remainingAmount) {
-      Swal.fire(
-        "Validation",
-        "Amount cannot exceed remaining balance",
-        "warning"
-      );
-      return;
-    }
+      const finalAmount = Number(payAmount || 0) - Number(discountAmount || 0);
 
-    const finalAmount =
-      Number(payAmount || 0) - Number(discountAmount || 0);
-
-    if (finalAmount <= 0) {
-      Swal.fire(
-        "Validation",
-        "Final payable amount must be greater than zero",
-        "warning"
-      );
-      return;
-    }
-
-    // ✅ NEW PAYLOAD
-    const payload = {
-      bookingID: bookingData.BookingID,
-      amountPaid: finalAmount,
-      paymentMode,               // ex: Cash / UPI / Card
-      paymentStatus: "Success",  // 🔒 static
-      paymentType: "Static",     // 🔒 static
-    };
-
-    const res = await axios.post(
-      `${API_BASE}Payments/InsertBookingAddOnsPayment`,
-      payload,
-      {
-        headers: { Authorization: `Bearer ${token}` },
+      if (finalAmount <= 0) {
+        Swal.fire(
+          "Validation",
+          "Final payable amount must be greater than zero",
+          "warning"
+        );
+        return;
       }
-    );
 
-    if (res?.data?.status) {
-      Swal.fire("Success", "Payment confirmed successfully", "success");
-      setShowPaymentModal(false);
-      setIsPaid(true);
-      fetchBookingData(); // refresh booking & payments
-    } else {
-      Swal.fire("Error", "Payment confirmation failed", "error");
+      // ✅ NEW PAYLOAD
+      const payload = {
+        bookingID: bookingData.BookingID,
+        amountPaid: finalAmount,
+        paymentMode, // ex: Cash / UPI / Card
+        paymentStatus: "Success", // 🔒 static
+        paymentType: "Static", // 🔒 static
+      };
+
+      const res = await axios.post(
+        `${API_BASE}Payments/InsertBookingAddOnsPayment`,
+        payload,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res?.data?.status) {
+        Swal.fire("Success", "Payment confirmed successfully", "success");
+        setShowPaymentModal(false);
+        setIsPaid(true);
+        fetchBookingData(); // refresh booking & payments
+      } else {
+        Swal.fire("Error", "Payment confirmation failed", "error");
+      }
+    } catch (err) {
+      console.error("Payment Error:", err);
+      Swal.fire("Error", "Something went wrong", "error");
     }
-  } catch (err) {
-    console.error("Payment Error:", err);
-    Swal.fire("Error", "Something went wrong", "error");
-  }
-};
-
+  };
 
   const handleSubmitPickupDetails = async () => {
     if (!pickupDate || !pickupTime || !dropDate || !dropTime) {
-      Swal.fire("Validation", "Please fill all pickup and drop details", "warning");
+      Swal.fire(
+        "Validation",
+        "Please fill all pickup and drop details",
+        "warning"
+      );
       return;
     }
 
@@ -941,7 +952,11 @@ const BookingViewLayer = () => {
       );
 
       if (res.data.success || res.status === 200) {
-        Swal.fire("Success", "Pickup and Drop details saved successfully!", "success");
+        Swal.fire(
+          "Success",
+          "Pickup and Drop details saved successfully!",
+          "success"
+        );
         // Reset form
         setPickupDate("");
         setPickupTime("");
@@ -949,7 +964,11 @@ const BookingViewLayer = () => {
         setDropTime("");
         fetchBookingData(); // Refresh booking data
       } else {
-        Swal.fire("Error", res.data.message || "Failed to save details", "error");
+        Swal.fire(
+          "Error",
+          res.data.message || "Failed to save details",
+          "error"
+        );
       }
     } catch (error) {
       console.error("Error saving pickup details:", error);
@@ -1232,7 +1251,10 @@ const BookingViewLayer = () => {
 
                     {/* Action buttons */}
                     <div className="d-flex justify-content-center gap-2 mt-4">
-                      <button className="btn btn-primary btn-sm" onClick={handleSubmitPickupDetails}>
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={handleSubmitPickupDetails}
+                      >
                         Submit Details
                       </button>
                     </div>
@@ -1289,7 +1311,9 @@ const BookingViewLayer = () => {
                           })
                           .map((slot) => ({
                             value: `${slot.StartTime} - ${slot.EndTime}`,
-                            label: `${formatTime(slot.StartTime)} - ${formatTime(slot.EndTime)}`,
+                            label: `${formatTime(
+                              slot.StartTime
+                            )} - ${formatTime(slot.EndTime)}`,
                           }))}
                         value={selectedTimeSlot.map((val) => ({
                           value: val,
@@ -1297,7 +1321,9 @@ const BookingViewLayer = () => {
                         }))}
                         onChange={(selectedOptions) =>
                           setSelectedTimeSlot(
-                            selectedOptions ? selectedOptions.map((opt) => opt.value) : []
+                            selectedOptions
+                              ? selectedOptions.map((opt) => opt.value)
+                              : []
                           )
                         }
                         placeholder="Select time slots"
@@ -1851,46 +1877,6 @@ const BookingViewLayer = () => {
                           )}
                           <div className="d-flex justify-content-between align-items-center mb-2 mt-2">
                             <h6 className="fw-bold mb-0">Billing Summary</h6>
-                            {/* {bookingData?.Payments?.length > 0 &&
-                              (() => {
-                                const rawStatus =
-                                  bookingData.Payments?.[0]?.PaymentStatus ||
-                                  "-";
-                                const status =
-                                  rawStatus === "Success" ? "Paid" : rawStatus;
-
-                                // Color map like your sample code
-                                const colorMap = {
-                                  Paid: "#28A745", // Green
-                                  Pending: "#F57C00", // Orange
-                                  Refunded: "#25878F", // Teal-blue
-                                  Failed: "#E34242", // Red
-                                  "-": "#BFBFBF", // Grey
-                                };
-
-                                const color = colorMap[status] || "#6c757d";
-
-                                return (
-                                  <span
-                                    className="fw-semibold d-flex align-items-center"
-                                    style={{
-                                      fontSize: "13px",
-                                      fontWeight: 500,
-                                    }}
-                                  >
-                                    <span
-                                      className="rounded-circle d-inline-block me-1"
-                                      style={{
-                                        width: "10px",
-                                        height: "10px",
-                                        backgroundColor: color,
-                                      }}
-                                    ></span>
-
-                                    <span style={{ color }}>{status}</span>
-                                  </span>
-                                );
-                              })()} */}
                           </div>
 
                           {bookingData ? (
@@ -1957,6 +1943,31 @@ const BookingViewLayer = () => {
                                   ).toFixed(2)}
                                 </span>
                               </li>
+                              <li className="list-group-item d-flex justify-content-between">
+                                <span className="fw-semibold text-secondary">
+                                  Already Paid
+                                </span>
+                                <span className="fw-semibold text-primary">
+                                  - ₹{alreadyPaid.toFixed(2)}
+                                </span>
+                              </li>
+                              <li className="list-group-item d-flex justify-content-between border-top pt-2">
+                                <span className="fw-bold text-dark">
+                                  Remaining Amount
+                                </span>
+                                <span className="fw-bold text-success">
+                                  ₹
+                                  {Math.max(
+                                    Number(
+                                      (bookingData.TotalPrice || 0) +
+                                        (bookingData.GSTAmount || 0) +
+                                        (bookingData.LabourCharges || 0) -
+                                        (bookingData.CouponAmount || 0)
+                                    ) - alreadyPaid,
+                                    0
+                                  ).toFixed(2)}
+                                </span>
+                              </li>
                             </ul>
                           ) : (
                             <p className="text-muted mb-0">
@@ -2002,7 +2013,7 @@ const BookingViewLayer = () => {
             </div>
             <div className="d-flex justify-content-center gap-2 mt-3">
               {/* Show Confirm Payment only if not paid */}
-              {!isPaid && (
+             {remainingAmount > 0 && (
                 <button
                   className="btn btn-primary-600 btn-sm"
                   onClick={() => {
@@ -2014,15 +2025,18 @@ const BookingViewLayer = () => {
                   Enter Payment
                 </button>
               )}
+              {remainingAmount > 0 && (
               <button
-                  className="btn btn-info btn-sm d-inline-flex align-items-center"
-                  onClick={handleGenerateEstimationInvoice}
-                >
-                  Generate Estimation Invoice
-                </button>
+                className="btn btn-warning btn-sm d-inline-flex align-items-center"
+                onClick={handleGenerateEstimationInvoice}
+              >
+                Generate Estimation Invoice
+              </button>
+              )}
 
               {/* Show Generate Invoice only if paid */}
-              {isPaid && (
+              {/* {isPaid && ( */}
+              {remainingAmount === 0 && (
                 <button
                   className="btn btn-info btn-sm d-inline-flex align-items-center"
                   onClick={handleGenerateFinalInvoice}
@@ -2171,16 +2185,15 @@ const BookingViewLayer = () => {
         </div>
       )}
       {showPaymentModal && (
-        <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+        <div
+          className="modal fade show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
           <div className="modal-dialog modal-md modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header justify-content-center">
                 <h6 className="modal-title">Enter Payment Details</h6>
-                {/* <button
-                  type="button"
-                  className="btn-close"
-                  onClick={closePaymentModal}
-                /> */}
               </div>
 
               <div className="modal-body">
@@ -2274,7 +2287,9 @@ const BookingViewLayer = () => {
                 )}
                 {/* Pay Amount */}
                 <div className="mb-3">
-                  <label className="form-label fw-semibold">Enter Final Amount</label>
+                  <label className="form-label fw-semibold">
+                    Enter Final Amount
+                  </label>
                   <input
                     type="number"
                     className="form-control"
