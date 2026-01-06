@@ -11,18 +11,8 @@ import App from "./App.jsx";
 
 import { PermissionProvider } from "./context/PermissionContext";
 
-const userId = localStorage.getItem("userId");
-const roleId = localStorage.getItem("roleId");
-const role = localStorage.getItem("role"); 
-const token = localStorage.getItem("token");
-
 createRoot(document.getElementById("root")).render(
-  <PermissionProvider
-    userId={userId}
-    roleId={roleId}
-    role={role}
-    token={token}
-  >
+  <PermissionProvider>
     <App />
   </PermissionProvider>
 );

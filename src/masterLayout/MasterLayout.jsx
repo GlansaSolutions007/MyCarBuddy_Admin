@@ -33,7 +33,7 @@ const MasterLayout = ({ children }) => {
   useEffect(() => {
     const fetchUserPermissions = async () => {
       try {
-        if (!userId || !token) return;
+        if (!userId || !token || !roleId) return;
         const response = await axios.get(`${API_BASE}rolehaspermissions/id?roleId=${roleId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -50,7 +50,7 @@ const MasterLayout = ({ children }) => {
     };
 
     fetchUserPermissions();
-  }, [userId, token, API_BASE]);
+  }, [userId, token, roleId, API_BASE]);
 
   // Helper function to check if user has a specific permission
   const hasPermission = (permissionName, page) => {
