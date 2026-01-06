@@ -476,7 +476,7 @@ const LeadsAssignLayer = () => {
               </div>
               <div>
                 <label className="form-label fw-semibold">
-                  Selected Leads :{" "}
+                  Selected Leads for Assign :{" "}
                 </label>
                 <span
                   className="fw-bold text-primary fs-5"

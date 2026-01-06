@@ -637,7 +637,8 @@ const BookServicesLayer = () => {
     const updatedItem = {
       type: itemType,
       name: name.trim(),
-      basePrice: Number(price) || 0,
+      // basePrice: Number(price) || 0,
+      basePrice: itemType === "Spare Part" ? Number(price) || 0 : 0,
       price: Number(baseTotal.toFixed(2)),
       quantity: Number(quantity),
       baseTotal: Number(baseTotal.toFixed(2)),
@@ -647,7 +648,13 @@ const BookServicesLayer = () => {
       dealerID: selectedDealer,
       percentage: Number(companyPercent) || 0,
       percentAmount: Number(percentAmount) || 0,
-      labourCharge: 0,
+      labourCharge:
+        itemType === "Service" ||
+        itemType === "Service Group" ||
+        itemType === "Package"
+          ? Number(price) || 0
+          : 0,
+      // labourCharge: 0,
       isEditing: false,
       includeId: itemType === "Service" ? Number(finalIncludeID) || 0 : 0,
       includeName:
@@ -1062,7 +1069,7 @@ const BookServicesLayer = () => {
       grow: 2,
     },
     {
-      name: "Base Price",
+      name: "Part Price",
       cell: (row) => (
         <input
           type="number"
@@ -1194,7 +1201,7 @@ const BookServicesLayer = () => {
       width: "100px",
     },
     {
-      name: "Total Price",
+      name: "Part Total",
       cell: (row) => (
         <input
           type="number"
@@ -1206,7 +1213,7 @@ const BookServicesLayer = () => {
       width: "120px",
     },
     {
-      name: "Labour Charges",
+      name: "Service Chg.",
       cell: (row, index) => (
         <input
           type="number"
@@ -1948,7 +1955,7 @@ const BookServicesLayer = () => {
                   <div>₹{itemTotal.toFixed(2)}</div>
                 </div>
                 <div className="d-flex justify-content-between">
-                  <div>Labour Charges</div>
+                  <div>Service Charges</div>
                   <div>₹{labourTotal.toFixed(2)}</div>
                 </div>
                 <div className="d-flex justify-content-between">
@@ -2087,12 +2094,14 @@ const BookServicesLayer = () => {
                 )}
               </div>
             )}
-            {hasNewItem && (
-              <div className="text-danger text-center mt-2 fw-semibold">
-                You’ve added new items. Please submit them first to proceed with
-                booking confirmation.
-              </div>
-            )}
+            {(employeeData?.RoleName === "Supervisor Head" ||
+              role === "Admin") &&
+              hasNewItem && (
+                <div className="text-danger text-center mt-2 fw-semibold">
+                  You’ve added new items. Please submit them first to proceed
+                  with booking confirmation.
+                </div>
+              )}
           </div>
         </div>
       </div>

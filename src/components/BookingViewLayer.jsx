@@ -1252,7 +1252,7 @@ const BookingViewLayer = () => {
                     {/* Action buttons */}
                     <div className="d-flex justify-content-center gap-2 mt-4">
                       <button
-                        className="btn btn-primary btn-sm"
+                        className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
                         onClick={handleSubmitPickupDetails}
                       >
                         Submit Details
@@ -1275,12 +1275,11 @@ const BookingViewLayer = () => {
                       <label className="form-label">Reschedule Date</label>
                       <input
                         type="date"
-                        className="form-control"
+                        className="form-control py-2"
                         min={today}
                         value={newDate}
                         onChange={(e) => {
                           setNewDate(e.target.value);
-                          // setSelectedTimeSlot(""); // reset time slot if date changes
                         }}
                       />
                     </div>
@@ -1345,7 +1344,7 @@ const BookingViewLayer = () => {
 
                   <div className="mt-3 d-flex justify-content-center gap-2">
                     <button
-                      className="btn btn-primary btn-sm"
+                      className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
                       onClick={handleReschedule}
                     >
                       Submit Reschedule
@@ -1429,7 +1428,7 @@ const BookingViewLayer = () => {
                       {roleId !== "8" &&
                         (bookingData.TechID || bookingData.SupervisorID) && (
                           <button
-                            className="btn btn-info btn-sm d-inline-flex align-items-center"
+                            className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                             onClick={() => handleAssignClick()}
                           >
                             Reassign
@@ -1439,7 +1438,7 @@ const BookingViewLayer = () => {
                       {/* BUTTON 2 — only for roleId = "8" AND TechID available */}
                       {roleId === "8" && bookingData.TechID && (
                         <button
-                          className="btn btn-info btn-sm d-inline-flex align-items-center"
+                          className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                           onClick={() => handleAssignClick()}
                         >
                           Reassign
@@ -1449,10 +1448,10 @@ const BookingViewLayer = () => {
                   )}
                 <Link
                   to={`/book-service/${bookingData?.LeadId}`}
-                  className="btn btn-info btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
+                  className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
                   title="Add"
                 >
-                  Add/Edit Services
+                  Add / Edit Services
                 </Link>
               </li>
 
@@ -1708,6 +1707,12 @@ const BookingViewLayer = () => {
                                       style={{ zIndex: 2 }}
                                     >
                                       <tr>
+                                        <th
+                                          style={{ width: "60px" }}
+                                          className="text-center"
+                                        >
+                                          S.No
+                                        </th>
                                         <th style={{ width: "100px" }}>Type</th>
                                         <th style={{ width: "180px" }}>
                                           Service Name
@@ -1717,25 +1722,25 @@ const BookingViewLayer = () => {
                                           style={{ width: "100px" }}
                                           className="text-end"
                                         >
-                                          Base Price
+                                          Part Price
                                         </th>
                                         <th
                                           style={{ width: "100px" }}
                                           className="text-end"
                                         >
-                                          Quantity
+                                          Qty
                                         </th>
                                         <th
                                           style={{ width: "100px" }}
                                           className="text-end"
                                         >
-                                          Total Price
+                                          Part Total
                                         </th>
                                         <th
                                           style={{ width: "120px" }}
                                           className="text-end"
                                         >
-                                          Labour Chg.
+                                          Service Chg.
                                         </th>
                                         <th
                                           style={{ width: "90px" }}
@@ -1779,14 +1784,17 @@ const BookingViewLayer = () => {
                                       {bookingData.BookingAddOns.map(
                                         (addon, index) => (
                                           <tr key={addon.AddOnID || index}>
+                                            <td className="text-center">
+                                              {index + 1}.
+                                            </td>
                                             <td className="normal">
                                               {addon.ServiceType || "—"}
                                             </td>
                                             <td className="normal">
-                                              <div>
-                                                <strong className="text-dark">
-                                                  {addon.ServiceName || "—"}
-                                                </strong>
+                                              <div className="normal">
+                                                {/* <strong > */}
+                                                {addon.ServiceName || "—"}
+                                                {/* </strong> */}
                                                 {addon.Includes &&
                                                   Array.isArray(
                                                     addon.Includes
@@ -1875,100 +1883,140 @@ const BookingViewLayer = () => {
                               </div>
                             </div>
                           )}
-                          <div className="d-flex justify-content-between align-items-center mb-2 mt-2">
+                          {/* <div className="d-flex justify-content-between align-items-center mb-2 mt-2">
                             <h6 className="fw-bold mb-0">Billing Summary</h6>
-                          </div>
-
+                          </div> */}
                           {bookingData ? (
-                            <ul className="list-group list-group-flush">
-                              <li className="list-group-item d-flex justify-content-between">
-                                <span className="fw-semibold text-secondary">
-                                  Base Price
-                                </span>
-                                <span>
-                                  ₹
-                                  {Number(bookingData.TotalPrice || 0).toFixed(
-                                    2
-                                  )}
-                                </span>
-                              </li>
-                              <li className="list-group-item d-flex justify-content-between">
-                                <span className="fw-semibold text-secondary">
-                                  Labour Charges
-                                </span>
-                                <span>
-                                  ₹
-                                  {Number(
-                                    bookingData.LabourCharges || 0
-                                  ).toFixed(2)}
-                                </span>
-                              </li>
-                              <li className="list-group-item d-flex justify-content-between">
-                                <span className="fw-semibold text-secondary">
-                                  GST Total
-                                </span>
-                                <span>
-                                  ₹
-                                  {Number(bookingData.GSTAmount || 0).toFixed(
-                                    2
-                                  )}
-                                </span>
-                              </li>
-
-                              {bookingData.CouponAmount ? (
-                                <li className="list-group-item d-flex justify-content-between">
-                                  <span className="fw-semibold text-secondary">
-                                    Coupon
+                            <>
+                              <ul className="list-group list-group-flush ">
+                                <li className="list-group-item d-flex justify-content-between p-0">
+                                  <span className="text-secondary">
+                                    Items Subtotal
                                   </span>
                                   <span>
-                                    - ₹
+                                    ₹
                                     {Number(
-                                      bookingData.CouponAmount || 0
+                                      bookingData.TotalPrice || 0
                                     ).toFixed(2)}
                                   </span>
                                 </li>
-                              ) : null}
+                                <li className="list-group-item d-flex justify-content-between p-0">
+                                  <span className="text-secondary">
+                                    Service Charges
+                                  </span>
+                                  <span>
+                                    ₹
+                                    {Number(
+                                      bookingData.LabourCharges || 0
+                                    ).toFixed(2)}
+                                  </span>
+                                </li>
+                                <li className="list-group-item d-flex justify-content-between p-0">
+                                  <span className="text-secondary">
+                                    GST Total
+                                  </span>
+                                  <span>
+                                    ₹
+                                    {Number(bookingData.GSTAmount || 0).toFixed(
+                                      2
+                                    )}
+                                  </span>
+                                </li>
 
-                              <li className="list-group-item d-flex justify-content-between border-top mt-2 pt-2">
-                                <span className="fw-bold text-dark">
-                                  Total Amount
-                                </span>
-                                <span className="fw-bold text-success">
-                                  ₹
-                                  {Number(
-                                    (bookingData.TotalPrice || 0) +
-                                      (bookingData.GSTAmount || 0) +
-                                      (bookingData.LabourCharges || 0) -
-                                      (bookingData.CouponAmount || 0)
-                                  ).toFixed(2)}
-                                </span>
-                              </li>
-                              <li className="list-group-item d-flex justify-content-between">
-                                <span className="fw-semibold text-secondary">
-                                  Already Paid
-                                </span>
-                                <span className="fw-semibold text-primary">
-                                  - ₹{alreadyPaid.toFixed(2)}
-                                </span>
-                              </li>
-                              <li className="list-group-item d-flex justify-content-between border-top pt-2">
-                                <span className="fw-bold text-dark">
-                                  Remaining Amount
-                                </span>
-                                <span className="fw-bold text-success">
-                                  ₹
-                                  {Math.max(
-                                    Number(
+                                {bookingData.CouponAmount ? (
+                                  <li className="list-group-item d-flex justify-content-between p-0">
+                                    <span className="fw-semibold text-secondary">
+                                      Coupon
+                                    </span>
+                                    <span>
+                                      - ₹
+                                      {Number(
+                                        bookingData.CouponAmount || 0
+                                      ).toFixed(2)}
+                                    </span>
+                                  </li>
+                                ) : null}
+
+                                <li className="list-group-item d-flex justify-content-between border-top p-0">
+                                  <span className="fw-bold text-dark">
+                                    Total Amount
+                                  </span>
+                                  <span className="fw-bold text-success">
+                                    ₹
+                                    {Number(
                                       (bookingData.TotalPrice || 0) +
                                         (bookingData.GSTAmount || 0) +
                                         (bookingData.LabourCharges || 0) -
                                         (bookingData.CouponAmount || 0)
-                                    ) - alreadyPaid,
-                                    0
-                                  ).toFixed(2)}
-                                </span>
-                              </li>
-                            </ul>
+                                    ).toFixed(2)}
+                                  </span>
+                                </li>
+                                {/* {alreadyPaid > 0 && (
+                                <> */}
+                                <li className="list-group-item d-flex justify-content-between p-0">
+                                  <span className="text-secondary">
+                                    Already Paid
+                                  </span>
+                                  <span className="text-primary">
+                                    - ₹{alreadyPaid.toFixed(2)}
+                                  </span>
+                                </li>
+                                <li className="list-group-item d-flex justify-content-between border-top p-0">
+                                  <span className="fw-bold text-dark">
+                                    Remaining Amount
+                                  </span>
+                                  <span className="fw-bold text-success">
+                                    ₹
+                                    {Math.max(
+                                      Number(
+                                        (bookingData.TotalPrice || 0) +
+                                          (bookingData.GSTAmount || 0) +
+                                          (bookingData.LabourCharges || 0) -
+                                          (bookingData.CouponAmount || 0)
+                                      ) - alreadyPaid,
+                                      0
+                                    ).toFixed(2)}
+                                  </span>
+                                </li>
+                                {/* </>
+                              )} */}
+                              </ul>
+                              <div className="d-flex justify-content-center gap-2 mt-3 mb-3">
+                                {/* Show Confirm Payment only if not paid */}
+                                {remainingAmount > 0 && (
+                                  <button
+                                    className="btn btn-primary-600 btn-sm"
+                                    onClick={() => {
+                                      setPaymentMode("");
+                                      setPayAmount(remainingAmount);
+                                      setShowPaymentModal(true);
+                                    }}
+                                  >
+                                    Enter Payment
+                                  </button>
+                                )}
+                                {remainingAmount > 0 && (
+                                  <button
+                                    className="btn btn-warning btn-sm d-inline-flex align-items-center"
+                                    onClick={handleGenerateEstimationInvoice}
+                                  >
+                                    Generate Estimation Invoice
+                                  </button>
+                                )}
+
+                                {/* Show Generate Invoice only if paid */}
+                                {remainingAmount === 0 &&
+                                  bookingData?.BookingAddOns &&
+                                  bookingData.BookingAddOns.length > 0 && (
+                                    <button
+                                      className="btn btn-info btn-sm d-inline-flex align-items-center"
+                                      onClick={handleGenerateFinalInvoice}
+                                    >
+                                      Generate Final Invoice
+                                    </button>
+                                  )}
+                              </div>
+                            </>
                           ) : (
                             <p className="text-muted mb-0">
                               Loading summary...
@@ -2011,9 +2059,8 @@ const BookingViewLayer = () => {
                 )}
               </div>
             </div>
-            <div className="d-flex justify-content-center gap-2 mt-3">
-              {/* Show Confirm Payment only if not paid */}
-             {remainingAmount > 0 && (
+            {/* <div className="d-flex justify-content-center gap-2 mt-3">
+              {remainingAmount > 0 && (
                 <button
                   className="btn btn-primary-600 btn-sm"
                   onClick={() => {
@@ -2026,25 +2073,25 @@ const BookingViewLayer = () => {
                 </button>
               )}
               {remainingAmount > 0 && (
-              <button
-                className="btn btn-warning btn-sm d-inline-flex align-items-center"
-                onClick={handleGenerateEstimationInvoice}
-              >
-                Generate Estimation Invoice
-              </button>
-              )}
-
-              {/* Show Generate Invoice only if paid */}
-              {/* {isPaid && ( */}
-              {remainingAmount === 0 && (
                 <button
-                  className="btn btn-info btn-sm d-inline-flex align-items-center"
-                  onClick={handleGenerateFinalInvoice}
+                  className="btn btn-warning btn-sm d-inline-flex align-items-center"
+                  onClick={handleGenerateEstimationInvoice}
                 >
-                  Generate Final Invoice
+                  Generate Estimation Invoice
                 </button>
               )}
-            </div>
+
+              {remainingAmount === 0 &&
+                bookingData?.BookingAddOns &&
+                bookingData.BookingAddOns.length > 0 && (
+                  <button
+                    className="btn btn-info btn-sm d-inline-flex align-items-center"
+                    onClick={handleGenerateFinalInvoice}
+                  >
+                    Generate Final Invoice
+                  </button>
+                )}
+            </div> */}
           </div>
         </div>
       </div>
@@ -2229,7 +2276,7 @@ const BookingViewLayer = () => {
                   </div>
                 </div>
                 {/* Discount Section */}
-                <div className="mb-3">
+                {/* <div className="mb-3">
                   <div className="form-check d-flex align-items-center gap-2">
                     <input
                       className="form-check-input"
@@ -2251,9 +2298,9 @@ const BookingViewLayer = () => {
                       Is Discount Applicable
                     </label>
                   </div>
-                </div>
+                </div> */}
 
-                {isDiscountApplicable && (
+                {/* {isDiscountApplicable && (
                   <div className="mb-3">
                     <label className="form-label fw-semibold">
                       Enter Discount Amount
@@ -2284,12 +2331,10 @@ const BookingViewLayer = () => {
                       </strong>
                     </div>
                   </div>
-                )}
+                )} */}
                 {/* Pay Amount */}
                 <div className="mb-3">
-                  <label className="form-label fw-semibold">
-                    Enter Final Amount
-                  </label>
+                  <label className="form-label fw-semibold">Enter Amount</label>
                   <input
                     type="number"
                     className="form-control"
