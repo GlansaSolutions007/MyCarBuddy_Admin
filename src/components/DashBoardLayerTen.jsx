@@ -7,6 +7,7 @@ import OverallReport from "./child/OverallReport";
 import PurchaseAndSales from "./child/PurchaseAndSales";
 import RecentTransactions from "./child/RecentTransactions";
 import TodaysBookings from "./child/TodaysBookings";
+import RevenueReportCharts from "./child/RevenueReportCharts";
 
 const DashBoardLayerTen = () => {
   const role = localStorage.getItem("role");
@@ -41,6 +42,9 @@ const DashBoardLayerTen = () => {
 
           {/* RecentTransactions */}
           <RecentTransactions />
+          
+          {/* RevenueReportCharts */}
+          <RevenueReportCharts />
         </>
       )}
     </div>

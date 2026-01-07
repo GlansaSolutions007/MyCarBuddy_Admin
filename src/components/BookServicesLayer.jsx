@@ -1218,7 +1218,7 @@ const BookServicesLayer = () => {
         <input
           type="number"
           className="form-control form-control-sm"
-          value={row.labourCharge || 0}
+          value={row.labourCharge}
           min={0}
           onChange={(e) => {
             const labourCharge = Math.max(0, Number(e.target.value) || 0);

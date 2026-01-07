@@ -104,11 +104,7 @@ const OrganicLeadsLayer = () => {
       "Phone Number": lead.PhoneNumber || "-",
       Email: lead.Email || "-",
       "Created Date": lead.CreatedDate
-        ? new Date(lead.CreatedDate).toLocaleString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          })
+        ? new Date(lead.CreatedDate).toLocaleString("en-GB")
         : "-",
       City: lead.City || "-",
       Platform: lead.Platform || "-",
@@ -118,11 +114,7 @@ const OrganicLeadsLayer = () => {
           .join(", ") || "-",
       Description: lead.Description || "-",
       "Updated Date": lead.Updated_At
-        ? new Date(lead.Updated_At).toLocaleString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          })
+        ? new Date(lead.Updated_At).toLocaleString("en-GB")
         : "-",
       "Lead Status": lead.FollowUpStatus || "No FollowUp Yet",
       "Next FollowUp": lead.NextFollowUp_Date || "-",

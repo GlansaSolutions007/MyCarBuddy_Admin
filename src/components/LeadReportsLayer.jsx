@@ -105,7 +105,14 @@ const LeadReportsLayer = () => {
     },
     {
       name: "Emp Name",
-      selector: (row) => row.EmployeeName,
+      selector: (row) => (
+        <Link
+          to={`/emp-leads-report/${row.EmpId}?fromDate=${fromDate}&toDate=${toDate}`}
+          className="text-primary"
+        >
+          {row.EmployeeName}
+        </Link>
+      ),
       sortable: true,
       width: "150px",
     },

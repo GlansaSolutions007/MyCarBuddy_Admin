@@ -279,7 +279,7 @@ const RevenueReports = () => {
       wrap: true,
     },
     { name: "Service Type", selector: (r) => r.ServiceType, sortable: true },
-    { name: "Service Name", selector: (r) => r.ServiceName, sortable: true },
+    { name: "Service Name", selector: (r) => r.ServiceName, sortable: true, width: "200px", wrap: true,},
     { name: "Garage Name", selector: (r) => r.GarageName, sortable: true },
     { name: "Price", selector: (r) => r.Price, sortable: true },
     { name: "GST", selector: (r) => r.GST },
@@ -335,6 +335,8 @@ const RevenueReports = () => {
     {
       name: "Email",
       selector: (r) => r.CustEmail,
+      width: "150px",
+      wrap: true,
     },
     {
       name: "Total Services",

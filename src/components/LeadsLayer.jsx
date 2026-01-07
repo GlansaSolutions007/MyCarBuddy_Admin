@@ -57,11 +57,7 @@ const LeadsLayer = () => {
       "Phone Number": lead.PhoneNumber || "-",
       Email: lead.Email || "-",
       "Created Date": lead.CreatedDate
-        ? new Date(lead.CreatedDate).toLocaleString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          })
+        ? new Date(lead.CreatedDate).toLocaleString("en-GB")
         : "-",
       City: lead.City || "-",
       Platform: lead.Platform || "-",
@@ -70,12 +66,8 @@ const LeadsLayer = () => {
           .map((addon) => addon.ServiceName)
           .join(", ") || "-",
       Description: lead.Description || "-",
-      "Updated At": lead.Updated_At
-        ? new Date(lead.Updated_At).toLocaleString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          })
+      "Updated Date": lead.Updated_At
+        ? new Date(lead.Updated_At).toLocaleString("en-GB")
         : "-",
       "Lead Status": lead.FollowUpStatus || "No FollowUp Yet",
       "Next FollowUp": lead.NextFollowUp_Date || "-",
@@ -167,7 +159,7 @@ const LeadsLayer = () => {
           hour: "2-digit",
           minute: "2-digit",
           second: "2-digit",
-          hour12: true, 
+          hour12: true,
         });
       },
       sortable: true,

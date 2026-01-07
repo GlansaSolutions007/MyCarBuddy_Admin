@@ -394,7 +394,11 @@ const LeadsAssignLayer = () => {
       : []),
     {
       name: "Lead ID",
-      selector: (row) => <span>{row.LeadTrackId}</span>,
+      selector: (row) => (
+        <Link to={`/lead-view/${row.LeadTrackId}`} className="text-primary">
+          {row.LeadTrackId}
+        </Link>
+      ),
     },
     {
       name: "Customer",
