@@ -103,6 +103,8 @@ import InvoiceFormatePage from "./pages/InvoiceFormatePage";
 import ServicesEarningReportPage from "./pages/ServicesEarningReportPage";
 import ClosedLeadsPage from "./pages/ClosedLeadsPage";
 import RevenueReporstPage from "./pages/RevenueReportsPage";
+import ExpenditurePage from "./pages/ExpenditurePage";
+import ExpenditureCategoryPage from "./pages/ExpenditureCategoryPage";
 
 function App() {
   return (
@@ -232,6 +234,8 @@ function App() {
           <Route exact path='/services-earning-report' element={<ServicesEarningReportPage/>} />
           <Route exact path='/invoice-formate' element={<InvoiceFormatePage/>} />
           <Route exact path='/revenue-reports' element={<RevenueReporstPage/>} />
+          <Route exact path='/expenditures' element={<ExpenditurePage/>} />
+          <Route exact path='/expenditure-cat' element={<ExpenditureCategoryPage/>} />
         </Route>
 
         {/* //extra  pages */}

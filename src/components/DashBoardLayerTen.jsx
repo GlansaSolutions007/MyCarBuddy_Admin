@@ -16,14 +16,14 @@ const DashBoardLayerTen = () => {
     <div className="row gy-4">
       {/* UnitCountSeven */}
       <UnitCountSeven />
-      
+
       {role === "Admin" && (
         <>
-          {/* IncomeVsExpense */}
-          <IncomeVsExpense />
+          {/* RevenueReportCharts */}
+          <RevenueReportCharts />
 
-          {/* TodayBookingsLayer */}
-          <TodaysBookings />
+          {/* IncomeVsExpense */}
+          {/* <IncomeVsExpense /> */}
 
           {/* UsersChart */}
           {/* <UsersChart /> */}
@@ -42,9 +42,9 @@ const DashBoardLayerTen = () => {
 
           {/* RecentTransactions */}
           <RecentTransactions />
-          
-          {/* RevenueReportCharts */}
-          <RevenueReportCharts />
+
+           {/* TodayBookingsLayer */}
+          <TodaysBookings />
         </>
       )}
     </div>

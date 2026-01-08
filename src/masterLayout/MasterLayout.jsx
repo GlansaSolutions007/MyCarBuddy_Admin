@@ -258,8 +258,28 @@ const MasterLayout = ({ children }) => {
           type: n.type || n.Type || 'general'
         }));
         setNotifications((prev) => {
-          // Prepend API notifications, keep any existing real-time ones
-          const rtOnly = prev.filter((p) => String(p.id).length > 12); // keep local Date.now ids
+          // Create a Map to track API notification IDs for deduplication
+          const apiNotificationIds = new Set(normalized.map(n => String(n.id)));
+          
+          // Keep real-time notifications (Date.now() ids) that don't have a matching API notification
+          // Match by checking if title+message+timestamp are similar (within 5 seconds)
+          const rtOnly = prev.filter((p) => {
+            const isRealTime = String(p.id).length > 12; // Date.now() generates 13+ digit IDs
+            if (!isRealTime) return false;
+            
+            // Check if this real-time notification matches any API notification
+            const matchesApi = normalized.some(apiNotif => {
+              const timeDiff = Math.abs(new Date(apiNotif.timestamp) - new Date(p.timestamp));
+              return apiNotif.title === p.title && 
+                     apiNotif.message === p.message && 
+                     timeDiff < 5000; // Within 5 seconds
+            });
+            
+            // Keep real-time notification only if it doesn't match an API one
+            return !matchesApi;
+          });
+          
+          // Merge: API notifications first (they have proper IDs), then unmatched real-time ones
           return [...normalized, ...rtOnly];
         });
         setUnreadCount(normalized.filter((n) => !n.read).length);
@@ -267,7 +287,19 @@ const MasterLayout = ({ children }) => {
         console.error('Failed to load notifications:', err);
       }
     };
+    
+    // Load notifications immediately
     loadNotifications();
+    
+    // Set up periodic polling every 30 seconds
+    const pollInterval = setInterval(() => {
+      loadNotifications();
+    }, 30000); // 30 seconds
+    
+    // Cleanup interval on unmount or when userId changes
+    return () => {
+      clearInterval(pollInterval);
+    };
   }, [userId]);
 
   let sidebarControl = () => {
@@ -430,6 +462,14 @@ const MasterLayout = ({ children }) => {
         { title: "Revenue Reports", to: "/revenue-reports", color: "text-primary-600", permission: "revenuereports_view", page: "Revenue Reports" },
       ],
     },
+    {
+      title: "Expanses",
+      icon: "mdi:cash-multiple",
+      children: [
+        { title: "Expenditures Category", to: "/expenditure-cat", color: "text-warning-main", permission: "expenditurecat_view", page: "Expenditures Category" },
+        { title: "Expenditures", to: "/expenditures", color: "text-primary-600", permission: "expenditures_view", page: "Expenditures" },
+      ]
+    },
     // {
     //   title: "Supervisor Assignment",
     //   icon: "hugeicons:user-settings-02",
@@ -507,7 +547,7 @@ const MasterLayout = ({ children }) => {
     },
     {
       title: "Leave Management",
-      icon: "ion:document-text-outline",
+      icon: "mdi:account-clock-outline",
       children: [
         { title: "Leaves", to: "/leave-list", color: "text-primary-600", permission: "leavelist_view", page: "Leave List" },
       ],

@@ -55,7 +55,10 @@ const ExplanationsAddLayer = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      const packagesData = res.data.map((pkg) => ({
+      // filtered out if package category id inactive IsActive === false
+       const packagesData = res.data
+      .filter((pkg) => pkg.IsActive === true)
+      .map((pkg) => ({
         value: pkg.PackageID,
         label: pkg.PackageName,
       }));
@@ -72,7 +75,9 @@ const ExplanationsAddLayer = () => {
       const res = await axios.get(`${API_BASE}Category`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const categoriesData = res.data.map((cat) => ({
+      const categoriesData = res.data
+      .filter((cat) => cat.IsActive === true)
+      .map((cat) => ({
         value: cat.CategoryID,
         label: cat.CategoryName,
       }));
