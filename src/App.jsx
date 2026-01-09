@@ -232,7 +232,6 @@ function App() {
           <Route exact path='/explanations' element={<ExplanationsPage/>} />
           <Route exact path='/add-explanations' element={<ExplanationsAddPage/>} />
           <Route exact path='/services-earning-report' element={<ServicesEarningReportPage/>} />
-          <Route exact path='/invoice-formate' element={<InvoiceFormatePage/>} />
           <Route exact path='/revenue-reports' element={<RevenueReporstPage/>} />
           <Route exact path='/expenditures' element={<ExpenditurePage/>} />
           <Route exact path='/expenditure-cat' element={<ExpenditureCategoryPage/>} />

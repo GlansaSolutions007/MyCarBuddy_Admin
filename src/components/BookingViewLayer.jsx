@@ -118,6 +118,29 @@ const BookingViewLayer = () => {
       );
       setBookingData(res.data[0]);
       console.log("Booking Data:", res.data[0]);
+      const formatDate = (date) => {
+        if (!date) return "";
+        if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+          return date;
+        }
+        return new Date(date).toISOString().split("T")[0];
+      };
+
+      const formatTime = (time) => {
+        if (!time) return "";
+        const match = time.toString().match(/^(\d{1,2}):(\d{2})/);
+        return match ? `${match[1].padStart(2, "0")}:${match[2]}` : "";
+      };
+
+      // Prefill pickup and delivery fields
+      const pickupDelivery = res.data?.[0]?.PickupDelivery?.[0];
+
+      if (pickupDelivery) {
+        setPickupDate(formatDate(pickupDelivery.PickupDate));
+        setPickupTime(formatTime(pickupDelivery.PickupTime));
+        setDropDate(formatDate(pickupDelivery.DeliveryDate));
+        setDropTime(formatTime(pickupDelivery.DeliveryTime));
+      }
     } catch (error) {
       console.error("Error fetching booking data:", error);
     }
@@ -984,6 +1007,14 @@ const BookingViewLayer = () => {
 
     return selected < now;
   };
+  const displayDate = (date) => {
+    if (!date) return "--";
+    return new Date(date).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
 
   return (
     <div className="row gy-4 mt-3">
@@ -1092,6 +1123,30 @@ const BookingViewLayer = () => {
                                       </span>
                                     </li>
                                   )}
+                                </>
+                              )}
+                              {(pickupDate || dropDate) && (
+                                <>
+                                  <li className="d-flex align-items-center gap-1 mb-12">
+                                    <span className="w-50 fw-semibold text-primary-light">
+                                      Car Pickup Date & Time :
+                                    </span>
+                                    <span className="w-70 text-secondary-light fw-bold">
+                                      {displayDate(pickupDate)}
+                                      {pickupTime && ` : ${pickupTime}`}
+                                      {/* OR use displayTime(pickupTime) */}
+                                    </span>
+                                  </li>
+
+                                  <li className="d-flex align-items-center gap-1 mb-12">
+                                    <span className="w-50 fw-semibold text-primary-light">
+                                      Car Drop Date & Time :
+                                    </span>
+                                    <span className="w-70 text-secondary-light fw-bold">
+                                      {displayDate(dropDate)}
+                                      {dropTime && ` : ${dropTime}`}
+                                    </span>
+                                  </li>
                                 </>
                               )}
 

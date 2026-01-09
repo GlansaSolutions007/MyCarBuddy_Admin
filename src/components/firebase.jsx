@@ -29,7 +29,7 @@ export const requestPermission = async () => {
 
     // Register service worker
     const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-    console.log("Service Worker registered:", registration);
+    // console.log("Service Worker registered:", registration);
 
     // Wait for the service worker to be ready
     await navigator.serviceWorker.ready;
@@ -50,7 +50,7 @@ export const requestPermission = async () => {
       throw new Error('Failed to get FCM token');
     }
 
-    console.log("FCM Token:", token);
+    // console.log("FCM Token:", token);
     return token;
   } catch (err) {
     console.error("Firebase setup error:", err);

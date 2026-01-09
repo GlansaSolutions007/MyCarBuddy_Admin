@@ -177,7 +177,7 @@ const MasterLayout = ({ children }) => {
         // Request notification permission
         const token = await requestPermission();
         if (token) {
-          console.log("FCM Token obtained:", token);
+          // console.log("FCM Token obtained:", token);
           // Store token or send to backend for registration
           localStorage.setItem("fcmToken", token);
 
@@ -484,7 +484,6 @@ const MasterLayout = ({ children }) => {
         { title: "Brand", to: "/vehicle-brand", color: "text-primary-600", permission: "vehiclebrand_view", page: "Vehicle Brand" },
         { title: "Model", to: "/vehicle-model", color: "text-warning-main", permission: "vehiclemodel_view", page: "Vehicle Model" },
         { title: "Fuel", to: "/vehicle-fuel", color: "text-info-main", permission: "vehiclefuel_view", page: "Vehicle Fuel" },
-        { title: "Invoice Formate", to: "/invoice-formate", color: "text-primary-600", permission: "invoiceformate_view", page: "Invoice Formate" },
       ],
     },
     {
