@@ -165,9 +165,9 @@ const EmployeeLayer = () => {
     { name: "Employee ID", selector: (row) => row.Id, sortable: true },
     { name: "Full Name", selector: (row) => row.Name, sortable: true },
     { name: "Email", selector: (row) => row.Email, sortable: true },
-    { name: "Phone Number", selector: (row) => row.PhoneNumber },
-    { name: "Role Name", selector: (row) => row.RoleName },
-    { name: "Department Name", selector: (row) => row.DepartmentName },
+    { name: "Phone Number", selector: (row) => row.PhoneNumber, sortable: true, },
+    { name: "Role Name", selector: (row) => row.RoleName, sortable: true, },
+    { name: "Department Name", selector: (row) => row.DepartmentName, sortable: true, },
     {
       name: "Status",
       cell: (row) => {
@@ -195,6 +195,7 @@ const EmployeeLayer = () => {
           </span>
         );
       },
+      sortable: true,
       // width: "140px",
     },
     ...(hasPermission("employees_edit")

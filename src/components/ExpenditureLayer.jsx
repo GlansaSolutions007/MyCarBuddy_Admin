@@ -272,19 +272,20 @@ const ExpenditureLayer = () => {
   /* ---------------- TABLE ---------------- */
 
   const columns = [
-    { name: "S.No", selector: (_, i) => i + 1, width: "70px" },
-    { name: "Date", selector: (r) => r.ExpenseDate?.split("T")[0] },
+    { name: "S.No", selector: (_, i) => i + 1, width: "70px", sortable: true, },
+    { name: "Date", selector: (r) => r.ExpenseDate?.split("T")[0], sortable: true, },
     {
       name: "Category",
       selector: (r) =>
         expenseCategories.find(
           (c) => c.ExpenseCategoryID === r.ExpenseCategoryID
         )?.CategoryName || "-",
+        sortable: true,
     },
-    { name: "Description", selector: (r) => r.Notes || "-" },
-    { name: "Amount", selector: (r) => `₹ ${r.Amount}` },
-    { name: "Payment", selector: (r) => r.PaymentMode || "-" },
-        {
+    { name: "Description", selector: (r) => r.Notes || "-", sortable: true, },
+    { name: "Amount", selector: (r) => `₹ ${r.Amount}`, sortable: true, },
+    { name: "Payment", selector: (r) => r.PaymentMode || "-", sortable: true, },
+    {
       name: "Docs",
       center: true,
       cell: (r) =>
@@ -301,7 +302,8 @@ const ExpenditureLayer = () => {
         ) : (
           <span className="text-muted">-</span>
         ),
-        width: "70px"
+        width: "70px",
+        sortable: true,
     },
     {
       name: "Status",
@@ -320,6 +322,7 @@ const ExpenditureLayer = () => {
           {r.Status || "-"}
         </span>
       ),
+      sortable: true,
     },
     ...(hasPermission("expenditures_edit") ||
     hasPermission("expenditures_delete")

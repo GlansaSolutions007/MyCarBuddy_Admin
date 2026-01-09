@@ -201,7 +201,7 @@ const LeadsLayer = () => {
           </div>
         );
       },
-      sortable: false,
+      sortable: true,
       wrap: true,
       minWidth: "200px",
     },

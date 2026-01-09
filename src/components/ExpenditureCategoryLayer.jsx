@@ -147,6 +147,7 @@ const handleDelete = async (row) => {
       name: "S.No",
       selector: (_, index) => index + 1,
       width: "80px",
+      sortable: true,
     },
     {
       name: "Category Name",
@@ -176,15 +177,16 @@ const handleDelete = async (row) => {
           </span>
         );
       },
+      sortable: true,
     },
-    ...(hasPermission("expenditure_category_edit") ||
-hasPermission("expenditure_category_delete")
+    ...(hasPermission("expenditurecat_edit") ||
+hasPermission("expenditurecat_delete")
   ? [
       {
         name: "Actions",
         cell: (row) => (
           <div className="d-flex gap-2">
-            {hasPermission("expenditure_category_edit") && (
+            {hasPermission("expenditurecat_edit") && (
               <button
                 onClick={() => handleEdit(row)}
                 className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
@@ -193,7 +195,7 @@ hasPermission("expenditure_category_delete")
               </button>
             )}
 
-            {hasPermission("expenditure_category_delete") && (
+            {hasPermission("expenditurecat_delete") && (
               <button
                 onClick={() => handleDelete(row)}
                 className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
@@ -252,7 +254,7 @@ hasPermission("expenditure_category_delete")
                     <option value="false">Inactive</option>
                   </select>
                 </div>
-
+              {(hasPermission("expenditurecat_add") || hasPermission("expenditurecat_edit")) && (
                 <button
                   className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
                   type="submit"
@@ -261,6 +263,7 @@ hasPermission("expenditure_category_delete")
                     ? "Update Category"
                     : "Add Category"}
                 </button>
+              )}
               </form>
             </div>
           </div>

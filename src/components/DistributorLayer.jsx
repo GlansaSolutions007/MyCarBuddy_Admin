@@ -226,30 +226,37 @@ const DistributorLayer = () => {
     //   name: "S.No",
     //   selector: (_, index) => index + 1,
     //   width: "80px",
+    // sortable: true,
     // },
     {
       name: "Distributor ID",
       selector: (row) => row.DistributorID,
+      sortable: true,
     },
     {
       name: "Full Name",
       selector: (row) => row.FullName,
+      sortable: true,
     },
     {
       name: "Email",
       selector: (row) => row.Email,
+      sortable: true,
     },
     {
       name: "Phone",
       selector: (row) => row.PhoneNumber,
+      sortable: true,
     },
     {
       name: "State",
       selector: (row) => states.find((s) => s.StateID === row.StateID)?.StateName || "",
+      sortable: true,
     },
     {
       name: "City",
       selector: (row) => cities.find((c) => c.CityID === row.CityID)?.CityName || "",
+      sortable: true,
     },
     {
       name: "Status",
@@ -278,6 +285,7 @@ const DistributorLayer = () => {
           </span>
         );
       },
+      sortable: true,
       // width: "150px",
     },
     ...(hasPermission("distributors_edit")

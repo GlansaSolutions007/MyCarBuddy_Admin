@@ -132,26 +132,31 @@ const LeadReportsLayer = () => {
       name: "Converted",
       selector: (row) => row.ConvertedCustomer,
       width: "120px",
+      sortable: true,
     },
     {
       name: "Interested",
       selector: (row) => row.Interested,
       width: "120px",
+      sortable: true,
     },
     {
       name: "Not Converted",
       selector: (row) => row.NotConverted,
       width: "140px",
+      sortable: true,
     },
     {
       name: "Need Info",
       selector: (row) => row.NeedMoreInfo,
       width: "120px",
+      sortable: true,
     },
     {
       name: "No Car",
       selector: (row) => row.NotHavingCar,
       width: "120px",
+      sortable: true,
     },
     {
       name: "Not Connected",
@@ -169,11 +174,13 @@ const LeadReportsLayer = () => {
       name: "Not Interested",
       selector: (row) => row.NotInterested,
       width: "140px",
+      sortable: true,
     },
     {
       name: "Doesn't Exist",
       selector: (row) => row.NumberDoesNotExist,
       width: "120px",
+      sortable: true,
     },
     ...(hasPermission("empleadsreport_view")
       ? [

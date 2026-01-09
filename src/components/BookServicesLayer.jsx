@@ -1132,6 +1132,7 @@ const BookServicesLayer = () => {
         />
       ),
       width: "120px",
+      sortable: true,
     },
     {
       name: "Qty",
@@ -1199,6 +1200,7 @@ const BookServicesLayer = () => {
         />
       ),
       width: "100px",
+      sortable: true,
     },
     {
       name: "Part Total",
@@ -1211,6 +1213,7 @@ const BookServicesLayer = () => {
         />
       ),
       width: "120px",
+      sortable: true,
     },
     {
       name: "Service Chg.",
@@ -1252,6 +1255,7 @@ const BookServicesLayer = () => {
         />
       ),
       width: "140px",
+      sortable: true,
     },
     {
       name: "GST %",
@@ -1291,6 +1295,7 @@ const BookServicesLayer = () => {
         />
       ),
       width: "120px",
+      sortable: true,
     },
     {
       name: "GST Amount",
@@ -1328,6 +1333,7 @@ const BookServicesLayer = () => {
         />
       ),
       width: "120px",
+      sortable: true,
     },
     ...(employeeData?.RoleName === "Supervisor Head" || role === "Admin"
       ? [
@@ -1361,6 +1367,7 @@ const BookServicesLayer = () => {
               />
             ),
             width: "120px",
+            sortable: true,
           },
           {
             name: "% Amount",
@@ -1392,7 +1399,7 @@ const BookServicesLayer = () => {
                 disabled={!row.isEditing}
               />
             ),
-            width: "120px",
+            width: "120px",sortable: true,
           },
           {
             name: "Select Dealer",
@@ -1457,6 +1464,7 @@ const BookServicesLayer = () => {
               </div>
             ),
             minWidth: "200px",
+            sortable: true,
           },
         ]
       : []),
@@ -1465,12 +1473,14 @@ const BookServicesLayer = () => {
       selector: (row) => row.status,
       right: true,
       width: "130px",
+      sortable: true,
     },
     {
       name: "Description",
       selector: (row) => (row.isInclude ? "" : row.description),
       wrap: true,
       width: "120px",
+      sortable: true,
     },
     {
       name: "Actions",

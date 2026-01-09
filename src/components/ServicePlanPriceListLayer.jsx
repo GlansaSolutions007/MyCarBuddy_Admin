@@ -60,21 +60,23 @@ const ServicePlanPriceListLayer = () => {
   };
 
   const columns = [
-    // { name: "S.No", selector: (_, index) => index + 1, width: "80px" },
-    { name: "Package ID", selector: (row) => row.PlanPriceID },
+    // { name: "S.No", selector: (_, index) => index + 1, width: "80px", sortable: true, },
+    { name: "Package ID", selector: (row) => row.PlanPriceID, sortable: true, },
 
-    { name: "Plan Name", selector: (row) => row.PackageName },
-    { name: "Brand", selector: (row) => row.BrandName },
-    { name: "Model", selector: (row) => row.ModelName },
-    { name: "Fuel Type", selector: (row) => row.FuelTypeName },
-    // { name: "Description", selector: (row) => row.Description },
+    { name: "Plan Name", selector: (row) => row.PackageName, sortable: true, },
+    { name: "Brand", selector: (row) => row.BrandName, sortable: true, },
+    { name: "Model", selector: (row) => row.ModelName, sortable: true, },
+    { name: "Fuel Type", selector: (row) => row.FuelTypeName, sortable: true, },
+    // { name: "Description", selector: (row) => row.Description, sortable: true, },
     {
       name: "Price",
       selector: (row) => `₹${row.Serv_Off_Price?.toFixed(2)}`,
+      sortable: true,
     },
     // {
     //   name: "Duration",
     //   selector: (row) => `${row.EstimatedDurationMinutes} mins`,
+    // sortable: true,
     // },
     // {
     //   name: "Image",
@@ -88,6 +90,7 @@ const ServicePlanPriceListLayer = () => {
     //     ) : (
     //       "No Image"
     //     ),
+    // sortable: true,
     // },
     {
       name: "Status",
@@ -117,6 +120,7 @@ const ServicePlanPriceListLayer = () => {
           </span>
         );
       },
+      sortable: true,
     },
     ...(hasPermission("serviceplanprices_edit")
     ? [

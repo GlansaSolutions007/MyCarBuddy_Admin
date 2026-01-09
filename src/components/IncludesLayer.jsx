@@ -178,10 +178,10 @@ const IncludesLayer = () => {
   };
 
   const columns = [
-    { name: "S.No", selector: (_, index) => index + 1, width: "80px" },
-    { name: "Include Name", selector: (row) => row.IncludeName },
-    { name: "Price", selector: (row) => `₹ ${parseFloat(row.IncludePrice).toFixed(2)}` },
-    { name: "Description", selector: (row) => row.Description },
+    { name: "S.No", selector: (_, index) => index + 1, width: "80px", sortable: true, },
+    { name: "Include Name", selector: (row) => row.IncludeName, sortable: true, },
+    { name: "Price", selector: (row) => `₹ ${parseFloat(row.IncludePrice).toFixed(2)}`, sortable: true, },
+    { name: "Description", selector: (row) => row.Description, sortable: true, },
     {
       name: "Status",
       cell: (row) => {
@@ -211,6 +211,7 @@ const IncludesLayer = () => {
           </span>
         );
       },
+      sortable: true,
     },
     ...(hasPermission("serviceincludes_edit")
     ? [

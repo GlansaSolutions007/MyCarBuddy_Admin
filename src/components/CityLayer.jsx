@@ -146,10 +146,12 @@ const CityLayer = () => {
       name: "S.No",
       selector: (_, index) => index + 1,
       width: "80px",
+      sortable: true,
     },
     {
       name: "State Name",
       selector: (row) => row.StateName || "—",
+      sortable: true,
     },
 
     {
@@ -190,6 +192,7 @@ const CityLayer = () => {
           </span>
         );
       },
+      sortable: true,
       // width: "150px",
     },
     ...(hasPermission("city_edit")

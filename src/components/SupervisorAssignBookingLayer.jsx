@@ -458,19 +458,22 @@ const SupervisorAssignBookingLayer = () => {
       name: "Booking ID",
       selector: (row) => row.BookingID,
       width: "100px",
+      sortable: true,
     },
     {
       name: "Booking date",
       selector: (row) =>
         row.BookingDate ? new Date(row.BookingDate).toLocaleDateString("en-GB") : "",
       width: "120px",
+      sortable: true,
     },
-    { name: "Time slot", selector: (row) => row.TimeSlot, width: "160px" },
+    { name: "Time slot", selector: (row) => row.TimeSlot, width: "160px", sortable: true, },
     {
       name: "Booking price",
       selector: (row) =>
         `₹${(row.TotalPrice + row.GSTAmount - row.CouponAmount).toFixed(2)}`,
       width: "120px",
+      sortable: true,
     },
     {
       name: "Customer name",
@@ -482,6 +485,7 @@ const SupervisorAssignBookingLayer = () => {
         </>
       ),
       width: "150px",
+      sortable: true,
     },
     {
       name: "Technician",
@@ -492,6 +496,7 @@ const SupervisorAssignBookingLayer = () => {
           {row.TechPhoneNumber || ""}
         </>
       ),
+      sortable: true,
       width: "150px",
     },
     {
@@ -509,6 +514,7 @@ const SupervisorAssignBookingLayer = () => {
         </span>
       ),
       width: "120px",
+      sortable: true,
     },
     {
       name: "Payment Status",
@@ -524,6 +530,7 @@ const SupervisorAssignBookingLayer = () => {
         );
       },
       width: "120px",
+      sortable: true,
     },
     {
       name: "Actions",

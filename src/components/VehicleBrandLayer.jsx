@@ -219,7 +219,8 @@ const VehicleBrandLayer = () => {
   const columns = [
     {
       name: "Brand ID",
-      selector: (row) => row.BrandID
+      selector: (row) => row.BrandID,
+      sortable: true,
     },
     {
       name: "Brand Logo",
@@ -230,6 +231,7 @@ const VehicleBrandLayer = () => {
           style={{ width: 50, height: 50, objectFit: "contain" }}
         />
       ),
+      sortable: true,
     },
     {
       name: "Brand Name",
@@ -263,6 +265,7 @@ const VehicleBrandLayer = () => {
           </span>
         );
       },
+      sortable: true,
       // width: "150px",
     },
     ...(hasPermission("vehiclebrand_edit")

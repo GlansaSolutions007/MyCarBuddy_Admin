@@ -1758,8 +1758,8 @@ const BookingViewLayer = () => {
                                     }}
                                   >
                                     <thead
-                                      className="table-light sticky-top"
-                                      style={{ zIndex: 2 }}
+                                      className="table-light sticky-top position-relative"
+                                      style={{ zIndex: 1 }}
                                     >
                                       <tr>
                                         <th

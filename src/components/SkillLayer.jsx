@@ -102,6 +102,7 @@ const SkillLayer = () => {
       name: "S.No",
       selector: (_, index) => index + 1,
       width: "80px",
+      sortable: true,
     },
     {
       name: "Skill Name",
@@ -138,6 +139,7 @@ const SkillLayer = () => {
           </span>
         );
       },
+      sortable: true,
     },
     ...(hasPermission("skills_edit")
     ? [

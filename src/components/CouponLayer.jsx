@@ -110,16 +110,17 @@ const CouponsPage = () => {
 
   const columns = [
     { name: "Code", selector: (row) => row.CouponCode, sortable: true },
-    { name: "Description", selector: (row) => row.Description },
+    { name: "Description", selector: (row) => row.Description, sortable: true,  },
     {
       name: "Discount",
       selector: (row) =>
         row.DiscountType === "percentage"
           ? `${row.DiscountValue}%`
           : `₹${row.DiscountValue}`,
+      sortable: true,
     },
-    { name: "Expiry", selector: (row) => row.ExpiryDate },
-    { name: "Max Usage", selector: (row) => row.UsageLimit },
+    { name: "Expiry", selector: (row) => row.ExpiryDate, sortable: true, },
+    { name: "Max Usage", selector: (row) => row.UsageLimit,sortable: true, },
     {
       name: "Active",
       cell: (row) => {

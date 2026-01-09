@@ -100,16 +100,16 @@ const PaymentsListLayer = () => {
   };
 
   const columns = [
-    { name: "S.No", selector: (_, index) => index + 1, width: "60px" },
+    { name: "S.No", selector: (_, index) => index + 1, width: "60px", sortable: true,},
     {
       name: "Booking ID", selector: (row) => (
         <Link to={`/booking-view/${row.BookingID}`} className="text-primary">
           {row.BookingTrackID}
         </Link>
-      ), width: "150px"
+      ), width: "150px", sortable: true,
     },
-    { name: "Invoice No", selector: (row) => (row.InvoiceNumber), width: "150px" },
-    { name: "Total Amount", selector: (row) => `₹${row.AmountPaid}` },
+    { name: "Invoice No", selector: (row) => (row.InvoiceNumber), width: "150px", sortable: true, },
+    { name: "Total Amount", selector: (row) => `₹${row.AmountPaid}`, sortable: true, },
     {
       name: "Payment Status",
       cell: (row) => {
@@ -142,10 +142,11 @@ const PaymentsListLayer = () => {
           </span>
         );
       },
+      sortable: true,
       // width: "150px",
     },
-    { name: "Payment Mode", selector: (row) => row.PaymentMode },
-    { name: "Transaction ID", selector: (row) => (row.TransactionID), width: "180px" },
+    { name: "Payment Mode", selector: (row) => row.PaymentMode , sortable: true,},
+    { name: "Transaction ID", selector: (row) => (row.TransactionID), width: "180px", sortable: true, },
     {
       name: "Payment Date",
       selector: (row) => {
@@ -155,8 +156,9 @@ const PaymentsListLayer = () => {
           date.getMonth() + 1
         ).padStart(2, "0")}/${date.getFullYear()}`;
       },
+      sortable: true,
     },
-    { name: "Refund Amount", selector: (row) => row.RefundAmount ? `₹${row.RefundAmount}` : 0 },
+    { name: "Refund Amount", selector: (row) => row.RefundAmount ? `₹${row.RefundAmount}` : 0, sortable: true, },
     {
       name: "Refund Initialization",
       cell: (row) => {
@@ -185,6 +187,7 @@ const PaymentsListLayer = () => {
           </span>
         );
       },
+      sortable: true,
       // width: "170px",
     },
     // {

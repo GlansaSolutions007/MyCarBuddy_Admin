@@ -389,6 +389,7 @@ const LeadsAssignLayer = () => {
             ),
             width: "80px",
             ignoreRowClick: true,
+            sortable: true,
           },
         ]
       : []),
@@ -399,26 +400,32 @@ const LeadsAssignLayer = () => {
           {row.LeadTrackId}
         </Link>
       ),
+      sortable: true,
     },
     {
       name: "Customer",
       selector: (row) => <span>{row.CustomerName}</span>,
+      sortable: true,
     },
     {
       name: "Phone",
       selector: (row) => row.PhoneNumber || "-",
+      sortable: true,
     },
     {
       name: "Email",
       selector: (row) => row.Email || "-",
+      sortable: true,
     },
     {
       name: "City",
       selector: (row) => row.City || "-",
+      sortable: true,
     },
     {
       name: "Platform",
       selector: (row) => row.Platform || "-",
+      sortable: true,
     },
     {
       name: "Created Date",
@@ -434,12 +441,14 @@ const LeadsAssignLayer = () => {
         </span>
       ),
       wrap: true,
+      sortable: true,
     },
     {
       name: "Description",
       selector: (row) => row.Description,
       wrap: true,
       width: "200px",
+      sortable: true,
     },
     {
       name: "Actions",

@@ -256,7 +256,7 @@ const RevenueReports = () => {
     },
     { name: "Total Revenue", selector: (r) => r.TotalRevenue, sortable: true },
     { name: "Total GST", selector: (r) => r.TotalGST, sortable: true },
-    { name: "Our Earnings", selector: (r) => r.OurEarnings },
+    { name: "Our Earnings", selector: (r) => r.OurEarnings, sortable: true, },
   ];
 
   const serviceColumns = [
@@ -282,9 +282,9 @@ const RevenueReports = () => {
     { name: "Service Name", selector: (r) => r.ServiceName, sortable: true, width: "200px", wrap: true,},
     { name: "Garage Name", selector: (r) => r.GarageName, sortable: true },
     { name: "Price", selector: (r) => r.Price, sortable: true },
-    { name: "GST", selector: (r) => r.GST },
-    { name: "Our %", selector: (r) => r.OurPercentage },
-    { name: "Our Earnings", selector: (r) => r.OurEarnings },
+    { name: "GST", selector: (r) => r.GST, sortable: true, },
+    { name: "Our %", selector: (r) => r.OurPercentage, sortable: true, },
+    { name: "Our Earnings", selector: (r) => r.OurEarnings, sortable: true, },
   ];
   const bookingColumns = [
     {
@@ -304,6 +304,7 @@ const RevenueReports = () => {
           {r.LeadId}
         </Link>
       ),
+      sortable: true,
     },
     {
       name: "Booking Date",
@@ -336,6 +337,7 @@ const RevenueReports = () => {
       name: "Email",
       selector: (r) => r.CustEmail,
       width: "150px",
+      sortable: true,
       wrap: true,
     },
     {
@@ -353,10 +355,12 @@ const RevenueReports = () => {
     {
       name: "GST",
       selector: (r) => r.TotalGST,
+      sortable: true,
     },
     {
       name: "Our Earnings",
       selector: (r) => r.OurEarnings,
+      sortable: true,
     },
   ];
 

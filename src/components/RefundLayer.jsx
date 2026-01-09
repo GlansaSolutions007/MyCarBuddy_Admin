@@ -47,6 +47,7 @@ const RefundLayer = () => {
           {row.BookingTrackID}
         </Link>
       ),
+      sortable: true,
     },
     {
       name: "Booking Date",
@@ -57,15 +58,18 @@ const RefundLayer = () => {
           date.getMonth() + 1
         ).padStart(2, "0")}/${date.getFullYear()}`;
       },
+      sortable: true,
     },
     {
       name: "Booking Price",
       selector: (row) =>
         `₹${(row.TotalPrice + row.GSTAmount - row.CouponAmount).toFixed(2)}`,
+      sortable: true,
     },
     {
       name: "Refund Amount",
       selector: (row) => `₹${(row.RefundAmount ?? 0).toFixed(2)}`,
+      sortable: true,
     },
     {
       name: "Customer Name",
@@ -75,12 +79,14 @@ const RefundLayer = () => {
           {row.CustPhoneNumber || ""}
         </>
       ),
+      sortable: true,
     },
     {
       name: "Refund Status",
       selector: (row) => (
         <span className="fw-bold">{row.RefundStatus ?? "N/A"}</span>
       ),
+      sortable: true,
     },
     {
       name: "Payment Status",
@@ -118,6 +124,7 @@ const RefundLayer = () => {
         );
       },
       width: "150px",
+      sortable: true,
     },
     ...(hasPermission("bookingview_view")
     ? [

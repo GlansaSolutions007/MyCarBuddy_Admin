@@ -273,12 +273,14 @@ const ExplanationsAddLayer = () => {
       selector: (row) => row.question,
       wrap: true,
       width: "30%",
+      sortable: true,
     },
     {
       name: "Explanation",
       selector: (row) => row.answer,
       wrap: true,
       width: "40%",
+      sortable: true,
     },
     {
       name: "Actions",

@@ -182,6 +182,7 @@ const StateLayer = () => {
       name: "S.No",
       selector: (_, index) => index + 1,
       width: "80px",
+      sortable: true,
     },
     {
       name: "State Name",

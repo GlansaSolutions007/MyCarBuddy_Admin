@@ -108,7 +108,7 @@ const EmployeeLeadsReportLayer = ({
     {
       name: "Description",
       selector: (row) => row.Description || "-",
-      sortable: false,
+      sortable: true,
       wrap: true,
     },
     // {

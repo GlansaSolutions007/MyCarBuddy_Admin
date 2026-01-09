@@ -191,6 +191,7 @@ const PermissionLayer = () => {
       name: "S.No",
       selector: (_, index) => index + 1,
       width: "80px",
+      sortable: true,
     },
     {
       name: "Page",
@@ -230,6 +231,7 @@ const PermissionLayer = () => {
           </span>
         );
       },
+      sortable: true,
     },
     {
       name: "Actions",

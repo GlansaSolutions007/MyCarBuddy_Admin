@@ -272,12 +272,14 @@ const FaqsAddLayer = () => {
       selector: (row) => row.question,
       wrap: true,
       width: "30%",
+      sortable: true,
     },
     {
       name: "Explanation",
       selector: (row) => row.answer,
       wrap: true,
       width: "40%",
+      sortable: true,
     },
     {
       name: "Actions",
@@ -290,6 +292,7 @@ const FaqsAddLayer = () => {
         </button>
       ),
       width: "10%",
+      sortable: true,
     },
   ];
 

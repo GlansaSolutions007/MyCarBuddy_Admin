@@ -94,26 +94,32 @@ const ServicePlanListLayer = () => {
       name: "S.No",
       selector: (_, index) => index + 1,
       width: "80px",
+      sortable: true,
     },
     {
       name: "Plan Name",
       selector: (row) => row.PackageName,
+      sortable: true,
     },
     {
       name: "Category",
       selector: (row) => row.CategoryName,
+      sortable: true,
     },
     {
       name: "SubCategory1",
       selector: (row) => row.SubCategoryName,
+      sortable: true,
     },
     // {
     //   name: "SubCategory2",
     //   selector: (row) => row.SubCategoryName2,
+    // sortable: true,
     // },
     // {
     //   name: "Price",
     //   selector: (row) => `₹${row.includePrices.toFixed(2)}`,
+    // sortable: true,
     // },
     {
       name: "Status",
@@ -143,6 +149,7 @@ const ServicePlanListLayer = () => {
           </span>
         );
       },
+      sortable: true,
     },
     ...(hasPermission("serviceplans_edit")
     ? [

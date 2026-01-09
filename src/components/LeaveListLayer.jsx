@@ -43,10 +43,10 @@ const LeaveListLayer = () => {
   });
 
   const columns = [
-    { name: "Technician", selector: row => row.TechnicianName },
-    { name: "From", selector: row => row.FromDate },
-    { name: "To", selector: row => row.ToDate },
-    { name: "Reason", selector: row => row.LeaveReason },
+    { name: "Technician", selector: row => row.TechnicianName, sortable: true, },
+    { name: "From", selector: row => row.FromDate, sortable: true, },
+    { name: "To", selector: row => row.ToDate, sortable: true, },
+    { name: "Reason", selector: row => row.LeaveReason, sortable: true, },
     {
       name: "Status",
       cell: (row) => {
@@ -85,7 +85,8 @@ const LeaveListLayer = () => {
             <span style={{ color }}>{status}</span>
           </span>
         );
-      }
+      },
+      sortable: true,
     },
     ...(hasPermission("leavelist_edit")
     ? [

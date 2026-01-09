@@ -25,26 +25,32 @@ const DealerServicePrice = () => {
       name: "S No.",
       selector: (_, index) => index + 1,
       width: "80px",
+      sortable: true,
     },
     {
       name: "Name",
       selector: (row) => row.Name,
+      sortable: true,
     },
     {
       name: "Email",
       selector: (row) => row.Email,
+      sortable: true,
     },
     {
       name: "Phone Number",
       selector: (row) => row.PhoneNumber,
+      sortable: true,
     },
     {
       name: "Subject",
       selector: (row) => row.Subject,
+      sortable: true,
     },
     {
       name: "Message",
       selector: (row) => row.Message,
+      sortable: true,
     },
   ];
 

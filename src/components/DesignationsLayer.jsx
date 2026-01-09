@@ -167,7 +167,7 @@ const DesignationLayer = () => {
 
   // ------------------ Table Columns ------------------
   const columns = [
-    { name: "S.No", selector: (_, i) => i + 1, width: "80px" },
+    { name: "S.No", selector: (_, i) => i + 1, width: "80px", sortable: true, },
     {
       name: "Designation Name",
       cell: (row) => (

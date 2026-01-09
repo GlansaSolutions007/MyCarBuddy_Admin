@@ -207,12 +207,14 @@ const VehicleFuelLayer = () => {
       name: "S.No",
       selector: (_, index) => index + 1,
       width: "80px",
+      sortable: true,
     },
     {
       name: "Fuel Image",
       selector: (row) => <img src={`${import.meta.env.VITE_APIURL_IMAGE}${row.FuelImage?.startsWith("/")
         ? row.FuelImage.substring(1)
         : row.FuelImage}`} alt="Brand Logo" />,
+        sortable: true,
     },
     {
       name: "Fuel Name",
@@ -246,6 +248,7 @@ const VehicleFuelLayer = () => {
           </span>
         );
       },
+      sortable: true,
       // width: "150px",
     },
     ...(hasPermission("vehiclefuel_edit")

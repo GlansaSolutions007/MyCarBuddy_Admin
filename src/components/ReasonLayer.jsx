@@ -89,6 +89,7 @@ export default function ReasonLayer() {
       name: "Created Date",
       selector: (row) =>
         new Date(row.CreatedDate).toLocaleDateString("en-GB"),
+      sortable: true,
     },
     {
       name: "Status",
@@ -119,7 +120,8 @@ export default function ReasonLayer() {
             <span style={{ color }}>{status}</span>
           </span>
         );
-      }
+      },
+      sortable: true,
     },
     {
       name: "Actions",

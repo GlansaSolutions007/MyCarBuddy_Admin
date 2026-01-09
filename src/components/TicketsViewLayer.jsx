@@ -121,6 +121,7 @@ const TicketsViewLayer = () => {
           {row.TicketTrackId || "-"}
         </Link>
       ),
+      sortable: true,
     },
     {
       name: "Customer",
@@ -131,10 +132,12 @@ const TicketsViewLayer = () => {
           {/* {row.PhoneNumber || ""} */}
         </>
       ),
+      sortable: true,
     },
     {
       name: "Booking id",
       selector: (row) => row.BookingTrackID || "-",
+      sortable: true,
     },
     {
       name: "Created Date",
@@ -151,66 +154,8 @@ const TicketsViewLayer = () => {
         });
       },
       wrap: true,
+      sortable: true,
     },
-
-    // {
-    //   name: "Ticket Status",
-    //   cell: (row) => {
-    //     const status = row?.TrackingHistory?.[0]?.StatusName ?? "-";
-    //     const colorMap = {
-    //         Pending: "bg-secondary text-white",
-    //         UnderReview: "bg-info text-white",
-    //         Awaiting: "bg-warning text-dark",
-    //         Resolved: "bg-success text-white",
-    //         Closed: "bg-dark text-white",
-    //         Cancelled: "bg-danger text-white",
-    //         Reopened: "bg-primary text-white",
-    // Forward: "bg-purple text-white",
-    //       };
-    //     const badgeClass = colorMap[status] || "bg-light text-dark";
-    //     return (
-    //       <span className={`badge rounded-pill px-3 py-1 ${badgeClass}`}>
-    //         {status}
-    //       </span>
-    //     );
-    //   },
-    //   wrap: true,
-    // },
-    // {
-    //   name: "Ticket Status",
-    //   cell: (row) => {
-    //     let status = row?.TrackingHistory?.[0]?.StatusName ?? "-";
-    //     if (!status || status === "-") status = "Not Assigned";
-    //     const colorMap = {
-    //       Pending: "text-secondary fw-semibold",
-    //       UnderReview: "text-info fw-semibold",
-    //       Awaiting: "text-warning fw-semibold",
-    //       Resolved: "text-success fw-semibold",
-    //       Closed: "text-dark fw-semibold",
-    //       Cancelled: "text-danger fw-semibold",
-    //       Reopened: "text-primary fw-semibold",
-    //       Forward: "text-purple fw-semibold",
-    //       UserResponse: "text-teal fw-semibold",
-    //       "Not Assigned": "text-muted fw-semibold",
-    //     };
-    //     const textClass = colorMap[status] || "text-muted";
-    //     return (
-    //       <span className={textClass}>
-    //         <span
-    //           className="rounded-circle"
-    //           style={{
-    //             width: "8px",
-    //             height: "8px",
-    //             marginRight: "4px",
-    //             backgroundColor: "currentColor",
-    //           }}
-    //         ></span>
-    //         {status}
-    //       </span>
-    //     );
-    //   },
-    //   wrap: true,
-    // },
     {
       name: "Ticket Status",
       cell: (row) => {
@@ -248,16 +193,19 @@ const TicketsViewLayer = () => {
         );
       },
       wrap: true,
+      sortable: true,
     },
     {
       name: "Assigned Emp",
       selector: (row) => row.EmployeeName || "-",
       wrap: true,
+      sortable: true,
     },
     {
       name: "Description",
       selector: (row) => row.Description || "-",
       wrap: true,
+      sortable: true,
     },
     {
       name: "Actions",

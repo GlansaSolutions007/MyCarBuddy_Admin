@@ -317,6 +317,7 @@ const BookingLayer = () => {
               </Link>
             ),
             width: "150px",
+            sortable: true,
           },
         ]
       : []),
@@ -334,18 +335,21 @@ const BookingLayer = () => {
         ).padStart(2, "0")}/${date.getFullYear()}`;
       },
       width: "120px",
+      sortable: true,
     },
     {
       name: "Time slot",
       selector: (row) =>
   row.TimeSlot || row.AssignedTimeSlot || "-",
       width: "160px",
+      sortable: true,
     },
     // {
     //   name: "Booking price",
     //   selector: (row) =>
     //     `₹${(row.TotalPrice + row.GSTAmount - row.CouponAmount).toFixed(2)}`,
     //   width: "120px",
+    // sortable: true,
     // },
     {
       name: "Customer name",
@@ -360,6 +364,7 @@ const BookingLayer = () => {
         </>
       ),
       width: "150px",
+      sortable: true,
     },
     {
       name: "Technician",
@@ -373,6 +378,7 @@ const BookingLayer = () => {
         </>
       ),
       width: "150px",
+      sortable: true,
     },
     {
       name: "Supervisor",
@@ -386,6 +392,7 @@ const BookingLayer = () => {
         </>
       ),
       width: "150px",
+      sortable: true,
     },
     {
       name: "Booking Status",
@@ -421,6 +428,7 @@ const BookingLayer = () => {
       },
       wrap: true,
       width: "150px",
+      sortable: true,
     },
     {
       name: "Payment Status",
@@ -460,6 +468,7 @@ const BookingLayer = () => {
       },
       wrap: true,
       width: "150px",
+      sortable: true,
     },
     {
       name: "Actions",

@@ -45,6 +45,7 @@ const TodayBookingsLayer = () => {
       name: "S No",
       selector: (row, index) => index + 1,
       width: "80px",
+      sortable: true,
     },
     {
       name: "Tech ID",
@@ -54,21 +55,25 @@ const TodayBookingsLayer = () => {
         </Link>
       ),
       width: "100px",
+      sortable: true,
     },
     {
       name: "Tech Name",
       selector: (row) => row.techFullName,
       width: "200px",
+      sortable: true,
     },
     {
       name: "Dealer Name",
       selector: (row) => row.dealerName || "N/A",
       width: "200px",
+      sortable: true,
     },
     {
       name: "Booking Count",
       selector: (row) => row.bookingCount,
       width: "150px",
+      sortable: true,
     },
     {
       name: "Action",
