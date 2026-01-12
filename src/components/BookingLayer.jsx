@@ -344,15 +344,15 @@ const BookingLayer = () => {
       width: "160px",
       sortable: true,
     },
-    // {
-    //   name: "Booking price",
-    //   selector: (row) =>
-    //     `₹${(row.TotalPrice + row.GSTAmount - row.CouponAmount).toFixed(2)}`,
-    //   width: "120px",
-    // sortable: true,
-    // },
     {
-      name: "Customer name",
+      name: "Amount",
+      selector: (row) =>
+        `₹${(row.TotalPrice + row.GSTAmount + row.LabourCharges - row.CouponAmount).toFixed(2)}`,
+      width: "120px",
+    sortable: true,
+    },
+    {
+      name: "Customer Name",
       selector: (row) => (
         <>
           <span className="fw-bold">
@@ -385,10 +385,10 @@ const BookingLayer = () => {
       selector: (row) => (
         <>
           <span className="fw-bold">
-            {row.SupervisorName ? row.SupervisorName : "Not Assigned"}
+            {row.SupervisorHeadName ? row.SupervisorHeadName : "Not Assigned"}
           </span>
           <br />
-          {row.SupervisorPhoneNumber || ""}
+          {row.SupervisorHeadPhoneNumber || ""}
         </>
       ),
       width: "150px",
@@ -622,7 +622,7 @@ const BookingLayer = () => {
               <input
                 type="number"
                 className="form-control flex-shrink-0"
-                placeholder="Min Price"
+                placeholder="Min Amount"
                 value={minPrice}
                 onChange={(e) => setMinPrice(e.target.value)}
                 style={{ minWidth: "100px", flex: "1 1 100px" }}
@@ -630,7 +630,7 @@ const BookingLayer = () => {
               <input
                 type="number"
                 className="form-control flex-shrink-0"
-                placeholder="Max Price"
+                placeholder="Max Amount"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(e.target.value)}
                 style={{ minWidth: "100px", flex: "1 1 100px" }}

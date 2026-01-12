@@ -457,7 +457,7 @@ const MasterLayout = ({ children }) => {
       children: [
         { title: "Ticket Reports", to: "/ticket-reports", color: "text-warning-main", permission: "ticketreports_view", page: "Ticket Reports" },
         { title: "Lead Reports", to: "/lead-reports", color: "text-info-main", permission: "leadreports_view", page: "Lead Reports" },
-        { title: "Booking Reports", to: "/booking-reports", color: "text-success-main", permission: "bookingreports_view", page: "Booking Reports" },
+        // { title: "Booking Reports", to: "/booking-reports", color: "text-success-main", permission: "bookingreports_view", page: "Booking Reports" },
         // { title: "Services Earning Report", to: "/services-earning-report", color: "text-danger-main", permission: "servicesearningreport_view", page: "Services Earning Report" },
         { title: "Revenue Reports", to: "/revenue-reports", color: "text-primary-600", permission: "revenuereports_view", page: "Revenue Reports" },
       ],
@@ -517,13 +517,6 @@ const MasterLayout = ({ children }) => {
         },
       ],
     },
-    //  {
-    //   title: "Payments",
-    //   icon: "hugeicons:invoice-03",
-    //   children: [
-    //     { title: "Payments", to: "/payments", color: "text-primary-600" },
-    //   ],
-    // },
     {
       title: "Time Slots",
       icon: "ion:time-outline",
@@ -551,11 +544,11 @@ const MasterLayout = ({ children }) => {
         { title: "Leaves", to: "/leave-list", color: "text-primary-600", permission: "leavelist_view", page: "Leave List" },
       ],
     },
-    {
-      title: "Blog",
-      icon: "material-symbols:article-outline",
-      children: [{ title: "Blog", to: "/blog", color: "text-primary-600", permission: "blog_view", page: "Blog" }],
-    },
+    // {
+    //   title: "Blog",
+    //   icon: "material-symbols:article-outline",
+    //   children: [{ title: "Blog", to: "/blog", color: "text-primary-600", permission: "blog_view", page: "Blog" }],
+    // },
     {
       title: "Contacts",
       icon: "flowbite:address-book-outline",
@@ -563,38 +556,38 @@ const MasterLayout = ({ children }) => {
         { title: "Contacts", to: "/contacts", color: "text-primary-600", permission: "contacts_view", page: "Contacts" },
       ],
     },
-    {
-      title: "Dealer Service Price",
-      icon: "material-symbols:request-quote-outline",
-      children: [
-        {
-          title: "Dealer Service Price",
-          to: "/dealer-service-price",
-          color: "text-primary-600",
-          permission: "dealerserviceprice_view",
-          page: "Dealer Service Price",
-        },
-      ],
-    },
+    // {
+    //   title: "Dealer Service Price",
+    //   icon: "material-symbols:request-quote-outline",
+    //   children: [
+    //     {
+    //       title: "Dealer Service Price",
+    //       to: "/dealer-service-price",
+    //       color: "text-primary-600",
+    //       permission: "dealerserviceprice_view",
+    //       page: "Dealer Service Price",
+    //     },
+    //   ],
+    // },
     {
       title: "Settings",
       icon: "material-symbols:settings-outline-rounded",
       children: [
         { title: "Reasons", to: "/reasons", color: "text-primary-600", permission: "reasons_view", page: "Reasons" },
-        {
-          title: "Notification Templates",
-          to: "/notification-templates",
-          color: "text-warning-main",
-          permission: "notificationtemplates_view",
-          page: "Notification Template",
-        },
-        {
-          title: "Notifications",
-          to: "/notifications",
-          color: "text-info-main",
-          permission: "notifications_view",
-          page: "Notifications",
-        },
+        // {
+        //   title: "Notification Templates",
+        //   to: "/notification-templates",
+        //   color: "text-warning-main",
+        //   permission: "notificationtemplates_view",
+        //   page: "Notification Template",
+        // },
+        // {
+        //   title: "Notifications",
+        //   to: "/notifications",
+        //   color: "text-info-main",
+        //   permission: "notifications_view",
+        //   page: "Notifications",
+        // },
         { title: "Roles", to: "/roles", color: "text-info-main", permission: "roles_view", page: "Roles" },
         {
           title: "Permission Pages",
@@ -605,14 +598,14 @@ const MasterLayout = ({ children }) => {
         },
       ],
     },
-    {
-      title: "Master Settings",
-      icon: "material-symbols:admin-panel-settings-outline",
-      children: [
-        { title: "Admin Users", to: "/admin-users", color: "text-primary-600", permission: "admin_user_view", page: "Admin_User" },
-      ],
+    // {
+    //   title: "Master Settings",
+    //   icon: "material-symbols:admin-panel-settings-outline",
+    //   children: [
+    //     { title: "Admin Users", to: "/admin-users", color: "text-primary-600", permission: "admin_user_view", page: "Admin_User" },
+    //   ],
 
-    },
+    // },
     {
       title: "Go To Website",
       icon: "mdi:earth",

@@ -953,7 +953,7 @@ const BookServicesLayer = () => {
           title: "Success!",
           text: "Services have been successfully added to this booking.",
         }).then(() => {
-          navigate(-1);
+          // navigate(-1);
         });
 
         await fetchBookingData();
@@ -2086,12 +2086,14 @@ const BookServicesLayer = () => {
             {/* Submit & Confirm Button */}
             {addedItems.length > 0 && (
               <div className="d-flex justify-content-center gap-3 mt-3">
+                {hasNewItem && (
                 <button
                   className="btn btn-primary-600 radius-8 px-10 py-4"
                   onClick={handleSubmit}
                 >
                   Submit Booking
                 </button>
+                )}
                 {(employeeData?.RoleName === "Supervisor Head" ||
                   role === "Admin") && (
                   <button
