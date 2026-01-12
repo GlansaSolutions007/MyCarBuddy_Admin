@@ -549,60 +549,127 @@ const BookServicesLayer = () => {
         try {
           // Create all new services
           const createPromises = newServices.map(async (newService) => {
-            const payload = {
-              IncludeName: newService.label.trim(),
-              Description: description.trim() || "",
-              IncludePrice: parseFloat(price) || 0,
-              CategoryID: 14,
-              SubCategoryID: 0,
-              SkillID: 4,
-              CreatedBy: userId,
-              IsActive: true,
-            };
+            try {
+              const payload = {
+                IncludeName: newService.label.trim(),
+                Description: description.trim() || "",
+                IncludePrice: parseFloat(price) || 0,
+                CategoryID: 14,
+                SubCategoryID: 0,
+                SkillID: 4,
+                CreatedBy: userId,
+                IsActive: true,
+              };
 
-            const resp = await axios.post(`${API_BASE}Includes`, payload, {
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-            });
-
-            if (resp.status === 200 || resp.status === 201) {
-              const created = resp.data;
-
-              // Update the dropdown
-              setIncludesList((prev) => [
-                ...prev,
-                {
-                  IncludeID: created.IncludeID,
-                  IncludeName: created.IncludeName,
-                  IncludePrice: created.IncludePrice,
+              const resp = await axios.post(`${API_BASE}Includes`, payload, {
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
                 },
-              ]);
+              });
 
+              if (resp.status === 200 || resp.status === 201) {
+                // Handle different response structures
+                const created = resp.data?.data || resp.data || {};
+                
+                // Debug logging to understand API response structure
+                console.log("API Response for service creation:", {
+                  fullResponse: resp.data,
+                  created: created,
+                  serviceLabel: newService.label,
+                });
+                
+                // Get IncludeID - try different possible field names
+                const includeId = created.IncludeID || created.includeID || created.id || created.IncludeId;
+                // Get IncludeName - use original label as fallback if missing or blank
+                const includeName = (created.IncludeName || created.includeName || created.name || "").trim() || newService.label.trim();
+                const includePrice = created.IncludePrice || created.includePrice || created.Include_Price || created.price || 0;
+
+                if (includeId) {
+                  // Ensure we always have a name (use original label if API didn't return one)
+                  const finalIncludeName = includeName || newService.label.trim();
+                  
+                  // Update the dropdown
+                  setIncludesList((prev) => {
+                    // Check if already exists to avoid duplicates
+                    const exists = prev.find((inc) => inc.IncludeID === includeId);
+                    if (exists) {
+                      // Update existing entry if name is blank
+                      if (!exists.IncludeName || exists.IncludeName.trim() === "") {
+                        return prev.map((inc) =>
+                          inc.IncludeID === includeId
+                            ? { ...inc, IncludeName: finalIncludeName }
+                            : inc
+                        );
+                      }
+                      return prev;
+                    }
+                    return [
+                      ...prev,
+                      {
+                        IncludeID: includeId,
+                        IncludeName: finalIncludeName,
+                        IncludePrice: includePrice,
+                      },
+                    ];
+                  });
+
+                  return {
+                    oldLabel: newService.label,
+                    newValue: {
+                      value: includeId,
+                      label: finalIncludeName,
+                    },
+                    created: created,
+                  };
+                } else {
+                  console.error("Service created but no ID returned:", created);
+                  // Fallback: return the original service with a warning
+                  return {
+                    oldLabel: newService.label,
+                    newValue: {
+                      value: `temp-${Date.now()}-${Math.random()}`,
+                      label: newService.label,
+                    },
+                    created: null,
+                    error: "No ID returned from API",
+                  };
+                }
+              }
+              return null;
+            } catch (serviceErr) {
+              console.error(`Failed to create service "${newService.label}":`, serviceErr);
+              // Return the original service so the item can still be added
               return {
                 oldLabel: newService.label,
                 newValue: {
-                  value: created.IncludeID,
-                  label: created.IncludeName,
+                  value: `temp-${Date.now()}-${Math.random()}`,
+                  label: newService.label,
                 },
-                created: created,
+                created: null,
+                error: serviceErr.message,
               };
             }
-            return null;
           });
 
           const results = await Promise.all(createPromises);
 
+          // Filter out null results and check for errors
+          const validResults = results.filter((r) => r !== null);
+          const errors = validResults.filter((r) => r.error);
+          const successes = validResults.filter((r) => !r.error);
+
           // Replace new services with created ones in selectedServices
           processedSelectedServices = selectedServices.map((service) => {
             if (service.__isNew__) {
-              const result = results.find(
+              const result = validResults.find(
                 (r) => r && r.oldLabel === service.label
               );
-              if (result) {
+              if (result && result.newValue) {
                 return result.newValue;
               }
+              // If no result found, keep the original service (shouldn't happen, but safety)
+              return service;
             }
             return service;
           });
@@ -610,11 +677,11 @@ const BookServicesLayer = () => {
           // Update state with processed services
           setSelectedServices(processedSelectedServices);
 
-          Swal.fire(
-            "Created!",
+            Swal.fire(
+              "Created!",
             `${newServices.length} new service(s) have been added`,
-            "success"
-          );
+              "success"
+            );
         } catch (err) {
           console.error(err);
           return Swal.fire(
@@ -633,10 +700,17 @@ const BookServicesLayer = () => {
     const baseTotal = p * q;
     const taxableAmount = baseTotal + labour;
     const gstAmount = (taxableAmount * gstP) / 100;
+    
+    // For Service Group, use the first service's name from processedSelectedServices
+    // This ensures we use the correct name after new services are created
+    const itemName = itemType === "Service Group" && processedSelectedServices.length > 0
+      ? processedSelectedServices[0].label.trim()
+      : name.trim();
+    
     //  BUILD THE FINAL ITEM
     const updatedItem = {
       type: itemType,
-      name: name.trim(),
+      name: itemName,
       // basePrice: Number(price) || 0,
       basePrice: itemType === "Spare Part" ? Number(price) || 0 : 0,
       price: Number(baseTotal.toFixed(2)),

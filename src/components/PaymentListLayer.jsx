@@ -23,6 +23,20 @@ const PaymentsListLayer = () => {
   const [refundStatus, setRefundStatus] = useState("all");
   const API_BASE = import.meta.env.VITE_APIURL;
   const token = localStorage.getItem("token");
+  const INVOICE_URL = "https://api.mycarsbuddy.com";
+
+  // Helper function to get invoice URL from FolderPath
+  const getInvoiceUrl = (folderPath) => {
+    if (!folderPath) return null;
+    let invoicePath;
+    if (folderPath.startsWith('http://') || folderPath.startsWith('https://')) {
+      const url = new URL(folderPath);
+      invoicePath = url.pathname;
+    } else {
+      invoicePath = folderPath.startsWith('/') ? folderPath : '/' + folderPath;
+    }
+    return `${INVOICE_URL}${invoicePath}`;
+  };
 
   useEffect(() => {
     fetchPayments();
@@ -207,7 +221,7 @@ const PaymentsListLayer = () => {
           {/* Invoice - open PDF */}
           {row.FolderPath && (
             <a
-              href={row.FolderPath}
+              href={getInvoiceUrl(row.FolderPath)}
               target="_blank"
               rel="noopener noreferrer"
               className="w-32-px h-32-px bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center"
@@ -449,7 +463,7 @@ const PaymentsListLayer = () => {
                 <p><strong>Refunded:</strong> {selectedPayment.IsRefunded ? "Yes" : "No"}</p>
                 {selectedPayment.FolderPath && (
                   <p>
-                    <a href={selectedPayment.FolderPath} target="_blank" rel="noopener noreferrer">
+                    <a href={getInvoiceUrl(selectedPayment.FolderPath)} target="_blank" rel="noopener noreferrer">
                       View Invoice PDF
                     </a>
                   </p>

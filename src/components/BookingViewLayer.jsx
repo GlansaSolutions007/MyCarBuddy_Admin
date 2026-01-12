@@ -1399,17 +1399,16 @@ const BookingViewLayer = () => {
 
                   <div className="mt-3 d-flex justify-content-center gap-2">
                     <button
-                      className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
-                      onClick={handleReschedule}
-                    >
-                      Submit Reschedule
-                    </button>
-
-                    <button
                       className="btn btn-secondary btn-sm"
                       onClick={() => setShowReschedule(false)}
                     >
                       Cancel Reschedule
+                    </button>
+                    <button
+                      className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
+                      onClick={handleReschedule}
+                    >
+                      Submit Reschedule
                     </button>
                   </div>
                 </div>
@@ -2257,7 +2256,7 @@ const BookingViewLayer = () => {
                   </div>
                 )}
               </div>
-              <div className="modal-footer">
+                 <div className=" modal-footer mt-3 d-flex justify-content-center gap-2">
                 <button
                   className="btn btn-secondary"
                   onClick={() => {
@@ -2268,7 +2267,7 @@ const BookingViewLayer = () => {
                     setSelectedReassignTimeSlot(null);
                   }}
                 >
-                  Cancel
+                  Cancel 
                 </button>
                 <button
                   className="btn btn-primary btn-sm"

@@ -89,87 +89,6 @@ const RevenueReports = () => {
     setSelectedExportColumns(EXPORT_COLUMNS[reportType].map((c) => c.key));
   }, [reportType]);
 
-  // const exportToExcel = () => {
-  //   let exportData = [];
-  //   let sheetName = "";
-  //   let filename = "";
-
-  //   if (reportType === "garage") {
-  //     exportData = filteredData.map((item) => ({
-  //       "Garage Name": item.GarageName || "-",
-  //       "Total Services": item.TotalServices || 0,
-  //       "Total Revenue": item.TotalRevenue || 0,
-  //       "Total GST": item.TotalGST || 0,
-  //       "Our Earnings": item.OurEarnings || 0,
-  //     }));
-  //     sheetName = "Garage Earnings";
-  //     filename = `garage_earnings_export_${new Date()
-  //       .toISOString()
-  //       .slice(0, 19)
-  //       .replace(/:/g, "")
-  //       .replace(/-/g, "")
-  //       .replace("T", "_")}.xlsx`;
-  //   } else if (reportType === "service") {
-  //     exportData = filteredData.map((item) => ({
-  //       Date: item.CreatedDate
-  //         ? new Date(item.CreatedDate).toLocaleDateString("en-GB")
-  //         : "-",
-  //       "Service Type": item.ServiceType || "-",
-  //       "Service Name": item.ServiceName || "-",
-  //       "Garage Name": item.GarageName || "-",
-  //       Price: item.Price || 0,
-  //       GST: item.GST || 0,
-  //       "Our %": item.OurPercentage || 0,
-  //       "Our Earnings": item.OurEarnings || 0,
-  //     }));
-  //     sheetName = "Service Wise Report";
-  //     filename = `service_wise_export_${new Date()
-  //       .toISOString()
-  //       .slice(0, 19)
-  //       .replace(/:/g, "")
-  //       .replace(/-/g, "")
-  //       .replace("T", "_")}.xlsx`;
-  //   } else if (reportType === "booking") {
-  //     exportData = filteredData.map((item) => ({
-  //       "Booking ID": item.BookingTrackID || "-",
-  //       "Lead ID": item.LeadId || "-",
-  //       "Booking Date": item.BookingDate
-  //         ? new Date(item.BookingDate).toLocaleDateString("en-GB")
-  //         : "-",
-  //       "Customer Name": item.CustFullName || "-",
-  //       Phone: item.CustPhoneNumber || "-",
-  //       Email: item.CustEmail || "-",
-  //       "Total Services": item.TotalServices || 0,
-  //       "Total Revenue": item.TotalRevenue || 0,
-  //       GST: item.TotalGST || 0,
-  //       "Our Earnings": item.OurEarnings || 0,
-  //     }));
-  //     sheetName = "Booking Reports";
-  //     filename = `booking_reports_export_${new Date()
-  //       .toISOString()
-  //       .slice(0, 19)
-  //       .replace(/:/g, "")
-  //       .replace(/-/g, "")
-  //       .replace("T", "_")}.xlsx`;
-  //   }
-
-  //   // Create workbook and worksheet
-  //   const wb = XLSX.utils.book_new();
-  //   const ws = XLSX.utils.json_to_sheet(exportData);
-
-  //   // Auto-size columns
-  //   const colWidths = Array(Object.keys(exportData[0] || {}).length).fill({
-  //     wch: 15,
-  //   });
-  //   ws["!cols"] = colWidths;
-
-  //   // Add worksheet to workbook
-  //   XLSX.utils.book_append_sheet(wb, ws, sheetName);
-
-  //   // Save file
-  //   XLSX.writeFile(wb, filename);
-  // };
-
   const exportToExcel = () => {
     if (!selectedExportColumns.length) return;
     const columns = EXPORT_COLUMNS[reportType];
@@ -353,6 +272,12 @@ const RevenueReports = () => {
       width: "150px",
     },
     {
+      name: "Amount Paid",
+      selector: (r) => r.AmountPaid,
+      sortable: true,
+      width: "150px",
+    },
+    {
       name: "GST",
       selector: (r) => r.TotalGST,
       sortable: true,
@@ -360,6 +285,7 @@ const RevenueReports = () => {
     {
       name: "Our Earnings",
       selector: (r) => r.OurEarnings,
+      // selector: (r) => (r.AmountPaid === 0 ? 0 : r.OurEarnings),
       sortable: true,
     },
   ];

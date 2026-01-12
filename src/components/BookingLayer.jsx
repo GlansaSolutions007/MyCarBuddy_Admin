@@ -385,10 +385,10 @@ const BookingLayer = () => {
       selector: (row) => (
         <>
           <span className="fw-bold">
-            {row.SupervisorHeadName ? row.SupervisorHeadName : "Not Assigned"}
+             {row.SupervisorName || row.SupervisorHeadName || "Not Assigned"}
           </span>
           <br />
-          {row.SupervisorHeadPhoneNumber || ""}
+          {row.SupervisorPhoneNumber || ""}
         </>
       ),
       width: "150px",
