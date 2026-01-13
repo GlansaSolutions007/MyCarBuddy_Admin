@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Icon } from "@iconify/react";
+import Swal from "sweetalert2";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
@@ -53,13 +54,21 @@ const InvoiceViewLayer = () => {
     if (invoicePdfUrl) {
       window.open(invoicePdfUrl, "_blank");
     } else {
-      alert("Invoice PDF not available");
+      Swal.fire({
+        icon: "warning",
+        title: "Invoice Not Available",
+        text: "Invoice PDF is not available at the moment.",
+      });
     }
   };
 
   const handleSendFinalInvoice = async () => {
     if (!bookingData?.BookingID || !invoiceNumber) {
-      alert("Invoice data not available");
+      Swal.fire({
+        icon: "error",
+        title: "Missing Invoice Data",
+        text: "Invoice information is not available.",
+      });
       return;
     }
 
@@ -76,15 +85,27 @@ const InvoiceViewLayer = () => {
           },
         }
       );
-      alert("Invoice sent successfully");
+      Swal.fire({
+        icon: "success",
+        title: "Invoice Sent",
+        text: "Final invoice sent successfully.",
+      });
     } catch (error) {
       console.error("Send Invoice Error:", error);
-      alert("Failed to send invoice");
+      Swal.fire({
+        icon: "error",
+        title: "Failed",
+        text: "Failed to send final invoice.",
+      });
     }
   };
   const handleSendEstimatedInvoice = async () => {
     if (!bookingData?.BookingID || !invoiceNumber) {
-      alert("Invoice data not available");
+      Swal.fire({
+        icon: "error",
+        title: "Missing Invoice Data",
+        text: "Invoice information is not available.",
+      });
       return;
     }
     try {
@@ -100,10 +121,18 @@ const InvoiceViewLayer = () => {
           },
         }
       );
-      alert("Estimation Invoice sent successfully");
+      Swal.fire({
+        icon: "success",
+        title: "Estimation Sent",
+        text: "Estimation invoice sent successfully.",
+      });
     } catch (error) {
       console.error("Send Estimation Invoice Error:", error);
-      alert("Failed to send Estimation invoice");
+      Swal.fire({
+        icon: "error",
+        title: "Failed",
+        text: "Failed to send estimation invoice.",
+      });
     }
   };
 

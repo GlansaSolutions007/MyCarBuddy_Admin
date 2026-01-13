@@ -1027,7 +1027,7 @@ const BookServicesLayer = () => {
           title: "Success!",
           text: "Services have been successfully added to this booking.",
         }).then(() => {
-          // navigate(-1);
+          navigate(-1);
         });
 
         await fetchBookingData();
@@ -1372,7 +1372,7 @@ const BookServicesLayer = () => {
       sortable: true,
     },
     {
-      name: "GST Amount",
+      name: "GST Amt",
       cell: (row, index) => (
         <input
           type="number"
@@ -1409,6 +1409,30 @@ const BookServicesLayer = () => {
       width: "120px",
       sortable: true,
     },
+    {
+  name: "Total Amt",
+  cell: (row) => {
+    const partTotal =
+      (Number(row.basePrice) || 0) * (Number(row.quantity) || 1);
+
+    const serviceCharge = Number(row.labourCharge) || 0;
+    const gstAmount = Number(row.gstPrice) || 0;
+
+    const total = partTotal + serviceCharge + gstAmount;
+
+    return (
+      <input
+        type="number"
+        className="form-control form-control-sm"
+        value={total.toFixed(2)}
+        disabled
+      />
+    );
+  },
+  width: "140px",
+  sortable: true,
+},
+
     ...(employeeData?.RoleName === "Supervisor Head" || role === "Admin"
       ? [
           {
@@ -1440,7 +1464,7 @@ const BookServicesLayer = () => {
                 disabled={!row.isEditing}
               />
             ),
-            width: "120px",
+            width: "130px",
             sortable: true,
           },
           {
