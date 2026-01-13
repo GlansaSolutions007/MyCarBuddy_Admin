@@ -78,6 +78,8 @@ const BookingViewLayer = () => {
   const [payAmount, setPayAmount] = useState("");
   const [isDiscountApplicable, setIsDiscountApplicable] = useState(false);
   const [discountAmount, setDiscountAmount] = useState("");
+  const employeeData = JSON.parse(localStorage.getItem("employeeData"));
+const userId = employeeData?.Id;
 
   const today = new Date().toISOString().split("T")[0];
   const nowTime = new Date().toTimeString().slice(0, 5); // HH:mm
@@ -924,6 +926,7 @@ const BookingViewLayer = () => {
         paymentMode, // ex: Cash / UPI / Card
         paymentStatus: "Success", // 🔒 static
         paymentType: "Static", // 🔒 static
+        createdBy: userId,
       };
 
       const res = await axios.post(
@@ -1073,14 +1076,14 @@ const BookingViewLayer = () => {
                             </span>
                           </li>
 
-                          <li className="d-flex align-items-center gap-1 mb-12">
+                          {/* <li className="d-flex align-items-center gap-1 mb-12">
                             <span className="w-50 fw-semibold text-primary-light">
                               Vehicle Number :
                             </span>
                             <span className="w-70 text-secondary-light fw-bold">
                               {bookingData.VehicleNumber || "—"}
                             </span>
-                          </li>
+                          </li> */}
                           <li className="d-flex align-items-center gap-1 mb-12">
                             <span className="w-50 fw-semibold text-primary-light">
                               Full Address :
@@ -1562,8 +1565,7 @@ const BookingViewLayer = () => {
                               {bookingData?.Payments?.length > 0 &&
                                 (() => {
                                   const rawStatus =
-                                    bookingData.Payments?.[0]?.PaymentStatus ||
-                                    "-";
+                                     bookingData.Payments?.[bookingData.Payments.length - 1]?.PaymentStatus || "-";
                                   const status =
                                     rawStatus === "Success"
                                       ? "Paid"
