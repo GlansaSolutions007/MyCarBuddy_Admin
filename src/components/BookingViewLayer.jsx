@@ -863,9 +863,15 @@ const userId = employeeData?.Id;
 
   // const alreadyPaid = bookingData?.PaidAmount || 0;
   const alreadyPaid = (bookingData?.Payments || [])
+    // .filter(
+    //   (payment) => payment.PaymentStatus === "Success" || payment.PaymentStatus === "Partialpaid" && !payment.IsRefunded
+    // )
     .filter(
-      (payment) => payment.PaymentStatus === "Success" && !payment.IsRefunded
-    )
+  (payment) =>
+    (payment.PaymentStatus === "Success" ||
+     payment.PaymentStatus === "Partialpaid") &&
+    !payment.IsRefunded
+)
     .reduce((sum, payment) => {
       return sum + Number(payment.AmountPaid || 0);
     }, 0);
