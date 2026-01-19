@@ -923,6 +923,7 @@ const LeadViewLayer = () => {
                 <div className="alert alert-danger">{error}</div>
               ) : lead ? (
                 <>
+                {!["Supervisor Head", "Supervisor"].includes(roleName) && (
                   <div className="d-flex justify-content-between align-items-center">
                     <h6 className="card-title">Update Status</h6>
                     <Icon
@@ -932,7 +933,8 @@ const LeadViewLayer = () => {
                       onClick={handleWhatsapp}
                     />
                   </div>
-
+                )}
+                  {!["Supervisor Head", "Supervisor"].includes(roleName) && (
                   <div className="p-3 border radius-16 bg-light">
                     {/* Call Answered Radio Buttons */}
                     <div className="mb-3">
@@ -1156,7 +1158,9 @@ const LeadViewLayer = () => {
                       </button>
                     </div>
                   </div>
+                  )}
                 </>
+                     
               ) : (
                 <p>No data</p>
               )}

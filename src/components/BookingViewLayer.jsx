@@ -1473,7 +1473,13 @@ const BookingViewLayer = () => {
                       )}
                     </div>
                   )}
-
+                <Link
+                  to={`/lead-view/${bookingData?.LeadId}`}
+                  className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
+                  title="View"
+                >
+                  View Lead
+                </Link>
                 {/* Reschedule & Reassign Buttons */}
                 {bookingData &&
                   !["Completed", "Cancelled", "Refunded"].includes(
@@ -1509,6 +1515,7 @@ const BookingViewLayer = () => {
                       )}
                     </div>
                   )}
+
                 <Link
                   to={`/book-service/${bookingData?.LeadId}`}
                   className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
