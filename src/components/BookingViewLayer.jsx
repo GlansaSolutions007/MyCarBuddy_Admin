@@ -1515,14 +1515,20 @@ const BookingViewLayer = () => {
                       )}
                     </div>
                   )}
-
-                <Link
-                  to={`/book-service/${bookingData?.LeadId}`}
-                  className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
-                  title="Add"
-                >
-                  Add / Edit Services
-                </Link>
+                {!(
+                  bookingData?.BookingStatus === "Completed" &&
+                  bookingData?.Payments?.length > 0 &&
+                  bookingData?.Payments?.[bookingData.Payments.length - 1]
+                    ?.PaymentStatus === "Success"
+                ) && (
+                  <Link
+                    to={`/book-service/${bookingData?.LeadId}`}
+                    className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
+                    title="Add"
+                  >
+                    Add / Edit Services
+                  </Link>
+                )}
               </li>
 
               {/* {bookingData &&
