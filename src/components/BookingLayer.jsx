@@ -622,7 +622,7 @@ const BookingLayer = () => {
               <input
                 type="number"
                 className="form-control flex-shrink-0"
-                placeholder="Min Amount"
+                placeholder="Min Amt"
                 value={minPrice}
                 onChange={(e) => setMinPrice(e.target.value)}
                 style={{ minWidth: "100px", flex: "1 1 100px" }}
@@ -630,7 +630,7 @@ const BookingLayer = () => {
               <input
                 type="number"
                 className="form-control flex-shrink-0"
-                placeholder="Max Amount"
+                placeholder="Max Amt"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(e.target.value)}
                 style={{ minWidth: "100px", flex: "1 1 100px" }}

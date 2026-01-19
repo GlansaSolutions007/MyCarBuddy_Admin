@@ -1568,47 +1568,35 @@ const BookingViewLayer = () => {
                               </div>
                             </div>
                             <div className="d-flex align-items-center gap-2 flex-wrap">
-                              {bookingData?.Payments?.length > 0 &&
-                                (() => {
-                                  const rawStatus =
-                                    bookingData.Payments?.[
-                                      bookingData.Payments.length - 1
-                                    ]?.PaymentStatus || "-";
-                                  const status =
-                                    rawStatus === "Success"
-                                      ? "Paid"
-                                      : rawStatus;
+                              {(() => {
+                                const payments = bookingData?.Payments;
 
-                                  const colorMap = {
-                                    Paid: "#28A745",
-                                    Pending: "#F57C00",
-                                    Refunded: "#25878F",
-                                    Failed: "#E34242",
-                                    "-": "#BFBFBF",
-                                  };
+                                let label = "Pending";
+                                let badgeClass = "bg-warning text-dark";
 
-                                  const color = colorMap[status] || "#6c757d";
+                                if (payments?.length > 0) {
+                                  const lastPayment =
+                                    payments[payments.length - 1];
+                                  const status = lastPayment?.PaymentStatus;
 
-                                  return (
+                                  if (status === "Success") {
+                                    label = "Paid";
+                                    badgeClass = "bg-success";
+                                  } else if (status === "Partialpaid") {
+                                    label = "Partial Paid";
+                                    badgeClass = "bg-primary";
+                                  }
+                                }
+                                return (
+                                  <span className="fw-semibold d-flex align-items-center">
                                     <span
-                                      className="fw-semibold d-flex align-items-center"
-                                      style={{ fontSize: "13px" }}
+                                      className={`badge px-3 py-1 rounded-pill ${badgeClass}`}
                                     >
-                                      <span
-                                        className="badge"
-                                        style={{
-                                          backgroundColor: color,
-                                          fontSize: "11px",
-                                          fontWeight: 500,
-                                          padding: "4px 10px",
-                                          borderRadius: "12px",
-                                        }}
-                                      >
-                                        {status}
-                                      </span>
+                                      {label}
                                     </span>
-                                  );
-                                })()}
+                                  </span>
+                                );
+                              })()}
 
                               <span
                                 className={`badge px-3 py-1 rounded-pill ${
@@ -2139,39 +2127,6 @@ const BookingViewLayer = () => {
                 )}
               </div>
             </div>
-            {/* <div className="d-flex justify-content-center gap-2 mt-3">
-              {remainingAmount > 0 && (
-                <button
-                  className="btn btn-primary-600 btn-sm"
-                  onClick={() => {
-                    setPaymentMode("");
-                    setPayAmount(remainingAmount);
-                    setShowPaymentModal(true);
-                  }}
-                >
-                  Enter Payment
-                </button>
-              )}
-              {remainingAmount > 0 && (
-                <button
-                  className="btn btn-warning btn-sm d-inline-flex align-items-center"
-                  onClick={handleGenerateEstimationInvoice}
-                >
-                  Generate Estimation Invoice
-                </button>
-              )}
-
-              {remainingAmount === 0 &&
-                bookingData?.BookingAddOns &&
-                bookingData.BookingAddOns.length > 0 && (
-                  <button
-                    className="btn btn-info btn-sm d-inline-flex align-items-center"
-                    onClick={handleGenerateFinalInvoice}
-                  >
-                    Generate Final Invoice
-                  </button>
-                )}
-            </div> */}
           </div>
         </div>
       </div>

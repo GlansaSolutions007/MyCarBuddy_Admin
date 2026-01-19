@@ -345,7 +345,7 @@ const TicketsViewLayer = () => {
               {/* ➕ Add Ticket Button */}
               <Link
                 to="/add-tickets"
-                className="btn btn-primary d-flex align-items-center gap-1 text-sm flex-shrink-0"
+                className="btn btn-primary-600 d-flex align-items-center gap-1 text-sm flex-shrink-0"
                 style={{
                   whiteSpace: "nowrap",
                   padding: "6px 12px",

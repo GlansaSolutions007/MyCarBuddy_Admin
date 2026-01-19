@@ -28,6 +28,21 @@ const MasterLayout = ({ children }) => {
   const navigate = useNavigate();
   const [userImage, setUserImage] = useState("");
 
+  // Helper function to get display role
+  const getDisplayRole = () => {
+    const employeeDataStr = localStorage.getItem("employeeData");
+    if (employeeDataStr) {
+      try {
+        const employeeData = JSON.parse(employeeDataStr);
+        return employeeData.RoleName || role || "Role";
+      } catch (error) {
+        console.error("Error parsing employeeData:", error);
+        return role || "Role";
+      }
+    }
+    return role || "Role";
+  };
+
   // Fetch user permissions from API
   useEffect(() => {
     const fetchUserPermissions = async () => {
@@ -1035,6 +1050,16 @@ const MasterLayout = ({ children }) => {
                   <input type='text' name='search' placeholder='Search' />
                   <Icon icon='ion:search-outline' className='icon' />
                 </form> */}
+              </div>
+            </div>
+            <div className="col text-center d-none d-md-block">
+              <div className="d-flex flex-column align-items-center">
+                <h6 className="mb-0 fw-semibold text-lg">
+                  {getDisplayRole()}  
+                </h6>
+                <span className="text-secondary-light fw-medium text-md">
+                  {localStorage.getItem("name") || "User"}
+                </span>
               </div>
             </div>
             <div className="col-auto ">
