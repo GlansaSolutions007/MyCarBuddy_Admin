@@ -79,13 +79,13 @@ const BookingViewLayer = () => {
   const [isDiscountApplicable, setIsDiscountApplicable] = useState(false);
   const [discountAmount, setDiscountAmount] = useState("");
   const employeeData = JSON.parse(localStorage.getItem("employeeData"));
-const userId = employeeData?.Id;
+  const userId = employeeData?.Id;
 
   const today = new Date().toISOString().split("T")[0];
   const nowTime = new Date().toTimeString().slice(0, 5); // HH:mm
   const finalPayAmount = Math.max(
     Number(payAmount || 0) - Number(discountAmount || 0),
-    0
+    0,
   );
   // State for dynamically adding services
   const [servicesToAdd, setServicesToAdd] = useState([
@@ -116,7 +116,7 @@ const userId = employeeData?.Id;
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
       setBookingData(res.data[0]);
       console.log("Booking Data:", res.data[0]);
@@ -157,7 +157,7 @@ const userId = employeeData?.Id;
         res.data.jsonResult.map((t) => ({
           value: t.TechID,
           label: `${t.TechnicianName} (${t.PhoneNumber})`,
-        }))
+        })),
       );
     } catch (error) {
       console.error("Failed to load technicians", error);
@@ -176,7 +176,7 @@ const userId = employeeData?.Id;
           StartTime: slot.startTime || slot.StartTime,
           EndTime: slot.endTime || slot.EndTime,
           IsActive: slot.IsActive ?? slot.Status ?? slot.status,
-        }))
+        })),
       );
     } catch (err) {
       console.error("Error fetching time slots:", err);
@@ -220,7 +220,7 @@ const userId = employeeData?.Id;
         .filter(
           (emp) =>
             emp.DepartmentName?.toLowerCase() === "supervisor" ||
-            emp.RoleName?.toLowerCase() === "supervisor"
+            emp.RoleName?.toLowerCase() === "supervisor",
         )
         .map((emp) => ({
           value: emp.Id,
@@ -275,7 +275,7 @@ const userId = employeeData?.Id;
           requestedBy: localStorage.getItem("userId") || 1, // Using localStorage for userId
           Status: "",
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       Swal.fire({
         icon: "success",
@@ -421,12 +421,12 @@ const userId = employeeData?.Id;
         },
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
       Swal.fire(
         "Cancelled!",
         "Booking has been cancelled successfully.",
-        "success"
+        "success",
       );
       fetchBookingData(); // Refresh booking data
     } catch (error) {
@@ -447,7 +447,7 @@ const userId = employeeData?.Id;
       Swal.fire(
         "Notification",
         "Your full amount has already been refunded.",
-        "info"
+        "info",
       );
       return;
     }
@@ -488,7 +488,7 @@ const userId = employeeData?.Id;
         },
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       if (res.data.success) {
@@ -498,7 +498,7 @@ const userId = employeeData?.Id;
         Swal.fire(
           "Error",
           res.data.message || "Failed to process refund.",
-          "error"
+          "error",
         );
       }
     } catch (error) {
@@ -548,7 +548,7 @@ const userId = employeeData?.Id;
           return updatedService;
         }
         return service;
-      })
+      }),
     );
   };
 
@@ -587,7 +587,7 @@ const userId = employeeData?.Id;
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       Swal.fire("Success", "Add-ons added successfully!", "success");
@@ -611,13 +611,13 @@ const userId = employeeData?.Id;
   const addServiceTotal = bookingData?.BookingAddOns
     ? bookingData.BookingAddOns.reduce(
         (sum, item) => sum + (item.TotalPrice || 0),
-        0
+        0,
       )
     : 0;
 
   const handleAddLocalService = async () => {
     const valid = servicesToAdd.filter(
-      (s) => s.name && s.price && Number(s.price) > 0
+      (s) => s.name && s.price && Number(s.price) > 0,
     );
 
     if (valid.length === 0) {
@@ -704,7 +704,7 @@ const userId = employeeData?.Id;
           gstAmount: item.GSTPrice,
           totalAmount: item.TotalPrice,
           bodyPart: item.Type,
-        }))
+        })),
       );
 
       console.log("Fetched Temp Services:", temp);
@@ -730,7 +730,7 @@ const userId = employeeData?.Id;
             `${API_BASE}Supervisor/TempAddOnService?addOnId=${id}`,
             {
               headers: { Authorization: `Bearer ${token}` },
-            }
+            },
           );
 
           // Remove from UI
@@ -755,7 +755,7 @@ const userId = employeeData?.Id;
       const response = await axios.post(
         `${API_BASE}Supervisor/MoveTempAddOns?bookingId=${bookingId}`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (response.data.success) {
@@ -771,7 +771,7 @@ const userId = employeeData?.Id;
         Swal.fire(
           "Error",
           response.data.message || "Something went wrong",
-          "error"
+          "error",
         );
       }
     } catch (error) {
@@ -795,12 +795,12 @@ const userId = employeeData?.Id;
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
       Swal.fire(
         "Success",
         res.data?.message || "Final Invoice generated successfully.",
-        "success"
+        "success",
       );
       navigate(`/invoice-view/${bookingData.BookingID}`);
     } catch (error) {
@@ -809,7 +809,7 @@ const userId = employeeData?.Id;
       Swal.fire(
         "Error",
         error?.response?.data?.message || "Failed to generate Final invoice.",
-        "error"
+        "error",
       );
     }
   };
@@ -828,12 +828,12 @@ const userId = employeeData?.Id;
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
       Swal.fire(
         "Success",
         res.data?.message || "Estimation Invoice generated successfully.",
-        "success"
+        "success",
       );
       navigate(`/invoice-view/${bookingData.BookingID}`);
     } catch (error) {
@@ -842,7 +842,7 @@ const userId = employeeData?.Id;
         "Error",
         error?.response?.data?.message ||
           "Failed to generate Estimation invoice.",
-        "error"
+        "error",
       );
     }
   };
@@ -867,11 +867,11 @@ const userId = employeeData?.Id;
     //   (payment) => payment.PaymentStatus === "Success" || payment.PaymentStatus === "Partialpaid" && !payment.IsRefunded
     // )
     .filter(
-  (payment) =>
-    (payment.PaymentStatus === "Success" ||
-     payment.PaymentStatus === "Partialpaid") &&
-    !payment.IsRefunded
-)
+      (payment) =>
+        (payment.PaymentStatus === "Success" ||
+          payment.PaymentStatus === "Partialpaid") &&
+        !payment.IsRefunded,
+    )
     .reduce((sum, payment) => {
       return sum + Number(payment.AmountPaid || 0);
     }, 0);
@@ -899,7 +899,7 @@ const userId = employeeData?.Id;
           Swal.fire(
             "Validation",
             "Discount cannot exceed entered amount",
-            "warning"
+            "warning",
           );
           return;
         }
@@ -909,7 +909,7 @@ const userId = employeeData?.Id;
         Swal.fire(
           "Validation",
           "Amount cannot exceed remaining balance",
-          "warning"
+          "warning",
         );
         return;
       }
@@ -920,7 +920,7 @@ const userId = employeeData?.Id;
         Swal.fire(
           "Validation",
           "Final payable amount must be greater than zero",
-          "warning"
+          "warning",
         );
         return;
       }
@@ -940,7 +940,7 @@ const userId = employeeData?.Id;
         payload,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       if (res?.data?.status) {
@@ -962,7 +962,7 @@ const userId = employeeData?.Id;
       Swal.fire(
         "Validation",
         "Please fill all pickup and drop details",
-        "warning"
+        "warning",
       );
       return;
     }
@@ -980,14 +980,14 @@ const userId = employeeData?.Id;
       const res = await axios.post(
         `${API_BASE}Supervisor/SavePickupDeliveryTime`,
         payload,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (res.data.success || res.status === 200) {
         Swal.fire(
           "Success",
           "Pickup and Drop details saved successfully!",
-          "success"
+          "success",
         );
         // Reset form
         setPickupDate("");
@@ -999,7 +999,7 @@ const userId = employeeData?.Id;
         Swal.fire(
           "Error",
           res.data.message || "Failed to save details",
-          "error"
+          "error",
         );
       }
     } catch (error) {
@@ -1375,7 +1375,7 @@ const userId = employeeData?.Id;
                           .map((slot) => ({
                             value: `${slot.StartTime} - ${slot.EndTime}`,
                             label: `${formatTime(
-                              slot.StartTime
+                              slot.StartTime,
                             )} - ${formatTime(slot.EndTime)}`,
                           }))}
                         value={selectedTimeSlot.map((val) => ({
@@ -1386,7 +1386,7 @@ const userId = employeeData?.Id;
                           setSelectedTimeSlot(
                             selectedOptions
                               ? selectedOptions.map((opt) => opt.value)
-                              : []
+                              : [],
                           )
                         }
                         placeholder="Select time slots"
@@ -1477,11 +1477,11 @@ const userId = employeeData?.Id;
                 {/* Reschedule & Reassign Buttons */}
                 {bookingData &&
                   !["Completed", "Cancelled", "Refunded"].includes(
-                    bookingData.BookingStatus
+                    bookingData.BookingStatus,
                   ) && (
                     <div className="d-flex gap-2 flex-wrap">
                       <button
-                        className="btn btn-warning btn-sm d-inline-flex align-items-center"
+                        className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                         onClick={() => setShowReschedule(!showReschedule)}
                       >
                         Reschedule
@@ -1571,7 +1571,9 @@ const userId = employeeData?.Id;
                               {bookingData?.Payments?.length > 0 &&
                                 (() => {
                                   const rawStatus =
-                                     bookingData.Payments?.[bookingData.Payments.length - 1]?.PaymentStatus || "-";
+                                    bookingData.Payments?.[
+                                      bookingData.Payments.length - 1
+                                    ]?.PaymentStatus || "-";
                                   const status =
                                     rawStatus === "Success"
                                       ? "Paid"
@@ -1613,8 +1615,8 @@ const userId = employeeData?.Id;
                                   bookingData.BookingStatus === "Completed"
                                     ? "bg-success"
                                     : bookingData.BookingStatus === "Confirmed"
-                                    ? "bg-primary"
-                                    : "bg-warning text-dark"
+                                      ? "bg-primary"
+                                      : "bg-warning text-dark"
                                 }`}
                               >
                                 {bookingData.BookingStatus}
@@ -1665,7 +1667,7 @@ const userId = employeeData?.Id;
                                                         <li key={inc.IncludeID}>
                                                           {inc.IncludeName}
                                                         </li>
-                                                      )
+                                                      ),
                                                     )}
                                                   </ul>
                                                 )}
@@ -1678,7 +1680,7 @@ const userId = employeeData?.Id;
                                                   ? (() => {
                                                       const hours = Math.floor(
                                                         pkg.EstimatedDurationMinutes /
-                                                          60
+                                                          60,
                                                       );
                                                       const minutes =
                                                         pkg.EstimatedDurationMinutes %
@@ -1691,7 +1693,7 @@ const userId = employeeData?.Id;
                                               </span>
                                             </div>
                                           </li>
-                                        )
+                                        ),
                                       )}
                                     </ul>
                                   </div>
@@ -1734,11 +1736,11 @@ const userId = employeeData?.Id;
                                             <span className="badge bg-secondary rounded-pill">
                                               ₹
                                               {Number(
-                                                addon.ServicePrice
+                                                addon.ServicePrice,
                                               ).toFixed(2)}
                                             </span>
                                           </li>
-                                        )
+                                        ),
                                       )}
                                     </ul>
                                   </div>
@@ -1859,7 +1861,7 @@ const userId = employeeData?.Id;
                                                 {/* </strong> */}
                                                 {addon.Includes &&
                                                   Array.isArray(
-                                                    addon.Includes
+                                                    addon.Includes,
                                                   ) &&
                                                   addon.Includes.length > 0 && (
                                                     <ul className="text-muted small ps-3 mb-0 mt-2">
@@ -1874,7 +1876,7 @@ const userId = employeeData?.Id;
                                                             {inc.IncludeName ||
                                                               inc.name}
                                                           </li>
-                                                        )
+                                                        ),
                                                       )}
                                                     </ul>
                                                   )}
@@ -1884,13 +1886,13 @@ const userId = employeeData?.Id;
                                             <td className="normal">
                                               {addon.CreatedDate
                                                 ? new Date(
-                                                    addon.CreatedDate
+                                                    addon.CreatedDate,
                                                   ).toLocaleDateString("en-IN")
                                                 : "—"}
                                             </td>
                                             <td className="text-end">
                                               {Number(
-                                                addon.BasePrice || 0
+                                                addon.BasePrice || 0,
                                               ).toFixed(2)}
                                             </td>
                                             <td className="text-end">
@@ -1898,12 +1900,12 @@ const userId = employeeData?.Id;
                                             </td>
                                             <td className="text-end">
                                               {Number(
-                                                addon.ServicePrice || 0
+                                                addon.ServicePrice || 0,
                                               ).toFixed(2)}
                                             </td>
                                             <td className="text-end">
                                               {Number(
-                                                addon.LabourCharges || 0
+                                                addon.LabourCharges || 0,
                                               ).toFixed(2)}
                                             </td>
                                             <td className="text-end">
@@ -1911,7 +1913,7 @@ const userId = employeeData?.Id;
                                             </td>
                                             <td className="text-end">
                                               {Number(
-                                                addon.GSTPrice || 0
+                                                addon.GSTPrice || 0,
                                               ).toFixed(2)}
                                             </td>
                                             <td className="text-end">
@@ -1919,12 +1921,12 @@ const userId = employeeData?.Id;
                                             </td>
                                             <td className="text-end">
                                               {Number(
-                                                addon.Our_Earnings || 0
+                                                addon.Our_Earnings || 0,
                                               ).toFixed(2)}
                                             </td>
                                             <td className="text-end fw-bold text-primary">
                                               {Number(
-                                                addon.TotalPrice || 0
+                                                addon.TotalPrice || 0,
                                               ).toFixed(2)}
                                             </td>
                                             <td
@@ -1937,7 +1939,7 @@ const userId = employeeData?.Id;
                                               {/* {addon.Description || "—"} */}
                                             </td>
                                           </tr>
-                                        )
+                                        ),
                                       )}
                                     </tbody>
                                   </table>
@@ -1958,7 +1960,7 @@ const userId = employeeData?.Id;
                                   <span>
                                     ₹
                                     {Number(
-                                      bookingData.TotalPrice || 0
+                                      bookingData.TotalPrice || 0,
                                     ).toFixed(2)}
                                   </span>
                                 </li>
@@ -1969,19 +1971,35 @@ const userId = employeeData?.Id;
                                   <span>
                                     ₹
                                     {Number(
-                                      bookingData.LabourCharges || 0
+                                      bookingData.LabourCharges || 0,
                                     ).toFixed(2)}
                                   </span>
                                 </li>
-                                <li className="list-group-item d-flex justify-content-between p-0">
+                                {/* <li className="list-group-item d-flex justify-content-between p-0">
                                   <span className="text-secondary">
                                     GST Total
                                   </span>
                                   <span>
                                     ₹
-                                    {Number(bookingData.GSTAmount || 0).toFixed(
-                                      2
-                                    )}
+                                    {Number(bookingData.GSTAmount || 0).toFixed(2)}
+                                  </span>
+                                </li> */}
+                                <li className="list-group-item d-flex justify-content-between p-0">
+                                  <span className="text-secondary">SGST</span>
+                                  <span>
+                                    ₹
+                                    {(
+                                      Number(bookingData.GSTAmount || 0) / 2
+                                    ).toFixed(2)}
+                                  </span>
+                                </li>
+                                <li className="list-group-item d-flex justify-content-between p-0">
+                                  <span className="text-secondary">CGST</span>
+                                  <span>
+                                    ₹
+                                    {(
+                                      Number(bookingData.GSTAmount || 0) / 2
+                                    ).toFixed(2)}
                                   </span>
                                 </li>
 
@@ -1993,7 +2011,7 @@ const userId = employeeData?.Id;
                                     <span>
                                       - ₹
                                       {Number(
-                                        bookingData.CouponAmount || 0
+                                        bookingData.CouponAmount || 0,
                                       ).toFixed(2)}
                                     </span>
                                   </li>
@@ -2009,7 +2027,7 @@ const userId = employeeData?.Id;
                                       (bookingData.TotalPrice || 0) +
                                         (bookingData.GSTAmount || 0) +
                                         (bookingData.LabourCharges || 0) -
-                                        (bookingData.CouponAmount || 0)
+                                        (bookingData.CouponAmount || 0),
                                     ).toFixed(2)}
                                   </span>
                                 </li>
@@ -2034,9 +2052,9 @@ const userId = employeeData?.Id;
                                         (bookingData.TotalPrice || 0) +
                                           (bookingData.GSTAmount || 0) +
                                           (bookingData.LabourCharges || 0) -
-                                          (bookingData.CouponAmount || 0)
+                                          (bookingData.CouponAmount || 0),
                                       ) - alreadyPaid,
-                                      0
+                                      0,
                                     ).toFixed(2)}
                                   </span>
                                 </li>
@@ -2059,7 +2077,7 @@ const userId = employeeData?.Id;
                                 )}
                                 {remainingAmount > 0 && (
                                   <button
-                                    className="btn btn-warning btn-sm d-inline-flex align-items-center"
+                                    className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                                     onClick={handleGenerateEstimationInvoice}
                                   >
                                     Generate Estimation Invoice
@@ -2071,7 +2089,7 @@ const userId = employeeData?.Id;
                                   bookingData?.BookingAddOns &&
                                   bookingData.BookingAddOns.length > 0 && (
                                     <button
-                                      className="btn btn-info btn-sm d-inline-flex align-items-center"
+                                      className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                                       onClick={handleGenerateFinalInvoice}
                                     >
                                       Generate Final Invoice
@@ -2264,7 +2282,7 @@ const userId = employeeData?.Id;
                   </div>
                 )}
               </div>
-                 <div className=" modal-footer mt-3 d-flex justify-content-center gap-2">
+              <div className=" modal-footer mt-3 d-flex justify-content-center gap-2">
                 <button
                   className="btn btn-secondary"
                   onClick={() => {
@@ -2275,10 +2293,10 @@ const userId = employeeData?.Id;
                     setSelectedReassignTimeSlot(null);
                   }}
                 >
-                  Cancel 
+                  Cancel
                 </button>
                 <button
-                  className="btn btn-primary btn-sm"
+                  className="btn btn-primary-600 btn-sm"
                   onClick={handleAssignConfirm}
                   disabled={
                     !selectedReassignTimeSlot ||

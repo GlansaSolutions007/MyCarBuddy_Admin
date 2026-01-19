@@ -62,9 +62,9 @@ const TechnicianLayer = () => {
 
 
   const columns = [
-    { name: "Tech ID", selector: (row) => row.TechID, sortable: true, },
-    { name: "Full Name", selector: (row) => row.TechnicianName, sortable: true, },
-    { name: "Email", selector: (row) => row.Email, sortable: true, },
+    { name: "ID", selector: (row) => row.TechID, sortable: true, width: "80px"},
+    { name: "Full Name", selector: (row) => row.TechnicianName, sortable: true, width: "150px"},
+    { name: "Email", selector: (row) => row.Email, sortable: true, width: "200px", wrap:true },
     { name: "Phone", selector: (row) => row.PhoneNumber, sortable: true, },
     // {
     //   name: "State",

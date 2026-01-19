@@ -385,7 +385,7 @@ const TicketInnerLayer = () => {
                       currentStatus?.toLowerCase()
                     ))) && (
                   <button
-                    className="btn btn-primary btn-sm d-flex align-items-center justify-content-center gap-1"
+                    className="btn btn-primary-600 btn-sm d-flex align-items-center justify-content-center gap-1"
                     onClick={handleForward}
                   >
                     <Icon icon="mdi:arrow-right" className="fs-5" />

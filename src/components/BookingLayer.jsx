@@ -316,13 +316,13 @@ const BookingLayer = () => {
                 {row.BookingTrackID}
               </Link>
             ),
-            width: "150px",
+            width: "160px",
             sortable: true,
           },
         ]
       : []),
     {
-      name: "Booking date",
+      name: "Date",
       selector: (row) => {
         const rawDate = row.BookingDate || row.CreatedDate;
         if (!rawDate) return "-";
@@ -340,7 +340,7 @@ const BookingLayer = () => {
     {
       name: "Time slot",
       selector: (row) =>
-  row.TimeSlot || row.AssignedTimeSlot || "-",
+      row.TimeSlot || row.AssignedTimeSlot || "-",
       width: "160px",
       sortable: true,
     },
@@ -352,7 +352,7 @@ const BookingLayer = () => {
     sortable: true,
     },
     {
-      name: "Customer Name",
+      name: "Cust. Name",
       selector: (row) => (
         <>
           <span className="fw-bold">
@@ -467,7 +467,7 @@ const BookingLayer = () => {
         );
       },
       wrap: true,
-      width: "150px",
+      width: "160px",
       sortable: true,
     },
     {
@@ -792,9 +792,9 @@ const BookingLayer = () => {
                   />
                 )}
               </div>
-              <div className="modal-footer">
+              <div className="modal-footer d-inline-flex align-items-center justify-content-center">
                 <button
-                  className="btn btn-secondary"
+                  className="btn btn-secondary btn-sm"
                   onClick={() => {
                     setAssignModalOpen(false);
                     setAssignType("technician");
@@ -805,7 +805,7 @@ const BookingLayer = () => {
                   Cancel
                 </button>
                 <button
-                  className="btn btn-primary"
+                className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
                   onClick={handleAssignConfirm}
                   disabled={
                     !selectedTimeSlot ||

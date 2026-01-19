@@ -197,13 +197,13 @@ const RevenueReports = () => {
       width: "150px",
       wrap: true,
     },
-    { name: "Service Type", selector: (r) => r.ServiceType, sortable: true },
+    { name: "Service Type", selector: (r) => r.ServiceType, sortable: true, width: "150px" },
     { name: "Service Name", selector: (r) => r.ServiceName, sortable: true, width: "200px", wrap: true,},
-    { name: "Garage Name", selector: (r) => r.GarageName, sortable: true },
-    { name: "Price", selector: (r) => r.Price, sortable: true },
+    { name: "Garage Name", selector: (r) => r.GarageName, sortable: true, width: "150px" },
+    { name: "Price", selector: (r) => r.Price, sortable: true, },
     { name: "GST", selector: (r) => r.GST, sortable: true, },
     { name: "Our %", selector: (r) => r.OurPercentage, sortable: true, },
-    { name: "Our Earnings", selector: (r) => r.OurEarnings, sortable: true, },
+    { name: "Our Earnings", selector: (r) => r.OurEarnings, sortable: true, width: "150px"},
   ];
   const bookingColumns = [
     {
@@ -224,6 +224,7 @@ const RevenueReports = () => {
         </Link>
       ),
       sortable: true,
+      width: "150px"
     },
     {
       name: "Booking Date",
@@ -244,13 +245,15 @@ const RevenueReports = () => {
       wrap: true,
     },
     {
-      name: "Customer Name",
+      name: "Cust. Name",
       selector: (r) => r.CustFullName,
       sortable: true,
+      width: "150px"
     },
     {
       name: "Phone",
       selector: (r) => r.CustPhoneNumber,
+      width: "150px"
     },
     {
       name: "Email",
@@ -287,6 +290,7 @@ const RevenueReports = () => {
       selector: (r) => r.OurEarnings,
       // selector: (r) => (r.AmountPaid === 0 ? 0 : r.OurEarnings),
       sortable: true,
+      width: "150px"
     },
   ];
 

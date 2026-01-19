@@ -169,7 +169,7 @@ const DesignationLayer = () => {
   const columns = [
     { name: "S.No", selector: (_, i) => i + 1, width: "80px", sortable: true, },
     {
-      name: "Designation Name",
+      name: "Designation",
       cell: (row) => (
         <div className="d-flex align-items-center gap-2">
           <input
@@ -183,11 +183,13 @@ const DesignationLayer = () => {
         </div>
       ),
       sortable: true,
+      width: "150px"
     },
     {
-      name: "Department Name",
+      name: "Department",
       selector: (row) => row.departmentName || "N/A",
       sortable: true,
+      width: "150px"
     },
     {
       name: "Level",
@@ -201,6 +203,7 @@ const DesignationLayer = () => {
         return levelMap[row.level] || row.level;  
       },
       sortable: true,
+      width: "150px"
     },
     ...(hasPermission("designation_edit")
     ? [

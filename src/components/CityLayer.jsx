@@ -152,17 +152,20 @@ const CityLayer = () => {
       name: "State Name",
       selector: (row) => row.StateName || "—",
       sortable: true,
+      width: "150px"
     },
 
     {
       name: "City Name",
       selector: (row) => row.CityName,
       sortable: true,
+      width: "150px"
     },
     {
       name: "Pincode",
       selector: (row) => row.Pincode,
       sortable: true,
+      width: "120px"
     },
 
     {

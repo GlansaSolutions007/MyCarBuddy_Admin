@@ -61,9 +61,8 @@ const ServicePlanPriceListLayer = () => {
 
   const columns = [
     // { name: "S.No", selector: (_, index) => index + 1, width: "80px", sortable: true, },
-    { name: "Package ID", selector: (row) => row.PlanPriceID, sortable: true, },
-
-    { name: "Plan Name", selector: (row) => row.PackageName, sortable: true, },
+    { name: "Package ID", selector: (row) => row.PlanPriceID, sortable: true, width: "125px", wrap:true },
+    { name: "Package Name", selector: (row) => row.PackageName, sortable: true, width: "160px", wrap: true},
     { name: "Brand", selector: (row) => row.BrandName, sortable: true, },
     { name: "Model", selector: (row) => row.ModelName, sortable: true, },
     { name: "Fuel Type", selector: (row) => row.FuelTypeName, sortable: true, },

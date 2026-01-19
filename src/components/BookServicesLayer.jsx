@@ -116,7 +116,7 @@ const BookServicesLayer = () => {
         });
         // sort by start time if needed
         const sorted = (res.data || []).sort((a, b) =>
-          a.StartTime.localeCompare(b.StartTime)
+          a.StartTime.localeCompare(b.StartTime),
         );
 
         setTimeSlots(sorted);
@@ -134,7 +134,7 @@ const BookServicesLayer = () => {
       setLoading(true);
       const response = await axios.get(
         `${API_BASE}Supervisor/SupervisorLeadId?LeadId=${leadId}`,
-        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} },
       );
       const data = response.data || {};
       setBookingData({
@@ -193,7 +193,7 @@ const BookServicesLayer = () => {
             // main service
             if (item.serviceId) {
               const main = includesList.find(
-                (inc) => inc.IncludeID == item.serviceId
+                (inc) => inc.IncludeID == item.serviceId,
               );
               services.push({
                 id: item.serviceId,
@@ -247,7 +247,7 @@ const BookServicesLayer = () => {
     try {
       const res = await axios.get(
         `${API_BASE}PlanPackage/GetPlanPackagesDetails`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       const packagesData = res.data.map((pkg) => {
@@ -404,7 +404,7 @@ const BookServicesLayer = () => {
           return Swal.fire(
             "Error",
             "Please select at least one include for the package",
-            "error"
+            "error",
           );
         }
 
@@ -427,7 +427,7 @@ const BookServicesLayer = () => {
               "Content-Type": "multipart/form-data",
               Authorization: `Bearer ${token}`,
             },
-          }
+          },
         );
 
         if (resp.status === 200 || resp.status === 201) {
@@ -445,7 +445,7 @@ const BookServicesLayer = () => {
             return Swal.fire(
               "Error",
               "Package created but ID not found in response",
-              "error"
+              "error",
             );
           }
 
@@ -461,7 +461,7 @@ const BookServicesLayer = () => {
           "Error",
           "Failed to create package: " +
             (err.response?.data?.message || err.message),
-          "error"
+          "error",
         );
       }
     }
@@ -480,7 +480,7 @@ const BookServicesLayer = () => {
         return Swal.fire(
           "Not Allowed",
           "You cannot modify includes of an existing package.",
-          "warning"
+          "warning",
         );
       }
     }
@@ -571,35 +571,56 @@ const BookServicesLayer = () => {
               if (resp.status === 200 || resp.status === 201) {
                 // Handle different response structures
                 const created = resp.data?.data || resp.data || {};
-                
+
                 // Debug logging to understand API response structure
                 console.log("API Response for service creation:", {
                   fullResponse: resp.data,
                   created: created,
                   serviceLabel: newService.label,
                 });
-                
+
                 // Get IncludeID - try different possible field names
-                const includeId = created.IncludeID || created.includeID || created.id || created.IncludeId;
+                const includeId =
+                  created.IncludeID ||
+                  created.includeID ||
+                  created.id ||
+                  created.IncludeId;
                 // Get IncludeName - use original label as fallback if missing or blank
-                const includeName = (created.IncludeName || created.includeName || created.name || "").trim() || newService.label.trim();
-                const includePrice = created.IncludePrice || created.includePrice || created.Include_Price || created.price || 0;
+                const includeName =
+                  (
+                    created.IncludeName ||
+                    created.includeName ||
+                    created.name ||
+                    ""
+                  ).trim() || newService.label.trim();
+                const includePrice =
+                  created.IncludePrice ||
+                  created.includePrice ||
+                  created.Include_Price ||
+                  created.price ||
+                  0;
 
                 if (includeId) {
                   // Ensure we always have a name (use original label if API didn't return one)
-                  const finalIncludeName = includeName || newService.label.trim();
-                  
+                  const finalIncludeName =
+                    includeName || newService.label.trim();
+
                   // Update the dropdown
                   setIncludesList((prev) => {
                     // Check if already exists to avoid duplicates
-                    const exists = prev.find((inc) => inc.IncludeID === includeId);
+                    const exists = prev.find(
+                      (inc) => inc.IncludeID === includeId,
+                    );
                     if (exists) {
                       // Update existing entry if name is blank
-                      if (!exists.IncludeName || exists.IncludeName.trim() === "") {
+                      if (
+                        !exists.IncludeName ||
+                        exists.IncludeName.trim() === ""
+                      ) {
                         return prev.map((inc) =>
                           inc.IncludeID === includeId
                             ? { ...inc, IncludeName: finalIncludeName }
-                            : inc
+                            : inc,
                         );
                       }
                       return prev;
@@ -638,7 +659,10 @@ const BookServicesLayer = () => {
               }
               return null;
             } catch (serviceErr) {
-              console.error(`Failed to create service "${newService.label}":`, serviceErr);
+              console.error(
+                `Failed to create service "${newService.label}":`,
+                serviceErr,
+              );
               // Return the original service so the item can still be added
               return {
                 oldLabel: newService.label,
@@ -663,7 +687,7 @@ const BookServicesLayer = () => {
           processedSelectedServices = selectedServices.map((service) => {
             if (service.__isNew__) {
               const result = validResults.find(
-                (r) => r && r.oldLabel === service.label
+                (r) => r && r.oldLabel === service.label,
               );
               if (result && result.newValue) {
                 return result.newValue;
@@ -677,17 +701,17 @@ const BookServicesLayer = () => {
           // Update state with processed services
           setSelectedServices(processedSelectedServices);
 
-            Swal.fire(
-              "Created!",
+          Swal.fire(
+            "Created!",
             `${newServices.length} new service(s) have been added`,
-              "success"
-            );
+            "success",
+          );
         } catch (err) {
           console.error(err);
           return Swal.fire(
             "Error",
             "Failed to create one or more services",
-            "error"
+            "error",
           );
         }
       }
@@ -700,13 +724,14 @@ const BookServicesLayer = () => {
     const baseTotal = p * q;
     const taxableAmount = baseTotal + labour;
     const gstAmount = (taxableAmount * gstP) / 100;
-    
+
     // For Service Group, use the first service's name from processedSelectedServices
     // This ensures we use the correct name after new services are created
-    const itemName = itemType === "Service Group" && processedSelectedServices.length > 0
-      ? processedSelectedServices[0].label.trim()
-      : name.trim();
-    
+    const itemName =
+      itemType === "Service Group" && processedSelectedServices.length > 0
+        ? processedSelectedServices[0].label.trim()
+        : name.trim();
+
     //  BUILD THE FINAL ITEM
     const updatedItem = {
       type: itemType,
@@ -758,8 +783,10 @@ const BookServicesLayer = () => {
   const handleEditItem = (index) => {
     setAddedItems((prev) =>
       prev.map((row, i) =>
-        i === index ? { ...row, isEditing: true } : { ...row, isEditing: false }
-      )
+        i === index
+          ? { ...row, isEditing: true }
+          : { ...row, isEditing: false },
+      ),
     );
   };
 
@@ -824,11 +851,11 @@ const BookServicesLayer = () => {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-          }
+          },
         );
       }
       setAddedItems((prev) =>
-        prev.map((r, i) => (i === index ? { ...r, isEditing: false } : r))
+        prev.map((r, i) => (i === index ? { ...r, isEditing: false } : r)),
       );
 
       Swal.fire("Saved", "Item updated successfully", "success");
@@ -855,7 +882,7 @@ const BookServicesLayer = () => {
             `${API_BASE}Supervisor/Id?id=${item._apiId}`,
             {
               headers: token ? { Authorization: `Bearer ${token}` } : {},
-            }
+            },
           );
 
           if (response.status === 200) {
@@ -887,7 +914,7 @@ const BookServicesLayer = () => {
         return Swal.fire(
           "Error",
           "Please select at least one time slot",
-          "error"
+          "error",
         );
       }
     }
@@ -994,7 +1021,7 @@ const BookServicesLayer = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (response.status === 200 || response.status === 201) {
@@ -1018,7 +1045,7 @@ const BookServicesLayer = () => {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`,
               },
-            }
+            },
           );
         }
 
@@ -1061,7 +1088,7 @@ const BookServicesLayer = () => {
       return Swal.fire(
         "No Items",
         "Please submit booking before confirming.",
-        "warning"
+        "warning",
       );
     }
 
@@ -1090,13 +1117,13 @@ const BookServicesLayer = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
       if (res.status === 200) {
         Swal.fire(
           "Confirmed",
           "Booking has been confirmed successfully",
-          "success"
+          "success",
         ).then(() => {
           navigate(-1);
         });
@@ -1106,7 +1133,7 @@ const BookServicesLayer = () => {
       Swal.fire(
         "Error",
         error.response?.data?.message || "Failed to confirm booking",
-        "error"
+        "error",
       );
     }
   };
@@ -1178,7 +1205,7 @@ const BookServicesLayer = () => {
               (
                 ((baseTotal + labour + gstPrice) * Number(row.percentage)) /
                 100
-              ).toFixed(2)
+              ).toFixed(2),
             );
 
             updateTableRow(row.addedItemsIndex, {
@@ -1241,7 +1268,7 @@ const BookServicesLayer = () => {
                 ((baseTotal + (Number(row.labourCharge) || 0) + gstPrice) *
                   Number(row.percentage)) /
                 100
-              ).toFixed(2)
+              ).toFixed(2),
             );
 
             updateTableRow(row.addedItemsIndex, {
@@ -1315,7 +1342,7 @@ const BookServicesLayer = () => {
                 ((baseTotal + labourCharge + gstPrice) *
                   Number(row.percentage)) /
                 100
-              ).toFixed(2)
+              ).toFixed(2),
             );
 
             updateTableRow(row.addedItemsIndex, {
@@ -1354,7 +1381,7 @@ const BookServicesLayer = () => {
                 ((baseTotal + (Number(row.labourCharge) || 0) + gstPrice) *
                   Number(row.percentage)) /
                 100
-              ).toFixed(2)
+              ).toFixed(2),
             );
 
             updateTableRow(row.addedItemsIndex, {
@@ -1410,28 +1437,28 @@ const BookServicesLayer = () => {
       sortable: true,
     },
     {
-  name: "Total Amt",
-  cell: (row) => {
-    const partTotal =
-      (Number(row.basePrice) || 0) * (Number(row.quantity) || 1);
+      name: "Total Amt",
+      cell: (row) => {
+        const partTotal =
+          (Number(row.basePrice) || 0) * (Number(row.quantity) || 1);
 
-    const serviceCharge = Number(row.labourCharge) || 0;
-    const gstAmount = Number(row.gstPrice) || 0;
+        const serviceCharge = Number(row.labourCharge) || 0;
+        const gstAmount = Number(row.gstPrice) || 0;
 
-    const total = partTotal + serviceCharge + gstAmount;
+        const total = partTotal + serviceCharge + gstAmount;
 
-    return (
-      <input
-        type="number"
-        className="form-control form-control-sm"
-        value={total.toFixed(2)}
-        disabled
-      />
-    );
-  },
-  width: "140px",
-  sortable: true,
-},
+        return (
+          <input
+            type="number"
+            className="form-control form-control-sm"
+            value={total.toFixed(2)}
+            disabled
+          />
+        );
+      },
+      width: "140px",
+      sortable: true,
+    },
 
     ...(employeeData?.RoleName === "Supervisor Head" || role === "Admin"
       ? [
@@ -1497,7 +1524,8 @@ const BookServicesLayer = () => {
                 disabled={!row.isEditing}
               />
             ),
-            width: "120px",sortable: true,
+            width: "120px",
+            sortable: true,
           },
           {
             name: "Select Dealer",
@@ -1663,7 +1691,7 @@ const BookServicesLayer = () => {
         // Match by string because one might be number, other string
         const incName =
           includesList.find(
-            (inc) => inc.IncludeID.toString() === incId.toString()
+            (inc) => inc.IncludeID.toString() === incId.toString(),
           )?.IncludeName || incId;
         flattenedRows.push({
           __id: `item-${idx}-inc-${iIdx}`,
@@ -1742,7 +1770,7 @@ const BookServicesLayer = () => {
                       if (val.length > 0) {
                         val = val.replace(
                           /^(\s*)(\S)/,
-                          (_, space, char) => space + char.toUpperCase()
+                          (_, space, char) => space + char.toUpperCase(),
                         );
                       }
                       setName(val);
@@ -1827,7 +1855,7 @@ const BookServicesLayer = () => {
                       }
 
                       const pkg = packagesList.find(
-                        (p) => p.id == option.value
+                        (p) => p.id == option.value,
                       );
 
                       setSelectedPackage(option.value);
@@ -1836,7 +1864,7 @@ const BookServicesLayer = () => {
                       if (pkg) {
                         setIsExistingPackage(true);
                         setSelectedIncludes(
-                          pkg.includes?.map((inc) => Number(inc.id)) || []
+                          pkg.includes?.map((inc) => Number(inc.id)) || [],
                         );
                         setPrice(Number(pkg.offerPrice) || 0);
                       } else {
@@ -1948,7 +1976,7 @@ const BookServicesLayer = () => {
                     }))}
                     value={includesList
                       .filter((inc) =>
-                        selectedIncludes.includes(Number(inc.IncludeID))
+                        selectedIncludes.includes(Number(inc.IncludeID)),
                       )
                       .map((inc) => ({
                         value: inc.IncludeID,
@@ -2021,7 +2049,7 @@ const BookServicesLayer = () => {
                     if (val.length > 0) {
                       val = val.replace(
                         /^(\s*)(\S)/,
-                        (_, space, char) => space + char.toUpperCase()
+                        (_, space, char) => space + char.toUpperCase(),
                       );
                     }
                     setDescription(val);
@@ -2032,7 +2060,7 @@ const BookServicesLayer = () => {
 
               <div className="col-12 d-flex gap-2 justify-content-end">
                 <button
-                  className="btn btn-primary py-2 px-3"
+                  className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
                   onClick={handleAddOrSave}
                 >
                   Add Item
@@ -2066,9 +2094,17 @@ const BookServicesLayer = () => {
                   <div>Service Charges</div>
                   <div>₹{labourTotal.toFixed(2)}</div>
                 </div>
-                <div className="d-flex justify-content-between">
+                {/* <div className="d-flex justify-content-between">
                   <div>Total GST</div>
                   <div>₹{totalGst.toFixed(2)}</div>
+                </div> */}
+                <div className="d-flex justify-content-between">
+                  <div>SGST</div>
+                  <div>₹{(totalGst / 2).toFixed(2)}</div>
+                </div>
+                <div className="d-flex justify-content-between">
+                  <div>CGST</div>
+                  <div>₹{(totalGst / 2).toFixed(2)}</div>
                 </div>
                 <hr />
                 <div className="d-flex justify-content-between fw-bold">
@@ -2097,7 +2133,7 @@ const BookServicesLayer = () => {
                           value={
                             bookingData?.bookingDate
                               ? new Date(
-                                  bookingData.bookingDate
+                                  bookingData.bookingDate,
                                 ).toLocaleDateString("en-IN")
                               : "—"
                           }
@@ -2144,7 +2180,7 @@ const BookServicesLayer = () => {
 
                             // case 3: ID → label
                             const slot = timeSlots.find(
-                              (t) => t.TsID === bookingData.timeSlot
+                              (t) => t.TsID === bookingData.timeSlot,
                             );
 
                             return slot
@@ -2185,17 +2221,19 @@ const BookServicesLayer = () => {
             {addedItems.length > 0 && (
               <div className="d-flex justify-content-center gap-3 mt-3">
                 {hasNewItem && (
-                <button
-                  className="btn btn-primary-600 radius-8 px-10 py-4"
-                  onClick={handleSubmit}
-                >
-                  Submit Booking
-                </button>
+                  <button
+                    className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
+                    // className="btn btn-primary-600 radius-8 px-10 py-4"
+                    onClick={handleSubmit}
+                  >
+                    Submit Booking
+                  </button>
                 )}
                 {(employeeData?.RoleName === "Supervisor Head" ||
                   role === "Admin") && (
                   <button
-                    className="btn btn-primary-700 radius-8 px-10 py-4"
+                    className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
+                    // className="btn btn-primary-700 radius-8 px-10 py-4"
                     onClick={handleConfirmBooking}
                     disabled={hasNewItem}
                   >

@@ -54,6 +54,8 @@ const DealerLayer = () => {
       name: "Email",
       selector: (row) => row.Email,
       sortable: true,
+      wrap: true,
+      width: "200px"
     },
     {
       name: "Phone",

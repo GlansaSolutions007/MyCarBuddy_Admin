@@ -143,7 +143,7 @@ const LeadReportsLayer = () => {
     {
       name: "Not Converted",
       selector: (row) => row.NotConverted,
-      width: "140px",
+      width: "150px",
       sortable: true,
     },
     {
@@ -173,13 +173,13 @@ const LeadReportsLayer = () => {
     {
       name: "Not Interested",
       selector: (row) => row.NotInterested,
-      width: "140px",
+      width: "150px",
       sortable: true,
     },
     {
       name: "Doesn't Exist",
       selector: (row) => row.NumberDoesNotExist,
-      width: "120px",
+      width: "150px",
       sortable: true,
     },
     ...(hasPermission("empleadsreport_view")

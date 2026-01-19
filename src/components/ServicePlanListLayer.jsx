@@ -91,25 +91,29 @@ const ServicePlanListLayer = () => {
 
   const columns = [
     {
-      name: "S.No",
+      name:"S.No",
       selector: (_, index) => index + 1,
       width: "80px",
       sortable: true,
     },
     {
-      name: "Plan Name",
+      name: "Package Name",
       selector: (row) => row.PackageName,
       sortable: true,
+      wrap:true
     },
     {
       name: "Category",
       selector: (row) => row.CategoryName,
       sortable: true,
+      wrap:true
+
     },
     {
-      name: "SubCategory1",
+      name: "Sub Category",
       selector: (row) => row.SubCategoryName,
       sortable: true,
+      wrap:true
     },
     // {
     //   name: "SubCategory2",

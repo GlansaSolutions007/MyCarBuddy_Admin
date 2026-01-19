@@ -84,12 +84,13 @@ export default function ReasonLayer() {
   };
 
   const columns = [
-    { name: "Reason", selector: (row) => row.Reason, sortable: true },
+    { name: "Reason", selector: (row) => row.Reason, sortable: true, width: "220px", wrap:true },
     {
       name: "Created Date",
       selector: (row) =>
         new Date(row.CreatedDate).toLocaleDateString("en-GB"),
       sortable: true,
+      width: "150px",
     },
     {
       name: "Status",
@@ -122,6 +123,7 @@ export default function ReasonLayer() {
         );
       },
       sortable: true,
+      width: "150px",
     },
     {
       name: "Actions",

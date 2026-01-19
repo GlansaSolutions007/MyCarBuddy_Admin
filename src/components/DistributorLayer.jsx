@@ -229,19 +229,23 @@ const DistributorLayer = () => {
     // sortable: true,
     // },
     {
-      name: "Distributor ID",
+      name: "ID",
       selector: (row) => row.DistributorID,
       sortable: true,
+      width: "80px"
     },
     {
       name: "Full Name",
       selector: (row) => row.FullName,
       sortable: true,
+      width: "150px"
     },
     {
       name: "Email",
       selector: (row) => row.Email,
       sortable: true,
+      width: "150px",
+      wrap: true
     },
     {
       name: "Phone",

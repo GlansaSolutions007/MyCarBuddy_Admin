@@ -370,7 +370,7 @@ const TelecalerAssignTicketLayer = () => {
                 }}
               />
             ),
-            width: "80px",
+            width: "90px",
             ignoreRowClick: true,
             sortable: true,
           },
@@ -385,9 +385,10 @@ const TelecalerAssignTicketLayer = () => {
         // </Link>
       ),
       sortable: true,
+      width: "150px"
     },
     {
-      name: "Customer",
+      name: "Cust. Name",
       selector: (row) => (
         <>
           <span className="fw-bold">{row.CustomerName || row.CustID}</span>

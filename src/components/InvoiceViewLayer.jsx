@@ -168,7 +168,7 @@ const InvoiceViewLayer = () => {
         <div className="d-flex gap-2">
           {activeInvoiceType === "Estimation" && (
             <button
-              className="btn btn-warning d-inline-flex align-items-center gap-2"
+              className="btn btn-primary-600 d-inline-flex align-items-center gap-2"
               onClick={handleSendEstimatedInvoice}
             >
               <Icon icon="mdi:email-send-outline" />
@@ -177,7 +177,7 @@ const InvoiceViewLayer = () => {
           )}
           {activeInvoiceType === "Final" && (
             <button
-              className="btn btn-success-600 d-inline-flex align-items-center gap-2"
+              className="btn btn-primary-600 d-inline-flex align-items-center gap-2"
               onClick={handleSendFinalInvoice}
             >
               <Icon icon="mdi:email-send-outline" />

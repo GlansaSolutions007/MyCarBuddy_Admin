@@ -179,9 +179,9 @@ const IncludesLayer = () => {
 
   const columns = [
     { name: "S.No", selector: (_, index) => index + 1, width: "80px", sortable: true, },
-    { name: "Include Name", selector: (row) => row.IncludeName, sortable: true, },
+    { name: "Include Name", selector: (row) => row.IncludeName, sortable: true, width:"150px",},
     { name: "Price", selector: (row) => `₹ ${parseFloat(row.IncludePrice).toFixed(2)}`, sortable: true, },
-    { name: "Description", selector: (row) => row.Description, sortable: true, },
+    { name: "Description", selector: (row) => row.Description, sortable: true, width:"150px",},
     {
       name: "Status",
       cell: (row) => {
@@ -454,7 +454,7 @@ const IncludesLayer = () => {
       )}
       <div className="col-xxl-8 col-lg-8">
         <div className="card mb-24">
-          <div className="card-body p-24">
+          <div className="card-body py-10">
             <div className="row gy-4">
               <div className="col-md-6">
                 <label className="form-label text-sm fw-semibold text-primary-light mb-8">

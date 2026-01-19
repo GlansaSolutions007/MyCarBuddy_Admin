@@ -43,10 +43,23 @@ const LeaveListLayer = () => {
   });
 
   const columns = [
-    { name: "Technician", selector: row => row.TechnicianName, sortable: true, },
-    { name: "From", selector: row => row.FromDate, sortable: true, },
-    { name: "To", selector: row => row.ToDate, sortable: true, },
-    { name: "Reason", selector: row => row.LeaveReason, sortable: true, },
+    { name: "Technician Name", selector: row => row.TechnicianName, sortable: true,  width: "180px",},
+    { 
+  name: "From Date", 
+  selector: row => row.FromDate 
+    ? new Date(row.FromDate).toLocaleDateString("en-GB") 
+    : "-", 
+  sortable: true 
+},
+{ 
+  name: "To Date", 
+  selector: row => row.ToDate 
+    ? new Date(row.ToDate).toLocaleDateString("en-GB") 
+    : "-", 
+  sortable: true 
+},
+
+    { name: "Leave Reason", selector: row => row.LeaveReason, sortable: true, width: "200px", wrap:true },
     {
       name: "Status",
       cell: (row) => {
@@ -87,6 +100,7 @@ const LeaveListLayer = () => {
         );
       },
       sortable: true,
+       width: "200px",
     },
     ...(hasPermission("leavelist_edit")
     ? [

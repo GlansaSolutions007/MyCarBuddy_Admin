@@ -44,16 +44,20 @@ const CustomerLayer = () => {
       name: "Full Name",
       selector: (row) => row.FullName,
       sortable: true,
+      width: "200px"
     },
     {
       name: "Email",
       selector: (row) => row.Email,
       sortable: true,
+      wrap: true,
+      width: "200px"
     },
     {
       name: "Phone",
       selector: (row) => row.PhoneNumber,
       sortable: true,
+      width: "150px"
     },
     {
       name: "Status",

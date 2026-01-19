@@ -382,7 +382,7 @@ const FaqsAddLayer = () => {
               {!isEditMode && hasPermission("faqs_add") && (
                 <div className="col-12 d-flex justify-content-end mb-10">
                   <button
-                    className="btn btn-primary radius-8 px-14 py-2 d-flex align-items-center"
+                    className="btn btn-primary-600 radius-8 px-14 py-2 d-flex align-items-center"
                     onClick={handleAddFaq}
                   >
                     <Icon icon="ic:baseline-plus" />

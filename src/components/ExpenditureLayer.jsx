@@ -423,7 +423,7 @@ const ExpenditureLayer = () => {
                 <option>Bank Transfer</option>
               </select>
             </div>
-            {/* <div className="mb-10">
+            <div className="mb-10">
               <label className="text-sm fw-semibold text-primary-light mb-0">
                 Dealer
               </label>
@@ -483,7 +483,7 @@ const ExpenditureLayer = () => {
                 placeholder="Reference No"
                 onChange={handleChange}
               />
-            </div> */}
+            </div>
             <div className="mb-10">
               <label className="text-sm fw-semibold text-primary-light mb-0">
                 Enter Description
