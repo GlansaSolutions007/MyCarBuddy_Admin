@@ -277,7 +277,11 @@ const LeadsLayer = () => {
         lead.Platform === "Organic" ||
         lead.Platform === "Web" ||
         lead.Platform === "App" ||
-        lead.NextAction === "Lead Closed"
+        lead.NextAction === "Lead Closed" &&
+        !(
+        lead.BookingStatus === "Completed" &&
+        lead.PaymentStatus === "Success"
+      )
       )
         return false;
       const text = searchText.toLowerCase();

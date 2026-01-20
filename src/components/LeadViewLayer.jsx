@@ -60,7 +60,11 @@ const LeadViewLayer = () => {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedSupervisorHead, setSelectedSupervisorHead] = useState(null);
   const [supervisorHeads, setSupervisorHeads] = useState([]);
-  const isLeadClosed = lead?.NextAction === "Lead Closed";
+  const shouldDisableActions = lead?.NextAction === "Lead Closed";
+  const isBookingCompletedAndPaid = lead?.BookingStatus === "Completed" && lead?.PaymentStatus === "Success";
+  const isLeadClosed = shouldDisableActions || isBookingCompletedAndPaid;
+
+
   const vehicle = lead?.VehiclesDetails?.[0];
   const isVehicleDataComplete =
     vehicle?.BrandName && vehicle?.ModelName && vehicle?.FuelTypeName;

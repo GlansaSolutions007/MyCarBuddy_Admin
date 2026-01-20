@@ -37,7 +37,12 @@ const ClosedLeadsLayer = () => {
       }
       const data = await response.json();
       const closedLeadsOnly = Array.isArray(data)
-        ? data.filter((lead) => lead.NextAction === "Lead Closed")
+        ? data.filter(
+            (lead) =>
+              lead.NextAction === "Lead Closed" ||
+              (lead.BookingStatus === "Completed" &&
+                lead.PaymentStatus === "Success"),
+          )
         : [];
       setLeads(closedLeadsOnly);
     } catch (err) {
@@ -192,7 +197,7 @@ const ClosedLeadsLayer = () => {
         return (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {row.BookingAddOns.filter(
-              (addon) => addon.IsUserClicked === true
+              (addon) => addon.IsUserClicked === true,
             ).map((addon) => (
               <span key={addon.AddOnId}>{addon.ServiceName}</span>
             ))}

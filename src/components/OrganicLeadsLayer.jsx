@@ -50,10 +50,13 @@ const OrganicLeadsLayer = () => {
               (lead.Platform === "Organic" ||
                 lead.Platform === "Web" ||
                 lead.Platform === "App") &&
-              lead.NextAction !== "Lead Closed"
+              lead.NextAction !== "Lead Closed" &&
+              !(
+                lead.BookingStatus === "Completed" &&
+                lead.PaymentStatus === "Success"
+              ),
           )
         : [];
-
       setLeads(organicOnly);
     } catch (err) {
       setError("Failed to fetch leads. Please try again.");
@@ -264,7 +267,7 @@ const OrganicLeadsLayer = () => {
         return (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {row.BookingAddOns.filter(
-              (addon) => addon.IsUserClicked === true
+              (addon) => addon.IsUserClicked === true,
             ).map((addon) => (
               <span key={addon.AddOnId}>{addon.ServiceName}</span>
             ))}
