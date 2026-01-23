@@ -453,7 +453,7 @@ const OrganicLeadsLayer = () => {
                   onChange={handleBulkUpload}
                 />
                 {/* Bulk Upload button */}
-                {role === "Admin" && (
+                {/* {role === "Admin" && ( */}
                   <button
                     type="button"
                     className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
@@ -468,7 +468,7 @@ const OrganicLeadsLayer = () => {
                     />
                     Bulk Upload
                   </button>
-                )}
+                {/* )} */}
                 {hasPermission("createlead_add") && (
                   <Link
                     to="/create-lead"

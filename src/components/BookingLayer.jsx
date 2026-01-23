@@ -57,18 +57,25 @@ const BookingLayer = () => {
   // New states for Supervisor Assignment
   const [supervisors, setSupervisors] = useState([]);
   const [selectedSupervisor, setSelectedSupervisor] = useState(null);
-  const [assignType, setAssignType] = useState("technician"); // 'technician' | 'supervisor'
+  const [assignType, setAssignType] = useState("technician"); // 'technician' | 'supervisor' | 'fieldAdvisor'
+
+  // States for Field Advisor Assignment
+  const [fieldAdvisors, setFieldAdvisors] = useState([]);
+  const [selectedFieldAdvisor, setSelectedFieldAdvisor] = useState(null);
 
   const API_BASE = import.meta.env.VITE_APIURL;
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
   const roleId = localStorage.getItem("roleId");
+  const employeeData = JSON.parse(localStorage.getItem("employeeData"));
+const roleName = employeeData?.RoleName;
   const userId = localStorage.getItem("userId"); // Assuming userId is available in localStorage
 
   useEffect(() => {
     fetchTechnicians();
     fetchBookings();
     fetchSupervisors(); // Fetch supervisors on component mount
+    fetchFieldAdvisors(); // Fetch field advisors on component mount
     getTimeSlotOptions(); // Fetch time slots on component mount
   }, []);
 
@@ -84,11 +91,9 @@ const BookingLayer = () => {
       if (roleId === "8") {
         // If supervisor
         url = `${API_BASE}Supervisor/AssingedBookings?SupervisorID=${userId}`;
-      } 
-       else if (roleId === "3") {
-      url = `${API_BASE}Bookings?type=${role}&dealerid=${userId}`;
-    }
-      else {
+      } else if (roleId === "3") {
+        url = `${API_BASE}Bookings?type=${role}&dealerid=${userId}`;
+      } else {
         // For all other roles
         url = `${API_BASE}Bookings`;
       }
@@ -134,11 +139,14 @@ const BookingLayer = () => {
         : res.data?.data || [];
 
       const supervisorList = employees
-        .filter(
-          (emp) =>
-            emp.DepartmentName?.toLowerCase() === "supervisor" ||
-            emp.RoleName?.toLowerCase() === "supervisor",
-        )
+        .filter((emp) => {
+          const department = emp.DepartmentName?.trim().toLowerCase();
+          const role = emp.RoleName?.trim().toLowerCase();
+          return (
+            department === "supervisor" &&
+            (role === "supervisor" || role === "supervisor head")
+          );
+        })
         .map((emp) => ({
           value: emp.Id,
           label: `${emp.Name} (${emp.PhoneNumber || "N/A"})`,
@@ -151,10 +159,39 @@ const BookingLayer = () => {
     }
   };
 
+  const fetchFieldAdvisors = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}Employee`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const employees = Array.isArray(res.data)
+        ? res.data
+        : res.data?.data || [];
+
+      const fieldAdvisorList = employees
+        .filter(
+          (emp) =>
+            emp.DepartmentName?.toLowerCase() === "field advisor" ||
+            emp.RoleName?.toLowerCase() === "field advisor",
+        )
+        .map((emp) => ({
+          value: emp.Id,
+          label: `${emp.Name} (${emp.PhoneNumber || "N/A"})`,
+        }));
+
+      setFieldAdvisors(fieldAdvisorList);
+    } catch (error) {
+      console.error("Failed to fetch field advisors:", error);
+      setFieldAdvisors([]);
+    }
+  };
+
   const handleAssignClick = (booking) => {
     setSelectedBooking(booking);
     setSelectedTechnician(null);
     setSelectedSupervisor(null); // Reset supervisor selection
+    setSelectedFieldAdvisor(null); // Reset field advisor selection
     setAssignType("technician"); // Default to technician when opening modal
 
     const slots = booking.TimeSlot?.split(",").map((s) => s.trim()) || [];
@@ -168,12 +205,12 @@ const BookingLayer = () => {
     } else {
       setSelectedTimeSlot(null);
     }
-
     setAssignModalOpen(true);
   };
 
   const handleAssignConfirm = async () => {
-    if (!selectedTimeSlot) {
+    // Time slot validation only for technician and supervisor
+    if (assignType !== "fieldAdvisor" && !selectedTimeSlot) {
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -186,40 +223,60 @@ const BookingLayer = () => {
     let apiUrl;
     let method;
 
-    // Common payload format
-    payload = {
-      bookingID: selectedBooking.BookingID,
-      techID:
-        assignType === "technician"
-          ? selectedTechnician?.value
-          : selectedSupervisor?.value,
-      assingedTimeSlot: selectedTimeSlot.value,
-      role: assignType === "technician" ? "Technician" : "Supervisor",
-    };
+    // Handle Field Advisor assignment
+    if (assignType === "fieldAdvisor") {
+      if (!selectedFieldAdvisor) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Please select a field advisor before assigning.",
+        });
+        return;
+      }
 
-    // API URL and method differ based on assign type
-    if (assignType === "technician") {
-      if (!selectedTechnician) {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "Please select a technician before assigning.",
-        });
-        return;
-      }
-      apiUrl = `${API_BASE}Bookings/assign-technician`;
-      method = "put";
+      payload = {
+        bookingIds: [selectedBooking.BookingID],
+        supervisorHeadId: Number(userId),
+        fieldAdvisorId: selectedFieldAdvisor.value,
+      };
+      apiUrl = `${API_BASE}Supervisor/AssignToFieldAdvisor`;
+      method = "post";
     } else {
-      if (!selectedSupervisor) {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "Please select a supervisor before assigning.",
-        });
-        return;
+      // Common payload format for technician and supervisor
+      payload = {
+        bookingID: selectedBooking.BookingID,
+        techID:
+          assignType === "technician"
+            ? selectedTechnician?.value
+            : selectedSupervisor?.value,
+        assingedTimeSlot: selectedTimeSlot.value,
+        role: assignType === "technician" ? "Technician" : "Supervisor",
+      };
+
+      // API URL and method differ based on assign type
+      if (assignType === "technician") {
+        if (!selectedTechnician) {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Please select a technician before assigning.",
+          });
+          return;
+        }
+        apiUrl = `${API_BASE}Bookings/assign-technician`;
+        method = "put";
+      } else {
+        if (!selectedSupervisor) {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Please select a supervisor before assigning.",
+          });
+          return;
+        }
+        apiUrl = `${API_BASE}Bookings/assign-technician`;
+        method = "put";
       }
-      apiUrl = `${API_BASE}Bookings/assign-technician`;
-      method = "put";
     }
 
     try {
@@ -231,29 +288,36 @@ const BookingLayer = () => {
       });
 
       if (res.status === 200 || res.status === 201) {
+        const assignTypeLabel =
+          assignType === "technician"
+            ? "Technician"
+            : assignType === "supervisor"
+              ? "Supervisor"
+              : "Field Advisor";
+
         Swal.fire({
           icon: "success",
           title: "Success",
-          text:
-            res.data.message ||
-            `${
-              assignType === "technician" ? "Technician" : "Supervisor"
-            } assigned successfully`,
+          text: res.data.message || `${assignTypeLabel} assigned successfully`,
         });
         fetchBookings();
         setAssignModalOpen(false);
         setSelectedTechnician(null);
         setSelectedSupervisor(null);
+        setSelectedFieldAdvisor(null);
         setAssignType("technician");
       } else {
+        const assignTypeLabel =
+          assignType === "technician"
+            ? "technician"
+            : assignType === "supervisor"
+              ? "supervisor"
+              : "field advisor";
+
         Swal.fire({
           icon: "error",
           title: "Error",
-          text:
-            res.data.message ||
-            `Failed to assign ${
-              assignType === "technician" ? "technician" : "supervisor"
-            }`,
+          text: res.data.message || `Failed to assign ${assignTypeLabel}`,
         });
       }
     } catch (error) {
@@ -309,21 +373,17 @@ const BookingLayer = () => {
   // };
 
   const columns = [
-          {
-            name: "Booking id",
-            selector: (row) => (
-              <Link
-                to={`/booking-view/${row.BookingID}`}
-                className="text-primary"
-              >
-                {row.BookingTrackID}
-              </Link>
-            ),
-            width: "160px",
-            sortable: true,
-          },
-     
-     
+    {
+      name: "Booking id",
+      selector: (row) => (
+        <Link to={`/booking-view/${row.BookingID}`} className="text-primary">
+          {row.BookingTrackID}
+        </Link>
+      ),
+      width: "160px",
+      sortable: true,
+    },
+
     {
       name: "Date",
       selector: (row) => {
@@ -497,18 +557,19 @@ const BookingLayer = () => {
                 (row.SupervisorID !== null &&
                   row.SupervisorID !== 0 &&
                   roleId === "8")) && ( */}
-            {!(
-              row.BookingStatus === "Completed" &&
-              row.PaymentStatus === "Success"
-            ) && (
-              <Link
-                onClick={() => handleAssignClick(row)}
-                className="w-32-px h-32-px bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                title="Assign"
-              >
-                <Icon icon="mdi:account-cog-outline" />
-              </Link>
-            )}
+            {(role === "Admin" || roleName === "Supervisor Head") &&
+              !(
+                row.BookingStatus === "Completed" &&
+                row.PaymentStatus === "Success"
+              ) && (
+                <Link
+                  onClick={() => handleAssignClick(row)}
+                  className="w-32-px h-32-px bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                  title="Assign"
+                >
+                  <Icon icon="mdi:account-cog-outline" />
+                </Link>
+              )}
             {/* )} */}
           </div>
         );
@@ -709,6 +770,7 @@ const BookingLayer = () => {
                     setAssignType("technician");
                     setSelectedTechnician(null);
                     setSelectedSupervisor(null);
+                    setSelectedFieldAdvisor(null);
                   }}
                 />
               </div>
@@ -716,6 +778,43 @@ const BookingLayer = () => {
               <div className="modal-body">
                 {/* Assignment Type Checkboxes */}
                 <div className="d-flex justify-content-center align-items-center gap-4 mb-3">
+                  {/* Supervisor Checkbox: show only if roleId is NOT 8 */}
+                  {/* {roleId !== "8" && (
+                    <div className="form-check d-flex align-items-center gap-2 m-0">
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        id="assignSup"
+                        checked={assignType === "supervisor"}
+                        onChange={() => setAssignType("supervisor")}
+                        style={{ width: "18px", height: "18px", margin: 0 }}
+                      />
+                      <label
+                        htmlFor="assignSup"
+                        className="form-check-label mb-0"
+                      >
+                        Supervisor
+                      </label>
+                    </div>
+                  )} */}
+
+                  {/* Field Advisor Checkbox */}
+                  <div className="form-check d-flex align-items-center gap-2 m-0">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id="assignFieldAdvisor"
+                      checked={assignType === "fieldAdvisor"}
+                      onChange={() => setAssignType("fieldAdvisor")}
+                      style={{ width: "18px", height: "18px", margin: 0 }}
+                    />
+                    <label
+                      htmlFor="assignFieldAdvisor"
+                      className="form-check-label mb-0"
+                    >
+                      Field Advisor
+                    </label>
+                  </div>
                   {/* Technician Checkbox: always show */}
                   <div className="form-check d-flex align-items-center gap-2 m-0">
                     <input
@@ -734,54 +833,36 @@ const BookingLayer = () => {
                       Technician
                     </label>
                   </div>
-
-                  {/* Supervisor Checkbox: show only if roleId is NOT 8 */}
-                  {roleId !== "8" && (
-                    <div className="form-check d-flex align-items-center gap-2 m-0">
-                      <input
-                        type="checkbox"
-                        className="form-check-input"
-                        id="assignSup"
-                        checked={assignType === "supervisor"}
-                        onChange={() => setAssignType("supervisor")}
-                        style={{ width: "18px", height: "18px", margin: 0 }}
-                      />
-                      <label
-                        htmlFor="assignSup"
-                        className="form-check-label mb-0"
-                      >
-                        Supervisor
-                      </label>
-                    </div>
-                  )}
                 </div>
 
-                {/* Time Slot Selection */}
-                <div className="mb-3">
-                  {selectedBooking?.TimeSlot?.split(",").length === 1 ? (
-                    <Select
-                      value={selectedTimeSlot}
-                      isDisabled
-                      styles={singleSlotStyle}
-                    />
-                  ) : (
-                    <Select
-                      options={getTimeSlotOptions()}
+                {/* Time Slot Selection - Hide for Field Advisor */}
+                {assignType !== "fieldAdvisor" && (
+                  <div className="mb-3">
+                    {selectedBooking?.TimeSlot?.split(",").length === 1 ? (
+                      <Select
+                        value={selectedTimeSlot}
+                        isDisabled
+                        styles={singleSlotStyle}
+                      />
+                    ) : (
+                      <Select
+                        options={getTimeSlotOptions()}
+                        value={selectedTimeSlot}
+                        onChange={(val) => setSelectedTimeSlot(val)}
+                        placeholder="Select TimeSlot"
+                      />
+                    )}
+
+                    {/* <Select
+                      options={timeSlots}
                       value={selectedTimeSlot}
                       onChange={(val) => setSelectedTimeSlot(val)}
                       placeholder="Select TimeSlot"
-                    />
-                  )}
+                    /> */}
+                  </div>
+                )}
 
-                  {/* <Select
-                    options={timeSlots}
-                    value={selectedTimeSlot}
-                    onChange={(val) => setSelectedTimeSlot(val)}
-                    placeholder="Select TimeSlot"
-                  /> */}
-                </div>
-
-                {/* Technician or Supervisor Selection based on assignType */}
+                {/* Employee Selection based on assignType */}
                 {assignType === "technician" ? (
                   <Select
                     options={technicians}
@@ -789,12 +870,19 @@ const BookingLayer = () => {
                     onChange={(val) => setSelectedTechnician(val)}
                     placeholder="Select Technician"
                   />
-                ) : (
+                ) : assignType === "supervisor" ? (
                   <Select
                     options={supervisors}
                     value={selectedSupervisor}
                     onChange={(val) => setSelectedSupervisor(val)}
                     placeholder="Select Supervisor"
+                  />
+                ) : (
+                  <Select
+                    options={fieldAdvisors}
+                    value={selectedFieldAdvisor}
+                    onChange={(val) => setSelectedFieldAdvisor(val)}
+                    placeholder="Select Field Advisor"
                   />
                 )}
               </div>
@@ -806,6 +894,7 @@ const BookingLayer = () => {
                     setAssignType("technician");
                     setSelectedTechnician(null);
                     setSelectedSupervisor(null);
+                    setSelectedFieldAdvisor(null);
                   }}
                 >
                   Cancel
@@ -814,9 +903,10 @@ const BookingLayer = () => {
                   className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
                   onClick={handleAssignConfirm}
                   disabled={
-                    !selectedTimeSlot ||
+                    (assignType !== "fieldAdvisor" && !selectedTimeSlot) ||
                     (assignType === "technician" && !selectedTechnician) ||
-                    (assignType === "supervisor" && !selectedSupervisor)
+                    (assignType === "supervisor" && !selectedSupervisor) ||
+                    (assignType === "fieldAdvisor" && !selectedFieldAdvisor)
                   }
                 >
                   Assign
