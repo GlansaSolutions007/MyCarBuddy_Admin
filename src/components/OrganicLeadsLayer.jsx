@@ -12,6 +12,7 @@ const API_BASE = import.meta.env.VITE_APIURL;
 const OrganicLeadsLayer = () => {
   const { hasPermission } = usePermissions();
   const employeeData = JSON.parse(localStorage.getItem("employeeData"));
+  const roleName = employeeData?.RoleName;
   const role = localStorage.getItem("role");
   const [leads, setLeads] = useState([]);
   const [searchText, setSearchText] = useState("");
@@ -453,7 +454,7 @@ const OrganicLeadsLayer = () => {
                   onChange={handleBulkUpload}
                 />
                 {/* Bulk Upload button */}
-                {/* {role === "Admin" && ( */}
+               {(role === "Admin" || roleName === "Telecaller Head") && (
                   <button
                     type="button"
                     className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
@@ -468,7 +469,7 @@ const OrganicLeadsLayer = () => {
                     />
                     Bulk Upload
                   </button>
-                {/* )} */}
+                 )} 
                 {hasPermission("createlead_add") && (
                   <Link
                     to="/create-lead"
