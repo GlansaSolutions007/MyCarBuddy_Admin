@@ -61,6 +61,7 @@ const BookingViewLayer = () => {
     useState(null);
   const token = localStorage.getItem("token");
   const roleId = localStorage.getItem("roleId");
+  const duserId = localStorage.getItem("userId");
   const [previewServices, setPreviewServices] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
   const [isPaid, setIsPaid] = useState(false);
@@ -110,14 +111,16 @@ const BookingViewLayer = () => {
 
   const fetchBookingData = async () => {
     try {
-      const res = await axios.get(
-        `${API_BASE}Bookings/BookingId?Id=${bookingId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      let url = `${API_BASE}Bookings/BookingId?Id=${bookingId}`;
+      // If Dealer
+      if (roleId === "3") {
+        url += `&dealerId=${duserId}`;
+      }
+      const res = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
       setBookingData(res.data[0]);
       console.log("Booking Data:", res.data[0]);
       const formatDate = (date) => {

@@ -61,6 +61,7 @@ const BookingLayer = () => {
 
   const API_BASE = import.meta.env.VITE_APIURL;
   const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
   const roleId = localStorage.getItem("roleId");
   const userId = localStorage.getItem("userId"); // Assuming userId is available in localStorage
 
@@ -83,7 +84,11 @@ const BookingLayer = () => {
       if (roleId === "8") {
         // If supervisor
         url = `${API_BASE}Supervisor/AssingedBookings?SupervisorID=${userId}`;
-      } else {
+      } 
+       else if (roleId === "3") {
+      url = `${API_BASE}Bookings?type=${role}&dealerid=${userId}`;
+    }
+      else {
         // For all other roles
         url = `${API_BASE}Bookings`;
       }
@@ -304,8 +309,6 @@ const BookingLayer = () => {
   // };
 
   const columns = [
-    ...(hasPermission("bookingview_view")
-      ? [
           {
             name: "Booking id",
             selector: (row) => (
@@ -319,8 +322,8 @@ const BookingLayer = () => {
             width: "160px",
             sortable: true,
           },
-        ]
-      : []),
+     
+     
     {
       name: "Date",
       selector: (row) => {

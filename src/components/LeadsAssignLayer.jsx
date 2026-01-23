@@ -646,9 +646,6 @@ const LeadsAssignLayer = () => {
           <label className="form-label fw-semibold">
             {role === "Employee" ? "Assigned Leads" : "Available Leads"}
           </label>
-          {error ? (
-            <div className="alert alert-danger m-3">{error}</div>
-          ) : (
             <div className="border rounded p-3">
               <DataTable
                 columns={leadColumns}
@@ -668,7 +665,6 @@ const LeadsAssignLayer = () => {
                 }
               />
             </div>
-          )}
         </div>
 
         {(role === "Admin" || userDetails?.Is_Head === 1) && (
