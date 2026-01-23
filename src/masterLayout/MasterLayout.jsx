@@ -513,6 +513,13 @@ const MasterLayout = ({ children }) => {
           permission: "city_view",
           page: "Cities",
         },
+         {
+          title: "Areas",
+          to: "/areas",
+          color: "text-info-danger",
+          permission: "areas_view",
+          page: "Areas",
+        },
       ],
     },
     {

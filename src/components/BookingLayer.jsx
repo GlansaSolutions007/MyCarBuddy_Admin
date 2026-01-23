@@ -93,7 +93,7 @@ const BookingLayer = () => {
       });
 
       const sortedBookings = res.data.sort(
-        (a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate)
+        (a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate),
       );
 
       setBookings(sortedBookings);
@@ -111,7 +111,7 @@ const BookingLayer = () => {
         res.data.jsonResult.map((t) => ({
           value: t.TechID,
           label: `${t.TechnicianName} (${t.PhoneNumber})`,
-        }))
+        })),
       );
     } catch (error) {
       console.error("Failed to load technicians", error);
@@ -132,7 +132,7 @@ const BookingLayer = () => {
         .filter(
           (emp) =>
             emp.DepartmentName?.toLowerCase() === "supervisor" ||
-            emp.RoleName?.toLowerCase() === "supervisor"
+            emp.RoleName?.toLowerCase() === "supervisor",
         )
         .map((emp) => ({
           value: emp.Id,
@@ -269,7 +269,7 @@ const BookingLayer = () => {
       value: slot.trim(),
       label: slot.trim(),
     }));
-    console.log("selected", )
+    console.log("selected");
   };
 
   // const getTimeSlotOptions = async () => {
@@ -331,7 +331,7 @@ const BookingLayer = () => {
         if (isNaN(date)) return "-";
 
         return `${String(date.getDate()).padStart(2, "0")}/${String(
-          date.getMonth() + 1
+          date.getMonth() + 1,
         ).padStart(2, "0")}/${date.getFullYear()}`;
       },
       width: "120px",
@@ -339,8 +339,7 @@ const BookingLayer = () => {
     },
     {
       name: "Time slot",
-      selector: (row) =>
-      row.TimeSlot || row.AssignedTimeSlot || "-",
+      selector: (row) => row.TimeSlot || row.AssignedTimeSlot || "-",
       width: "160px",
       sortable: true,
     },
@@ -349,7 +348,7 @@ const BookingLayer = () => {
       selector: (row) =>
         `₹${(row.TotalPrice + row.GSTAmount + row.LabourCharges - row.CouponAmount).toFixed(2)}`,
       width: "120px",
-    sortable: true,
+      sortable: true,
     },
     {
       name: "Cust. Name",
@@ -360,7 +359,7 @@ const BookingLayer = () => {
             {row.CustFullName || row.CustomerName || "-"}
           </span>{" "}
           <br />
-          {row.CustPhoneNumber ||row.PhoneNumber || ""}
+          {row.CustPhoneNumber || row.PhoneNumber || ""}
         </>
       ),
       width: "150px",
@@ -385,7 +384,7 @@ const BookingLayer = () => {
       selector: (row) => (
         <>
           <span className="fw-bold">
-             {row.SupervisorName || row.SupervisorHeadName || "Not Assigned"}
+            {row.SupervisorName || row.SupervisorHeadName || "Not Assigned"}
           </span>
           <br />
           {row.SupervisorPhoneNumber || ""}
@@ -495,14 +494,19 @@ const BookingLayer = () => {
                 (row.SupervisorID !== null &&
                   row.SupervisorID !== 0 &&
                   roleId === "8")) && ( */}
-                <Link
-                  onClick={() => handleAssignClick(row)}
-                  className="w-32-px h-32-px bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                  title="Assign"
-                >
-                  <Icon icon="mdi:account-cog-outline" />
-                </Link>
-              {/* )} */}
+            {!(
+              row.BookingStatus === "Completed" &&
+              row.PaymentStatus === "Success"
+            ) && (
+              <Link
+                onClick={() => handleAssignClick(row)}
+                className="w-32-px h-32-px bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                title="Assign"
+              >
+                <Icon icon="mdi:account-cog-outline" />
+              </Link>
+            )}
+            {/* )} */}
           </div>
         );
       },
@@ -514,11 +518,11 @@ const BookingLayer = () => {
     const matchesSearch =
       booking.CustFullName?.toLowerCase().includes(searchText.toLowerCase()) ||
       booking.CustPhoneNumber?.toLowerCase().includes(
-        searchText.toLowerCase()
+        searchText.toLowerCase(),
       ) ||
       booking.TechFullName?.toLowerCase().includes(searchText.toLowerCase()) ||
       booking.TechPhoneNumber?.toLowerCase().includes(
-        searchText.toLowerCase()
+        searchText.toLowerCase(),
       ) ||
       booking.BookingTrackID?.toLowerCase().includes(searchText.toLowerCase());
 
@@ -649,7 +653,6 @@ const BookingLayer = () => {
                 <option value="reached">Reached</option>
                 <option value="serviceStarted">ServiceStarted</option>
                 <option value="completed">Completed</option>
-                
               </select>
 
               {/* Excel Button */}
@@ -759,7 +762,7 @@ const BookingLayer = () => {
                       styles={singleSlotStyle}
                     />
                   ) : (
-                   <Select
+                    <Select
                       options={getTimeSlotOptions()}
                       value={selectedTimeSlot}
                       onChange={(val) => setSelectedTimeSlot(val)}
@@ -805,7 +808,7 @@ const BookingLayer = () => {
                   Cancel
                 </button>
                 <button
-                className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
+                  className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
                   onClick={handleAssignConfirm}
                   disabled={
                     !selectedTimeSlot ||
