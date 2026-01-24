@@ -165,6 +165,8 @@ const BookServicesLayer = () => {
             labourCharge: Number(item.labourCharges || 0),
             includeId: item.serviceType === "Service" ? item.serviceId : null,
             packageId: item.serviceType === "Package" ? item.serviceId : null,
+            dealerSparePrice: item.dealerSparePrice || "0.00",
+            dealerServicePrice: item.dealerServicePrice || "0.00",
             isEditing: false,
             // API identifiers (keep for update)
             _apiId: item.id || null,
@@ -775,6 +777,9 @@ const BookServicesLayer = () => {
               name: s.label,
             }))
           : [],
+      // Dealer prices (default to 0.00 for new items, populated from API for existing items)
+      dealerSparePrice: "0.00",
+      dealerServicePrice: "0.00",
     };
     setAddedItems((prev) => [...prev, updatedItem]);
     resetForm();
@@ -1167,7 +1172,7 @@ const BookServicesLayer = () => {
       sortable: true,
       wrap: true,
       fixed: true,
-      grow: 2,
+      width: "180px",
     },
     {
       name: "Part Price",
@@ -1317,6 +1322,23 @@ const BookServicesLayer = () => {
       sortable: true,
     },
     {
+      name: "Dealer Part",
+      cell: (row) => (
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          value={
+            row.isInclude
+              ? ""
+              : Number(row.dealerSparePrice || "0.00").toFixed(2)
+          }
+          disabled
+        />
+      ),
+      width: "150px",
+      sortable: true,
+    },
+    {
       name: "Service Chg.",
       cell: (row, index) => (
         <input
@@ -1356,6 +1378,23 @@ const BookServicesLayer = () => {
         />
       ),
       width: "140px",
+      sortable: true,
+    },
+    {
+      name: "Dealer Service",
+      cell: (row) => (
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          value={
+            row.isInclude
+              ? ""
+              : Number(row.dealerServicePrice || "0.00").toFixed(2)
+          }
+          disabled
+        />
+      ),
+      width: "150px",
       sortable: true,
     },
     {
@@ -1439,6 +1478,17 @@ const BookServicesLayer = () => {
     {
       name: "Total Amt",
       cell: (row) => {
+        if (row.isInclude) {
+          return (
+            <input
+              type="number"
+              className="form-control form-control-sm"
+              value=""
+              disabled
+            />
+          );
+        }
+
         const partTotal =
           (Number(row.basePrice) || 0) * (Number(row.quantity) || 1);
 

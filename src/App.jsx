@@ -105,6 +105,7 @@ import RevenueReporstPage from "./pages/RevenueReportsPage";
 import ExpenditurePage from "./pages/ExpenditurePage";
 import ExpenditureCategoryPage from "./pages/ExpenditureCategoryPage";
 import AreaPage from "./pages/AreaPage";
+import DealerBookingsViewPage from "./pages/DealerBookingsViewPage";
 
 function App() {
   return (
@@ -236,6 +237,7 @@ function App() {
           <Route exact path='/expenditures' element={<ExpenditurePage/>} />
           <Route exact path='/expenditure-cat' element={<ExpenditureCategoryPage/>} />
           <Route exact path='/areas' element={<AreaPage/>} />
+          <Route exact path='/dealer-booking-view/:Id' element={<DealerBookingsViewPage/>} />
         </Route>
 
         {/* //extra  pages */}

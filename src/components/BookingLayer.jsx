@@ -68,7 +68,7 @@ const BookingLayer = () => {
   const role = localStorage.getItem("role");
   const roleId = localStorage.getItem("roleId");
   const employeeData = JSON.parse(localStorage.getItem("employeeData"));
-const roleName = employeeData?.RoleName;
+  const roleName = employeeData?.RoleName;
   const userId = localStorage.getItem("userId"); // Assuming userId is available in localStorage
 
   useEffect(() => {
@@ -93,6 +93,8 @@ const roleName = employeeData?.RoleName;
         url = `${API_BASE}Supervisor/AssingedBookings?SupervisorID=${userId}`;
       } else if (roleId === "3") {
         url = `${API_BASE}Bookings?type=${role}&dealerid=${userId}`;
+       } else if (roleId === "9") {
+        url = `${API_BASE}Bookings?employeeId=${userId}`; 
       } else {
         // For all other roles
         url = `${API_BASE}Bookings`;
@@ -376,7 +378,14 @@ const roleName = employeeData?.RoleName;
     {
       name: "Booking id",
       selector: (row) => (
-        <Link to={`/booking-view/${row.BookingID}`} className="text-primary">
+        <Link
+          to={
+            role === "Dealer"
+              ? `/dealer-booking-view/${row.LeadId}`
+              : `/booking-view/${row.BookingID}`
+          }
+          className="text-primary"
+        >
           {row.BookingTrackID}
         </Link>
       ),
@@ -544,7 +553,11 @@ const roleName = employeeData?.RoleName;
         return (
           <div className="d-flex gap-2 align-items-center">
             <Link
-              to={`/booking-view/${row.BookingID}`}
+              to={
+                role === "Dealer"
+                  ? `/dealer-booking-view/${row.LeadId}`
+                  : `/booking-view/${row.BookingID}`
+              }
               className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
               title="View"
             >
