@@ -4,6 +4,22 @@ import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { usePermissions } from "../context/PermissionContext";
+import * as XLSX from "xlsx";
+
+const EXPORT_COLUMNS = [
+  { key: "EmpId", label: "Employee ID" },
+  { key: "EmployeeName", label: "Employee Name" },
+  { key: "TotalAssigned", label: "Total Leads" },
+  { key: "NoFollowUpYet", label: "No Follow Up" },
+  { key: "ConvertedCustomer", label: "Converted" },
+  { key: "Interested", label: "Interested" },
+  { key: "NotConverted", label: "Not Converted" },
+  { key: "NeedMoreInfo", label: "Need More Info" },
+  { key: "NotHavingCar", label: "Not Having Car" },
+  { key: "NotConnected", label: "Not Connected" },
+  { key: "NotInterested", label: "Not Interested" },
+  { key: "NumberDoesNotExist", label: "Number Doesn’t Exist" },
+];
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
@@ -16,6 +32,9 @@ const LeadReportsLayer = () => {
   const [error, setError] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [selectedExportColumns, setSelectedExportColumns] = useState(
+    EXPORT_COLUMNS.map((c) => c.key),
+  );
 
   const token = localStorage.getItem("token");
 
@@ -28,7 +47,7 @@ const LeadReportsLayer = () => {
     const filtered = leads.filter(
       (lead) =>
         lead.Name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        String(lead.EmployeeId).includes(searchTerm)
+        String(lead.EmployeeId).includes(searchTerm),
     );
     setFilteredLeads(filtered);
   }, [searchTerm, leads]);
@@ -94,6 +113,42 @@ const LeadReportsLayer = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const exportToExcel = () => {
+    if (!filteredLeads.length) return;
+
+    const exportData = filteredLeads.map((item) => {
+      const row = {};
+
+      EXPORT_COLUMNS.forEach((col) => {
+        if (!selectedExportColumns.includes(col.key)) return;
+
+        if (col.key === "NotConnected") {
+          row[col.label] =
+            item.RingingButNotResponded +
+            item.Busy +
+            item.NotReachable +
+            item.SwitchedOff +
+            item.TemporaryOutofService +
+            item.DND;
+        } else {
+          row[col.label] = item[col.key] ?? 0;
+        }
+      });
+
+      return row;
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    ws["!cols"] = Object.keys(exportData[0] || {}).map(() => ({ wch: 18 }));
+
+    XLSX.utils.book_append_sheet(wb, ws, "Lead Reports");
+    XLSX.writeFile(
+      wb,
+      `lead_reports_${new Date().toISOString().slice(0, 10)}.xlsx`,
+    );
   };
 
   const columns = [
@@ -218,10 +273,8 @@ const LeadReportsLayer = () => {
                 <Icon icon="ion:search-outline" className="icon" />
               </form>
               <div className="d-flex gap-3">
-                <div>
-                  <label htmlFor="fromDate" className="form-label">
-                    From Date
-                  </label>
+                <div className="d-flex align-items-center gap-2">
+                  <label className="text-sm fw-semibold">From:</label>
                   <input
                     type="date"
                     id="fromDate"
@@ -231,10 +284,8 @@ const LeadReportsLayer = () => {
                     onChange={(e) => setFromDate(e.target.value)}
                   />
                 </div>
-                <div>
-                  <label htmlFor="toDate" className="form-label">
-                    To Date
-                  </label>
+                <div className="d-flex align-items-center gap-2">
+                  <label className="text-sm fw-semibold">To:</label>
                   <input
                     type="date"
                     id="toDate"
@@ -243,6 +294,48 @@ const LeadReportsLayer = () => {
                     value={toDate}
                     onChange={(e) => setToDate(e.target.value)}
                   />
+                </div>
+                <div className="d-flex align-items-center gap-2">
+                  <div className="dropdown">
+                    <button
+                      className="btn btn-outline-secondary dropdown-toggle p-1"
+                      data-bs-toggle="dropdown"
+                    >
+                      Columns
+                    </button>
+                    <div
+                      className="dropdown-menu p-3"
+                      style={{ minWidth: "220px" }}
+                    >
+                      {EXPORT_COLUMNS.map((col) => (
+                        <div className="form-check" key={col.key}>
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            checked={selectedExportColumns.includes(col.key)}
+                            onChange={() =>
+                              setSelectedExportColumns((prev) =>
+                                prev.includes(col.key)
+                                  ? prev.filter((k) => k !== col.key)
+                                  : [...prev, col.key],
+                              )
+                            }
+                          />
+                          <label className="form-check-label ms-2">
+                            {col.label}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                    title="Export to Excel"
+                    onClick={exportToExcel}
+                  >
+                    <Icon icon="mdi:microsoft-excel" width="22" height="22" />
+                  </button>
                 </div>
               </div>
             </div>

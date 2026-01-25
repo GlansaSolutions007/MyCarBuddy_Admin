@@ -282,7 +282,7 @@ const MasterLayout = ({ children }) => {
           // Send token to backend for registration (optional)
           try {
             const userToken = localStorage.getItem("token");
-            await fetch(`https://api.mycarsbuddy.com/api/Push/register`, {
+            await fetch(`${API_BASE}Push/register`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -519,6 +519,13 @@ const MasterLayout = ({ children }) => {
           color: "text-info-danger",
           permission: "areas_view",
           page: "Areas",
+        },
+         {
+          title: "Assign Area",
+          to: "/assign-area",
+          color: "text-info-main",
+          permission: "assignarea_view",
+          page: "Assign Area",
         },
       ],
     },

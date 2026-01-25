@@ -850,6 +850,50 @@ const BookingViewLayer = () => {
     }
   };
 
+  const handleGenerateDealerInvoice = async () => {
+    if (!bookingData?.BookingID) {
+      Swal.fire("Error", "Booking data not available.", "error");
+      return;
+    }
+    const dealerID = bookingData?.BookingAddOns?.find(
+      (addon) => addon?.DealerID,
+    )?.DealerID;
+
+    if (!dealerID) {
+      Swal.fire("Error", "Dealer ID not found.", "error");
+      return;
+    }
+
+    try {
+      const res = await axios.post(
+        `${API_BASE}Dealer/GenerateDealerInvoice`,
+        {
+          bookingID: bookingData.BookingID,
+          dealerID: dealerID,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      Swal.fire(
+        "Success",
+        res.data?.message || "Dealer Invoice generated successfully.",
+        "success",
+      );
+      // change route if dealer invoice has different view
+      navigate(`/invoice-view/${bookingData.BookingID}`);
+    } catch (error) {
+      console.error("Generate Dealer Invoice Error:", error);
+      Swal.fire(
+        "Error",
+        error?.response?.data?.message || "Failed to generate Dealer invoice.",
+        "error",
+      );
+    }
+  };
+
   const closePaymentModal = () => {
     setShowPaymentModal(false);
     setPaymentMode("");
@@ -1793,7 +1837,13 @@ const BookingViewLayer = () => {
                                           Part Price
                                         </th>
                                         <th
-                                          style={{ width: "100px" }}
+                                          style={{ width: "125px" }}
+                                          className="text-end"
+                                        >
+                                          DLR Part Price
+                                        </th>
+                                        <th
+                                          style={{ width: "70px" }}
                                           className="text-end"
                                         >
                                           Qty
@@ -1808,7 +1858,19 @@ const BookingViewLayer = () => {
                                           style={{ width: "120px" }}
                                           className="text-end"
                                         >
+                                          DLR Part Total
+                                        </th>
+                                        <th
+                                          style={{ width: "120px" }}
+                                          className="text-end"
+                                        >
                                           Service Chg.
+                                        </th>
+                                          <th
+                                          style={{ width: "145px" }}
+                                          className="text-end"
+                                        >
+                                          DLR Service Chg.
                                         </th>
                                         <th
                                           style={{ width: "90px" }}
@@ -1900,6 +1962,11 @@ const BookingViewLayer = () => {
                                               ).toFixed(2)}
                                             </td>
                                             <td className="text-end">
+                                              {Number(
+                                                addon.DealerBasePrice || 0,
+                                              ).toFixed(2)}
+                                            </td>
+                                            <td className="text-end">
                                               {addon.Quantity ?? "1"}
                                             </td>
                                             <td className="text-end">
@@ -1909,7 +1976,17 @@ const BookingViewLayer = () => {
                                             </td>
                                             <td className="text-end">
                                               {Number(
+                                                addon.DealerSparePrice || 0,
+                                              ).toFixed(2)}
+                                            </td>
+                                            <td className="text-end">
+                                              {Number(
                                                 addon.LabourCharges || 0,
+                                              ).toFixed(2)}
+                                            </td>
+                                             <td className="text-end">
+                                              {Number(
+                                                addon.DealerPrice || 0,
                                               ).toFixed(2)}
                                             </td>
                                             <td className="text-end">
@@ -2099,6 +2176,12 @@ const BookingViewLayer = () => {
                                       Generate Final Invoice
                                     </button>
                                   )}
+                                <button
+                                  className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                                  onClick={handleGenerateDealerInvoice}
+                                >
+                                  Generate Dealer Invoice
+                                </button>
                               </div>
                             </>
                           ) : (

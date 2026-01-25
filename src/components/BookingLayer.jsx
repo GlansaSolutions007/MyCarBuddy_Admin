@@ -438,20 +438,6 @@ const BookingLayer = () => {
       sortable: true,
     },
     {
-      name: "Technician",
-      selector: (row) => (
-        <>
-          <span className="fw-bold">
-            {row.TechFullName ? row.TechFullName : "Not Assigned"}
-          </span>
-          <br />
-          {row.TechPhoneNumber || ""}
-        </>
-      ),
-      width: "150px",
-      sortable: true,
-    },
-    {
       name: "Supervisor",
       selector: (row) => (
         <>
@@ -460,6 +446,34 @@ const BookingLayer = () => {
           </span>
           <br />
           {row.SupervisorPhoneNumber || ""}
+        </>
+      ),
+      width: "150px",
+      sortable: true,
+    },
+     {
+      name: "Field Advisor",
+      selector: (row) => (
+        <>
+          <span className="fw-bold">
+            {row.FieldAdvisorName ? row.FieldAdvisorName : "Not Assigned"}
+          </span>
+          <br />
+          {row.FieldAdvisorPhoneNumber || ""}
+        </>
+      ),
+      width: "150px",
+      sortable: true,
+    },
+    {
+      name: "Technician",
+      selector: (row) => (
+        <>
+          <span className="fw-bold">
+            {row.TechFullName ? row.TechFullName : "Not Assigned"}
+          </span>
+          <br />
+          {row.TechPhoneNumber || ""}
         </>
       ),
       width: "150px",
@@ -570,7 +584,7 @@ const BookingLayer = () => {
                 (row.SupervisorID !== null &&
                   row.SupervisorID !== 0 &&
                   roleId === "8")) && ( */}
-            {(role === "Admin" || roleName === "Supervisor Head") &&
+            {(role === "Admin" || roleName === "Supervisor Head" || roleName === "Field Advisor") &&
               !(
                 row.BookingStatus === "Completed" &&
                 row.PaymentStatus === "Success"

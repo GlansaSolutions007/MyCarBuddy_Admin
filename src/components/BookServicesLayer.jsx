@@ -1240,6 +1240,23 @@ const BookServicesLayer = () => {
       width: "120px",
       sortable: true,
     },
+        {
+      name: "DLR Part Price",
+      cell: (row) => (
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          value={
+            row.isInclude
+              ? ""
+              : Number(row.dealerBasePrice || "0.00").toFixed(2)
+          }
+          disabled
+        />
+      ),
+      width: "150px",
+      sortable: true,
+    },
     {
       name: "Qty",
       cell: (row, index) => (
@@ -1322,7 +1339,7 @@ const BookServicesLayer = () => {
       sortable: true,
     },
     {
-      name: "Dealer Part",
+      name: "DLR Part Total",
       cell: (row) => (
         <input
           type="number"
@@ -1381,7 +1398,7 @@ const BookServicesLayer = () => {
       sortable: true,
     },
     {
-      name: "Dealer Service",
+      name: "DLR Service Chg.",
       cell: (row) => (
         <input
           type="number"
@@ -1394,7 +1411,7 @@ const BookServicesLayer = () => {
           disabled
         />
       ),
-      width: "150px",
+      width: "170px",
       sortable: true,
     },
     {

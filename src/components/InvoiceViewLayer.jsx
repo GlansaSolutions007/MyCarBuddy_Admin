@@ -11,12 +11,33 @@ const InvoiceViewLayer = () => {
   const navigate = useNavigate();
   const [bookingData, setBookingData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [dealerList, setDealerList] = useState([]);
+  const [selectedDealer, setSelectedDealer] = useState("");
+
   const token = localStorage.getItem("token");
 
   useEffect(() => {
     fetchBookingData();
   }, [bookingId]);
 
+  // const fetchBookingData = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const res = await axios.get(
+  //       `${API_BASE}Bookings/BookingId?Id=${bookingId}`,
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //     setBookingData(res.data[0]);
+  //   } catch (error) {
+  //     console.error("Error fetching booking data:", error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
   const fetchBookingData = async () => {
     try {
       setLoading(true);
@@ -26,24 +47,129 @@ const InvoiceViewLayer = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
-      setBookingData(res.data[0]);
+
+      const data = res.data[0];
+      setBookingData(data);
+
+      // 🔥 Extract unique dealer IDs
+      const dealersMap = new Map();
+
+      data?.BookingAddOns?.forEach((addon) => {
+        if (addon.DealerID && addon.DealerName) {
+          dealersMap.set(addon.DealerID, addon.DealerName);
+        }
+      });
+
+      const dealers = Array.from(dealersMap.entries()).map(
+        ([dealerId, dealerName]) => ({
+          dealerId,
+          dealerName,
+        }),
+      );
+      setDealerList(dealers);
     } catch (error) {
       console.error("Error fetching booking data:", error);
     } finally {
       setLoading(false);
     }
   };
-  const INV_STATIC = "https://api.mycarsbuddy.com";
+
+  const handleGenerateDealerInvoice = async (dealerId) => {
+    if (!bookingData?.BookingID) {
+      Swal.fire("Error", "Booking data not available.", "error");
+      return;
+    }
+
+    try {
+      await axios.post(
+        `${API_BASE}Dealer/GenerateDealerInvoice`,
+        {
+          bookingID: bookingData.BookingID,
+          dealerID: dealerId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      Swal.fire({
+        icon: "success",
+        title: "Invoice Generated",
+        text: "Dealer invoice generated successfully.",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+
+      fetchBookingData(); // refresh invoice view
+    } catch (error) {
+      console.error("Generate Dealer Invoice Error:", error);
+      Swal.fire(
+        "Error",
+        error?.response?.data?.message || "Failed to generate dealer invoice.",
+        "error",
+      );
+    }
+  };
+
+  const handleSendDealerInvoice = async () => {
+    if (!bookingData?.BookingID) {
+      Swal.fire("Error", "Booking data not available.", "error");
+      return;
+    }
+
+    if (!selectedDealer) {
+      Swal.fire("Error", "Please select a dealer.", "error");
+      return;
+    }
+
+    if (!activeInvoice) {
+      Swal.fire("Error", "No active invoice found.", "error");
+      return;
+    }
+
+    try {
+      await axios.post(
+        `${API_BASE}Dealer/SendDealerInvoice`,
+        {
+          bookingID: bookingData.BookingID,
+          dealerID: selectedDealer,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      Swal.fire({
+        icon: "success",
+        title: "Invoice Sent",
+        text: "Dealer invoice sent successfully.",
+      });
+    } catch (error) {
+      console.error("Send Dealer Invoice Error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Failed",
+        text:
+          error?.response?.data?.message || "Failed to send dealer invoice.",
+      });
+    }
+  };
+
+  // const INV_STATIC = ;
 
   const activeInvoice = bookingData?.Invoices?.find(
-    (inv) => inv.IsActive === true
+    (inv) => inv.IsActive === true,
   );
   const activeInvoiceType = activeInvoice?.InvoiceType;
 
   const invoicePdfUrl = activeInvoice?.FolderPath
-    ? `${INV_STATIC}/Invoices/${activeInvoice.FolderPath.split("\\").pop()}`
+    ? `${API_BASE}../${activeInvoice.FolderPath.split("\\").pop()}`
     : null;
 
   const invoiceNumber = activeInvoice?.FolderPath
@@ -83,7 +209,7 @@ const InvoiceViewLayer = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
       Swal.fire({
         icon: "success",
@@ -119,7 +245,7 @@ const InvoiceViewLayer = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
       Swal.fire({
         icon: "success",
@@ -164,6 +290,29 @@ const InvoiceViewLayer = () => {
           <Icon icon="mdi:arrow-left" />
           <span>Back</span>
         </button>
+        {activeInvoiceType === "Dealer" && (
+        <div className="d-flex gap-2 align-items-center mb-3">
+          <select
+            className="form-select w-auto"
+            value={selectedDealer}
+            onChange={(e) => {
+              const dealerId = e.target.value;
+              setSelectedDealer(dealerId);
+
+              if (dealerId) {
+                handleGenerateDealerInvoice(dealerId);
+              }
+            }}
+          >
+            {/* <option value="">Select Dealer</option> */}
+            {dealerList.map((dealer) => (
+              <option key={dealer.dealerId} value={dealer.dealerId}>
+                {dealer.dealerName}
+              </option>
+            ))}
+          </select>
+        </div>
+        )}
 
         <div className="d-flex gap-2">
           {activeInvoiceType === "Estimation" && (
@@ -183,6 +332,18 @@ const InvoiceViewLayer = () => {
               <Icon icon="mdi:email-send-outline" />
               <span>Send Final Invoice</span>
             </button>
+          )}
+          {activeInvoiceType === "Dealer" && (
+            <div className="d-flex gap-2">
+              <button
+                className="btn btn-primary-600 d-inline-flex align-items-center gap-2"
+                onClick={handleSendDealerInvoice}
+                disabled={!activeInvoice}
+              >
+                <Icon icon="mdi:email-send" />
+                <span>Send Dealer Invoice</span>
+              </button>
+            </div>
           )}
           {/* <button
             className="btn btn-primary d-inline-flex align-items-center gap-2"
