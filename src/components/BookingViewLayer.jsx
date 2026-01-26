@@ -1879,10 +1879,22 @@ const BookingViewLayer = () => {
                                           GST %
                                         </th>
                                         <th
+                                          style={{ width: "120px" }}
+                                          className="text-end"
+                                        >
+                                          DLR GST %
+                                        </th>
+                                        <th
                                           style={{ width: "100px" }}
                                           className="text-end"
                                         >
                                           GST Amt.
+                                        </th>
+                                        <th
+                                          style={{ width: "120px" }}
+                                          className="text-end"
+                                        >
+                                          DLR GST Amt.
                                         </th>
                                         <th
                                           style={{ width: "100px" }}
@@ -1992,9 +2004,17 @@ const BookingViewLayer = () => {
                                             <td className="text-end">
                                               {addon.GSTPercent ?? 0}%
                                             </td>
+                                             <td className="text-end">
+                                              {addon.DealerGSTPercent ?? 0}%
+                                            </td>
                                             <td className="text-end">
                                               {Number(
                                                 addon.GSTPrice || 0,
+                                              ).toFixed(2)}
+                                            </td>
+                                            <td className="text-end">
+                                              {Number(
+                                                addon.DealerGSTAmount || 0,
                                               ).toFixed(2)}
                                             </td>
                                             <td className="text-end">

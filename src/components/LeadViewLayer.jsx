@@ -60,6 +60,8 @@ const LeadViewLayer = () => {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedSupervisorHead, setSelectedSupervisorHead] = useState(null);
   const [supervisorHeads, setSupervisorHeads] = useState([]);
+  const [selectedArea, setSelectedArea] = useState(null);
+  const [areas, setAreas] = useState([]);
   const shouldDisableActions = lead?.NextAction === "Lead Closed";
   const isBookingCompletedAndPaid = lead?.BookingStatus === "Completed" && lead?.PaymentStatus === "Success";
   const isLeadClosed = shouldDisableActions || isBookingCompletedAndPaid;
@@ -82,6 +84,7 @@ const LeadViewLayer = () => {
     fetchModels();
     fetchFuelTypes();
     fetchSupervisorHeads();
+    fetchAreas();
   }, [leadId]);
 
   useEffect(() => {
@@ -338,6 +341,26 @@ const LeadViewLayer = () => {
     }
   };
 
+  // Fetch areas
+  const fetchAreas = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}Area/GetArea`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const areasData = res.data?.data || [];
+      const areaList = areasData.map((area) => ({
+        value: area.AreaId,
+        label: `${area.AreaName} (${area.CityName}, ${area.StateName})`,
+      }));
+
+      setAreas(areaList);
+    } catch (error) {
+      console.error("Failed to fetch areas:", error);
+      setAreas([]);
+    }
+  };
+
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: currentYear - 1979 }, (_, i) => {
     const year = 1980 + i;
@@ -369,6 +392,15 @@ const LeadViewLayer = () => {
         icon: "warning",
         title: "Assignment Not Allowed",
         text: "Supervisor cannot be assigned when current bookings are 0.",
+      });
+      return;
+    }
+
+    if (!selectedArea) {
+      Swal.fire({
+        icon: "warning",
+        title: "Select Area",
+        text: "Please select an area before assigning a supervisor.",
       });
       return;
     }
@@ -412,6 +444,7 @@ const LeadViewLayer = () => {
           body: JSON.stringify({
             bookingIds: bookingIds,
             supervisorHeadId: selectedSupervisorHead.value,
+            areaId: selectedArea.value,
             assignedDate: new Date().toISOString().split("T")[0],
             assignStatus: "Assign",
             createdBy: parseInt(localStorage.getItem("userId")),
@@ -432,6 +465,7 @@ const LeadViewLayer = () => {
       await fetchLead();
       setAssignModalOpen(false);
       setSelectedSupervisorHead(null);
+      setSelectedArea(null);
     } catch (err) {
       console.error("Assign supervisor failed", err);
       Swal.fire({
@@ -1756,6 +1790,17 @@ const LeadViewLayer = () => {
         </Modal.Header>
         <Modal.Body>
           <div className="mb-3">
+            <label className="form-label fw-semibold">Select Area</label>
+            <Select
+              options={areas}
+              value={selectedArea}
+              onChange={setSelectedArea}
+              placeholder="Select Area"
+              className="react-select-container"
+              isSearchable
+            />
+          </div>
+          <div className="mb-3">
             <label className="form-label fw-semibold">Select Supervisor</label>
             <Select
               options={supervisorHeads}
@@ -1773,6 +1818,7 @@ const LeadViewLayer = () => {
             onClick={() => {
               setAssignModalOpen(false);
               setSelectedSupervisorHead(null);
+              setSelectedArea(null);
             }}
           >
             Cancel
