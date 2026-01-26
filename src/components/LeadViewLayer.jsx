@@ -60,6 +60,7 @@ const LeadViewLayer = () => {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedSupervisorHead, setSelectedSupervisorHead] = useState(null);
   const [supervisorHeads, setSupervisorHeads] = useState([]);
+  const [allSupervisors, setAllSupervisors] = useState([]);
   const [selectedArea, setSelectedArea] = useState(null);
   const [areas, setAreas] = useState([]);
   const shouldDisableActions = lead?.NextAction === "Lead Closed";
@@ -113,6 +114,24 @@ const LeadViewLayer = () => {
       }
     }
   }, [models, carBrand, carModel]);
+
+  // Filter supervisors based on selected area
+  useEffect(() => {
+    if (!selectedArea) {
+      // If no area selected, show all supervisors
+      setSupervisorHeads(allSupervisors);
+      return;
+    }
+
+    // Filter supervisors by AreaId matching the selected area
+    const filtered = allSupervisors.filter(
+      (supervisor) => supervisor.areaId === selectedArea.value
+    );
+
+    setSupervisorHeads(filtered);
+    // Clear supervisor selection when area changes
+    setSelectedSupervisorHead(null);
+  }, [selectedArea, allSupervisors]);
 
   // Prefill Personal Information and Car Details fields with data from the lead
   useEffect(() => {
@@ -332,11 +351,16 @@ const LeadViewLayer = () => {
         .map((emp) => ({
           value: emp.Id,
           label: `${emp.Name} (${emp.PhoneNumber || "N/A"})`,
+          areaId: emp.AreaId,
+          areaName: emp.AreaName,
         }));
 
+      setAllSupervisors(supervisorList);
+      // Initially show all supervisors, will be filtered when area is selected
       setSupervisorHeads(supervisorList);
     } catch (error) {
       console.error("Failed to fetch supervisorHeads:", error);
+      setAllSupervisors([]);
       setSupervisorHeads([]);
     }
   };

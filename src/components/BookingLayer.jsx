@@ -374,7 +374,7 @@ const BookingLayer = () => {
   //   }
   // };
 
-  const columns = [
+  const allColumns = [
     {
       name: "Booking id",
       selector: (row) => (
@@ -412,8 +412,9 @@ const BookingLayer = () => {
     {
       name: "Time slot",
       selector: (row) => row.TimeSlot || row.AssignedTimeSlot || "-",
-      width: "160px",
+      width: "220px",
       sortable: true,
+      wrap: true
     },
     {
       name: "Amount",
@@ -605,6 +606,14 @@ const BookingLayer = () => {
     },
   ];
 
+  // Filter columns based on role - hide Amount, Cust. Name, Booking Status, Payment Status for Dealer
+  const columns = allColumns.filter((col) => {
+    if (role === "Dealer") {
+      return !["Amount", "Cust. Name", "Booking Status", "Payment Status"].includes(col.name);
+    }
+    return true;
+  });
+
   const filteredBookings = bookings.filter((booking) => {
     const matchesSearch =
       booking.CustFullName?.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -713,38 +722,44 @@ const BookingLayer = () => {
                 style={{ minWidth: "120px", flex: "1 1 130px" }}
               />
 
-              {/* Price Range */}
-              <input
-                type="number"
-                className="form-control flex-shrink-0"
-                placeholder="Min Amt"
-                value={minPrice}
-                onChange={(e) => setMinPrice(e.target.value)}
-                style={{ minWidth: "100px", flex: "1 1 100px" }}
-              />
-              <input
-                type="number"
-                className="form-control flex-shrink-0"
-                placeholder="Max Amt"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
-                style={{ minWidth: "100px", flex: "1 1 100px" }}
-              />
+              {/* Price Range - Hide for Dealer */}
+              {role !== "Dealer" && (
+                <>
+                  <input
+                    type="number"
+                    className="form-control flex-shrink-0"
+                    placeholder="Min Amt"
+                    value={minPrice}
+                    onChange={(e) => setMinPrice(e.target.value)}
+                    style={{ minWidth: "100px", flex: "1 1 100px" }}
+                  />
+                  <input
+                    type="number"
+                    className="form-control flex-shrink-0"
+                    placeholder="Max Amt"
+                    value={maxPrice}
+                    onChange={(e) => setMaxPrice(e.target.value)}
+                    style={{ minWidth: "100px", flex: "1 1 100px" }}
+                  />
+                </>
+              )}
 
-              {/* Status */}
-              <select
-                className="form-select flex-shrink-0"
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                style={{ minWidth: "120px", flex: "1 1 120px" }}
-              >
-                <option value="all">All</option>
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="reached">Reached</option>
-                <option value="serviceStarted">ServiceStarted</option>
-                <option value="completed">Completed</option>
-              </select>
+              {/* Status - Hide for Dealer */}
+              {role !== "Dealer" && (
+                <select
+                  className="form-select flex-shrink-0"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  style={{ minWidth: "120px", flex: "1 1 120px" }}
+                >
+                  <option value="all">All</option>
+                  <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="reached">Reached</option>
+                  <option value="serviceStarted">ServiceStarted</option>
+                  <option value="completed">Completed</option>
+                </select>
+              )}
 
               {/* Excel Button */}
               <button
