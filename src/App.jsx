@@ -102,6 +102,10 @@ import GarageWiseEarningReportPage from "./pages/GarageWiseEarningReportPage";
 import ServicesEarningReportPage from "./pages/ServicesEarningReportPage";
 import ClosedLeadsPage from "./pages/ClosedLeadsPage";
 import RevenueReporstPage from "./pages/RevenueReportsPage";
+import BookingReportsSortingPage from "./pages/BookingReportsSortingPage";
+import CaseStudiesPage from "./pages/CaseStudiesPage";
+import CaseStudiesAddPage from "./pages/CaseStudiesAddPage";
+import CompanyInformationPage from "./pages/CompanyInformationPage";
 
 function App() {
   return (
@@ -153,6 +157,8 @@ function App() {
           <Route exact path='/service-plans' element={<ServicePlanListPage />} />
           <Route exact path='/add-service-package' element={<ServicePlanAddPage />} />
           <Route exact path='/edit-service-package/:PackageID' element={<ServicePlanAddPage />} />
+          <Route exact path='/edit-case-studies/:PackageID' element={<CaseStudiesAddPage />} />
+          <Route exact path='/add-case-studies' element={<CaseStudiesAddPage />} />
 
           <Route exact path='/service-plan-prices' element={<ServicePlanPriceListPage />} />
           <Route exact path='/add-service-plan-price' element={<ServicePlanPriceAddPage />} />
@@ -230,6 +236,8 @@ function App() {
           <Route exact path='/services-earning-report' element={<ServicesEarningReportPage/>} />
           <Route exact path='/garage-earning-report' element={<GarageWiseEarningReportPage/>} />
           <Route exact path='/revenue-reports' element={<RevenueReporstPage/>} />
+          <Route exact path='/case-studies' element={<CaseStudiesPage/>} />
+          <Route exact path='/company-information' element={<CompanyInformationPage/>} />
         </Route>
 
         {/* //extra  pages */}
