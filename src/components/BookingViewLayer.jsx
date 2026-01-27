@@ -2204,14 +2204,14 @@ const BookingViewLayer = () => {
                                     >
                                       Generate Final Invoice
                                     </button>
-                                    <button
+                                </>
+                                  )}
+                                  <button
                                   className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                                   onClick={handleGenerateDealerInvoice}
                                 >
                                   Generate Dealer Invoice
                                 </button>
-                                </>
-                                  )}
                               </div>
                             </>
                           ) : (

@@ -1110,6 +1110,21 @@ const BookServicesLayer = () => {
       );
     }
 
+    // Check if all addons have selected dealers (excluding include items)
+    const mainItems = addedItems.filter((item) => !item.isInclude);
+    const itemsWithoutDealer = mainItems.filter(
+      (item) => !item.dealerID || item.dealerID === "" || item.dealerID === null || item.dealerID === undefined
+    );
+
+    if (itemsWithoutDealer.length > 0) {
+      const serviceNames = itemsWithoutDealer.map((item) => item.name || item.serviceName).filter(Boolean);
+      return Swal.fire({
+        icon: "error",
+        title: "Dealer Selection Required",
+        html: `Please select dealers for all addon services.<br/><br/>Missing dealers for: <strong>${serviceNames.join(", ")}</strong>`,
+      });
+    }
+
     // 🔔 PRE-CONFIRMATION ALERT
     const result = await Swal.fire({
       title: "Please Check Before Confirmation",
@@ -2043,7 +2058,8 @@ const BookServicesLayer = () => {
                   className="form-control"
                   value={price}
                   min={0}
-                  onChange={(e) => setPrice(Number(e.target.value) || 0)}
+                  // onChange={(e) => setPrice(Number(e.target.value) || 0)}
+                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="0.00"
                 />
               </div>
@@ -2362,8 +2378,9 @@ const BookServicesLayer = () => {
                     Submit Booking
                   </button>
                 )}
-                {(employeeData?.RoleName === "Supervisor Head" ||
-                  role === "Admin") && (
+               {(employeeData?.RoleName === "Supervisor Head" ||
+                role === "Admin") &&
+                employeeData?.DepartmentName !== "Support" && (
                   <button
                     className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
                     onClick={handleConfirmBooking}
