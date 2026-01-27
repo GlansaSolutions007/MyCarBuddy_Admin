@@ -106,7 +106,7 @@ const DepartmentTicketsLayer = ({ deptId }) => {
     },
     // { name: "Emp ID", selector: (row) => row.Id, sortable: true },
     { name: "Designation", selector: (row) => row.RoleName || "N/A", sortable: true },
-    { name: "Phone Number", selector: (row) => row.PhoneNumber },
+    { name: "Phone Number", selector: (row) => row.PhoneNumber , sortable: true,},
     { name: "Total Tickets", selector: (row) => row.totalTickets, sortable: true },
     { name: "Pending Tickets", selector: (row) => row.pendingTickets, sortable: true },
     { name: "Resolved Tickets", selector: (row) => row.resolvedTickets, sortable: true },

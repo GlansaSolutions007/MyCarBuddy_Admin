@@ -162,12 +162,12 @@ const EmployeeLayer = () => {
       width: "60px",
       center: true,
     },
-    { name: "Employee ID", selector: (row) => row.Id, sortable: true },
-    { name: "Full Name", selector: (row) => row.Name, sortable: true },
-    { name: "Email", selector: (row) => row.Email, sortable: true },
-    { name: "Phone Number", selector: (row) => row.PhoneNumber },
-    { name: "Role Name", selector: (row) => row.RoleName },
-    { name: "Department Name", selector: (row) => row.DepartmentName },
+    { name: "ID", selector: (row) => row.Id, sortable: true, width: "70px" },
+    { name: "Emp. Name", selector: (row) => row.Name, sortable: true, width: "150px" },
+    { name: "Email", selector: (row) => row.Email, sortable: true, wrap: true, width: "180px" },
+    { name: "Phone Number", selector: (row) => row.PhoneNumber, sortable: true, width: "150px"},
+    { name: "Designation", selector: (row) => row.RoleName, sortable: true, width: "150px"},
+    { name: "Department", selector: (row) => row.DepartmentName, sortable: true, width: "150px"},
     {
       name: "Status",
       cell: (row) => {
@@ -195,6 +195,7 @@ const EmployeeLayer = () => {
           </span>
         );
       },
+      sortable: true,
       // width: "140px",
     },
     ...(hasPermission("employees_edit")

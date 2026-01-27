@@ -215,6 +215,7 @@ const TelecalerAssignBookingLayer = () => {
           {row.BookingTrackID}
         </Link>
       ),
+      sortable: true,
       width: "150px",
     },
     {
@@ -222,13 +223,15 @@ const TelecalerAssignBookingLayer = () => {
       selector: (row) =>
         row.BookingDate ? new Date(row.BookingDate).toLocaleDateString("en-GB") : "",
       width: "120px",
+      sortable: true,
     },
-    { name: "Time slot", selector: (row) => row.TimeSlot, width: "160px" },
+    { name: "Time slot", selector: (row) => row.TimeSlot, width: "160px", sortable: true, },
     {
       name: "Booking price",
       selector: (row) =>
         `₹${(row.TotalPrice + row.GSTAmount - row.CouponAmount).toFixed(2)}`,
       width: "120px",
+      sortable: true,
     },
     {
       name: "Customer name",
@@ -240,6 +243,7 @@ const TelecalerAssignBookingLayer = () => {
         </>
       ),
       width: "150px",
+      sortable: true,
     },
     {
       name: "Technician",
@@ -251,6 +255,7 @@ const TelecalerAssignBookingLayer = () => {
         </>
       ),
       width: "150px",
+      sortable: true,
     },
     {
       name: "Booking Status",
@@ -267,6 +272,7 @@ const TelecalerAssignBookingLayer = () => {
         </span>
       ),
       width: "120px",
+      sortable: true,
     },
     {
       name: "Payment Status",
@@ -282,6 +288,7 @@ const TelecalerAssignBookingLayer = () => {
         );
       },
       width: "120px",
+      sortable: true,
     },
     {
       name: "Actions",

@@ -185,6 +185,7 @@ const RoleLayer = () => {
       name: "S.No",
       selector: (_, index) => index + 1,
       width: "80px",
+      sortable: true,
     },
     {
       name: "Role Name",
@@ -221,6 +222,7 @@ const RoleLayer = () => {
           </span>
         );
       },
+      sortable: true,
     },
     {
       name: "Actions",

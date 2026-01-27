@@ -5,6 +5,16 @@ import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 const API_BASE = import.meta.env.VITE_APIURL;
 import { usePermissions } from "../context/PermissionContext";
+import * as XLSX from "xlsx";
+
+const EXPORT_COLUMNS = [
+  { key: "Id", label: "Lead ID" },
+  { key: "FullName", label: "Customer Name" },
+  { key: "PhoneNumber", label: "Phone" },
+  { key: "LeadStatus", label: "Status" },
+  { key: "Description", label: "Description" },
+  { key: "CreatedDate", label: "Created Date", format: "date" },
+];
 
 const EmployeeLeadsReportLayer = ({
   employeeId,
@@ -19,6 +29,9 @@ const EmployeeLeadsReportLayer = ({
   const [error, setError] = useState("");
   const [fromDate, setFromDate] = useState(initialFromDate);
   const [toDate, setToDate] = useState(initialToDate);
+  const [selectedExportColumns, setSelectedExportColumns] = useState(
+    EXPORT_COLUMNS.map((c) => c.key),
+  );
 
   const token = localStorage.getItem("token");
 
@@ -31,7 +44,9 @@ const EmployeeLeadsReportLayer = ({
       (lead) =>
         (lead.Id && lead.Id.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (lead.Notes &&
-          lead.Notes.toLowerCase().includes(searchTerm.toLowerCase()))
+          lead.Notes.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (lead.LeadStatus &&
+          lead.LeadStatus.toLowerCase().includes(searchTerm.toLowerCase())),
     );
     setFilteredLeads(filtered);
   }, [searchTerm, leads]);
@@ -60,7 +75,7 @@ const EmployeeLeadsReportLayer = ({
 
       if (res.data && Array.isArray(res.data)) {
         const sorted = [...res.data].sort(
-          (a, b) => new Date(b.Leadcreateddate) - new Date(a.Leadcreateddate)
+          (a, b) => new Date(b.Leadcreateddate) - new Date(a.Leadcreateddate),
         );
         setLeads(sorted);
         setFilteredLeads(sorted);
@@ -74,6 +89,36 @@ const EmployeeLeadsReportLayer = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const exportToExcel = () => {
+    if (!selectedExportColumns.length) return;
+
+    const exportData = filteredLeads.map((item) => {
+      const row = {};
+      EXPORT_COLUMNS.forEach((col) => {
+        if (!selectedExportColumns.includes(col.key)) return;
+
+        let value = item[col.key];
+
+        if (col.format === "date" && value) {
+          value = new Date(value).toLocaleDateString("en-GB");
+        }
+
+        row[col.label] = value ?? "-";
+      });
+      return row;
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    ws["!cols"] = Object.keys(exportData[0] || {}).map(() => ({ wch: 20 }));
+    XLSX.utils.book_append_sheet(wb, ws, "Employee Leads");
+
+    XLSX.writeFile(
+      wb,
+      `employee_leads_${new Date().toISOString().slice(0, 10)}.xlsx`,
+    );
   };
 
   const columns = [
@@ -108,7 +153,7 @@ const EmployeeLeadsReportLayer = ({
     {
       name: "Description",
       selector: (row) => row.Description || "-",
-      sortable: false,
+      sortable: true,
       wrap: true,
     },
     // {
@@ -203,24 +248,65 @@ const EmployeeLeadsReportLayer = ({
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
                 />
+                <div className="d-flex align-items-center gap-2">
+                  <div className="dropdown">
+                    <button
+                      className="btn btn-outline-secondary dropdown-toggle p-1"
+                      data-bs-toggle="dropdown"
+                    >
+                      Columns
+                    </button>
+                    <div
+                      className="dropdown-menu p-3"
+                      style={{ minWidth: "220px" }}
+                    >
+                      {EXPORT_COLUMNS.map((col) => (
+                        <div className="form-check" key={col.key}>
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            checked={selectedExportColumns.includes(col.key)}
+                            onChange={() =>
+                              setSelectedExportColumns((prev) =>
+                                prev.includes(col.key)
+                                  ? prev.filter((k) => k !== col.key)
+                                  : [...prev, col.key],
+                              )
+                            }
+                          />
+                          <label className="form-check-label ms-2">
+                            {col.label}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                    onClick={exportToExcel}
+                    title="Export to Excel"
+                  >
+                    <Icon icon="mdi:microsoft-excel" width="22" height="22" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-            <DataTable
-              columns={columns}
-              data={filteredLeads}
-              progressPending={loading}
-              pagination
-              highlightOnHover
-              responsive
-              striped
-              persistTableHead
-              noDataComponent={
-                loading
-                  ? "Loading employee lead Reports..."
-                  : "No employee lead Reports available"
-              }
-            />
+          <DataTable
+            columns={columns}
+            data={filteredLeads}
+            progressPending={loading}
+            pagination
+            highlightOnHover
+            responsive
+            striped
+            persistTableHead
+            noDataComponent={
+              loading
+                ? "Loading employee lead Reports..."
+                : "No employee lead Reports available"
+            }
+          />
         </div>
       </div>
     </div>

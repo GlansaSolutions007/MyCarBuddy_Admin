@@ -47,6 +47,8 @@ const RefundLayer = () => {
           {row.BookingTrackID}
         </Link>
       ),
+      sortable: true,
+      width: "150px"
     },
     {
       name: "Booking Date",
@@ -57,15 +59,21 @@ const RefundLayer = () => {
           date.getMonth() + 1
         ).padStart(2, "0")}/${date.getFullYear()}`;
       },
+      sortable: true,
+      width: "150px"
     },
     {
       name: "Booking Price",
       selector: (row) =>
         `₹${(row.TotalPrice + row.GSTAmount - row.CouponAmount).toFixed(2)}`,
+      sortable: true,
+      width: "150px"
     },
     {
       name: "Refund Amount",
       selector: (row) => `₹${(row.RefundAmount ?? 0).toFixed(2)}`,
+      sortable: true,
+      width: "150px"
     },
     {
       name: "Customer Name",
@@ -75,12 +83,16 @@ const RefundLayer = () => {
           {row.CustPhoneNumber || ""}
         </>
       ),
+      sortable: true,
+      width: "150px"
     },
     {
       name: "Refund Status",
       selector: (row) => (
         <span className="fw-bold">{row.RefundStatus ?? "N/A"}</span>
       ),
+      sortable: true,
+      width: "150px"
     },
     {
       name: "Payment Status",
@@ -118,6 +130,7 @@ const RefundLayer = () => {
         );
       },
       width: "150px",
+      sortable: true,
     },
     ...(hasPermission("bookingview_view")
     ? [
@@ -240,15 +253,8 @@ const RefundLayer = () => {
 
               {/* 📊 Excel Export Button */}
               <button
-                className="d-inline-flex align-items-center justify-content-center rounded-circle border-0"
+                className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
                 onClick={exportToExcel}
-                style={{
-                  width: "36px",
-                  height: "36px",
-                  backgroundColor: "#e8f5e9",
-                  color: "#2e7d32",
-                  flex: "0 0 auto",
-                }}
               >
                 <Icon icon="mdi:microsoft-excel" width="20" height="20" />
               </button>

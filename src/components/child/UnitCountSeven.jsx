@@ -194,14 +194,14 @@ const UnitCountSeven = () => {
                 <div className='px-20 py-16 shadow-none radius-8 h-100 gradient-deep-4 left-line line-bg-warning position-relative overflow-hidden'>
                   <div className='d-flex flex-wrap align-items-center justify-content-between gap-1 mb-8'>
                     <div>
-                      <Link to="/refunds">
+                      {/* <Link to="/refunds"> */}
                         <span className='mb-2 fw-medium text-secondary-light text-md'>
                           {department === "Support Department" && role !== "Admin" ? "Pending Tickets" : "Total Refunds"}
                         </span>
                         <h6 className='fw-semibold mb-1'>
                           {department === "Support Department" && role !== "Admin" ? pendingCount : (refunds.length || 0)}
                         </h6>
-                      </Link>
+                      {/* </Link> */}
                     </div>
                     <span className='w-44-px h-44-px radius-8 d-inline-flex justify-content-center align-items-center text-2xl mb-12 bg-warning-focus text-warning-600'>
                       <i className='ri-arrow-go-back-line' />

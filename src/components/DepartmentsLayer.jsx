@@ -122,7 +122,7 @@ const DepartmentsLayer = () => {
   };
 
   const columns = [
-    { name: "S.No", selector: (_, i) => i + 1, width: "80px" },
+    { name: "S.No", selector: (_, i) => i + 1, width: "80px", sortable: true, },
     { name: "Department Name", selector: (row) => row.departmentName, sortable: true },
     {
       name: "Status",
@@ -153,6 +153,7 @@ const DepartmentsLayer = () => {
         );
       },
       // width: "150px",
+      sortable: true,
     },
     ...(hasPermission("department_edit")
     ? [

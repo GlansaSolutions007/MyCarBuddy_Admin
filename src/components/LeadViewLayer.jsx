@@ -50,6 +50,8 @@ const LeadViewLayer = () => {
   const [personalMobileNo, setPersonalMobileNo] = useState("");
   const [personalEmail, setPersonalEmail] = useState("");
   const [personalFullAddress, setPersonalFullAddress] = useState("");
+  const [gstNumber, setGstNumber] = useState("");
+  const [gstName, setGstName] = useState("");
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
   const [bookings, setBookings] = useState([]);
@@ -58,13 +60,22 @@ const LeadViewLayer = () => {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedSupervisorHead, setSelectedSupervisorHead] = useState(null);
   const [supervisorHeads, setSupervisorHeads] = useState([]);
-  const isLeadClosed = lead?.NextAction === "Lead Closed";
+  const [allSupervisors, setAllSupervisors] = useState([]);
+  const [selectedArea, setSelectedArea] = useState(null);
+  const [areas, setAreas] = useState([]);
+  const shouldDisableActions = lead?.NextAction === "Lead Closed";
+  const isBookingCompletedAndPaid = lead?.BookingStatus === "Completed" && lead?.PaymentStatus === "Success";
+  const isLeadClosed = shouldDisableActions || isBookingCompletedAndPaid;
+
+
   const vehicle = lead?.VehiclesDetails?.[0];
   const isVehicleDataComplete =
     vehicle?.BrandName && vehicle?.ModelName && vehicle?.FuelTypeName;
   const hasAtLeastOneFollowUp =
     Array.isArray(lead?.FollowUps) && lead.FollowUps.length > 0;
   const hasCurrentLeadBooking = currentBookings.length > 0;
+  const isCustomerConverted = lead?.CustID !== null;
+  const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
   const navigate = useNavigate();
 
@@ -74,6 +85,7 @@ const LeadViewLayer = () => {
     fetchModels();
     fetchFuelTypes();
     fetchSupervisorHeads();
+    fetchAreas();
   }, [leadId]);
 
   useEffect(() => {
@@ -103,6 +115,24 @@ const LeadViewLayer = () => {
     }
   }, [models, carBrand, carModel]);
 
+  // Filter supervisors based on selected area
+  useEffect(() => {
+    if (!selectedArea) {
+      // If no area selected, show all supervisors
+      setSupervisorHeads(allSupervisors);
+      return;
+    }
+
+    // Filter supervisors by AreaId matching the selected area
+    const filtered = allSupervisors.filter(
+      (supervisor) => supervisor.areaId === selectedArea.value
+    );
+
+    setSupervisorHeads(filtered);
+    // Clear supervisor selection when area changes
+    setSelectedSupervisorHead(null);
+  }, [selectedArea, allSupervisors]);
+
   // Prefill Personal Information and Car Details fields with data from the lead
   useEffect(() => {
     if (lead) {
@@ -110,7 +140,8 @@ const LeadViewLayer = () => {
       setPersonalMobileNo(lead.PhoneNumber || "");
       setPersonalEmail(lead.Email || "");
       setPersonalFullAddress(lead.City || ""); // Full address comes from City field
-
+      setGstNumber(lead.GSTNumber || "");
+      setGstName(lead.GSTName || "");
       // Prefill Car Details if available
       if (lead.VehiclesDetails && lead.VehiclesDetails.length > 0) {
         const vehicle = lead.VehiclesDetails[0];
@@ -118,17 +149,17 @@ const LeadViewLayer = () => {
         setCarBrand(
           vehicle.BrandID && vehicle.BrandName
             ? { value: vehicle.BrandID, label: vehicle.BrandName }
-            : null
+            : null,
         );
         setCarModel(
           vehicle.ModelID && vehicle.ModelName
             ? { value: vehicle.ModelID, label: vehicle.ModelName }
-            : null
+            : null,
         );
         setCarFuelType(
           vehicle.FuelTypeID && vehicle.FuelTypeName
             ? { value: vehicle.FuelTypeID, label: vehicle.FuelTypeName }
-            : null
+            : null,
         );
         setCarKmDriven(vehicle.KmDriven || "");
         setCarYearOfPurchase(vehicle.YearOfPurchase || "");
@@ -148,7 +179,7 @@ const LeadViewLayer = () => {
     setError("");
     try {
       const response = await fetch(
-        `${API_BASE}Leads/GetLeadsByIds?LeadIds=${leadId}`
+        `${API_BASE}Leads/GetLeadsByIds?LeadIds=${leadId}`,
       );
       if (!response.ok) {
         throw new Error("Failed to fetch lead data");
@@ -242,7 +273,7 @@ const LeadViewLayer = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
       setModels(res.data.data);
     } catch (error) {
@@ -270,7 +301,7 @@ const LeadViewLayer = () => {
 
       const res = await axios.get(
         `${API_BASE}Supervisor/ExistingBookings?PhoneNumber=${lead.PhoneNumber}`,
-        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} },
       );
 
       if (Array.isArray(res.data) && res.data.length > 0) {
@@ -285,7 +316,7 @@ const LeadViewLayer = () => {
 
           .filter((b) => b.LeadId !== leadId)
           .sort((a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate));
-          console.log("previous", previous)
+        console.log("previous", previous);
 
         setBookings(bookingsList);
         setCurrentBookings(current);
@@ -315,17 +346,42 @@ const LeadViewLayer = () => {
         .filter(
           (emp) =>
             emp.DepartmentName === "supervisor" ||
-            emp.RoleName === "Supervisor Head"
+            emp.RoleName === "Supervisor Head",
         )
         .map((emp) => ({
           value: emp.Id,
           label: `${emp.Name} (${emp.PhoneNumber || "N/A"})`,
+          areaId: emp.AreaId,
+          areaName: emp.AreaName,
         }));
 
+      setAllSupervisors(supervisorList);
+      // Initially show all supervisors, will be filtered when area is selected
       setSupervisorHeads(supervisorList);
     } catch (error) {
       console.error("Failed to fetch supervisorHeads:", error);
+      setAllSupervisors([]);
       setSupervisorHeads([]);
+    }
+  };
+
+  // Fetch areas
+  const fetchAreas = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}Area/GetArea`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const areasData = res.data?.data || [];
+      const areaList = areasData.map((area) => ({
+        value: area.AreaId,
+        label: `${area.AreaName} (${area.CityName}, ${area.StateName})`,
+      }));
+
+      setAreas(areaList);
+    } catch (error) {
+      console.error("Failed to fetch areas:", error);
+      setAreas([]);
     }
   };
 
@@ -350,20 +406,29 @@ const LeadViewLayer = () => {
     }
     const message = `Hello ${name}!`;
     const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(
-      message
+      message,
     )}`;
     window.open(url, "_blank");
   };
-  // Handle Assign Supervisor
   const handleAssignSupervisor = async () => {
-      if (currentBookings === 0) {
-    Swal.fire({
-      icon: "warning",
-      title: "Assignment Not Allowed",
-      text: "Supervisor cannot be assigned when current bookings are 0.",
-    });
-    return;
-  }
+    if (currentBookings === 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "Assignment Not Allowed",
+        text: "Supervisor cannot be assigned when current bookings are 0.",
+      });
+      return;
+    }
+
+    if (!selectedArea) {
+      Swal.fire({
+        icon: "warning",
+        title: "Select Area",
+        text: "Please select an area before assigning a supervisor.",
+      });
+      return;
+    }
+
     if (!selectedSupervisorHead) {
       Swal.fire({
         icon: "warning",
@@ -372,29 +437,59 @@ const LeadViewLayer = () => {
       });
       return;
     }
-    try {
-      const response = await fetch(`${API_BASE}Leads/AssignLeadsToSupervisorHead`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          leadIds: [leadId],
-          supervisor_Head: selectedSupervisorHead.value,
-        }),
+    if (!personalFullAddress || personalFullAddress.trim().length === 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "Address Required",
+        text: "Please enter address before assigning a supervisor.",
       });
+      return;
+    }
+    if (!carRegistrationNumber || carRegistrationNumber.trim() === "") {
+      Swal.fire({
+        icon: "warning",
+        title: "Registration Number Required",
+        text: "Please enter vehicle registration number before assigning a supervisor.",
+      });
+      return;
+    }
+
+    // ✅ collect booking IDs
+    const bookingIds = currentBookings.map((b) => b.BookingID);
+    try {
+      const response = await fetch(
+        `${API_BASE}Supervisor/AssignToSupervisorHead`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            bookingIds: bookingIds,
+            supervisorHeadId: selectedSupervisorHead.value,
+            areaId: selectedArea.value,
+            assignedDate: new Date().toISOString().split("T")[0],
+            assignStatus: "Assign",
+            createdBy: parseInt(localStorage.getItem("userId")),
+          }),
+        },
+      );
+
       if (!response.ok) {
         throw new Error("Failed to assign supervisor");
       }
+
       Swal.fire({
         icon: "success",
         title: "Supervisor Assigned",
-        text: "Lead has been successfully assigned to the supervisor.",
+        text: "Bookings assigned successfully.",
       });
+
       await fetchLead();
       setAssignModalOpen(false);
       setSelectedSupervisorHead(null);
+      setSelectedArea(null);
     } catch (err) {
       console.error("Assign supervisor failed", err);
       Swal.fire({
@@ -427,7 +522,7 @@ const LeadViewLayer = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(payload),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -458,7 +553,11 @@ const LeadViewLayer = () => {
       FullName: personalFullName,
       PhoneNumber: personalMobileNo,
       Email: personalEmail,
+      GSTNumber: gstNumber,
+      GSTName: gstName,
       City: personalFullAddress,
+      Latitude: latitude,
+      Longitude: longitude,
     };
 
     try {
@@ -470,7 +569,7 @@ const LeadViewLayer = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(payload),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -483,8 +582,9 @@ const LeadViewLayer = () => {
         PhoneNumber: personalMobileNo,
         Email: personalEmail,
         City: personalFullAddress,
+        GSTNumber: gstNumber,
+        GSTName: gstName,
       }));
-
       Swal.fire({
         icon: "success",
         title: "Personal Information Saved",
@@ -555,7 +655,7 @@ const LeadViewLayer = () => {
         Swal.fire(
           "Missing Next Action",
           "Please select Next Action before submitting.",
-          "warning"
+          "warning",
         );
         return;
       }
@@ -660,10 +760,35 @@ const LeadViewLayer = () => {
   const showVehicleDataRequiredAlert = () => {
     Swal.fire({
       icon: "warning",
-      title: "Vehicle Details Required",
-      text: "Car Brand, Model, and Fuel Type are required to proceed.",
+      title: "Details Required",
+      text: "Full Address, Car Registration Number, Brand, Model, and Fuel Type are required to proceed.",
       confirmButtonText: "OK",
     });
+  };
+  const handleConvertCustomer = async () => {
+    try {
+      await axios.post(`${API_BASE}/Leads/ConvertLead`, null, {
+        params: {
+          leadId: lead.Id,
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      Swal.fire({
+        icon: "success",
+        title: "Converted",
+        text: "Lead has been successfully converted to customer.",
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Conversion Failed",
+        text:
+          error?.response?.data?.message ||
+          "Unable to convert lead. Please try again.",
+      });
+    }
   };
 
   const showFollowUpRequiredAlert = () => {
@@ -798,14 +923,14 @@ const LeadViewLayer = () => {
                       : {lead?.PaymentAmount || "N/A"}
                     </span>
                   </li>
-                  <li className="d-flex align-items-center gap-1 mb-12">
+                  {/* <li className="d-flex align-items-center gap-1 mb-12">
                     <span className="w-30 text-md fw-semibold text-primary-light">
                       Supervisor Name
                     </span>
                     <span className="w-70 text-secondary-light fw-medium">
                       : {lead?.Assignments?.[0]?.SupervisorName || "N/A"}
                     </span>
-                  </li>
+                  </li> */}
                 </ul>
                 <div className="d-flex gap-2 mt-3">
                   <Link
@@ -816,7 +941,8 @@ const LeadViewLayer = () => {
                     Back
                   </Link>
                   {!["Supervisor Head", "Supervisor"].includes(roleName) &&
-                    !isLeadClosed && (
+                    !isLeadClosed &&
+                    currentBookings?.length > 0 && (
                       <button
                         className="btn btn-primary-600 btn-sm d-flex align-items-center justify-content-center gap-1"
                         onClick={() => {
@@ -850,7 +976,7 @@ const LeadViewLayer = () => {
                             showFollowUpRequiredAlert();
                           }
                         }}
-                        className="btn btn-secondary btn-sm d-flex align-items-center justify-content-center gap-1"
+                        className="btn btn-primary-600 btn-sm d-flex align-items-center justify-content-center gap-1"
                       >
                         <Icon
                           icon="lucide:calendar-check"
@@ -875,201 +1001,97 @@ const LeadViewLayer = () => {
                 <div className="alert alert-danger">{error}</div>
               ) : lead ? (
                 <>
-                  <div className="d-flex justify-content-between align-items-center">
-                    <h6 className="card-title">Update Status</h6>
-                    <Icon
-                      icon="ic:baseline-whatsapp"
-                      fontSize={28}
-                      style={{ color: "#25D366", cursor: "pointer" }}
-                      onClick={handleWhatsapp}
-                    />
-                  </div>
-
-                  <div className="p-3 border radius-16 bg-light">
-                    {/* Call Answered Radio Buttons */}
-                    <div className="mb-3">
-                      <label className="form-label fw-semibold text-primary-light">
-                        Call Status
-                      </label>
-                      <div className="d-flex justify-content-around px-3 py-2">
-                        <div className="form-check d-flex align-items-center">
-                          <input
-                            className="form-check-input"
-                            type="radio"
-                            name="callAnswered"
-                            id="callAnswered"
-                            value="Ans"
-                            checked={callAnswered === "Ans"}
-                            onChange={(e) => setCallAnswered(e.target.value)}
-                            disabled={isLeadClosed}
-                          />
-                          <label
-                            className="form-check-label ms-1"
-                            htmlFor="callAnswered"
-                          >
-                            Call Answered
-                          </label>
-                        </div>
-                        <div className="form-check d-flex align-items-center">
-                          <input
-                            className="form-check-input"
-                            type="radio"
-                            name="callAnswered"
-                            id="callNotAnswered"
-                            value="Not Ans"
-                            checked={callAnswered === "Not Ans"}
-                            onChange={(e) => setCallAnswered(e.target.value)}
-                            disabled={isLeadClosed}
-                          />
-                          <label
-                            className="form-check-label ms-1"
-                            htmlFor="callNotAnswered"
-                          >
-                            Call Not Answered
-                          </label>
-                        </div>
-                      </div>
+                  {!["Supervisor Head", "Supervisor"].includes(roleName) && (
+                    <div className="d-flex justify-content-between align-items-center">
+                      <h6 className="card-title">Update Status</h6>
+                      <Icon
+                        icon="ic:baseline-whatsapp"
+                        fontSize={28}
+                        style={{ color: "#25D366", cursor: "pointer" }}
+                        onClick={handleWhatsapp}
+                      />
                     </div>
-
-                    {/* Conditional Fields based on Call Status */}
-                    {callAnswered === "Not Ans" && (
-                      <div className="row g-3">
-                        <div className="col-md-6">
-                          <label className="form-label fw-semibold text-primary-light">
-                            Follow-up Status
-                          </label>
-                          <select
-                            className="form-select"
-                            value={followUpStatus}
-                            onChange={(e) => setFollowUpStatus(e.target.value)}
-                          >
-                            <option value="">Select status</option>
-                            <option value="Ringing But Not Responded">
-                              Ringing But Not Responded
-                            </option>
-                            <option value="Busy">Busy</option>
-                            <option value="Not Reachable">Not Reachable</option>
-                            <option value="Switched Off">Switched Off</option>
-                            <option value="Temporary Out of Service">
-                              Temporary Out of Service
-                            </option>
-                            <option value="Number Does Not Exist">
-                              Number Does Not Exist
-                            </option>
-                            <option value="DND">DND</option>
-                          </select>
-                        </div>
-                        <div className="col-md-6">
-                          <label className="form-label fw-semibold text-primary-light">
-                            Next Follow-up Date
-                          </label>
-                          <input
-                            type="date"
-                            placeholder="DD-MM-YYYY"
-                            className="form-control"
-                            value={notAnsweredFollowUpDate}
-                            onChange={(e) =>
-                              setNotAnsweredFollowUpDate(e.target.value)
-                            }
-                          />
-                        </div>
-                        <div className="col-12">
-                          <label className="form-label fw-semibold text-primary-light">
-                            Description / Notes
-                          </label>
-                          <textarea
-                            className="form-control"
-                            rows={3}
-                            placeholder="Add notes"
-                            value={descriptionNotes}
-                            maxLength={200}
-                            onChange={(e) =>
-                              setDescriptionNotes(e.target.value)
-                            }
-                          />
-                          <small
-                            className="text-secondary-light text-sm"
-                            style={{ display: "block", textAlign: "right" }}
-                          >
-                            {descriptionNotes.length}/200 characters
-                          </small>
+                  )}
+                  {!["Supervisor Head", "Supervisor"].includes(roleName) && (
+                    <div className="p-3 border radius-16 bg-light">
+                      {/* Call Answered Radio Buttons */}
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold text-primary-light">
+                          Call Status
+                        </label>
+                        <div className="d-flex justify-content-around px-3 py-2">
+                          <div className="form-check d-flex align-items-center">
+                            <input
+                              className="form-check-input"
+                              type="radio"
+                              name="callAnswered"
+                              id="callAnswered"
+                              value="Ans"
+                              checked={callAnswered === "Ans"}
+                              onChange={(e) => setCallAnswered(e.target.value)}
+                              disabled={isLeadClosed}
+                            />
+                            <label
+                              className="form-check-label ms-1"
+                              htmlFor="callAnswered"
+                            >
+                              Call Answered
+                            </label>
+                          </div>
+                          <div className="form-check d-flex align-items-center">
+                            <input
+                              className="form-check-input"
+                              type="radio"
+                              name="callAnswered"
+                              id="callNotAnswered"
+                              value="Not Ans"
+                              checked={callAnswered === "Not Ans"}
+                              onChange={(e) => setCallAnswered(e.target.value)}
+                              disabled={isLeadClosed}
+                            />
+                            <label
+                              className="form-check-label ms-1"
+                              htmlFor="callNotAnswered"
+                            >
+                              Call Not Answered
+                            </label>
+                          </div>
                         </div>
                       </div>
-                    )}
 
-                    {callAnswered === "Ans" && (
-                      <div className="row g-3">
-                        <div className="col-12">
-                          <label className="form-label fw-semibold text-primary-light">
-                            Discussion Result
-                          </label>
-                          <select
-                            className="form-select"
-                            value={callOutcome}
-                            onChange={(e) => setCallOutcome(e.target.value)}
-                          >
-                            <option value="">Select outcome</option>
-                            <option value="Interested">Interested</option>
-                            <option value="Not Interested">
-                              Not Interested
-                            </option>
-                            <option value="Need More Info">
-                              Need More Info
-                            </option>
-                            <option value="Converted to Customer">
-                              Converted to Customer
-                            </option>
-                            <option value="Not Converted">Not Converted</option>
-                            <option value="Not Having Car">
-                              Not Having Car
-                            </option>
-                            {/* <option value="Conversion">Customer Referred</option> */}
-                          </select>
-                        </div>
-                        <div className="col-12">
-                          <label className="form-label fw-semibold text-primary-light">
-                            Discussion Notes
-                          </label>
-                          <textarea
-                            className="form-control"
-                            rows={3}
-                            placeholder="Add discussion notes"
-                            value={discussionNotes}
-                            onChange={(e) => {
-                              setDiscussionNotes(e.target.value);
-                              e.target.style.height = "auto";
-                              e.target.style.height =
-                                e.target.scrollHeight + "px";
-                            }}
-                            style={{ overflow: "hidden", resize: "none" }}
-                          />
-                        </div>
-                        <div className="col-12">
-                          <label className="form-label fw-semibold text-primary-light">
-                            Next Action
-                          </label>
-                          <select
-                            className="form-select"
-                            value={nextAction}
-                            onChange={(e) => setNextAction(e.target.value)}
-                          >
-                            <option value="">Select action</option>
-                            <option value="Ok for Inspection">
-                              Ok for Inspection
-                            </option>
-                            <option value="Schedule Meeting">
-                              Schedule Meeting
-                            </option>
-                            <option value="Price Issue">Price Issue</option>
-                            <option value="Follow-up Needed">
-                              Follow-up Needed
-                            </option>
-                            <option value="Send Details">Send Details</option>
-                            <option value="Lead Closed">Lead Closed</option>
-                          </select>
-                        </div>
-                        {nextAction && nextAction !== "Lead Closed" && (
-                          <div className="col-12">
+                      {/* Conditional Fields based on Call Status */}
+                      {callAnswered === "Not Ans" && (
+                        <div className="row g-3">
+                          <div className="col-md-6">
+                            <label className="form-label fw-semibold text-primary-light">
+                              Follow-up Status
+                            </label>
+                            <select
+                              className="form-select"
+                              value={followUpStatus}
+                              onChange={(e) =>
+                                setFollowUpStatus(e.target.value)
+                              }
+                            >
+                              <option value="">Select status</option>
+                              <option value="Ringing But Not Responded">
+                                Ringing But Not Responded
+                              </option>
+                              <option value="Busy">Busy</option>
+                              <option value="Not Reachable">
+                                Not Reachable
+                              </option>
+                              <option value="Switched Off">Switched Off</option>
+                              <option value="Temporary Out of Service">
+                                Temporary Out of Service
+                              </option>
+                              <option value="Number Does Not Exist">
+                                Number Does Not Exist
+                              </option>
+                              <option value="DND">DND</option>
+                            </select>
+                          </div>
+                          <div className="col-md-6">
                             <label className="form-label fw-semibold text-primary-light">
                               Next Follow-up Date
                             </label>
@@ -1077,37 +1099,144 @@ const LeadViewLayer = () => {
                               type="date"
                               placeholder="DD-MM-YYYY"
                               className="form-control"
-                              value={nextFollowUpDate}
+                              value={notAnsweredFollowUpDate}
                               onChange={(e) =>
-                                setNextFollowUpDate(e.target.value)
+                                setNotAnsweredFollowUpDate(e.target.value)
                               }
                             />
                           </div>
-                        )}
-                      </div>
-                    )}
+                          <div className="col-12">
+                            <label className="form-label fw-semibold text-primary-light">
+                              Description / Notes
+                            </label>
+                            <textarea
+                              className="form-control"
+                              rows={3}
+                              placeholder="Add notes"
+                              value={descriptionNotes}
+                              maxLength={200}
+                              onChange={(e) =>
+                                setDescriptionNotes(e.target.value)
+                              }
+                            />
+                            <small
+                              className="text-secondary-light text-sm"
+                              style={{ display: "block", textAlign: "right" }}
+                            >
+                              {descriptionNotes.length}/200 characters
+                            </small>
+                          </div>
+                        </div>
+                      )}
 
-                    <div className="d-flex justify-content-end mt-3 gap-10">
-                      {/* {hasPermission("createlead_add") && (
-                        <Link
-                          to="/create-lead"
-                          className="btn btn-secondary px-20 btn-sm"
+                      {callAnswered === "Ans" && (
+                        <div className="row g-3">
+                          <div className="col-12">
+                            <label className="form-label fw-semibold text-primary-light">
+                              Discussion Result
+                            </label>
+                            <select
+                              className="form-select"
+                              value={callOutcome}
+                              onChange={(e) => setCallOutcome(e.target.value)}
+                            >
+                              <option value="">Select outcome</option>
+                              <option value="Interested">Interested</option>
+                              <option value="Not Interested">
+                                Not Interested
+                              </option>
+                              <option value="Need More Info">
+                                Need More Info
+                              </option>
+                              <option value="Converted to Customer">
+                                Converted to Customer
+                              </option>
+                              <option value="Not Converted">
+                                Not Converted
+                              </option>
+                              <option value="Not Having Car">
+                                Not Having Car
+                              </option>
+                              {/* <option value="Conversion">Customer Referred</option> */}
+                            </select>
+                          </div>
+                          <div className="col-12">
+                            <label className="form-label fw-semibold text-primary-light">
+                              Discussion Notes
+                            </label>
+                            <textarea
+                              className="form-control"
+                              rows={3}
+                              placeholder="Add discussion notes"
+                              value={discussionNotes}
+                              onChange={(e) => {
+                                setDiscussionNotes(e.target.value);
+                                e.target.style.height = "auto";
+                                e.target.style.height =
+                                  e.target.scrollHeight + "px";
+                              }}
+                              style={{ overflow: "hidden", resize: "none" }}
+                            />
+                          </div>
+                          <div className="col-12">
+                            <label className="form-label fw-semibold text-primary-light">
+                              Next Action
+                            </label>
+                            <select
+                              className="form-select"
+                              value={nextAction}
+                              onChange={(e) => setNextAction(e.target.value)}
+                            >
+                              <option value="">Select action</option>
+                              <option value="Ok for Inspection">
+                                Ok for Inspection
+                              </option>
+                              <option value="Schedule Meeting">
+                                Schedule Meeting
+                              </option>
+                              <option value="Price Issue">Price Issue</option>
+                              <option value="Follow-up Needed">
+                                Follow-up Needed
+                              </option>
+                              <option value="Send Details">Send Details</option>
+                              <option value="Lead Closed">Lead Closed</option>
+                            </select>
+                          </div>
+                          {nextAction && nextAction !== "Lead Closed" && (
+                            <div className="col-12">
+                              <label className="form-label fw-semibold text-primary-light">
+                                Next Follow-up Date
+                              </label>
+                              <input
+                                type="date"
+                                placeholder="DD-MM-YYYY"
+                                className="form-control"
+                                value={nextFollowUpDate}
+                                onChange={(e) =>
+                                  setNextFollowUpDate(e.target.value)
+                                }
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="d-flex justify-content-end mt-3 gap-10">
+                        <button
+                          className="btn btn-primary-600 px-20 btn-sm"
+                          onClick={handleSubmitStatus}
+                          disabled={
+                            isLeadClosed ||
+                            (callAnswered === "Ans" &&
+                              callOutcome &&
+                              !nextAction)
+                          }
                         >
-                          Add Lead
-                        </Link>
-                      )} */}
-                      <button
-                        className="btn btn-primary-600 px-20 btn-sm"
-                        onClick={handleSubmitStatus}
-                        disabled={
-                          isLeadClosed ||
-                          (callAnswered === "Ans" && callOutcome && !nextAction)
-                        }
-                      >
-                        Submit
-                      </button>
+                          Submit
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </>
               ) : (
                 <p>No data</p>
@@ -1130,8 +1259,12 @@ const LeadViewLayer = () => {
                             className="form-control"
                             value={personalFullName}
                             onChange={(e) => {
-                              const val = e.target.value;
-                              if (val.length <= 30) setPersonalFullName(val);
+                              let val = e.target.value;
+                              if (val.length <= 30) {
+                                val =
+                                  val.charAt(0).toUpperCase() + val.slice(1);
+                                setPersonalFullName(val);
+                              }
                             }}
                             disabled={isLeadClosed}
                           />
@@ -1167,6 +1300,57 @@ const LeadViewLayer = () => {
                             disabled={isLeadClosed}
                           />
                         </div>
+                        <div className="col-md-6">
+                          <label className="form-label fw-semibold text-primary-light">
+                            GST Name
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={gstName}
+                            onChange={(e) => {
+                              let val = e.target.value;
+                              if (val.length > 0) {
+                                val =
+                                  val.charAt(0).toUpperCase() + val.slice(1);
+                              }
+                              setGstName(val);
+                            }}
+                            placeholder="Enter GST Name"
+                            disabled={isLeadClosed}
+                          />
+                        </div>
+                        <div className="col-md-6">
+                          <label className="form-label fw-semibold text-primary-light">
+                            GST Number
+                          </label>
+                          <input
+                            type="text"
+                            style={{ padding: 8 }}
+                            className={`form-control ${
+                              gstNumber && !GST_REGEX.test(gstNumber)
+                                ? "is-invalid"
+                                : ""
+                            }`}
+                            value={gstNumber}
+                            onChange={(e) => {
+                              let val = e.target.value.toUpperCase();
+                              val = val.replace(/[^A-Z0-9]/g, ""); // allow only alphanumeric
+                              if (val.length <= 15) {
+                                setGstNumber(val);
+                              }
+                            }}
+                            placeholder="Enter GST Number"
+                            maxLength={15}
+                            disabled={isLeadClosed}
+                          />
+
+                          {gstNumber && !GST_REGEX.test(gstNumber) && (
+                            <div className="invalid-feedback">
+                              Enter a valid 15-character GST Number
+                            </div>
+                          )}
+                        </div>
                         {/* ✅ FULL ADDRESS */}
                         <div className="col-12">
                           <label className="form-label fw-semibold text-primary-light">
@@ -1183,6 +1367,17 @@ const LeadViewLayer = () => {
                                 placeholder="Search address from Google"
                                 autoComplete="off"
                                 disabled={isLeadClosed}
+                                onChange={(e) => {
+                                  let val = e.target.value;
+                                  if (val.length > 0) {
+                                    val = val.replace(
+                                      /^(\s*)(\S)/,
+                                      (_, space, char) =>
+                                        space + char.toUpperCase(),
+                                    );
+                                  }
+                                  e.target.value = val;
+                                }}
                               />
                             </Autocomplete>
                           )}
@@ -1192,7 +1387,15 @@ const LeadViewLayer = () => {
                             className="form-control"
                             value={personalFullAddress}
                             onChange={(e) => {
-                              setPersonalFullAddress(e.target.value);
+                              let val = e.target.value;
+                              if (val.length > 0) {
+                                val = val.replace(
+                                  /^(\s*)(\S)/,
+                                  (_, space, char) =>
+                                    space + char.toUpperCase(),
+                                );
+                              }
+                              setPersonalFullAddress(val);
                               e.target.style.height = "auto";
                               e.target.style.height =
                                 e.target.scrollHeight + "px";
@@ -1201,8 +1404,8 @@ const LeadViewLayer = () => {
                               overflow: "hidden",
                               resize: "none",
                             }}
+                            disabled={isLeadClosed}
                           />
-
                           {latitude && longitude && (
                             <p className="text-sm text-muted mt-1">
                               Lat: {latitude} | Lng: {longitude}
@@ -1240,7 +1443,7 @@ const LeadViewLayer = () => {
                             value={carRegistrationNumber}
                             onChange={(e) =>
                               setCarRegistrationNumber(
-                                e.target.value.toUpperCase()
+                                e.target.value.toUpperCase(),
                               )
                             }
                             disabled={isLeadClosed}
@@ -1377,129 +1580,151 @@ const LeadViewLayer = () => {
                   </Accordion.Body>
                 </Accordion.Item>
               </Accordion>
-              <Accordion className="mt-3">
-                <Accordion.Item eventKey="current">
-                  <Accordion.Header>
-                    Current Bookings ({currentBookings.length})
-                  </Accordion.Header>
-                  <Accordion.Body>
-                    {currentBookings.length === 0 ? (
-                      <p className="text-muted">No current bookings found.</p>
-                    ) : (
-                      <div className="table-responsive">
-                        <table className="table table-bordered table-striped p-2 radius-16">
-                          <thead className="form-label fw-semibold text-primary-light">
-                            <tr>
-                              {/* <th>ID</th> */}
-                              <th>Booking TrackID</th>
-                              <th>Booking Date</th>
-                              <th className="text-center">Action</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {currentBookings.map((b) => (
-                              <tr key={b.BookingID}>
-                                {/* <td>{b.BookingID}</td> */}
-                                <td>
-                                  <Link
-                                    to={`/view-booking/${b.BookingTrackID}`}
-                                    className="text-primary"
-                                  >
-                                    {b.BookingTrackID}
-                                  </Link>
-                                </td>
-                                <td>
-                                  {b.CreatedDate
-                                    ? new Date(
-                                        b.CreatedDate
-                                      ).toLocaleDateString("en-IN")
-                                    : "N/A"}
-                                </td>
-                                <td className="text-center">
-                                  <Link
-                                    to={`/booking-view/${b.BookingID}`}
-                                    className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                                    title="View"
-                                  >
-                                    <Icon icon="lucide:eye" />
-                                  </Link>
-                                  {!isLeadClosed && (
-                                    <Link
-                                      to={`/book-service/${b.LeadId}`}
-                                      className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                                      title="Edit"
-                                    >
-                                      <Icon icon="lucide:edit" />
-                                    </Link>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </Accordion.Body>
-                </Accordion.Item>
 
-                <Accordion.Item eventKey="previous">
-                  <Accordion.Header>
-                    Previous Bookings ({previousBookings.length})
-                  </Accordion.Header>
-                  <Accordion.Body>
-                    {previousBookings.length === 0 ? (
-                      <p className="text-muted">No previous bookings found.</p>
-                    ) : (
-                      <div className="table-responsive">
-                        <table className="table table-bordered table-striped p-2 radius-16">
-                          <thead className="form-label fw-semibold text-primary-light">
-                            <tr>
-                              {/* <th>ID</th> */}
-                              <th>Lead ID</th>
-                              <th>Booking TrackID</th>
-                              <th>Booking Date</th>
-                              <th className="text-center">View</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {previousBookings.map((b) => (
-                              <tr key={b.BookingID}>
-                                {/* <td>{b.BookingID}</td> */}
-                                <td>{b.LeadId}</td>
-                                <td>
-                                  <Link
-                                    to={`/view-booking/${b.BookingTrackID}`}
-                                    className="text-primary"
-                                  >
-                                    {b.BookingTrackID}
-                                  </Link>
-                                </td>
-                                <td>
-                                  {b.CreatedDate
-                                    ? new Date(
-                                        b.CreatedDate
-                                      ).toLocaleDateString("en-IN")
-                                    : "N/A"}
-                                </td>
+              {/* ================= CUSTOMER NOT CONVERTED ================= */}
+              {!isCustomerConverted ? (
+                <div className="alert alert-warning d-flex justify-content-between align-items-center mt-3">
+                  <span className="fw-semibold">
+                    This lead has not yet been converted to a customer. Please
+                    confirm the conversion to proceed with booking.
+                  </span>
+                  <button
+                    className="btn btn-primary-600 px-20 btn-sm"
+                    onClick={handleConvertCustomer}
+                    disabled={isLeadClosed}
+                  >
+                    Converted
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <Accordion className="mt-3">
+                    <Accordion.Item eventKey="current">
+                      <Accordion.Header>
+                        Current Bookings ({currentBookings.length})
+                      </Accordion.Header>
+                      <Accordion.Body>
+                        {currentBookings.length === 0 ? (
+                          <p className="text-muted">
+                            No current bookings found.
+                          </p>
+                        ) : (
+                          <div className="table-responsive">
+                            <table className="table table-bordered table-striped p-2 radius-16">
+                              <thead className="form-label fw-semibold text-primary-light">
+                                <tr>
+                                  <th>Booking TrackID</th>
+                                  <th>Booking Date</th>
+                                  <th className="text-center">Action</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {currentBookings.map((b) => (
+                                  <tr key={b.BookingID}>
+                                    <td>
+                                      <Link
+                                        to={`/booking-view/${b.BookingID}`}
+                                        className="text-primary"
+                                      >
+                                        {b.BookingTrackID}
+                                      </Link>
+                                    </td>
+                                    <td>
+                                      {b.CreatedDate
+                                        ? new Date(
+                                            b.CreatedDate,
+                                          ).toLocaleDateString("en-IN")
+                                        : "N/A"}
+                                    </td>
+                                    <td className="text-center">
+                                      <Link
+                                        to={`/booking-view/${b.BookingID}`}
+                                        className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                        title="View"
+                                      >
+                                        <Icon icon="lucide:eye" />
+                                      </Link>
+                                      {!isLeadClosed && (
+                                        <Link
+                                          to={`/book-service/${b.LeadId}`}
+                                          className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                          title="Edit"
+                                        >
+                                          <Icon icon="lucide:edit" />
+                                        </Link>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </Accordion.Body>
+                    </Accordion.Item>
 
-                                <td className="text-center">
-                                  <Link
-                                    to={`/booking-view/${b.BookingID}`}
-                                    className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                                    title="View"
-                                  >
-                                    <Icon icon="lucide:eye" />
-                                  </Link>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </Accordion.Body>
-                </Accordion.Item>
-              </Accordion>
+                    <Accordion.Item eventKey="previous">
+                      <Accordion.Header>
+                        Previous Bookings ({previousBookings.length})
+                      </Accordion.Header>
+                      <Accordion.Body>
+                        {previousBookings.length === 0 ? (
+                          <p className="text-muted">
+                            No previous bookings found.
+                          </p>
+                        ) : (
+                          <div className="table-responsive">
+                            <table className="table table-bordered table-striped p-2 radius-16">
+                              <thead className="form-label fw-semibold text-primary-light">
+                                <tr>
+                                  {/* <th>ID</th> */}
+                                  <th>Lead ID</th>
+                                  <th>Booking TrackID</th>
+                                  <th>Booking Date</th>
+                                  <th className="text-center">View</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {previousBookings.map((b) => (
+                                  <tr key={b.BookingID}>
+                                    {/* <td>{b.BookingID}</td> */}
+                                    <td>{b.LeadId}</td>
+                                    <td>
+                                      <Link
+                                        to={`/booking-view/${b.BookingID}`}
+                                        className="text-primary"
+                                      >
+                                        {b.BookingTrackID}
+                                      </Link>
+                                    </td>
+                                    <td>
+                                      {b.CreatedDate
+                                        ? new Date(
+                                            b.CreatedDate,
+                                          ).toLocaleDateString("en-IN")
+                                        : "N/A"}
+                                    </td>
+
+                                    <td className="text-center">
+                                      <Link
+                                        to={`/booking-view/${b.BookingID}`}
+                                        className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                        title="View"
+                                      >
+                                        <Icon icon="lucide:eye" />
+                                      </Link>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </Accordion.Body>
+                    </Accordion.Item>
+                  </Accordion>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -1516,20 +1741,16 @@ const LeadViewLayer = () => {
                 className="flex-grow-1 overflow-auto pe-0"
                 style={{ maxHeight: "925px", scrollbarWidth: "thin" }}
               >
-                {lead?.FollowUps && lead.FollowUps.length > 0 ? (
+                {lead?.TrackingHistory && lead.TrackingHistory.length > 0 ? (
                   <ul className="mb-0 list-unstyled ps-0">
-                    {[...lead.FollowUps]
+                    {[...lead.TrackingHistory]
                       .sort((a, b) => {
-                        const dateA = a.Updated_At
-                          ? new Date(a.Updated_At)
-                          : new Date(a.Created_At);
-                        const dateB = b.Updated_At
-                          ? new Date(b.Updated_At)
-                          : new Date(b.Created_At);
+                        const dateA = new Date(a.CreatedDate);
+                        const dateB = new Date(b.CreatedDate);
                         return dateB - dateA;
                       })
                       .map((item, idx) => {
-                        if (item.Status === null) return null;
+                        if (!item.StatusName) return null;
                         return (
                           <li
                             key={idx}
@@ -1539,14 +1760,14 @@ const LeadViewLayer = () => {
                               <span
                                 className={`badge rounded-pill px-3 py-2 fw-semibold text-white bg-orange`}
                               >
-                                {item.Status}
+                                {item.StatusName}
                               </span>
                             </div>
                             <div>
                               <div className="text-sm text-secondary-light fw-medium">
-                                <strong>Updation Date: </strong>
-                                {item.Updated_At
-                                  ? new Date(item.Updated_At).toLocaleString(
+                                <strong>Created Date: </strong>
+                                {item.CreatedDate
+                                  ? new Date(item.CreatedDate).toLocaleString(
                                       "en-IN",
                                       {
                                         day: "2-digit",
@@ -1555,27 +1776,13 @@ const LeadViewLayer = () => {
                                         hour: "2-digit",
                                         minute: "2-digit",
                                         hour12: true,
-                                      }
+                                      },
                                     )
                                   : "-"}
                               </div>
                               <div className="text-sm text-secondary-light">
-                                <strong>Discussion Notes: </strong>
-                                {item.Notes || "-"}
-                              </div>
-                              {item.NextAction && (
-                                <div className="text-sm text-secondary-light">
-                                  <strong>Next Action: </strong>
-                                  {item.NextAction}
-                                </div>
-                              )}
-                              <div className="text-sm text-secondary-light">
-                                <strong>Next Follow-up Date: </strong>{" "}
-                                {item.NextFollowUp_Date
-                                  ? new Date(
-                                      item.NextFollowUp_Date
-                                    ).toLocaleDateString()
-                                  : "-"}
+                                <strong>Description: </strong>
+                                {item.Description || "-"}
                               </div>
                               <div className="text-sm text-secondary-light">
                                 <strong>Updated By: </strong>
@@ -1588,7 +1795,7 @@ const LeadViewLayer = () => {
                   </ul>
                 ) : (
                   <p className="text-secondary-light mb-0">
-                    No follow-ups available
+                    No tracking history available
                   </p>
                 )}
               </div>
@@ -1607,6 +1814,17 @@ const LeadViewLayer = () => {
         </Modal.Header>
         <Modal.Body>
           <div className="mb-3">
+            <label className="form-label fw-semibold">Select Area</label>
+            <Select
+              options={areas}
+              value={selectedArea}
+              onChange={setSelectedArea}
+              placeholder="Select Area"
+              className="react-select-container"
+              isSearchable
+            />
+          </div>
+          <div className="mb-3">
             <label className="form-label fw-semibold">Select Supervisor</label>
             <Select
               options={supervisorHeads}
@@ -1620,15 +1838,17 @@ const LeadViewLayer = () => {
         </Modal.Body>
         <Modal.Footer className="justify-content-center">
           <Button
-            variant="secondary"
+            variant="secondary btn-sm"
             onClick={() => {
               setAssignModalOpen(false);
-              setSelectedSupervisorHeadHead(null);
+              setSelectedSupervisorHead(null);
+              setSelectedArea(null);
             }}
           >
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleAssignSupervisor}>
+          <Button className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
+                  title="View" onClick={handleAssignSupervisor}>
             Assign
           </Button>
         </Modal.Footer>

@@ -2,7 +2,7 @@ import { Icon } from "@iconify/react";
 import { useState, useEffect } from "react";
 import Accordion from "react-bootstrap/Accordion";
 import axios from "axios";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 const API_IMAGE = import.meta.env.VITE_APIURL_IMAGE;
@@ -19,9 +19,9 @@ const CustomerViewLayer = () => {
 
   useEffect(() => {
     fetchProfile();
-    fetchAddresses();
+    // fetchAddresses();
     fetchBookings();
-    fetchMYCars();
+    // fetchMYCars();
   }, []);
 
   // Fetch Profile
@@ -37,17 +37,17 @@ const CustomerViewLayer = () => {
   };
 
   // Fetch Addresses
-  const fetchAddresses = async () => {
-    try {
-      const res = await axios.get(
-        `${API_BASE}CustomerAddresses/custid?custid=${CustomerID || ""}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setAddresses(res.data);
-    } catch (error) {
-      console.error("Error fetching addresses:", error);
-    }
-  };
+  // const fetchAddresses = async () => {
+  //   try {
+  //     const res = await axios.get(
+  //       `${API_BASE}CustomerAddresses/custid?custid=${CustomerID || ""}`,
+  //       { headers: { Authorization: `Bearer ${token}` } }
+  //     );
+  //     setAddresses(res.data);
+  //   } catch (error) {
+  //     console.error("Error fetching addresses:", error);
+  //   }
+  // };
 
   // Fetch Bookings
   const fetchBookings = async () => {
@@ -62,22 +62,17 @@ const CustomerViewLayer = () => {
   };
 
   // Fetch My Cars
-  const fetchMYCars = async () => {
-    try {
-      const response = await axios.get(
-        `${API_BASE}CustomerVehicles/CustId?CustId=${CustomerID}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setVehicles(response.data);
-    } catch (error) {
-      console.error("Error fetching cars:", error);
-    }
-  };
-
-  const payments = [
-    { id: 1, amount: "₹1500", method: "UPI", date: "2025-07-01" },
-    { id: 2, amount: "₹2500", method: "Credit Card", date: "2025-06-10" },
-  ];
+  // const fetchMYCars = async () => {
+  //   try {
+  //     const response = await axios.get(
+  //       `${API_BASE}CustomerVehicles/CustId?CustId=${CustomerID}`,
+  //       { headers: { Authorization: `Bearer ${token}` } }
+  //     );
+  //     setVehicles(response.data);
+  //   } catch (error) {
+  //     console.error("Error fetching cars:", error);
+  //   }
+  // };
 
   return (
     <div className="row gy-4 mt-3">
@@ -127,14 +122,14 @@ const CustomerViewLayer = () => {
                     : {profile.PhoneNumber || "N/A"}
                   </span>
                 </li>
-                <li className="d-flex align-items-center gap-1 mb-12">
+                {/* <li className="d-flex align-items-center gap-1 mb-12">
                   <span className="w-30 text-md fw-semibold text-primary-light">
                     Alternate
                   </span>
                   <span className="w-70 text-secondary-light fw-medium">
                     : {profile.AlternateNumber || "N/A"}
                   </span>
-                </li>
+                </li> */}
               </ul>
             </div>
           </div>
@@ -146,18 +141,18 @@ const CustomerViewLayer = () => {
         <div className="card h-100">
           <div className="card-body p-24">
             <ul className="nav border-gradient-tab nav-pills mb-20">
-              {bookings.length > 0 && (
-                <li className="nav-item">
-                  <button
-                    className="nav-link active"
-                    data-bs-toggle="pill"
-                    data-bs-target="#booking"
-                  >
-                    Bookings
-                  </button>
-                </li>
-              )}
+              {/* {bookings.length > 0 && ( */}
               <li className="nav-item">
+                <button
+                  className="nav-link active"
+                  data-bs-toggle="pill"
+                  data-bs-target="#booking"
+                >
+                  Bookings
+                </button>
+              </li>
+              {/* )} */}
+              {/* <li className="nav-item">
                 <button
                   className={`nav-link ${bookings.length === 0 ? "active" : ""}`}
                   data-bs-toggle="pill"
@@ -175,33 +170,47 @@ const CustomerViewLayer = () => {
                 <button className="nav-link" data-bs-toggle="pill" data-bs-target="#address">
                   Address
                 </button>
-              </li>
+              </li> */}
             </ul>
 
             <div className="tab-content">
               {/* ✅ Bookings Tab (only if available) */}
               {bookings.length > 0 && (
-                <div className="tab-pane fade show active" id="booking">
-                  <Accordion className="styled-booking-accordion">
+                <div className="tab-pane fade show active p-4" id="booking">
+                  <div className="styled-booking-accordion p-4">
                     {bookings.map((item, idx) => (
                       <Accordion.Item
                         eventKey={idx.toString()}
                         key={item.BookingID}
                         className="mb-3 shadow-sm rounded-3 border border-light"
                       >
-                        <Accordion.Header>
-                          <div className="d-flex justify-content-between align-items-center w-100">
-                            <div className="d-flex align-items-center gap-3">
-                              <Icon icon="mdi:calendar-check" className="text-primary fs-4" />
+                        <div>
+                          <div className="d-flex justify-content-between align-items-center w-100 p-3">
+                            <div className="d-flex align-items-center gap-3 ">
+                              <Icon
+                                icon="mdi:calendar-check"
+                                className="text-primary fs-4"
+                              />
                               <div>
-                                <h6 className="mb-0 text-dark fw-bold">
-                                  Booking #{item.BookingTrackID}
+                                <h6 className="mb-0 text-dark fw-bold p-2">
+                                  Booking ID :
+                                  <Link
+                                    to={`/booking-view/${item.BookingID}`}
+                                    className="text-primary mx-2"
+                                  >
+                                    {" "}
+                                    {item.BookingTrackID}
+                                  </Link>
                                 </h6>
-                                <small className="text-muted">
-                                  Scheduled:{" "}
-                                  {new Date(item.BookingDate).toLocaleDateString()} (
-                                  {item.TimeSlot})
-                                </small>
+                                {item.BookingDate && (
+                                  <small className="text-muted">
+                                    Booking Date:{" "}
+                                    {new Date(
+                                      item.BookingDate
+                                    ).toLocaleDateString()}
+                                    {/* ({item.TimeSlot}) */}
+                                  </small>
+                                )}
                               </div>
                             </div>
                             <span
@@ -216,50 +225,79 @@ const CustomerViewLayer = () => {
                               {item.BookingStatus}
                             </span>
                           </div>
-                        </Accordion.Header>
+                        </div>
 
-                        <Accordion.Body className="bg-white">
+                        <Accordion.Body className="bg-white d-none">
                           <div className="mb-4">
-                            <h6 className="text-primary fw-bold mb-3">📋 Booking Details</h6>
+                            <h6 className="text-primary fw-bold mb-3">
+                              📋 Booking Details
+                            </h6>
                             <div className="row g-3">
                               <div className="col-md-6">
-                                <strong>Customer Name:</strong> {item.CustomerName}
+                                <strong>Customer Name:</strong>{" "}
+                                {item.CustomerName}
                               </div>
                               <div className="col-md-6">
                                 <strong>Phone:</strong> {item.PhoneNumber}
                               </div>
-                              <div className="col-md-6">
-                                <strong>Vehicle No:</strong> {item.VehicleNumber}
+                              <div className="col-md-12">
+                                <strong>Address:</strong> {item.Leads?.City}
                               </div>
                               <div className="col-md-6">
-                                <strong>Brand:</strong> {item.BrandName}
+                                <strong>Vehicle No:</strong>{" "}
+                                {item.Leads?.Vehicle?.RegistrationNumber || "-"}
                               </div>
                               <div className="col-md-6">
-                                <strong>Model:</strong> {item.ModelName}
+                                <strong>Brand:</strong>{" "}
+                                {item.Leads?.Vehicle?.BrandName || "-"}
                               </div>
                               <div className="col-md-6">
-                                <strong>Fuel Type:</strong> {item.FuelTypeName}
+                                <strong>Model:</strong>{" "}
+                                {item.Leads.Vehicle?.ModelName || "-"}
                               </div>
                               <div className="col-md-6">
-                                <strong>Total Price:</strong> ₹{item.TotalPrice}
+                                <strong>Fuel Type:</strong>{" "}
+                                {item.Leads.Vehicle?.FuelTypeName || "-"}
+                              </div>
+                              <div className="col-md-6">
+                                <strong>KM Driven:</strong>{" "}
+                                {item.Leads.Vehicle?.KmDriven || "-"}
+                              </div>
+                              <div className="col-md-6">
+                                <strong>Year of Puchase:</strong>{" "}
+                                {item.Leads.Vehicle?.YearOfPurchase || "-"}
+                              </div>
+                              <div className="col-md-6">
+                                <strong>Total Price:</strong> ₹
+                                {item.TotalPrice || "-"}
                               </div>
                             </div>
                           </div>
 
                           {/* Packages */}
                           <div className="mb-4">
-                            <h6 className="text-warning fw-bold mb-3">📦 Packages</h6>
+                            <h6 className="text-warning fw-bold mb-3">
+                              📦 Packages
+                            </h6>
                             {item.Packages?.map((pkg) => (
-                              <div key={pkg.PackageID} className="mb-3 p-3 border rounded">
+                              <div
+                                key={pkg.PackageID}
+                                className="mb-3 p-3 border rounded"
+                              >
                                 <strong>{pkg.PackageName}</strong>{" "}
                                 <span className="text-muted">
                                   ({pkg.EstimatedDurationMinutes} mins)
                                 </span>
                                 {pkg.Category?.SubCategories?.map((sub) => (
-                                  <div key={sub.SubCategoryID} className="ms-3 mt-2">
+                                  <div
+                                    key={sub.SubCategoryID}
+                                    className="ms-3 mt-2"
+                                  >
                                     <ul className="mb-0">
                                       {sub.Includes?.map((inc) => (
-                                        <li key={inc.IncludeID}>{inc.IncludeName}</li>
+                                        <li key={inc.IncludeID}>
+                                          {inc.IncludeName}
+                                        </li>
                                       ))}
                                     </ul>
                                   </div>
@@ -269,7 +307,7 @@ const CustomerViewLayer = () => {
                           </div>
 
                           {/* Map */}
-                          <div>
+                          {/* <div>
                             <h6 className="text-info fw-bold mb-3">🗺️ Location</h6>
                             <div
                               className="rounded overflow-hidden border"
@@ -285,16 +323,16 @@ const CustomerViewLayer = () => {
                                 loading="lazy"
                               ></iframe>
                             </div>
-                          </div>
+                          </div> */}
                         </Accordion.Body>
                       </Accordion.Item>
                     ))}
-                  </Accordion>
+                  </div>
                 </div>
               )}
 
               {/* ✅ Payments Tab */}
-              <div
+              {/* <div
                 className={`tab-pane fade ${
                   bookings.length === 0 ? "show active" : ""
                 }`}
@@ -312,10 +350,10 @@ const CustomerViewLayer = () => {
                     </Accordion.Item>
                   ))}
                 </Accordion>
-              </div>
+              </div> */}
 
               {/* ✅ Vehicles Tab */}
-              <div className="tab-pane fade" id="vehicle">
+              {/* <div className="tab-pane fade" id="vehicle">
                 <div className="row">
                   {vehicles.map((car) => (
                     <div className="col-md-4 mb-3" key={car.VehicleID}>
@@ -352,10 +390,10 @@ const CustomerViewLayer = () => {
                     </div>
                   ))}
                 </div>
-              </div>
+              </div> */}
 
               {/* ✅ Address Tab */}
-              <div className="tab-pane fade" id="address">
+              {/* <div className="tab-pane fade" id="address">
                 <div className="row">
                   {addresses.map((address) => (
                     <div className="col-md-6 mb-3" key={address.AddressID}>
@@ -369,7 +407,7 @@ const CustomerViewLayer = () => {
                     </div>
                   ))}
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
@@ -395,19 +433,45 @@ const CustomerViewLayer = () => {
                     alt="Vehicle"
                     className="img-fluid rounded mb-3"
                   />
-                  <div><strong>Brand:</strong> {selectedVehicle.BrandName}</div>
-                  <div><strong>Model:</strong> {selectedVehicle.ModelName}</div>
-                  <div><strong>Fuel:</strong> {selectedVehicle.FuelTypeName}</div>
-                  <div><strong>Transmission:</strong> {selectedVehicle.TransmissionType}</div>
+                  <div>
+                    <strong>Brand:</strong> {selectedVehicle.BrandName}
+                  </div>
+                  <div>
+                    <strong>Model:</strong> {selectedVehicle.ModelName}
+                  </div>
+                  <div>
+                    <strong>Fuel:</strong> {selectedVehicle.FuelTypeName}
+                  </div>
+                  <div>
+                    <strong>Transmission:</strong>{" "}
+                    {selectedVehicle.TransmissionType}
+                  </div>
                 </div>
                 <div className="col-md-8">
                   <ul className="list-group">
-                    <li className="list-group-item"><strong>Vehicle Number:</strong> {selectedVehicle.VehicleNumber}</li>
-                    <li className="list-group-item"><strong>Year Of Purchase:</strong> {selectedVehicle.YearOfPurchase}</li>
-                    <li className="list-group-item"><strong>Engine Type:</strong> {selectedVehicle.EngineType}</li>
-                    <li className="list-group-item"><strong>Kilometers Driven:</strong> {selectedVehicle.KilometersDriven}</li>
-                    <li className="list-group-item"><strong>Created Date:</strong> {new Date(selectedVehicle.CreatedDate).toLocaleString()}</li>
-                    <li className="list-group-item"><strong>Status:</strong> {selectedVehicle.IsActive ? "Active" : "Inactive"}</li>
+                    <li className="list-group-item">
+                      <strong>Vehicle Number:</strong>{" "}
+                      {selectedVehicle.VehicleNumber}
+                    </li>
+                    <li className="list-group-item">
+                      <strong>Year Of Purchase:</strong>{" "}
+                      {selectedVehicle.YearOfPurchase}
+                    </li>
+                    <li className="list-group-item">
+                      <strong>Engine Type:</strong> {selectedVehicle.EngineType}
+                    </li>
+                    <li className="list-group-item">
+                      <strong>Kilometers Driven:</strong>{" "}
+                      {selectedVehicle.KilometersDriven}
+                    </li>
+                    <li className="list-group-item">
+                      <strong>Created Date:</strong>{" "}
+                      {new Date(selectedVehicle.CreatedDate).toLocaleString()}
+                    </li>
+                    <li className="list-group-item">
+                      <strong>Status:</strong>{" "}
+                      {selectedVehicle.IsActive ? "Active" : "Inactive"}
+                    </li>
                   </ul>
                 </div>
               </div>

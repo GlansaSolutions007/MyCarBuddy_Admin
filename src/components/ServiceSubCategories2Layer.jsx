@@ -178,10 +178,10 @@ const ServiceSubCategories2Layer = () => {
   });
 
   const columns = [
-    { name: "S.No", selector: (_, index) => index + 1, width: "80px" },
-    { name: "Sub Category Name", selector: (row) => row.SubCategoryName },
-    { name: "Category Name", selector: (row) => row.CategoryName },
-    { name: "Description", selector: (row) => row.Description },
+    { name: "S.No", selector: (_, index) => index + 1, width: "80px", sortable: true, },
+    { name: "Sub Category Name", selector: (row) => row.SubCategoryName, sortable: true, },
+    { name: "Category Name", selector: (row) => row.CategoryName, sortable: true, },
+    { name: "Description", selector: (row) => row.Description, sortable: true, },
     {
       name: "Status",
       cell: (row) => {

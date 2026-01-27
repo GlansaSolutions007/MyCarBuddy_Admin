@@ -62,17 +62,19 @@ const TechnicianLayer = () => {
 
 
   const columns = [
-    { name: "Tech ID", selector: (row) => row.TechID },
-    { name: "Full Name", selector: (row) => row.TechnicianName },
-    { name: "Email", selector: (row) => row.Email },
-    { name: "Phone", selector: (row) => row.PhoneNumber },
+    { name: "ID", selector: (row) => row.TechID, sortable: true, width: "80px"},
+    { name: "Full Name", selector: (row) => row.TechnicianName, sortable: true, width: "150px"},
+    { name: "Email", selector: (row) => row.Email, sortable: true, width: "200px", wrap:true },
+    { name: "Phone", selector: (row) => row.PhoneNumber, sortable: true, },
     // {
     //   name: "State",
     //   selector: (row) => row.StateName,
+    // sortable: true,
     // },
     // {
     //   name: "City",
     //   selector: (row) => row.CityName,
+    // sortable: true,
     // },
     {
       name: "Status",
@@ -102,6 +104,7 @@ const TechnicianLayer = () => {
         );
       },
       // width: "140px",
+      sortable: true,
     },
     {
       name: "Actions",

@@ -14,7 +14,7 @@ const TodayLeadsLayer = () => {
   const [error, setError] = useState("");
 
   // Assuming employee id is stored or retrieved from token or localStorage
-  const userId = localStorage.getItem("userId") 
+  const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -31,7 +31,8 @@ const TodayLeadsLayer = () => {
         (lead.Email && lead.Email.toLowerCase().includes(term)) ||
         (lead.City && lead.City.toLowerCase().includes(term)) ||
         (lead.AssignedDate && lead.AssignedDate.toLowerCase().includes(term)) ||
-        (lead.Leadcreateddate && lead.Leadcreateddate.toLowerCase().includes(term))
+        (lead.Leadcreateddate &&
+          lead.Leadcreateddate.toLowerCase().includes(term))
       );
     });
     setFilteredLeads(filtered);
@@ -85,7 +86,12 @@ const TodayLeadsLayer = () => {
     },
     {
       name: "Lead ID",
-      selector: (row) => row.LeadId || "-",
+      selector: (row) =>
+        (
+          <Link to={`/lead-view/${row.LeadId}`} className="text-primary">
+            {row.LeadId}
+          </Link>
+        ) || "-",
       sortable: true,
       width: "150px",
     },
@@ -139,20 +145,20 @@ const TodayLeadsLayer = () => {
       width: "150px",
     },
     {
-          name: "Action",
-          cell: (row) => (
-            <Link
-               to={`/lead-view/${row.LeadId}`}
-              className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-              title="View"
-            >
-            <Icon icon="lucide:eye" />
-            </Link>
-          ),
-          ignoreRowClick: true,
-          allowOverflow: true,
-          button: true,
-        }
+      name: "Action",
+      cell: (row) => (
+        <Link
+          to={`/lead-view/${row.LeadId}`}
+          className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+          title="View"
+        >
+          <Icon icon="lucide:eye" />
+        </Link>
+      ),
+      ignoreRowClick: true,
+      allowOverflow: true,
+      button: true,
+    },
   ];
 
   return (
@@ -170,7 +176,7 @@ const TodayLeadsLayer = () => {
               />
             </form>
           </div>
-          
+
           <DataTable
             columns={columns}
             data={filteredLeads}
@@ -180,7 +186,9 @@ const TodayLeadsLayer = () => {
             responsive
             striped
             persistTableHead
-            noDataComponent={loading ? "Loading leads..." : "No leads available"}
+            noDataComponent={
+              loading ? "Loading leads..." : "No leads available"
+            }
           />
         </div>
       </div>

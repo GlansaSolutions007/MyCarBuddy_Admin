@@ -7,6 +7,7 @@ import OverallReport from "./child/OverallReport";
 import PurchaseAndSales from "./child/PurchaseAndSales";
 import RecentTransactions from "./child/RecentTransactions";
 import TodaysBookings from "./child/TodaysBookings";
+import RevenueReportCharts from "./child/RevenueReportCharts";
 
 const DashBoardLayerTen = () => {
   const role = localStorage.getItem("role");
@@ -15,14 +16,14 @@ const DashBoardLayerTen = () => {
     <div className="row gy-4">
       {/* UnitCountSeven */}
       <UnitCountSeven />
-      
+
       {role === "Admin" && (
         <>
-          {/* IncomeVsExpense */}
-          <IncomeVsExpense />
+          {/* RevenueReportCharts */}
+          <RevenueReportCharts />
 
-          {/* TodayBookingsLayer */}
-          <TodaysBookings />
+          {/* IncomeVsExpense */}
+          {/* <IncomeVsExpense /> */}
 
           {/* UsersChart */}
           {/* <UsersChart /> */}
@@ -41,6 +42,9 @@ const DashBoardLayerTen = () => {
 
           {/* RecentTransactions */}
           <RecentTransactions />
+
+           {/* TodayBookingsLayer */}
+          <TodaysBookings />
         </>
       )}
     </div>

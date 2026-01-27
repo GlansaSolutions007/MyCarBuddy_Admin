@@ -55,7 +55,9 @@ const FaqsAddLayer = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      const packagesData = res.data.map((pkg) => ({
+       const packagesData = res.data
+      .filter((pkg) => pkg.IsActive === true)
+      .map((pkg) => ({
         value: pkg.PackageID,
         label: pkg.PackageName,
       }));
@@ -72,7 +74,9 @@ const FaqsAddLayer = () => {
       const res = await axios.get(`${API_BASE}Category`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const categoriesData = res.data.map((cat) => ({
+      const categoriesData = res.data
+      .filter((cat) => cat.IsActive === true)
+      .map((cat) => ({
         value: cat.CategoryID,
         label: cat.CategoryName,
       }));
@@ -268,12 +272,14 @@ const FaqsAddLayer = () => {
       selector: (row) => row.question,
       wrap: true,
       width: "30%",
+      sortable: true,
     },
     {
       name: "Explanation",
       selector: (row) => row.answer,
       wrap: true,
       width: "40%",
+      sortable: true,
     },
     {
       name: "Actions",
@@ -286,6 +292,7 @@ const FaqsAddLayer = () => {
         </button>
       ),
       width: "10%",
+      sortable: true,
     },
   ];
 
@@ -375,7 +382,7 @@ const FaqsAddLayer = () => {
               {!isEditMode && hasPermission("faqs_add") && (
                 <div className="col-12 d-flex justify-content-end mb-10">
                   <button
-                    className="btn btn-primary radius-8 px-14 py-2 d-flex align-items-center"
+                    className="btn btn-primary-600 radius-8 px-14 py-2 d-flex align-items-center"
                     onClick={handleAddFaq}
                   >
                     <Icon icon="ic:baseline-plus" />

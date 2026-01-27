@@ -370,8 +370,9 @@ const TelecalerAssignTicketLayer = () => {
                 }}
               />
             ),
-            width: "80px",
+            width: "90px",
             ignoreRowClick: true,
+            sortable: true,
           },
         ]
       : []),
@@ -383,14 +384,17 @@ const TelecalerAssignTicketLayer = () => {
         //   {row.TicketTrackId || row.ticket_id}
         // </Link>
       ),
+      sortable: true,
+      width: "150px"
     },
     {
-      name: "Customer",
+      name: "Cust. Name",
       selector: (row) => (
         <>
           <span className="fw-bold">{row.CustomerName || row.CustID}</span>
         </>
       ),
+      sortable: true,
     },
     {
       name: "Created Date",
@@ -409,65 +413,8 @@ const TelecalerAssignTicketLayer = () => {
         </span>
       ),
       wrap: true,
+      sortable: true,
     },
-    // {
-    //   name: "Ticket Status",
-    //   cell: (row) => {
-    //     const originalStatus = row.StatusName ?? "-";
-    //     const status = originalStatus === "Pending" ? "Created" : originalStatus;
-    //     const colorMap = {
-    //         Created: "bg-secondary text-white",
-    //         UnderReview: "bg-info text-white",
-    //         Awaiting: "bg-warning text-dark",
-    //         Resolved: "bg-success text-white",
-    //         Closed: "bg-dark text-white",
-    //         Cancelled: "bg-danger text-white",
-    //         Reopened: "bg-primary text-white",
-
-    //       };
-    //     const badgeClass = colorMap[status] || "bg-light text-dark";
-    //     return (
-    //       <span className={`badge rounded-pill px-3 py-1 ${badgeClass}`}>
-    //         {status}
-    //       </span>
-    //     );
-    //   },
-    //   wrap: true,
-    // },
-    // {
-    //   name: "Ticket Status",
-    //   cell: (row) => {
-    //     let status = row?.StatusName ?? "-";
-    //     if (!status || status === "-") status = "Not Assigned";
-    //     const colorMap = {
-    //       Pending: "text-secondary fw-semibold",
-    //       UnderReview: "text-info fw-semibold",
-    //       Awaiting: "text-warning fw-semibold",
-    //       Resolved: "text-success fw-semibold",
-    //       Closed: "text-dark fw-semibold",
-    //       Cancelled: "text-danger fw-semibold",
-    //       Reopened: "text-primary fw-semibold",
-    //       Forward: "text-purple fw-semibold",
-    //       "Not Assigned": "text-muted fw-semibold",
-    //     };
-    //     const textClass = colorMap[status] || "text-muted";
-    //     return (
-    //       <span className={textClass}>
-    //         <span
-    //           className="rounded-circle"
-    //           style={{
-    //             width: "8px",
-    //             height: "8px",
-    //             marginRight: "4px",
-    //             backgroundColor: "currentColor",
-    //           }}
-    //         ></span>
-    //         {status}
-    //       </span>
-    //     );
-    //   },
-    //   wrap: true,
-    // },
     {
       name: "Ticket Status",
       cell: (row) => {
@@ -505,11 +452,13 @@ const TelecalerAssignTicketLayer = () => {
         );
       },
       wrap: true,
+      sortable: true,
     },
     {
       name: "Description",
       selector: (row) => row.Description || row.TicketDescription,
       wrap: true,
+      sortable: true,
     },
     {
       name: "Actions",

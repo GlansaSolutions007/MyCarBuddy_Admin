@@ -467,7 +467,7 @@ const [loading, setLoading] = useState(false);
         <strong>Total SEO Score:</strong> {seoData.seo_score} / 100
       </div>
       {hasPermission("seo_add") && (
-        <button className="btn btn-primary" onClick={(e) => handleSubmit(e)} disabled={loading}>
+        <button className="btn btn-primary-600 btn-sm d-flex align-items-center justify-content-center gap-1" onClick={(e) => handleSubmit(e)} disabled={loading}>
           {loading ? "Saving..." : (seoData.seo_id ? "Update SEO" : "Add SEO")}
         </button>
       )}

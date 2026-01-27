@@ -24,28 +24,33 @@ const ContactsLayer = () => {
     {
       name: "S No.",
       selector: (_, index) => index + 1,
-      width: "80px",
+      width: "100px",
+      sortable: true,
     },
     {
       name: "Name",
       selector: (row) => row.Name,
+      sortable: true,
     },
     {
       name: "Email",
       selector: (row) => row.Email,
       width: "280px",
+      sortable: true,
     },
     {
       name: "Phone Number",
       selector: (row) => row.PhoneNumber,
+      sortable: true,
     },
     {
       name: "Subject",
       selector: (row) => row.Subject,
+      sortable: true,
     },
     {
       name: "Message",
-      selector: (row) => row.Message,
+      selector: (row) => row.Message,sortable: true,
     },
   ];
 

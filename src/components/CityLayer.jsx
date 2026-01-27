@@ -146,21 +146,25 @@ const CityLayer = () => {
       name: "S.No",
       selector: (_, index) => index + 1,
       width: "80px",
+      sortable: true,
     },
-    {
-      name: "State Name",
-      selector: (row) => row.StateName || "—",
-    },
-
     {
       name: "City Name",
       selector: (row) => row.CityName,
       sortable: true,
+      width: "150px"
+    },
+    {
+      name: "State Name",
+      selector: (row) => row.StateName || "—",
+      sortable: true,
+      width: "150px"
     },
     {
       name: "Pincode",
       selector: (row) => row.Pincode,
       sortable: true,
+      width: "120px"
     },
 
     {
@@ -190,6 +194,7 @@ const CityLayer = () => {
           </span>
         );
       },
+      sortable: true,
       // width: "150px",
     },
     ...(hasPermission("city_edit")

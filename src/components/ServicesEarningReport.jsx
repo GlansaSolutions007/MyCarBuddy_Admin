@@ -86,14 +86,17 @@ const ServicesEarningReport = () => {
     {
       name: "GST",
       selector: (row) => row.GST,
+      sortable: true,
     },
     {
       name: "Our Percentage",
       selector: (row) => row.OurPercentage,
+      sortable: true,
     },
     {
       name: "Our Earnings",
       selector: (row) => row.OurEarnings,
+      sortable: true,
     },
 
     // {

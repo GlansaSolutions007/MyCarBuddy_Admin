@@ -92,13 +92,8 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
           {row.TicketTrackId || "-"}
         </Link>
       ),
+      sortable: true,
     },
-    // {
-    //   name: "Customer Name",
-    //   selector: (row) => (
-    //       <span className="fw-bold">{row.CustomerName || "N/A"}</span>
-    //   ),
-    // },
     {
       name: "Customer Name",
       selector: (row) => row.CustomerName,
@@ -108,10 +103,12 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
           : "N/A";
         return <span className="fw-bold">{formattedName}</span>;
       },
+      sortable: true,
     },
     {
       name: "Booking id",
       selector: (row) => row.BookingTrackID || "-",
+      sortable: true,
     },
     {
       name: "Created Date",
@@ -125,40 +122,8 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
         });
       },
       wrap: true,
+      sortable: true,
     },
-    // {
-    //   name: "Ticket Status",
-    //   cell: (row) => {
-    //     let status = row?.StatusName ?? "-";
-    //     const colorMap = {
-    //       Pending: "text-secondary fw-semibold",
-    //       UnderReview: "text-info fw-semibold",
-    //       Awaiting: "text-warning fw-semibold",
-    //       Resolved: "text-success fw-semibold",
-    //       Closed: "text-dark fw-semibold",
-    //       Cancelled: "text-danger fw-semibold",
-    //       Reopened: "text-primary fw-semibold",
-    //       Forward: "text-purple fw-semibold",
-    //       UserResponse: "text-teal fw-semibold",
-    //     };
-    //     const textClass = colorMap[status] || "text-muted";
-    //     return (
-    //       <span className={textClass}>
-    //         <span
-    //           className="rounded-circle"
-    //           style={{
-    //             width: "8px",
-    //             height: "8px",
-    //             marginRight: "4px",
-    //             backgroundColor: "currentColor",
-    //           }}
-    //         ></span>
-    //         {status}
-    //       </span>
-    //     );
-    //   },
-    //   wrap: true,
-    // },
     {
       name: "Ticket Status",
       cell: (row) => {
@@ -196,6 +161,7 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
       name: "Description",
       selector: (row) => row.Description || "-",
       wrap: true,
+      sortable: true,
     },
     {
       name: "Actions",

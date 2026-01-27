@@ -5,8 +5,6 @@ import axios from "axios";
 import useFormError from "../hook/useFormError"; // form errors
 import FormError from "../components/FormError"; // form errors
 
-
-
 const SignInLayer = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -38,12 +36,11 @@ const SignInLayer = () => {
       const data = response.data;
       localStorage.setItem("token", data.token);
       localStorage.setItem("userId", data.id);
-      
+
       localStorage.setItem("roleId", data.roleID);
-      if(data.roleID == 1){
-        localStorage.setItem("role", 'Admin');
-      }
-      else{
+      if (data.roleID == 1) {
+        localStorage.setItem("role", "Admin");
+      } else {
         localStorage.setItem("role", data.role);
       }
 
@@ -52,10 +49,16 @@ const SignInLayer = () => {
       // If role is Employee, fetch additional employee data
       if (data.role === "Employee") {
         try {
-          const employeeRes = await axios.get(`${import.meta.env.VITE_APIURL}Employee/Id?Id=${data.id}`, {
-            headers: { Authorization: `Bearer ${data.token}` },
-          });
-          localStorage.setItem("employeeData", JSON.stringify(employeeRes.data[0]));
+          const employeeRes = await axios.get(
+            `${import.meta.env.VITE_APIURL}Employee/Id?Id=${data.id}`,
+            {
+              headers: { Authorization: `Bearer ${data.token}` },
+            }
+          );
+          localStorage.setItem(
+            "employeeData",
+            JSON.stringify(employeeRes.data[0])
+          );
         } catch (err) {
           console.error("Failed to fetch employee data", err);
           // Optionally handle error, but proceed to dashboard
@@ -70,50 +73,63 @@ const SignInLayer = () => {
     }
   };
 
-
   return (
-    <section className='auth bg-base d-flex flex-wrap login-bg'>
-      
+    <section className="auth bg-base d-flex flex-wrap login-bg">
       {/* <div className='auth-left d-lg-block d-none'>
         <div className='d-flex align-items-center flex-column h-100 justify-content-center'>
           <img src='assets/images/auth/auth-img.png' alt='WowDash React Vite' />
         </div>
       </div> */}
-      
-      <div className=' auth-right py-32 px-24 d-flex flex-column justify-content-center'>
-        <div className='card max-w-464-px mx-auto w-100 p-5'>
-           <div className="mb-3 d-flex justify-content-center">
-              <img
+
+      <div className=" auth-right py-24 px-24 d-flex flex-column justify-content-center">
+        <div className="card max-w-464-px mx-auto w-100 p-5">
+          <Link to="/index" className="d-flex justify-content-center mb-3">
+            <img
+              src="/assets/images/MyCarBuddy-Logo1.webp"
+              alt="MyCarBuddy Logo"
+              style={{
+                width: "220px", // 👈 slightly smaller
+                height: "auto",
+                objectFit: "contain",
+              }}
+            />
+          </Link>
+          {/* <div className="mb-3 d-flex justify-content-center">
+            <img
                 src="assets/images/avatar.png" // 👉 Replace with your image pat    h
                 alt="User"
                 className="rounded-circle"
                 style={{ width: "80px", height: "80px", objectFit: "cover", border: "2px solid #e5e5e5", padding: "3px" }}
-              />
-            </div>
+            />
+          </div> */}
           <div>
             {/* <Link to='/index' className='mb-40 max-w-290-px'>
-              <img src='assets/images/logo.png' alt='MYCarBuddy' />
+              <img src='/assets/images/MyCarBuddy-Logo1.webp' />
             </Link> */}
-            <h5 className='mb-3 text-center '>Sign In </h5>
-            {/* <p className='mb-32 text-secondary-light text-lg'>
-              Welcome back! please enter your detail
-            </p> */}
+            <h5 className="mb-2 mt-3 text-center text-lg">
+              Log In to your Account{" "}
+            </h5>
+            <p className="mb-32 text-center text-secondary-light text-sm">
+              Welcome back! please enter details
+            </p>
           </div>
-          <form onSubmit={handleSubmit} className='form' noValidate>
-            <div className='icon-field '>
-              <span className='icon top-50 translate-middle-y'>
-                <Icon icon='mage:email' />
+          <form onSubmit={handleSubmit} className="form" noValidate>
+            <div className="icon-field ">
+              <span className="icon top-50 translate-middle-y">
+                <Icon icon="mage:email" />
               </span>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className={`form-control h-56-px bg-neutral-50 radius-12 ${errors.email ? "is-invalid" : ""}`}
-                placeholder="Email"
+                className={`form-control h-56-px bg-neutral-50 radius-12 ${
+                  errors.email ? "is-invalid" : ""
+                }`}
+                placeholder="Enter Your Email"
               />
 
-               {/* <input
+              {/* <input
                 type="text"
                 name="phoneNumber"
                 value={formData.phoneNumber}
@@ -121,10 +137,9 @@ const SignInLayer = () => {
                 className={`form-control h-56-px bg-neutral-50 radius-12 ${errors.password ? "is-invalid" : ""}`}
                 placeholder="Phone Number or Email"
               /> */}
-             
             </div>
-             <FormError error={errors.phoneNumber} />
-            <div className='position-relative mb-20 mt-16'>
+            <FormError error={errors.phoneNumber} />
+            <div className="position-relative mb-20 mt-16">
               <div className="icon-field">
                 <span className="icon top-50 translate-middle-y">
                   <Icon icon="solar:lock-password-outline" />
@@ -135,20 +150,23 @@ const SignInLayer = () => {
                   value={formData.password}
                   onChange={handleChange}
                   className={`form-control h-56-px bg-neutral-50 radius-12 `}
-                  placeholder="Password"
+                  placeholder="Enter Your Password"
                 />
               </div>
               <FormError error={errors.password} />
               <span
-                  className='position-absolute end-0 top-50 translate-middle-y me-16 text-secondary-light cursor-pointer'
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  <Icon icon={showPassword ? "mdi:eye-off" : "mdi:eye"} width={20} />
-                </span>
+                className="position-absolute end-0 top-50 translate-middle-y me-16 text-secondary-light cursor-pointer"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                <Icon
+                  icon={showPassword ? "mdi:eye-off" : "mdi:eye"}
+                  width={20}
+                />
+              </span>
             </div>
-            <div className=''>
-              <div className='d-flex justify-content-between gap-2'>
-                <div className='form-check style-check d-flex align-items-center'>
+            <div className="">
+              <div className="d-flex justify-content-between gap-2">
+                <div className="form-check style-check d-flex align-items-center">
                   {/* <input
                     className='form-check-input border border-neutral-300'
                     type='checkbox'
@@ -159,11 +177,14 @@ const SignInLayer = () => {
                     Remember me{" "}
                   </label> */}
                 </div>
-                <Link to='/forgot-password' className='text-primary-600 fw-medium'>
+                <Link
+                  to="/forgot-password"
+                  className="text-primary-600 fw-medium"
+                >
                   Forgot Password?
                 </Link>
               </div>
-               {apiError && <div className="text-danger mt-3">{apiError}</div>}
+              {apiError && <div className="text-danger mt-3">{apiError}</div>}
             </div>
             <button
               type="submit"
@@ -172,8 +193,7 @@ const SignInLayer = () => {
             >
               {loading ? "Signing In..." : "Sign In"}
             </button>
-            
-            
+
             {/* <div className='mt-32 center-border-horizontal text-center'>
               <span className='bg-base z-1 px-4'>Or sign in with</span>
             </div> */}
@@ -210,9 +230,13 @@ const SignInLayer = () => {
           </form>
         </div>
       </div>
-      <div className='auth-left d-lg-block d-none bg-none'>
-        <div className='d-flex align-items-center flex-column h-100 justify-content-center'>
-            <img src='assets/images/sign-car.png' alt='MYCARBUDDY ' style={{width:"80%"}} />
+      <div className="auth-left d-lg-block d-none bg-none">
+        <div className="d-flex align-items-center flex-column h-100 justify-content-center">
+          <img
+            src="assets/images/sign-car.png"
+            alt="MYCARBUDDY "
+            style={{ width: "80%" }}
+          />
         </div>
       </div>
     </section>

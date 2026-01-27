@@ -86,13 +86,13 @@ const SeoListLayer = () => {
     {
       name: "Description",
       selector: (row) => row.seo_description,
-      sortable: false,
+      sortable: true,
       wrap: true,
     },
     {
       name: "Keywords",
       cell: (row) => <KeywordsCell row={row} />,
-      sortable: false,
+      sortable: true,
       wrap: true,
     },
     ...(hasPermission("seo_edit")

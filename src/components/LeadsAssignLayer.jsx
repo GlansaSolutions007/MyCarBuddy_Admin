@@ -75,7 +75,7 @@ const LeadsAssignLayer = () => {
         // Show leads assigned to this head and not assigned to employee
         filteredData = mappedData.filter(
           (lead) =>
-            lead.Head_Assign === userDetails.Id &&
+            Number(lead.Head_Assign) === Number(userDetails.Id) &&
             (lead.IsAssigned_Emp == null || lead.IsAssigned_Emp == 0)
         );
       } else {
@@ -387,34 +387,53 @@ const LeadsAssignLayer = () => {
                 }}
               />
             ),
-            width: "80px",
+            width: "90px",
             ignoreRowClick: true,
+            sortable: true,
           },
         ]
       : []),
     {
       name: "Lead ID",
-      selector: (row) => <span>{row.LeadTrackId}</span>,
+      selector: (row) => (
+        <Link to={`/lead-view/${row.LeadTrackId}`} className="text-primary">
+          {row.LeadTrackId}
+        </Link>
+      ),
+      sortable: true,
+      width: "150px"
     },
     {
-      name: "Customer",
+      name: "Cust. Name",
       selector: (row) => <span>{row.CustomerName}</span>,
+      sortable: true,
+      width: "150px"
     },
     {
       name: "Phone",
       selector: (row) => row.PhoneNumber || "-",
+      sortable: true,
+      width: "150px"
     },
     {
       name: "Email",
       selector: (row) => row.Email || "-",
+      sortable: true,
+      width: "150px",
+      wrap:true
     },
     {
-      name: "City",
-      selector: (row) => row.City || "-",
+      name: "Address",
+      selector: (row) => row.City || "",
+      sortable: true,
+      width: "150px",
+      wrap: true
     },
     {
       name: "Platform",
       selector: (row) => row.Platform || "-",
+      sortable: true,
+      width: "120px"
     },
     {
       name: "Created Date",
@@ -430,12 +449,15 @@ const LeadsAssignLayer = () => {
         </span>
       ),
       wrap: true,
+      sortable: true,
+      width: "150px"
     },
     {
       name: "Description",
       selector: (row) => row.Description,
       wrap: true,
       width: "200px",
+      sortable: true,
     },
     {
       name: "Actions",
@@ -476,7 +498,7 @@ const LeadsAssignLayer = () => {
               </div>
               <div>
                 <label className="form-label fw-semibold">
-                  Selected Leads :{" "}
+                  Selected Leads for Assign :{" "}
                 </label>
                 <span
                   className="fw-bold text-primary fs-5"
@@ -624,9 +646,6 @@ const LeadsAssignLayer = () => {
           <label className="form-label fw-semibold">
             {role === "Employee" ? "Assigned Leads" : "Available Leads"}
           </label>
-          {error ? (
-            <div className="alert alert-danger m-3">{error}</div>
-          ) : (
             <div className="border rounded p-3">
               <DataTable
                 columns={leadColumns}
@@ -646,7 +665,6 @@ const LeadsAssignLayer = () => {
                 }
               />
             </div>
-          )}
         </div>
 
         {(role === "Admin" || userDetails?.Is_Head === 1) && (

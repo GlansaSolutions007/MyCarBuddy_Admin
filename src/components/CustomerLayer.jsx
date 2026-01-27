@@ -37,19 +37,27 @@ const CustomerLayer = () => {
     {
       name: "S.No",
       selector: (_, index) => index + 1,
+      sortable: true,
       width: "80px",
     },
     {
       name: "Full Name",
       selector: (row) => row.FullName,
+      sortable: true,
+      width: "200px"
     },
     {
       name: "Email",
       selector: (row) => row.Email,
+      sortable: true,
+      wrap: true,
+      width: "200px"
     },
     {
       name: "Phone",
       selector: (row) => row.PhoneNumber,
+      sortable: true,
+      width: "150px"
     },
     {
       name: "Status",
@@ -83,6 +91,7 @@ const CustomerLayer = () => {
           </span>
         );
       },
+      sortable: true,
       width: "150px",
     },
     ...(hasPermission("viewcustomer_view")

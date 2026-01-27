@@ -81,8 +81,8 @@ export default function NotificationTemplates() {
 
   const columns = [
     { name: "Name", selector: (row) => row.TemplateName, sortable: true },
-    { name: "Type", selector: (row) => row.TemplateType },
-    { name: "Status", selector: (row) => row.IsActive ? "Active" : "Inactive" },
+    { name: "Type", selector: (row) => row.TemplateType, sortable: true, },
+    { name: "Status", selector: (row) => row.IsActive ? "Active" : "Inactive", sortable: true, },
     {
       name: "Actions",
       cell: (row) => (

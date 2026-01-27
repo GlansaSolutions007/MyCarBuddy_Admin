@@ -20,11 +20,11 @@ const formatTime = (timeStr) => {
       const hour = parseInt(match[1], 10);
       const minute = match[2] ? parseInt(match[2], 10) : 0;
       const period = match[3].toUpperCase();
-      const hh = (hour % 12) || 12;
-      const mm = minute.toString().padStart(2, '0');
+      const hh = hour % 12 || 12;
+      const mm = minute.toString().padStart(2, "0");
       return `${hh}:${mm} ${period}`;
     }
-    return raw.replace(/am/i, 'AM').replace(/pm/i, 'PM');
+    return raw.replace(/am/i, "AM").replace(/pm/i, "PM");
   }
 
   // Extract HH and MM from formats like HH:MM or HH:MM:SS or even just HH
@@ -33,9 +33,9 @@ const formatTime = (timeStr) => {
   const hour24 = parseInt(match[1], 10);
   const minute = match[2] ? parseInt(match[2], 10) : 0;
   if (Number.isNaN(hour24) || Number.isNaN(minute)) return raw;
-  const period = hour24 >= 12 ? 'PM' : 'AM';
-  const hour12 = (hour24 % 12) || 12;
-  return `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
+  const period = hour24 >= 12 ? "PM" : "AM";
+  const hour12 = hour24 % 12 || 12;
+  return `${hour12}:${minute.toString().padStart(2, "0")} ${period}`;
 };
 
 const BookingLayer = () => {
@@ -52,22 +52,30 @@ const BookingLayer = () => {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [status, setStatus] = useState("all");
-    const [timeSlots, setTimeSlots] = useState([]);
+  const [timeSlots, setTimeSlots] = useState([]);
 
   // New states for Supervisor Assignment
   const [supervisors, setSupervisors] = useState([]);
   const [selectedSupervisor, setSelectedSupervisor] = useState(null);
-  const [assignType, setAssignType] = useState("technician"); // 'technician' | 'supervisor'
+  const [assignType, setAssignType] = useState("technician"); // 'technician' | 'supervisor' | 'fieldAdvisor'
+
+  // States for Field Advisor Assignment
+  const [fieldAdvisors, setFieldAdvisors] = useState([]);
+  const [selectedFieldAdvisor, setSelectedFieldAdvisor] = useState(null);
 
   const API_BASE = import.meta.env.VITE_APIURL;
   const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
   const roleId = localStorage.getItem("roleId");
+  const employeeData = JSON.parse(localStorage.getItem("employeeData"));
+  const roleName = employeeData?.RoleName;
   const userId = localStorage.getItem("userId"); // Assuming userId is available in localStorage
 
   useEffect(() => {
     fetchTechnicians();
     fetchBookings();
     fetchSupervisors(); // Fetch supervisors on component mount
+    fetchFieldAdvisors(); // Fetch field advisors on component mount
     getTimeSlotOptions(); // Fetch time slots on component mount
   }, []);
 
@@ -83,6 +91,10 @@ const BookingLayer = () => {
       if (roleId === "8") {
         // If supervisor
         url = `${API_BASE}Supervisor/AssingedBookings?SupervisorID=${userId}`;
+      } else if (roleId === "3") {
+        url = `${API_BASE}Bookings?type=${role}&dealerid=${userId}`;
+       } else if (roleId === "9") {
+        url = `${API_BASE}Bookings?employeeId=${userId}`; 
       } else {
         // For all other roles
         url = `${API_BASE}Bookings`;
@@ -93,7 +105,7 @@ const BookingLayer = () => {
       });
 
       const sortedBookings = res.data.sort(
-        (a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate)
+        (a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate),
       );
 
       setBookings(sortedBookings);
@@ -111,7 +123,7 @@ const BookingLayer = () => {
         res.data.jsonResult.map((t) => ({
           value: t.TechID,
           label: `${t.TechnicianName} (${t.PhoneNumber})`,
-        }))
+        })),
       );
     } catch (error) {
       console.error("Failed to load technicians", error);
@@ -129,11 +141,14 @@ const BookingLayer = () => {
         : res.data?.data || [];
 
       const supervisorList = employees
-        .filter(
-          (emp) =>
-            emp.DepartmentName?.toLowerCase() === "supervisor" ||
-            emp.RoleName?.toLowerCase() === "supervisor"
-        )
+        .filter((emp) => {
+          const department = emp.DepartmentName?.trim().toLowerCase();
+          const role = emp.RoleName?.trim().toLowerCase();
+          return (
+            department === "supervisor" &&
+            (role === "supervisor" || role === "supervisor head")
+          );
+        })
         .map((emp) => ({
           value: emp.Id,
           label: `${emp.Name} (${emp.PhoneNumber || "N/A"})`,
@@ -146,10 +161,39 @@ const BookingLayer = () => {
     }
   };
 
+  const fetchFieldAdvisors = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}Employee`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const employees = Array.isArray(res.data)
+        ? res.data
+        : res.data?.data || [];
+
+      const fieldAdvisorList = employees
+        .filter(
+          (emp) =>
+            emp.DepartmentName?.toLowerCase() === "field advisor" ||
+            emp.RoleName?.toLowerCase() === "field advisor",
+        )
+        .map((emp) => ({
+          value: emp.Id,
+          label: `${emp.Name} (${emp.PhoneNumber || "N/A"})`,
+        }));
+
+      setFieldAdvisors(fieldAdvisorList);
+    } catch (error) {
+      console.error("Failed to fetch field advisors:", error);
+      setFieldAdvisors([]);
+    }
+  };
+
   const handleAssignClick = (booking) => {
     setSelectedBooking(booking);
     setSelectedTechnician(null);
     setSelectedSupervisor(null); // Reset supervisor selection
+    setSelectedFieldAdvisor(null); // Reset field advisor selection
     setAssignType("technician"); // Default to technician when opening modal
 
     const slots = booking.TimeSlot?.split(",").map((s) => s.trim()) || [];
@@ -158,17 +202,17 @@ const BookingLayer = () => {
       const [start, end] = slot.split(" - ");
       setSelectedTimeSlot({
         value: slot,
-        label: `${formatTime(start)} - ${formatTime(end)}`
+        label: `${formatTime(start)} - ${formatTime(end)}`,
       });
     } else {
       setSelectedTimeSlot(null);
     }
-
     setAssignModalOpen(true);
   };
 
   const handleAssignConfirm = async () => {
-    if (!selectedTimeSlot) {
+    // Time slot validation only for technician and supervisor
+    if (assignType !== "fieldAdvisor" && !selectedTimeSlot) {
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -181,40 +225,60 @@ const BookingLayer = () => {
     let apiUrl;
     let method;
 
-    // Common payload format
-    payload = {
-      bookingID: selectedBooking.BookingID,
-      techID:
-        assignType === "technician"
-          ? selectedTechnician?.value
-          : selectedSupervisor?.value,
-      assingedTimeSlot: selectedTimeSlot.value,
-      role: assignType === "technician" ? "Technician" : "Supervisor",
-    };
+    // Handle Field Advisor assignment
+    if (assignType === "fieldAdvisor") {
+      if (!selectedFieldAdvisor) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Please select a field advisor before assigning.",
+        });
+        return;
+      }
 
-    // API URL and method differ based on assign type
-    if (assignType === "technician") {
-      if (!selectedTechnician) {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "Please select a technician before assigning.",
-        });
-        return;
-      }
-      apiUrl = `${API_BASE}Bookings/assign-technician`;
-      method = "put";
+      payload = {
+        bookingIds: [selectedBooking.BookingID],
+        supervisorHeadId: Number(userId),
+        fieldAdvisorId: selectedFieldAdvisor.value,
+      };
+      apiUrl = `${API_BASE}Supervisor/AssignToFieldAdvisor`;
+      method = "post";
     } else {
-      if (!selectedSupervisor) {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "Please select a supervisor before assigning.",
-        });
-        return;
+      // Common payload format for technician and supervisor
+      payload = {
+        bookingID: selectedBooking.BookingID,
+        techID:
+          assignType === "technician"
+            ? selectedTechnician?.value
+            : selectedSupervisor?.value,
+        assingedTimeSlot: selectedTimeSlot.value,
+        role: assignType === "technician" ? "Technician" : "Supervisor",
+      };
+
+      // API URL and method differ based on assign type
+      if (assignType === "technician") {
+        if (!selectedTechnician) {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Please select a technician before assigning.",
+          });
+          return;
+        }
+        apiUrl = `${API_BASE}Bookings/assign-technician`;
+        method = "put";
+      } else {
+        if (!selectedSupervisor) {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Please select a supervisor before assigning.",
+          });
+          return;
+        }
+        apiUrl = `${API_BASE}Bookings/assign-technician`;
+        method = "put";
       }
-      apiUrl = `${API_BASE}Bookings/assign-technician`;
-      method = "put";
     }
 
     try {
@@ -226,25 +290,36 @@ const BookingLayer = () => {
       });
 
       if (res.status === 200 || res.status === 201) {
+        const assignTypeLabel =
+          assignType === "technician"
+            ? "Technician"
+            : assignType === "supervisor"
+              ? "Supervisor"
+              : "Field Advisor";
+
         Swal.fire({
           icon: "success",
           title: "Success",
-          text:
-            res.data.message ||
-            `${assignType === "technician" ? "Technician" : "Supervisor"} assigned successfully`,
+          text: res.data.message || `${assignTypeLabel} assigned successfully`,
         });
         fetchBookings();
         setAssignModalOpen(false);
         setSelectedTechnician(null);
         setSelectedSupervisor(null);
+        setSelectedFieldAdvisor(null);
         setAssignType("technician");
       } else {
+        const assignTypeLabel =
+          assignType === "technician"
+            ? "technician"
+            : assignType === "supervisor"
+              ? "supervisor"
+              : "field advisor";
+
         Swal.fire({
           icon: "error",
           title: "Error",
-          text:
-            res.data.message ||
-            `Failed to assign ${assignType === "technician" ? "technician" : "supervisor"}`,
+          text: res.data.message || `Failed to assign ${assignTypeLabel}`,
         });
       }
     } catch (error) {
@@ -259,88 +334,137 @@ const BookingLayer = () => {
     }
   };
 
+  const getTimeSlotOptions = () => {
+    if (!selectedBooking || !selectedBooking.TimeSlot) return [];
+    return selectedBooking.TimeSlot.split(",").map((slot) => ({
+      value: slot.trim(),
+      label: slot.trim(),
+    }));
+    console.log("selected");
+  };
 
-
-  // const getTimeSlotOptions = () => {
-  //   if (!selectedBooking || !selectedBooking.TimeSlot) return [];
-  //   return selectedBooking.TimeSlot.split(",").map((slot) => ({
-  //     value: slot.trim(),
-  //     label: slot.trim(),
-  //   }));
-
-
+  // const getTimeSlotOptions = async () => {
+  //   try {
+  //     const response = await axios.get(`${API_BASE}TimeSlot`, {
+  //       headers: { Authorization: `Bearer ${token}` },
+  //     });
+  //     setTimeSlots(
+  //       response.data
+  //         .filter((slot) => slot.IsActive ?? slot.Status ?? slot.status) // Only active slots
+  //         .sort((a, b) => {
+  //           const [aHour, aMinute] = (a.StartTime || a.startTime)
+  //             .split(":")
+  //             .map(Number);
+  //           const [bHour, bMinute] = (b.StartTime || b.startTime)
+  //             .split(":")
+  //             .map(Number);
+  //           return aHour * 60 + aMinute - (bHour * 60 + bMinute);
+  //         })
+  //         .map((slot) => ({
+  //           value: `${slot.StartTime || slot.startTime} - ${
+  //             slot.EndTime || slot.endTime
+  //           }`,
+  //           label: `${formatTime(
+  //             slot.StartTime || slot.startTime
+  //           )} - ${formatTime(slot.EndTime || slot.endTime)}`,
+  //         }))
+  //     );
+  //   } catch (err) {
+  //     console.error("Error fetching time slots:", err);
+  //   }
   // };
 
-
-    const getTimeSlotOptions = async () => {
-      try {
-        const response = await axios.get(`${API_BASE}TimeSlot`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setTimeSlots(
-          response.data
-            .filter((slot) => slot.IsActive ?? slot.Status ?? slot.status) // Only active slots
-            .sort((a, b) => {
-              const [aHour, aMinute] = (a.StartTime || a.startTime).split(":").map(Number);
-              const [bHour, bMinute] = (b.StartTime || b.startTime).split(":").map(Number);
-              return aHour * 60 + aMinute - (bHour * 60 + bMinute);
-            })
-            .map((slot) => ({
-              value: `${slot.StartTime || slot.startTime} - ${slot.EndTime || slot.endTime}`,
-              label: `${formatTime(slot.StartTime || slot.startTime)} - ${formatTime(slot.EndTime || slot.endTime)}`,
-            }))
-        );
-
-      } catch (err) {
-        console.error("Error fetching time slots:", err);
-      }
-    };
-
-  const columns = [
-    ...(hasPermission("bookingview_view")
-    ? [
+  const allColumns = [
     {
       name: "Booking id",
       selector: (row) => (
-        <Link to={`/booking-view/${row.BookingID}`} className="text-primary">
+        <Link
+          to={
+            role === "Dealer"
+              ? `/dealer-booking-view/${row.LeadId}`
+              : `/booking-view/${row.BookingID}`
+          }
+          className="text-primary"
+        >
           {row.BookingTrackID}
         </Link>
       ),
-      width: "150px",
+      width: "160px",
+      sortable: true,
     },
-      ]
-    : []),
+
     {
-      name: "Booking date",
+      name: "Date",
       selector: (row) => {
-        if (!row.CreatedDate) return "";
-        const date = new Date(row.CreatedDate);
+        const rawDate = row.BookingDate || row.CreatedDate;
+        if (!rawDate) return "-";
+
+        const date = new Date(rawDate);
+        if (isNaN(date)) return "-";
+
         return `${String(date.getDate()).padStart(2, "0")}/${String(
-          date.getMonth() + 1
+          date.getMonth() + 1,
         ).padStart(2, "0")}/${date.getFullYear()}`;
       },
       width: "120px",
+      sortable: true,
     },
-    // {
-    //   name: "Time slot",
-    //   selector: (row) => row.TimeSlot,
-    //   width: "160px",
-    // },
-    // {
-    //   name: "Booking price",
-    //   selector: (row) =>
-    //     `₹${(row.TotalPrice + row.GSTAmount - row.CouponAmount).toFixed(2)}`,
-    //   width: "120px",
-    // },
     {
-      name: "Customer name",
+      name: "Time slot",
+      selector: (row) => row.TimeSlot || row.AssignedTimeSlot || "-",
+      width: "220px",
+      sortable: true,
+      wrap: true
+    },
+    {
+      name: "Amount",
+      selector: (row) =>
+        `₹${(row.TotalPrice + row.GSTAmount + row.LabourCharges - row.CouponAmount).toFixed(2)}`,
+      width: "120px",
+      sortable: true,
+    },
+    {
+      name: "Cust. Name",
       selector: (row) => (
         <>
-          <span className="fw-bold">{row.CustFullName}</span> <br />
-          {row.CustPhoneNumber || ""}
+          <span className="fw-bold">
+            {" "}
+            {row.CustFullName || row.CustomerName || "-"}
+          </span>{" "}
+          <br />
+          {row.CustPhoneNumber || row.PhoneNumber || ""}
         </>
       ),
       width: "150px",
+      sortable: true,
+    },
+    {
+      name: "Supervisor",
+      selector: (row) => (
+        <>
+          <span className="fw-bold">
+            {row.SupervisorName || row.SupervisorHeadName || "Not Assigned"}
+          </span>
+          <br />
+          {row.SupervisorPhoneNumber || ""}
+        </>
+      ),
+      width: "150px",
+      sortable: true,
+    },
+     {
+      name: "Field Advisor",
+      selector: (row) => (
+        <>
+          <span className="fw-bold">
+            {row.FieldAdvisorName ? row.FieldAdvisorName : "Not Assigned"}
+          </span>
+          <br />
+          {row.FieldAdvisorPhoneNumber || ""}
+        </>
+      ),
+      width: "150px",
+      sortable: true,
     },
     {
       name: "Technician",
@@ -354,19 +478,7 @@ const BookingLayer = () => {
         </>
       ),
       width: "150px",
-    },
-    {
-      name: "Supervisor",
-      selector: (row) => (
-        <>
-          <span className="fw-bold">
-            {row.SupervisorName ? row.SupervisorName : "Not Assigned"}
-          </span>
-          <br />
-          {row.SupervisorPhoneNumber || ""}
-        </>
-      ),
-      width: "150px",
+      sortable: true,
     },
     {
       name: "Booking Status",
@@ -376,11 +488,11 @@ const BookingLayer = () => {
 
         // Define colors similar to Ticket Status
         const colorMap = {
-          Pending: "#F57C00",        // Orange
-          Confirmed: "#28A745",      // Green
-          Cancelled: "#E34242",      // Red
-          Completed: "#25878F",      // Teal-blue
-          Rejected: "#E34242",       // Red
+          Pending: "#F57C00", // Orange
+          Confirmed: "#28A745", // Green
+          Cancelled: "#E34242", // Red
+          Completed: "#25878F", // Teal-blue
+          Rejected: "#E34242", // Red
           "Not Assigned": "#BFBFBF", // Grey
         };
 
@@ -402,6 +514,7 @@ const BookingLayer = () => {
       },
       wrap: true,
       width: "150px",
+      sortable: true,
     },
     {
       name: "Payment Status",
@@ -416,10 +529,10 @@ const BookingLayer = () => {
 
         // Color mapping (consistent with your badge logic)
         const colorMap = {
-          Paid: "#28A745",       // Green
-          Pending: "#F7AE21",    // Yellow/Orange
-          Failed: "#E34242",     // Red
-          Refunded: "#25878F",   // Teal-blue
+          Paid: "#28A745", // Green
+          Pending: "#F7AE21", // Yellow/Orange
+          Failed: "#E34242", // Red
+          Refunded: "#25878F", // Teal-blue
           "Not Paid": "#BFBFBF", // Grey
         };
 
@@ -440,7 +553,8 @@ const BookingLayer = () => {
         );
       },
       wrap: true,
-      width: "150px",
+      width: "160px",
+      sortable: true,
     },
     {
       name: "Actions",
@@ -454,18 +568,27 @@ const BookingLayer = () => {
         return (
           <div className="d-flex gap-2 align-items-center">
             <Link
-              to={`/booking-view/${row.BookingID}`}
+              to={
+                role === "Dealer"
+                  ? `/dealer-booking-view/${row.LeadId}`
+                  : `/booking-view/${row.BookingID}`
+              }
               className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
               title="View"
             >
               <Icon icon="lucide:eye" />
             </Link>
-            {isFutureOrToday &&
+            {/* {isFutureOrToday &&
               row.BookingStatus.toLowerCase() === "pending" &&
-              (
-                row.SupervisorID === null ||
+              (row.SupervisorID === null ||
                 row.SupervisorID === 0 ||
-                (row.SupervisorID !== null && row.SupervisorID !== 0 && roleId === "8")
+                (row.SupervisorID !== null &&
+                  row.SupervisorID !== 0 &&
+                  roleId === "8")) && ( */}
+            {(role === "Admin" || roleName === "Supervisor Head" || roleName === "Field Advisor") &&
+              !(
+                row.BookingStatus === "Completed" &&
+                row.PaymentStatus === "Success"
               ) && (
                 <Link
                   onClick={() => handleAssignClick(row)}
@@ -474,9 +597,8 @@ const BookingLayer = () => {
                 >
                   <Icon icon="mdi:account-cog-outline" />
                 </Link>
-              )
-            }
-
+              )}
+            {/* )} */}
           </div>
         );
       },
@@ -484,12 +606,24 @@ const BookingLayer = () => {
     },
   ];
 
+  // Filter columns based on role - hide Amount, Cust. Name, Booking Status, Payment Status for Dealer
+  const columns = allColumns.filter((col) => {
+    if (role === "Dealer") {
+      return !["Amount", "Cust. Name", "Booking Status", "Payment Status"].includes(col.name);
+    }
+    return true;
+  });
+
   const filteredBookings = bookings.filter((booking) => {
     const matchesSearch =
       booking.CustFullName?.toLowerCase().includes(searchText.toLowerCase()) ||
-      booking.CustPhoneNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
+      booking.CustPhoneNumber?.toLowerCase().includes(
+        searchText.toLowerCase(),
+      ) ||
       booking.TechFullName?.toLowerCase().includes(searchText.toLowerCase()) ||
-      booking.TechPhoneNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
+      booking.TechPhoneNumber?.toLowerCase().includes(
+        searchText.toLowerCase(),
+      ) ||
       booking.BookingTrackID?.toLowerCase().includes(searchText.toLowerCase());
 
     const bookingDate = new Date(booking.BookingDate);
@@ -503,7 +637,8 @@ const BookingLayer = () => {
       (!maxPrice || price <= parseFloat(maxPrice));
 
     const matchesStatus =
-      status === "all" || booking.BookingStatus.toLowerCase() === status.toLowerCase();
+      status === "all" ||
+      booking.BookingStatus.toLowerCase() === status.toLowerCase();
 
     return matchesSearch && matchesDate && matchesPrice && matchesStatus;
   });
@@ -544,7 +679,10 @@ const BookingLayer = () => {
               }}
             >
               {/* Search */}
-              <form className="navbar-search flex-grow-1 flex-shrink-1" style={{ minWidth: "180px" }}>
+              <form
+                className="navbar-search flex-grow-1 flex-shrink-1"
+                style={{ minWidth: "180px" }}
+              >
                 <div className="position-relative">
                   <input
                     type="text"
@@ -584,38 +722,44 @@ const BookingLayer = () => {
                 style={{ minWidth: "120px", flex: "1 1 130px" }}
               />
 
-              {/* Price Range */}
-              <input
-                type="number"
-                className="form-control flex-shrink-0"
-                placeholder="Min Price"
-                value={minPrice}
-                onChange={(e) => setMinPrice(e.target.value)}
-                style={{ minWidth: "100px", flex: "1 1 100px" }}
-              />
-              <input
-                type="number"
-                className="form-control flex-shrink-0"
-                placeholder="Max Price"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
-                style={{ minWidth: "100px", flex: "1 1 100px" }}
-              />
+              {/* Price Range - Hide for Dealer */}
+              {role !== "Dealer" && (
+                <>
+                  <input
+                    type="number"
+                    className="form-control flex-shrink-0"
+                    placeholder="Min Amt"
+                    value={minPrice}
+                    onChange={(e) => setMinPrice(e.target.value)}
+                    style={{ minWidth: "100px", flex: "1 1 100px" }}
+                  />
+                  <input
+                    type="number"
+                    className="form-control flex-shrink-0"
+                    placeholder="Max Amt"
+                    value={maxPrice}
+                    onChange={(e) => setMaxPrice(e.target.value)}
+                    style={{ minWidth: "100px", flex: "1 1 100px" }}
+                  />
+                </>
+              )}
 
-              {/* Status */}
-              <select
-                className="form-select flex-shrink-0"
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                style={{ minWidth: "120px", flex: "1 1 120px" }}
-              >
-                <option value="all">All</option>
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="cancelled">Cancelled</option>
-                <option value="Completed">Completed</option>
-                <option value="Faild">Faild</option>
-              </select>
+              {/* Status - Hide for Dealer */}
+              {role !== "Dealer" && (
+                <select
+                  className="form-select flex-shrink-0"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  style={{ minWidth: "120px", flex: "1 1 120px" }}
+                >
+                  <option value="all">All</option>
+                  <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="reached">Reached</option>
+                  <option value="serviceStarted">ServiceStarted</option>
+                  <option value="completed">Completed</option>
+                </select>
+              )}
 
               {/* Excel Button */}
               <button
@@ -625,14 +769,19 @@ const BookingLayer = () => {
                 <Icon icon="mdi:microsoft-excel" width="20" height="20" />
               </button>
             </div>
-
           </div>
           <DataTable
             columns={columns}
             data={filteredBookings}
             pagination
             paginationPerPage={10}
-            paginationRowsPerPageOptions={[10, 25, 50, 100, filteredBookings.length]}
+            paginationRowsPerPageOptions={[
+              10,
+              25,
+              50,
+              100,
+              filteredBookings.length,
+            ]}
             highlightOnHover
             responsive
             striped
@@ -644,8 +793,14 @@ const BookingLayer = () => {
 
       {/* Assign Technician/Supervisor Modal */}
       {assignModalOpen && (
-        <div className="modal fade show d-block" style={{ background: "#00000080" }}>
-          <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: "500px", width: "90%" }}>
+        <div
+          className="modal fade show d-block"
+          style={{ background: "#00000080" }}
+        >
+          <div
+            className="modal-dialog modal-dialog-centered"
+            style={{ maxWidth: "500px", width: "90%" }}
+          >
             <div className="modal-content">
               <div className="modal-header">
                 <h6 className="modal-title">Assign</h6>
@@ -657,6 +812,7 @@ const BookingLayer = () => {
                     setAssignType("technician");
                     setSelectedTechnician(null);
                     setSelectedSupervisor(null);
+                    setSelectedFieldAdvisor(null);
                   }}
                 />
               </div>
@@ -664,6 +820,43 @@ const BookingLayer = () => {
               <div className="modal-body">
                 {/* Assignment Type Checkboxes */}
                 <div className="d-flex justify-content-center align-items-center gap-4 mb-3">
+                  {/* Supervisor Checkbox: show only if roleId is NOT 8 */}
+                  {/* {roleId !== "8" && (
+                    <div className="form-check d-flex align-items-center gap-2 m-0">
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        id="assignSup"
+                        checked={assignType === "supervisor"}
+                        onChange={() => setAssignType("supervisor")}
+                        style={{ width: "18px", height: "18px", margin: 0 }}
+                      />
+                      <label
+                        htmlFor="assignSup"
+                        className="form-check-label mb-0"
+                      >
+                        Supervisor
+                      </label>
+                    </div>
+                  )} */}
+
+                  {/* Field Advisor Checkbox */}
+                  <div className="form-check d-flex align-items-center gap-2 m-0">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id="assignFieldAdvisor"
+                      checked={assignType === "fieldAdvisor"}
+                      onChange={() => setAssignType("fieldAdvisor")}
+                      style={{ width: "18px", height: "18px", margin: 0 }}
+                    />
+                    <label
+                      htmlFor="assignFieldAdvisor"
+                      className="form-check-label mb-0"
+                    >
+                      Field Advisor
+                    </label>
+                  </div>
                   {/* Technician Checkbox: always show */}
                   <div className="form-check d-flex align-items-center gap-2 m-0">
                     <input
@@ -675,55 +868,43 @@ const BookingLayer = () => {
                       style={{ width: "18px", height: "18px", margin: 0 }}
                       disabled={false} // always enabled
                     />
-                    <label htmlFor="assignTech" className="form-check-label mb-0">
+                    <label
+                      htmlFor="assignTech"
+                      className="form-check-label mb-0"
+                    >
                       Technician
                     </label>
                   </div>
+                </div>
 
-                  {/* Supervisor Checkbox: show only if roleId is NOT 8 */}
-                  {roleId !== "8" && (
-                    <div className="form-check d-flex align-items-center gap-2 m-0">
-                      <input
-                        type="checkbox"
-                        className="form-check-input"
-                        id="assignSup"
-                        checked={assignType === "supervisor"}
-                        onChange={() => setAssignType("supervisor")}
-                        style={{ width: "18px", height: "18px", margin: 0 }}
+                {/* Time Slot Selection - Hide for Field Advisor */}
+                {assignType !== "fieldAdvisor" && (
+                  <div className="mb-3">
+                    {selectedBooking?.TimeSlot?.split(",").length === 1 ? (
+                      <Select
+                        value={selectedTimeSlot}
+                        isDisabled
+                        styles={singleSlotStyle}
                       />
-                      <label htmlFor="assignSup" className="form-check-label mb-0">
-                        Supervisor
-                      </label>
-                    </div>
-                  )}
-                </div>
+                    ) : (
+                      <Select
+                        options={getTimeSlotOptions()}
+                        value={selectedTimeSlot}
+                        onChange={(val) => setSelectedTimeSlot(val)}
+                        placeholder="Select TimeSlot"
+                      />
+                    )}
 
-                {/* Time Slot Selection */}
-                <div className="mb-3">
-                  {/* {selectedBooking?.TimeSlot?.split(",").length === 1 ? (
-                    <Select
-                      value={selectedTimeSlot}
-                      isDisabled
-                      styles={singleSlotStyle}
-                    />
-                  ) : (
-                   <Select
+                    {/* <Select
                       options={timeSlots}
                       value={selectedTimeSlot}
                       onChange={(val) => setSelectedTimeSlot(val)}
                       placeholder="Select TimeSlot"
-                    />
-                  )} */}
+                    /> */}
+                  </div>
+                )}
 
-                   <Select
-                      options={timeSlots}
-                      value={selectedTimeSlot}
-                      onChange={(val) => setSelectedTimeSlot(val)}
-                      placeholder="Select TimeSlot"
-                    />
-                </div>
-
-                {/* Technician or Supervisor Selection based on assignType */}
+                {/* Employee Selection based on assignType */}
                 {assignType === "technician" ? (
                   <Select
                     options={technicians}
@@ -731,34 +912,43 @@ const BookingLayer = () => {
                     onChange={(val) => setSelectedTechnician(val)}
                     placeholder="Select Technician"
                   />
-                ) : (
+                ) : assignType === "supervisor" ? (
                   <Select
                     options={supervisors}
                     value={selectedSupervisor}
                     onChange={(val) => setSelectedSupervisor(val)}
                     placeholder="Select Supervisor"
                   />
+                ) : (
+                  <Select
+                    options={fieldAdvisors}
+                    value={selectedFieldAdvisor}
+                    onChange={(val) => setSelectedFieldAdvisor(val)}
+                    placeholder="Select Field Advisor"
+                  />
                 )}
               </div>
-              <div className="modal-footer">
+              <div className="modal-footer d-inline-flex align-items-center justify-content-center">
                 <button
-                  className="btn btn-secondary"
+                  className="btn btn-secondary btn-sm"
                   onClick={() => {
                     setAssignModalOpen(false);
                     setAssignType("technician");
                     setSelectedTechnician(null);
                     setSelectedSupervisor(null);
+                    setSelectedFieldAdvisor(null);
                   }}
                 >
                   Cancel
                 </button>
                 <button
-                  className="btn btn-primary"
+                  className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
                   onClick={handleAssignConfirm}
                   disabled={
-                    !selectedTimeSlot ||
+                    (assignType !== "fieldAdvisor" && !selectedTimeSlot) ||
                     (assignType === "technician" && !selectedTechnician) ||
-                    (assignType === "supervisor" && !selectedSupervisor)
+                    (assignType === "supervisor" && !selectedSupervisor) ||
+                    (assignType === "fieldAdvisor" && !selectedFieldAdvisor)
                   }
                 >
                   Assign

@@ -21,9 +21,16 @@ const DealerAddLayer = ({ setPageTitle }) => {
   const [cities, setCities] = useState([]);
   const [distributors, setDistributors] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedDealerTypes, setSelectedDealerTypes] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
   const { errors, validate, clearAllErrors } = useFormError();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const dealerTypeOptions = [
+    { value: "service", label: "Service Provider" },
+    { value: "component", label: "Component Provider" },
+  ];
 
   const [formData, setFormData] = useState({
     DealerID: "",
@@ -32,7 +39,6 @@ const DealerAddLayer = ({ setPageTitle }) => {
     PhoneNumber: "",
     Email: "",
     PasswordHash: "",
-    ConfirmPassword: "",
     Address: "",
     StateID: "",
     CityID: "",
@@ -46,12 +52,11 @@ const DealerAddLayer = ({ setPageTitle }) => {
     IFSCCode: "",
     BankName: "",
     CategoryIDs: "",
-    Rating: 0,
-  });
-
-  const [data, setData] = useState({
-    type: "",
-    value: "",
+    Rating: "0",
+    ConfirmPassword: "",
+    dealerType: "",
+    commissionType: "",
+    amount: "",
   });
 
   const typeOptions = [
@@ -59,26 +64,99 @@ const DealerAddLayer = ({ setPageTitle }) => {
     { value: "fixed", label: "Fixed Amount" },
   ];
 
+  const resetForm = () => {
+    setFormData({
+      DealerID: "",
+      DistributorID: "",
+      FullName: "",
+      PhoneNumber: "",
+      Email: "",
+      PasswordHash: "",
+      ConfirmPassword: "",
+      Address: "",
+      StateID: "",
+      CityID: "",
+      IsActive: true,
+      GSTNumber: "",
+      CreatedDate: new Date().toISOString(),
+      Longitude: 0,
+      Latitude: 0,
+      BankAccountNumber: "",
+      BranchName: "",
+      IFSCCode: "",
+      BankName: "",
+      CategoryIDs: "",
+      Rating: "0",
+      dealerType: "",
+      commissionType: "",
+      amount: "",
+    });
+
+    setSelectedCategories([]);
+    setSelectedDealerTypes([]);
+  };
+
   useEffect(() => {
     setPageTitle(isEditing ? "Edit - Dealer" : "Add - Dealer");
     fetchStates();
     fetchCities();
     fetchCategories();
     fetchDistributors();
-    if (isEditing) fetchDealer();
-  }, []);
+    if (isEditing) {
+      fetchDealer();
+    } else {
+      resetForm(); // ✅ clears email & password
+    }
+  }, [DealerID]);
 
   const fetchDealer = async () => {
     try {
       const res = await axios.get(
         `${API_BASE}Dealer/dealerid?dealerid=${DealerID}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       const dealer = Array.isArray(res.data) ? res.data[0] : res.data;
+      const categoryOptions = dealer.Categories
+        ? dealer.Categories.map((c) => ({
+            value: c.CategoryID,
+            label: c.CategoryName,
+          }))
+        : [];
+      setSelectedCategories(categoryOptions);
+      const dealerTypeArray = dealer.DealerType
+        ? dealer.DealerType.split(",")
+        : [];
+
+      setSelectedDealerTypes(dealerTypeArray);
+
       setFormData((prev) => ({
         ...prev,
-        ...dealer,
-        ConfirmPassword: dealer.PasswordHash || "",
+        DealerID: dealer.DealerID,
+        DistributorID: dealer.DistributorID,
+        FullName: dealer.FullName,
+        PhoneNumber: dealer.PhoneNumber,
+        Email: dealer.Email,
+        Address: dealer.Address,
+        StateID: dealer.StateID,
+        CityID: dealer.CityID,
+        IsActive: dealer.IsActive,
+        GSTNumber: dealer.GSTNumber,
+        BankAccountNumber: dealer.BankAccountNumber,
+        BranchName: dealer.BranchName,
+        IFSCCode: dealer.IFSCCode,
+        BankName: dealer.BankName,
+        Rating: dealer.Rating ? String(dealer.Rating) : "0",
+        PasswordHash: dealer.PasswordHash || "",
+        CreatedDate: dealer.CreatedDate || new Date().toISOString(),
+        Longitude: dealer.Longitude || 0,
+        Latitude: dealer.Latitude || 0,
+
+        // ✅ MAP GET → camelCase
+        dealerType: dealer.DealerType || "",
+        commissionType: dealer.CommissionType || "",
+        amount: dealer.Amount ? String(dealer.Amount) : "",
+
+        CategoryIDs: categoryOptions.map((c) => c.value).join(","),
       }));
     } catch (err) {
       console.error("Failed to fetch dealer", err);
@@ -104,7 +182,7 @@ const DealerAddLayer = ({ setPageTitle }) => {
       setDistributors(res.data);
     } else {
       const filtered = res.data.filter(
-        (d) => d.DistributorID === Number(userId)
+        (d) => d.DistributorID === Number(userId),
       );
       setDistributors(filtered);
     }
@@ -129,17 +207,26 @@ const DealerAddLayer = ({ setPageTitle }) => {
   };
 
   const handleInput = (e) => {
-    setData({
-      ...data,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    // ✅ API payload
+    setFormData((prev) => ({
+      ...prev,
+      amount: value.toString(),
+    }));
+
+    clearAllErrors();
   };
 
   const handleDropdown = (selected) => {
-    setData({
-      ...data,
-      type: selected?.value || "",
-    });
+    const value = selected?.value || "";
+
+    // ✅ API payload
+    setFormData((prev) => ({
+      ...prev,
+      commissionType: value,
+    }));
+
+    clearAllErrors();
   };
 
   const handleChange = (e) => {
@@ -152,27 +239,65 @@ const DealerAddLayer = ({ setPageTitle }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("SUBMIT CLICKED", {
+      isEditing,
+      formData,
+    });
+    
+    // Fields to ignore during validation (these are optional or handled separately)
+    const ignoreFields = isEditing
+      ? ["ConfirmPassword"] // For edit, ignore ConfirmPassword
+      : ["DealerID", "ConfirmPassword"]; // For POST, ignore DealerID (empty) and ConfirmPassword (validated separately)
 
-    const validationErrors = validate(formData, [
-      "DealerID",
-      "IsActive",
-      "ConfirmPassword",
-    ]);
+    const validationErrors = validate(formData, ignoreFields);
 
-    if (formData.PasswordHash !== formData.ConfirmPassword) {
+    if (!isEditing && formData.PasswordHash !== formData.ConfirmPassword) {
       validationErrors.ConfirmPassword = "Passwords do not match";
     }
 
-    if (Object.keys(validationErrors).length > 0) return;
+    if (Object.keys(validationErrors).length > 0) {
+      console.log("Validation errors:", validationErrors);
+      return;
+    }
 
     setIsSubmitting(true);
 
     try {
       if (isEditing) {
-        const { ConfirmPassword, ...payload } = formData;
-        if (role === "Distributor") {
-          payload.DistributorID = Number(userId);
-        }
+        const { ConfirmPassword, DealerID, ...rest } = formData;
+
+        // PUT payload - all fields in camelCase as per backend API
+        const payload = {
+          dealerID: Number(formData.DealerID),
+          distributorID:
+            role === "Distributor"
+              ? Number(userId)
+              : Number(rest.DistributorID),
+          fullName: rest.FullName,
+          phoneNumber: rest.PhoneNumber,
+          email: rest.Email,
+          passwordHash: rest.PasswordHash,
+          stateID: Number(rest.StateID),
+          cityID: Number(rest.CityID),
+          address: rest.Address,
+          gstNumber: rest.GSTNumber,
+          createdDate: rest.CreatedDate || new Date().toISOString(),
+          isActive: rest.IsActive,
+          longitude: Number(rest.Longitude) || 0,
+          latitude: Number(rest.Latitude) || 0,
+          bankAccountNumber: rest.BankAccountNumber,
+          branchName: rest.BranchName,
+          ifscCode: rest.IFSCCode,
+          bankName: rest.BankName,
+          categoryIds: rest.CategoryIDs || "",
+          modifiedDate: new Date().toISOString(),
+          rating: String(rest.Rating || "0"),
+          commissionType: rest.commissionType,
+          amount: String(rest.amount || ""),
+          dealerType: rest.dealerType,
+        };
+
+        console.log("PUT Payload:", payload);
         await axios.put(`${API_BASE}Dealer`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -180,10 +305,40 @@ const DealerAddLayer = ({ setPageTitle }) => {
           },
         });
       } else {
-        const { ConfirmPassword, DealerID, ...payload } = formData;
-        if (role === "Distributor") {
-          payload.DistributorID = Number(userId);
-        }
+        // Exclude DealerID and ConfirmPassword from POST payload
+        const { ConfirmPassword, DealerID, ...rest } = formData;
+
+        // Build payload matching expected API format - NO DealerID for POST
+        const payload = {
+          DistributorID:
+            role === "Distributor"
+              ? Number(userId)
+              : Number(rest.DistributorID),
+          FullName: rest.FullName,
+          PhoneNumber: rest.PhoneNumber,
+          Email: rest.Email,
+          PasswordHash: rest.PasswordHash,
+          Address: rest.Address,
+          StateID: Number(rest.StateID),
+          CityID: Number(rest.CityID),
+          IsActive: rest.IsActive,
+          GSTNumber: rest.GSTNumber,
+          CreatedDate: rest.CreatedDate || new Date().toISOString(),
+          Longitude: Number(rest.Longitude) || 0,
+          Latitude: Number(rest.Latitude) || 0,
+          BankAccountNumber: rest.BankAccountNumber,
+          BranchName: rest.BranchName,
+          IFSCCode: rest.IFSCCode,
+          BankName: rest.BankName,
+          CategoryIDs: rest.CategoryIDs || "",
+          Rating: String(rest.Rating || "0"),
+          commissionType: rest.commissionType,
+          amount: String(rest.amount || ""),
+          dealerType: rest.dealerType,
+          CategoryNames: selectedCategories.map((cat) => cat.label),
+        };
+
+        console.log("POST Payload:", payload);
         await axios.post(`${API_BASE}Dealer`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -265,6 +420,21 @@ const DealerAddLayer = ({ setPageTitle }) => {
             />
             <FormError error={errors.PhoneNumber} />
           </div>
+          {/* GST */}
+          <div className="col-sm-6 mt-2">
+            <label className="form-label text-sm fw-semibold text-primary-light mb-8">
+              GST Number <span className="text-danger-600">*</span>
+            </label>
+            <input
+              type="text"
+              name="GSTNumber"
+              className="form-control radius-8"
+              value={formData.GSTNumber}
+              onChange={handleChange}
+              placeholder="Enter GST Number"
+            />
+            <FormError error={errors.GSTNumber} />
+          </div>
 
           {/* Distributor */}
           <div className="col-sm-6 mt-2">
@@ -282,58 +452,216 @@ const DealerAddLayer = ({ setPageTitle }) => {
                   ? {
                       value: formData.DistributorID,
                       label: distributors.find(
-                        (s) => s.DistributorID === formData.DistributorID
+                        (s) => s.DistributorID === formData.DistributorID,
                       )?.FullName,
                     }
                   : null
               }
               onChange={(selected) =>
                 handleChange({
-                  target: { name: "DistributorID", value: selected?.value || "" },
+                  target: {
+                    name: "DistributorID",
+                    value: selected?.value || "",
+                  },
                 })
               }
               classNamePrefix="react-select"
             />
             <FormError error={errors.DistributorID} />
           </div>
-
-          {/* Password */}
+          {/* Dealer Type */}
           <div className="col-sm-6 mt-2">
             <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-              Password <span className="text-danger-600">*</span>
+              Dealer Type <span className="text-danger-600">*</span>
             </label>
-            <div className="position-relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="PasswordHash"
-                className="form-control radius-8"
-                value={formData.PasswordHash}
-                onChange={handleChange}
-                placeholder="Enter Password"
-              />
-              <Icon
-                icon={showPassword ? "mdi:eye-off-outline" : "mdi:eye-outline"}
-                className="position-absolute end-0 top-50 translate-middle-y me-16 cursor-pointer"
-                onClick={() => setShowPassword((prev) => !prev)}
-              />
-            </div>
-            <FormError error={errors.PasswordHash} />
+
+            <Select
+              options={dealerTypeOptions}
+              value={dealerTypeOptions.filter((opt) =>
+                selectedDealerTypes.includes(opt.value),
+              )}
+              onChange={(selected) => {
+                const values = selected ? selected.map((s) => s.value) : [];
+
+                setSelectedDealerTypes(values);
+
+                setFormData((prev) => ({
+                  ...prev,
+                  dealerType: values.join(","), // ✅ backend key
+                }));
+
+                clearAllErrors();
+              }}
+              isMulti
+              placeholder="Select Dealer Type"
+              classNamePrefix="react-select"
+            />
+
+            <FormError error={errors.dealerType} />
+          </div>
+          {/* Categories */}
+          <div className="col-sm-6 mt-2">
+            <label className="form-label text-sm fw-semibold text-primary-light mb-8">
+              Category Name <span className="text-danger-600">*</span>
+            </label>
+            <Select
+              options={categories.map((c) => ({
+                value: c.CategoryID,
+                label: c.CategoryName,
+              }))}
+              value={selectedCategories}
+              onChange={(selected) => {
+                const values = selected || [];
+
+                setSelectedCategories(values);
+
+                setFormData((prev) => ({
+                  ...prev,
+                  CategoryIDs: values.map((v) => v.value).join(","),
+                }));
+
+                clearAllErrors();
+              }}
+              isMulti
+              placeholder="Select Categories"
+              classNamePrefix="react-select"
+            />
+
+            <FormError error={errors.CategoryIDs} />
           </div>
 
-          {/* Confirm Password */}
+          {/* Status */}
           <div className="col-sm-6 mt-2">
             <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-              Confirm Password <span className="text-danger-600">*</span>
+              Status
+            </label>
+            <select
+              name="IsActive"
+              className="form-select radius-8"
+              value={formData.IsActive ? "true" : "false"}
+              onChange={handleChange}
+            >
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
+            </select>
+          </div>
+
+          {/* Commission Type */}
+          <div className="col-sm-6 mt-2">
+            <label className="form-label text-sm fw-semibold text-primary-light mb-8">
+              Commission Type <span className="text-danger-600">*</span>
+            </label>
+            <Select
+              options={typeOptions}
+              value={
+                formData.commissionType
+                  ? typeOptions.find(
+                      (opt) => opt.value === formData.commissionType,
+                    )
+                  : null
+              }
+              onChange={(selected) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  commissionType: selected?.value || "",
+                }));
+                clearAllErrors();
+              }}
+              classNamePrefix="react-select"
+            />
+          </div>
+
+          {/* Commission Value */}
+          <div className="col-sm-6 mt-2">
+            <label className="form-label text-sm fw-semibold text-primary-light mb-8">
+              Commission Percentage / Amount{" "}
+              <span className="text-danger-600">*</span>
+            </label>
+            <div className="input-group">
+              <input
+                type="number"
+                className="form-control radius-8"
+                value={formData.amount}
+                onChange={(e) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    amount: e.target.value,
+                  }));
+                  clearAllErrors();
+                }}
+                placeholder="Enter Percentage / Amount"
+              />
+              <span className="input-group-text" style={{ height: "33px" }}>
+                {formData.commissionType === "percentage"
+                  ? "%"
+                  : formData.commissionType === "fixed"
+                    ? "₹"
+                    : ""}
+              </span>
+            </div>
+          </div>
+
+          {/* Bank Name */}
+          <div className="col-sm-6 mt-2">
+            <label className="form-label text-sm fw-semibold text-primary-light mb-8">
+              Bank Name <span className="text-danger-600">*</span>
             </label>
             <input
-              type={showPassword ? "text" : "password"}
-              name="ConfirmPassword"
+              type="text"
+              name="BankName"
               className="form-control radius-8"
-              value={formData.ConfirmPassword}
+              value={formData.BankName}
               onChange={handleChange}
-              placeholder="Confirm Password"
+              placeholder="Enter Bank Name"
             />
-            <FormError error={errors.ConfirmPassword} />
+            <FormError error={errors.BankName} />
+          </div>
+
+          {/* Account Number */}
+          <div className="col-sm-6 mt-2">
+            <label className="form-label text-sm fw-semibold text-primary-light mb-8">
+              Account Number <span className="text-danger-600">*</span>
+            </label>
+            <input
+              type="text"
+              name="BankAccountNumber"
+              className="form-control radius-8"
+              value={formData.BankAccountNumber}
+              onChange={handleChange}
+              placeholder="Enter Account Number"
+            />
+            <FormError error={errors.BankAccountNumber} />
+          </div>
+
+          {/* IFSC Code */}
+          <div className="col-sm-6 mt-2">
+            <label className="form-label text-sm fw-semibold text-primary-light mb-8">
+              IFSC Code <span className="text-danger-600">*</span>
+            </label>
+            <input
+              type="text"
+              name="IFSCCode"
+              className="form-control radius-8"
+              value={formData.IFSCCode}
+              onChange={handleChange}
+              placeholder="Enter IFSC Code"
+            />
+            <FormError error={errors.IFSCCode} />
+          </div>
+          {/* Branch */}
+          <div className="col-sm-6 mt-2">
+            <label className="form-label text-sm fw-semibold text-primary-light mb-8">
+              Branch Name <span className="text-danger-600">*</span>
+            </label>
+            <input
+              type="text"
+              name="BranchName"
+              className="form-control radius-8"
+              value={formData.BranchName}
+              onChange={handleChange}
+              placeholder="Enter Branch Name"
+            />
+            <FormError error={errors.BranchName} />
           </div>
 
           {/* State */}
@@ -394,239 +722,94 @@ const DealerAddLayer = ({ setPageTitle }) => {
             />
             <FormError error={errors.CityID} />
           </div>
-
-          {/* Categories */}
+          <div className="col-sm-12 mt-2">
+            <label className="form-label text-sm fw-semibold text-primary-light mb-8">
+              Address
+            </label>
+            <textarea
+              rows="2"
+              name="Address"
+              className="form-control radius-8"
+              value={formData.Address}
+              onChange={handleChange}
+              placeholder="Enter Address "
+            />
+          </div>
+          {/* Password */}
           <div className="col-sm-6 mt-2">
             <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-              Category Name <span className="text-danger-600">*</span>
+              Password <span className="text-danger-600">*</span>
             </label>
-            <Select
-              name="CategoryIDs"
-              options={categories.map((c) => ({
-                value: c.CategoryID,
-                label: c.CategoryName,
-              }))}
-              value={categories
-                .filter((c) => {
-                  const ids = formData.CategoryIDs
-                    ? formData.CategoryIDs.split(",").map((id) => Number(id))
-                    : [];
-                  return ids.includes(c.CategoryID);
-                })
-                .map((c) => ({
-                  value: c.CategoryID,
-                  label: c.CategoryName,
-                }))}
-              onChange={(selectedOptions) => {
-                const ids = selectedOptions
-                  ? selectedOptions.map((opt) => opt.value)
-                  : [];
-                const names = selectedOptions
-                  ? selectedOptions.map((opt) => opt.label)
-                  : [];
-                setFormData((prev) => ({
-                  ...prev,
-                  CategoryIDs: ids.join(","),
-                  CategoryNames: names,
-                }));
-                clearAllErrors();
-              }}
-              isMulti
-              closeMenuOnSelect={false}
-              placeholder="Select Categories"
-              classNamePrefix="react-select"
-            />
-            <FormError error={errors.CategoryIDs} />
+            <div className="position-relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="PasswordHash"
+                className="form-control radius-8"
+                value={formData.PasswordHash}
+                onChange={handleChange}
+                placeholder="Enter Password"
+              />
+              <Icon
+                icon={showPassword ? "mdi:eye-off-outline" : "mdi:eye-outline"}
+                className="position-absolute end-0 top-50 translate-middle-y me-16 cursor-pointer"
+                onClick={() => setShowPassword((prev) => !prev)}
+              />
+            </div>
+            <FormError error={errors.PasswordHash} />
           </div>
 
-          {/* GST */}
+          {/* Confirm Password */}
           <div className="col-sm-6 mt-2">
             <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-              GST Number <span className="text-danger-600">*</span>
+              Confirm Password <span className="text-danger-600">*</span>
             </label>
             <input
-              type="text"
-              name="GSTNumber"
+              type={showPassword ? "text" : "password"}
+              name="ConfirmPassword"
               className="form-control radius-8"
-              value={formData.GSTNumber}
+              value={formData.ConfirmPassword}
               onChange={handleChange}
-              placeholder="Enter GST Number"
+              placeholder="Confirm Password"
             />
-            <FormError error={errors.GSTNumber} />
+            <FormError error={errors.ConfirmPassword} />
           </div>
-
-          {/* Status */}
           <div className="col-sm-6 mt-2">
             <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-              Status
-            </label>
-            <select
-              name="IsActive"
-              className="form-select radius-8"
-              value={formData.IsActive ? "true" : "false"}
-              onChange={handleChange}
-            >
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
-            </select>
-          </div>
-
-          {/* Commission Type */}
-          <div className="col-sm-6 mt-2">
-            <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-              Commission Type <span className="text-danger-600">*</span>
-            </label>
-            <Select
-              name="type"
-              options={typeOptions}
-              value={
-                data.type
-                  ? typeOptions.find((opt) => opt.value === data.type)
-                  : null
-              }
-              onChange={handleDropdown}
-              classNamePrefix="react-select"
-            />
-          </div>
-
-          {/* Commission Value */}
-          <div className="col-sm-6 mt-2">
-            <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-              Amount <span className="text-danger-600">*</span>
+              Rating <span className="text-danger-600">*</span>
             </label>
             <div className="input-group">
               <input
                 type="number"
-                name="value"
+                name="Rating"
                 className="form-control radius-8"
-                value={data.value}
-                onChange={handleInput}
-                placeholder="Enter Amount"
-              />
-              <span className="input-group-text" style={{ height: "33px" }}>
-                {data.type === "percentage"
-                  ? "%"
-                  : data.type === "fixed"
-                  ? "₹"
-                  : ""}
-              </span>
-            </div>
-          </div>
-
-          {/* Bank Name */}
-          <div className="col-sm-6 mt-2">
-            <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-              Bank Name <span className="text-danger-600">*</span>
-            </label>
-            <input
-              type="text"
-              name="BankName"
-              className="form-control radius-8"
-              value={formData.BankName}
-              onChange={handleChange}
-              placeholder="Enter Bank Name"
-            />
-            <FormError error={errors.BankName} />
-          </div>
-
-          {/* Account Number */}
-          <div className="col-sm-6 mt-2">
-            <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-              Account Number <span className="text-danger-600">*</span>
-            </label>
-            <input
-              type="text"
-              name="BankAccountNumber"
-              className="form-control radius-8"
-              value={formData.BankAccountNumber}
-              onChange={handleChange}
-              placeholder="Enter Account Number"
-            />
-            <FormError error={errors.BankAccountNumber} />
-          </div>
-
-          {/* IFSC Code */}
-          <div className="col-sm-6 mt-2">
-            <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-              IFSC Code <span className="text-danger-600">*</span>
-            </label>
-            <input
-              type="text"
-              name="IFSCCode"
-              className="form-control radius-8"
-              value={formData.IFSCCode}
-              onChange={handleChange}
-              placeholder="Enter IFSC Code"
-            />
-            <FormError error={errors.IFSCCode} />
-          </div>
-            {/* Branch */}
-            <div className="col-sm-6 mt-2">
-              <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-                Branch Name <span className="text-danger-600">*</span>
-              </label>
-              <input
-                type="text"
-                name="BranchName"
-                className="form-control radius-8"
-                value={formData.BranchName}
+                // value={formState.Rating}
+                // onChange={updateField}
+                value={formData.Rating}
                 onChange={handleChange}
-                placeholder="Enter Branch Name"
-              />
-              <FormError error={errors.BranchName} />
-            </div>
-            <div className="col-sm-6 mt-2">
-              <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-                Rating <span className="text-danger-600">*</span>
-              </label>
-              <div className="input-group">
-                <input
-                  type="number"
-                  name="Rating"
-                  className="form-control radius-8"
-                  // value={formState.Rating}
-                  // onChange={updateField}
-                  value={formData.Rating}
-                  onChange={handleChange}
-                  placeholder="Enter Rating"
-                />
-              </div>
-              <FormError error={errors.Rating} />
-            </div>
-
-            <div className="col-sm-12 mt-2">
-              <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-                Address
-              </label>
-              <textarea
-                rows="2"
-                name="Address"
-                className="form-control radius-8"
-                value={formData.Address}
-                onChange={handleChange}
-                placeholder="Enter Address "
+                placeholder="Enter Rating"
               />
             </div>
-
-            <div className="d-flex justify-content-center gap-3 mt-24">
-              <Link
-                to="/dealers"
-                className="btn btn-secondary radius-8 px-14 py-6 text-sm"
-              >
-                Cancel
-              </Link>
-              <button
-                type="submit"
-                className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
-              >
-                {/* {isEditing ? "Update" : "Save"} Dealer */}
-                {isSubmitting
-                  ? "Submitting..."
-                  : isEditing
+            <FormError error={errors.Rating} />
+          </div>
+          <div className="d-flex justify-content-center gap-3 mt-24">
+            <Link
+              to="/dealers"
+              className="btn btn-secondary radius-8 px-14 py-6 text-sm"
+            >
+              Cancel
+            </Link>
+            <button
+              type="submit"
+              className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
+            >
+              {/* {isEditing ? "Update" : "Save"} Dealer */}
+              {isSubmitting
+                ? "Submitting..."
+                : isEditing
                   ? "Update Dealer"
                   : "Save Dealer"}
-              </button>
-            </div>
+            </button>
+          </div>
           {/* </div> */}
         </form>
       </div>

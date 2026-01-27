@@ -43,22 +43,29 @@ const DealerLayer = () => {
     {
       name: "Dealer ID",
       selector: (row) => row.DealerID,
+      sortable: true,
     },
     {
       name: "Full Name",
       selector: (row) => row.FullName,
+      sortable: true,
     },
     {
       name: "Email",
       selector: (row) => row.Email,
+      sortable: true,
+      wrap: true,
+      width: "200px"
     },
     {
       name: "Phone",
       selector: (row) => row.PhoneNumber,
+      sortable: true,
     },
     {
       name: "City",
       selector: (row) => row.CityName,
+      sortable: true,
     },
     {
       name: "Status",
@@ -87,6 +94,7 @@ const DealerLayer = () => {
           </span>
         );
       },
+      sortable: true,
       // width: "150px",
     },
      ...(hasPermission("dealers_edit")

@@ -199,14 +199,17 @@ const BookingTimeSlotLayer = () => {
       name: "S.No",
       selector: (row) => row.TsID,
       width: "80px",
+      sortable: true,
     },
     {
       name: "Start Time",
       selector: (row) => row.StartTime,
+      sortable: true,
     },
     {
       name: "End Time",
       selector: (row) => row.EndTime,
+      sortable: true,
     },
     {
       name: "Status",
@@ -238,6 +241,7 @@ const BookingTimeSlotLayer = () => {
           </span>
         );
       },
+      sortable: true,
     },
     {
       name: "Actions",

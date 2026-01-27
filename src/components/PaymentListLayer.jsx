@@ -23,6 +23,20 @@ const PaymentsListLayer = () => {
   const [refundStatus, setRefundStatus] = useState("all");
   const API_BASE = import.meta.env.VITE_APIURL;
   const token = localStorage.getItem("token");
+  const INVOICE_URL = "https://api.mycarsbuddy.com";
+
+  // Helper function to get invoice URL from FolderPath
+  const getInvoiceUrl = (folderPath) => {
+    if (!folderPath) return null;
+    let invoicePath;
+    if (folderPath.startsWith('http://') || folderPath.startsWith('https://')) {
+      const url = new URL(folderPath);
+      invoicePath = url.pathname;
+    } else {
+      invoicePath = folderPath.startsWith('/') ? folderPath : '/' + folderPath;
+    }
+    return `${INVOICE_URL}${invoicePath}`;
+  };
 
   useEffect(() => {
     fetchPayments();
@@ -100,16 +114,16 @@ const PaymentsListLayer = () => {
   };
 
   const columns = [
-    { name: "S.No", selector: (_, index) => index + 1, width: "60px" },
+    { name: "S.No", selector: (_, index) => index + 1, width: "80px", sortable: true,},
     {
       name: "Booking ID", selector: (row) => (
         <Link to={`/booking-view/${row.BookingID}`} className="text-primary">
           {row.BookingTrackID}
         </Link>
-      ), width: "150px"
+      ), width: "150px", sortable: true,
     },
-    { name: "Invoice No", selector: (row) => (row.InvoiceNumber), width: "150px" },
-    { name: "Total Amount", selector: (row) => `₹${row.AmountPaid}` },
+    { name: "Invoice No", selector: (row) => (row.InvoiceNumber), width: "160px", sortable: true, wrap: true},
+    { name: "Total Amount", selector: (row) => `₹${row.AmountPaid}`, sortable: true, width: "150px" },
     {
       name: "Payment Status",
       cell: (row) => {
@@ -142,10 +156,11 @@ const PaymentsListLayer = () => {
           </span>
         );
       },
-      // width: "150px",
+      sortable: true,
+      width: "160px",
     },
-    { name: "Payment Mode", selector: (row) => row.PaymentMode },
-    { name: "Transaction ID", selector: (row) => (row.TransactionID), width: "180px" },
+    { name: "Payment Mode", selector: (row) => row.PaymentMode , sortable: true, width: "150px"},
+    { name: "Transaction ID", selector: (row) => (row.TransactionID), width: "180px", sortable: true, },
     {
       name: "Payment Date",
       selector: (row) => {
@@ -155,10 +170,12 @@ const PaymentsListLayer = () => {
           date.getMonth() + 1
         ).padStart(2, "0")}/${date.getFullYear()}`;
       },
+      sortable: true,
+      width: "150px"
     },
-    { name: "Refund Amount", selector: (row) => row.RefundAmount ? `₹${row.RefundAmount}` : 0 },
+    { name: "Refund Amount", selector: (row) => row.RefundAmount ? `₹${row.RefundAmount}` : 0, sortable: true, width: "150px"},
     {
-      name: "Refund Initialization",
+      name: "Refund Status",
       cell: (row) => {
         const status = row.IsRefunded ? "Raised" : "Not Raised";
 
@@ -185,7 +202,8 @@ const PaymentsListLayer = () => {
           </span>
         );
       },
-      // width: "170px",
+      sortable: true,
+      width: "150px"
     },
     // {
     //   name: "Refunded",
@@ -204,7 +222,7 @@ const PaymentsListLayer = () => {
           {/* Invoice - open PDF */}
           {row.FolderPath && (
             <a
-              href={row.FolderPath}
+              href={getInvoiceUrl(row.FolderPath)}
               target="_blank"
               rel="noopener noreferrer"
               className="w-32-px h-32-px bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center"
@@ -397,15 +415,8 @@ const PaymentsListLayer = () => {
 
               {/* 📊 Export Excel */}
               <button
-                className="d-inline-flex align-items-center justify-content-center rounded-circle border-0"
+                className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
                 onClick={exportToExcel}
-                style={{
-                  width: "36px",
-                  height: "36px",
-                  backgroundColor: "#e8f5e9",
-                  color: "#2e7d32",
-                  flex: "0 0 auto",
-                }}
               >
                 <Icon icon="mdi:microsoft-excel" width="20" height="20" />
               </button>
@@ -415,7 +426,7 @@ const PaymentsListLayer = () => {
             columns={columns}
             data={filteredPayments}
             pagination
-            paginationPerPage={10} // default rows per page
+            paginationPerPage={10}
             paginationRowsPerPageOptions={[10, 25, 50, 100, filteredPayments.length]} // last option shows all
             highlightOnHover
             responsive
@@ -446,7 +457,7 @@ const PaymentsListLayer = () => {
                 <p><strong>Refunded:</strong> {selectedPayment.IsRefunded ? "Yes" : "No"}</p>
                 {selectedPayment.FolderPath && (
                   <p>
-                    <a href={selectedPayment.FolderPath} target="_blank" rel="noopener noreferrer">
+                    <a href={getInvoiceUrl(selectedPayment.FolderPath)} target="_blank" rel="noopener noreferrer">
                       View Invoice PDF
                     </a>
                   </p>

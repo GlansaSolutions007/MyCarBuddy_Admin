@@ -161,11 +161,11 @@ const ServiceCategoriesLayer = () => {
 
   const columns = [
     // { name: "S.No", selector: (_, index) => index + 1, width: "80px" },
-    { name: "Category ID", selector: (row) => row.CategoryID },
-    { name: "Icon Image", selector: (row) => <img src={`${import.meta.env.VITE_APIURL_IMAGE}${row.IconImage}`} alt="" /> },
-    { name: "Thumbnail Image", selector: (row) => <img src={`${import.meta.env.VITE_APIURL_IMAGE}${row.ThumbnailImage}`} alt="" /> },
-    { name: "Category Name", selector: (row) => row.CategoryName },
-    { name: "Description", selector: (row) => row.Description },
+    { name: "ID", selector: (row) => row.CategoryID, sortable: true, width:"100px"},
+    { name: "Icon Image", selector: (row) => <img src={`${import.meta.env.VITE_APIURL_IMAGE}${row.IconImage}`} alt="" />, sortable: true, width:"150px"},
+    { name: "Thumbnail Image", selector: (row) => <img src={`${import.meta.env.VITE_APIURL_IMAGE}${row.ThumbnailImage}`} alt="" />, sortable: true, width:"170px"},
+    { name: "Category Name", selector: (row) => row.CategoryName, sortable: true, width:"160px", wrap: true},
+    { name: "Description", selector: (row) => row.Description, sortable: true, width:"150px", wrap:true},
     {
       name: "Status",
       cell: (row) => {
@@ -197,6 +197,7 @@ const ServiceCategoriesLayer = () => {
           </span>
         );
       },
+      sortable: true,
     },
     ...(hasPermission("servicecategory_edit")
     ? [

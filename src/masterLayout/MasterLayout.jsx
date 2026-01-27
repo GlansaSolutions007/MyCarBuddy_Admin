@@ -11,7 +11,6 @@ import axios from "axios";
 // import CrytoJS from "crypto-js";
 
 const MasterLayout = ({ children }) => {
-
   let [sidebarActive, seSidebarActive] = useState(false);
   let [mobileMenu, setMobileMenu] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -29,16 +28,34 @@ const MasterLayout = ({ children }) => {
   const navigate = useNavigate();
   const [userImage, setUserImage] = useState("");
 
+  // Helper function to get display role
+  const getDisplayRole = () => {
+    const employeeDataStr = localStorage.getItem("employeeData");
+    if (employeeDataStr) {
+      try {
+        const employeeData = JSON.parse(employeeDataStr);
+        return employeeData.RoleName || role || "Role";
+      } catch (error) {
+        console.error("Error parsing employeeData:", error);
+        return role || "Role";
+      }
+    }
+    return role || "Role";
+  };
+
   // Fetch user permissions from API
   useEffect(() => {
     const fetchUserPermissions = async () => {
       try {
-        if (!userId || !token) return;
-        const response = await axios.get(`${API_BASE}rolehaspermissions/id?roleId=${roleId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        if (!userId || !token || !roleId) return;
+        const response = await axios.get(
+          `${API_BASE}rolehaspermissions/id?roleId=${roleId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         if (response.data && Array.isArray(response.data)) {
           setUserPermissions(response.data);
         }
@@ -50,12 +67,16 @@ const MasterLayout = ({ children }) => {
     };
 
     fetchUserPermissions();
-  }, [userId, token, API_BASE]);
+  }, [userId, token, roleId, API_BASE]);
 
   // Helper function to check if user has a specific permission
   const hasPermission = (permissionName, page) => {
     if (!userPermissions || userPermissions.length === 0) return false;
-    return userPermissions.some(perm => perm.name === permissionName && perm.page.toLowerCase() === page.toLowerCase());
+    return userPermissions.some(
+      (perm) =>
+        perm.name === permissionName &&
+        perm.page.toLowerCase() === page.toLowerCase()
+    );
   };
 
   // Helper function to check if user has permission for a menu item
@@ -64,7 +85,7 @@ const MasterLayout = ({ children }) => {
 
     // If item has children, show it if any child is visible
     if (item.children && item.children.length > 0) {
-      return item.children.some(child => {
+      return item.children.some((child) => {
         if (child.roles && child.roles.includes(role)) return true;
         if (role === "Admin") return true;
         if (child.permission && child.page) {
@@ -130,28 +151,104 @@ const MasterLayout = ({ children }) => {
     }
   }, []);
 
+  // Mapping of parent routes to their child route patterns
+  const parentToChildRoutes = {
+    "/customers": ["/view-customer/", "/edit-customer/", "/add-customer"],
+    "/bookings": ["/booking-view/", "/edit-bookings/"],
+    "/payments": ["/invoice-preview/", "/invoice-view/"],
+    "/tickets": ["/tickets/", "/add-tickets", "/edit-tickets/"],
+    "/leads": ["/lead-view/", "/create-lead"],
+    "/organic-leads": ["/lead-view/"],
+    "/todays-lead": ["/lead-view/"],
+    "/closed-leads": ["/lead-view/"],
+    "/lead-reports": ["/emp-leads-report/"],
+    "/ticket-reports": ["/dept-employee-reports/", "/view-employee-report/"],
+    "/employees": ["/add-employee", "/edit-employee/"],
+    "/technicians": [
+      "/technicians/add",
+      "/edit-technicians/",
+      "/view-technician/",
+    ],
+    "/dealers": ["/add-dealers", "/edit-dealers/"],
+    "/service-plans": ["/add-service-package", "/edit-service-package/"],
+    "/service-plan-prices": [
+      "/add-service-plan-price",
+      "/edit-service-plan-price/",
+    ],
+    "/leave-list": ["/leave-edit/"],
+    "/seo": ["/add-seo", "/edit-seo/"],
+    "/faqs": ["/add-faqs"],
+    "/explanations": ["/add-explanations"],
+    "/book-service": ["/book-service/"],
+  };
+
+  // Helper function to check if current pathname matches a child route pattern
+  const isChildRoute = (parentRoute, currentPathname) => {
+    const childPatterns = parentToChildRoutes[parentRoute];
+    if (!childPatterns) return false;
+
+    return childPatterns.some((pattern) => {
+      // Check if current pathname starts with the pattern
+      // This handles dynamic routes like /booking-view/:bookingId
+      if (currentPathname.startsWith(pattern)) {
+        return true;
+      }
+      return false;
+    });
+  };
+
   useEffect(() => {
     const openActiveDropdown = () => {
       const allDropdowns = document.querySelectorAll(".sidebar-menu .dropdown");
       allDropdowns.forEach((dropdown) => {
         const submenuLinks = dropdown.querySelectorAll(".sidebar-submenu li a");
+        let shouldOpen = false;
+
         submenuLinks.forEach((link) => {
-          if (
-            link.getAttribute("href") === location.pathname ||
-            link.getAttribute("to") === location.pathname
-          ) {
-            dropdown.classList.add("open");
-            const submenu = dropdown.querySelector(".sidebar-submenu");
-            if (submenu) {
-              submenu.style.maxHeight = `${submenu.scrollHeight}px`; // Expand submenu
-            }
+          // Check if link has active-page class (NavLink adds this for active routes)
+          if (link.classList.contains("active-page")) {
+            shouldOpen = true;
+            return;
+          }
+
+          // Get the href attribute (NavLink renders as <a> with href)
+          const href = link.getAttribute("href");
+          if (!href) return;
+
+          // Check for exact match
+          if (href === location.pathname) {
+            shouldOpen = true;
+            return;
+          }
+
+          // Check for nested route match (e.g., /book-service matches /book-service/123)
+          // Only match if href is a base path and current pathname starts with it
+          if (href !== "/" && location.pathname.startsWith(href + "/")) {
+            shouldOpen = true;
+            return;
+          }
+
+          // Check if current pathname is a child route of this parent route
+          if (isChildRoute(href, location.pathname)) {
+            shouldOpen = true;
+            return;
           }
         });
+
+        if (shouldOpen) {
+          dropdown.classList.add("open");
+          const submenu = dropdown.querySelector(".sidebar-submenu");
+          if (submenu) {
+            submenu.style.maxHeight = `${submenu.scrollHeight}px`; // Expand submenu
+          }
+        }
       });
     };
 
-    // Open the submenu that contains the active route
-    openActiveDropdown();
+    // Use setTimeout to ensure DOM is updated after React Router navigation
+    const timeoutId = setTimeout(() => {
+      openActiveDropdown();
+    }, 0);
 
     // Attach click event listeners to dropdown triggers
     const dropdownTriggers = document.querySelectorAll(
@@ -162,8 +259,9 @@ const MasterLayout = ({ children }) => {
       trigger.addEventListener("click", handleDropdownClick);
     });
 
-    // Cleanup event listeners on unmount
+    // Cleanup event listeners and timeout on unmount
     return () => {
+      clearTimeout(timeoutId);
       dropdownTriggers.forEach((trigger) => {
         trigger.removeEventListener("click", handleDropdownClick);
       });
@@ -177,14 +275,14 @@ const MasterLayout = ({ children }) => {
         // Request notification permission
         const token = await requestPermission();
         if (token) {
-          console.log("FCM Token obtained:", token);
+          // console.log("FCM Token obtained:", token);
           // Store token or send to backend for registration
           localStorage.setItem("fcmToken", token);
 
           // Send token to backend for registration (optional)
           try {
             const userToken = localStorage.getItem("token");
-            await fetch(`https://api.mycarsbuddy.com/api/Push/register`, {
+            await fetch(`${API_BASE}Push/register`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -250,24 +348,68 @@ const MasterLayout = ({ children }) => {
         if (!userId) return;
         const results = await notificationService.getUserNotifications(userId);
         const normalized = (results || []).map((n) => ({
-          id: n.id || n.notificationId || n.Id || n.NotificationId || Date.now(),
-          title: n.title || n.Title || 'Notification',
-          message: n.message || n.Message || '',
-          timestamp: n.timestamp || n.Timestamp || n.createdAt || n.CreatedAt || new Date().toISOString(),
+          id:
+            n.id || n.notificationId || n.Id || n.NotificationId || Date.now(),
+          title: n.title || n.Title || "Notification",
+          message: n.message || n.Message || "",
+          timestamp:
+            n.timestamp ||
+            n.Timestamp ||
+            n.createdAt ||
+            n.CreatedAt ||
+            new Date().toISOString(),
           read: Boolean(n.read ?? n.isRead ?? n.IsRead ?? false),
-          type: n.type || n.Type || 'general'
+          type: n.type || n.Type || "general",
         }));
         setNotifications((prev) => {
-          // Prepend API notifications, keep any existing real-time ones
-          const rtOnly = prev.filter((p) => String(p.id).length > 12); // keep local Date.now ids
+          // Create a Map to track API notification IDs for deduplication
+          const apiNotificationIds = new Set(
+            normalized.map((n) => String(n.id))
+          );
+
+          // Keep real-time notifications (Date.now() ids) that don't have a matching API notification
+          // Match by checking if title+message+timestamp are similar (within 5 seconds)
+          const rtOnly = prev.filter((p) => {
+            const isRealTime = String(p.id).length > 12; // Date.now() generates 13+ digit IDs
+            if (!isRealTime) return false;
+
+            // Check if this real-time notification matches any API notification
+            const matchesApi = normalized.some((apiNotif) => {
+              const timeDiff = Math.abs(
+                new Date(apiNotif.timestamp) - new Date(p.timestamp)
+              );
+              return (
+                apiNotif.title === p.title &&
+                apiNotif.message === p.message &&
+                timeDiff < 5000
+              ); // Within 5 seconds
+            });
+
+            // Keep real-time notification only if it doesn't match an API one
+            return !matchesApi;
+          });
+
+          // Merge: API notifications first (they have proper IDs), then unmatched real-time ones
           return [...normalized, ...rtOnly];
         });
         setUnreadCount(normalized.filter((n) => !n.read).length);
       } catch (err) {
-        console.error('Failed to load notifications:', err);
+        console.error("Failed to load notifications:", err);
       }
     };
+
+    // Load notifications immediately
     loadNotifications();
+
+    // Set up periodic polling every 30 seconds
+    const pollInterval = setInterval(() => {
+      loadNotifications();
+    }, 30000); // 30 seconds
+
+    // Cleanup interval on unmount or when userId changes
+    return () => {
+      clearInterval(pollInterval);
+    };
   }, [userId]);
 
   let sidebarControl = () => {
@@ -296,27 +438,95 @@ const MasterLayout = ({ children }) => {
       title: "Customer Details",
       icon: "flowbite:users-group-outline",
       children: [
-        { title: "Customers", to: "/customers", color: "text-primary-600", permission: "customers_view", page: "Customers" },
-        { title: "Bookings", to: "/bookings", color: "text-warning-main", permission: "bookings_view", page: "Bookings" },
-        { title: "Refunds", to: "/refunds", color: "text-black", permission: "refunds_view", page: "Refunds" },
-        { title: "Payments", to: "/payments", color: "text-info-main", permission: "payments_view", page: "Payments" },
-        { title: "Tickets", to: "/tickets", color: "text-info-danger", permission: "tickets_view", page: "Tickets" },
+        {
+          title: "Customers",
+          to: "/customers",
+          color: "text-primary-600",
+          permission: "customers_view",
+          page: "Customers",
+        },
+        {
+          title: "Bookings",
+          to: "/bookings",
+          color: "text-warning-main",
+          permission: "bookings_view",
+          page: "Bookings",
+        },
+        {
+          title: "Refunds",
+          to: "/refunds",
+          color: "text-black",
+          permission: "refunds_view",
+          page: "Refunds",
+        },
+        {
+          title: "Payments",
+          to: "/payments",
+          color: "text-info-main",
+          permission: "payments_view",
+          page: "Payments",
+        },
+        {
+          title: "Tickets",
+          to: "/tickets",
+          color: "text-info-danger",
+          permission: "tickets_view",
+          page: "Tickets",
+        },
       ],
     },
     {
       title: "Departments",
       icon: "mdi:office-building",
       children: [
-        { title: "Departments", to: "/departments", color: "text-primary-600", permission: "department_view", page: "Departments" },
-        { title: "Designations", to: "/designations", color: "text-warning-main", permission: "designation_view", page: "Designations" },
+        {
+          title: "Departments",
+          to: "/departments",
+          color: "text-primary-600",
+          permission: "department_view",
+          page: "Departments",
+        },
+        {
+          title: "Designations",
+          to: "/designations",
+          color: "text-warning-main",
+          permission: "designation_view",
+          page: "Designations",
+        },
       ],
     },
     {
       title: "Regions",
       icon: "material-symbols:map-outline",
       children: [
-        { title: "States", to: "/states", color: "text-primary-600", permission: "state_view", page: "States" },
-        { title: "Cities", to: "/cities", color: "text-warning-main", permission: "city_view", page: "Cities" },
+        {
+          title: "States",
+          to: "/states",
+          color: "text-primary-600",
+          permission: "state_view",
+          page: "States",
+        },
+        {
+          title: "Cities",
+          to: "/cities",
+          color: "text-warning-main",
+          permission: "city_view",
+          page: "Cities",
+        },
+         {
+          title: "Areas",
+          to: "/areas",
+          color: "text-info-danger",
+          permission: "areas_view",
+          page: "Areas",
+        },
+         {
+          title: "Assign Area",
+          to: "/assign-area",
+          color: "text-info-main",
+          permission: "assignarea_view",
+          page: "Assign Area",
+        },
       ],
     },
     {
@@ -354,13 +564,25 @@ const MasterLayout = ({ children }) => {
       ],
     },
     {
-      title: "Telecaller Assignment",
+      title: "Telecaller Assign",
       icon: "hugeicons:user-check-02",
       children: [
         // { title: "Assign Bookings", to: "/telecaler-bookings", color: "text-warning-main", permission: "telecaler_booking_view", page: "Telecaler_Bookings" },
         // { title: "Telecaller Tickets", to: "/telecaler-tickets", color: "text-info-main", permission: "telecaler_ticket_view", page: "Telecaler_Tickets" },
-        { title: "Assign Tickets", to: "/assign-tickets", color: "text-success-main", permission: "assigntickets_view", page: "Assign Tickets" },
-        { title: "Assign Leads", to: "/assign-leads", color: "text-danger-main", permission: "assignleads_view", page: "Assign Leads" },
+        {
+          title: "Assign Tickets",
+          to: "/assign-tickets",
+          color: "text-success-main",
+          permission: "assigntickets_view",
+          page: "Assign Tickets",
+        },
+        {
+          title: "Assign Leads",
+          to: "/assign-leads",
+          color: "text-danger-main",
+          permission: "assignleads_view",
+          page: "Assign Leads",
+        },
         // { title: "Employee Tickets", to: "/employee-tickets", color: "text-danger-main", permission: "employee_ticket_view", page: "Employee_Tickets" },
       ],
     },
@@ -368,7 +590,13 @@ const MasterLayout = ({ children }) => {
       title: "Digital Marketing",
       icon: "mdi:bullhorn-outline",
       children: [
-        { title: "SEO", to: "/seo", color: "text-info-main", permission: "seo_view", page: "SEO" },
+        {
+          title: "SEO",
+          to: "/seo",
+          color: "text-info-main",
+          permission: "seo_view",
+          page: "SEO",
+        },
         {
           title: "FAQs",
           to: "/faqs",
@@ -403,13 +631,17 @@ const MasterLayout = ({ children }) => {
           permission: "organicleads_view",
           page: "Organic Leads",
         },
-        {
-          title: "Today Pending Leads",
-          to: "/todays-lead",
-          color: "text-black",
-          permission: "todayslead_view",
-          page: "Today Pending Leads",
-        },
+        ...(role !== "Admin"
+          ? [
+              {
+                title: "Today Pending Leads",
+                to: "/todays-lead",
+                color: "text-black",
+                permission: "todayslead_view",
+                page: "Today Pending Leads",
+              },
+            ]
+          : []),
         {
           title: "Closed Leads",
           to: "/closed-leads",
@@ -430,13 +662,49 @@ const MasterLayout = ({ children }) => {
       title: "Reports",
       icon: "ion:document-text-outline",
       children: [
-        { title: "Ticket Reports", to: "/ticket-reports", color: "text-warning-main", permission: "ticketreports_view", page: "Ticket Reports" },
-        { title: "Lead Reports", to: "/lead-reports", color: "text-info-main", permission: "leadreports_view", page: "Lead Reports" },
-        { title: "Booking Reports", to: "/booking-reports", color: "text-success-main", permission: "bookingreports_view", page: "Booking Reports" },
-        { title: "Services Earning Report", to: "/services-earning-report", color: "text-danger-main", permission: "servicesearningreport_view", page: "Services Earning Report" },
-        { title: "Garage Earning Report", to: "/garage-earning-report", color: "text-primary-600", permission: "garageearningreport_view", page: "Garage Earning Report" },
-        { title: "Revenue Reports", to: "/revenue-reports", color: "text-primary-600", permission: "revenuereports_view", page: "Revenue Reports" },
-
+        {
+          title: "Ticket Reports",
+          to: "/ticket-reports",
+          color: "text-warning-main",
+          permission: "ticketreports_view",
+          page: "Ticket Reports",
+        },
+        {
+          title: "Lead Reports",
+          to: "/lead-reports",
+          color: "text-info-main",
+          permission: "leadreports_view",
+          page: "Lead Reports",
+        },
+        // { title: "Booking Reports", to: "/booking-reports", color: "text-success-main", permission: "bookingreports_view", page: "Booking Reports" },
+        // { title: "Services Earning Report", to: "/services-earning-report", color: "text-danger-main", permission: "servicesearningreport_view", page: "Services Earning Report" },
+        {
+          title: "Revenue Reports",
+          to: "/revenue-reports",
+          color: "text-primary-600",
+          permission: "revenuereports_view",
+          page: "Revenue Reports",
+        },
+      ],
+    },
+    {
+      title: "Expanses",
+      icon: "mdi:cash-multiple",
+      children: [
+        {
+          title: "Expenditures Category",
+          to: "/expenditure-cat",
+          color: "text-warning-main",
+          permission: "expenditurecat_view",
+          page: "Expenditures Category",
+        },
+        {
+          title: "Expenditures",
+          to: "/expenditures",
+          color: "text-primary-600",
+          permission: "expenditures_view",
+          page: "Expenditures",
+        },
       ],
     },
     // {
@@ -450,9 +718,27 @@ const MasterLayout = ({ children }) => {
       title: "Vehicle",
       icon: "hugeicons:car-03",
       children: [
-        { title: "Brand", to: "/vehicle-brand", color: "text-primary-600", permission: "vehiclebrand_view", page: "Vehicle Brand" },
-        { title: "Model", to: "/vehicle-model", color: "text-warning-main", permission: "vehiclemodel_view", page: "Vehicle Model" },
-        { title: "Fuel", to: "/vehicle-fuel", color: "text-info-main", permission: "vehiclefuel_view", page: "Vehicle Fuel" },
+        {
+          title: "Brand",
+          to: "/vehicle-brand",
+          color: "text-primary-600",
+          permission: "vehiclebrand_view",
+          page: "Vehicle Brand",
+        },
+        {
+          title: "Model",
+          to: "/vehicle-model",
+          color: "text-warning-main",
+          permission: "vehiclemodel_view",
+          page: "Vehicle Model",
+        },
+        {
+          title: "Fuel",
+          to: "/vehicle-fuel",
+          color: "text-info-main",
+          permission: "vehiclefuel_view",
+          page: "Vehicle Fuel",
+        },
       ],
     },
     {
@@ -474,9 +760,27 @@ const MasterLayout = ({ children }) => {
           page: "Service Subcategory1",
         },
         // { title: "Sub Categories 2", to: "/service-subcategory2", color: "text-info-main" },
-        { title: "Skill", to: "/skills", color: "text-info-main", permission: "skills_view", page: "Skills" },
-        { title: "Include", to: "/service-includes", color: "text-info-main", permission: "serviceincludes_view", page: "Service Includes" },
-        { title: "Package", to: "/service-plans", color: "text-info-main", permission: "serviceplans_view", page: "Service Plans" },
+        {
+          title: "Skill",
+          to: "/skills",
+          color: "text-info-main",
+          permission: "skills_view",
+          page: "Skills",
+        },
+        {
+          title: "Include",
+          to: "/service-includes",
+          color: "text-info-main",
+          permission: "serviceincludes_view",
+          page: "Service Includes",
+        },
+        {
+          title: "Package",
+          to: "/service-plans",
+          color: "text-info-main",
+          permission: "serviceplans_view",
+          page: "Service Plans",
+        },
         {
           title: "Packages Price",
           to: "/service-plan-prices",
@@ -486,20 +790,13 @@ const MasterLayout = ({ children }) => {
         },
       ],
     },
-    //  {
-    //   title: "Payments",
-    //   icon: "hugeicons:invoice-03",
-    //   children: [
-    //     { title: "Payments", to: "/payments", color: "text-primary-600" },
-    //   ],
-    // },
     {
       title: "Time Slots",
       icon: "ion:time-outline",
       children: [
         {
           title: "Time Slots",
-          to: "/booking-time-slot", 
+          to: "/booking-time-slot",
           color: "text-primary-600",
           permission: "bookingtimeslot_view",
           page: "Booking Time Slot",
@@ -510,61 +807,91 @@ const MasterLayout = ({ children }) => {
       title: "Coupons",
       icon: "ion:card-outline",
       children: [
-        { title: "Coupons", to: "/coupons", color: "text-primary-600", permission: "coupons_view", page: "Coupons" },
+        {
+          title: "Coupons",
+          to: "/coupons",
+          color: "text-primary-600",
+          permission: "coupons_view",
+          page: "Coupons",
+        },
       ],
     },
     {
       title: "Leave Management",
-      icon: "ion:document-text-outline",
+      icon: "mdi:account-clock-outline",
       children: [
-        { title: "Leaves", to: "/leave-list", color: "text-primary-600", permission: "leavelist_view", page: "Leave List" },
+        {
+          title: "Leaves",
+          to: "/leave-list",
+          color: "text-primary-600",
+          permission: "leavelist_view",
+          page: "Leave List",
+        },
       ],
     },
-    {
-      title: "Blog",
-      icon: "material-symbols:article-outline",
-      children: [{ title: "Blog", to: "/blog", color: "text-primary-600", permission: "blog_view", page: "Blog" }],
-    },
+    // {
+    //   title: "Blog",
+    //   icon: "material-symbols:article-outline",
+    //   children: [{ title: "Blog", to: "/blog", color: "text-primary-600", permission: "blog_view", page: "Blog" }],
+    // },
     {
       title: "Contacts",
       icon: "flowbite:address-book-outline",
       children: [
-        { title: "Contacts", to: "/contacts", color: "text-primary-600", permission: "contacts_view", page: "Contacts" },
-      ],
-    },
-    {
-      title: "Dealer Service Price",
-      icon: "material-symbols:request-quote-outline",
-      children: [
         {
-          title: "Dealer Service Price",
-          to: "/dealer-service-price",
+          title: "Contacts",
+          to: "/contacts",
           color: "text-primary-600",
-          permission: "dealerserviceprice_view",
-          page: "Dealer Service Price",
+          permission: "contacts_view",
+          page: "Contacts",
         },
       ],
     },
+    // {
+    //   title: "Dealer Service Price",
+    //   icon: "material-symbols:request-quote-outline",
+    //   children: [
+    //     {
+    //       title: "Dealer Service Price",
+    //       to: "/dealer-service-price",
+    //       color: "text-primary-600",
+    //       permission: "dealerserviceprice_view",
+    //       page: "Dealer Service Price",
+    //     },
+    //   ],
+    // },
     {
       title: "Settings",
       icon: "material-symbols:settings-outline-rounded",
       children: [
-        { title: "Reasons", to: "/reasons", color: "text-primary-600", permission: "reasons_view", page: "Reasons" },
         {
-          title: "Notification Templates",
-          to: "/notification-templates",
-          color: "text-warning-main",
-          permission: "notificationtemplates_view",
-          page: "Notification Template",
+          title: "Reasons",
+          to: "/reasons",
+          color: "text-primary-600",
+          permission: "reasons_view",
+          page: "Reasons",
         },
+        // {
+        //   title: "Notification Templates",
+        //   to: "/notification-templates",
+        //   color: "text-warning-main",
+        //   permission: "notificationtemplates_view",
+        //   page: "Notification Template",
+        // },
+        // {
+        //   title: "Notifications",
+        //   to: "/notifications",
+        //   color: "text-info-main",
+        //   permission: "notifications_view",
+        //   page: "Notifications",
+        // },
         {
-          title: "Notifications",
-          to: "/notifications",
+          title: "Roles",
+          to: "/roles",
           color: "text-info-main",
-          permission: "notifications_view",
-          page: "Notifications",
+          permission: "roles_view",
+          page: "Roles",
         },
-        { title: "Roles", to: "/roles", color: "text-info-main", permission: "roles_view", page: "Roles" },
         {
           title: "Permission Pages",
           to: "/permission-pages",
@@ -581,14 +908,14 @@ const MasterLayout = ({ children }) => {
         },
       ],
     },
-    {
-      title: "Master Settings",
-      icon: "material-symbols:admin-panel-settings-outline",
-      children: [
-        { title: "Admin Users", to: "/admin-users", color: "text-primary-600", permission: "admin_user_view", page: "Admin_User" },
-      ],
+    // {
+    //   title: "Master Settings",
+    //   icon: "material-symbols:admin-panel-settings-outline",
+    //   children: [
+    //     { title: "Admin Users", to: "/admin-users", color: "text-primary-600", permission: "admin_user_view", page: "Admin_User" },
+    //   ],
 
-    },
+    // },
     {
       title: "Go To Website",
       icon: "mdi:earth",
@@ -605,8 +932,8 @@ const MasterLayout = ({ children }) => {
           sidebarActive
             ? "sidebar active "
             : mobileMenu
-              ? "sidebar sidebar-open"
-              : "sidebar"
+            ? "sidebar sidebar-open"
+            : "sidebar"
         }
       >
         <button
@@ -642,20 +969,21 @@ const MasterLayout = ({ children }) => {
                 const hasChildren = Array.isArray(item.children);
                 const visibleChildren = hasChildren
                   ? item.children.filter((child) => {
-                    // Check role-based access first
-                    if (child.roles && child.roles.includes(role)) return true;
+                      // Check role-based access first
+                      if (child.roles && child.roles.includes(role))
+                        return true;
 
-                    // For Admin users, show all children
-                    if (role === "Admin") return true;
+                      // For Admin users, show all children
+                      if (role === "Admin") return true;
 
-                    // Check permissions for non-admin users
-                    if (child.permission && child.page) {
-                      return hasPermission(child.permission, child.page);
-                    }
+                      // Check permissions for non-admin users
+                      if (child.permission && child.page) {
+                        return hasPermission(child.permission, child.page);
+                      }
 
-                    // Hide if no permission defined
-                    return false;
-                  })
+                      // Hide if no permission defined
+                      return false;
+                    })
                   : [];
 
                 if (hasChildren && visibleChildren.length === 0) return null;
@@ -673,9 +1001,19 @@ const MasterLayout = ({ children }) => {
                             <li key={i}>
                               <NavLink
                                 to={child.to}
-                                className={({ isActive }) =>
-                                  isActive ? "active-page" : ""
-                                }
+                                className={({ isActive }) => {
+                                  // Check if exact match
+                                  if (isActive) return "active-page";
+
+                                  // Check if current pathname is a child route of this parent
+                                  if (
+                                    isChildRoute(child.to, location.pathname)
+                                  ) {
+                                    return "active-page";
+                                  }
+
+                                  return "";
+                                }}
                               >
                                 <i
                                   className={`ri-circle-fill circle-icon ${child.color} w-auto`}
@@ -740,6 +1078,16 @@ const MasterLayout = ({ children }) => {
                   <input type='text' name='search' placeholder='Search' />
                   <Icon icon='ion:search-outline' className='icon' />
                 </form> */}
+              </div>
+            </div>
+            <div className="col text-center d-none d-md-block">
+              <div className="d-flex flex-column align-items-center">
+                <h6 className="mb-0 fw-semibold text-lg">
+                  {getDisplayRole()}  
+                </h6>
+                <span className="text-secondary-light fw-medium text-md">
+                  {localStorage.getItem("name") || "User"}
+                </span>
               </div>
             </div>
             <div className="col-auto ">
@@ -963,13 +1311,21 @@ const MasterLayout = ({ children }) => {
                     type="button"
                     data-bs-toggle="dropdown"
                   >
-                    <Icon icon="iconoir:bell" className="text-primary-light text-l" />
+                    <Icon
+                      icon="iconoir:bell"
+                      className="text-primary-light text-l"
+                    />
                     {unreadCount > 0 && (
                       <span className="notification-badge">{unreadCount}</span>
                     )}
                   </button>
 
-                  <div className="dropdown-menu to-top  p-0" style={{ width: "520px" }} > {/*dropdown-menu-lg*/}
+                  <div
+                    className="dropdown-menu to-top  p-0"
+                    style={{ width: "520px" }}
+                  >
+                    {" "}
+                    {/*dropdown-menu-lg*/}
                     {/* Header */}
                     <div className="m-16 py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2">
                       <div>
@@ -983,31 +1339,38 @@ const MasterLayout = ({ children }) => {
                         </span>
                       )}
                     </div>
-
                     {/* Notification List */}
                     <div className="max-h-400-px overflow-y-auto scroll-sm pe-4">
                       {notifications.length === 0 ? (
                         <div className="px-24 py-12 text-center">
-                          <p className="text-secondary-light mb-0">No notifications</p>
+                          <p className="text-secondary-light mb-0">
+                            No notifications
+                          </p>
                         </div>
                       ) : (
                         notifications.map((notification) => (
                           <Link
                             key={notification.id}
                             to="#"
-                            className={`px-24 py-12 d-flex align-items-start gap-3 mb-2 ${!notification.read ? "bg-neutral-50" : ""
-                              }`}
+                            className={`px-24 py-12 d-flex align-items-start gap-3 mb-2 ${
+                              !notification.read ? "bg-neutral-50" : ""
+                            }`}
                             onClick={() => {
                               // Mark as read
                               setNotifications((prev) =>
                                 prev.map((n) =>
-                                  n.id === notification.id ? { ...n, read: true } : n
+                                  n.id === notification.id
+                                    ? { ...n, read: true }
+                                    : n
                                 )
                               );
                               setUnreadCount((prev) => Math.max(0, prev - 1));
                               try {
-                                notificationService.markAsRead(notification.id, userId);
-                              } catch (_) { }
+                                notificationService.markAsRead(
+                                  notification.id,
+                                  userId
+                                );
+                              } catch (_) {}
                             }}
                           >
                             <div className="text-black hover-bg-transparent hover-text-primary d-flex align-items-start gap-3">
@@ -1019,7 +1382,9 @@ const MasterLayout = ({ children }) => {
                                   {notification.message}
                                 </p>
                                 <p className="text-xs text-secondary mb-0">
-                                  {new Date(notification.timestamp).toLocaleString(undefined, {
+                                  {new Date(
+                                    notification.timestamp
+                                  ).toLocaleString(undefined, {
                                     dateStyle: "medium",
                                     timeStyle: "short",
                                   })}
@@ -1030,20 +1395,29 @@ const MasterLayout = ({ children }) => {
                         ))
                       )}
                     </div>
-
                     {/* Clear All Button */}
                     <div className="text-center py-12 px-16">
                       <button
                         onClick={async () => {
                           try {
-                            const unreadNotifications = notifications.filter((n) => !n.read);
+                            const unreadNotifications = notifications.filter(
+                              (n) => !n.read
+                            );
                             for (const notification of unreadNotifications) {
-                              await notificationService.markAsRead(notification.id, userId);
+                              await notificationService.markAsRead(
+                                notification.id,
+                                userId
+                              );
                             }
-                            setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+                            setNotifications((prev) =>
+                              prev.map((n) => ({ ...n, read: true }))
+                            );
                             setUnreadCount(0);
                           } catch (error) {
-                            console.error("Error clearing notifications:", error);
+                            console.error(
+                              "Error clearing notifications:",
+                              error
+                            );
                           }
                         }}
                         className="text-primary-600 fw-semibold text-md border-0 bg-transparent"

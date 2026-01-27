@@ -158,15 +158,17 @@ const VehicleModelLayer = () => {
 
 
   const columns = [
-    { name: "Model ID", selector: (row) => row.ModelID },
+    { name: "Model ID", selector: (row) => row.ModelID, sortable: true, },
     {
-      name: "Image", selector: (row) => <img
+      name: "Image", 
+      selector: (row) => <img
         src={`${import.meta.env.VITE_APIURL_IMAGE}${row.VehicleImage}`}
         alt="Brand Logo"
         style={{ width: 50, height: 50, objectFit: "contain" }}
-      />
+      />,
+      sortable: true,
     },
-    { name: "Model Name", selector: (row) => row.ModelName },
+    { name: "Model Name", selector: (row) => row.ModelName, sortable: true, },
     {
       name: "Status",
       cell: (row) => {
@@ -195,6 +197,7 @@ const VehicleModelLayer = () => {
         );
       },
       // width: "150px",
+      sortable: true,
     },
     ...(hasPermission("vehiclemodel_edit")
     ? [

@@ -191,10 +191,10 @@ const ServiceSubCategories1Layer = () => {
   });
 
   const columns = [
-    { name: "Sub Category ID", selector: (row) => row.SubCategoryID },
-    { name: "Sub Category Name", selector: (row) => row.SubCategoryName },
-    { name: "Category Name", selector: (row) => row.CategoryName },
-    { name: "Description", selector: (row) => row.Description },
+    { name: "ID", selector: (row) => row.SubCategoryID, sortable: true, width:"80px", wrap:true},
+    { name: "Sub Category Name", selector: (row) => row.SubCategoryName, sortable: true, width:"180px", wrap:true},
+    { name: "Category Name", selector: (row) => row.CategoryName, sortable: true, width:"160px", wrap:true},
+    { name: "Description", selector: (row) => row.Description, sortable: true, width:"150px", wrap:true},
     {
       name: "Status",
       cell: (row) => {
@@ -226,6 +226,7 @@ const ServiceSubCategories1Layer = () => {
           </span>
         );
       },
+      sortable: true,
     },
     ...(hasPermission("servicesubcategory1_edit")
     ? [

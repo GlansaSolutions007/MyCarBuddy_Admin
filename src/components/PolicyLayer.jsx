@@ -43,7 +43,7 @@ const PolicyPages = () => {
 
   const columns = [
     { name: "Title", selector: (row) => row.Title, sortable: true },
-    { name: "Slug", selector: (row) => row.Slug },
+    { name: "Slug", selector: (row) => row.Slug, sortable: true, },
     {
       name: "Actions",
       cell: (row) => (
@@ -59,6 +59,7 @@ const PolicyPages = () => {
           Edit
         </Button>
       ),
+      sortable: true,
     },
   ];
 
