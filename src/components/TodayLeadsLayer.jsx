@@ -38,33 +38,47 @@ const TodayLeadsLayer = () => {
     setFilteredLeads(filtered);
   }, [searchTerm, leads]);
 
-  const fetchLeads = async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const url = `${API_BASE}Leads/TodayAssignedFollowUpLeads?EmpId=${userId}`;
-      const res = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+const fetchLeads = async () => {
+  try {
+    setLoading(true);
+    setError("");
+
+    const url = `${API_BASE}Leads/TodayAssignedFollowUpLeads?EmpId=${userId}`;
+    const res = await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (res.data && Array.isArray(res.data)) {
+      const filteredData = res.data.filter((lead) => {
+        const isCompletedAndPaid =
+          lead.BookingStatus === "Completed" &&
+          lead.PaymentStatus === "Success";
+
+        const isLeadClosed = lead.NextAction === "Lead Closed";
+
+        // ❌ remove if either condition is true
+        return !isCompletedAndPaid && !isLeadClosed;
       });
-      if (res.data && Array.isArray(res.data)) {
-        setLeads(res.data);
-        setFilteredLeads(res.data);
-      } else {
-        setLeads([]);
-        setFilteredLeads([]);
-      }
-    } catch (e) {
-      console.error(e);
-      setError("Failed to load leads.");
+
+      setLeads(filteredData);
+      setFilteredLeads(filteredData);
+    } else {
       setLeads([]);
       setFilteredLeads([]);
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (e) {
+    console.error(e);
+    setError("Failed to load leads.");
+    setLeads([]);
+    setFilteredLeads([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Format date helper to show nicer dates (like DD-MM-YYYY)
   const formatDate = (dateStr) => {

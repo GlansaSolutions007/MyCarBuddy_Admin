@@ -841,6 +841,7 @@ const BookingLayer = () => {
                   )} */}
 
                   {/* Field Advisor Checkbox */}
+                  {roleName !== "Field Advisor" && (
                   <div className="form-check d-flex align-items-center gap-2 m-0">
                     <input
                       type="checkbox"
@@ -857,6 +858,7 @@ const BookingLayer = () => {
                       Field Advisor
                     </label>
                   </div>
+                  )}
                   {/* Technician Checkbox: always show */}
                   <div className="form-check d-flex align-items-center gap-2 m-0">
                     <input

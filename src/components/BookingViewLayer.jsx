@@ -81,7 +81,7 @@ const BookingViewLayer = () => {
   const [discountAmount, setDiscountAmount] = useState("");
   const employeeData = JSON.parse(localStorage.getItem("employeeData"));
   const userId = employeeData?.Id;
-
+  const roleName = employeeData?.RoleName;
   const today = new Date().toISOString().split("T")[0];
   const nowTime = new Date().toTimeString().slice(0, 5); // HH:mm
   const finalPayAmount = Math.max(
@@ -2189,19 +2189,21 @@ const BookingViewLayer = () => {
                                 {remainingAmount === 0 &&
                                   bookingData?.BookingAddOns &&
                                   bookingData.BookingAddOns.length > 0 && (
+                                    <>
                                     <button
                                       className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                                       onClick={handleGenerateFinalInvoice}
                                     >
                                       Generate Final Invoice
                                     </button>
-                                  )}
-                                <button
+                                    <button
                                   className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                                   onClick={handleGenerateDealerInvoice}
                                 >
                                   Generate Dealer Invoice
                                 </button>
+                                </>
+                                  )}
                               </div>
                             </>
                           ) : (
@@ -2295,7 +2297,7 @@ const BookingViewLayer = () => {
                       Technician
                     </label>
                   </div>
-                  {roleId !== "8" && (
+                  {roleId !== "8" && roleName !== "Field Advisor" &&(
                     <div className="form-check d-flex align-items-center gap-2 m-0">
                       <input
                         type="checkbox"

@@ -165,8 +165,21 @@ const BookServicesLayer = () => {
             labourCharge: Number(item.labourCharges || 0),
             includeId: item.serviceType === "Service" ? item.serviceId : null,
             packageId: item.serviceType === "Package" ? item.serviceId : null,
-            dealerSparePrice: item.dealerSparePrice || "0.00",
-            dealerServicePrice: item.dealerServicePrice || "0.00",
+            dealerBasePrice: item.dealerBasePrice !== null && item.dealerBasePrice !== undefined && item.dealerBasePrice !== ""
+              ? Number(item.dealerBasePrice)
+              : 0,
+            dealerSparePrice: item.dealerSparePrice !== null && item.dealerSparePrice !== undefined && item.dealerSparePrice !== ""
+              ? Number(item.dealerSparePrice)
+              : 0,
+            dealerServicePrice: item.dealerServicePrice !== null && item.dealerServicePrice !== undefined && item.dealerServicePrice !== ""
+              ? Number(item.dealerServicePrice)
+              : 0,
+            dealerGSTPercent: item.dealerGSTPercent !== null && item.dealerGSTPercent !== undefined && item.dealerGSTPercent !== ""
+              ? Number(item.dealerGSTPercent)
+              : 0,
+            dealerGstAmount: item.dealerGstAmount !== null && item.dealerGstAmount !== undefined && item.dealerGstAmount !== ""
+              ? Number(item.dealerGstAmount)
+              : 0,
             isEditing: false,
             // API identifiers (keep for update)
             _apiId: item.id || null,
@@ -1240,7 +1253,7 @@ const BookServicesLayer = () => {
       width: "120px",
       sortable: true,
     },
-        {
+    {
       name: "DLR Part Price",
       cell: (row) => (
         <input
@@ -1454,6 +1467,23 @@ const BookServicesLayer = () => {
       width: "120px",
       sortable: true,
     },
+     {
+      name: "DLR GST %",
+      cell: (row) => (
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          value={
+            row.isInclude
+              ? ""
+              : Number(row.dealerGSTPercent || "0")
+          }
+          disabled
+        />
+      ),
+      width: "150px",
+      sortable: true,
+    },
     {
       name: "GST Amt",
       cell: (row, index) => (
@@ -1492,6 +1522,23 @@ const BookServicesLayer = () => {
       width: "120px",
       sortable: true,
     },
+     {
+      name: "DLR GST Amt",
+      cell: (row) => (
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          value={
+            row.isInclude
+              ? ""
+              : Number(row.dealerGstAmount || "0.00")
+          }
+          disabled
+        />
+      ),
+      width: "150px",
+      sortable: true,
+    },
     {
       name: "Total Amt",
       cell: (row) => {
@@ -1527,7 +1574,9 @@ const BookServicesLayer = () => {
       sortable: true,
     },
 
-    ...(employeeData?.RoleName === "Supervisor Head" || role === "Admin"
+    ...(employeeData?.RoleName === "Supervisor Head" ||
+    employeeData?.RoleName === "Field Advisor" ||
+    role === "Admin"
       ? [
           {
             name: "Company %",
@@ -1677,11 +1726,22 @@ const BookServicesLayer = () => {
     },
     {
       name: "Actions",
-      cell: (row, index) =>
-        !row.isInclude ? (
+      cell: (row) => {
+        const isFieldAdvisor = employeeData?.RoleName === "Field Advisor";
+        const isConfirmed = row.status === "Confirmed";
+
+        const canModify =
+          !isConfirmed ||
+          employeeData?.RoleName === "Supervisor Head" ||
+          role === "Admin";
+
+        return !row.isInclude ? (
           <div className="d-flex gap-2">
+            {/* Edit */}
             {!row.isEditing &&
+              canModify &&
               (employeeData?.RoleName === "Supervisor Head" ||
+                employeeData?.RoleName === "Field Advisor" ||
                 role === "Admin") && (
                 <button
                   className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
@@ -1691,8 +1751,12 @@ const BookServicesLayer = () => {
                   edit
                 </button>
               )}
+
+            {/* Save */}
             {row.isEditing &&
+              canModify &&
               (employeeData?.RoleName === "Supervisor Head" ||
+                employeeData?.RoleName === "Field Advisor" ||
                 role === "Admin") && (
                 <button
                   className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
@@ -1702,7 +1766,9 @@ const BookServicesLayer = () => {
                   save
                 </button>
               )}
-            {!row.isEditing && (
+
+            {/* Delete */}
+            {!row.isEditing && canModify && (
               <button
                 className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
                 onClick={() => handleRemoveItem(row.addedItemsIndex)}
@@ -1712,7 +1778,8 @@ const BookServicesLayer = () => {
               </button>
             )}
           </div>
-        ) : null,
+        ) : null;
+      },
       ignoreRowClick: true,
       allowOverflow: true,
     },
@@ -2290,7 +2357,6 @@ const BookServicesLayer = () => {
                 {hasNewItem && (
                   <button
                     className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
-                    // className="btn btn-primary-600 radius-8 px-10 py-4"
                     onClick={handleSubmit}
                   >
                     Submit Booking
@@ -2300,7 +2366,6 @@ const BookServicesLayer = () => {
                   role === "Admin") && (
                   <button
                     className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
-                    // className="btn btn-primary-700 radius-8 px-10 py-4"
                     onClick={handleConfirmBooking}
                     disabled={hasNewItem}
                   >

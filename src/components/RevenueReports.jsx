@@ -16,14 +16,27 @@ const EXPORT_COLUMNS = {
     { key: "OurEarnings", label: "Our Earnings" },
   ],
   service: [
-    { key: "CreatedDate", label: "Date", format: "date" },
+    { key: "BookingTrackID", label: "Booking Track ID" },
+    { key: "LeadId", label: "Lead ID" },
     { key: "ServiceType", label: "Service Type" },
     { key: "ServiceName", label: "Service Name" },
+    { key: "CreatedDate", label: "Date", format: "date" },
     { key: "GarageName", label: "Garage Name" },
+    { key: "BasePrice", label: "Base Price" },
+    { key: "Quantity", label: "Quantity" },
     { key: "Price", label: "Price" },
+    { key: "LabourCharges", label: "Labour Charges" },
+    { key: "GSTPercent", label: "GST %" },
     { key: "GST", label: "GST" },
+    { key: "TotalPrice", label: "Total Price" },
+    { key: "DealerBasePrice", label: "Dealer Base Price" },
+    { key: "DealerSparePrice", label: "Dealer Spare Price" },
+    { key: "DealerPrice", label: "Dealer Price" },
+    { key: "DealerGSTPercent", label: "Dealer GST %" },
+    { key: "DealerGSTAmount", label: "Dealer GST Amount" },
     { key: "OurPercentage", label: "Our %" },
-    { key: "OurEarnings", label: "Our Earnings" },
+    { key: "OurEarningsStored", label: "Our Earnings" },
+    // { key: "OurEarningsCalculated", label: "Our Earnings (Calculated)" },
   ],
   booking: [
     { key: "BookingTrackID", label: "Booking ID" },
@@ -139,7 +152,9 @@ const RevenueReports = () => {
       return (
         (!searchTerm ||
           item.ServiceName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          item.GarageName?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+          item.GarageName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.BookingTrackID?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.LeadId?.toLowerCase().includes(searchTerm.toLowerCase())) &&
         (!serviceType || item.ServiceType === serviceType) &&
         (!fromDate || item.CreatedDate >= fromDate) &&
         (!toDate ||
@@ -180,6 +195,31 @@ const RevenueReports = () => {
 
   const serviceColumns = [
     {
+      name: "Booking ID",
+      selector: (r) => r.BookingTrackID || "-",
+      sortable: true,
+      width: "150px",
+    },
+    {
+      name: "Lead ID",
+      selector: (r) => r.LeadId || "-",
+      sortable: true,
+      width: "120px",
+    },
+    {
+      name: "Type",
+      selector: (r) => r.ServiceType || "-",
+      sortable: true,
+      width: "120px",
+    },
+    {
+      name: "Service Name",
+      selector: (r) => r.ServiceName || "-",
+      sortable: true,
+      width: "200px",
+      wrap: true,
+    },
+        {
       name: "Booking Date",
       selector: (r) =>
         r.CreatedDate
@@ -190,20 +230,103 @@ const RevenueReports = () => {
               hour: "2-digit",
               minute: "2-digit",
               second: "2-digit",
-              hour12: true, // set false for 24-hour format
+              hour12: true,
             })
           : "-",
       sortable: true,
       width: "150px",
       wrap: true,
     },
-    { name: "Service Type", selector: (r) => r.ServiceType, sortable: true, width: "150px" },
-    { name: "Service Name", selector: (r) => r.ServiceName, sortable: true, width: "200px", wrap: true,},
-    { name: "Garage Name", selector: (r) => r.GarageName, sortable: true, width: "150px" },
-    { name: "Price", selector: (r) => r.Price, sortable: true, },
-    { name: "GST", selector: (r) => r.GST, sortable: true, },
-    { name: "Our %", selector: (r) => r.OurPercentage, sortable: true, },
-    { name: "Our Earnings", selector: (r) => r.OurEarnings, sortable: true, width: "150px"},
+    {
+      name: "Garage Name",
+      selector: (r) => r.GarageName || "-",
+      sortable: true,
+      width: "150px",
+    },
+    {
+      name: "Part Price",
+      selector: (r) => r.BasePrice ?? "-",
+      sortable: true,
+      width: "120px",
+    },
+    {
+      name: "Quantity",
+      selector: (r) => r.Quantity || 0,
+      sortable: true,
+      width: "120px",
+    },
+    {
+      name: "Part Total",
+      selector: (r) => r.Price ?? "-",
+      sortable: true,
+      width: "120px",
+    },
+    {
+      name: "Service Chg.",
+      selector: (r) => r.LabourCharges ?? "-",
+      sortable: true,
+      width: "140px",
+    },
+    {
+      name: "GST %",
+      selector: (r) => r.GSTPercent ?? "-",
+      sortable: true,
+      width: "100px",
+    },
+    {
+      name: "GST Amt.",
+      selector: (r) => r.GST ?? "-",
+      sortable: true,
+      width: "120px",
+    },
+    {
+      name: "Total Price",
+      selector: (r) => r.TotalPrice ?? "-",
+      sortable: true,
+      width: "120px",
+    },
+    {
+      name: "DLR Part Price",
+      selector: (r) => r.DealerBasePrice ?? "-",
+      sortable: true,
+      width: "150px",
+    },
+    {
+      name: "DLR Part Total",
+      selector: (r) => r.DealerSparePrice ?? "-",
+      sortable: true,
+      width: "160px",
+    },
+    {
+      name: "DLR Service Chg.",
+      selector: (r) => r.DealerPrice ?? "-",
+      sortable: true,
+      width: "170px",
+    },
+    {
+      name: "DLR GST %",
+      selector: (r) => r.DealerGSTPercent ?? "-",
+      sortable: true,
+      width: "130px",
+    },
+    {
+      name: "DLR GST Amt.",
+      selector: (r) => r.DealerGSTAmount ?? "-",
+      sortable: true,
+      width: "160px",
+    },
+    {
+      name: "Our %",
+      selector: (r) => r.OurPercentage ?? "-",
+      sortable: true,
+      width: "100px",
+    },
+    {
+      name: "Our Earnings",
+      selector: (r) => r.OurEarningsStored ?? "-",
+      sortable: true,
+      width: "180px",
+    },
   ];
   const bookingColumns = [
     {
@@ -310,7 +433,7 @@ const RevenueReports = () => {
             <div className="row align-items-center g-3">
               {/* LEFT: REPORT + SEARCH (col-4) */}
               <div className="col-12 col-md-5">
-                <div className="d-flex align-items-center gap-3 flex-wrap">
+                <div className="d-flex align-items-center gap-1 flex-wrap">
                   <div className="d-flex align-items-center gap-2">
                     <label className="form-label mb-0 fw-semibold">
                       Report:
@@ -353,8 +476,9 @@ const RevenueReports = () => {
                       >
                         <option value="">All</option>
                         <option value="Service">Service</option>
-                        <option value="Spare">Spare</option>
+                        <option value="Spare Part">Spare Part</option>
                         <option value="Package">Package</option>
+                        <option value="Service Group">Service Group</option>
                       </select>
                     </div>
                   )}

@@ -200,7 +200,8 @@ const LeadsAssignLayer = () => {
         : [];
       const empList = empArray
         .filter(
-          (emp) => emp.Is_Head !== 1 && emp.DeptId === userDetails?.DeptId
+          (emp) => emp.Is_Head !== 1 && emp.DeptId === userDetails?.DeptId &&
+          Number(emp.Reporting_To) === Number(userDetails?.Id)
         )
         .map((emp) => ({
           value: emp.Id,

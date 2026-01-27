@@ -20,24 +20,6 @@ const InvoiceViewLayer = () => {
     fetchBookingData();
   }, [bookingId]);
 
-  // const fetchBookingData = async () => {
-  //   try {
-  //     setLoading(true);
-  //     const res = await axios.get(
-  //       `${API_BASE}Bookings/BookingId?Id=${bookingId}`,
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-  //     setBookingData(res.data[0]);
-  //   } catch (error) {
-  //     console.error("Error fetching booking data:", error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
   const fetchBookingData = async () => {
     try {
       setLoading(true);
