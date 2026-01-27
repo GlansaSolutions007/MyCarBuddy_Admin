@@ -73,38 +73,38 @@ const DealerBookingsView = () => {
               item.dealerBasePrice !== null &&
               item.dealerBasePrice !== undefined &&
               item.dealerBasePrice !== ""
-                ? Number(item.dealerBasePrice)
-                : 0,
+                ? (Number(item.dealerBasePrice) === 0 ? "" : Number(item.dealerBasePrice))
+                : "",
             description: item.description || "",
             gstPercent:
               item.dealerGSTPercent !== null &&
               item.dealerGSTPercent !== undefined &&
               item.dealerGSTPercent !== ""
-                ? Number(item.dealerGSTPercent)
+                ? (Number(item.dealerGSTPercent) === 0 ? "" : Number(item.dealerGSTPercent))
                 : 18,
             gstPrice:
               item.dealerGstAmount !== null &&
               item.dealerGstAmount !== undefined &&
               item.dealerGstAmount !== ""
-                ? Number(item.dealerGstAmount)
-                : 0,
+                ? (Number(item.dealerGstAmount) === 0 ? "" : Number(item.dealerGstAmount))
+                : "",
             dealerID: item.dealerID || "",
-            percentage: Number(item.percentage || 0),
-            percentAmount: Number(item.our_Earnings || 0),
+            percentage: Number(item.percentage || 0) === 0 ? "" : Number(item.percentage || 0),
+            percentAmount: Number(item.our_Earnings || 0) === 0 ? "" : Number(item.our_Earnings || 0),
             status: item.status,
-            labourCharge: Number(item.labourCharges || 0),
+            labourCharge: Number(item.labourCharges || 0) === 0 ? "" : Number(item.labourCharges || 0),
             dealerServicePrice:
               item.dealerServicePrice !== null &&
               item.dealerServicePrice !== undefined &&
               item.dealerServicePrice !== ""
-                ? Number(item.dealerServicePrice)
-                : 0,
+                ? (Number(item.dealerServicePrice) === 0 ? "" : Number(item.dealerServicePrice))
+                : "",
             dealerSparePrice:
               item.dealerSparePrice !== null &&
               item.dealerSparePrice !== undefined &&
               item.dealerSparePrice !== ""
-                ? Number(item.dealerSparePrice)
-                : 0,
+                ? (Number(item.dealerSparePrice) === 0 ? "" : Number(item.dealerSparePrice))
+                : "",
             isDealer_Confirm: item.isDealer_Confirm || "Pending",
             includeId: item.serviceType === "Service" ? item.serviceId : null,
             packageId: item.serviceType === "Package" ? item.serviceId : null,
@@ -215,14 +215,14 @@ const DealerBookingsView = () => {
           serviceType: row.type,
           serviceName: row.name,
           basePrice: Number(row.dealerBasePrice) || 0,
-          quantity: row.quantity,
+          quantity: row.quantity || 1,
           price: Number(row.dealerSparePrice) || 0, // Part Total
-          gstPercent: row.gstPercent,
-          gstAmount: row.gstPrice,
+          gstPercent: row.gstPercent === "" || row.gstPercent === 0 ? 18 : Number(row.gstPercent),
+          gstAmount: Number(row.gstPrice) || 0,
           description: row.description,
           dealerID: row.dealerID,
-          percentage: row.percentage,
-          our_Earnings: row.percentAmount,
+          percentage: Number(row.percentage) || 0,
+          our_Earnings: Number(row.percentAmount) || 0,
           labourCharges: Number(row.dealerServicePrice) || 0, // Service Chg.
           modifiedBy: parseInt(localStorage.getItem("userId")),
           isActive: true,
@@ -388,13 +388,8 @@ const DealerBookingsView = () => {
             type="number"
             className="form-control form-control-sm"
             min={0}
-            value={
-              row.dealerBasePrice !== null &&
-              row.dealerBasePrice !== undefined &&
-              row.dealerBasePrice !== ""
-                ? row.dealerBasePrice
-                : 0
-            }
+            placeholder="0"
+            value={row.dealerBasePrice === "" || row.dealerBasePrice === 0 ? "" : row.dealerBasePrice}
             disabled={!row.isEditing}
             onChange={(e) => {
               const val = e.target.value;
@@ -439,9 +434,10 @@ const DealerBookingsView = () => {
               });
             }}
             onBlur={() => {
-              if (row.dealerBasePrice === "") {
+              if (row.dealerBasePrice === "" || row.dealerBasePrice === 0) {
+                const dealerBasePrice = 0;
                 const quantity = Number(row.quantity) || 1;
-                const partTotal = 0 * quantity; // Part Total = Part Price * Qty
+                const partTotal = dealerBasePrice * quantity; // Part Total = Part Price * Qty
                 const serviceCharge = Number(row.dealerServicePrice) || 0;
                 const baseAmount = partTotal + serviceCharge;
                 const gstPrice = (baseAmount * 18) / 100;
@@ -478,6 +474,7 @@ const DealerBookingsView = () => {
             type="number"
             className="form-control form-control-sm"
             min={1}
+            placeholder="1"
             value={row.quantity === "" ? "" : row.quantity}
             disabled={!row.isEditing}
             onChange={(e) => {
@@ -560,13 +557,8 @@ const DealerBookingsView = () => {
           <input
             type="number"
             className="form-control form-control-sm"
-            value={
-              row.dealerSparePrice !== null &&
-              row.dealerSparePrice !== undefined &&
-              row.dealerSparePrice !== ""
-                ? Number(row.dealerSparePrice).toFixed(2)
-                : 0
-            }
+            placeholder="0"
+            value={row.dealerSparePrice === "" || row.dealerSparePrice === 0 ? "" : Number(row.dealerSparePrice).toFixed(2)}
             disabled={!row.isEditing}
             onChange={(e) => {
               const val = e.target.value;
@@ -606,9 +598,17 @@ const DealerBookingsView = () => {
               });
             }}
             onBlur={() => {
-              if (row.dealerSparePrice === "") {
+              if (row.dealerSparePrice === "" || row.dealerSparePrice === 0) {
+                const dealerSparePrice = 0;
+                const serviceCharge = Number(row.dealerServicePrice) || 0;
+                const baseAmount = dealerSparePrice + serviceCharge;
+                const gstPrice = row.gstPercent !== "" && row.gstPercent !== null && row.gstPercent !== undefined
+                  ? (baseAmount * Number(row.gstPercent)) / 100
+                  : (baseAmount * 18) / 100;
+                
                 updateTableRow(row.addedItemsIndex, {
                   dealerSparePrice: 0,
+                  gstPrice: Number(gstPrice.toFixed(2)),
                 });
               }
             }}
@@ -632,18 +632,12 @@ const DealerBookingsView = () => {
             />
           );
         }
-        const displayValue =
-          row.dealerServicePrice !== null &&
-          row.dealerServicePrice !== undefined &&
-          row.dealerServicePrice !== ""
-            ? Number(row.dealerServicePrice)
-            : 0;
-
         return (
           <input
             type="number"
             className="form-control form-control-sm"
-            value={displayValue}
+            placeholder="0"
+            value={row.dealerServicePrice === "" || row.dealerServicePrice === 0 ? "" : row.dealerServicePrice}
             min={0}
             onChange={(e) => {
               const val = e.target.value;
@@ -683,9 +677,17 @@ const DealerBookingsView = () => {
               });
             }}
             onBlur={() => {
-              if (row.dealerServicePrice === "") {
+              if (row.dealerServicePrice === "" || row.dealerServicePrice === 0) {
+                const dealerServicePrice = 0;
+                const partTotal = Number(row.dealerSparePrice) || 0;
+                const baseAmount = partTotal + dealerServicePrice;
+                const gstPrice = row.gstPercent !== "" && row.gstPercent !== null && row.gstPercent !== undefined
+                  ? (baseAmount * Number(row.gstPercent)) / 100
+                  : (baseAmount * 18) / 100;
+                
                 updateTableRow(row.addedItemsIndex, {
                   dealerServicePrice: 0,
+                  gstPrice: Number(gstPrice.toFixed(2)),
                 });
               }
             }}
@@ -715,7 +717,8 @@ const DealerBookingsView = () => {
           <input
             type="number"
             className="form-control form-control-sm"
-            value={row.gstPercent}
+            placeholder="0"
+            value={row.gstPercent === "" || row.gstPercent === 0 ? "" : row.gstPercent}
             min={0}
             // step="0.01"
             disabled={!row.isEditing}
@@ -764,9 +767,16 @@ const DealerBookingsView = () => {
               });
             }}
             onBlur={() => {
-              if (row.gstPercent === "") {
+              if (row.gstPercent === "" || row.gstPercent === 0) {
+                const gstPercent = 18;
+                const partTotal = Number(row.dealerSparePrice) || 0;
+                const serviceCharge = Number(row.dealerServicePrice) || 0;
+                const baseAmount = partTotal + serviceCharge;
+                const gstPrice = (baseAmount * gstPercent) / 100;
+                
                 updateTableRow(row.addedItemsIndex, {
                   gstPercent: 18,
+                  gstPrice: Number(gstPrice.toFixed(2)),
                 });
               }
             }}
@@ -791,44 +801,14 @@ const DealerBookingsView = () => {
             />
           );
         }
-        // Use stored gstPrice if available, otherwise calculate
-        let gstAmount = 0;
-        if (
-          row.gstPrice !== null &&
-          row.gstPrice !== undefined &&
-          row.gstPrice !== ""
-        ) {
-          // Use the stored value (from API or manual edit)
-          gstAmount = Number(row.gstPrice);
-        } else {
-          // Calculate Part Total from dealerSparePrice (default to 0)
-          const partTotal =
-            row.dealerSparePrice !== null &&
-            row.dealerSparePrice !== undefined &&
-            row.dealerSparePrice !== ""
-              ? Number(row.dealerSparePrice)
-              : 0;
-
-          // Calculate Service Chg. from dealerServicePrice (default to 0)
-          const serviceCharge =
-            row.dealerServicePrice !== null &&
-            row.dealerServicePrice !== undefined &&
-            row.dealerServicePrice !== ""
-              ? Number(row.dealerServicePrice)
-              : 0;
-
-          // Calculate GST Amt = (Part Total + Service Chg.) * (GST % / 100)
-          const gstPercent = row.gstPercent || 18;
-          gstAmount = ((partTotal + serviceCharge) * Number(gstPercent)) / 100;
-        }
-
         return (
           <input
             type="number"
             className="form-control form-control-sm"
             min={0}
+            placeholder="0"
             // step="0.01"
-            value={gstAmount.toFixed(2)}
+            value={row.gstPrice === "" || row.gstPrice === 0 ? "" : (row.gstPrice !== null && row.gstPrice !== undefined && row.gstPrice !== "" ? Number(row.gstPrice).toFixed(2) : "")}
             disabled={!row.isEditing}
             onChange={(e) => {
               const val = e.target.value;
@@ -880,25 +860,12 @@ const DealerBookingsView = () => {
               });
             }}
             onBlur={() => {
-              if (row.gstPrice === "") {
+              if (row.gstPrice === "" || row.gstPrice === 0) {
                 // Recalculate GST based on current values
-                const partTotal =
-                  row.dealerSparePrice !== null &&
-                  row.dealerSparePrice !== undefined &&
-                  row.dealerSparePrice !== ""
-                    ? Number(row.dealerSparePrice)
-                    : 0;
-
-                const serviceCharge =
-                  row.dealerServicePrice !== null &&
-                  row.dealerServicePrice !== undefined &&
-                  row.dealerServicePrice !== ""
-                    ? Number(row.dealerServicePrice)
-                    : 0;
-
+                const partTotal = Number(row.dealerSparePrice) || 0;
+                const serviceCharge = Number(row.dealerServicePrice) || 0;
                 const gstPercent = row.gstPercent || 18;
-                const gstPrice =
-                  ((partTotal + serviceCharge) * Number(gstPercent)) / 100;
+                const gstPrice = ((partTotal + serviceCharge) * Number(gstPercent)) / 100;
 
                 updateTableRow(row.addedItemsIndex, {
                   gstPrice: Number(gstPrice.toFixed(2)),
@@ -1017,13 +984,13 @@ const DealerBookingsView = () => {
                   >
                     edit
                   </button>
-                  <button
+                  {/* <button
                     className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
                     onClick={() => handleRemoveItem(row.addedItemsIndex)}
                     title="Delete"
                   >
                     <Icon icon="mingcute:delete-2-line" />
-                  </button>
+                  </button> */}
                 </>
               )}
             {row.isEditing && (
