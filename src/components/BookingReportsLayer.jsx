@@ -16,13 +16,20 @@ const BookingReportsLayer = () => {
 
     useEffect(() => {
         fetchMetrics();
-    }, []);
+    }, [endDate]);
 
     const fetchMetrics = async () => {
         try {
             setLoading(true);
 
-            const res = await axios.get(`${API_BASE}Supervisor/BookingMetrics`, {
+            // Form final API URL
+            let url = `${API_BASE}Supervisor/BookingMetrics`;
+
+            if (startDate && endDate) {
+                url += `?FromDate=${startDate}&ToDate=${endDate}`;
+            }
+
+            const res = await axios.get(url, {
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
@@ -30,6 +37,7 @@ const BookingReportsLayer = () => {
             });
 
             setMetrics(res.data);
+            setError("");
         } catch (error) {
             console.error("Error loading metrics:", error);
             setError("Failed to load Booking Metrics.");
@@ -39,34 +47,51 @@ const BookingReportsLayer = () => {
     };
 
     const statusConfig = {
-        "Total Bookings": {color: "info", icon: "mdi:book",  gradientClass: "gradient-deep-2", lineClass: "line-bg-info"},
-        "Completed Services": {color: "primary", icon: "mdi:check-circle", gradientClass: "gradient-deep-1", lineClass: "line-bg-primary"},
-        "Pending": {color: "danger", icon: "mdi:clock-outline", gradientClass: "gradient-deep-4", lineClass: "line-bg-danger"},
-        "Journey Started": {color: "success", icon: "mdi:road-variant", gradientClass: "gradient-deep-3", lineClass: "line-bg-success"},
-        "Reached": {color: "warning", icon: "mdi:map-marker-check", gradientClass: "gradient-deep-4", lineClass: "line-bg-warning"},
-        "Service Started": {color: "info", icon: "mdi:play-circle", gradientClass: "gradient-deep-1", lineClass: "line-bg-secondary"},
-        "Service Ended": {color: "success", icon: "mdi:stop-circle", gradientClass: "gradient-deep-3", lineClass: "line-bg-dark"},
-        "Cancelled": {color: "danger", icon: "mdi:close-circle", gradientClass: "gradient-deep-2", lineClass: "line-bg-danger"},
-        "Confirmed": {color: "success", icon: "mdi:checkbox-marked-circle", gradientClass: "gradient-deep-1", lineClass: "line-bg-success"},
-        "Failed": {color: "warning", icon: "mdi:alert-circle", gradientClass: "gradient-deep-3", lineClass: "line-bg-warning"
+        "Total Bookings": { color: "info", icon: "mdi:book", gradientClass: "gradient-deep-2", lineClass: "line-bg-info" },
+        "Completed Services": { color: "primary", icon: "mdi:check-circle", gradientClass: "gradient-deep-1", lineClass: "line-bg-primary" },
+        "Pending": { color: "danger", icon: "mdi:clock-outline", gradientClass: "gradient-deep-4", lineClass: "line-bg-danger" },
+        "Journey Started": { color: "success", icon: "mdi:road-variant", gradientClass: "gradient-deep-3", lineClass: "line-bg-success" },
+        "Reached": { color: "warning", icon: "mdi:map-marker-check", gradientClass: "gradient-deep-4", lineClass: "line-bg-warning" },
+        "Service Started": { color: "info", icon: "mdi:play-circle", gradientClass: "gradient-deep-1", lineClass: "line-bg-secondary" },
+        "Service Ended": { color: "success", icon: "mdi:stop-circle", gradientClass: "gradient-deep-3", lineClass: "line-bg-dark" },
+        "Cancelled": { color: "danger", icon: "mdi:close-circle", gradientClass: "gradient-deep-2", lineClass: "line-bg-danger" },
+        "Confirmed": { color: "success", icon: "mdi:checkbox-marked-circle", gradientClass: "gradient-deep-1", lineClass: "line-bg-success" },
+        "Failed": {
+            color: "warning", icon: "mdi:alert-circle", gradientClass: "gradient-deep-3", lineClass: "line-bg-warning"
         }
     };
 
-    const cardDesign = Object.entries(statusConfig).map(([title, config]) => ({
-        title,
-        key:
-            title === "Total Bookings" ? "TotalBookings" :
-                title === "Completed Services" ? "CompletedServices" :
-                    title === "Pending" ? "Pending" :
-                        title === "Journey Started" ? "StartJourneyCount" :
-                            title === "Reached" ? "ReachedCount" :
-                                title === "Service Started" ? "ServiceStartedCount" :
-                                    title === "Service Ended" ? "ServiceEndedCount" :
-                                        title === "Cancelled" ? "CancelledCount" :
-                                            title === "Confirmed" ? "ConfirmedCount" :
-                                                "FailedCount",
-        ...config
-    }));
+    const cardDesign = Object.entries(statusConfig).map(([title, config]) => {
+        let apiStatus =
+            title === "Total Bookings" ? "" :
+                title === "Completed Services" ? "Completed" :
+                    title === "Service Started" ? "ServiceStarted" :
+                        title === "Service Ended" ? "ServiceEnded" :
+                            title === "Pending" ? "pending" :
+                                title === "Reached" ? "Reached" :
+                                    title === "Journey Started" ? "JourneyStarted" :
+                                        title === "Cancelled" ? "Cancelled" :
+                                            title === "Confirmed" ? "Confirmed" :
+                                                "Failed";
+
+        return {
+            title,
+            key:
+                title === "Total Bookings" ? "TotalBookings" :
+                    title === "Completed Services" ? "CompletedServices" :
+                        title === "Pending" ? "Pending" :
+                            title === "Journey Started" ? "StartJourneyCount" :
+                                title === "Reached" ? "ReachedCount" :
+                                    title === "Service Started" ? "ServiceStartedCount" :
+                                        title === "Service Ended" ? "ServiceEndedCount" :
+                                            title === "Cancelled" ? "CancelledCount" :
+                                                title === "Confirmed" ? "ConfirmedCount" :
+                                                    "FailedCount",
+            apiStatus,
+            ...config
+        };
+    });
+
 
 
     return (
@@ -76,35 +101,100 @@ const BookingReportsLayer = () => {
 
                     {/* 🔹 Date Filter Bar */}
                     <div
-                        className="d-flex flex-wrap align-items-center gap-2 mb-3 p-2"
+                        className="d-flex flex-wrap align-items-center gap-2 mb-3 p-2 ps-5"
                         style={{
                             background: "#f8f9fa",
                             borderRadius: "8px",
                         }}
-                    >
+                    >   From
                         <input
                             type="date"
                             className="form-control m-1"
                             placeholder="DD-MM-YYYY"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
-                            style={{
-                                minWidth: "100px",
-                                maxWidth: "150px",
-                            }}
+                            style={{ minWidth: "120px", maxWidth: "150px" }}
                         />
-
+                        To
                         <input
                             type="date"
                             className="form-control m-1"
                             placeholder="DD-MM-YYYY"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
-                            style={{
-                                minWidth: "100px",
-                                maxWidth: "150px",
-                            }}
+                            style={{ minWidth: "120px", maxWidth: "150px" }}
                         />
+
+                        {/* Search Button */}
+                        {/* <button
+                            className="btn btn-sm m-1"
+                            onClick={fetchMetrics}
+                            style={{
+                                background: "#0a6264",
+                                color: "#fff",
+                                padding: "6px 14px",
+                                fontSize: "12px",
+                                borderRadius: "5px",
+                                height: "32px",
+                                cursor: "pointer",
+                                border: "none",
+                                boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
+                                transition: "all 0.2s ease",
+                            }}
+                            onMouseOver={(e) => {
+                                e.target.style.transform = "translateY(-2px)";
+                                e.target.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
+                            }}
+                            onMouseOut={(e) => {
+                                e.target.style.transform = "translateY(0)";
+                                e.target.style.boxShadow = "0 2px 5px rgba(0,0,0,0.2)";
+                            }}
+                            onMouseDown={(e) => {
+                                e.target.style.transform = "scale(0.97)";
+                            }}
+                            onMouseUp={(e) => {
+                                e.target.style.transform = "translateY(-2px)";
+                            }}
+                        >
+                            Search
+                        </button> */}
+
+                        {/* Clear Button */}
+                        <button
+                            className="btn btn-sm m-1"
+                            onClick={() => {
+                                setStartDate("");
+                                setEndDate("");
+                            }}
+                            style={{
+                                background: "#b14343",
+                                color: "#fff",
+                                padding: "6px 14px",
+                                fontSize: "12px",
+                                borderRadius: "5px",
+                                height: "32px",
+                                cursor: "pointer",
+                                border: "none",
+                                boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
+                                transition: "all 0.2s ease",
+                            }}
+                            onMouseOver={(e) => {
+                                e.target.style.transform = "translateY(-2px)";
+                                e.target.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
+                            }}
+                            onMouseOut={(e) => {
+                                e.target.style.transform = "translateY(0)";
+                                e.target.style.boxShadow = "0 2px 5px rgba(0,0,0,0.2)";
+                            }}
+                            onMouseDown={(e) => {
+                                e.target.style.transform = "scale(0.97)";
+                            }}
+                            onMouseUp={(e) => {
+                                e.target.style.transform = "translateY(-2px)";
+                            }}
+                        >
+                            Clear
+                        </button>
                     </div>
 
 
@@ -144,7 +234,7 @@ const BookingReportsLayer = () => {
                                     >
 
                                         <div className='d-flex flex-wrap align-items-center justify-content-between gap-1 mb-8'>
-                                            <Link to="/bookings">
+                                            <Link   to={`/booking-sorting-page?status=${item.apiStatus}&from=${startDate}&to=${endDate}`}>
                                                 <div>
                                                     <span className='mb-2 fw-medium text-secondary-light text-md'>
                                                         {item.title}

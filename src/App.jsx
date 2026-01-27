@@ -102,6 +102,10 @@ import ExplanationsAddPage from "./pages/ExplanationsAddPage";
 import ServicesEarningReportPage from "./pages/ServicesEarningReportPage";
 import ClosedLeadsPage from "./pages/ClosedLeadsPage";
 import RevenueReporstPage from "./pages/RevenueReportsPage";
+import BookingReportsSortingPage from "./pages/BookingReportsSortingPage";
+import CaseStudiesPage from "./pages/CaseStudiesPage";
+import CaseStudiesAddPage from "./pages/CaseStudiesAddPage";
+import CompanyInformationPage from "./pages/CompanyInformationPage";
 import ExpenditurePage from "./pages/ExpenditurePage";
 import ExpenditureCategoryPage from "./pages/ExpenditureCategoryPage";
 import AreaPage from "./pages/AreaPage";
@@ -121,10 +125,10 @@ function App() {
         <Route exact path='/reset-password' element={<SignInPage />} />
         <Route exact path='/reset-password/:token' element={<ResetPasswordPage />} />
 
-      <Route exact path='/index' element={<HomePageTen />} />
-          <Route exact path='/dashboard' element={<HomePageTen />} />
+        <Route exact path='/index' element={<HomePageTen />} />
+        <Route exact path='/dashboard' element={<HomePageTen />} />
         <Route element={<PrivateRoute />}>
-          
+
           <Route exact path='/states' element={<StatePage />} />
           <Route exact path='/cities' element={<CityPage />} />
           <Route exact path='/distributors' element={<DistributorPage />} />
@@ -158,6 +162,8 @@ function App() {
           <Route exact path='/service-plans' element={<ServicePlanListPage />} />
           <Route exact path='/add-service-package' element={<ServicePlanAddPage />} />
           <Route exact path='/edit-service-package/:PackageID' element={<ServicePlanAddPage />} />
+          <Route exact path='/edit-case-studies/:PackageID' element={<CaseStudiesAddPage />} />
+          <Route exact path='/add-case-studies' element={<CaseStudiesAddPage />} />
 
           <Route exact path='/service-plan-prices' element={<ServicePlanPriceListPage />} />
           <Route exact path='/add-service-plan-price' element={<ServicePlanPriceAddPage />} />
@@ -235,6 +241,8 @@ function App() {
           <Route exact path='/add-explanations' element={<ExplanationsAddPage/>} />
           <Route exact path='/services-earning-report' element={<ServicesEarningReportPage/>} />
           <Route exact path='/revenue-reports' element={<RevenueReporstPage/>} />
+          <Route exact path='/case-studies' element={<CaseStudiesPage/>} />
+          <Route exact path='/company-information' element={<CompanyInformationPage/>} />
           <Route exact path='/expenditures' element={<ExpenditurePage/>} />
           <Route exact path='/expenditure-cat' element={<ExpenditureCategoryPage/>} />
           <Route exact path='/areas' element={<AreaPage/>} />
@@ -250,7 +258,8 @@ function App() {
         <Route exact path='/access-denied' element={<AccessDeniedPage />} />
         <Route exact path='/maintenance' element={<MaintenancePage />} />
         <Route exact path='/blank-page' element={<BlankPagePage />} />
-
+        <Route path="/booking-sorting-page" element={<BookingReportsSortingPage />} />
+        
         <Route
           exact
           path='/marketplace-details'

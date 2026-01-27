@@ -649,6 +649,13 @@ const MasterLayout = ({ children }) => {
           permission: "closedleads_view",
           page: "Closed Leads",
         },
+        {
+          title: "Case Studies",
+          to: "/case-studies",
+          color: "text-purple-main",
+          permission: "case_studies_view",
+          page: "Case Studies",
+        },
       ],
     },
     {
@@ -891,6 +898,13 @@ const MasterLayout = ({ children }) => {
           color: "text-info-main",
           permission: "permissionpages_view",
           page: "Permission Pages",
+        },
+        {
+          title: "Company Information",
+          to: "/company-information",
+          color: "text-secondary-600",
+          permission: "companyinformation_view",
+          page: "Company Information",
         },
       ],
     },
