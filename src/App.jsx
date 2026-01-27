@@ -102,18 +102,15 @@ import ExplanationsAddPage from "./pages/ExplanationsAddPage";
 import ServicesEarningReportPage from "./pages/ServicesEarningReportPage";
 import ClosedLeadsPage from "./pages/ClosedLeadsPage";
 import RevenueReporstPage from "./pages/RevenueReportsPage";
-<<<<<<< HEAD
 import BookingReportsSortingPage from "./pages/BookingReportsSortingPage";
 import CaseStudiesPage from "./pages/CaseStudiesPage";
 import CaseStudiesAddPage from "./pages/CaseStudiesAddPage";
 import CompanyInformationPage from "./pages/CompanyInformationPage";
-=======
 import ExpenditurePage from "./pages/ExpenditurePage";
 import ExpenditureCategoryPage from "./pages/ExpenditureCategoryPage";
 import AreaPage from "./pages/AreaPage";
 import DealerBookingsViewPage from "./pages/DealerBookingsViewPage";
 import AssignSupervisorAreaPage from "./pages/AssignSupervisorAreaPage";
->>>>>>> 1f25b85cadf40ff0b84e3281ef1ba63260ec6c52
 
 function App() {
   return (
@@ -244,17 +241,14 @@ function App() {
           <Route exact path='/add-explanations' element={<ExplanationsAddPage/>} />
           <Route exact path='/services-earning-report' element={<ServicesEarningReportPage/>} />
           <Route exact path='/revenue-reports' element={<RevenueReporstPage/>} />
-<<<<<<< HEAD
           <Route exact path='/case-studies' element={<CaseStudiesPage/>} />
           <Route exact path='/company-information' element={<CompanyInformationPage/>} />
-=======
           <Route exact path='/expenditures' element={<ExpenditurePage/>} />
           <Route exact path='/expenditure-cat' element={<ExpenditureCategoryPage/>} />
           <Route exact path='/areas' element={<AreaPage/>} />
            <Route exact path='/assign-area' element={<AssignSupervisorAreaPage/>} />
           
           <Route exact path='/dealer-booking-view/:Id' element={<DealerBookingsViewPage/>} />
->>>>>>> 1f25b85cadf40ff0b84e3281ef1ba63260ec6c52
         </Route>
 
         {/* //extra  pages */}
