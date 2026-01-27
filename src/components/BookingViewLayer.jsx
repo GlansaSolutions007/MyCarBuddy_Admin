@@ -537,13 +537,18 @@ const BookingViewLayer = () => {
         if (service.id === id) {
           const updatedService = { ...service, [field]: value };
 
-          // Parse values safely
           const price = parseFloat(updatedService.price) || 0;
           const gstPercent = parseFloat(updatedService.gstPercent) || 0;
+          const qty = parseInt(updatedService.qty) || 0; // stored but not used in amount calc
 
-          // Auto-calculate GST Amount and Total
-          const gstAmount = (price * gstPercent) / 100;
-          const totalAmount = price + gstAmount;
+          // Base amount is now only price
+          const baseAmount = price;
+
+          // GST calculated on base price only
+          const gstAmount = (baseAmount * gstPercent) / 100;
+
+          // Total = price + gst only (no qty multiplication)
+          const totalAmount = baseAmount + gstAmount;
 
           updatedService.gstAmount = gstAmount.toFixed(2);
           updatedService.totalAmount = totalAmount.toFixed(2);
@@ -574,6 +579,7 @@ const BookingViewLayer = () => {
       addOns: previewServices.map((item) => ({
         serviceName: item.name,
         servicePrice: Number(item.price),
+        quantity: Number(item.qty),
         description: item.description || "",
         gstPercent: Number(item.gstPercent || 0),
         gstPrice: Number(item.gstAmount || 0),
@@ -636,6 +642,7 @@ const BookingViewLayer = () => {
       addOns: valid.map((item) => ({
         serviceName: item.name,
         servicePrice: Number(item.price),
+        quantity: Number(item.qty),
         description: item.description || "",
         gstPercent: Number(item.gstPercent || 0),
         gstPrice: Number(item.gstAmount || 0),
@@ -658,6 +665,7 @@ const BookingViewLayer = () => {
           name: "",
           bodyPart: "",
           price: "",
+          qty: "",
           gstPercent: "",
           gstAmount: "",
           totalAmount: "",
