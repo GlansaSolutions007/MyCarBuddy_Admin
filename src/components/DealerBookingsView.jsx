@@ -310,6 +310,8 @@ const DealerBookingsView = () => {
           ids: item._apiId.toString(),
           type: type,
           status: status,
+          dealerId: item.dealerID,
+          createdBy: userId,
         },
         {
           headers: {

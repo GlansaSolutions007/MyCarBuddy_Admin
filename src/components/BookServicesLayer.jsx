@@ -1687,9 +1687,7 @@ const BookServicesLayer = () => {
       width: "140px",
       sortable: true,
     },
-
     ...(employeeData?.RoleName === "Supervisor Head" ||
-    employeeData?.RoleName === "Field Advisor" ||
     role === "Admin"
       ? [
           {
@@ -1713,13 +1711,11 @@ const BookServicesLayer = () => {
                   }
                   const percent = Math.max(0, Number(val) || 0);
 
-                  const basePrice = Number(row.basePrice) || 0;
-                  const quantity = Number(row.quantity) || 1;
-                  const labour = Number(row.labourCharge) || 0;
-                  const gst = Number(row.gstPrice) || 0;
-
-                  const totalPrice = basePrice * quantity;
-                  const companyBase = totalPrice + labour + gst;
+                  // Company % / % Amount base: sum of dealer prices from API
+                  const companyBase =
+                    Number(row.dealerServicePrice || 0) +
+                    Number(row.dealerSparePrice || 0) +
+                    Number(row.dealerGstAmount || 0);
 
                   const amt = (companyBase * percent) / 100;
 
@@ -1731,12 +1727,10 @@ const BookServicesLayer = () => {
                 onBlur={() => {
                   if (row.percentage === "") {
                     const percentage = 0;
-                    const basePrice = Number(row.basePrice) || 0;
-                    const quantity = Number(row.quantity) || 1;
-                    const labour = Number(row.labourCharge) || 0;
-                    const gst = Number(row.gstPrice) || 0;
-                    const totalPrice = basePrice * quantity;
-                    const companyBase = totalPrice + labour + gst;
+                    const companyBase =
+                      Number(row.dealerServicePrice || 0) +
+                      Number(row.dealerSparePrice || 0) +
+                      Number(row.dealerGstAmount || 0);
                     const amt = (companyBase * percentage) / 100;
                     updateTableRow(row.addedItemsIndex, {
                       percentage,
@@ -1772,13 +1766,11 @@ const BookServicesLayer = () => {
                   }
                   const amt = Math.max(0, Number(val) || 0);
 
-                  const basePrice = Number(row.basePrice) || 0;
-                  const quantity = Number(row.quantity) || 1;
-                  const labour = Number(row.labourCharge) || 0;
-                  const gst = Number(row.gstPrice) || 0;
-
-                  const totalPrice = basePrice * quantity;
-                  const companyBase = totalPrice + labour + gst;
+                  // Company % / % Amount base: sum of dealer prices from API
+                  const companyBase =
+                    Number(row.dealerServicePrice || 0) +
+                    Number(row.dealerSparePrice || 0) +
+                    Number(row.dealerGstAmount || 0);
 
                   const percent =
                     companyBase > 0 ? (amt / companyBase) * 100 : 0;
@@ -1791,12 +1783,10 @@ const BookServicesLayer = () => {
                 onBlur={() => {
                   if (row.percentAmount === "") {
                     const percentAmount = 0;
-                    const basePrice = Number(row.basePrice) || 0;
-                    const quantity = Number(row.quantity) || 1;
-                    const labour = Number(row.labourCharge) || 0;
-                    const gst = Number(row.gstPrice) || 0;
-                    const totalPrice = basePrice * quantity;
-                    const companyBase = totalPrice + labour + gst;
+                    const companyBase =
+                      Number(row.dealerServicePrice || 0) +
+                      Number(row.dealerSparePrice || 0) +
+                      Number(row.dealerGstAmount || 0);
                     const percent = companyBase > 0 ? (percentAmount / companyBase) * 100 : 0;
                     updateTableRow(row.addedItemsIndex, {
                       percentAmount,
@@ -1811,6 +1801,12 @@ const BookServicesLayer = () => {
             width: "120px",
             sortable: true,
           },
+           ]
+      : []),
+          ...(employeeData?.RoleName === "Supervisor Head" ||
+    employeeData?.RoleName === "Field Advisor" ||
+    role === "Admin"
+      ? [
           {
             name: "Select Dealer",
             cell: (row, index) => (

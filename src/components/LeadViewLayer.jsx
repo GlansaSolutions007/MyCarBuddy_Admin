@@ -437,22 +437,22 @@ const LeadViewLayer = () => {
       });
       return;
     }
-    if (!personalFullAddress || personalFullAddress.trim().length === 0) {
-      Swal.fire({
-        icon: "warning",
-        title: "Address Required",
-        text: "Please enter address before assigning a supervisor.",
-      });
-      return;
-    }
-    if (!carRegistrationNumber || carRegistrationNumber.trim() === "") {
-      Swal.fire({
-        icon: "warning",
-        title: "Registration Number Required",
-        text: "Please enter vehicle registration number before assigning a supervisor.",
-      });
-      return;
-    }
+    // if (!personalFullAddress || personalFullAddress.trim().length === 0) {
+    //   Swal.fire({
+    //     icon: "warning",
+    //     title: "Address Required",
+    //     text: "Please enter address before assigning a supervisor.",
+    //   });
+    //   return;
+    // }
+    // if (!carRegistrationNumber || carRegistrationNumber.trim() === "") {
+    //   Swal.fire({
+    //     icon: "warning",
+    //     title: "Registration Number Required",
+    //     text: "Please enter vehicle registration number before assigning a supervisor.",
+    //   });
+    //   return;
+    // }
 
     // ✅ collect booking IDs
     const bookingIds = currentBookings.map((b) => b.BookingID);
@@ -761,7 +761,7 @@ const LeadViewLayer = () => {
     Swal.fire({
       icon: "warning",
       title: "Details Required",
-      text: "Full Address, Car Registration Number, Brand, Model, and Fuel Type are required to proceed.",
+      text: "Brand, Model, and Fuel Type are required to proceed.",
       confirmButtonText: "OK",
     });
   };

@@ -272,7 +272,7 @@ const ExpenditureLayer = () => {
   /* ---------------- TABLE ---------------- */
 
   const columns = [
-    { name: "S.No", selector: (_, i) => i + 1, width: "70px", sortable: true, },
+    { name: "S.No", selector: (_, i) => i + 1, width: "80px", sortable: true, },
     { name: "Date", selector: (r) => r.ExpenseDate?.split("T")[0], sortable: true, },
     {
       name: "Category",
@@ -281,8 +281,9 @@ const ExpenditureLayer = () => {
           (c) => c.ExpenseCategoryID === r.ExpenseCategoryID
         )?.CategoryName || "-",
         sortable: true,
+        width: "150px",
     },
-    { name: "Description", selector: (r) => r.Notes || "-", sortable: true, },
+    { name: "Description", selector: (r) => r.Notes || "-", sortable: true, wrap: true , width: "150px",},
     { name: "Amount", selector: (r) => `₹ ${r.Amount}`, sortable: true, },
     { name: "Payment", selector: (r) => r.PaymentMode || "-", sortable: true, },
     {
@@ -302,7 +303,7 @@ const ExpenditureLayer = () => {
         ) : (
           <span className="text-muted">-</span>
         ),
-        width: "70px",
+        width: "100px",
         sortable: true,
     },
     {

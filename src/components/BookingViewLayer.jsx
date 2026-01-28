@@ -1916,17 +1916,17 @@ const BookingViewLayer = () => {
                                         >
                                           Our Amt.
                                         </th>
-
+                                         <th style={{ width: "200px" }}
+                                            className="text-center">
+                                          Selected Dealer
+                                        </th>
                                         <th
                                           style={{ width: "100px" }}
                                           className="text-end"
                                         >
                                           Total Amt
                                         </th>
-                                        {/* <th style={{ width: "200px" }}
-                                        className="text-center">
-                                          Description
-                                        </th> */}
+                                       
                                       </tr>
                                     </thead>
 
@@ -2033,20 +2033,21 @@ const BookingViewLayer = () => {
                                                 addon.Our_Earnings || 0,
                                               ).toFixed(2)}
                                             </td>
-                                            <td className="text-end fw-bold text-primary">
-                                              {Number(
-                                                addon.TotalPrice || 0,
-                                              ).toFixed(2)}
-                                            </td>
                                             <td
-                                              className=" normal"
+                                              className=" normal text-center"
                                               style={{
                                                 whiteSpace: "normal",
                                                 wordBreak: "break-word",
                                               }}
                                             >
-                                              {/* {addon.Description || "—"} */}
+                                              {addon.DealerName || "—"}
                                             </td>
+                                            <td className="text-end fw-bold text-primary">
+                                              {Number(
+                                                addon.TotalPrice || 0,
+                                              ).toFixed(2)}
+                                            </td>
+                                            
                                           </tr>
                                         ),
                                       )}
