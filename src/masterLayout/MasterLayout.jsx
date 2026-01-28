@@ -705,6 +705,13 @@ const MasterLayout = ({ children }) => {
           permission: "expenditures_view",
           page: "Expenditures",
         },
+         {
+          title: "Dealer Expenditures",
+          to: "/dealer-expenditure",
+          color:"text-warning-main",
+          permission: "dealerexpenditure_view",
+          page: "Dealer Expenditures",
+        },
       ],
     },
     // {

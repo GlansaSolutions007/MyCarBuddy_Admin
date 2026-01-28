@@ -111,6 +111,7 @@ import ExpenditureCategoryPage from "./pages/ExpenditureCategoryPage";
 import AreaPage from "./pages/AreaPage";
 import DealerBookingsViewPage from "./pages/DealerBookingsViewPage";
 import AssignSupervisorAreaPage from "./pages/AssignSupervisorAreaPage";
+import DealerPaymentsPage from "./pages/DealerPaymentsPage";
 
 function App() {
   return (
@@ -247,8 +248,8 @@ function App() {
           <Route exact path='/expenditure-cat' element={<ExpenditureCategoryPage/>} />
           <Route exact path='/areas' element={<AreaPage/>} />
            <Route exact path='/assign-area' element={<AssignSupervisorAreaPage/>} />
-          
           <Route exact path='/dealer-booking-view/:Id' element={<DealerBookingsViewPage/>} />
+          <Route exact path='/dealer-expenditure' element={<DealerPaymentsPage/>} />
         </Route>
 
         {/* //extra  pages */}

@@ -8,6 +8,7 @@ import PurchaseAndSales from "./child/PurchaseAndSales";
 import RecentTransactions from "./child/RecentTransactions";
 import TodaysBookings from "./child/TodaysBookings";
 import RevenueReportCharts from "./child/RevenueReportCharts";
+import DealerDashboardLayer from "./DealerDashboardLayer";
 
 const DashBoardLayerTen = () => {
   const role = localStorage.getItem("role");
@@ -15,7 +16,8 @@ const DashBoardLayerTen = () => {
   return (
     <div className="row gy-4">
       {/* UnitCountSeven */}
-      <UnitCountSeven />
+      {role !== "Dealer" && <UnitCountSeven />}
+      {role === "Dealer" && <DealerDashboardLayer />}
 
       {role === "Admin" && (
         <>
@@ -43,7 +45,7 @@ const DashBoardLayerTen = () => {
           {/* RecentTransactions */}
           <RecentTransactions />
 
-           {/* TodayBookingsLayer */}
+          {/* TodayBookingsLayer */}
           <TodaysBookings />
         </>
       )}

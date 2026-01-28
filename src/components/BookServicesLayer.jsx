@@ -41,6 +41,7 @@ const BookServicesLayer = () => {
   const [timeSlots, setTimeSlots] = useState([]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
   const hasNewItem = addedItems.some((item) => !item._apiId);
 
   const navigate = useNavigate();
@@ -2521,31 +2522,72 @@ const BookServicesLayer = () => {
             )}
             {/* Submit & Confirm Button */}
             {addedItems.length > 0 && (
-              <div className="d-flex justify-content-center gap-3 mt-3">
-                {hasNewItem && (
-                  <button
-                    className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
-                    onClick={handleSubmit}
-                  >
-                    Submit Booking
-                  </button>
-                )}
-               {(employeeData?.RoleName === "Supervisor Head" ||
-                role === "Admin") &&
-                employeeData?.DepartmentName !== "Support" && (
-                  <button
-                    className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
-                    onClick={handleConfirmBooking}
-                    disabled={hasNewItem}
-                  >
-                    Confirm Booking
-                  </button>
-                )}
+              <div className="mt-3">
+                {/* Verification Checkbox - Visible to Admin and Supervisor Head */}
+                {(employeeData?.RoleName === "Supervisor Head" ||
+                  role === "Admin") &&
+                  employeeData?.DepartmentName !== "Support" && (
+                    <div className="mb-3 p-3 border rounded bg-light">
+                      <div className="d-flex align-items-start">
+                        <input
+                          type="checkbox"
+                          id="verifyAddons"
+                          className="form-check-input mt-1"
+                          checked={isVerified}
+                          onChange={(e) => setIsVerified(e.target.checked)}
+                          style={{
+                            cursor: "pointer",
+                            width: "18px",
+                            height: "18px",
+                            border: "2px solid #0d9488",
+                            borderRadius: "3px",
+                            flexShrink: 0,
+                            marginRight: "10px",
+                          }}
+                        />
+                        <label
+                          htmlFor="verifyAddons"
+                          className="form-check-label mb-0"
+                          style={{
+                            cursor: "pointer",
+                            lineHeight: "1.5",
+                            userSelect: "none",
+                            paddingLeft: "4px",
+                          }}
+                        >
+                          I have carefully checked and verified all booking add-ons and agree to proceed with the confirmation.
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                <div className="d-flex justify-content-center gap-3">
+                  {hasNewItem && (
+                    <button
+                      className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
+                      onClick={handleSubmit}
+                    >
+                      Submit Booking
+                    </button>
+                  )}
+                  {(employeeData?.RoleName === "Supervisor Head" ||
+                    role === "Admin") &&
+                    employeeData?.DepartmentName !== "Support" && (
+                      <button
+                        className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
+                        onClick={handleConfirmBooking}
+                        disabled={hasNewItem || !isVerified}
+                      >
+                        Confirm Booking
+                      </button>
+                    )}
+                </div>
               </div>
             )}
-            {(employeeData?.RoleName === "Supervisor Head" ||
-              role === "Admin") &&
-              hasNewItem && (
+            {(
+  (employeeData?.RoleName === "Supervisor Head" || role === "Admin") &&
+  employeeData?.DepartmentName !== "Support" &&
+  hasNewItem
+) && (
                 <div className="text-danger text-center mt-2 fw-semibold">
                   You’ve added new items. Please submit them first to proceed
                   with booking confirmation.
