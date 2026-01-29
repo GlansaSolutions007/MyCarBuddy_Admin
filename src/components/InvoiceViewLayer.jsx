@@ -157,6 +157,8 @@ const InvoiceViewLayer = () => {
   const invoiceNumber = activeInvoice?.FolderPath
     ? activeInvoice.FolderPath.split("\\").pop().replace(".pdf", "")
     : null;
+    
+  const invoiceNum = activeInvoice?.InvoiceNumber
 
   const handlePrint = () => {
     if (invoicePdfUrl) {
@@ -169,6 +171,88 @@ const InvoiceViewLayer = () => {
       });
     }
   };
+
+  const handleWhatsappEstimatedInvoice = async () => {
+  if (!bookingData?.BookingID || !invoiceNumber) {
+    Swal.fire({
+      icon: "error",
+      title: "Missing Invoice Data",
+      text: "Invoice information is not available.",
+    });
+    return;
+  }
+
+  try {
+    await axios.post(
+      `${API_BASE}Leads/SendEstimationInvoiceWhatsApp`,
+      {
+        bookingID: bookingData.BookingID,
+        invoiceNumber: invoiceNum,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    Swal.fire({
+      icon: "success",
+      title: "Sent",
+      text: "Estimation invoice sent on WhatsApp successfully.",
+    });
+  } catch (error) {
+    console.error("WhatsApp Estimation Invoice Error:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Failed",
+      text:
+        error?.response?.data?.message ||
+        "Failed to send estimation invoice on WhatsApp.",
+    });
+  }
+};
+const handleWhatsappFinalInvoice = async () => {
+  if (!bookingData?.BookingID || !invoiceNumber) {
+    Swal.fire({
+      icon: "error",
+      title: "Missing Invoice Data",
+      text: "Invoice information is not available.",
+    });
+    return;
+  }
+
+  try {
+    await axios.post(
+      `${API_BASE}Leads/SendFinalInvoiceWhatsApp`,
+      {
+        bookingID: bookingData.BookingID,
+        invoiceNumber: invoiceNum,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    Swal.fire({
+      icon: "success",
+      title: "Sent",
+      text: "Final invoice sent on WhatsApp successfully.",
+    });
+  } catch (error) {
+    console.error("WhatsApp Final Invoice Error:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Failed",
+      text:
+        error?.response?.data?.message ||
+        "Failed to send final invoice on WhatsApp.",
+    });
+  }
+};
+
 
   const handleSendFinalInvoice = async () => {
     if (!bookingData?.BookingID || !invoiceNumber) {
@@ -207,7 +291,7 @@ const InvoiceViewLayer = () => {
       });
     }
   };
-  const handleSendEstimatedInvoice = async () => {
+  const handleEmailEstimatedInvoice = async () => {
     if (!bookingData?.BookingID || !invoiceNumber) {
       Swal.fire({
         icon: "error",
@@ -298,22 +382,40 @@ const InvoiceViewLayer = () => {
 
         <div className="d-flex gap-2">
           {activeInvoiceType === "Estimation" && (
+            <>
             <button
               className="btn btn-primary-600 d-inline-flex align-items-center gap-2"
-              onClick={handleSendEstimatedInvoice}
+              onClick={handleWhatsappEstimatedInvoice}
             >
               <Icon icon="mdi:email-send-outline" />
-              <span>Send Estimation Invoice</span>
+              <span>Whatsapp Estimation Invoice</span>
             </button>
+            <button
+              className="btn btn-primary-600 d-inline-flex align-items-center gap-2"
+              onClick={handleEmailEstimatedInvoice}
+            >
+              <Icon icon="mdi:email-send-outline" />
+              <span>Email Estimation Invoice</span>
+            </button>
+            </>
           )}
           {activeInvoiceType === "Final" && (
+            <>
+              <button
+              className="btn btn-primary-600 d-inline-flex align-items-center gap-2"
+              onClick={handleWhatsappFinalInvoice}
+            >
+              <Icon icon="mdi:email-send-outline" />
+              <span>Whatsapp Final Invoice</span>
+            </button>
             <button
               className="btn btn-primary-600 d-inline-flex align-items-center gap-2"
               onClick={handleSendFinalInvoice}
             >
               <Icon icon="mdi:email-send-outline" />
-              <span>Send Final Invoice</span>
+              <span>Email Final Invoice</span>
             </button>
+            </>
           )}
           {activeInvoiceType === "Dealer" && (
             <div className="d-flex gap-2">

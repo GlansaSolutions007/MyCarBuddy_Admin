@@ -1111,7 +1111,7 @@ const BookServicesLayer = () => {
   const handleConfirmBooking = async () => {
     // collect only saved items
     const ids = addedItems
-      .filter((item) => item._apiId) // only existing booking items
+      .filter((item) => item._apiId) 
       .map((item) => item._apiId);
 
     if (ids.length === 0) {

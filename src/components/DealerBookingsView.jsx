@@ -229,10 +229,11 @@ const DealerBookingsView = () => {
           type: bookingType,
           includes: includes,
           serviceId: serviceId,
+          dealerType: "dealer"
         };
-        if (role === "Dealer") {
-          payload.dealerType = "Dealer";
-        }
+        // if (role === "Dealer") {
+        //   payload.dealerType = "Dealer";
+        // }
         await axios.put(
           `${API_BASE}Supervisor/UpdateSupervisorBooking`,
           payload,

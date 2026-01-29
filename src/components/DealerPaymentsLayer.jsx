@@ -1,9 +1,10 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import DataTable from "react-data-table-component";
 import Select from "react-select";
 import Swal from "sweetalert2";
 import * as XLSX from "xlsx";
+import axios from "axios";
 
 const EXPORT_COLUMNS = [
   { key: "dealerName", label: "Dealer Name" },
@@ -21,113 +22,10 @@ const EXPORT_COLUMNS = [
 ];
 
 const DealerPaymentsLayer = () => {
-  // Dummy data - will be replaced with API data later
-  const [payments, setPayments] = useState([
-    {
-      id: 1,
-      dealerName: "ABC Auto Services",
-      bookingId: "BK001",
-      serviceType: "Service",
-      serviceName: "Full Service",
-      bookingDate: "2024-01-15",
-      serviceCompletionDate: "2024-01-20",
-      serviceTotalAmount: 5000,
-      dealerTotalAmount: 4500,
-      ourPercentAmount: 500,
-      dealerPaymentStatus: "Pending",
-      paidAmount: 0,
-      paymentDate: null,
-      documents: [],
-    },
-    {
-      id: 2,
-      dealerName: "XYZ Car Care",
-      bookingId: "BK002",
-      serviceType: "Package",
-      serviceName: "Premium Package",
-      bookingDate: "2024-01-16",
-      serviceCompletionDate: "2024-01-22",
-      serviceTotalAmount: 12000,
-      dealerTotalAmount: 10800,
-      ourPercentAmount: 1200,
-      dealerPaymentStatus: "Pending",
-      paidAmount: 0,
-      paymentDate: null,
-      documents: [],
-    },
-    {
-      id: 3,
-      dealerName: "ABC Auto Services",
-      bookingId: "BK003",
-      serviceType: "Spare Part",
-      serviceName: "Brake Pads",
-      bookingDate: "2024-01-17",
-      serviceCompletionDate: "2024-01-18",
-      serviceTotalAmount: 3000,
-      dealerTotalAmount: 2700,
-      ourPercentAmount: 300,
-      dealerPaymentStatus: "Paid",
-      paidAmount: 2700,
-      paymentDate: "2024-01-19",
-      documents: [
-        { name: "receipt.pdf", url: "https://example.com/receipt.pdf" },
-        { name: "invoice.jpg", url: "https://example.com/invoice.jpg" },
-      ],
-    },
-    {
-      id: 4,
-      dealerName: "Premium Motors",
-      bookingId: "BK004",
-      serviceType: "Service Group",
-      serviceName: "Engine Service Group",
-      bookingDate: "2024-01-18",
-      serviceCompletionDate: "2024-01-25",
-      serviceTotalAmount: 8000,
-      dealerTotalAmount: 7200,
-      ourPercentAmount: 800,
-      dealerPaymentStatus: "Pending",
-      paidAmount: 0,
-      paymentDate: null,
-      documents: [],
-    },
-    {
-      id: 5,
-      dealerName: "XYZ Car Care",
-      bookingId: "BK005",
-      serviceType: "Service",
-      serviceName: "AC Service",
-      bookingDate: "2024-01-19",
-      serviceCompletionDate: "2024-01-21",
-      serviceTotalAmount: 2500,
-      dealerTotalAmount: 2250,
-      ourPercentAmount: 250,
-      dealerPaymentStatus: "Paid",
-      paidAmount: 2250,
-      paymentDate: "2024-01-22",
-      documents: [
-        {
-          name: "payment_receipt.pdf",
-          url: "https://example.com/payment_receipt.pdf",
-        },
-      ],
-    },
-    {
-      id: 6,
-      dealerName: "ABC Auto Services",
-      bookingId: "BK006",
-      serviceType: "Package",
-      serviceName: "Basic Package",
-      bookingDate: "2024-01-20",
-      serviceCompletionDate: "2024-01-23",
-      serviceTotalAmount: 6000,
-      dealerTotalAmount: 5400,
-      ourPercentAmount: 600,
-      dealerPaymentStatus: "Pending",
-      paidAmount: 0,
-      paymentDate: null,
-      documents: [],
-    },
-  ]);
+  const API_BASE = import.meta.env.VITE_APIURL;
+  const token = localStorage.getItem("token");
+  const [loading, setLoading] = useState(false);
+  const [payments, setPayments] = useState([]);
 
   // Filter states
   const [searchText, setSearchText] = useState("");
@@ -144,8 +42,82 @@ const DealerPaymentsLayer = () => {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [paymentMode, setPaymentMode] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState("");
+  const [expenseDate, setExpenseDate] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
   const fileInputRef = useRef(null);
+
+  const userId = localStorage.getItem("userId");
+
+  // Fetch payments data from API
+  useEffect(() => {
+    fetchDealerPayments();
+  }, []);
+
+  const fetchDealerPayments = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(
+        `${API_BASE}Dealer/GetDealerExpenditures`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (response.data && Array.isArray(response.data)) {
+        const mappedPayments = response.data.map((item) => {
+          // Convert Documents string to array format
+          let documents = [];
+          if (item.Documents) {
+            // Construct full URL for document
+            const baseUrl = API_BASE.replace("/api", "");
+            const docUrl = item.Documents.startsWith("/")
+              ? `${baseUrl}${item.Documents}`
+              : item.Documents.startsWith("http")
+                ? item.Documents
+                : `${baseUrl}${item.Documents}`;
+            const fileName = item.Documents.split("/").pop() || "document";
+            documents = [
+              {
+                name: fileName,
+                url: docUrl,
+              },
+            ];
+          }
+
+          // Map Status: "Unpaid" -> "Pending", "Paid" -> "Paid"
+          const paymentStatus = item.Status === "Paid" ? "Paid" : "Pending";
+
+          return {
+            id: item.AddOnID,
+            dealerId: item.DealerID,
+            dealerName: item.DealerName,
+            bookingId: item.BookingID?.toString() || "",
+            bookingTrackID: item.BookingTrackID || "",
+            serviceType: item.Type || "",
+            serviceName: item.ServiceName || "",
+            bookingDate: item.ServiceDate || "",
+            serviceCompletionDate: item.ServiceCompletedDate || "",
+            serviceTotalAmount: Number(item.ServiceAmount || 0),
+            dealerTotalAmount: Number(item.DealerAmount || 0),
+            ourPercentAmount: Number(item.OurAmount || 0),
+            dealerPaymentStatus: paymentStatus,
+            paidAmount: Number(item.PaidAmount || 0),
+            paymentDate: item.PaymentDate || null,
+            documents: documents,
+          };
+        });
+
+        setPayments(mappedPayments);
+      }
+    } catch (error) {
+      console.error("Error fetching payments:", error);
+      Swal.fire("Error", "Failed to load payments data", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Get unique dealer names for dropdown
   const dealerOptions = useMemo(() => {
@@ -171,13 +143,15 @@ const DealerPaymentsLayer = () => {
     { value: "Cheque", label: "Cheque" },
     { value: "Online Payment", label: "Online Payment" },
   ];
+  const normalizeAmount = (value) => Number(Number(value).toFixed(2));
 
   // Format currency
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
-      maximumFractionDigits: 0,
+      maximumFractionDigits: 2,
+      minimumFractionDigits: 0,
     }).format(amount);
   };
 
@@ -226,8 +200,16 @@ const DealerPaymentsLayer = () => {
   const handlePayNow = (payment) => {
     setSelectedPayment(payment);
     setPaymentMode(null);
-    setPaymentAmount("");
+    setPaymentAmount(
+      (payment.dealerTotalAmount - payment.ourPercentAmount).toString(),
+    );
+
+    setExpenseDate(new Date().toISOString().split("T")[0]);
     setSelectedFiles([]);
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
     setPaymentModalOpen(true);
   };
 
@@ -352,9 +334,14 @@ const DealerPaymentsLayer = () => {
   };
 
   // Handle payment submission
-  const handlePaymentSubmit = () => {
+  const handlePaymentSubmit = async () => {
     if (!paymentMode) {
       Swal.fire("Error", "Please select payment mode", "error");
+      return;
+    }
+
+    if (!expenseDate) {
+      Swal.fire("Error", "Please select expense date", "error");
       return;
     }
 
@@ -365,8 +352,8 @@ const DealerPaymentsLayer = () => {
     }
 
     const remainingAmount =
-      selectedPayment.dealerTotalAmount - selectedPayment.paidAmount;
-    if (amount !== remainingAmount) {
+      selectedPayment.dealerTotalAmount - selectedPayment.ourPercentAmount;
+    if (Math.abs(Number(amount) - Number(remainingAmount)) > 0.0001) {
       Swal.fire(
         "Error",
         `Payment amount must be exactly ${formatCurrency(remainingAmount)} (full payment only)`,
@@ -375,41 +362,67 @@ const DealerPaymentsLayer = () => {
       return;
     }
 
-    // Convert selected files to document objects (in real app, upload to server first)
-    const uploadedDocuments = selectedFiles.map((file) => ({
-      name: file.name,
-      url: URL.createObjectURL(file), // In real app, this would be server URL
-    }));
+    try {
+      const formData = new FormData();
 
-    // Update payment data (dummy update - will be replaced with API call)
-    setPayments((prev) =>
-      prev.map((p) => {
-        if (p.id === selectedPayment.id) {
-          return {
-            ...p,
-            paidAmount: p.dealerTotalAmount,
-            dealerPaymentStatus: "Paid",
-            paymentDate: new Date().toISOString().split("T")[0],
-            documents: [...(p.documents || []), ...uploadedDocuments],
-          };
+      formData.append("expenseDate", new Date(expenseDate).toISOString());
+      formData.append("expenseCategoryID", 1);
+      formData.append("amount", amount);
+      formData.append("paymentMode", paymentMode.value || paymentMode);
+      formData.append("dealerID", selectedPayment.dealerId || 0);
+      formData.append("technicianID", 0);
+      formData.append("bookingID", Number(selectedPayment.bookingId));
+      formData.append("referenceNo", selectedPayment.bookingTrackID || "");
+      formData.append("notes", "");
+      formData.append("status", "Paid");
+      formData.append("createdBy", Number(userId) || 0);
+      formData.append("isActive", true);
+      formData.append("addOnId", selectedPayment.id || 0);
+
+      if (selectedFiles.length > 0) {
+        selectedFiles.forEach((file) => {
+          formData.append("billPath", file);
+        });
+      }
+
+      const response = await axios.post(
+        `${API_BASE}Expenditure/Expenditure`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        Swal.fire({
+          icon: "success",
+          title: "Payment Successful",
+          text: `Payment of ${formatCurrency(amount)} has been recorded.`,
+        });
+
+        // Refresh payments data
+        await fetchDealerPayments();
+
+        setPaymentModalOpen(false);
+        setSelectedPayment(null);
+        setPaymentMode(null);
+        setPaymentAmount("");
+        setExpenseDate("");
+        setSelectedFiles([]);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
         }
-        return p;
-      }),
-    );
-
-    Swal.fire({
-      icon: "success",
-      title: "Payment Successful",
-      text: `Payment of ${formatCurrency(amount)} has been recorded.`,
-    });
-
-    setPaymentModalOpen(false);
-    setSelectedPayment(null);
-    setPaymentMode(null);
-    setPaymentAmount("");
-    setSelectedFiles([]);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      }
+    } catch (error) {
+      console.error("Payment submission error:", error);
+      Swal.fire(
+        "Error",
+        error.response?.data?.message ||
+          "Failed to submit payment. Please try again.",
+        "error",
+      );
     }
   };
 
@@ -424,9 +437,9 @@ const DealerPaymentsLayer = () => {
     },
     {
       name: "Booking ID",
-      selector: (row) => row.bookingId,
+      selector: (row) => row.bookingTrackID,
       sortable: true,
-      width: "120px",
+      width: "150px",
     },
     {
       name: "Type",
@@ -716,6 +729,7 @@ const DealerPaymentsLayer = () => {
               responsive
               striped
               persistTableHead
+              progressPending={loading}
               noDataComponent="No payments found"
             />
           </div>
@@ -773,31 +787,44 @@ const DealerPaymentsLayer = () => {
                     <span className="text-primary-600 fw-bold">
                       {formatCurrency(
                         selectedPayment.dealerTotalAmount -
-                          selectedPayment.paidAmount,
+                          selectedPayment.ourPercentAmount,
                       )}
                     </span>
                   </div>
                 </div>
 
-                {/* Payment Mode */}
-                <div className="mb-3">
-                  <label className="form-label fw-semibold">
-                    Payment Mode <span className="text-danger">*</span>
-                  </label>
-                  <Select
-                    options={paymentModeOptions}
-                    value={paymentMode}
-                    onChange={(option) => setPaymentMode(option)}
-                    placeholder="Select Payment Mode"
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                  />
+                <div className="row g-3 mb-3">
+                  <div className="col-md-6">
+                    <label className="form-label fw-semibold">
+                      Select Expense Date <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={expenseDate}
+                      onChange={(e) => setExpenseDate(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label fw-semibold">
+                      Select Payment Mode <span className="text-danger">*</span>
+                    </label>
+                    <Select
+                      options={paymentModeOptions}
+                      value={paymentMode}
+                      onChange={(option) => setPaymentMode(option)}
+                      placeholder="Select Payment Mode"
+                      className="react-select-container"
+                      classNamePrefix="react-select"
+                    />
+                  </div>
                 </div>
 
                 {/* Payment Amount */}
                 <div className="mb-3">
                   <label className="form-label fw-semibold">
-                    Payment Amount <span className="text-danger">*</span>
+                    Enter Payment Amount <span className="text-danger">*</span>
                   </label>
                   <input
                     type="number"
@@ -808,14 +835,14 @@ const DealerPaymentsLayer = () => {
                     min="0"
                     max={
                       selectedPayment.dealerTotalAmount -
-                      selectedPayment.paidAmount
+                      selectedPayment.ourPercentAmount
                     }
                   />
                   <small className="text-muted">
                     Full payment required:{" "}
                     {formatCurrency(
                       selectedPayment.dealerTotalAmount -
-                        selectedPayment.paidAmount,
+                        selectedPayment.ourPercentAmount,
                     )}
                   </small>
                 </div>
@@ -961,112 +988,6 @@ const DealerPaymentsLayer = () => {
                     </div>
                   </div>
                 )}
-
-                {/* Existing Documents Preview (if any) */}
-                {selectedPayment.documents &&
-                  selectedPayment.documents.length > 0 && (
-                    <div className="mb-3">
-                      <label className="form-label fw-semibold">
-                        Existing Documents
-                      </label>
-                      <div
-                        className="border rounded p-2"
-                        style={{ maxHeight: "200px", overflowY: "auto" }}
-                      >
-                        <div className="row g-2">
-                          {selectedPayment.documents.map((doc, index) => (
-                            <div key={index} className="col-md-6">
-                              <div className="border rounded p-2">
-                                {isImageFile(doc) ? (
-                                  <img
-                                    src={doc.url}
-                                    alt={doc.name}
-                                    style={{
-                                      width: "100%",
-                                      height: "80px",
-                                      objectFit: "cover",
-                                      borderRadius: "4px",
-                                    }}
-                                  />
-                                ) : isPdfFile(doc) ? (
-                                  <div
-                                    className="d-flex align-items-center justify-content-center bg-light rounded"
-                                    style={{ height: "80px" }}
-                                  >
-                                    <Icon
-                                      icon="mdi:file-pdf-box"
-                                      style={{
-                                        fontSize: "48px",
-                                        color: "#dc3545",
-                                      }}
-                                    />
-                                  </div>
-                                ) : isExcelFile(doc) ? (
-                                  <div
-                                    className="d-flex align-items-center justify-content-center bg-light rounded"
-                                    style={{ height: "80px" }}
-                                  >
-                                    <Icon
-                                      icon="mdi:file-excel-box"
-                                      style={{
-                                        fontSize: "48px",
-                                        color: "#28a745",
-                                      }}
-                                    />
-                                  </div>
-                                ) : isWordFile(doc) ? (
-                                  <div
-                                    className="d-flex align-items-center justify-content-center bg-light rounded"
-                                    style={{ height: "80px" }}
-                                  >
-                                    <Icon
-                                      icon="mdi:file-word-box"
-                                      style={{
-                                        fontSize: "48px",
-                                        color: "#0078d4",
-                                      }}
-                                    />
-                                  </div>
-                                ) : (
-                                  <div
-                                    className="d-flex align-items-center justify-content-center bg-light rounded"
-                                    style={{ height: "80px" }}
-                                  >
-                                    <Icon
-                                      icon="mdi:file-document"
-                                      style={{
-                                        fontSize: "32px",
-                                        color: "#6c757d",
-                                      }}
-                                    />
-                                  </div>
-                                )}
-                                <div className="mt-1">
-                                  <small
-                                    className="text-truncate d-block"
-                                    style={{ maxWidth: "100%" }}
-                                    title={doc.name}
-                                  >
-                                    {doc.name.length > 20
-                                      ? `${doc.name.substring(0, 20)}...`
-                                      : doc.name}
-                                  </small>
-                                  <a
-                                    href={doc.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="btn btn-sm btn-primary mt-1"
-                                  >
-                                    <Icon icon="mdi:eye" /> View
-                                  </a>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
               </div>
 
               <div className="modal-footer d-flex justify-content-center">
@@ -1077,6 +998,7 @@ const DealerPaymentsLayer = () => {
                     setSelectedPayment(null);
                     setPaymentMode(null);
                     setPaymentAmount("");
+                    setExpenseDate("");
                     setSelectedFiles([]);
                     if (fileInputRef.current) {
                       fileInputRef.current.value = "";
