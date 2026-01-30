@@ -383,7 +383,7 @@ const RevenueReports = () => {
     {
       name: "DLR Pay. Date",
       selector: (r) =>
-        r.CreatedDate
+        r.DealerPaymentDate
           ? new Date(r.DealerPaymentDate).toLocaleString("en-GB", {
               day: "2-digit",
               month: "short",

@@ -325,35 +325,35 @@ const ExpenditureLayer = () => {
       ),
       sortable: true,
     },
-    ...(hasPermission("expenditures_edit") ||
-    hasPermission("expenditures_delete")
-      ? [
-          {
-            name: "Actions",
-            cell: (row) => (
-              <div className="d-flex">
-                {hasPermission("expenditures_edit") && (
-                  <button
-                    onClick={() => handleEdit(row)}
-                    className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle border-0 d-inline-flex align-items-center justify-content-center"
-                  >
-                    <Icon icon="lucide:edit" />
-                  </button>
-                )}
+    // ...(hasPermission("expenditures_edit") ||
+    // hasPermission("expenditures_delete")
+    //   ? [
+    //       {
+    //         name: "Actions",
+    //         cell: (row) => (
+    //           <div className="d-flex">
+    //             {hasPermission("expenditures_edit") && (
+    //               <button
+    //                 onClick={() => handleEdit(row)}
+    //                 className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle border-0 d-inline-flex align-items-center justify-content-center"
+    //               >
+    //                 <Icon icon="lucide:edit" />
+    //               </button>
+    //             )}
 
-                {hasPermission("expenditures_delete") && (
-                  <button
-                    onClick={() => handleDelete(row.ExpenseID)}
-                    className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle border-0 d-inline-flex align-items-center justify-content-center"
-                  >
-                    <Icon icon="lucide:trash-2" />
-                  </button>
-                )}
-              </div>
-            ),
-          },
-        ]
-      : []),
+    //             {hasPermission("expenditures_delete") && (
+    //               <button
+    //                 onClick={() => handleDelete(row.ExpenseID)}
+    //                 className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle border-0 d-inline-flex align-items-center justify-content-center"
+    //               >
+    //                 <Icon icon="lucide:trash-2" />
+    //               </button>
+    //             )}
+    //           </div>
+    //         ),
+    //       },
+    //     ]
+    //   : []),
   ];
 
   /* ---------------- UI ---------------- */

@@ -112,6 +112,7 @@ import AreaPage from "./pages/AreaPage";
 import DealerBookingsViewPage from "./pages/DealerBookingsViewPage";
 import AssignSupervisorAreaPage from "./pages/AssignSupervisorAreaPage";
 import DealerPaymentsPage from "./pages/DealerPaymentsPage";
+import DealerReportPage from "./pages/DealerRepportPage";
 
 function App() {
   return (
@@ -250,6 +251,8 @@ function App() {
            <Route exact path='/assign-area' element={<AssignSupervisorAreaPage/>} />
           <Route exact path='/dealer-booking-view/:Id' element={<DealerBookingsViewPage/>} />
           <Route exact path='/dealer-expenditure' element={<DealerPaymentsPage/>} />
+          <Route exact path='/dealer-report' element={<DealerReportPage/>} />
+          
         </Route>
 
         {/* //extra  pages */}

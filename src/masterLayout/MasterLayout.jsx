@@ -685,6 +685,14 @@ const MasterLayout = ({ children }) => {
           permission: "revenuereports_view",
           page: "Revenue Reports",
         },
+        {
+          title: "Dealer Report",
+          to: "/dealer-report",
+          color: "text-success-main",
+          permission: "dealerreport_view",
+          page: "Dealer Report",
+        },
+        
       ],
     },
     {
