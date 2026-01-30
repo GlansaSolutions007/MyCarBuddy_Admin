@@ -611,6 +611,13 @@ const MasterLayout = ({ children }) => {
           permission: "explanations_view",
           page: "Explanations",
         },
+        {
+          title: "Case Studies",
+          to: "/case-studies",
+          color: "text-purple-main",
+          permission: "case_studies_view",
+          page: "Case Studies",
+        },
       ],
     },
     {
@@ -648,13 +655,6 @@ const MasterLayout = ({ children }) => {
           color: "text-warning-main",
           permission: "closedleads_view",
           page: "Closed Leads",
-        },
-        {
-          title: "Case Studies",
-          to: "/case-studies",
-          color: "text-purple-main",
-          permission: "case_studies_view",
-          page: "Case Studies",
         },
       ],
     },

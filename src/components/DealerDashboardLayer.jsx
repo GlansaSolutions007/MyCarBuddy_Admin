@@ -5,7 +5,7 @@ const API_BASE = import.meta.env.VITE_APIURL;
 
 const DealerDashboardLayer = () => {
  const [dashboardData, setDashboardData] = useState({
-  totalBookings: 0,
+  totalServices: 0,
   acceptedBookings: 0,
   rejectedBookings: 0,
   ongoingBookings: 0,
@@ -43,7 +43,7 @@ const [loading, setLoading] = useState(false);
       );
       const data = res.data;
       setDashboardData({
-        totalBookings: data.TotalBookings,
+        totalServices: data.TotalServices,
         acceptedBookings: data.AcceptedBookings,
         rejectedBookings: data.RejectedBookings,
         ongoingBookings: data.OngoingBookings,
@@ -114,7 +114,7 @@ const [loading, setLoading] = useState(false);
                         <p className="fw-medium text-primary-light mb-1">
                           Total Bookings
                         </p>
-                        <h6 className="mb-0">{dashboardData.totalBookings}</h6>
+                        <h6 className="mb-0">{dashboardData.totalServices}</h6>
                       </div>
                       <div className="w-50-px h-50-px bg-primary-600 rounded-circle d-flex justify-content-center align-items-center">
                         <Icon

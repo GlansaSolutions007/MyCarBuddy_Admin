@@ -9,11 +9,18 @@ const API_BASE = import.meta.env.VITE_APIURL;
 
 const EXPORT_COLUMNS = {
   garage: [
-    { key: "GarageName", label: "Garage Name" },
+    { key: "GarageName", label: "Dealer Name" },
     { key: "TotalServices", label: "Total Services" },
+    { key: "AcceptedBookings", label: "Accepted Services" },
+    { key: "RejectedBookings", label: "Rejected Services" },
+    { key: "OngoingBookings", label: "Ongoing Services" },
+    { key: "CompletedBookings", label: "Completed Services" },
     { key: "TotalRevenue", label: "Total Revenue" },
-    { key: "TotalGST", label: "Total GST" },
-    { key: "OurEarnings", label: "Our Earnings" },
+    // { key: "TotalGST", label: "Total GST" },
+    // { key: "OurEarnings", label: "Our Earnings" },
+    { key: "TotalPrice", label: "Total Amount" },
+    { key: "PaidAmount", label: "Paid Amount" },
+    { key: "BalanceAmount", label: "Remaining Amount" },
   ],
   service: [
     { key: "BookingTrackID", label: "Booking Track ID" },
@@ -36,6 +43,10 @@ const EXPORT_COLUMNS = {
     { key: "DealerGSTAmount", label: "Dealer GST Amount" },
     { key: "OurPercentage", label: "Our %" },
     { key: "OurEarningsStored", label: "Our Earnings" },
+    { key: "DealerPaidAmount", label: "Dealer Payment Amount" },
+    { key: "DealerPaymentDate", label: "Dealer Payment Date" },
+    { key: "DealerPaymentMode", label: "Dealer Payment Mode" },
+    { key: "DealerPaymentStatus", label: "Dealer Payment Status" },
     // { key: "OurEarningsCalculated", label: "Our Earnings (Calculated)" },
   ],
   booking: [
@@ -133,7 +144,7 @@ const RevenueReports = () => {
     XLSX.utils.book_append_sheet(wb, ws, "Report");
     XLSX.writeFile(
       wb,
-      `${reportType}_report_${new Date().toISOString().slice(0, 10)}.xlsx`
+      `${reportType}_report_${new Date().toISOString().slice(0, 10)}.xlsx`,
     );
   };
 
@@ -153,7 +164,9 @@ const RevenueReports = () => {
         (!searchTerm ||
           item.ServiceName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           item.GarageName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          item.BookingTrackID?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.BookingTrackID?.toLowerCase().includes(
+            searchTerm.toLowerCase(),
+          ) ||
           item.LeadId?.toLowerCase().includes(searchTerm.toLowerCase())) &&
         (!serviceType || item.ServiceType === serviceType) &&
         (!fromDate || item.CreatedDate >= fromDate) &&
@@ -187,10 +200,44 @@ const RevenueReports = () => {
       name: "Total Services",
       selector: (r) => r.TotalServices,
       sortable: true,
+      width: "150px",
     },
-    { name: "Total Revenue", selector: (r) => r.TotalRevenue, sortable: true },
-    { name: "Total GST", selector: (r) => r.TotalGST, sortable: true },
-    { name: "Our Earnings", selector: (r) => r.OurEarnings, sortable: true, },
+    {
+      name: "Accepted Services",
+      selector: (r) => r.AcceptedBookings,
+      sortable: true,
+      width: "180px",
+    },
+    {
+      name: "Rejected Services",
+      selector: (r) => r.RejectedBookings,
+      sortable: true,
+      width: "180px",
+    },
+    {
+      name: "Ongoing Services",
+      selector: (r) => r.OngoingBookings,
+      sortable: true,
+      width: "180px",
+    },
+    {
+      name: "Completed Services",
+      selector: (r) => r.CompletedBookings,
+      sortable: true,
+      width: "180px",
+    },
+
+    { name: "Total Revenue", selector: (r) => r.TotalRevenue, sortable: true, width: "150px", },
+    // { name: "Total GST", selector: (r) => r.TotalGST, sortable: true },
+    // { name: "Our Earnings", selector: (r) => r.OurEarnings, sortable: true, },
+    { name: "Total Amount", selector: (r) => r.TotalPrice, sortable: true, width: "150px", },
+    { name: "Paid Amount", selector: (r) => r.PaidAmount, sortable: true, width: "150px", },
+    {
+      name: "Remaining Amount",
+      selector: (r) => r.BalanceAmount,
+      sortable: true,
+      width: "180px",
+    },
   ];
 
   const serviceColumns = [
@@ -219,7 +266,7 @@ const RevenueReports = () => {
       width: "200px",
       wrap: true,
     },
-        {
+    {
       name: "Booking Date",
       selector: (r) =>
         r.CreatedDate
@@ -327,6 +374,41 @@ const RevenueReports = () => {
       sortable: true,
       width: "180px",
     },
+    {
+      name: "DLR Payment Amt.",
+      selector: (r) => r.DealerPaidAmount ?? "-",
+      sortable: true,
+      width: "180px",
+    },
+    {
+      name: "DLR Pay. Date",
+      selector: (r) =>
+        r.CreatedDate
+          ? new Date(r.DealerPaymentDate).toLocaleString("en-GB", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+              // hour: "2-digit",
+              // minute: "2-digit",
+              // second: "2-digit",
+              // hour12: true,
+            })
+          : "-",
+      sortable: true,
+      width: "180px",
+    },
+    {
+      name: "DLR Pay. Mode",
+      selector: (r) => r.DealerPaymentMode ?? "-",
+      sortable: true,
+      width: "180px",
+    },
+    {
+      name: "DLR Pay. Status",
+      selector: (r) => r.DealerPaymentStatus ?? "-",
+      sortable: true,
+      width: "180px",
+    },
   ];
   const bookingColumns = [
     {
@@ -347,7 +429,7 @@ const RevenueReports = () => {
         </Link>
       ),
       sortable: true,
-      width: "150px"
+      width: "150px",
     },
     {
       name: "Booking Date",
@@ -371,12 +453,12 @@ const RevenueReports = () => {
       name: "Cust. Name",
       selector: (r) => r.CustFullName,
       sortable: true,
-      width: "150px"
+      width: "150px",
     },
     {
       name: "Phone",
       selector: (r) => r.CustPhoneNumber,
-      width: "150px"
+      width: "150px",
     },
     {
       name: "Email",
@@ -413,7 +495,7 @@ const RevenueReports = () => {
       selector: (r) => r.OurEarnings,
       // selector: (r) => (r.AmountPaid === 0 ? 0 : r.OurEarnings),
       sortable: true,
-      width: "150px"
+      width: "150px",
     },
   ];
 
@@ -421,16 +503,16 @@ const RevenueReports = () => {
     reportType === "garage"
       ? garageColumns
       : reportType === "service"
-      ? serviceColumns
-      : bookingColumns;
+        ? serviceColumns
+        : bookingColumns;
 
   // ---------------- UI ----------------
   return (
     <div className="row gy-4">
       <div className="col-12">
-        <div className="card overflow-hidden p-3">
+        <div className="card overflow-hidden py-3">
           <div className="card-header">
-            <div className="row align-items-center g-3">
+            <div className="row align-items-center g-1">
               {/* LEFT: REPORT + SEARCH (col-4) */}
               <div className="col-12 col-md-5">
                 <div className="d-flex align-items-center gap-1 flex-wrap">
@@ -443,7 +525,7 @@ const RevenueReports = () => {
                       value={reportType}
                       onChange={(e) => setReportType(e.target.value)}
                     >
-                      <option value="garage">Garage Wise</option>
+                      <option value="garage">Dealer Wise</option>
                       <option value="service">Service Wise</option>
                       <option value="booking">Booking Reports</option>
                     </select>
@@ -482,7 +564,8 @@ const RevenueReports = () => {
                       </select>
                     </div>
                   )}
-
+                  {reportType !== "garage" && (
+                  <>
                   <div className="d-flex align-items-center gap-2">
                     <label className="form-label mb-0">From:</label>
                     <input
@@ -502,10 +585,12 @@ const RevenueReports = () => {
                       onChange={(e) => setToDate(e.target.value)}
                     />
                   </div>
+                  </>
+                  )}
 
                   <div className="dropdown">
                     <button
-                       className="btn btn-outline-secondary dropdown-toggle px-3 d-flex align-items-center"
+                      className="btn btn-outline-secondary dropdown-toggle px-3 d-flex align-items-center"
                       style={{ height: "32px" }}
                       data-bs-toggle="dropdown"
                     >
@@ -525,7 +610,7 @@ const RevenueReports = () => {
                               setSelectedExportColumns((prev) =>
                                 prev.includes(col.key)
                                   ? prev.filter((k) => k !== col.key)
-                                  : [...prev, col.key]
+                                  : [...prev, col.key],
                               )
                             }
                           />
