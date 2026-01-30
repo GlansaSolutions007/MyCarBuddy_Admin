@@ -112,7 +112,7 @@ const [loading, setLoading] = useState(false);
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
                       <div>
                         <p className="fw-medium text-primary-light mb-1">
-                          Total Bookings
+                          Total Services
                         </p>
                         <h6 className="mb-0">{dashboardData.totalServices}</h6>
                       </div>
@@ -134,7 +134,7 @@ const [loading, setLoading] = useState(false);
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
                       <div>
                         <p className="fw-medium text-primary-light mb-1">
-                          Accepted Bookings
+                          Accepted Services
                         </p>
                         <h6 className="mb-0">
                           {dashboardData.acceptedBookings}
@@ -158,7 +158,7 @@ const [loading, setLoading] = useState(false);
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
                       <div>
                         <p className="fw-medium text-primary-light mb-1">
-                          Rejected Bookings
+                          Rejected Services
                         </p>
                         <h6 className="mb-0">
                           {dashboardData.rejectedBookings}
@@ -182,7 +182,7 @@ const [loading, setLoading] = useState(false);
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
                       <div>
                         <p className="fw-medium text-primary-light mb-1">
-                          Completed Bookings
+                          Completed Services
                         </p>
                         <h6 className="mb-0">
                           {dashboardData.comletedBookings}
@@ -206,7 +206,7 @@ const [loading, setLoading] = useState(false);
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
                       <div>
                         <p className="fw-medium text-primary-light mb-1">
-                          Ongoing Bookings
+                          Ongoing Services
                         </p>
                         <h6 className="mb-0">
                           {dashboardData.ongoingBookings}

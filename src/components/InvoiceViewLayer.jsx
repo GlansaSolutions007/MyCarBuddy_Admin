@@ -224,7 +224,8 @@ const handleWhatsappFinalInvoice = async () => {
 
   try {
     await axios.post(
-      `${API_BASE}Leads/SendFinalInvoiceWhatsApp`,
+      // `${API_BASE}Leads/SendFinalInvoiceWhatsApp`,
+      `${API_BASE}Leads/SendEstimationInvoiceWhatsApp`,
       {
         bookingID: bookingData.BookingID,
         invoiceNumber: invoiceNum,
