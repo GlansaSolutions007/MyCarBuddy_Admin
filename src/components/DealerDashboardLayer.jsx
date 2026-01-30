@@ -224,7 +224,7 @@ const [loading, setLoading] = useState(false);
               </div>
 
               {/* Today's Vehicles to be Handed Over */}
-              <div className="col">
+              {/* <div className="col">
                 <div className="card shadow-none border bg-gradient-start-5 h-100">
                   <div className="card-body p-20">
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -245,7 +245,7 @@ const [loading, setLoading] = useState(false);
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               {/* Total Amount */}
               <div className="col">
