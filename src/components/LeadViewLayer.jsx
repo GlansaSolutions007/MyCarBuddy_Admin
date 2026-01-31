@@ -11,6 +11,34 @@ import { useLayoutEffect } from "react";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
+const WHATSAPP_TEMPLATES = [
+  {
+    id: "not-interested",
+    title: "NOT INTERESTED CUSTOMER",
+    content: `Hello {Customer Name},
+Thank you for your time and for considering MyCarBuddy Services.
+We respect your decision. Should you require any doorstep car services in the future, please feel free to contact us at 7075243939 or visit www.mycarbuddy.in.
+Have a great day.`,
+  },
+  {
+    id: "call-not-answered",
+    title: "CALL NOT ANSWERED (OUTBOUND LEAD – FIRST CONTACT)",
+    content: `Hello {Customer Name},
+We are reaching out from MyCarBuddy Services to share details about our doorstep car services.
+We attempted to connect with you but could not reach you.
+Please feel free to reply to this message or call us at 7075243939 at your convenience.
+www.mycarbuddy.in`,
+  },
+  {
+    id: "not-required-now",
+    title: "ANSWERED BUT NOT REQUIRED AS OF NOW",
+    content: `Hello {Customer Name},
+Thank you for speaking with us. We understand that you do not require any car service at the moment.
+Whenever you need doorstep car services, please feel free to reach out to MyCarBuddy Services at 7075243939 or visit www.mycarbuddy.in.
+We will be happy to assist you.`,
+  },
+];
+
 const LeadViewLayer = () => {
   const addressRef = useRef(null);
   const { hasPermission } = usePermissions();
@@ -63,6 +91,8 @@ const LeadViewLayer = () => {
   const [allSupervisors, setAllSupervisors] = useState([]);
   const [selectedArea, setSelectedArea] = useState(null);
   const [areas, setAreas] = useState([]);
+  const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
+  const [selectedWhatsappTemplate, setSelectedWhatsappTemplate] = useState(null);
   const shouldDisableActions = lead?.NextAction === "Lead Closed";
   const isBookingCompletedAndPaid = lead?.BookingStatus === "Completed" && lead?.PaymentStatus === "Success";
   const isLeadClosed = shouldDisableActions || isBookingCompletedAndPaid;
@@ -392,23 +422,35 @@ const LeadViewLayer = () => {
   });
 
   const handleWhatsapp = () => {
-    let phone = lead?.PhoneNumber;
-    const name = lead?.FullName;
-    if (!phone) {
-      alert("Customer phone number not available");
+    if (!lead?.PhoneNumber) {
+      Swal.fire("Warning", "Customer phone number not available", "warning");
       return;
     }
-    // Clean the number (remove +, spaces, brackets, hyphens)
+    setSelectedWhatsappTemplate(null);
+    setWhatsappModalOpen(true);
+  };
+
+  const handleOpenWhatsappWithTemplate = () => {
+    if (!selectedWhatsappTemplate) {
+      Swal.fire("Warning", "Please select a message template", "warning");
+      return;
+    }
+    let phone = lead?.PhoneNumber;
+    const name = lead?.FullName || "Customer";
+    if (!phone) {
+      Swal.fire("Warning", "Customer phone number not available", "warning");
+      return;
+    }
     phone = phone.toString().trim().replace(/\D/g, "");
-    // Add country code if missing
     if (!phone.startsWith("91")) {
       phone = "91" + phone;
     }
-    const message = `Hello ${name}!`;
-    const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(
-      message,
-    )}`;
+    const template = WHATSAPP_TEMPLATES.find((t) => t.id === selectedWhatsappTemplate);
+    const message = template.content.replace(/\{Customer Name\}/g, name);
+    const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
+    setWhatsappModalOpen(false);
+    setSelectedWhatsappTemplate(null);
   };
   const handleAssignSupervisor = async () => {
     if (currentBookings === 0) {
@@ -1850,6 +1892,71 @@ const LeadViewLayer = () => {
           <Button className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
                   title="View" onClick={handleAssignSupervisor}>
             Assign
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* WhatsApp Message Template Modal */}
+      <Modal
+        show={whatsappModalOpen}
+        onHide={() => {
+          setWhatsappModalOpen(false);
+          setSelectedWhatsappTemplate(null);
+        }}
+        centered
+        size="lg"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title className="h6 fw-bold">Select WhatsApp Message</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div
+            className="d-flex flex-column gap-3"
+            style={{ maxHeight: "500px", overflowY: "auto" }}
+          >
+            {WHATSAPP_TEMPLATES.map((template) => (
+              <div
+                key={template.id}
+                className={`card border ${selectedWhatsappTemplate === template.id ? "border-2" : ""}`}
+                style={{
+                  cursor: "pointer",
+                  ...(selectedWhatsappTemplate === template.id
+                    ? {
+                        borderColor: "#25D366",
+                        backgroundColor: "rgba(37, 211, 102, 0.12)",
+                        boxShadow: "0 0 0 2px rgba(37, 211, 102, 0.3)",
+                      }
+                    : {}),
+                }}
+                onClick={() => setSelectedWhatsappTemplate(template.id)}
+              >
+                <div className="card-body p-3">
+                  <h6 className="card-title text-sm fw-bold mb-2">{template.title}</h6>
+                  <p className="card-text text-muted small mb-0" style={{ whiteSpace: "pre-wrap" }}>
+                    {template.content.replace(/\{Customer Name\}/g, lead?.FullName || "Customer")}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Modal.Body>
+        <Modal.Footer className="justify-content-center">
+          <Button
+            variant="secondary btn-sm"
+            onClick={() => {
+              setWhatsappModalOpen(false);
+              setSelectedWhatsappTemplate(null);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            className="btn btn-success btn-sm d-inline-flex align-items-center gap-2"
+            onClick={handleOpenWhatsappWithTemplate}
+            disabled={!selectedWhatsappTemplate}
+          >
+            <Icon icon="ic:baseline-whatsapp" fontSize={20} />
+            Open WhatsApp
           </Button>
         </Modal.Footer>
       </Modal>
