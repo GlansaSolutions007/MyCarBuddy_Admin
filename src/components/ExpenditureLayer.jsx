@@ -27,6 +27,7 @@ const ExpenditureLayer = () => {
   const [paymentModeFilter, setPaymentModeFilter] = useState("");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
 
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [formData, setFormData] = useState({
     expenseID: "",
     expenseDate: "",
@@ -134,13 +135,74 @@ const ExpenditureLayer = () => {
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setSelectedFiles((prev) => [...prev, ...files]);
+  };
 
-    setFormData((prev) => ({
-      ...prev,
-      billPath: `${file.name}`,
-    }));
+  const handleRemoveFile = (index) => {
+    setSelectedFiles((prev) => {
+      const newFiles = prev.filter((_, i) => i !== index);
+      if (fileRef.current) fileRef.current.value = "";
+      return newFiles;
+    });
+  };
+
+  const getFilePreview = (file) => {
+    if (file.url) return file.url;
+    return URL.createObjectURL(file);
+  };
+
+  const isImageFile = (file) => {
+    if (file.url) return /\.(jpg|jpeg|png|gif|webp)$/i.test(file.url);
+    return file.type?.startsWith("image/");
+  };
+
+  const isPdfFile = (file) => {
+    if (file.url) return /\.pdf$/i.test(file.url);
+    return file.type === "application/pdf";
+  };
+
+  const isExcelFile = (file) => {
+    if (file.url) return /\.(xls|xlsx)$/i.test(file.url);
+    return (
+      file.type === "application/vnd.ms-excel" ||
+      file.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+  };
+
+  const isWordFile = (file) => {
+    if (file.url) return /\.(doc|docx)$/i.test(file.url);
+    return (
+      file.type === "application/msword" ||
+      file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
+  };
+
+  const handleDownloadDoc = async (url, fileName) => {
+    try {
+      const res = await fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error("Fetch failed");
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      a.target = "_blank";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -148,52 +210,83 @@ const ExpenditureLayer = () => {
     setIsSubmitting(true);
 
     try {
-      const basePayload = {
-        expenseDate: new Date(formData.expenseDate).toISOString(),
-        expenseCategoryID: Number(formData.expenseCategoryID),
-        amount: Number(formData.amount),
-        paymentMode: formData.paymentMode,
-        dealerID: formData.dealerID ? Number(formData.dealerID) : null,
-        technicianID: formData.technicianID
-          ? Number(formData.technicianID)
-          : null,
-        bookingID: formData.bookingID ? Number(formData.bookingID) : null,
-        referenceNo: formData.referenceNo,
-        notes: formData.notes,
-        billPath: formData.billPath,
-        status: formData.status,
-        isActive: formData.isActive,
-      };
+      const hasFiles = selectedFiles.length > 0;
 
-      if (formData.expenseID) {
-        // ✅ PUT (UPDATE)
-        const updatePayload = {
-          ...basePayload,
-          expenseID: Number(formData.expenseID),
-          modifiedBy: Number(userId),
-        };
+      if (hasFiles) {
+        // Use FormData for binary file upload (multiple files)
+        const fd = new FormData();
+        fd.append("expenseDate", new Date(formData.expenseDate).toISOString());
+        fd.append("expenseCategoryID", Number(formData.expenseCategoryID));
+        fd.append("amount", Number(formData.amount));
+        fd.append("paymentMode", formData.paymentMode || "");
+        fd.append("dealerID", formData.dealerID ? Number(formData.dealerID) : 0);
+        fd.append("technicianID", formData.technicianID ? Number(formData.technicianID) : 0);
+        fd.append("bookingID", formData.bookingID ? String(formData.bookingID) : "");
+        fd.append("referenceNo", formData.referenceNo || "");
+        fd.append("notes", formData.notes || "");
+        fd.append("status", formData.status || "");
+        fd.append("isActive", formData.isActive);
 
-        await axios.put(`${API_BASE}Expenditure/Expenditure`, updatePayload, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+        selectedFiles.forEach((file) => {
+          fd.append("billPath", file);
         });
-        Swal.fire("Success", "Expense updated successfully", "success");
+
+        if (formData.expenseID) {
+          fd.append("expenseID", Number(formData.expenseID));
+          fd.append("modifiedBy", Number(userId));
+          await axios.put(`${API_BASE}Expenditure/Expenditure`, fd, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          Swal.fire("Success", "Expense updated successfully", "success");
+        } else {
+          fd.append("createdBy", Number(userId));
+          await axios.post(`${API_BASE}Expenditure/Expenditure`, fd, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          Swal.fire("Success", "Expense added successfully", "success");
+        }
       } else {
-        // ✅ POST (ADD)
-        const createPayload = {
-          ...basePayload,
-          createdBy: Number(userId),
+        // JSON payload when no files
+        const basePayload = {
+          expenseDate: new Date(formData.expenseDate).toISOString(),
+          expenseCategoryID: Number(formData.expenseCategoryID),
+          amount: Number(formData.amount),
+          paymentMode: formData.paymentMode,
+          dealerID: formData.dealerID ? Number(formData.dealerID) : null,
+          technicianID: formData.technicianID ? Number(formData.technicianID) : null,
+          bookingID: formData.bookingID ? String(formData.bookingID) : null,
+          referenceNo: formData.referenceNo,
+          notes: formData.notes,
+          billPath: formData.billPath,
+          status: formData.status,
+          isActive: formData.isActive,
         };
-        await axios.post(`${API_BASE}Expenditure/Expenditure`, createPayload, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-        Swal.fire("Success", "Expense added successfully", "success");
+
+        if (formData.expenseID) {
+          const updatePayload = {
+            ...basePayload,
+            expenseID: Number(formData.expenseID),
+            modifiedBy: Number(userId),
+          };
+          await axios.put(`${API_BASE}Expenditure/Expenditure`, updatePayload, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+          Swal.fire("Success", "Expense updated successfully", "success");
+        } else {
+          const createPayload = { ...basePayload, createdBy: Number(userId) };
+          await axios.post(`${API_BASE}Expenditure/Expenditure`, createPayload, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+          Swal.fire("Success", "Expense added successfully", "success");
+        }
       }
+
       fetchExpenses();
       resetForm();
     } catch (err) {
@@ -220,13 +313,13 @@ const ExpenditureLayer = () => {
       status: "",
       isActive: true,
     });
-
-    if (fileRef.current) {
-      fileRef.current.value = "";
-    }
+    setSelectedFiles([]);
+    if (fileRef.current) fileRef.current.value = "";
   };
 
   const handleEdit = (row) => {
+    setSelectedFiles([]);
+    if (fileRef.current) fileRef.current.value = "";
     setFormData({
       expenseID: row.ExpenseID,
       expenseDate: row.ExpenseDate?.split("T")[0],
@@ -238,6 +331,7 @@ const ExpenditureLayer = () => {
       bookingID: row.BookingID,
       referenceNo: row.ReferenceNo,
       notes: row.Notes,
+      billPath: row.BillPath,
       status: row.Status,
       isActive: row.IsActive,
     });
@@ -285,26 +379,62 @@ const ExpenditureLayer = () => {
     },
     { name: "Description", selector: (r) => r.Notes || "-", sortable: true, wrap: true , width: "150px",},
     { name: "Amount", selector: (r) => `₹ ${r.Amount}`, sortable: true, },
-    { name: "Payment", selector: (r) => r.PaymentMode || "-", sortable: true, },
+    { name: "Payment", selector: (r) => r.PaymentMode || "-", sortable: true, width: "150px",},
     {
       name: "Docs",
       center: true,
-      cell: (r) =>
-        r.BillPath ? (
-          <button
-            className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle border-0 d-inline-flex align-items-center justify-content-center"
-            title="View Bill"
-            onClick={() =>
-              window.open( `${import.meta.env.VITE_APIURL_IMAGE}${r.BillPath}`, "_blank")
-            }
-          >
-            <Icon icon="lucide:file-text" />
-          </button>
-        ) : (
-          <span className="text-muted">-</span>
-        ),
-        width: "100px",
-        sortable: true,
+      cell: (r) => {
+        if (!r.BillPath) return <span className="text-muted">—</span>;
+        const paths = r.BillPath.split(",").map((p) => p.trim()).filter(Boolean);
+        const baseUrl = API_BASE.replace("/api", "").replace(/\/$/, "");
+        const documents = paths.map((path) => {
+          const trimmedPath = path.replace(/^\//, "");
+          const url = path.startsWith("http") ? path : `${baseUrl}/${trimmedPath}`;
+          const name = path.split("/").pop() || "document";
+          return { name, url };
+        });
+        const getFileIconAndColor = (fileName) => {
+          const ext = fileName.split(".").pop()?.toLowerCase();
+          if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) {
+            return { icon: "mdi:file-image", color: "#6f42c1" };
+          } else if (ext === "pdf") {
+            return { icon: "mdi:file-pdf-box", color: "#dc3545" };
+          } else if (["doc", "docx"].includes(ext)) {
+            return { icon: "mdi:file-word-box", color: "#0078d4" };
+          } else if (["xls", "xlsx"].includes(ext)) {
+            return { icon: "mdi:file-excel-box", color: "#28a745" };
+          }
+          return { icon: "mdi:file-document", color: "#6c757d" };
+        };
+        return (
+          <div className="d-flex flex-wrap gap-2">
+            {documents.map((doc, index) => {
+              const { icon, color } = getFileIconAndColor(doc.name);
+              return (
+                <button
+                  key={index}
+                  type="button"
+                  className="w-32-px h-32-px rounded-circle d-inline-flex align-items-center justify-content-center border-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownloadDoc(doc.url, doc.name);
+                  }}
+                  title={`Download ${doc.name}`}
+                  style={{
+                    backgroundColor: `${color}15`,
+                    color: color,
+                  }}
+                >
+                  <Icon icon={icon} style={{ fontSize: "18px" }} />
+                </button>
+              );
+            })}
+          </div>
+        );
+      },
+      sortable: false,
+      width: "200px",
+      wrap: true,
     },
     {
       name: "Status",
@@ -499,15 +629,125 @@ const ExpenditureLayer = () => {
             </div>
             <div className="mb-10">
               <label className="text-sm fw-semibold text-primary-light mb-0">
-                Upload Document
+                Upload Documents (Multiple)
               </label>
               <input
-                type="file"
                 ref={fileRef}
-                className="form-control mb-10"
+                type="file"
+                className="form-control mb-2"
+                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                multiple
                 onChange={handleFileChange}
               />
+              <small className="text-muted">Accepted: Images, PDF, Word, Excel</small>
             </div>
+
+            {selectedFiles.length > 0 && (
+              <div className="mb-10">
+                <label className="text-sm fw-semibold text-primary-light mb-2 d-block">
+                  Selected Documents Preview
+                </label>
+                <div
+                  className="border rounded p-2"
+                  style={{ maxHeight: "200px", overflowY: "auto" }}
+                >
+                  <div className="row g-2">
+                    {selectedFiles.map((file, index) => (
+                      <div key={index} className="col-md-6">
+                        <div className="border rounded p-2 position-relative">
+                          <button
+                            type="button"
+                            className="position-absolute"
+                            onClick={() => handleRemoveFile(index)}
+                            style={{
+                              top: "8px",
+                              right: "8px",
+                              width: "24px",
+                              height: "24px",
+                              borderRadius: "50%",
+                              backgroundColor: "rgba(220, 53, 69, 0.9)",
+                              border: "none",
+                              color: "white",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "pointer",
+                              zIndex: 10,
+                            }}
+                            title="Remove"
+                          >
+                            <Icon icon="mdi:close" style={{ fontSize: "16px" }} />
+                          </button>
+                          {isImageFile(file) ? (
+                            <img
+                              src={getFilePreview(file)}
+                              alt={file.name}
+                              style={{
+                                width: "100%",
+                                height: "80px",
+                                objectFit: "cover",
+                                borderRadius: "4px",
+                              }}
+                            />
+                          ) : isPdfFile(file) ? (
+                            <div
+                              className="d-flex align-items-center justify-content-center bg-light rounded"
+                              style={{ height: "80px" }}
+                            >
+                              <Icon
+                                icon="mdi:file-pdf-box"
+                                style={{ fontSize: "48px", color: "#dc3545" }}
+                              />
+                            </div>
+                          ) : isExcelFile(file) ? (
+                            <div
+                              className="d-flex align-items-center justify-content-center bg-light rounded"
+                              style={{ height: "80px" }}
+                            >
+                              <Icon
+                                icon="mdi:file-excel-box"
+                                style={{ fontSize: "48px", color: "#28a745" }}
+                              />
+                            </div>
+                          ) : isWordFile(file) ? (
+                            <div
+                              className="d-flex align-items-center justify-content-center bg-light rounded"
+                              style={{ height: "80px" }}
+                            >
+                              <Icon
+                                icon="mdi:file-word-box"
+                                style={{ fontSize: "48px", color: "#0078d4" }}
+                              />
+                            </div>
+                          ) : (
+                            <div
+                              className="d-flex align-items-center justify-content-center bg-light rounded"
+                              style={{ height: "80px" }}
+                            >
+                              <Icon
+                                icon="mdi:file-document"
+                                style={{ fontSize: "32px", color: "#6c757d" }}
+                              />
+                            </div>
+                          )}
+                          <div className="mt-1">
+                            <small
+                              className="text-truncate d-block"
+                              style={{ maxWidth: "100%" }}
+                              title={file.name}
+                            >
+                              {file.name.length > 20
+                                ? `${file.name.substring(0, 20)}...`
+                                : file.name}
+                            </small>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="mb-10">
               <label className="text-sm fw-semibold text-primary-light mb-0">
                 Select Status
