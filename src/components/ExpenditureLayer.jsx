@@ -18,6 +18,7 @@ const ExpenditureLayer = () => {
   const [expenseCategories, setExpenseCategories] = useState([]);
   const [dealers, setDealers] = useState([]);
   const [technicians, setTechnicians] = useState([]);
+  const [bookings, setBookings] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [searchText, setSearchText] = useState("");
@@ -51,6 +52,7 @@ const ExpenditureLayer = () => {
     fetchExpenseCategories();
     fetchDealers();
     fetchTechnicians();
+    fetchBookings();
   }, []);
 
   useEffect(() => {
@@ -125,6 +127,17 @@ const ExpenditureLayer = () => {
       { headers: { Authorization: `Bearer ${token}` } }
     );
     setTechnicians(res.data?.jsonResult || []);
+  };
+
+  const fetchBookings = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}Bookings`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setBookings(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error("Failed to load bookings", err);
+    }
   };
 
   /* ---------------- FORM HANDLERS ---------------- */
@@ -207,6 +220,12 @@ const ExpenditureLayer = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.expenseCategoryID) {
+      Swal.fire("Warning", "Please select Expense Category", "warning");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -593,14 +612,38 @@ const ExpenditureLayer = () => {
             </div>
             <div className="mb-10">
               <label className="text-sm fw-semibold text-primary-light mb-0">
-                Enter Booking ID
+                Select Booking
               </label>
-              <input
-                type="text"
-                name="bookingID"
-                className="form-control mb-10"
-                placeholder="Booking ID"
-                onChange={handleChange}
+              <Select
+                options={bookings.map((b) => ({
+                  value: b.BookingID,
+                  label: `${b.BookingTrackID || `Booking #${b.BookingID}`}${b.CustomerName ? ` - ${b.CustomerName}` : ""}`,
+                  BookingTrackID: b.BookingTrackID,
+                }))}
+                value={
+                  (() => {
+                    const b = bookings.find((x) => String(x.BookingID) === String(formData.bookingID));
+                    return b
+                      ? {
+                          value: b.BookingID,
+                          label: `${b.BookingTrackID || `Booking #${b.BookingID}`}${b.CustomerName ? ` - ${b.CustomerName}` : ""}`,
+                          BookingTrackID: b.BookingTrackID,
+                        }
+                      : null;
+                  })()
+                }
+                onChange={(option) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    bookingID: option?.value ? String(option.value) : "",
+                    referenceNo: option?.BookingTrackID || "",
+                  }));
+                }}
+                placeholder="Select Booking"
+                isClearable
+                isSearchable
+                className="react-select-container"
+                classNamePrefix="react-select"
               />
             </div>
             <div className="mb-10">
