@@ -15,14 +15,50 @@ const DealerBookingsView = () => {
   const token = localStorage.getItem("token");
   const [addedItems, setAddedItems] = useState([]);
   const [includesList, setIncludesList] = useState([]);
+  const [initialItemsSnapshot, setInitialItemsSnapshot] = useState({});
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+
+  const getItemFingerprint = (item) =>
+    JSON.stringify({
+      dealerBasePrice: Number(item.dealerBasePrice) || 0,
+      quantity: Number(item.quantity) || 1,
+      dealerServicePrice: Number(item.dealerServicePrice) || 0,
+      gstPercent: Number(item.gstPercent) || 18,
+      gstPrice: Number(item.gstPrice) || 0,
+      dealerSparePrice: Number(item.dealerSparePrice) || 0,
+    });
+
+  const buildSnapshot = (items) => {
+    const snap = {};
+    items.forEach((item) => {
+      if (item._apiId) snap[item._apiId] = getItemFingerprint(item);
+    });
+    return snap;
+  };
+
+  const hasEdits =
+    addedItems.some(
+      (item) =>
+        item._apiId &&
+        initialItemsSnapshot[item._apiId] !== undefined &&
+        getItemFingerprint(item) !== initialItemsSnapshot[item._apiId]
+    );
+
+  const showSubmitButton = hasEdits && !submitSuccess;
 
   useEffect(() => {
     if (leadId) {
       fetchBookingData();
     } else {
       setAddedItems([]);
+      setInitialItemsSnapshot({});
     }
+    setSubmitSuccess(false);
   }, [leadId]);
+
+  useEffect(() => {
+    if (hasEdits) setSubmitSuccess(false);
+  }, [hasEdits]);
 
   useEffect(() => {
     const fetchIncludes = async () => {
@@ -159,23 +195,97 @@ const DealerBookingsView = () => {
         });
 
         setAddedItems(converted);
+        setInitialItemsSnapshot(buildSnapshot(converted));
         return; // --- STOP here
       }
       // Case 2: no data found (fresh new booking)
       setAddedItems([]);
+      setInitialItemsSnapshot({});
     } catch (err) {
       console.error("Failed to fetch booking data:", err);
     }
   };
 
-  const handleEditItem = (index) => {
-    setAddedItems((prev) =>
-      prev.map((row, i) =>
-        i === index
-          ? { ...row, isEditing: true }
-          : { ...row, isEditing: false },
-      ),
+  const handleSaveAll = async () => {
+    const itemsToSave = addedItems.filter((item) => item._apiId);
+    if (itemsToSave.length === 0) {
+      Swal.fire({ icon: "info", title: "Nothing to Save", text: "No items to save." });
+      return false;
+    }
+
+    const editableItems = itemsToSave.filter(
+      (item) => item.isDealer_Confirm === "Confirmed" || item.isDealer_Confirm === "Approved"
     );
+    if (editableItems.length === 0) {
+      Swal.fire({ icon: "info", title: "No Editable Items", text: "Only Confirmed/Approved items can be edited." });
+      return false;
+    }
+
+    try {
+      for (let i = 0; i < addedItems.length; i++) {
+        const row = addedItems[i];
+        if (!row._apiId) continue;
+        if (row.isDealer_Confirm !== "Confirmed" && row.isDealer_Confirm !== "Approved") continue;
+
+        let includes = "";
+        let serviceId = 0;
+
+        if (row.type === "Package" && Array.isArray(row.includes)) {
+          includes = row.includes.join(",");
+          serviceId = Number(row.packageId);
+        } else if (row.type === "Service Group" && row.serviceGroupServices) {
+          const sgs = row.serviceGroupServices || [];
+          if (sgs.length > 0) {
+            serviceId = Number(sgs[0].id);
+            includes = sgs.slice(1).map((s) => s.id).join(",");
+          }
+        } else if (row.type === "Service") {
+          serviceId = Number(row.includeId);
+        }
+
+        const bookingType = row.status?.toLowerCase() === "confirmed" ? "Confirm" : "NotConfirm";
+
+        const payload = {
+          id: row._apiId,
+          bookingId: row._bookingId,
+          bookingTrackID: row._bookingTrackId,
+          leadId: leadId,
+          serviceType: row.type,
+          serviceName: row.name,
+          basePrice: Number(row.dealerBasePrice) || 0,
+          quantity: row.quantity || 1,
+          price: Number(row.dealerSparePrice) || 0,
+          gstPercent: row.gstPercent === "" || row.gstPercent === 0 ? 18 : Number(row.gstPercent),
+          gstAmount: Number(row.gstPrice) || 0,
+          description: row.description,
+          dealerID: row.dealerID != null && row.dealerID !== "" ? Number(row.dealerID) : 0,
+          percentage: Number(row.percentage) || 0,
+          our_Earnings: Number(row.percentAmount) || 0,
+          labourCharges: Number(row.dealerServicePrice) || 0,
+          modifiedBy: parseInt(localStorage.getItem("userId")) || 0,
+          isActive: true,
+          type: bookingType,
+          includes,
+          serviceId,
+          dealerType: "dealer",
+        };
+
+        await axios.put(
+          `${API_BASE}Supervisor/UpdateSupervisorBooking`,
+          payload,
+          { headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } }
+        );
+      }
+      setInitialItemsSnapshot(buildSnapshot(addedItems));
+      setSubmitSuccess(true);
+      Swal.fire("Success!", "Changes saved successfully.", "success");
+      await fetchBookingData();
+      return true;
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Error", err.response?.data?.message || "Failed to save changes", "error");
+      throw err;
+    }
   };
 
   const handleSaveRow = async (index) => {
@@ -375,17 +485,7 @@ const DealerBookingsView = () => {
     {
       name: "Part Price",
       cell: (row) => {
-        if (row.isInclude) {
-          return (
-            <input
-              type="number"
-              className="form-control form-control-sm"
-              min={0}
-              value=""
-              disabled
-            />
-          );
-        }
+        if (row.isInclude) return null;
         return (
           <input
             type="number"
@@ -393,7 +493,7 @@ const DealerBookingsView = () => {
             min={0}
             placeholder="0"
             value={row.dealerBasePrice === "" || row.dealerBasePrice === 0 ? "" : row.dealerBasePrice}
-            disabled={!row.isEditing}
+            disabled={row.isDealer_Confirm === "Pending"}
             onChange={(e) => {
               const val = e.target.value;
 
@@ -461,17 +561,7 @@ const DealerBookingsView = () => {
     {
       name: "Qty",
       cell: (row, index) => {
-        if (row.isInclude) {
-          return (
-            <input
-              type="number"
-              className="form-control form-control-sm"
-              min={1}
-              value=""
-              disabled
-            />
-          );
-        }
+        if (row.isInclude) return null;
         return (
           <input
             type="number"
@@ -479,7 +569,7 @@ const DealerBookingsView = () => {
             min={1}
             placeholder="1"
             value={row.quantity === "" ? "" : row.quantity}
-            disabled={!row.isEditing}
+            disabled={row.isDealer_Confirm === "Pending"}
             onChange={(e) => {
               const val = e.target.value;
 
@@ -546,23 +636,14 @@ const DealerBookingsView = () => {
     {
       name: "Part Total",
       cell: (row) => {
-        if (row.isInclude) {
-          return (
-            <input
-              type="number"
-              className="form-control form-control-sm"
-              value=""
-              disabled
-            />
-          );
-        }
+        if (row.isInclude) return null;
         return (
           <input
             type="number"
             className="form-control form-control-sm"
             placeholder="0"
             value={row.dealerSparePrice === "" || row.dealerSparePrice === 0 ? "" : Number(row.dealerSparePrice).toFixed(2)}
-            disabled={!row.isEditing}
+            disabled={row.isDealer_Confirm === "Pending"}
             onChange={(e) => {
               const val = e.target.value;
 
@@ -624,17 +705,7 @@ const DealerBookingsView = () => {
     {
       name: "Service Chg.",
       cell: (row, index) => {
-        if (row.isInclude) {
-          return (
-            <input
-              type="number"
-              className="form-control form-control-sm"
-              value=""
-              min={0}
-              disabled
-            />
-          );
-        }
+        if (row.isInclude) return null;
         return (
           <input
             type="number"
@@ -642,6 +713,7 @@ const DealerBookingsView = () => {
             placeholder="0"
             value={row.dealerServicePrice === "" || row.dealerServicePrice === 0 ? "" : row.dealerServicePrice}
             min={0}
+            disabled={row.isDealer_Confirm === "Pending"}
             onChange={(e) => {
               const val = e.target.value;
 
@@ -694,7 +766,6 @@ const DealerBookingsView = () => {
                 });
               }
             }}
-            disabled={!row.isEditing}
           />
         );
       },
@@ -704,18 +775,7 @@ const DealerBookingsView = () => {
     {
       name: "GST %",
       cell: (row, index) => {
-        if (row.isInclude) {
-          return (
-            <input
-              type="number"
-              className="form-control form-control-sm"
-              value=""
-              min={0}
-              disabled
-              readOnly
-            />
-          );
-        }
+        if (row.isInclude) return null;
         return (
           <input
             type="number"
@@ -723,8 +783,7 @@ const DealerBookingsView = () => {
             placeholder="0"
             value={row.gstPercent === "" || row.gstPercent === 0 ? "" : row.gstPercent}
             min={0}
-            // step="0.01"
-            disabled={!row.isEditing}
+            disabled={row.isDealer_Confirm === "Pending"}
             onChange={(e) => {
               const val = e.target.value;
 
@@ -792,18 +851,7 @@ const DealerBookingsView = () => {
     {
       name: "GST Amt",
       cell: (row, index) => {
-        if (row.isInclude) {
-          return (
-            <input
-              type="number"
-              className="form-control form-control-sm"
-              min={0}
-              value=""
-              disabled
-              readOnly
-            />
-          );
-        }
+        if (row.isInclude) return null;
         return (
           <input
             type="number"
@@ -812,7 +860,7 @@ const DealerBookingsView = () => {
             placeholder="0"
             // step="0.01"
             value={row.gstPrice === "" || row.gstPrice === 0 ? "" : (row.gstPrice !== null && row.gstPrice !== undefined && row.gstPrice !== "" ? Number(row.gstPrice).toFixed(2) : "")}
-            disabled={!row.isEditing}
+            disabled={row.isDealer_Confirm === "Pending"}
             onChange={(e) => {
               const val = e.target.value;
 
@@ -884,16 +932,7 @@ const DealerBookingsView = () => {
     {
       name: "Total Amt",
       cell: (row) => {
-        if (row.isInclude) {
-          return (
-            <input
-              type="number"
-              className="form-control form-control-sm"
-              value=""
-              disabled
-            />
-          );
-        }
+        if (row.isInclude) return null;
         // Calculate Part Total from dealerSparePrice (default to 0)
         const partTotal =
           row.dealerSparePrice !== null &&
@@ -942,7 +981,7 @@ const DealerBookingsView = () => {
 
     {
       name: "Status",
-      selector: (row) => row.status,
+      selector: (row) => (row.isInclude ? "" : row.status),
       right: true,
       width: "130px",
       sortable: true,
@@ -974,36 +1013,6 @@ const DealerBookingsView = () => {
                   <Icon icon="mingcute:close-line" />
                 </button>
               </>
-            )}
-            {/* Edit/Delete buttons when isDealer_Confirm is "Confirmed" */}
-            {(row.isDealer_Confirm === "Confirmed" ||
-              row.isDealer_Confirm === "Approved") &&
-              !row.isEditing && (
-                <>
-                  <button
-                    className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                    onClick={() => handleEditItem(row.addedItemsIndex)}
-                    title="Edit"
-                  >
-                    edit
-                  </button>
-                  {/* <button
-                    className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                    onClick={() => handleRemoveItem(row.addedItemsIndex)}
-                    title="Delete"
-                  >
-                    <Icon icon="mingcute:delete-2-line" />
-                  </button> */}
-                </>
-              )}
-            {row.isEditing && (
-              <button
-                className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                onClick={() => handleSaveRow(row.addedItemsIndex)}
-                title="Save"
-              >
-                save
-              </button>
             )}
           </div>
         ) : null,
@@ -1134,6 +1143,18 @@ const DealerBookingsView = () => {
                 striped
                 persistTableHead
                 noDataComponent="No items added yet"
+                conditionalRowStyles={[
+                  {
+                    when: (row) =>
+                      row._apiId &&
+                      !row.isInclude &&
+                      initialItemsSnapshot[row._apiId] !== undefined &&
+                      getItemFingerprint(row) !== initialItemsSnapshot[row._apiId],
+                    style: {
+                      backgroundColor: "rgba(13, 148, 136, 0.12)",
+                    },
+                  },
+                ]}
               />
             </div>
             {/* Totals */}
@@ -1164,6 +1185,17 @@ const DealerBookingsView = () => {
                   <div>Grand Total</div>
                   <div>₹{grandTotal.toFixed(2)}</div>
                 </div>
+              </div>
+            )}
+            {/* Submit button - below, centered */}
+            {showSubmitButton && (
+              <div className="mt-3 d-flex justify-content-center">
+                <button
+                  className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
+                  onClick={handleSaveAll}
+                >
+                  Submit
+                </button>
               </div>
             )}
           </div>

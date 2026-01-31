@@ -20,6 +20,7 @@ const OrganicLeadsLayer = () => {
   const [error, setError] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [dateType, setDateType] = useState("created"); // "created" | "updated"
   const [platformFilter, setPlatformFilter] = useState("All");
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -343,11 +344,13 @@ const OrganicLeadsLayer = () => {
       : []),
   ];
 
+  const dateField = dateType === "updated" ? "Updated_At" : "CreatedDate";
+
   let filteredLeads = leads
     .filter((lead) => {
       const text = searchText.toLowerCase();
 
-      const leadDate = lead.CreatedDate ? new Date(lead.CreatedDate) : null;
+      const leadDate = lead[dateField] ? new Date(lead[dateField]) : null;
       const from = fromDate ? new Date(fromDate + "T00:00:00") : null;
       const to = toDate ? new Date(toDate + "T23:59:59") : null;
 
@@ -389,7 +392,42 @@ const OrganicLeadsLayer = () => {
                 <Icon icon="ion:search-outline" className="icon" />
               </form>
               <div className="d-flex gap-2 align-items-center">
-                <label className="text-sm fw-semibold">From:</label>
+                <div className="d-flex align-items-center gap-2">
+                  <label className="text-sm fw-semibold mb-0">Date Type:</label>
+                  <div className="position-relative d-inline-block">
+                    <select
+                      className="form-control radius-8 px-14 py-6 text-sm w-auto"
+                      value={dateType}
+                      onChange={(e) => {
+                        setDateType(e.target.value);
+                        setFromDate("");
+                        setToDate("");
+                      }}
+                      style={{
+                        appearance: "none",
+                        WebkitAppearance: "none",
+                        MozAppearance: "none",
+                        paddingRight: "30px",
+                      }}
+                    >
+                      <option value="created">Created Date</option>
+                      <option value="updated">Updated Date</option>
+                    </select>
+                    <i
+                      className="bi bi-chevron-down"
+                      style={{
+                        position: "absolute",
+                        right: "10px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        pointerEvents: "none",
+                        fontSize: "14px",
+                        color: "#555",
+                      }}
+                    />
+                  </div>
+                </div>
+                <label className="text-sm fw-semibold mb-0">From:</label>
                 <input
                   type="date"
                   placeholder="DD-MM-YYYY"
@@ -397,7 +435,7 @@ const OrganicLeadsLayer = () => {
                   value={fromDate}
                   onChange={(e) => setFromDate(e.target.value)}
                 />
-                <label className="text-sm fw-semibold">To:</label>
+                <label className="text-sm fw-semibold mb-0">To:</label>
                 <input
                   type="date"
                   placeholder="DD-MM-YYYY"

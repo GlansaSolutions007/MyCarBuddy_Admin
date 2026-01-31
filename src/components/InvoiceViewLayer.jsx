@@ -13,6 +13,7 @@ const InvoiceViewLayer = () => {
   const [loading, setLoading] = useState(true);
   const [dealerList, setDealerList] = useState([]);
   const [selectedDealer, setSelectedDealer] = useState("");
+  const [sendingInvoice, setSendingInvoice] = useState(null); // "whatsapp-estimation" | "email-estimation" | "whatsapp-final" | "email-final" | "dealer"
 
   const token = localStorage.getItem("token");
 
@@ -114,6 +115,7 @@ const InvoiceViewLayer = () => {
     }
 
     try {
+      setSendingInvoice("dealer");
       await axios.post(
         `${API_BASE}Dealer/SendDealerInvoice`,
         {
@@ -140,6 +142,8 @@ const InvoiceViewLayer = () => {
         text:
           error?.response?.data?.message || "Failed to send dealer invoice.",
       });
+    } finally {
+      setSendingInvoice(null);
     }
   };
 
@@ -183,6 +187,7 @@ const InvoiceViewLayer = () => {
   }
 
   try {
+    setSendingInvoice("whatsapp-estimation");
     await axios.post(
       `${API_BASE}Leads/SendEstimationInvoiceWhatsApp`,
       {
@@ -210,6 +215,8 @@ const InvoiceViewLayer = () => {
         error?.response?.data?.message ||
         "Failed to send estimation invoice on WhatsApp.",
     });
+  } finally {
+    setSendingInvoice(null);
   }
 };
 const handleWhatsappFinalInvoice = async () => {
@@ -223,6 +230,7 @@ const handleWhatsappFinalInvoice = async () => {
   }
 
   try {
+    setSendingInvoice("whatsapp-final");
     await axios.post(
       // `${API_BASE}Leads/SendFinalInvoiceWhatsApp`,
       `${API_BASE}Leads/SendEstimationInvoiceWhatsApp`,
@@ -251,6 +259,8 @@ const handleWhatsappFinalInvoice = async () => {
         error?.response?.data?.message ||
         "Failed to send final invoice on WhatsApp.",
     });
+  } finally {
+    setSendingInvoice(null);
   }
 };
 
@@ -266,6 +276,7 @@ const handleWhatsappFinalInvoice = async () => {
     }
 
     try {
+      setSendingInvoice("email-final");
       await axios.post(
         `${API_BASE}Leads/SendFinalInvoiceEmail`,
         {
@@ -290,6 +301,8 @@ const handleWhatsappFinalInvoice = async () => {
         title: "Failed",
         text: "Failed to send final invoice.",
       });
+    } finally {
+      setSendingInvoice(null);
     }
   };
   const handleEmailEstimatedInvoice = async () => {
@@ -302,6 +315,7 @@ const handleWhatsappFinalInvoice = async () => {
       return;
     }
     try {
+      setSendingInvoice("email-estimation");
       await axios.post(
         `${API_BASE}Leads/SendEstimationInvoiceEmail`,
         {
@@ -326,6 +340,8 @@ const handleWhatsappFinalInvoice = async () => {
         title: "Failed",
         text: "Failed to send estimation invoice.",
       });
+    } finally {
+      setSendingInvoice(null);
     }
   };
 
@@ -387,16 +403,18 @@ const handleWhatsappFinalInvoice = async () => {
             <button
               className="btn btn-primary-600 d-inline-flex align-items-center gap-2"
               onClick={handleWhatsappEstimatedInvoice}
+              disabled={sendingInvoice === "whatsapp-estimation"}
             >
               <Icon icon="mdi:email-send-outline" />
-              <span>Whatsapp Estimation Invoice</span>
+              <span>{sendingInvoice === "whatsapp-estimation" ? "Sending..." : "Whatsapp Estimation Invoice"}</span>
             </button>
             <button
               className="btn btn-primary-600 d-inline-flex align-items-center gap-2"
               onClick={handleEmailEstimatedInvoice}
+              disabled={sendingInvoice === "email-estimation"}
             >
               <Icon icon="mdi:email-send-outline" />
-              <span>Email Estimation Invoice</span>
+              <span>{sendingInvoice === "email-estimation" ? "Sending..." : "Email Estimation Invoice"}</span>
             </button>
             </>
           )}
@@ -405,16 +423,18 @@ const handleWhatsappFinalInvoice = async () => {
               <button
               className="btn btn-primary-600 d-inline-flex align-items-center gap-2"
               onClick={handleWhatsappFinalInvoice}
+              disabled={sendingInvoice === "whatsapp-final"}
             >
               <Icon icon="mdi:email-send-outline" />
-              <span>Whatsapp Final Invoice</span>
+              <span>{sendingInvoice === "whatsapp-final" ? "Sending..." : "Whatsapp Final Invoice"}</span>
             </button>
             <button
               className="btn btn-primary-600 d-inline-flex align-items-center gap-2"
               onClick={handleSendFinalInvoice}
+              disabled={sendingInvoice === "email-final"}
             >
               <Icon icon="mdi:email-send-outline" />
-              <span>Email Final Invoice</span>
+              <span>{sendingInvoice === "email-final" ? "Sending..." : "Email Final Invoice"}</span>
             </button>
             </>
           )}
@@ -423,10 +443,10 @@ const handleWhatsappFinalInvoice = async () => {
               <button
                 className="btn btn-primary-600 d-inline-flex align-items-center gap-2"
                 onClick={handleSendDealerInvoice}
-                disabled={!activeInvoice}
+                disabled={!activeInvoice || sendingInvoice === "dealer"}
               >
                 <Icon icon="mdi:email-send" />
-                <span>Send Dealer Invoice</span>
+                <span>{sendingInvoice === "dealer" ? "Sending..." : "Send Dealer Invoice"}</span>
               </button>
             </div>
           )}

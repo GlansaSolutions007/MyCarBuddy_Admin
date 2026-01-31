@@ -29,6 +29,7 @@ const EmployeeLeadsReportLayer = ({
   const [error, setError] = useState("");
   const [fromDate, setFromDate] = useState(initialFromDate);
   const [toDate, setToDate] = useState(initialToDate);
+  const [dateType, setDateType] = useState("created"); // "created" | "updated"
   const [selectedExportColumns, setSelectedExportColumns] = useState(
     EXPORT_COLUMNS.map((c) => c.key),
   );
@@ -59,6 +60,7 @@ const EmployeeLeadsReportLayer = ({
       // let url = API_BASE + `Leads/FollowUpLeads?EmployeeId=${employeeId}`;
       let url = API_BASE + `Leads/AssignedLeads?Emp_Assign=${employeeId}`;
 
+      url += `&DateType=${dateType === "updated" ? "UpdatedDate" : "CreatedDate"}`;
       if (fromDate) {
         url += `&FromDate=${fromDate}`;
       }
@@ -74,7 +76,19 @@ const EmployeeLeadsReportLayer = ({
       });
 
       if (res.data && Array.isArray(res.data)) {
-        const sorted = [...res.data].sort(
+        const dateField = dateType === "updated" ? "Updated_At" : "CreatedDate";
+        let filtered = res.data;
+        if (fromDate || toDate) {
+          filtered = res.data.filter((lead) => {
+            const d = lead[dateField];
+            if (!d) return !fromDate && !toDate;
+            const leadDate = new Date(d).toISOString().slice(0, 10);
+            if (fromDate && leadDate < fromDate) return false;
+            if (toDate && leadDate > toDate) return false;
+            return true;
+          });
+        }
+        const sorted = [...filtered].sort(
           (a, b) => new Date(b.Leadcreateddate) - new Date(a.Leadcreateddate),
         );
         setLeads(sorted);
@@ -139,7 +153,7 @@ const EmployeeLeadsReportLayer = ({
       sortable: true,
     },
     {
-      name: "Created At",
+      name: "Created Date",
       selector: (row) => formatDate(row.CreatedDate) || "-",
       sortable: true,
       wrap: true,
@@ -156,12 +170,12 @@ const EmployeeLeadsReportLayer = ({
       sortable: true,
       wrap: true,
     },
-    // {
-    //   name: "Updated At",
-    //   selector: (row) => formatDate(row.Created_At) || "-",
-    //   sortable: true,
-    //   wrap: true,
-    // },
+    {
+      name: "Updated Date",
+      selector: (row) => formatDate(row.Updated_At) || "-",
+      sortable: true,
+      wrap: true,
+    },
     // {
     //   name: "Count",
     //   selector: (row) => row.FollowUpCount || "-",
@@ -231,7 +245,22 @@ const EmployeeLeadsReportLayer = ({
                 />
               </form>
               <div className="d-flex align-items-center gap-3 flex-wrap">
-                <label className="text-sm fw-semibold">From:</label>
+                <div className="d-flex align-items-center gap-2">
+                  <label className="text-sm fw-semibold mb-0">Date Type:</label>
+                  <select
+                    className="form-select w-auto"
+                    value={dateType}
+                    onChange={(e) => {
+                      setDateType(e.target.value);
+                      setFromDate("");
+                      setToDate("");
+                    }}
+                  >
+                    <option value="created">Created Date</option>
+                    <option value="updated">Updated Date</option>
+                  </select>
+                </div>
+                <label className="text-sm fw-semibold mb-0">From:</label>
                 <input
                   type="date"
                   id="fromDate"
@@ -240,7 +269,7 @@ const EmployeeLeadsReportLayer = ({
                   onChange={(e) => setFromDate(e.target.value)}
                 />
 
-                <label className="text-sm fw-semibold">To:</label>
+                <label className="text-sm fw-semibold mb-0">To:</label>
                 <input
                   type="date"
                   id="toDate"

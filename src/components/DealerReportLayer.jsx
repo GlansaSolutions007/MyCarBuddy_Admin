@@ -221,7 +221,31 @@ const DealerReportLayer = () => {
     },
     {
       name: "Pay. Status",
-      selector: (r) => r.DealerPaymentStatus ?? "-",
+      cell: (row) => {
+        const status = row.DealerPaymentStatus?.trim() || "Pending";
+
+        const colorMap = {
+          Pending: "#F57C00",   // Orange
+          Paid: "#28A745",      // Green
+          Unpaid: "#E34242",    // Red
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
       sortable: true,
       width: "140px",
     },

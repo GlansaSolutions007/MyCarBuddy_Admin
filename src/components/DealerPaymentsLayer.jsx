@@ -67,23 +67,19 @@ const DealerPaymentsLayer = () => {
 
       if (response.data && Array.isArray(response.data)) {
         const mappedPayments = response.data.map((item) => {
-          // Convert Documents string to array format
+          // Convert Documents string to array format (comma-separated paths)
           let documents = [];
           if (item.Documents) {
-            // Construct full URL for document
-            const baseUrl = API_BASE.replace("/api", "");
-            const docUrl = item.Documents.startsWith("/")
-              ? `${baseUrl}${item.Documents}`
-              : item.Documents.startsWith("http")
-                ? item.Documents
-                : `${baseUrl}${item.Documents}`;
-            const fileName = item.Documents.split("/").pop() || "document";
-            documents = [
-              {
-                name: fileName,
-                url: docUrl,
-              },
-            ];
+            const baseUrl = API_BASE.replace("/api", "").replace(/\/$/, "");
+            const paths = item.Documents.split(",").map((p) => p.trim()).filter(Boolean);
+            documents = paths.map((path) => {
+              const trimmedPath = path.replace(/^\//, "");
+              const url = path.startsWith("http")
+                ? path
+                : `${baseUrl}/${trimmedPath}`;
+              const fileName = path.split("/").pop() || "document";
+              return { name: fileName, url };
+            });
           }
 
           // Map Status: "Unpaid" -> "Pending", "Paid" -> "Paid"
@@ -532,9 +528,16 @@ const DealerPaymentsLayer = () => {
                   className="w-32-px h-32-px rounded-circle d-inline-flex align-items-center justify-content-center"
                   onClick={(e) => {
                     e.stopPropagation();
-                    window.open(doc.url, "_blank");
+                    const a = document.createElement("a");
+                    a.href = doc.url;
+                    a.download = doc.name;
+                    a.target = "_blank";
+                    a.rel = "noopener noreferrer";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
                   }}
-                  title={doc.name}
+                  title={`Download ${doc.name}`}
                   style={{
                     backgroundColor: `${color}15`,
                     color: color,
@@ -584,16 +587,16 @@ const DealerPaymentsLayer = () => {
     },
     {
       name: "Actions",
-      cell: (row) => (
-        <button
-          className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-          onClick={() => handlePayNow(row)}
-          disabled={row.dealerPaymentStatus === "Paid"}
-          title="Edit"
-        >
-          Pay
-        </button>
-      ),
+      cell: (row) =>
+        row.dealerPaymentStatus === "Paid" ? null : (
+          <button
+            className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+            onClick={() => handlePayNow(row)}
+            title="Pay"
+          >
+            Pay
+          </button>
+        ),
       ignoreRowClick: true,
       allowOverflow: true,
       width: "120px",

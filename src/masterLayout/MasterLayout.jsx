@@ -54,7 +54,7 @@ const MasterLayout = ({ children }) => {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          }
+          },
         );
         if (response.data && Array.isArray(response.data)) {
           setUserPermissions(response.data);
@@ -75,7 +75,7 @@ const MasterLayout = ({ children }) => {
     return userPermissions.some(
       (perm) =>
         perm.name === permissionName &&
-        perm.page.toLowerCase() === page.toLowerCase()
+        perm.page.toLowerCase() === page.toLowerCase(),
     );
   };
 
@@ -252,7 +252,7 @@ const MasterLayout = ({ children }) => {
 
     // Attach click event listeners to dropdown triggers
     const dropdownTriggers = document.querySelectorAll(
-      ".sidebar-menu .dropdown > a, .sidebar-menu .dropdown > Link"
+      ".sidebar-menu .dropdown > a, .sidebar-menu .dropdown > Link",
     );
 
     dropdownTriggers.forEach((trigger) => {
@@ -322,7 +322,7 @@ const MasterLayout = ({ children }) => {
           notificationService.showToastNotification(
             newNotification.title,
             newNotification.message,
-            "info"
+            "info",
           );
 
           // Show browser notification
@@ -364,7 +364,7 @@ const MasterLayout = ({ children }) => {
         setNotifications((prev) => {
           // Create a Map to track API notification IDs for deduplication
           const apiNotificationIds = new Set(
-            normalized.map((n) => String(n.id))
+            normalized.map((n) => String(n.id)),
           );
 
           // Keep real-time notifications (Date.now() ids) that don't have a matching API notification
@@ -376,7 +376,7 @@ const MasterLayout = ({ children }) => {
             // Check if this real-time notification matches any API notification
             const matchesApi = normalized.some((apiNotif) => {
               const timeDiff = Math.abs(
-                new Date(apiNotif.timestamp) - new Date(p.timestamp)
+                new Date(apiNotif.timestamp) - new Date(p.timestamp),
               );
               return (
                 apiNotif.title === p.title &&
@@ -513,14 +513,14 @@ const MasterLayout = ({ children }) => {
           permission: "city_view",
           page: "Cities",
         },
-         {
+        {
           title: "Areas",
           to: "/areas",
           color: "text-info-danger",
           permission: "areas_view",
           page: "Areas",
         },
-         {
+        {
           title: "Assign Area",
           to: "/assign-area",
           color: "text-info-main",
@@ -685,14 +685,17 @@ const MasterLayout = ({ children }) => {
           permission: "revenuereports_view",
           page: "Revenue Reports",
         },
-        {
-          title: "Dealer Report",
-          to: "/dealer-report",
-          color: "text-success-main",
-          permission: "dealerreport_view",
-          page: "Dealer Report",
-        },
-        
+        ...(role === "Dealer"
+          ? [
+              {
+                title: "Dealer Report",
+                to: "/dealer-report",
+                color: "text-success-main",
+                permission: "dealerreport_view",
+                page: "Dealer Report",
+              },
+            ]
+          : []),
       ],
     },
     {
@@ -713,10 +716,10 @@ const MasterLayout = ({ children }) => {
           permission: "expenditures_view",
           page: "Expenditures",
         },
-         {
+        {
           title: "Dealer Expenditures",
           to: "/dealer-expenditure",
-          color:"text-warning-main",
+          color: "text-warning-main",
           permission: "dealerexpenditure_view",
           page: "Dealer Expenditures",
         },
@@ -947,8 +950,8 @@ const MasterLayout = ({ children }) => {
           sidebarActive
             ? "sidebar active "
             : mobileMenu
-            ? "sidebar sidebar-open"
-            : "sidebar"
+              ? "sidebar sidebar-open"
+              : "sidebar"
         }
       >
         <button
@@ -1052,7 +1055,7 @@ const MasterLayout = ({ children }) => {
                     )}
                   </li>
                 );
-              }
+              },
             )}
           </ul>
         </div>
@@ -1097,9 +1100,7 @@ const MasterLayout = ({ children }) => {
             </div>
             <div className="col text-center d-none d-md-block">
               <div className="d-flex flex-column align-items-center">
-                <h6 className="mb-0 fw-semibold text-lg">
-                  {getDisplayRole()}  
-                </h6>
+                <h6 className="mb-0 fw-semibold text-lg">{getDisplayRole()}</h6>
                 <span className="text-secondary-light fw-medium text-md">
                   {localStorage.getItem("name") || "User"}
                 </span>
@@ -1376,14 +1377,14 @@ const MasterLayout = ({ children }) => {
                                 prev.map((n) =>
                                   n.id === notification.id
                                     ? { ...n, read: true }
-                                    : n
-                                )
+                                    : n,
+                                ),
                               );
                               setUnreadCount((prev) => Math.max(0, prev - 1));
                               try {
                                 notificationService.markAsRead(
                                   notification.id,
-                                  userId
+                                  userId,
                                 );
                               } catch (_) {}
                             }}
@@ -1398,7 +1399,7 @@ const MasterLayout = ({ children }) => {
                                 </p>
                                 <p className="text-xs text-secondary mb-0">
                                   {new Date(
-                                    notification.timestamp
+                                    notification.timestamp,
                                   ).toLocaleString(undefined, {
                                     dateStyle: "medium",
                                     timeStyle: "short",
@@ -1416,22 +1417,22 @@ const MasterLayout = ({ children }) => {
                         onClick={async () => {
                           try {
                             const unreadNotifications = notifications.filter(
-                              (n) => !n.read
+                              (n) => !n.read,
                             );
                             for (const notification of unreadNotifications) {
                               await notificationService.markAsRead(
                                 notification.id,
-                                userId
+                                userId,
                               );
                             }
                             setNotifications((prev) =>
-                              prev.map((n) => ({ ...n, read: true }))
+                              prev.map((n) => ({ ...n, read: true })),
                             );
                             setUnreadCount(0);
                           } catch (error) {
                             console.error(
                               "Error clearing notifications:",
-                              error
+                              error,
                             );
                           }
                         }}

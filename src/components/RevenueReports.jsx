@@ -405,7 +405,29 @@ const RevenueReports = () => {
     },
     {
       name: "DLR Pay. Status",
-      selector: (r) => r.DealerPaymentStatus ?? "-",
+      selector: (r) => r.DealerPaymentStatus || "Pending",
+      cell: (row) => {
+        const status = row.DealerPaymentStatus || "Pending";
+        const colorMap = {
+          Pending: "#F57C00",
+          Paid: "#28A745",
+          Unpaid: "#F57C00",
+        };
+        const color = colorMap[status] || "#6c757d";
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            />
+            <span style={{ color }}>{status}</span>
+          </span>
+        );
+      },
       sortable: true,
       width: "180px",
     },

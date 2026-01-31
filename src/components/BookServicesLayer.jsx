@@ -11,6 +11,11 @@ import PropTypes from "prop-types";
 const employeeData = JSON.parse(localStorage.getItem("employeeData"));
 const userId = employeeData?.Id;
 const role = localStorage.getItem("role");
+const roleId = localStorage.getItem("roleId");
+
+const isSupervisorHead = roleId === "8" || employeeData?.RoleName === "Supervisor Head";
+const isFieldAdvisor = roleId === "9" || employeeData?.RoleName === "Field Advisor";
+const isAdmin = role === "Admin" || roleId === "1";
 
 const BookServicesLayer = () => {
   const { Id } = useParams();
@@ -42,13 +47,53 @@ const BookServicesLayer = () => {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
+  const [initialItemsSnapshot, setInitialItemsSnapshot] = useState({});
+  const [submitSuccess, setSubmitSuccess] = useState(false);
   const hasNewItem = addedItems.some((item) => !item._apiId);
+
+  const getItemFingerprint = (item) =>
+    JSON.stringify({
+      basePrice: Number(item.basePrice) || 0,
+      quantity: Number(item.quantity) || 1,
+      labourCharge: Number(item.labourCharge) || 0,
+      gstPercent: Number(item.gstPercent) || 0,
+      gstPrice: Number(item.gstPrice) || 0,
+      percentage: Number(item.percentage) || 0,
+      percentAmount: Number(item.percentAmount) || 0,
+      dealerID: String(item.dealerID || ""),
+    });
+
+  const buildSnapshot = (items) => {
+    const snap = {};
+    items.forEach((item) => {
+      if (item._apiId) {
+        snap[item._apiId] = getItemFingerprint(item);
+      }
+    });
+    return snap;
+  };
+
+  const hasEdits =
+    addedItems.some(
+      (item) =>
+        item._apiId &&
+        initialItemsSnapshot[item._apiId] !== undefined &&
+        getItemFingerprint(item) !== initialItemsSnapshot[item._apiId]
+    );
+
+  const showSubmitButton = (hasNewItem || hasEdits) && !submitSuccess;
 
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchAllPackages();
   }, []);
+
+  useEffect(() => {
+    if (hasNewItem || hasEdits) {
+      setSubmitSuccess(false);
+    }
+  }, [hasNewItem, hasEdits]);
 
   useEffect(() => {
     // ✅ Company percent calculated on total price + labour + gst
@@ -69,7 +114,9 @@ const BookServicesLayer = () => {
       fetchBookingData();
     } else {
       setAddedItems([]);
+      setInitialItemsSnapshot({});
     }
+    setSubmitSuccess(false);
   }, [leadId]);
 
   useEffect(() => {
@@ -166,6 +213,7 @@ const BookServicesLayer = () => {
             labourCharge: Number(item.labourCharges || 0) === 0 ? "" : Number(item.labourCharges || 0),
             includeId: item.serviceType === "Service" ? item.serviceId : null,
             packageId: item.serviceType === "Package" ? item.serviceId : null,
+            serviceId: item.serviceId || 0,
             dealerBasePrice: item.dealerBasePrice !== null && item.dealerBasePrice !== undefined && item.dealerBasePrice !== ""
               ? Number(item.dealerBasePrice)
               : 0,
@@ -248,10 +296,12 @@ const BookServicesLayer = () => {
         });
 
         setAddedItems(converted);
+        setInitialItemsSnapshot(buildSnapshot(converted));
         return; // --- STOP here
       }
       // Case 2: no data found (fresh new booking)
       setAddedItems([]);
+      setInitialItemsSnapshot({});
     } catch (err) {
       console.error("Failed to fetch booking data:", err);
     } finally {
@@ -799,28 +849,129 @@ const BookServicesLayer = () => {
     resetForm();
   };
 
-  const handleEditItem = (index) => {
-    setAddedItems((prev) =>
-      prev.map((row, i) =>
-        i === index
-          ? { ...row, isEditing: true }
-          : { ...row, isEditing: false },
-      ),
+  const handleSaveAll = async (skipSuccessSwal = false) => {
+    const itemsToSave = addedItems.filter((item) => item._apiId);
+    if (itemsToSave.length === 0) {
+      Swal.fire({
+        icon: "info",
+        title: "Nothing to Save",
+        text: "No items from API to save. New items must be submitted via Submit Booking.",
+      });
+      return false;
+    }
+
+    const canModifyItem = (item) =>
+      item.status?.toLowerCase() !== "confirmed" ||
+      isSupervisorHead ||
+      isAdmin;
+
+    const savableItems = itemsToSave.filter(canModifyItem);
+    const withoutDealer = savableItems.filter(
+      (item) =>
+        !item.dealerID ||
+        item.dealerID === "" ||
+        item.dealerID === null ||
+        item.dealerID === undefined
     );
+    // if (withoutDealer.length > 0) {
+    //   Swal.fire({
+    //     icon: "info",
+    //     title: "Dealer Required",
+    //     text: "Please select dealer for all items before saving.",
+    //   });
+    //   return false;
+    // }
+
+    try {
+      for (let i = 0; i < addedItems.length; i++) {
+        const row = addedItems[i];
+        if (!row._apiId) continue;
+        if (!canModifyItem(row)) continue;
+
+        let includes = "";
+        let serviceId = 0;
+
+        if (row.type === "Package" && Array.isArray(row.includes)) {
+          includes = row.includes.join(",");
+          serviceId = Number(row.packageId);
+        } else if (row.type === "Service Group" && row.serviceGroupServices) {
+          const serviceGroupServices = row.serviceGroupServices || [];
+          if (serviceGroupServices.length > 0) {
+            serviceId = Number(serviceGroupServices[0].id);
+            const includeIds = serviceGroupServices
+              .slice(1)
+              .map((s) => s.id)
+              .join(",");
+            includes = includeIds;
+          }
+        } else if (row.type === "Service") {
+          serviceId = Number(row.includeId);
+        } else if (row.type === "Spare Part") {
+          serviceId = Number(row.serviceId) || 0;
+        }
+
+        const bookingType =
+          row.status?.toLowerCase() === "confirmed" ? "Confirm" : "NotConfirm";
+
+        const payload = {
+          id: row._apiId,
+          bookingId: row._bookingId,
+          bookingTrackID: row._bookingTrackId,
+          leadId: leadId,
+          serviceType: row.type,
+          serviceName: row.name,
+          basePrice: Number(row.basePrice) || 0,
+          quantity: row.quantity,
+          price: Number(row.price) || 0,
+          gstPercent: row.gstPercent,
+          gstAmount: row.gstPrice,
+          description: row.description,
+          dealerID: row.dealerID != null && row.dealerID !== "" ? Number(row.dealerID) : 0,
+          percentage: row.percentage || 0,
+          our_Earnings: row.percentAmount || 0,
+          labourCharges: row.labourCharge || 0,
+          modifiedBy: parseInt(userId) || parseInt(localStorage.getItem("userId")) || 0,
+          isActive: true,
+          type: bookingType,
+          includes: includes,
+          serviceId: serviceId,
+        };
+
+        await axios.put(
+          `${API_BASE}Supervisor/UpdateSupervisorBooking`,
+          payload,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+      }
+      if (!skipSuccessSwal) {
+        Swal.fire("Saved", "All items updated successfully", "success");
+      }
+      setInitialItemsSnapshot(buildSnapshot(addedItems));
+      return true;
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Error", "Failed to save changes", "error");
+      throw err;
+    }
   };
 
   const handleSaveRow = async (index) => {
     const row = addedItems[index];
     
     // Check if dealer is selected (only for non-include items)
-    if (!row.isInclude && (!row.dealerID || row.dealerID === "" || row.dealerID === null || row.dealerID === undefined)) {
-      Swal.fire({
-        icon: "info",
-        title: "Dealer Required",
-        text: `Please select dealer before saving.`,
-      });
-      return;
-    }
+    // if (!row.isInclude && (!row.dealerID || row.dealerID === "" || row.dealerID === null || row.dealerID === undefined)) {
+    //   Swal.fire({
+    //     icon: "info",
+    //     title: "Dealer Required",
+    //     text: `Please select dealer before saving.`,
+    //   });
+    //   return;
+    // }
     
     const bookingType =
       row.status?.toLowerCase() === "confirmed" ? "Confirm" : "NotConfirm";
@@ -862,11 +1013,11 @@ const BookServicesLayer = () => {
           gstPercent: row.gstPercent,
           gstAmount: row.gstPrice,
           description: row.description,
-          dealerID: row.dealerID,
+          dealerID: row.dealerID != null && row.dealerID !== "" ? Number(row.dealerID) : 0,
           percentage: row.percentage || 0,
           our_Earnings: row.percentAmount || 0,
           labourCharges: row.labourCharge || 0,
-          modifiedBy: parseInt(localStorage.getItem("userId")),
+          modifiedBy: parseInt(userId) || parseInt(localStorage.getItem("userId")) || 0,
           isActive: true,
           type: bookingType,
           includes: includes,
@@ -917,7 +1068,9 @@ const BookServicesLayer = () => {
 
           if (response.status === 200) {
             Swal.fire("Deleted!", "Item removed successfully.", "success");
-            setAddedItems((prev) => prev.filter((_, i) => i !== index));
+            const next = addedItems.filter((_, i) => i !== index);
+            setAddedItems(next);
+            setInitialItemsSnapshot(buildSnapshot(next));
           }
         } catch (err) {
           console.error(err);
@@ -931,7 +1084,44 @@ const BookServicesLayer = () => {
     });
   };
 
-  const handleSubmit = async () => {
+  const handleCombinedSubmit = async () => {
+    if (addedItems.length === 0) {
+      return Swal.fire("Error", "No items to submit", "error");
+    }
+
+    const hasApiItems = addedItems.some((item) => item._apiId);
+    const hasNewItems = addedItems.some((item) => !item._apiId);
+
+    try {
+      let apiItemsSaved = true;
+      if (hasApiItems) {
+        apiItemsSaved = await handleSaveAll(true);
+        if (apiItemsSaved) {
+          await fetchBookingData();
+        } else {
+          return;
+        }
+      }
+      if (hasNewItems) {
+        await handleSubmit(true);
+      }
+      setSubmitSuccess(true);
+      Swal.fire({
+        icon: "success",
+        title: "Success!",
+        text: "Services have been successfully added to this booking.",
+      }).then(() => {
+        if (hasNewItems) {
+          navigate(-1);
+        }
+      });
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Error", err.response?.data?.message || "Failed to save changes", "error");
+    }
+  };
+
+  const handleSubmit = async (skipSuccessSwal = false) => {
     if (addedItems.length === 0)
       return Swal.fire("Error", "No items to submit", "error");
     if (!leadId) return Swal.fire("Error", "Lead ID is required", "error");
@@ -1079,13 +1269,15 @@ const BookServicesLayer = () => {
           );
         }
 
-        Swal.fire({
-          icon: "success",
-          title: "Success!",
-          text: "Services have been successfully added to this booking.",
-        }).then(() => {
-          navigate(-1);
-        });
+        if (!skipSuccessSwal) {
+          Swal.fire({
+            icon: "success",
+            title: "Success!",
+            text: "Services have been successfully added to this booking.",
+          }).then(() => {
+            navigate(-1);
+          });
+        }
 
         await fetchBookingData();
         resetForm();
@@ -1217,9 +1409,11 @@ const BookServicesLayer = () => {
     {
       name: "Part Price",
       cell: (row) => {
-        if (row.isInclude) {
-          return <input type="number" className="form-control form-control-sm" value="" disabled />;
-        }
+        if (row.isInclude) return null;
+        const canModify =
+          row.status !== "Confirmed" ||
+          isSupervisorHead ||
+          isAdmin;
         return (
         <input
           type="number"
@@ -1227,7 +1421,7 @@ const BookServicesLayer = () => {
           min={0}
           placeholder="0"
           value={row.basePrice === "" || row.basePrice === 0 ? "" : row.basePrice}
-          disabled={!row.isEditing}
+          disabled={!canModify}
           onChange={(e) => {
             const val = e.target.value;
 
@@ -1288,27 +1482,28 @@ const BookServicesLayer = () => {
     },
     {
       name: "DLR Part Price",
-      cell: (row) => (
+      cell: (row) => {
+        if (row.isInclude) return null;
+        return (
         <input
           type="number"
           className="form-control form-control-sm"
-          value={
-            row.isInclude
-              ? ""
-              : Number(row.dealerBasePrice || "0.00").toFixed(2)
-          }
+          value={Number(row.dealerBasePrice || "0.00").toFixed(2)}
           disabled
         />
-      ),
+        );
+      },
       width: "150px",
       sortable: true,
     },
     {
       name: "Qty",
       cell: (row, index) => {
-        if (row.isInclude) {
-          return <input type="number" className="form-control form-control-sm" value="" disabled />;
-        }
+        if (row.isInclude) return null;
+        const canModify =
+          row.status !== "Confirmed" ||
+          isSupervisorHead ||
+          isAdmin;
         return (
         <input
           type="number"
@@ -1316,7 +1511,7 @@ const BookServicesLayer = () => {
           min={1}
           placeholder="1"
           value={row.quantity === "" ? "" : row.quantity}
-          disabled={!row.isEditing}
+          disabled={!canModify}
           onChange={(e) => {
             const val = e.target.value;
 
@@ -1380,9 +1575,7 @@ const BookServicesLayer = () => {
     {
       name: "Part Total",
       cell: (row) => {
-        if (row.isInclude) {
-          return <input type="number" className="form-control form-control-sm" value="" disabled />;
-        }
+        if (row.isInclude) return null;
         return (
         <input
           type="number"
@@ -1397,27 +1590,28 @@ const BookServicesLayer = () => {
     },
     {
       name: "DLR Part Total",
-      cell: (row) => (
+      cell: (row) => {
+        if (row.isInclude) return null;
+        return (
         <input
           type="number"
           className="form-control form-control-sm"
-          value={
-            row.isInclude
-              ? ""
-              : Number(row.dealerSparePrice || "0.00").toFixed(2)
-          }
+          value={Number(row.dealerSparePrice || "0.00").toFixed(2)}
           disabled
         />
-      ),
+        );
+      },
       width: "150px",
       sortable: true,
     },
     {
       name: "Service Chg.",
       cell: (row, index) => {
-        if (row.isInclude) {
-          return <input type="number" className="form-control form-control-sm" value="" disabled />;
-        }
+        if (row.isInclude) return null;
+        const canModify =
+          row.status !== "Confirmed" ||
+          isSupervisorHead ||
+          isAdmin;
         return (
         <input
           type="number"
@@ -1425,6 +1619,7 @@ const BookServicesLayer = () => {
           placeholder="0"
           value={row.labourCharge === "" || row.labourCharge === 0 ? "" : row.labourCharge}
           min={0}
+          disabled={!canModify}
           onChange={(e) => {
             const val = e.target.value;
             if (val === "") {
@@ -1478,7 +1673,6 @@ const BookServicesLayer = () => {
               });
             }
           }}
-          disabled={!row.isEditing}
         />
         );
       },
@@ -1487,27 +1681,28 @@ const BookServicesLayer = () => {
     },
     {
       name: "DLR Service Chg.",
-      cell: (row) => (
+      cell: (row) => {
+        if (row.isInclude) return null;
+        return (
         <input
           type="number"
           className="form-control form-control-sm"
-          value={
-            row.isInclude
-              ? ""
-              : Number(row.dealerServicePrice || "0.00").toFixed(2)
-          }
+          value={Number(row.dealerServicePrice || "0.00").toFixed(2)}
           disabled
         />
-      ),
+        );
+      },
       width: "170px",
       sortable: true,
     },
     {
       name: "GST %",
       cell: (row, index) => {
-        if (row.isInclude) {
-          return <input type="number" className="form-control form-control-sm" value="" disabled />;
-        }
+        if (row.isInclude) return null;
+        const canModify =
+          row.status !== "Confirmed" ||
+          isSupervisorHead ||
+          isAdmin;
         return (
         <input
           type="number"
@@ -1568,7 +1763,7 @@ const BookServicesLayer = () => {
               });
             }
           }}
-          disabled={!row.isEditing}
+          disabled={!canModify}
         />
         );
       },
@@ -1577,27 +1772,28 @@ const BookServicesLayer = () => {
     },
      {
       name: "DLR GST %",
-      cell: (row) => (
+      cell: (row) => {
+        if (row.isInclude) return null;
+        return (
         <input
           type="number"
           className="form-control form-control-sm"
-          value={
-            row.isInclude
-              ? ""
-              : Number(row.dealerGSTPercent || "0")
-          }
+          value={Number(row.dealerGSTPercent || "0")}
           disabled
         />
-      ),
+        );
+      },
       width: "150px",
       sortable: true,
     },
     {
       name: "GST Amt",
       cell: (row, index) => {
-        if (row.isInclude) {
-          return <input type="number" className="form-control form-control-sm" value="" disabled />;
-        }
+        if (row.isInclude) return null;
+        const canModify =
+          row.status !== "Confirmed" ||
+          isSupervisorHead ||
+          isAdmin;
         return (
         <input
           type="number"
@@ -1605,7 +1801,7 @@ const BookServicesLayer = () => {
           min={0}
           placeholder="0"
           value={row.gstPrice === "" || row.gstPrice === 0 ? "" : row.gstPrice}
-          disabled={!row.isEditing}
+          disabled={!canModify}
           onChange={(e) => {
             const val = e.target.value;
             if (val === "") {
@@ -1638,34 +1834,24 @@ const BookServicesLayer = () => {
     },
      {
       name: "DLR GST Amt",
-      cell: (row) => (
+      cell: (row) => {
+        if (row.isInclude) return null;
+        return (
         <input
           type="number"
           className="form-control form-control-sm"
-          value={
-            row.isInclude
-              ? ""
-              : Number(row.dealerGstAmount || "0.00")
-          }
+          value={Number(row.dealerGstAmount || "0.00")}
           disabled
         />
-      ),
+        );
+      },
       width: "150px",
       sortable: true,
     },
     {
       name: "Total Amt",
       cell: (row) => {
-        if (row.isInclude) {
-          return (
-            <input
-              type="number"
-              className="form-control form-control-sm"
-              value=""
-              disabled
-            />
-          );
-        }
+        if (row.isInclude) return null;
 
         const partTotal =
           (Number(row.basePrice) || 0) * (Number(row.quantity) || 1);
@@ -1687,15 +1873,16 @@ const BookServicesLayer = () => {
       width: "140px",
       sortable: true,
     },
-    ...(employeeData?.RoleName === "Supervisor Head" ||
-    role === "Admin"
+    ...(isSupervisorHead || isAdmin
       ? [
           {
             name: "Company %",
             cell: (row, index) => {
-              if (row.isInclude) {
-                return <input type="number" className="form-control form-control-sm" value="" disabled />;
-              }
+              if (row.isInclude) return null;
+              const canModify =
+                row.status !== "Confirmed" ||
+                isSupervisorHead ||
+                isAdmin;
               return (
               <input
                 type="number"
@@ -1738,7 +1925,7 @@ const BookServicesLayer = () => {
                     });
                   }
                 }}
-                disabled={!row.isEditing}
+                disabled={!canModify}
               />
               );
             },
@@ -1748,9 +1935,11 @@ const BookServicesLayer = () => {
           {
             name: "% Amount",
             cell: (row, index) => {
-              if (row.isInclude) {
-                return <input type="number" className="form-control form-control-sm" value="" disabled />;
-              }
+              if (row.isInclude) return null;
+              const canModify =
+                row.status !== "Confirmed" ||
+                isSupervisorHead ||
+                isAdmin;
               return (
               <input
                 type="number"
@@ -1794,7 +1983,7 @@ const BookServicesLayer = () => {
                     });
                   }
                 }}
-                disabled={!row.isEditing}
+                disabled={!canModify}
               />
               );
             },
@@ -1803,16 +1992,20 @@ const BookServicesLayer = () => {
           },
            ]
       : []),
-          ...(employeeData?.RoleName === "Supervisor Head" ||
-    employeeData?.RoleName === "Field Advisor" ||
-    role === "Admin"
+          ...(isSupervisorHead || isFieldAdvisor || isAdmin
       ? [
           {
             name: "Select Dealer",
-            cell: (row, index) => (
+            cell: (row, index) => {
+              if (row.isInclude) return null;
+              const canModify =
+                row.status !== "Confirmed" ||
+                isSupervisorHead ||
+                isAdmin;
+              return (
               <div className="position-relative overflow-visible w-100">
                 <Select
-                  isDisabled={!row.isEditing}
+                  isDisabled={!canModify}
                   className="react-select-container text-sm"
                   classNamePrefix="react-select"
                   isClearable
@@ -1868,7 +2061,8 @@ const BookServicesLayer = () => {
                   }}
                 />
               </div>
-            ),
+            );
+            },
             minWidth: "200px",
             sortable: true,
           },
@@ -1876,7 +2070,7 @@ const BookServicesLayer = () => {
       : []),
     {
       name: "Status",
-      selector: (row) => row.status,
+      selector: (row) => (row.isInclude ? "" : row.status),
       right: true,
       width: "130px",
       sortable: true,
@@ -1891,48 +2085,17 @@ const BookServicesLayer = () => {
     {
       name: "Actions",
       cell: (row) => {
-        const isFieldAdvisor = employeeData?.RoleName === "Field Advisor";
         const isConfirmed = row.status === "Confirmed";
 
         const canModify =
           !isConfirmed ||
-          employeeData?.RoleName === "Supervisor Head" ||
-          role === "Admin";
+          isSupervisorHead ||
+          isAdmin;
 
         return !row.isInclude ? (
           <div className="d-flex gap-2">
-            {/* Edit */}
-            {!row.isEditing &&
-              canModify &&
-              (employeeData?.RoleName === "Supervisor Head" ||
-                employeeData?.RoleName === "Field Advisor" ||
-                role === "Admin") && (
-                <button
-                  className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                  onClick={() => handleEditItem(row.addedItemsIndex)}
-                  title="Edit"
-                >
-                  edit
-                </button>
-              )}
-
-            {/* Save */}
-            {row.isEditing &&
-              canModify &&
-              (employeeData?.RoleName === "Supervisor Head" ||
-                employeeData?.RoleName === "Field Advisor" ||
-                role === "Admin") && (
-                <button
-                  className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                  onClick={() => handleSaveRow(row.addedItemsIndex)}
-                  title="Save"
-                >
-                  save
-                </button>
-              )}
-
             {/* Delete */}
-            {!row.isEditing && canModify && (
+            {canModify && (
               <button
                 className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
                 onClick={() => handleRemoveItem(row.addedItemsIndex)}
@@ -2380,6 +2543,18 @@ const BookServicesLayer = () => {
                 striped
                 persistTableHead
                 noDataComponent="No items added yet"
+                conditionalRowStyles={[
+                  {
+                    when: (row) =>
+                      row._apiId &&
+                      !row.isInclude &&
+                      initialItemsSnapshot[row._apiId] !== undefined &&
+                      getItemFingerprint(row) !== initialItemsSnapshot[row._apiId],
+                    style: {
+                      backgroundColor: "rgba(13, 148, 136, 0.12)",
+                    },
+                  },
+                ]}
               />
             </div>
             {/* Totals */}
@@ -2520,8 +2695,7 @@ const BookServicesLayer = () => {
             {addedItems.length > 0 && (
               <div className="mt-3">
                 {/* Verification Checkbox - Visible to Admin and Supervisor Head */}
-                {(employeeData?.RoleName === "Supervisor Head" ||
-                  role === "Admin") &&
+                {(isSupervisorHead || isAdmin) &&
                   employeeData?.DepartmentName !== "Support" && (
                     <div className="mb-3 p-3 border rounded bg-light">
                       <div className="d-flex align-items-start">
@@ -2557,16 +2731,17 @@ const BookServicesLayer = () => {
                     </div>
                   )}
                 <div className="d-flex justify-content-center gap-3">
-                  {hasNewItem && (
-                    <button
-                      className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
-                      onClick={handleSubmit}
-                    >
-                      Submit Booking
-                    </button>
-                  )}
-                  {(employeeData?.RoleName === "Supervisor Head" ||
-                    role === "Admin") &&
+                  {showSubmitButton &&
+                    (isSupervisorHead || isFieldAdvisor || isAdmin) && (
+                      <button
+                        className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
+                        onClick={handleCombinedSubmit}
+                      >
+                        Submit
+                      </button>
+                    )}
+                  {(isSupervisorHead ||
+                    isAdmin) &&
                     employeeData?.DepartmentName !== "Support" && (
                       <button
                         className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
@@ -2580,7 +2755,7 @@ const BookServicesLayer = () => {
               </div>
             )}
             {(
-  (employeeData?.RoleName === "Supervisor Head" || role === "Admin") &&
+  (isSupervisorHead || isAdmin) &&
   employeeData?.DepartmentName !== "Support" &&
   hasNewItem
 ) && (
