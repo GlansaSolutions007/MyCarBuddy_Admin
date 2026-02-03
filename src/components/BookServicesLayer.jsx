@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import Select, { components } from "react-select";
 import CreatableSelect from "react-select/creatable";
 import PropTypes from "prop-types";
-const employeeData = JSON.parse(localStorage.getItem("employeeData"));
+const   employeeData = JSON.parse(localStorage.getItem("employeeData"));
 const userId = employeeData?.Id;
 const role = localStorage.getItem("role");
 const roleId = localStorage.getItem("roleId");
@@ -16,6 +16,7 @@ const roleId = localStorage.getItem("roleId");
 const isSupervisorHead = roleId === "8" || employeeData?.RoleName === "Supervisor Head";
 const isFieldAdvisor = roleId === "9" || employeeData?.RoleName === "Field Advisor";
 const isAdmin = role === "Admin" || roleId === "1";
+const isEmployee = employeeData?.RoleName === "Telecaller" || roleId === "6";
 
 const BookServicesLayer = () => {
   const { Id } = useParams();
@@ -2732,7 +2733,7 @@ const BookServicesLayer = () => {
                   )}
                 <div className="d-flex justify-content-center gap-3">
                   {showSubmitButton &&
-                    (isSupervisorHead || isFieldAdvisor || isAdmin) && (
+                    (isSupervisorHead || isFieldAdvisor || isAdmin || isEmployee) && (
                       <button
                         className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
                         onClick={handleCombinedSubmit}
