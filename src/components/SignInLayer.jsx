@@ -35,6 +35,8 @@ const SignInLayer = () => {
       }
       const data = response.data;
       localStorage.setItem("token", data.token);
+      localStorage.setItem("refreshToken", data.refreshToken || "");
+      if (data.expiresIn) localStorage.setItem("expiresIn", String(data.expiresIn));
       localStorage.setItem("userId", data.id);
 
       localStorage.setItem("roleId", data.roleID);
@@ -123,11 +125,11 @@ const SignInLayer = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className={`form-control h-56-px bg-neutral-50 radius-12 ${errors.email ? "is-invalid" : ""
-                  }`}
+                className={`form-control h-56-px bg-neutral-50 radius-12 ${
+                  errors.email ? "is-invalid" : ""
+                }`}
                 placeholder="Enter Your Email"
               />
-              <FormError error={errors.email} />
 
               {/* <input
                 type="text"
