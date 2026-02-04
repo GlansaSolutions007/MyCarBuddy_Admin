@@ -29,7 +29,7 @@ const DashBoardLayerTen = () => {
   return (
     <div className="row gy-4">
       {/* UnitCountSeven */}
-      {role !== "Dealer" && departmentName !== "Support" && <UnitCountSeven />}
+      {role !== "Dealer" && departmentName !== "Support" && employeeData?.RoleName !== "Field Advisor" && <UnitCountSeven />}
       {role === "Dealer" && <DealerDashboardLayer />}
       {departmentName === "Support" && <SupportDashboardLayer />}
       {employeeData?.RoleName === "Field Advisor" && <FieldAdvisorDashboardLayer />}

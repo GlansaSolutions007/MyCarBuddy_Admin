@@ -2185,14 +2185,14 @@ const BookingViewLayer = () => {
                                     Enter Payment
                                   </button>
                                 )}
-                                {remainingAmount > 0 && (
+                                {/* {remainingAmount > 0 && ( */}
                                   <button
                                     className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                                     onClick={handleGenerateEstimationInvoice}
                                   >
                                     Generate Estimation Invoice
                                   </button>
-                                )}
+                                {/* )} */}
 
                                 {/* Show Generate Invoice only if paid */}
                                 {remainingAmount === 0 &&
