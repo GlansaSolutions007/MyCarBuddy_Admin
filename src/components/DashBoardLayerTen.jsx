@@ -10,6 +10,7 @@ import TodaysBookings from "./child/TodaysBookings";
 import RevenueReportCharts from "./child/RevenueReportCharts";
 import DealerDashboardLayer from "./DealerDashboardLayer";
 import SupportDashboardLayer from "./SupportDashboardLayer";
+import FieldAdvisorDashboardLayer from "./FieldAdvisorDashboardLayer";
 
 const DashBoardLayerTen = () => {
   const role = localStorage.getItem("role");
@@ -31,7 +32,7 @@ const DashBoardLayerTen = () => {
       {role !== "Dealer" && departmentName !== "Support" && <UnitCountSeven />}
       {role === "Dealer" && <DealerDashboardLayer />}
       {departmentName === "Support" && <SupportDashboardLayer />}
-
+      {employeeData?.RoleName === "Field Advisor" && <FieldAdvisorDashboardLayer />}
       {role === "Admin" && (
         <>
           {/* RevenueReportCharts */}

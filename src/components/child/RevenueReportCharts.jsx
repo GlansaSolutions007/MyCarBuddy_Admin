@@ -22,7 +22,7 @@ function RevenueReportCharts() {
   const token = localStorage.getItem("token");
 
   const [data, setData] = useState([]);
-  const [chartPeriod, setChartPeriod] = useState("weekly");
+  const [chartPeriod, setChartPeriod] = useState("daily");
   const [selectedReport, setSelectedReport] = useState("booking");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");

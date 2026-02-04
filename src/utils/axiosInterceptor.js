@@ -27,6 +27,21 @@ const clearAuthAndRedirect = () => {
 };
 
 export const setupAxiosInterceptor = () => {
+
+  axios.interceptors.request.use(
+    (config) => {
+      const token = localStorage.getItem("token");
+
+      // ❗ IMPORTANT: do NOT attach token to refresh API
+      if (token && !config.url.includes("Auth/refresh")) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+
   axios.interceptors.response.use(
     (response) => response,
     async (error) => {
