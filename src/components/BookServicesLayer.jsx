@@ -1111,7 +1111,8 @@ const BookServicesLayer = () => {
         }
       }
       if (hasNewItems) {
-        await handleSubmit(true);
+        const submitted = await handleSubmit(true);
+        if (submitted === false) return;
       }
       setSubmitSuccess(true);
       Swal.fire({
@@ -1130,20 +1131,27 @@ const BookServicesLayer = () => {
   };
 
   const handleSubmit = async (skipSuccessSwal = false) => {
-    if (addedItems.length === 0)
-      return Swal.fire("Error", "No items to submit", "error");
-    if (!leadId) return Swal.fire("Error", "Lead ID is required", "error");
+    if (addedItems.length === 0) {
+      await Swal.fire("Error", "No items to submit", "error");
+      return false;
+    }
+    if (!leadId) {
+      await Swal.fire("Error", "Lead ID is required", "error");
+      return false;
+    }
     if (bookingData?.bookingDate === null && !bookingData?.timeSlot) {
       if (!serviceDate) {
-        return Swal.fire("Error", "Please select service date", "error");
+        await Swal.fire("Error", "Please select service date", "error");
+        return false;
       }
 
       if (!Array.isArray(selectedTimeSlot) || selectedTimeSlot.length === 0) {
-        return Swal.fire(
+        await Swal.fire(
           "Error",
           "Please select at least one time slot",
           "error",
         );
+        return false;
       }
     }
     try {
@@ -1293,12 +1301,13 @@ const BookServicesLayer = () => {
         resetBookingForm();
         setSelectedTimeSlot([]);
         setServiceDate("");
+        return true;
       } else {
         throw new Error(response.data?.message || "Failed to create booking");
       }
     } catch (error) {
       console.error("API Error:", error);
-      Swal.fire({
+      await Swal.fire({
         icon: "error",
         title: "Error",
         text:
@@ -1306,6 +1315,7 @@ const BookServicesLayer = () => {
           error.message ||
           "Failed to submit booking. Please try again.",
       });
+      return false;
     }
   };
   const handleConfirmBooking = async () => {

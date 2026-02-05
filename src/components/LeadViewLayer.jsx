@@ -85,6 +85,7 @@ const LeadViewLayer = () => {
   const [bookings, setBookings] = useState([]);
   const [currentBookings, setCurrentBookings] = useState([]);
   const [previousBookings, setPreviousBookings] = useState([]);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedSupervisorHead, setSelectedSupervisorHead] = useState(null);
   const [supervisorHeads, setSupervisorHeads] = useState([]);
@@ -199,7 +200,11 @@ const LeadViewLayer = () => {
 
   useEffect(() => {
     if (lead?.PhoneNumber) {
+      setBookingsLoading(true);
       fetchBookings();
+    } else {
+      setCurrentBookings([]);
+      setBookingsLoading(false);
     }
   }, [lead]);
 
@@ -327,7 +332,10 @@ const LeadViewLayer = () => {
 
   const fetchBookings = async () => {
     try {
-      if (!lead || !lead.PhoneNumber) return;
+      if (!lead || !lead.PhoneNumber) {
+        setBookingsLoading(false);
+        return;
+      }
 
       const res = await axios.get(
         `${API_BASE}Supervisor/ExistingBookings?PhoneNumber=${lead.PhoneNumber}`,
@@ -353,10 +361,16 @@ const LeadViewLayer = () => {
         setPreviousBookings(previous);
       } else {
         setBookings([]);
+        setCurrentBookings([]);
+        setPreviousBookings([]);
       }
     } catch (err) {
       console.error("bookings fetch error:", err);
       setBookings([]);
+      setCurrentBookings([]);
+      setPreviousBookings([]);
+    } finally {
+      setBookingsLoading(false);
     }
   };
 
@@ -974,7 +988,7 @@ const LeadViewLayer = () => {
                     </span>
                   </li> */}
                 </ul>
-                <div className="d-flex gap-2 mt-3">
+                <div className="d-flex gap-2 mt-3 align-items-center flex-wrap">
                   <Link
                     onClick={() => navigate(-1)}
                     className="btn btn-secondary btn-sm d-flex align-items-center justify-content-center gap-1"
@@ -982,51 +996,36 @@ const LeadViewLayer = () => {
                     <Icon icon="mdi:arrow-left" className="fs-5" />
                     Back
                   </Link>
-                  {!["Supervisor Head", "Supervisor"].includes(roleName) &&
-                    !isLeadClosed &&
-                    currentBookings?.length > 0 && (
-                      <button
-                        className="btn btn-primary-600 btn-sm d-flex align-items-center justify-content-center gap-1"
-                        onClick={() => {
-                          if (!isVehicleDataComplete) {
-                            showVehicleDataRequiredAlert();
-                            return;
-                          }
-                          if (!hasAtLeastOneFollowUp) {
-                            showFollowUpRequiredAlert();
-                            return;
-                          }
-                          setAssignModalOpen(true);
-                        }}
-                      >
-                        <Icon icon="mdi:account-plus" className="fs-5" />
-                        Assign Supervisor
-                      </button>
-                    )}
-                  {hasPermission("bookservice_view") &&
-                    !isLeadClosed &&
-                    !hasCurrentLeadBooking && (
-                      <Link
-                        to={`/book-service/${lead?.Id}`}
-                        onClick={(e) => {
-                          if (!isVehicleDataComplete) {
-                            e.preventDefault();
-                            showVehicleDataRequiredAlert();
-                          }
-                          if (!hasAtLeastOneFollowUp) {
-                            e.preventDefault();
-                            showFollowUpRequiredAlert();
-                          }
-                        }}
-                        className="btn btn-primary-600 btn-sm d-flex align-items-center justify-content-center gap-1"
-                      >
-                        <Icon
-                          icon="lucide:calendar-check"
-                          className="text-white"
-                        />{" "}
-                        Book Services
-                      </Link>
-                    )}
+                  {bookingsLoading ? (
+                    <span className="text-muted small d-flex align-items-center gap-1">
+                      <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+                      Loading...
+                    </span>
+                  ) : (
+                    <>
+                      {!["Supervisor Head", "Supervisor"].includes(roleName) &&
+                        !isLeadClosed &&
+                        currentBookings?.length > 0 && (
+                          <button
+                            className="btn btn-primary-600 btn-sm d-flex align-items-center justify-content-center gap-1"
+                            onClick={() => {
+                              if (!isVehicleDataComplete) {
+                                showVehicleDataRequiredAlert();
+                                return;
+                              }
+                              if (!hasAtLeastOneFollowUp) {
+                                showFollowUpRequiredAlert();
+                                return;
+                              }
+                              setAssignModalOpen(true);
+                            }}
+                          >
+                            <Icon icon="mdi:account-plus" className="fs-5" />
+                            Assign Supervisor
+                          </button>
+                        )}
+                    </>
+                  )}
                 </div>
               </div>
             </div>

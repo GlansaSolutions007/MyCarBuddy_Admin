@@ -49,7 +49,7 @@ const SignInLayer = () => {
       localStorage.setItem("name", data.name);
       localStorage.removeItem("employeeData");
       // If role is Employee, fetch additional employee data
-      if (data.role === "Employee") {
+      if (data.role === "Employee" || data.role === "Admin") {
         try {
           const employeeRes = await axios.get(
             `${import.meta.env.VITE_APIURL}Employee/Id?Id=${data.id}`,

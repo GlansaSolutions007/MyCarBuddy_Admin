@@ -420,20 +420,12 @@ const MasterLayout = ({ children }) => {
     setMobileMenu(!mobileMenu);
   };
 
-  // const handleLogout = () => {
-  //   // Remove token
-  //   localStorage.removeItem("token");
-
-  //   // Redirect to login
-  //   navigate("/sign-in");
-  // };
-
   const handleLogout = () => {
-    localStorage.clear();
-    sessionStorage.clear();
+    // Remove token
+    localStorage.removeItem("token");
 
-    //Force full app reset (prevents React cache issues)
-    window.location.href = "/sign-in";
+    // Redirect to login
+    navigate("/sign-in");
   };
 
   const SIDEBAR_MENU = [

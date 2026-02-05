@@ -9,30 +9,16 @@ import RecentTransactions from "./child/RecentTransactions";
 import TodaysBookings from "./child/TodaysBookings";
 import RevenueReportCharts from "./child/RevenueReportCharts";
 import DealerDashboardLayer from "./DealerDashboardLayer";
-import SupportDashboardLayer from "./SupportDashboardLayer";
-import FieldAdvisorDashboardLayer from "./FieldAdvisorDashboardLayer";
 
 const DashBoardLayerTen = () => {
   const role = localStorage.getItem("role");
-  const employeeDataRaw = localStorage.getItem("employeeData");
-  let employeeData = null;
-  try {
-    employeeData = employeeDataRaw ? JSON.parse(employeeDataRaw) : null;
-  } catch (err) {
-    console.warn("Failed to parse employeeData:", err);
-    employeeData = null;
-  }
-  const departmentName = Array.isArray(employeeData)
-    ? (employeeData[0]?.DepartmentName || employeeData[0]?.departmentName || "").trim()
-    : (employeeData?.DepartmentName || employeeData?.departmentName || "").trim();
 
   return (
     <div className="row gy-4">
       {/* UnitCountSeven */}
-      {role !== "Dealer" && departmentName !== "Support" && employeeData?.RoleName !== "Field Advisor" && <UnitCountSeven />}
+      {role !== "Dealer" && <UnitCountSeven />}
       {role === "Dealer" && <DealerDashboardLayer />}
-      {departmentName === "Support" && <SupportDashboardLayer />}
-      {employeeData?.RoleName === "Field Advisor" && <FieldAdvisorDashboardLayer />}
+
       {role === "Admin" && (
         <>
           {/* RevenueReportCharts */}

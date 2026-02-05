@@ -792,6 +792,15 @@ const BookingViewLayer = () => {
   };
 
   const showGenerateInvoiceConfirm = (name, generateHandler, invoiceType) => {
+    const bookingTotal =
+      Number(bookingData?.TotalPrice || 0) +
+      Number(bookingData?.GSTAmount || 0) +
+      Number(bookingData?.LabourCharges || 0) -
+      Number(bookingData?.CouponAmount || 0);
+    if (bookingTotal <= 0) {
+      Swal.fire("Error", "Please check amount.", "error");
+      return;
+    }
     Swal.fire({
       title: name,
       html: "Do you want to <strong>generate a new invoice</strong> or <strong>view the existing invoice</strong>?",
@@ -984,7 +993,7 @@ const BookingViewLayer = () => {
     }
 
     try {
-      await axios.get(
+      await axios.post(
         `${API_BASE}Supervisor/MoveSupervisorBookings?bookingId=${bookingData.BookingID}`,
         {
           headers: {
@@ -1025,6 +1034,18 @@ const BookingViewLayer = () => {
       return sum + Number(payment.AmountPaid || 0);
     }, 0);
   const remainingAmount = Math.max(totalAmount - alreadyPaid, 0);
+
+  const hasAtLeastOneService =
+    (bookingData?.BookingAddOns?.length > 0) ||
+    (bookingData?.SupervisorBookings?.length > 0);
+  const isSupervisorConfirmed = (item) =>
+    item?.IsSupervisor_Confirm === 1 || item?.IsSupervisor_Confirm === true;
+  const allSupervisorConfirmed =
+    hasAtLeastOneService &&
+    (bookingData?.BookingAddOns || []).every(isSupervisorConfirmed) &&
+    (bookingData?.SupervisorBookings || []).every(isSupervisorConfirmed);
+  const showEstimationButton = hasAtLeastOneService && allSupervisorConfirmed;
+  const showFinalButton = remainingAmount === 0 && hasAtLeastOneService;
 
   const handleConfirmPayment = async () => {
     try {
@@ -2296,34 +2317,33 @@ const BookingViewLayer = () => {
                                     Enter Payment
                                   </button>
                                 )}
-                                {remainingAmount > 0 && (
+                                {showEstimationButton && (
                                   <button
                                     className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                    onClick={() => showGenerateInvoiceConfirm("Generate Estimation Invoice", handleGenerateEstimationInvoice)}
+                                    onClick={() => showGenerateInvoiceConfirm("Generate Estimation Invoice", handleGenerateEstimationInvoice, "Estimation")}
                                   >
                                     Generate Estimation Invoice
                                   </button>
                                 )}
 
-                                {/* Show Generate Invoice only if paid */}
-                                {remainingAmount === 0 &&
-                                  bookingData?.BookingAddOns &&
-                                  bookingData.BookingAddOns.length > 0 && (
-                                    <>
-                                    <button
-                                      className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                      onClick={() => showGenerateInvoiceConfirm("Generate Final Invoice", handleGenerateFinalInvoice, "Final")}
-                                    >
-                                      Generate Final Invoice
-                                    </button>
-                                </>
-                                  )}
+                                {/* Final Invoice: show only after full payment is completed */}
+                                {showFinalButton && (
+                                  <button
+                                    className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                                    onClick={() => showGenerateInvoiceConfirm("Generate Final Invoice", handleGenerateFinalInvoice, "Final")}
+                                  >
+                                    Generate Final Invoice
+                                  </button>
+                                )}
                                   <button
                                   className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                                   onClick={() => showGenerateInvoiceConfirm("Generate Dealer Invoice", handleGenerateDealerInvoice, "Dealer")}
                                 >
                                   Generate Dealer Invoice
                                 </button>
+                              </div>
+                              <div className="small text-muted mt-2 mb-0">
+                                <strong>Note:</strong> Estimation button displays when at least one service exists and supervisor has confirmed all services. Final Invoice button displays after full payment is completed.
                               </div>
                             </>
                           ) : (
