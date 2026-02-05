@@ -996,36 +996,51 @@ const LeadViewLayer = () => {
                     <Icon icon="mdi:arrow-left" className="fs-5" />
                     Back
                   </Link>
-                  {bookingsLoading ? (
-                    <span className="text-muted small d-flex align-items-center gap-1">
-                      <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
-                      Loading...
-                    </span>
-                  ) : (
-                    <>
-                      {!["Supervisor Head", "Supervisor"].includes(roleName) &&
-                        !isLeadClosed &&
-                        currentBookings?.length > 0 && (
-                          <button
-                            className="btn btn-primary-600 btn-sm d-flex align-items-center justify-content-center gap-1"
-                            onClick={() => {
-                              if (!isVehicleDataComplete) {
-                                showVehicleDataRequiredAlert();
-                                return;
-                              }
-                              if (!hasAtLeastOneFollowUp) {
-                                showFollowUpRequiredAlert();
-                                return;
-                              }
-                              setAssignModalOpen(true);
-                            }}
-                          >
-                            <Icon icon="mdi:account-plus" className="fs-5" />
-                            Assign Supervisor
-                          </button>
-                        )}
-                    </>
-                  )}
+                   {!["Supervisor Head", "Supervisor"].includes(roleName) &&
+                    !isLeadClosed &&
+                    currentBookings?.length > 0 && (
+                      <button
+                        className="btn btn-primary-600 btn-sm d-flex align-items-center justify-content-center gap-1"
+                        onClick={() => {
+                          if (!isVehicleDataComplete) {
+                            showVehicleDataRequiredAlert();
+                            return;
+                          }
+                          if (!hasAtLeastOneFollowUp) {
+                            showFollowUpRequiredAlert();
+                            return;
+                          }
+                          setAssignModalOpen(true);
+                        }}
+                      >
+                        <Icon icon="mdi:account-plus" className="fs-5" />
+                        Assign Supervisor
+                      </button>
+                    )}
+                  {hasPermission("bookservice_view") &&
+                    !isLeadClosed &&
+                    !hasCurrentLeadBooking && (
+                      <Link
+                        to={`/book-service/${lead?.Id}`}
+                        onClick={(e) => {
+                          if (!isVehicleDataComplete) {
+                            e.preventDefault();
+                            showVehicleDataRequiredAlert();
+                          }
+                          if (!hasAtLeastOneFollowUp) {
+                            e.preventDefault();
+                            showFollowUpRequiredAlert();
+                          }
+                        }}
+                        className="btn btn-primary-600 btn-sm d-flex align-items-center justify-content-center gap-1"
+                      >
+                        <Icon
+                          icon="lucide:calendar-check"
+                          className="text-white"
+                        />{" "}
+                        Book Services
+                      </Link>
+                    )}
                 </div>
               </div>
             </div>
