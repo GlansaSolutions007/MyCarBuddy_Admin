@@ -791,6 +791,24 @@ const BookingViewLayer = () => {
     }
   };
 
+  const showGenerateInvoiceConfirm = (name, generateHandler, invoiceType) => {
+    Swal.fire({
+      title: name,
+      html: "Do you want to <strong>generate a new invoice</strong> or <strong>view the existing invoice</strong>?",
+      icon: "question",
+      showDenyButton: true,
+      confirmButtonText: "Yes, generate new invoice",
+      denyButtonText: "View invoice",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        generateHandler();
+      } else if (result.isDenied) {
+        const typeParam = invoiceType ? `?type=${encodeURIComponent(invoiceType)}` : "";
+        navigate(`/invoice-view/${bookingData.BookingID}${typeParam}`);
+      }
+    });
+  };
+
   const handleGenerateFinalInvoice = async () => {
     if (!bookingData?.BookingID) {
       Swal.fire("Error", "Booking data not available.", "error");
@@ -813,7 +831,7 @@ const BookingViewLayer = () => {
         res.data?.message || "Final Invoice generated successfully.",
         "success",
       );
-      navigate(`/invoice-view/${bookingData.BookingID}`);
+      navigate(`/invoice-view/${bookingData.BookingID}?type=Final`);
     } catch (error) {
       console.error("Generate Invoice Error:", error);
 
@@ -891,7 +909,7 @@ const BookingViewLayer = () => {
         "success",
       );
       // change route if dealer invoice has different view
-      navigate(`/invoice-view/${bookingData.BookingID}`);
+      navigate(`/invoice-view/${bookingData.BookingID}?type=Dealer`);
     } catch (error) {
       console.error("Generate Dealer Invoice Error:", error);
       Swal.fire(
@@ -908,6 +926,82 @@ const BookingViewLayer = () => {
     setPayAmount("");
     setIsDiscountApplicable(false);
     setDiscountAmount("");
+  };
+
+  const handleCustomerConfirmation = async () => {
+    if (!bookingData?.BookingID) {
+      Swal.fire("Error", "Booking data not available.", "error");
+      return;
+    }
+
+    const hasDealerId = (item) => {
+      const id = item?.DealerID;
+      return id != null && id !== "" && Number(id) !== 0;
+    };
+
+    const addOnsWithoutDealer = (bookingData?.BookingAddOns || []).filter(
+      (item) => !hasDealerId(item),
+    );
+    const supervisorBookingsWithoutDealer = (
+      bookingData?.SupervisorBookings || []
+    ).filter((item) => !hasDealerId(item));
+
+    const missingDealer = [...addOnsWithoutDealer, ...supervisorBookingsWithoutDealer];
+    if (missingDealer.length > 0) {
+      const names = missingDealer
+        .map((item) => item?.ServiceName || item?.Description || "Service")
+        .filter(Boolean);
+      Swal.fire({
+        icon: "error",
+        title: "Dealer required",
+        html: `Please select a dealer for all services before confirmation.<br/><br/><strong>Missing dealer for:</strong><br/>${names.join("<br/>")}`,
+      });
+      return;
+    }
+
+    const isSupervisorConfirmed = (item) =>
+      item?.IsSupervisor_Confirm === 1 ||
+      item?.IsSupervisor_Confirm === true;
+
+    const addOnsNotConfirmed = (bookingData?.BookingAddOns || []).filter(
+      (item) => !isSupervisorConfirmed(item),
+    );
+    const supervisorBookingsNotConfirmed = (
+      bookingData?.SupervisorBookings || []
+    ).filter((item) => !isSupervisorConfirmed(item));
+
+    const missingConfirm = [...addOnsNotConfirmed, ...supervisorBookingsNotConfirmed];
+    if (missingConfirm.length > 0) {
+      const names = missingConfirm
+        .map((item) => item?.ServiceName || item?.Description || "Service")
+        .filter(Boolean);
+      Swal.fire({
+        icon: "error",
+        title: "Supervisor confirmation required",
+        html: `All services must be confirmed by supervisor before customer confirmation.<br/><br/><strong>Pending supervisor confirmation for:</strong><br/>${names.join("<br/>")}`,
+      });
+      return;
+    }
+
+    try {
+      await axios.get(
+        `${API_BASE}Supervisor/MoveSupervisorBookings?bookingId=${bookingData.BookingID}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      Swal.fire("Success", "Customer confirmation completed successfully.", "success");
+      fetchBookingData();
+    } catch (error) {
+      console.error("Customer Confirmation Error:", error);
+      Swal.fire(
+        "Error",
+        error?.response?.data?.message || "Failed to complete customer confirmation.",
+        "error",
+      );
+    }
   };
 
   const totalAmount =
@@ -1535,6 +1629,12 @@ const BookingViewLayer = () => {
                 >
                   View Lead
                 </Link>
+                <button
+                                  className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                                  onClick={handleCustomerConfirmation}
+                                >
+                                  Customer Confirmation
+                  </button>
                 {/* Reschedule & Reassign Buttons */}
                 {bookingData &&
                   !["Completed", "Cancelled", "Refunded"].includes(
@@ -1584,6 +1684,8 @@ const BookingViewLayer = () => {
                     Add / Edit Services
                   </Link>
                 )}
+
+                  
               </li>
 
               {/* {bookingData &&
@@ -2171,7 +2273,16 @@ const BookingViewLayer = () => {
                                 {/* </>
                               )} */}
                               </ul>
-                              <div className="d-flex justify-content-center gap-2 mt-3 mb-3">
+                              {bookingData?.SupervisorBookings &&
+                                bookingData.SupervisorBookings.length > 0 && (
+                                  <div className="alert alert-info py-2 px-3 mb-2 mb-md-3 small">
+                                    There are{" "}
+                                    <strong>{bookingData.SupervisorBookings.length}</strong>{" "}
+                                    booking(s) that need to be confirmed by the customer.
+                                  </div>
+                                )}
+                              <div className="d-flex justify-content-center gap-2 mt-3 mb-3 flex-wrap">
+                                
                                 {/* Show Confirm Payment only if not paid */}
                                 {remainingAmount > 0 && (
                                   <button
@@ -2185,14 +2296,14 @@ const BookingViewLayer = () => {
                                     Enter Payment
                                   </button>
                                 )}
-                                {/* {remainingAmount > 0 && ( */}
+                                {remainingAmount > 0 && (
                                   <button
                                     className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                    onClick={handleGenerateEstimationInvoice}
+                                    onClick={() => showGenerateInvoiceConfirm("Generate Estimation Invoice", handleGenerateEstimationInvoice)}
                                   >
                                     Generate Estimation Invoice
                                   </button>
-                                {/* )} */}
+                                )}
 
                                 {/* Show Generate Invoice only if paid */}
                                 {remainingAmount === 0 &&
@@ -2201,7 +2312,7 @@ const BookingViewLayer = () => {
                                     <>
                                     <button
                                       className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                      onClick={handleGenerateFinalInvoice}
+                                      onClick={() => showGenerateInvoiceConfirm("Generate Final Invoice", handleGenerateFinalInvoice, "Final")}
                                     >
                                       Generate Final Invoice
                                     </button>
@@ -2209,7 +2320,7 @@ const BookingViewLayer = () => {
                                   )}
                                   <button
                                   className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                  onClick={handleGenerateDealerInvoice}
+                                  onClick={() => showGenerateInvoiceConfirm("Generate Dealer Invoice", handleGenerateDealerInvoice, "Dealer")}
                                 >
                                   Generate Dealer Invoice
                                 </button>

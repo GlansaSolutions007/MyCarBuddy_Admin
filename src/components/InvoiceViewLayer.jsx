@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { Icon } from "@iconify/react";
 import Swal from "sweetalert2";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
+const VALID_INVOICE_TYPES = ["Estimation", "Dealer", "Final"];
+
 const InvoiceViewLayer = () => {
   const { bookingId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [bookingData, setBookingData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dealerList, setDealerList] = useState([]);
@@ -16,6 +19,10 @@ const InvoiceViewLayer = () => {
   const [sendingInvoice, setSendingInvoice] = useState(null); // "whatsapp-estimation" | "email-estimation" | "whatsapp-final" | "email-final" | "dealer"
 
   const token = localStorage.getItem("token");
+
+  const typeFromUrl = searchParams.get("type");
+  const urlInvoiceType =
+    typeFromUrl && VALID_INVOICE_TYPES.includes(typeFromUrl) ? typeFromUrl : null;
 
   useEffect(() => {
     fetchBookingData();
@@ -33,7 +40,7 @@ const InvoiceViewLayer = () => {
         },
       );
 
-      const data = res.data[0];
+      const data = Array.isArray(res.data) ? res.data[0] : res.data;
       setBookingData(data);
 
       // 🔥 Extract unique dealer IDs
@@ -147,22 +154,40 @@ const InvoiceViewLayer = () => {
     }
   };
 
-  // const INV_STATIC = ;
-
-  const activeInvoice = bookingData?.Invoices?.find(
-    (inv) => inv.IsActive === true,
-  );
+  // Resolve active invoice: use ?type=Estimation|Dealer|Final from URL when present, else first active
+  const invoices = bookingData?.Invoices || [];
+  const activeInvoice = urlInvoiceType
+    ? invoices.find(
+        (inv) => inv.InvoiceType === urlInvoiceType && inv.IsActive === true,
+      ) ||
+      invoices.find((inv) => inv.InvoiceType === urlInvoiceType)
+    : invoices.find((inv) => inv.IsActive === true);
   const activeInvoiceType = activeInvoice?.InvoiceType;
 
-  const invoicePdfUrl = activeInvoice?.FolderPath
-    ? `${API_BASE}../${activeInvoice.FolderPath.split("\\").pop()}`
+  // When in Dealer view and dealer list is loaded, default to first dealer so "Send Dealer Invoice" works
+  useEffect(() => {
+    if (
+      activeInvoiceType === "Dealer" &&
+      dealerList.length > 0 &&
+      !selectedDealer &&
+      dealerList[0]?.dealerId != null
+    ) {
+      setSelectedDealer(String(dealerList[0].dealerId));
+    }
+  }, [activeInvoiceType, dealerList]);
+
+  const normalizedFolderPath = activeInvoice?.FolderPath
+    ? (activeInvoice.FolderPath || "").replace(/\\/g, "/")
+    : "";
+  const invoicePdfUrl = normalizedFolderPath
+    ? `${API_BASE}../${normalizedFolderPath}`
     : null;
 
   const invoiceNumber = activeInvoice?.FolderPath
-    ? activeInvoice.FolderPath.split("\\").pop().replace(".pdf", "")
+    ? (activeInvoice.FolderPath || "").replace(/\\/g, "/").split("/").pop().replace(".pdf", "")
     : null;
-    
-  const invoiceNum = activeInvoice?.InvoiceNumber
+
+  const invoiceNum = activeInvoice?.InvoiceNumber;
 
   const handlePrint = () => {
     if (invoicePdfUrl) {
@@ -232,8 +257,8 @@ const handleWhatsappFinalInvoice = async () => {
   try {
     setSendingInvoice("whatsapp-final");
     await axios.post(
-      `${API_BASE}Leads/SendFinalInvoiceWhatsApp`,
-      // `${API_BASE}Leads/SendEstimationInvoiceWhatsApp`,
+      // `${API_BASE}Leads/SendFinalInvoiceWhatsApp`,
+      `${API_BASE}Leads/SendEstimationInvoiceWhatsApp`,
       {
         bookingID: bookingData.BookingID,
         invoiceNumber: invoiceNum,
