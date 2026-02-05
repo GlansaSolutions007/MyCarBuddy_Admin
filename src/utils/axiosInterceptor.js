@@ -27,20 +27,15 @@ const clearAuthAndRedirect = () => {
 };
 
 export const setupAxiosInterceptor = () => {
-
-  axios.interceptors.request.use(
-    (config) => {
-      const token = localStorage.getItem("token");
-
-      // ❗ IMPORTANT: do NOT attach token to refresh API
-      if (token && !config.url.includes("Auth/refresh")) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
+  // Attach current token from localStorage to every request
+  axios.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  });
 
   axios.interceptors.response.use(
     (response) => response,
@@ -72,6 +67,7 @@ export const setupAxiosInterceptor = () => {
           failedQueue.push({ resolve, reject });
         })
           .then((token) => {
+            originalRequest.headers = originalRequest.headers || {};
             originalRequest.headers.Authorization = `Bearer ${token}`;
             return axios(originalRequest);
           })
@@ -87,14 +83,17 @@ export const setupAxiosInterceptor = () => {
           refreshToken,
         });
 
-        if (response.data?.success && response.data?.accessToken) {
-          const { accessToken, refreshToken: newRefreshToken, expiresIn } = response.data;
-          localStorage.setItem("token", accessToken);
+        const newAccessToken = response.data?.accessToken ?? response.data?.token;
+        const success = response.data?.success !== false;
+        if (success && newAccessToken) {
+          const { refreshToken: newRefreshToken, expiresIn } = response.data;
+          localStorage.setItem("token", newAccessToken);
           if (newRefreshToken) localStorage.setItem("refreshToken", newRefreshToken);
-          if (expiresIn) localStorage.setItem("expiresIn", String(expiresIn));
+          if (expiresIn != null) localStorage.setItem("expiresIn", String(expiresIn));
 
-          processQueue(null, accessToken);
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          processQueue(null, newAccessToken);
+          originalRequest.headers = originalRequest.headers || {};
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           return axios(originalRequest);
         } else {
           throw new Error("Invalid refresh response");

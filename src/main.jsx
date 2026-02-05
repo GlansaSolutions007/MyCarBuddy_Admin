@@ -8,8 +8,10 @@ import "lightgallery/css/lightgallery.css";
 import "lightgallery/css/lg-zoom.css";
 import "lightgallery/css/lg-thumbnail.css";
 import App from "./App.jsx";
-
+import { setupAxiosInterceptor } from "./utils/axiosInterceptor";
 import { PermissionProvider } from "./context/PermissionContext";
+
+setupAxiosInterceptor();
 
 createRoot(document.getElementById("root")).render(
   <PermissionProvider>

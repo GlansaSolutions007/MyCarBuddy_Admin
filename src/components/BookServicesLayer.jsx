@@ -8,21 +8,28 @@ import { useNavigate } from "react-router-dom";
 import Select, { components } from "react-select";
 import CreatableSelect from "react-select/creatable";
 import PropTypes from "prop-types";
-const   employeeData = JSON.parse(localStorage.getItem("employeeData"));
-const userId = employeeData?.Id;
-const role = localStorage.getItem("role");
-const roleId = localStorage.getItem("roleId");
-
-const isSupervisorHead = roleId === "8" || employeeData?.RoleName === "Supervisor Head";
-const isFieldAdvisor = roleId === "9" || employeeData?.RoleName === "Field Advisor";
-const isAdmin = role === "Admin" || roleId === "1";
-const isEmployee = employeeData?.RoleName === "Telecaller" || roleId === "6";
+const getEmployeeData = () => {
+  try {
+    return JSON.parse(localStorage.getItem("employeeData") || "null");
+  } catch {
+    return null;
+  }
+};
 
 const BookServicesLayer = () => {
   const { Id } = useParams();
   const leadId = Id;
   const API_BASE = import.meta.env.VITE_APIURL;
   const token = localStorage.getItem("token");
+
+  // Read from localStorage on every render so buttons show correctly after login / without hard refresh
+  const employeeData = getEmployeeData();
+  const userId = employeeData?.Id;
+  const role = localStorage.getItem("role");
+  const roleId = localStorage.getItem("roleId");
+  const isSupervisorHead = roleId === "8" || employeeData?.RoleName === "Supervisor Head";
+  const isFieldAdvisor = roleId === "9" || employeeData?.RoleName === "Field Advisor";
+  const isAdmin = role === "Admin" || roleId === "1";
   const [dealersList, setDealersList] = useState([]);
   const [bookingData, setBookingData] = useState(null);
   const [selectedDealer, setSelectedDealer] = useState("");
@@ -2733,7 +2740,7 @@ const BookServicesLayer = () => {
                   )}
                 <div className="d-flex justify-content-center gap-3">
                   {showSubmitButton &&
-                    (isSupervisorHead || isFieldAdvisor || isAdmin || isEmployee) && (
+                    (isSupervisorHead || isFieldAdvisor || isAdmin) && (
                       <button
                         className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
                         onClick={handleCombinedSubmit}
@@ -2747,7 +2754,7 @@ const BookServicesLayer = () => {
                       <button
                         className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
                         onClick={handleConfirmBooking}
-                        disabled={hasNewItem || !isVerified}
+                        disabled={hasNewItem || hasEdits || !isVerified}
                       >
                         Confirm Booking
                       </button>
@@ -2758,7 +2765,7 @@ const BookServicesLayer = () => {
             {(
   (isSupervisorHead || isAdmin) &&
   employeeData?.DepartmentName !== "Support" &&
-  hasNewItem
+  (hasNewItem || hasEdits)
 ) && (
                 <div className="text-danger text-center mt-2 fw-semibold">
                   You’ve added new items. Please submit them first to proceed
