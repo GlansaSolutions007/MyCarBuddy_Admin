@@ -823,7 +823,7 @@ const LeadViewLayer = () => {
   };
   const handleConvertCustomer = async () => {
     try {
-      await axios.post(`${API_BASE}/Leads/ConvertLead`, null, {
+      await axios.post(`${API_BASE}Leads/ConvertLead`, null, {
         params: {
           leadId: lead.Id,
         },
