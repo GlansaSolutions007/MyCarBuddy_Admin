@@ -836,6 +836,8 @@ const LeadViewLayer = () => {
         title: "Converted",
         text: "Lead has been successfully converted to customer.",
       });
+      // Refetch lead so CustID and UI (Converted / Book Service) update
+      await fetchLead();
     } catch (error) {
       Swal.fire({
         icon: "error",
@@ -1018,6 +1020,7 @@ const LeadViewLayer = () => {
                       </button>
                     )}
                   {hasPermission("bookservice_view") &&
+                    lead?.CustID != null &&
                     !isLeadClosed &&
                     !hasCurrentLeadBooking && (
                       <Link
@@ -1644,13 +1647,13 @@ const LeadViewLayer = () => {
                     This lead has not yet been converted to a customer. Please
                     confirm the conversion to proceed with booking.
                   </span>
-                  <button
-                    className="btn btn-primary-600 px-20 btn-sm"
-                    onClick={handleConvertCustomer}
-                    disabled={isLeadClosed}
-                  >
-                    Converted
-                  </button>
+                    <button
+                      className="btn btn-primary-600 px-20 btn-sm"
+                      onClick={handleConvertCustomer}
+                      disabled={isLeadClosed}
+                    >
+                      Converted
+                    </button>
                 </div>
               ) : (
                 <>
