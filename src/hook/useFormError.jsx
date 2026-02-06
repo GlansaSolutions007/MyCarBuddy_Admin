@@ -6,18 +6,18 @@ const useFormError = () => {
   // Field label mapping
   const fieldLabels = {
     StateID: "State Name",
-    PasswordHash : "Password",
-    CityID : "City Name",
-    DistributorID : "Distributor Name",
-    DealerID : "Dealer Name",
-    CategoryID : "Category Name",
-    SubCategoryID : "Sub Category Name",
-    IconImage1  : "Icon Image",
-    ThumbnailImage1 : "Thumbnail Image",
-    FullName : "Name",
-    Email : "Email",
-    PhoneNumber : "Phone Number",
-    CityName : "City Name",
+    PasswordHash: "Password",
+    CityID: "City Name",
+    DistributorID: "Distributor Name",
+    DealerID: "Dealer Name",
+    CategoryID: "Category Name",
+    SubCategoryID: "Sub Category Name",
+    IconImage1: "Icon Image",
+    ThumbnailImage1: "Thumbnail Image",
+    FullName: "Name",
+    Email: "Email",
+    PhoneNumber: "Phone Number",
+    CityName: "City Name",
   };
 
   const validate = (fields, ignoreKeys = []) => {
@@ -40,8 +40,12 @@ const useFormError = () => {
           err[key] = "Name can contain only letters and spaces";
         }
 
-        if (key.toLowerCase() === "email" && !/\S+@\S+\.\S+/.test(value)) {
-          err.Email = "Invalid email format";
+        if (key.toLowerCase() === "email") {
+          const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
+
+          if (!emailRegex.test(value.trim())) {
+            err[key] = "Enter a valid email address";
+          }
         }
 
         if ((key === "password" || key === "PasswordHash") && value.length < 6) {

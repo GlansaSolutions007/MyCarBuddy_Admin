@@ -2305,7 +2305,7 @@ const BookingViewLayer = () => {
                               <div className="d-flex justify-content-center gap-2 mt-3 mb-3 flex-wrap">
                                 
                                 {/* Show Confirm Payment only if not paid */}
-                                {remainingAmount > 0 && (
+                                {/* {remainingAmount > 0 && ( */}
                                   <button
                                     className="btn btn-primary-600 btn-sm"
                                     onClick={() => {
@@ -2316,7 +2316,7 @@ const BookingViewLayer = () => {
                                   >
                                     Enter Payment
                                   </button>
-                                )}
+                                {/* )} */}
                                 {showEstimationButton && (
                                   <button
                                     className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
