@@ -1045,7 +1045,9 @@ const BookingViewLayer = () => {
     (bookingData?.BookingAddOns || []).every(isSupervisorConfirmed) &&
     (bookingData?.SupervisorBookings || []).every(isSupervisorConfirmed);
   const showEstimationButton = hasAtLeastOneService && allSupervisorConfirmed;
-  const showFinalButton = remainingAmount === 0 && hasAtLeastOneService;
+  const showFinalButton = remainingAmount === 0 && hasAtLeastOneService && allSupervisorConfirmed && totalAmount > 0;
+  const showEnterPaymentButton = remainingAmount > 0 && hasAtLeastOneService && allSupervisorConfirmed && totalAmount > 0;
+  const showDealerInvoiceButton =  hasAtLeastOneService && allSupervisorConfirmed && totalAmount > 0;
 
   const handleConfirmPayment = async () => {
     try {
@@ -2305,7 +2307,7 @@ const BookingViewLayer = () => {
                               <div className="d-flex justify-content-center gap-2 mt-3 mb-3 flex-wrap">
                                 
                                 {/* Show Confirm Payment only if not paid */}
-                                {/* {remainingAmount > 0 && ( */}
+                                {showEnterPaymentButton && (
                                   <button
                                     className="btn btn-primary-600 btn-sm"
                                     onClick={() => {
@@ -2316,7 +2318,7 @@ const BookingViewLayer = () => {
                                   >
                                     Enter Payment
                                   </button>
-                                {/* )} */}
+                                 )} 
                                 {showEstimationButton && (
                                   <button
                                     className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
@@ -2335,14 +2337,16 @@ const BookingViewLayer = () => {
                                     Generate Final Invoice
                                   </button>
                                 )}
+                                {showDealerInvoiceButton && (
                                   <button
                                   className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                                   onClick={() => showGenerateInvoiceConfirm("Generate Dealer Invoice", handleGenerateDealerInvoice, "Dealer")}
                                 >
                                   Generate Dealer Invoice
                                 </button>
+                                  )}
                               </div>
-                              <div className="small text-muted mt-2 mb-0">
+                              <div className="small text-muted mt-2 mb-0 fw-bold">
                                 <strong>Note:</strong> Estimation button displays when at least one service exists and supervisor has confirmed all services. Final Invoice button displays after full payment is completed.
                               </div>
                             </>
