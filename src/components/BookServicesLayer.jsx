@@ -30,6 +30,9 @@ const BookServicesLayer = () => {
   const isSupervisorHead = roleId === "8" || employeeData?.RoleName === "Supervisor Head";
   const isFieldAdvisor = roleId === "9" || employeeData?.RoleName === "Field Advisor";
   const isAdmin = role === "Admin" || roleId === "1";
+  const isTelecaller = roleId === "6" || employeeData?.RoleName === "Telecaller";
+  const isTelecallerHead = roleId === "5" || employeeData?.RoleName === "Telecaller Head";
+
   const [dealersList, setDealersList] = useState([]);
   const [bookingData, setBookingData] = useState(null);
   const [selectedDealer, setSelectedDealer] = useState("");
@@ -2750,7 +2753,7 @@ const BookServicesLayer = () => {
                   )}
                 <div className="d-flex justify-content-center gap-3">
                   {showSubmitButton &&
-                    (isSupervisorHead || isFieldAdvisor || isAdmin) && (
+                    (isSupervisorHead || isFieldAdvisor || isAdmin || isTelecaller || isTelecallerHead) && (
                       <button
                         className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
                         onClick={handleCombinedSubmit}
