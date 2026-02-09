@@ -253,19 +253,19 @@ const CustomerViewLayer = () => {
                               </div>
                               <div className="col-md-6">
                                 <strong>Model:</strong>{" "}
-                                {item.Leads.Vehicle?.ModelName || "-"}
+                                {item.Leads?.Vehicle?.ModelName || "-"}
                               </div>
                               <div className="col-md-6">
                                 <strong>Fuel Type:</strong>{" "}
-                                {item.Leads.Vehicle?.FuelTypeName || "-"}
+                                {item.Leads?.Vehicle?.FuelTypeName || "-"}
                               </div>
                               <div className="col-md-6">
                                 <strong>KM Driven:</strong>{" "}
-                                {item.Leads.Vehicle?.KmDriven || "-"}
+                                {item.Leads?.Vehicle?.KmDriven || "-"}
                               </div>
                               <div className="col-md-6">
                                 <strong>Year of Puchase:</strong>{" "}
-                                {item.Leads.Vehicle?.YearOfPurchase || "-"}
+                                {item.Leads?.Vehicle?.YearOfPurchase || "-"}
                               </div>
                               <div className="col-md-6">
                                 <strong>Total Price:</strong> ₹
