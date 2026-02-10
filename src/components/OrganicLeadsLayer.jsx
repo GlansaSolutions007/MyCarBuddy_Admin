@@ -25,44 +25,40 @@ const OrganicLeadsLayer = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalRows, setTotalRows] = useState(0);
+  const [allLeads, setAllLeads] = useState([]); // stored chunks
+  const [chunkPage, setChunkPage] = useState(1); // API chunk page
+  const CHUNK_SIZE = 50;
+
+  console.log("Employee Data:", allLeads);
+
   useEffect(() => {
-    fetchLeads();
+    fetchLeads(1);
   }, []);
 
-  const fetchLeads = async () => {
+  const fetchLeads = async (page = 1) => {
     setLoading(true);
-    setError("");
-
     try {
       let url;
+
       if (role === "Admin") {
-        url = `${API_BASE}ServiceLeads/FacebookLeads`;
+        url = `${API_BASE}ServiceLeads/FacebookLeads?pageNumber=${page}&pageSize=50`;
       } else {
-        url = `${API_BASE}ServiceLeads/FacebookLeads?EmployeeId=${employeeData?.Id}&RoleName=${employeeData?.RoleName}`;
+        url = `${API_BASE}ServiceLeads/FacebookLeads?pageNumber=${page}&pageSize=50&EmployeeId=${employeeData?.Id}&RoleName=${employeeData?.RoleName}`;
       }
 
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      const organicOnly = Array.isArray(data)
-        ? data.filter(
-            (lead) =>
-              (lead.Platform === "Organic" ||
-                lead.Platform === "Web" ||
-                lead.Platform === "App") &&
-              lead.NextAction !== "Lead Closed" &&
-              !(
-                lead.BookingStatus === "Completed" &&
-                lead.PaymentStatus === "Success"
-              ),
-          )
-        : [];
-      setLeads(organicOnly);
+      const res = await fetch(url);
+      const data = await res.json();
+
+      const newData = data.data || data;
+
+      setAllLeads(prev => [...prev, ...newData]); // append chunk
+      setTotalRows(data.totalCount || 0);
+
     } catch (err) {
-      setError("Failed to fetch leads. Please try again.");
-      console.error("Error fetching leads:", err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -325,28 +321,28 @@ const OrganicLeadsLayer = () => {
     },
     ...(hasPermission("leadview_view")
       ? [
-          {
-            name: "Action",
-            cell: (row) => (
-              <Link
-                to={`/lead-view/${row.Id}`}
-                className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                title="View"
-              >
-                <Icon icon="lucide:eye" />
-              </Link>
-            ),
-            ignoreRowClick: true,
-            allowOverflow: true,
-            button: true,
-          },
-        ]
+        {
+          name: "Action",
+          cell: (row) => (
+            <Link
+              to={`/lead-view/${row.Id}`}
+              className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+              title="View"
+            >
+              <Icon icon="lucide:eye" />
+            </Link>
+          ),
+          ignoreRowClick: true,
+          allowOverflow: true,
+          button: true,
+        },
+      ]
       : []),
   ];
 
   const dateField = dateType === "updated" ? "Updated_At" : "CreatedDate";
 
-  let filteredLeads = leads
+  let filteredLeads = allLeads
     .filter((lead) => {
       const text = searchText.toLowerCase();
 
@@ -373,6 +369,60 @@ const OrganicLeadsLayer = () => {
       );
     })
     .sort((a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate));
+
+  const handlePageChange = (page) => {
+    setPageNumber(page);
+
+    const requiredData = page * pageSize;
+    const lastApiPage = Math.ceil(totalRows / CHUNK_SIZE);
+    const lastUiPage = Math.ceil(totalRows / pageSize);
+
+    // ✅ USER CLICKED LAST UI PAGE
+    if (page === lastUiPage) {
+      if (chunkPage < lastApiPage) {
+        setChunkPage(lastApiPage);
+        fetchLeads(lastApiPage); // 🔥 direct last page call
+      }
+      return;
+    }
+
+    // ✅ NORMAL NEXT CHUNK LOAD
+    if (
+      requiredData > allLeads.length &&
+      allLeads.length < totalRows
+    ) {
+      const nextChunk = chunkPage + 1;
+      setChunkPage(nextChunk);
+      fetchLeads(nextChunk);
+    }
+  };
+
+
+  const handleRowsChange = (newSize, page) => {
+    setPageSize(newSize);
+    setPageNumber(page);
+
+    const requiredData = page * newSize;
+    const lastApiPage = Math.ceil(totalRows / CHUNK_SIZE);
+    const lastUiPage = Math.ceil(totalRows / newSize);
+
+    if (page === lastUiPage) {
+      if (chunkPage < lastApiPage) {
+        setChunkPage(lastApiPage);
+        fetchLeads(lastApiPage);
+      }
+      return;
+    }
+
+    if (
+      requiredData > allLeads.length &&
+      allLeads.length < totalRows
+    ) {
+      const nextChunk = chunkPage + 1;
+      setChunkPage(nextChunk);
+      fetchLeads(nextChunk);
+    }
+  };
 
   return (
     <div className="row gy-4">
@@ -492,7 +542,7 @@ const OrganicLeadsLayer = () => {
                   onChange={handleBulkUpload}
                 />
                 {/* Bulk Upload button */}
-               {(role === "Admin" || roleName === "Telecaller Head") && (
+                {(role === "Admin" || roleName === "Telecaller Head") && (
                   <button
                     type="button"
                     className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
@@ -507,7 +557,7 @@ const OrganicLeadsLayer = () => {
                     />
                     Bulk Upload
                   </button>
-                 )} 
+                )}
                 {hasPermission("createlead_add") && (
                   <Link
                     to="/create-lead"
@@ -538,16 +588,17 @@ const OrganicLeadsLayer = () => {
           ) : (
             <DataTable
               columns={columns}
-              data={filteredLeads}
+              data={filteredLeads.slice(
+                (pageNumber - 1) * pageSize,
+                pageNumber * pageSize
+              )}
               progressPending={loading}
               pagination
-              highlightOnHover
-              responsive
-              striped
-              persistTableHead
-              noDataComponent={
-                loading ? "Loading leads..." : "No leads available"
-              }
+              paginationServer
+              paginationPerPage={pageSize}
+              paginationTotalRows={totalRows}
+              onChangePage={handlePageChange}
+              onChangeRowsPerPage={handleRowsChange}
             />
           )}
         </div>
