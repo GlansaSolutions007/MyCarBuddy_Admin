@@ -127,9 +127,9 @@ function App() {
         <Route exact path='/reset-password' element={<SignInPage />} />
         <Route exact path='/reset-password/:token' element={<ResetPasswordPage />} />
 
+        <Route element={<PrivateRoute />}>
         <Route exact path='/index' element={<HomePageTen />} />
         <Route exact path='/dashboard' element={<HomePageTen />} />
-        <Route element={<PrivateRoute />}>
 
           <Route exact path='/states' element={<StatePage />} />
           <Route exact path='/cities' element={<CityPage />} />
