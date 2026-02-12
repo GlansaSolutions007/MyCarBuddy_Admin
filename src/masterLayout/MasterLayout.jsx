@@ -28,6 +28,12 @@ const MasterLayout = ({ children }) => {
   const navigate = useNavigate();
   const [userImage, setUserImage] = useState("");
 
+  useEffect(() => {
+    if (!token) {
+      navigate("/sign-in");
+    }
+  }, [token, navigate]);
+
   // Helper function to get display role
   const getDisplayRole = () => {
     const employeeDataStr = localStorage.getItem("employeeData");
@@ -943,6 +949,9 @@ const MasterLayout = ({ children }) => {
     },
   ];
 
+  if (!token) {
+  return null; 
+}
   return (
     <section className={mobileMenu ? "overlay active" : "overlay "}>
       {/* sidebar */}

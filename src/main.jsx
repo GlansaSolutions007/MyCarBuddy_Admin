@@ -10,11 +10,14 @@ import "lightgallery/css/lg-thumbnail.css";
 import App from "./App.jsx";
 import { setupAxiosInterceptor } from "./utils/axiosInterceptor";
 import { PermissionProvider } from "./context/PermissionContext";
+import { InternetProvider } from "./context/InternetContext";
 
 setupAxiosInterceptor();
 
 createRoot(document.getElementById("root")).render(
+  <InternetProvider>
   <PermissionProvider>
     <App />
   </PermissionProvider>
+</InternetProvider>
 );

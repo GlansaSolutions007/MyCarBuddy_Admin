@@ -17,6 +17,7 @@ const DealerBookingsView = () => {
   const [includesList, setIncludesList] = useState([]);
   const [initialItemsSnapshot, setInitialItemsSnapshot] = useState({});
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const dealer = localStorage.getItem("role") || "Dealer";
 
   const getItemFingerprint = (item) =>
     JSON.stringify({
@@ -75,6 +76,62 @@ const DealerBookingsView = () => {
     fetchIncludes();
   }, []);
 
+  const handleServiceCompleted = async (index) => {
+  const item = addedItems[index];
+
+  if (!item?._apiId) {
+    return Swal.fire("Error", "AddOn ID not found", "error");
+  }
+
+  const confirmResult = await Swal.fire({
+    title: "Mark Service as Completed?",
+    text: "Are you sure this service is completed?",
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonColor: "#28a745",
+    cancelButtonColor: "#d33",
+    confirmButtonText: "Yes, Complete",
+    cancelButtonText: "Cancel",
+  });
+
+  if (!confirmResult.isConfirmed) return;
+
+  try {
+    const payload = {
+      addOnID: item._apiId,   // 🔹 your AddOn ID
+      is_Completed: true,
+      completedBy: parseInt(localStorage.getItem("userId")) || 0,
+      completedRole: dealer,
+      statusName: "ServiceCompleted",
+    };
+
+    const response = await axios.put(
+      `${API_BASE}Supervisor/UpdateAddOnCompletion`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (response.status === 200 || response.status === 201) {
+      Swal.fire("Success!", "Service marked as completed.", "success");
+
+      // Refresh table data
+      await fetchBookingData();
+    }
+  } catch (error) {
+    console.error(error);
+    Swal.fire(
+      "Error",
+      error.response?.data?.message || "Failed to update service completion",
+      "error"
+    );
+  }
+};
+
   const fetchBookingData = async () => {
     try {
       const response = await axios.get(
@@ -102,6 +159,7 @@ const DealerBookingsView = () => {
           const baseItem = {
             type: item.serviceType || "Service",
             name: item.serviceName || "",
+            addOnStatus: item.addOnStatus || "",
             serviceName: item.serviceName || "",
             price: Number(item.price || 0),
             quantity: Number(item.quantity || 1),
@@ -1019,6 +1077,39 @@ const DealerBookingsView = () => {
       ignoreRowClick: true,
       allowOverflow: true,
     },
+   {
+  name: "Service Status",
+  width: "130px",
+  cell: (row) => {
+    const isApproved = row.isDealer_Confirm?.toString().trim().toLowerCase() === "approved";
+    const isCompleted = row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted";
+
+    return !row.isInclude ? (
+      <div className="d-flex gap-2 align-items-center">
+        
+        {/* Show Completed Text */}
+        {isApproved && isCompleted && (
+          <span className="badge bg-success">
+            Completed
+          </span>
+        )}
+
+        {/* Show Complete Button */}
+        {isApproved && !isCompleted && (
+          <button
+            className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+            onClick={() => handleServiceCompleted(row.addedItemsIndex)}
+            title="Mark as Completed"
+          >
+            <Icon icon="mingcute:check-circle-fill" />
+          </button>
+        )}
+      </div>
+    ) : null;
+  },
+  ignoreRowClick: true,
+  allowOverflow: true,
+}
   ];
 
   const itemTotal = addedItems.reduce((sum, item) => {

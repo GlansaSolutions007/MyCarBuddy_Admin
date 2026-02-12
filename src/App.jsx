@@ -113,10 +113,12 @@ import DealerBookingsViewPage from "./pages/DealerBookingsViewPage";
 import AssignSupervisorAreaPage from "./pages/AssignSupervisorAreaPage";
 import DealerPaymentsPage from "./pages/DealerPaymentsPage";
 import DealerReportPage from "./pages/DealerRepportPage";
+import NoInternetModal from "./components/NoInternetModal";
 
 function App() {
   return (
     <BrowserRouter>
+<NoInternetModal />
       <RouteScrollToTop />
       <Routes>
 
@@ -127,9 +129,9 @@ function App() {
         <Route exact path='/reset-password' element={<SignInPage />} />
         <Route exact path='/reset-password/:token' element={<ResetPasswordPage />} />
 
-        <Route element={<PrivateRoute />}>
         <Route exact path='/index' element={<HomePageTen />} />
         <Route exact path='/dashboard' element={<HomePageTen />} />
+        <Route element={<PrivateRoute />}>
 
           <Route exact path='/states' element={<StatePage />} />
           <Route exact path='/cities' element={<CityPage />} />

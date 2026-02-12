@@ -643,6 +643,8 @@ const OrganicLeadsLayer = () => {
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   // 1. Core Fetch Logic (Handles Chunking)
   const fetchLeadsChunk = useCallback(async (targetPage) => {
@@ -654,7 +656,7 @@ const OrganicLeadsLayer = () => {
     try {
       let url;
       const queryParams = `pageNumber=${chunkIndex}&pageSize=${CHUNK_SIZE}`;
-      
+
       if (role === "Admin") {
         url = `${API_BASE}ServiceLeads/FacebookLeads?${queryParams}`;
       } else {
@@ -686,26 +688,57 @@ const OrganicLeadsLayer = () => {
 
   // 2. Initial load and Page Change listener
   useEffect(() => {
+    // 🚫 If searching, don't call normal API
+    if (isSearching) return;
+
     const startItem = (pageNumber - 1) * pageSize;
     const endItem = pageNumber * pageSize;
-    
-    // Check if the current page slice is missing data in our cache
+
     const slice = allLeads.slice(startItem, endItem).filter(Boolean);
-    
-    // If we don't have data for this page and we aren't already loading
+
     if (slice.length === 0) {
       fetchLeadsChunk(pageNumber);
     }
-  }, [pageNumber, pageSize, allLeads, fetchLeadsChunk]);
+  }, [pageNumber, pageSize, allLeads, fetchLeadsChunk, isSearching]);
+
+
+  useEffect(() => {
+
+    const delayDebounce = setTimeout(() => {
+
+      if (
+        searchText ||
+        platformFilter !== "All" ||
+        fromDate ||
+        toDate
+      ) {
+        setPageNumber(1);
+        fetchSearchLeads(searchText, 1);
+      } else {
+        setIsSearching(false);
+        setSearchResults([]);
+        fetchLeadsChunk(1);
+      }
+
+    }, 400);
+
+    return () => clearTimeout(delayDebounce);
+
+  }, [searchText, platformFilter, fromDate, toDate, dateType]);
 
   // Reset logic when filters change
   useEffect(() => {
     setAllLeads([]);
     setTotalRows(0);
     setPageNumber(1);
-  }, [searchText, fromDate, toDate, dateType, platformFilter]);
+  }, []);
 
-  const handlePageChange = (page) => setPageNumber(page);
+  const handlePageChange = (page) => {
+    setPageNumber(page);
+    if (isSearching) {
+      fetchSearchLeads(searchText, page);
+    }
+  };
 
   const handleRowsChange = (newSize) => {
     setPageSize(newSize);
@@ -713,40 +746,22 @@ const OrganicLeadsLayer = () => {
     setPageNumber(1);
   };
 
-  // 3. Filtering Logic (for the data we have in cache)
-  const filteredLeads = useMemo(() => {
-    const dateField = dateType === "updated" ? "Updated_At" : "CreatedDate";
-    
-    return allLeads.filter(Boolean).filter((lead) => {
-      const text = searchText.toLowerCase();
-      const leadDate = lead[dateField] ? new Date(lead[dateField]) : null;
-      const from = fromDate ? new Date(fromDate + "T00:00:00") : null;
-      const to = toDate ? new Date(toDate + "T23:59:59") : null;
+  const filteredLeads = allLeads.filter(Boolean);
 
-      const dateMatch = (!from || (leadDate && leadDate >= from)) && (!to || (leadDate && leadDate <= to));
-      const platformMatch = platformFilter === "All" || lead.Platform === platformFilter;
-
-      return (
-        dateMatch &&
-        platformMatch &&
-        (lead.Id?.toString().toLowerCase().includes(text) ||
-          lead.FullName?.toLowerCase().includes(text) ||
-          lead.PhoneNumber?.toLowerCase().includes(text) ||
-          lead.Email?.toLowerCase().includes(text) ||
-          lead.City?.toLowerCase().includes(text))
-      );
-    });
-  }, [allLeads, searchText, fromDate, toDate, dateType, platformFilter]);
-
-  // 4. Slicing for Display
   const displayLeads = useMemo(() => {
-    // If searching, show filtered results directly
-    if (searchText || fromDate || toDate || platformFilter !== "All") {
-      return filteredLeads.slice((pageNumber - 1) * pageSize, pageNumber * pageSize);
+
+    // ✅ SERVER SIDE SEARCH / FILTER MODE
+    if (isSearching) {
+      return searchResults;
     }
-    // Otherwise slice from the master cache (handles empty slots gracefully)
-    return allLeads.slice((pageNumber - 1) * pageSize, pageNumber * pageSize).filter(Boolean);
-  }, [filteredLeads, allLeads, pageNumber, pageSize, searchText, fromDate, toDate, platformFilter]);
+
+    // ✅ NORMAL CHUNK CACHE MODE
+    return allLeads
+      .slice((pageNumber - 1) * pageSize, pageNumber * pageSize)
+      .filter(Boolean);
+
+  }, [isSearching, searchResults, allLeads, pageNumber, pageSize]);
+
 
   // Columns Configuration (Preserved your design)
   const columns = [
@@ -781,16 +796,16 @@ const OrganicLeadsLayer = () => {
     },
     { name: "Lead Status", selector: (row) => row.FollowUpStatus || "No FollowUp Yet", width: "180px" },
     ...(hasPermission("leadview_view") ? [
-        {
-          name: "Action",
-          cell: (row) => (
-            <Link to={`/lead-view/${row.Id}`} className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center">
-              <Icon icon="lucide:eye" />
-            </Link>
-          ),
-          button: true,
-        },
-      ] : []),
+      {
+        name: "Action",
+        cell: (row) => (
+          <Link to={`/lead-view/${row.Id}`} className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center">
+            <Icon icon="lucide:eye" />
+          </Link>
+        ),
+        button: true,
+      },
+    ] : []),
   ];
 
   // Excel Export Logic (Preserved)
@@ -825,6 +840,65 @@ const OrganicLeadsLayer = () => {
     }
   };
 
+  const fetchSearchLeads = useCallback(async (text = "", page = 1) => {
+
+    setLoading(true);
+    setIsSearching(true);
+
+    try {
+      let queryParams = `pageNumber=${page}&pageSize=${CHUNK_SIZE}`;
+
+      // ✅ search text
+      if (text) {
+        queryParams += `&searchText=${encodeURIComponent(text)}`;
+      }
+
+      // ✅ platform filter
+      if (platformFilter !== "All") {
+        queryParams += `&platform=${platformFilter}`;
+      }
+
+      // ✅ NEW → Date Filters (SERVER SIDE)
+      if (fromDate) {
+        queryParams += `&fromDate=${fromDate}`;
+      }
+
+      if (toDate) {
+        queryParams += `&toDate=${toDate}`;
+      }
+
+      if (fromDate || toDate) {
+        const apiDateType = dateType === "updated"
+          ? "UpdatedDate"
+          : "CreatedDate";
+
+        queryParams += `&DateType=${apiDateType}`;
+      }
+
+      let url;
+
+      if (role === "Admin") {
+        url = `${API_BASE}ServiceLeads/FacebookLeads?${queryParams}`;
+      } else {
+        url = `${API_BASE}ServiceLeads/FacebookLeads?${queryParams}&EmployeeId=${employeeData?.Id}&RoleName=${employeeData?.RoleName}`;
+      }
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      setSearchResults(data.data || data);
+      setTotalRows(data.totalCount || 0);
+
+    } catch (err) {
+      console.error(err);
+      setError("Search failed");
+    } finally {
+      setLoading(false);
+    }
+
+  }, [role, employeeData, platformFilter, fromDate, toDate, dateType]);
+
+
   return (
     <div className="row gy-4">
       <div className="col-12">
@@ -835,7 +909,7 @@ const OrganicLeadsLayer = () => {
                 <input
                   type="text"
                   className="form-control w-auto"
-                  placeholder="Search Leads"
+                  placeholder="Search Leads, Name, Phone, Email..."
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
                 />
@@ -859,37 +933,37 @@ const OrganicLeadsLayer = () => {
                 <input type="date" className="form-control radius-8 px-14 py-6 text-sm w-auto" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
                 <label className="text-sm fw-semibold mb-0">To:</label>
                 <input type="date" className="form-control radius-8 px-14 py-6 text-sm w-auto" value={toDate} onChange={(e) => setToDate(e.target.value)} />
-                
+
                 <select className="form-control radius-8 px-14 py-6 text-sm w-auto" value={platformFilter} onChange={(e) => setPlatformFilter(e.target.value)}>
-                    <option value="All">All</option>
-                    <option value="Organic">Organic</option>
-                    <option value="Web">Web</option>
-                    <option value="App">App</option>
+                  <option value="All">All</option>
+                  <option value="Organic">Organic</option>
+                  <option value="Web">Web</option>
+                  <option value="App">App</option>
                 </select>
 
                 <input type="file" id="organicUpload" style={{ display: "none" }} onChange={handleBulkUpload} />
-                
+
                 {(role === "Admin" || roleName === "Telecaller Head") && (
                   <button className="btn btn-primary-600 radius-8 px-14 py-6 text-sm" onClick={() => document.getElementById("organicUpload").click()} disabled={uploading}>
                     <Icon icon="mdi:upload" className="icon text-xl" /> Bulk Upload
                   </button>
                 )}
-                
+
                 {hasPermission("createlead_add") && (
                   <Link to="/create-lead" className="btn btn-primary-600 radius-8 px-14 py-6 text-sm">
                     <Icon icon="ic:baseline-plus" className="icon text-xl" /> Add Lead
                   </Link>
                 )}
-                
+
                 <button className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center" onClick={exportToExcel}>
                   <Icon icon="mdi:microsoft-excel" width="22" height="22" />
                 </button>
               </div>
             </div>
           </div>
-          
+
           {uploading && <div className="m-3">Uploading...</div>}
-          
+
           <DataTable
             columns={columns}
             data={displayLeads}
