@@ -809,18 +809,73 @@ const OrganicLeadsLayer = () => {
   ];
 
   // Excel Export Logic (Preserved)
-  const exportToExcel = () => {
-    const exportData = filteredLeads.map((lead) => ({
-      "Lead ID": lead.Id,
-      "Customer Name": lead.FullName || "-",
-      "Phone Number": lead.PhoneNumber || "-",
-      "Lead Status": lead.FollowUpStatus || "No FollowUp Yet",
-    }));
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    XLSX.utils.book_append_sheet(wb, ws, "Organic Leads");
-    XLSX.writeFile(wb, `leads_export_${Date.now()}.xlsx`);
-  };
+  const exportToExcel = async () => {
+  try {
+    setLoading(true);
+
+    let queryParams = "";
+
+    // search text
+    if (searchText) {
+      queryParams += `&searchText=${encodeURIComponent(searchText)}`;
+    }
+
+    // platform filter
+    if (platformFilter !== "All") {
+      queryParams += `&platform=${platformFilter}`;
+    }
+
+    // date filters
+    if (fromDate) {
+      queryParams += `&fromDate=${fromDate}`;
+    }
+
+    if (toDate) {
+      queryParams += `&toDate=${toDate}`;
+    }
+
+    if (fromDate || toDate) {
+      const apiDateType =
+        dateType === "updated"
+          ? "UpdatedDate"
+          : "CreatedDate";
+
+      queryParams += `&DateType=${apiDateType}`;
+    }
+
+    let url;
+
+    if (role === "Admin") {
+      url = `${API_BASE}ServiceLeads/ExportLeadsWithQuestions?${queryParams}`;
+    } else {
+      url = `${API_BASE}ServiceLeads/ExportLeadsWithQuestions?${queryParams}&EmployeeId=${employeeData?.Id}&RoleName=${employeeData?.RoleName}`;
+    }
+
+    const response = await axios.get(url, {
+      responseType: "blob",
+    });
+
+    // Create download link
+    const blob = new Blob([response.data]);
+    const downloadUrl = window.URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = `leads_export_${Date.now()}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+
+    link.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+
+  } catch (error) {
+    console.error(error);
+    Swal.fire("Error", "Excel export failed", "error");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleBulkUpload = async (e) => {
     const file = e.target.files[0];

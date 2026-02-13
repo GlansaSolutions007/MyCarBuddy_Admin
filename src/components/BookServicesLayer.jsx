@@ -324,32 +324,75 @@ const BookServicesLayer = () => {
   };
 
   const handleServiceCompleted = async (index) => {
+    const item = addedItems[index];
+
+    if (!item?._apiId) {
+      return Swal.fire("Error", "AddOn ID not found", "error");
+    }
+
+    const confirmResult = await Swal.fire({
+      title: "Mark Service as Completed?",
+      text: "Are you sure this service is completed?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#28a745",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, Complete",
+      cancelButtonText: "Cancel",
+    });
+
+    if (!confirmResult.isConfirmed) return;
+
+    try {
+      const payload = {
+        addOnID: item._apiId,   // 🔹 your AddOn ID
+        is_Completed: true,
+        completedBy: parseInt(localStorage.getItem("userId")) || 0,
+        completedRole: dealer,
+        statusName: "ServiceCompleted",
+      };
+
+      const response = await axios.put(
+        `${API_BASE}Supervisor/UpdateAddOnCompletion`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        Swal.fire("Success!", "Service marked as completed.", "success");
+
+        // Refresh table data
+        await fetchBookingData();
+      }
+    } catch (error) {
+      console.error(error);
+      Swal.fire(
+        "Error",
+        error.response?.data?.message || "Failed to update service completion",
+        "error"
+      );
+    }
+  };
+
+  const handleStatusChange = async (index, selectedStatus) => {
   const item = addedItems[index];
 
   if (!item?._apiId) {
     return Swal.fire("Error", "AddOn ID not found", "error");
   }
 
-  const confirmResult = await Swal.fire({
-    title: "Mark Service as Completed?",
-    text: "Are you sure this service is completed?",
-    icon: "question",
-    showCancelButton: true,
-    confirmButtonColor: "#28a745",
-    cancelButtonColor: "#d33",
-    confirmButtonText: "Yes, Complete",
-    cancelButtonText: "Cancel",
-  });
-
-  if (!confirmResult.isConfirmed) return;
-
   try {
     const payload = {
-      addOnID: item._apiId,   // 🔹 your AddOn ID
-      is_Completed: true,
+      addOnID: item._apiId,
+      is_Completed: selectedStatus === "ServiceCompleted",
       completedBy: parseInt(localStorage.getItem("userId")) || 0,
       completedRole: dealer,
-      statusName: "ServiceCompleted",
+      statusName: selectedStatus,
     };
 
     const response = await axios.put(
@@ -364,20 +407,19 @@ const BookServicesLayer = () => {
     );
 
     if (response.status === 200 || response.status === 201) {
-      Swal.fire("Success!", "Service marked as completed.", "success");
-
-      // Refresh table data
+      Swal.fire("Success!", "Status updated successfully.", "success");
       await fetchBookingData();
     }
   } catch (error) {
     console.error(error);
     Swal.fire(
       "Error",
-      error.response?.data?.message || "Failed to update service completion",
+      error.response?.data?.message || "Failed to update status",
       "error"
     );
   }
 };
+
 
   const fetchAllPackages = async () => {
     try {
@@ -596,7 +638,7 @@ const BookServicesLayer = () => {
         return Swal.fire(
           "Error",
           "Failed to create package: " +
-            (err.response?.data?.message || err.message),
+          (err.response?.data?.message || err.message),
           "error",
         );
       }
@@ -885,8 +927,8 @@ const BookServicesLayer = () => {
       percentAmount: Number(percentAmount) || 0,
       labourCharge:
         itemType === "Service" ||
-        itemType === "Service Group" ||
-        itemType === "Package"
+          itemType === "Service Group" ||
+          itemType === "Package"
           ? Number(price) || 0
           : 0,
       // labourCharge: 0,
@@ -895,7 +937,7 @@ const BookServicesLayer = () => {
       includeName:
         itemType === "Service"
           ? includesList.find((i) => i.IncludeID == finalIncludeID)
-              ?.IncludeName || name
+            ?.IncludeName || name
           : null,
 
       // package-specific metadata
@@ -907,9 +949,9 @@ const BookServicesLayer = () => {
       serviceGroupServices:
         itemType === "Service Group"
           ? processedSelectedServices.map((s) => ({
-              id: Number(s.value),
-              name: s.label,
-            }))
+            id: Number(s.value),
+            name: s.label,
+          }))
           : [],
       // Dealer prices (default to 0.00 for new items, populated from API for existing items)
       dealerSparePrice: "0.00",
@@ -1032,7 +1074,7 @@ const BookServicesLayer = () => {
 
   const handleSaveRow = async (index) => {
     const row = addedItems[index];
-    
+
     // Check if dealer is selected (only for non-include items)
     // if (!row.isInclude && (!row.dealerID || row.dealerID === "" || row.dealerID === null || row.dealerID === undefined)) {
     //   Swal.fire({
@@ -1042,7 +1084,7 @@ const BookServicesLayer = () => {
     //   });
     //   return;
     // }
-    
+
     const bookingType =
       row.status?.toLowerCase() === "confirmed" ? "Confirm" : "NotConfirm";
 
@@ -1383,7 +1425,7 @@ const BookServicesLayer = () => {
   const handleConfirmBooking = async () => {
     // collect only saved items
     const ids = addedItems
-      .filter((item) => item._apiId) 
+      .filter((item) => item._apiId)
       .map((item) => item._apiId);
 
     if (ids.length === 0) {
@@ -1495,66 +1537,66 @@ const BookServicesLayer = () => {
           isSupervisorHead ||
           isAdmin;
         return (
-        <input
-          type="number"
-          className="form-control form-control-sm"
-          min={0}
-          placeholder="0"
-          value={row.basePrice === "" || row.basePrice === 0 ? "" : row.basePrice}
-          disabled={!canModify}
-          onChange={(e) => {
-            const val = e.target.value;
+          <input
+            type="number"
+            className="form-control form-control-sm"
+            min={0}
+            placeholder="0"
+            value={row.basePrice === "" || row.basePrice === 0 ? "" : row.basePrice}
+            disabled={!canModify}
+            onChange={(e) => {
+              const val = e.target.value;
 
-            // allow empty while typing
-            if (val === "") {
-              updateTableRow(row.addedItemsIndex, { basePrice: "" });
-              return;
-            }
+              // allow empty while typing
+              if (val === "") {
+                updateTableRow(row.addedItemsIndex, { basePrice: "" });
+                return;
+              }
 
-            const basePrice = Number(val);
-            if (isNaN(basePrice) || basePrice < 0) return;
+              const basePrice = Number(val);
+              if (isNaN(basePrice) || basePrice < 0) return;
 
-            const quantity = Number(row.quantity) || 1;
-            const labour = Number(row.labourCharge) || 0;
-
-            const baseTotal = basePrice * quantity;
-            const baseAmount = baseTotal + labour;
-
-            const gstPrice =
-              row.gstPercent !== ""
-                ? (baseAmount * Number(row.gstPercent)) / 100
-                : 0;
-
-            const percentAmount = Number(
-              (
-                ((baseTotal + labour + gstPrice) * Number(row.percentage)) /
-                100
-              ).toFixed(2),
-            );
-
-            updateTableRow(row.addedItemsIndex, {
-              basePrice,
-              baseTotal,
-              price: baseTotal,
-              gstPrice: Number(gstPrice.toFixed(2)),
-              percentAmount,
-            });
-          }}
-          onBlur={() => {
-            if (row.basePrice === "") {
-              const basePrice = 0;
               const quantity = Number(row.quantity) || 1;
+              const labour = Number(row.labourCharge) || 0;
 
               const baseTotal = basePrice * quantity;
+              const baseAmount = baseTotal + labour;
+
+              const gstPrice =
+                row.gstPercent !== ""
+                  ? (baseAmount * Number(row.gstPercent)) / 100
+                  : 0;
+
+              const percentAmount = Number(
+                (
+                  ((baseTotal + labour + gstPrice) * Number(row.percentage)) /
+                  100
+                ).toFixed(2),
+              );
 
               updateTableRow(row.addedItemsIndex, {
                 basePrice,
                 baseTotal,
                 price: baseTotal,
+                gstPrice: Number(gstPrice.toFixed(2)),
+                percentAmount,
               });
-            }
-          }}
-        />
+            }}
+            onBlur={() => {
+              if (row.basePrice === "") {
+                const basePrice = 0;
+                const quantity = Number(row.quantity) || 1;
+
+                const baseTotal = basePrice * quantity;
+
+                updateTableRow(row.addedItemsIndex, {
+                  basePrice,
+                  baseTotal,
+                  price: baseTotal,
+                });
+              }
+            }}
+          />
         );
       },
       width: "120px",
@@ -1565,12 +1607,12 @@ const BookServicesLayer = () => {
       cell: (row) => {
         if (row.isInclude) return null;
         return (
-        <input
-          type="number"
-          className="form-control form-control-sm"
-          value={Number(row.dealerBasePrice || "0.00").toFixed(2)}
-          disabled
-        />
+          <input
+            type="number"
+            className="form-control form-control-sm"
+            value={Number(row.dealerBasePrice || "0.00").toFixed(2)}
+            disabled
+          />
         );
       },
       width: "150px",
@@ -1585,51 +1627,23 @@ const BookServicesLayer = () => {
           isSupervisorHead ||
           isAdmin;
         return (
-        <input
-          type="number"
-          className="form-control form-control-sm"
-          min={1}
-          placeholder="1"
-          value={row.quantity === "" ? "" : row.quantity}
-          disabled={!canModify}
-          onChange={(e) => {
-            const val = e.target.value;
+          <input
+            type="number"
+            className="form-control form-control-sm"
+            min={1}
+            placeholder="1"
+            value={row.quantity === "" ? "" : row.quantity}
+            disabled={!canModify}
+            onChange={(e) => {
+              const val = e.target.value;
 
-            if (val === "") {
-              updateTableRow(row.addedItemsIndex, { quantity: "" });
-              return;
-            }
+              if (val === "") {
+                updateTableRow(row.addedItemsIndex, { quantity: "" });
+                return;
+              }
 
-            const quantity = Number(val);
-            if (isNaN(quantity) || quantity < 1) return;
-
-            const baseTotal = (Number(row.basePrice) || 0) * quantity;
-            const baseAmount = baseTotal + (Number(row.labourCharge) || 0);
-
-            const gstPrice =
-              row.gstPercent !== ""
-                ? (baseAmount * Number(row.gstPercent)) / 100
-                : 0;
-
-            const percentAmount = Number(
-              (
-                ((baseTotal + (Number(row.labourCharge) || 0) + gstPrice) *
-                  Number(row.percentage)) /
-                100
-              ).toFixed(2),
-            );
-
-            updateTableRow(row.addedItemsIndex, {
-              quantity,
-              baseTotal,
-              price: baseTotal,
-              gstPrice: Number(gstPrice.toFixed(2)),
-              percentAmount,
-            });
-          }}
-          onBlur={() => {
-            if (row.quantity === "") {
-              const quantity = 1;
+              const quantity = Number(val);
+              if (isNaN(quantity) || quantity < 1) return;
 
               const baseTotal = (Number(row.basePrice) || 0) * quantity;
               const baseAmount = baseTotal + (Number(row.labourCharge) || 0);
@@ -1639,14 +1653,42 @@ const BookServicesLayer = () => {
                   ? (baseAmount * Number(row.gstPercent)) / 100
                   : 0;
 
+              const percentAmount = Number(
+                (
+                  ((baseTotal + (Number(row.labourCharge) || 0) + gstPrice) *
+                    Number(row.percentage)) /
+                  100
+                ).toFixed(2),
+              );
+
               updateTableRow(row.addedItemsIndex, {
                 quantity,
                 baseTotal,
+                price: baseTotal,
                 gstPrice: Number(gstPrice.toFixed(2)),
+                percentAmount,
               });
-            }
-          }}
-        />
+            }}
+            onBlur={() => {
+              if (row.quantity === "") {
+                const quantity = 1;
+
+                const baseTotal = (Number(row.basePrice) || 0) * quantity;
+                const baseAmount = baseTotal + (Number(row.labourCharge) || 0);
+
+                const gstPrice =
+                  row.gstPercent !== ""
+                    ? (baseAmount * Number(row.gstPercent)) / 100
+                    : 0;
+
+                updateTableRow(row.addedItemsIndex, {
+                  quantity,
+                  baseTotal,
+                  gstPrice: Number(gstPrice.toFixed(2)),
+                });
+              }
+            }}
+          />
         );
       },
       width: "100px",
@@ -1657,12 +1699,12 @@ const BookServicesLayer = () => {
       cell: (row) => {
         if (row.isInclude) return null;
         return (
-        <input
-          type="number"
-          className="form-control form-control-sm"
-          value={Number(row.basePrice * row.quantity).toFixed(2)}
-          disabled
-        />
+          <input
+            type="number"
+            className="form-control form-control-sm"
+            value={Number(row.basePrice * row.quantity).toFixed(2)}
+            disabled
+          />
         );
       },
       width: "120px",
@@ -1673,12 +1715,12 @@ const BookServicesLayer = () => {
       cell: (row) => {
         if (row.isInclude) return null;
         return (
-        <input
-          type="number"
-          className="form-control form-control-sm"
-          value={Number(row.dealerSparePrice || "0.00").toFixed(2)}
-          disabled
-        />
+          <input
+            type="number"
+            className="form-control form-control-sm"
+            value={Number(row.dealerSparePrice || "0.00").toFixed(2)}
+            disabled
+          />
         );
       },
       width: "150px",
@@ -1693,67 +1735,67 @@ const BookServicesLayer = () => {
           isSupervisorHead ||
           isAdmin;
         return (
-        <input
-          type="number"
-          className="form-control form-control-sm"
-          placeholder="0"
-          value={row.labourCharge === "" || row.labourCharge === 0 ? "" : row.labourCharge}
-          min={0}
-          disabled={!canModify}
-          onChange={(e) => {
-            const val = e.target.value;
-            if (val === "") {
-              updateTableRow(row.addedItemsIndex, { labourCharge: "" });
-              return;
-            }
-            const labourCharge = Math.max(0, Number(val) || 0);
+          <input
+            type="number"
+            className="form-control form-control-sm"
+            placeholder="0"
+            value={row.labourCharge === "" || row.labourCharge === 0 ? "" : row.labourCharge}
+            min={0}
+            disabled={!canModify}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === "") {
+                updateTableRow(row.addedItemsIndex, { labourCharge: "" });
+                return;
+              }
+              const labourCharge = Math.max(0, Number(val) || 0);
 
-            const baseTotal =
-              (Number(row.basePrice) || 0) * (Number(row.quantity) || 1);
+              const baseTotal =
+                (Number(row.basePrice) || 0) * (Number(row.quantity) || 1);
 
-            const baseAmount = baseTotal + labourCharge;
-
-            const gstPrice =
-              row.gstPercent !== ""
-                ? (baseAmount * Number(row.gstPercent)) / 100
-                : 0;
-
-            const percentAmount = Number(
-              (
-                ((baseTotal + labourCharge + gstPrice) *
-                  Number(row.percentage)) /
-                100
-              ).toFixed(2),
-            );
-
-            updateTableRow(row.addedItemsIndex, {
-              labourCharge,
-              baseTotal,
-              gstPrice: Number(gstPrice.toFixed(2)),
-              percentAmount,
-            });
-          }}
-          onBlur={() => {
-            if (row.labourCharge === "") {
-              const labourCharge = 0;
-              const baseTotal = (Number(row.basePrice) || 0) * (Number(row.quantity) || 1);
               const baseAmount = baseTotal + labourCharge;
-              const gstPrice = row.gstPercent !== "" ? (baseAmount * Number(row.gstPercent)) / 100 : 0;
+
+              const gstPrice =
+                row.gstPercent !== ""
+                  ? (baseAmount * Number(row.gstPercent)) / 100
+                  : 0;
+
               const percentAmount = Number(
                 (
-                  ((baseTotal + labourCharge + gstPrice) * Number(row.percentage)) /
+                  ((baseTotal + labourCharge + gstPrice) *
+                    Number(row.percentage)) /
                   100
                 ).toFixed(2),
               );
+
               updateTableRow(row.addedItemsIndex, {
                 labourCharge,
                 baseTotal,
                 gstPrice: Number(gstPrice.toFixed(2)),
                 percentAmount,
               });
-            }
-          }}
-        />
+            }}
+            onBlur={() => {
+              if (row.labourCharge === "") {
+                const labourCharge = 0;
+                const baseTotal = (Number(row.basePrice) || 0) * (Number(row.quantity) || 1);
+                const baseAmount = baseTotal + labourCharge;
+                const gstPrice = row.gstPercent !== "" ? (baseAmount * Number(row.gstPercent)) / 100 : 0;
+                const percentAmount = Number(
+                  (
+                    ((baseTotal + labourCharge + gstPrice) * Number(row.percentage)) /
+                    100
+                  ).toFixed(2),
+                );
+                updateTableRow(row.addedItemsIndex, {
+                  labourCharge,
+                  baseTotal,
+                  gstPrice: Number(gstPrice.toFixed(2)),
+                  percentAmount,
+                });
+              }
+            }}
+          />
         );
       },
       width: "140px",
@@ -1764,12 +1806,12 @@ const BookServicesLayer = () => {
       cell: (row) => {
         if (row.isInclude) return null;
         return (
-        <input
-          type="number"
-          className="form-control form-control-sm"
-          value={Number(row.dealerServicePrice || "0.00").toFixed(2)}
-          disabled
-        />
+          <input
+            type="number"
+            className="form-control form-control-sm"
+            value={Number(row.dealerServicePrice || "0.00").toFixed(2)}
+            disabled
+          />
         );
       },
       width: "170px",
@@ -1784,49 +1826,27 @@ const BookServicesLayer = () => {
           isSupervisorHead ||
           isAdmin;
         return (
-        <input
-          type="number"
-          className="form-control form-control-sm"
-          placeholder="0"
-          value={row.gstPercent === "" || row.gstPercent === 0 ? "" : row.gstPercent}
-          min={0}
-          onChange={(e) => {
-            const val = e.target.value;
-            if (val === "") {
-              updateTableRow(row.addedItemsIndex, { gstPercent: "" });
-              return;
-            }
-            const percent = Math.max(0, Number(val) || 0);
+          <input
+            type="number"
+            className="form-control form-control-sm"
+            placeholder="0"
+            value={row.gstPercent === "" || row.gstPercent === 0 ? "" : row.gstPercent}
+            min={0}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === "") {
+                updateTableRow(row.addedItemsIndex, { gstPercent: "" });
+                return;
+              }
+              const percent = Math.max(0, Number(val) || 0);
 
-            const baseTotal =
-              (Number(row.basePrice) || 0) * (Number(row.quantity) || 1);
+              const baseTotal =
+                (Number(row.basePrice) || 0) * (Number(row.quantity) || 1);
 
-            const baseAmount = baseTotal + (Number(row.labourCharge) || 0);
-
-            const gstPrice = (baseAmount * percent) / 100;
-
-            const percentAmount = Number(
-              (
-                ((baseTotal + (Number(row.labourCharge) || 0) + gstPrice) *
-                  Number(row.percentage)) /
-                100
-              ).toFixed(2),
-            );
-
-            updateTableRow(row.addedItemsIndex, {
-              gstPercent: percent,
-              baseTotal,
-              price: baseTotal,
-              gstPrice: Number(gstPrice.toFixed(2)),
-              percentAmount,
-            });
-          }}
-          onBlur={() => {
-            if (row.gstPercent === "") {
-              const gstPercent = 0;
-              const baseTotal = (Number(row.basePrice) || 0) * (Number(row.quantity) || 1);
               const baseAmount = baseTotal + (Number(row.labourCharge) || 0);
-              const gstPrice = (baseAmount * gstPercent) / 100;
+
+              const gstPrice = (baseAmount * percent) / 100;
+
               const percentAmount = Number(
                 (
                   ((baseTotal + (Number(row.labourCharge) || 0) + gstPrice) *
@@ -1834,33 +1854,55 @@ const BookServicesLayer = () => {
                   100
                 ).toFixed(2),
               );
+
               updateTableRow(row.addedItemsIndex, {
-                gstPercent,
+                gstPercent: percent,
                 baseTotal,
                 price: baseTotal,
                 gstPrice: Number(gstPrice.toFixed(2)),
                 percentAmount,
               });
-            }
-          }}
-          disabled={!canModify}
-        />
+            }}
+            onBlur={() => {
+              if (row.gstPercent === "") {
+                const gstPercent = 0;
+                const baseTotal = (Number(row.basePrice) || 0) * (Number(row.quantity) || 1);
+                const baseAmount = baseTotal + (Number(row.labourCharge) || 0);
+                const gstPrice = (baseAmount * gstPercent) / 100;
+                const percentAmount = Number(
+                  (
+                    ((baseTotal + (Number(row.labourCharge) || 0) + gstPrice) *
+                      Number(row.percentage)) /
+                    100
+                  ).toFixed(2),
+                );
+                updateTableRow(row.addedItemsIndex, {
+                  gstPercent,
+                  baseTotal,
+                  price: baseTotal,
+                  gstPrice: Number(gstPrice.toFixed(2)),
+                  percentAmount,
+                });
+              }
+            }}
+            disabled={!canModify}
+          />
         );
       },
       width: "120px",
       sortable: true,
     },
-     {
+    {
       name: "DLR GST %",
       cell: (row) => {
         if (row.isInclude) return null;
         return (
-        <input
-          type="number"
-          className="form-control form-control-sm"
-          value={Number(row.dealerGSTPercent || "0")}
-          disabled
-        />
+          <input
+            type="number"
+            className="form-control form-control-sm"
+            value={Number(row.dealerGSTPercent || "0")}
+            disabled
+          />
         );
       },
       width: "150px",
@@ -1875,54 +1917,54 @@ const BookServicesLayer = () => {
           isSupervisorHead ||
           isAdmin;
         return (
-        <input
-          type="number"
-          className="form-control form-control-sm"
-          min={0}
-          placeholder="0"
-          value={row.gstPrice === "" || row.gstPrice === 0 ? "" : row.gstPrice}
-          disabled={!canModify}
-          onChange={(e) => {
-            const val = e.target.value;
-            if (val === "") {
-              updateTableRow(row.addedItemsIndex, { gstPrice: "" });
-              return;
-            }
-            const gstAmt = Number(val);
-            if (isNaN(gstAmt) || gstAmt < 0) return;
-            const quantity = Number(row.quantity) || 1;
-            const baseTotal = (Number(row.basePrice) || 0) * quantity;
-            const labour = Number(row.labourCharge) || 0;
-            const baseAmount = baseTotal + labour;
-            const gstPercent = baseAmount > 0 ? (gstAmt / baseAmount) * 100 : 0;
-            updateTableRow(row.addedItemsIndex, {
-              gstPrice: gstAmt,
-              gstPercent: Number(gstPercent.toFixed(2)),
-              baseTotal,
-            });
-          }}
-          onBlur={() => {
-            if (row.gstPrice === "") {
-              updateTableRow(row.addedItemsIndex, { gstPrice: 0 });
-            }
-          }}
-        />
+          <input
+            type="number"
+            className="form-control form-control-sm"
+            min={0}
+            placeholder="0"
+            value={row.gstPrice === "" || row.gstPrice === 0 ? "" : row.gstPrice}
+            disabled={!canModify}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === "") {
+                updateTableRow(row.addedItemsIndex, { gstPrice: "" });
+                return;
+              }
+              const gstAmt = Number(val);
+              if (isNaN(gstAmt) || gstAmt < 0) return;
+              const quantity = Number(row.quantity) || 1;
+              const baseTotal = (Number(row.basePrice) || 0) * quantity;
+              const labour = Number(row.labourCharge) || 0;
+              const baseAmount = baseTotal + labour;
+              const gstPercent = baseAmount > 0 ? (gstAmt / baseAmount) * 100 : 0;
+              updateTableRow(row.addedItemsIndex, {
+                gstPrice: gstAmt,
+                gstPercent: Number(gstPercent.toFixed(2)),
+                baseTotal,
+              });
+            }}
+            onBlur={() => {
+              if (row.gstPrice === "") {
+                updateTableRow(row.addedItemsIndex, { gstPrice: 0 });
+              }
+            }}
+          />
         );
       },
       width: "120px",
       sortable: true,
     },
-     {
+    {
       name: "DLR GST Amt",
       cell: (row) => {
         if (row.isInclude) return null;
         return (
-        <input
-          type="number"
-          className="form-control form-control-sm"
-          value={Number(row.dealerGstAmount || "0.00")}
-          disabled
-        />
+          <input
+            type="number"
+            className="form-control form-control-sm"
+            value={Number(row.dealerGstAmount || "0.00")}
+            disabled
+          />
         );
       },
       width: "150px",
@@ -1955,15 +1997,15 @@ const BookServicesLayer = () => {
     },
     ...(isSupervisorHead || isAdmin
       ? [
-          {
-            name: "Company %",
-            cell: (row, index) => {
-              if (row.isInclude) return null;
-              const canModify =
-                row.status !== "Confirmed" ||
-                isSupervisorHead ||
-                isAdmin;
-              return (
+        {
+          name: "Company %",
+          cell: (row, index) => {
+            if (row.isInclude) return null;
+            const canModify =
+              row.status !== "Confirmed" ||
+              isSupervisorHead ||
+              isAdmin;
+            return (
               <input
                 type="number"
                 className="form-control form-control-sm"
@@ -2007,20 +2049,20 @@ const BookServicesLayer = () => {
                 }}
                 disabled={!canModify}
               />
-              );
-            },
-            width: "130px",
-            sortable: true,
+            );
           },
-          {
-            name: "% Amount",
-            cell: (row, index) => {
-              if (row.isInclude) return null;
-              const canModify =
-                row.status !== "Confirmed" ||
-                isSupervisorHead ||
-                isAdmin;
-              return (
+          width: "130px",
+          sortable: true,
+        },
+        {
+          name: "% Amount",
+          cell: (row, index) => {
+            if (row.isInclude) return null;
+            const canModify =
+              row.status !== "Confirmed" ||
+              isSupervisorHead ||
+              isAdmin;
+            return (
               <input
                 type="number"
                 className="form-control form-control-sm"
@@ -2065,24 +2107,24 @@ const BookServicesLayer = () => {
                 }}
                 disabled={!canModify}
               />
-              );
-            },
-            width: "120px",
-            sortable: true,
+            );
           },
-           ]
+          width: "120px",
+          sortable: true,
+        },
+      ]
       : []),
-          ...(isSupervisorHead || isFieldAdvisor || isAdmin
+    ...(isSupervisorHead || isFieldAdvisor || isAdmin
       ? [
-          {
-            name: "Select Dealer",
-            cell: (row, index) => {
-              if (row.isInclude) return null;
-              const canModify =
-                row.status !== "Confirmed" ||
-                isSupervisorHead ||
-                isAdmin;
-              return (
+        {
+          name: "Select Dealer",
+          cell: (row, index) => {
+            if (row.isInclude) return null;
+            const canModify =
+              row.status !== "Confirmed" ||
+              isSupervisorHead ||
+              isAdmin;
+            return (
               <div className="position-relative overflow-visible w-100">
                 <Select
                   isDisabled={!canModify}
@@ -2094,11 +2136,11 @@ const BookServicesLayer = () => {
                   value={
                     row.dealerID
                       ? {
-                          value: row.dealerID,
-                          label:
-                            dealersList.find((d) => d.DealerID === row.dealerID)
-                              ?.FullName || "Unknown Dealer",
-                        }
+                        value: row.dealerID,
+                        label:
+                          dealersList.find((d) => d.DealerID === row.dealerID)
+                            ?.FullName || "Unknown Dealer",
+                      }
                       : null
                   }
                   options={dealersList.map((d) => ({
@@ -2142,11 +2184,11 @@ const BookServicesLayer = () => {
                 />
               </div>
             );
-            },
-            minWidth: "200px",
-            sortable: true,
           },
-        ]
+          minWidth: "200px",
+          sortable: true,
+        },
+      ]
       : []),
     {
       name: "Status",
@@ -2162,6 +2204,53 @@ const BookServicesLayer = () => {
       width: "120px",
       sortable: true,
     },
+     {
+  name: "Service Status",
+  width: "160px",
+  cell: (row) => {
+    const isApproved =
+      row.isDealer_Confirm?.toString().trim().toLowerCase() === "approved";
+
+    const status = row.addOnStatus?.toString().trim();
+
+    const isCompleted =
+      status?.toLowerCase() === "servicecompleted";
+
+    return !row.isInclude ? (
+      <div className="d-flex gap-2 align-items-center">
+
+        {/* ✅ If Approved AND status is NULL → Show Complete Button */}
+        {isApproved && !status && (
+          <button
+            className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+            onClick={() => handleServiceCompleted(row.addedItemsIndex)}
+            title="Mark as Completed"
+          >
+            <Icon icon="mingcute:check-circle-fill" />
+          </button>
+        )}
+
+        {/* ✅ If status exists → Show Dropdown */}
+        {isApproved && status && (
+          <select
+            className="form-select form-select-sm"
+            value={status}
+            onChange={(e) =>
+              handleStatusChange(row.addedItemsIndex, e.target.value)
+            }
+          >
+            <option value="ServiceCompleted">Completed</option>
+            <option value="Rework">Rework</option>
+            <option value="InProgress">In-Progress</option>
+            <option value="Clarification">Clarification</option>
+          </select>
+        )}
+      </div>
+    ) : null;
+  },
+  ignoreRowClick: true,
+  allowOverflow: true,
+},
     {
       name: "Actions",
       cell: (row) => {
@@ -2190,39 +2279,7 @@ const BookServicesLayer = () => {
       ignoreRowClick: true,
       allowOverflow: true,
     },
-    {
-  name: "Service Status",
-  width: "130px",
-  cell: (row) => {
-    const isApproved = row.isDealer_Confirm?.toString().trim().toLowerCase() === "approved";
-    const isCompleted = row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted";
-
-    return !row.isInclude ? (
-      <div className="d-flex gap-2 align-items-center">
-        
-        {/* Show Completed Text */}
-        {isApproved && isCompleted && (
-          <span className="badge bg-success">
-            Completed
-          </span>
-        )}
-
-        {/* Show Complete Button */}
-        {isApproved && !isCompleted && (
-          <button
-            className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-            onClick={() => handleServiceCompleted(row.addedItemsIndex)}
-            title="Mark as Completed"
-          >
-            <Icon icon="mingcute:check-circle-fill" />
-          </button>
-        )}
-      </div>
-    ) : null;
-  },
-  ignoreRowClick: true,
-  allowOverflow: true,
-}
+   
   ];
 
   const itemTotal = addedItems.reduce((sum, item) => {
@@ -2407,11 +2464,11 @@ const BookServicesLayer = () => {
                     value={
                       selectedPackage
                         ? {
-                            value: selectedPackage,
-                            label:
-                              packagesList.find((p) => p.id == selectedPackage)
-                                ?.name || selectedPackage,
-                          }
+                          value: selectedPackage,
+                          label:
+                            packagesList.find((p) => p.id == selectedPackage)
+                              ?.name || selectedPackage,
+                        }
                         : null
                     }
                     options={packagesList.map((pkg) => ({
@@ -2484,7 +2541,7 @@ const BookServicesLayer = () => {
                   value={price}
                   min={0}
                   // onChange={(e) => setPrice(Number(e.target.value) || 0)}
-                   onChange={(e) => setPrice(e.target.value)}
+                  onChange={(e) => setPrice(e.target.value)}
                   placeholder="0.00"
                 />
               </div>
@@ -2720,8 +2777,8 @@ const BookServicesLayer = () => {
                           value={
                             bookingData?.bookingDate
                               ? new Date(
-                                  bookingData.bookingDate,
-                                ).toLocaleDateString("en-IN")
+                                bookingData.bookingDate,
+                              ).toLocaleDateString("en-IN")
                               : "—"
                           }
                           readOnly
@@ -2868,10 +2925,10 @@ const BookServicesLayer = () => {
               </div>
             )}
             {(
-  (isSupervisorHead || isAdmin) &&
-  employeeData?.DepartmentName !== "Support" &&
-  (hasNewItem || hasEdits)
-) && (
+              (isSupervisorHead || isAdmin) &&
+              employeeData?.DepartmentName !== "Support" &&
+              (hasNewItem || hasEdits)
+            ) && (
                 <div className="text-danger text-center mt-2 fw-semibold">
                   You’ve added new items. Please submit them first to proceed
                   with booking confirmation.

@@ -551,7 +551,7 @@ const DealerBookingsView = () => {
             min={0}
             placeholder="0"
             value={row.dealerBasePrice === "" || row.dealerBasePrice === 0 ? "" : row.dealerBasePrice}
-            disabled={row.isDealer_Confirm === "Pending"}
+            disabled={row.isDealer_Confirm === "Pending" || row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted"}
             onChange={(e) => {
               const val = e.target.value;
 
@@ -627,7 +627,7 @@ const DealerBookingsView = () => {
             min={1}
             placeholder="1"
             value={row.quantity === "" ? "" : row.quantity}
-            disabled={row.isDealer_Confirm === "Pending"}
+            disabled={row.isDealer_Confirm === "Pending" || row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted"}
             onChange={(e) => {
               const val = e.target.value;
 
@@ -701,7 +701,7 @@ const DealerBookingsView = () => {
             className="form-control form-control-sm"
             placeholder="0"
             value={row.dealerSparePrice === "" || row.dealerSparePrice === 0 ? "" : Number(row.dealerSparePrice).toFixed(2)}
-            disabled={row.isDealer_Confirm === "Pending"}
+            disabled={row.isDealer_Confirm === "Pending" || row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted"}
             onChange={(e) => {
               const val = e.target.value;
 
@@ -771,7 +771,7 @@ const DealerBookingsView = () => {
             placeholder="0"
             value={row.dealerServicePrice === "" || row.dealerServicePrice === 0 ? "" : row.dealerServicePrice}
             min={0}
-            disabled={row.isDealer_Confirm === "Pending"}
+            disabled={row.isDealer_Confirm === "Pending" || row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted"}
             onChange={(e) => {
               const val = e.target.value;
 
@@ -841,7 +841,7 @@ const DealerBookingsView = () => {
             placeholder="0"
             value={row.gstPercent === "" || row.gstPercent === 0 ? "" : row.gstPercent}
             min={0}
-            disabled={row.isDealer_Confirm === "Pending"}
+            disabled={row.isDealer_Confirm === "Pending" || row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted"}
             onChange={(e) => {
               const val = e.target.value;
 
@@ -918,7 +918,7 @@ const DealerBookingsView = () => {
             placeholder="0"
             // step="0.01"
             value={row.gstPrice === "" || row.gstPrice === 0 ? "" : (row.gstPrice !== null && row.gstPrice !== undefined && row.gstPrice !== "" ? Number(row.gstPrice).toFixed(2) : "")}
-            disabled={row.isDealer_Confirm === "Pending"}
+            disabled={row.isDealer_Confirm === "Pending" || row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted"}
             onChange={(e) => {
               const val = e.target.value;
 
@@ -1038,7 +1038,7 @@ const DealerBookingsView = () => {
     },
 
     {
-      name: "Status",
+      name: "Cust. Status",
       selector: (row) => (row.isInclude ? "" : row.status),
       right: true,
       width: "130px",
