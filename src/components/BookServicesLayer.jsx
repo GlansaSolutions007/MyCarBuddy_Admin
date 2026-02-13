@@ -2239,10 +2239,10 @@ const BookServicesLayer = () => {
               handleStatusChange(row.addedItemsIndex, e.target.value)
             }
           >
+            <option value="Pending">Pending</option>
             <option value="ServiceCompleted">Completed</option>
             <option value="Rework">Rework</option>
             <option value="InProgress">In-Progress</option>
-            <option value="Clarification">Clarification</option>
           </select>
         )}
       </div>

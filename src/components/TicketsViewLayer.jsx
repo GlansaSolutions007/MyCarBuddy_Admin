@@ -230,7 +230,7 @@ const TicketsViewLayer = () => {
   const filteredTickets = tickets.filter((ticket) => {
     const text = searchText.toLowerCase();
     const statusName = (
-      ticket?.TrackingHistory?.[0]?.StatusName || ""
+      ticket?.TrackingHistory?.[0]?.StatusName || ticket?.StatusName || ""
     ).toLowerCase();
     // const statusMatch =
     //   selectedStatus === "All" || statusName === selectedStatus.toLowerCase();

@@ -756,6 +756,93 @@ const BookingViewLayer = () => {
     });
   };
 
+  const dealer = localStorage.getItem("role") || "Admin";
+
+  const handleServiceCompleted = async (addon) => {
+    const addOnID = addon?.AddOnID ?? addon?.addOnID;
+    if (!addOnID) {
+      Swal.fire("Error", "AddOn ID not found", "error");
+      return;
+    }
+    const confirmResult = await Swal.fire({
+      title: "Mark as Completed?",
+      text: "This will set the service status to Completed.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Complete",
+      cancelButtonText: "Cancel",
+    });
+    if (!confirmResult.isConfirmed) return;
+    try {
+      const payload = {
+        addOnID: addOnID,
+        is_Completed: true,
+        completedBy: parseInt(localStorage.getItem("userId")) || 0,
+        completedRole: dealer,
+        statusName: "ServiceCompleted",
+      };
+      const response = await axios.put(
+        `${API_BASE}Supervisor/UpdateAddOnCompletion`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      if (response.status === 200 || response.status === 201) {
+        Swal.fire("Success!", "Service marked as completed.", "success");
+        await fetchBookingData();
+      }
+    } catch (error) {
+      console.error(error);
+      Swal.fire(
+        "Error",
+        error.response?.data?.message || "Failed to update service completion",
+        "error",
+      );
+    }
+  };
+
+  const handleAddOnStatusChange = async (addon, selectedStatus) => {
+    const addOnID = addon?.AddOnID ?? addon?.addOnID;
+    if (!addOnID) {
+      Swal.fire("Error", "AddOn ID not found", "error");
+      return;
+    }
+    try {
+      const payload = {
+        addOnID: addOnID,
+        is_Completed: selectedStatus === "ServiceCompleted",
+        completedBy: parseInt(localStorage.getItem("userId")) || 0,
+        completedRole: dealer,
+        statusName: selectedStatus,
+      };
+      const response = await axios.put(
+        `${API_BASE}Supervisor/UpdateAddOnCompletion`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      if (response.status === 200 || response.status === 201) {
+        Swal.fire("Success!", "Status updated successfully.", "success");
+        await fetchBookingData();
+      }
+    } catch (error) {
+      console.error(error);
+      Swal.fire(
+        "Error",
+        error.response?.data?.message || "Failed to update status",
+        "error",
+      );
+    }
+  };
+
   const handleFinalSubmitToMain = async () => {
     if (!previewServices.length) {
       Swal.fire("Error", "No services to submit!", "error");
@@ -1652,18 +1739,19 @@ const BookingViewLayer = () => {
                 >
                   View Lead
                 </Link>
-                <button
-                                  className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                  onClick={handleCustomerConfirmation}
-                                >
-                                  Customer Confirmation
-                  </button>
+               
                 {/* Reschedule & Reassign Buttons */}
                 {bookingData &&
                   !["Completed", "Cancelled", "Refunded"].includes(
                     bookingData.BookingStatus,
                   ) && (
                     <div className="d-flex gap-2 flex-wrap">
+                       <button
+                                  className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                                  onClick={handleCustomerConfirmation}
+                                >
+                                  Customer Confirmation
+                  </button>
                       <button
                         className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                         onClick={() => setShowReschedule(!showReschedule)}
@@ -2046,6 +2134,12 @@ const BookingViewLayer = () => {
                                           Selected Dealer
                                         </th>
                                         <th
+                                          style={{ width: "160px" }}
+                                          className="text-center"
+                                        >
+                                          Service Status
+                                        </th>
+                                        <th
                                           style={{ width: "100px" }}
                                           className="text-end"
                                         >
@@ -2166,6 +2260,37 @@ const BookingViewLayer = () => {
                                               }}
                                             >
                                               {addon.DealerName || "—"}
+                                            </td>
+                                            <td className="text-center align-middle">
+                                              {(() => {
+                                                const isApproved =
+                                                  (addon.IsDealer_Confirm ?? addon.isDealer_Confirm)
+                                                    ?.toString()
+                                                    .trim()
+                                                    .toLowerCase() === "approved";
+                                                const status = (addon.StatusName ?? addon.statusName ?? addon.AddOnStatus ?? addon.addOnStatus)
+                                                  ?.toString()
+                                                  .trim();
+                                                return (
+                                                  <div className="d-flex gap-2 align-items-center justify-content-center">
+                                                    {isApproved && (
+                                                      <select
+                                                        className="form-select form-select-sm"
+                                                        value={status}
+                                                        onChange={(e) =>
+                                                          handleAddOnStatusChange(addon, e.target.value)
+                                                        }
+                                                      >
+                                                        <option value="">Select Status</option>
+                                                        <option value="Pending">Pending</option>
+                                                        <option value="ServiceCompleted">Completed</option>
+                                                        <option value="Rework">Rework</option>
+                                                        <option value="InProgress">In-Progress</option>
+                                                      </select>
+                                                    )}
+                                                  </div>
+                                                );
+                                              })()}
                                             </td>
                                             <td className="text-end fw-bold text-primary">
                                               {Number(
