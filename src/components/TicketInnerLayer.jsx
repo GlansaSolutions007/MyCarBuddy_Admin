@@ -592,6 +592,19 @@ const TicketInnerLayer = () => {
                           {ticket.BookingDetails?.BookingTrackID || "-"}
                         </div>
                         <div className="col-sm-6 mb-10">
+                          <strong>Lead ID:</strong>{" "}
+                          {ticket.LeadId ? (
+                            <Link
+                              to={`/lead-view/${ticket.LeadId}`}
+                              className="text-primary text-decoration-underline"
+                            >
+                              {ticket.LeadId}
+                            </Link>
+                          ) : (
+                            "-"
+                          )}
+                        </div>
+                        <div className="col-sm-6 mb-10">
                           <strong>Date:</strong>{" "}
                           {ticket.BookingDetails?.BookingDate || "-"}
                         </div>

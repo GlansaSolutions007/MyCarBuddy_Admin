@@ -688,8 +688,8 @@ const OrganicLeadsLayer = () => {
 
   // 2. Initial load and Page Change listener
   useEffect(() => {
-    // 🚫 If searching, don't call normal API
     if (isSearching) return;
+    if (totalRows === 0 && allLeads.length === 0) return;
 
     const startItem = (pageNumber - 1) * pageSize;
     const endItem = pageNumber * pageSize;
@@ -699,7 +699,7 @@ const OrganicLeadsLayer = () => {
     if (slice.length === 0) {
       fetchLeadsChunk(pageNumber);
     }
-  }, [pageNumber, pageSize, allLeads, fetchLeadsChunk, isSearching]);
+  }, [pageNumber, pageSize]);
 
 
   useEffect(() => {
@@ -810,71 +810,71 @@ const OrganicLeadsLayer = () => {
 
   // Excel Export Logic (Preserved)
   const exportToExcel = async () => {
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    let queryParams = "";
+      let queryParams = "";
 
-    // search text
-    if (searchText) {
-      queryParams += `&searchText=${encodeURIComponent(searchText)}`;
+      // search text
+      if (searchText) {
+        queryParams += `&searchText=${encodeURIComponent(searchText)}`;
+      }
+
+      // platform filter
+      if (platformFilter !== "All") {
+        queryParams += `&platform=${platformFilter}`;
+      }
+
+      // date filters
+      if (fromDate) {
+        queryParams += `&fromDate=${fromDate}`;
+      }
+
+      if (toDate) {
+        queryParams += `&toDate=${toDate}`;
+      }
+
+      if (fromDate || toDate) {
+        const apiDateType =
+          dateType === "updated"
+            ? "UpdatedDate"
+            : "CreatedDate";
+
+        queryParams += `&DateType=${apiDateType}`;
+      }
+
+      let url;
+
+      if (role === "Admin") {
+        url = `${API_BASE}ServiceLeads/ExportLeadsWithQuestions?${queryParams}`;
+      } else {
+        url = `${API_BASE}ServiceLeads/ExportLeadsWithQuestions?${queryParams}&EmployeeId=${employeeData?.Id}&RoleName=${employeeData?.RoleName}`;
+      }
+
+      const response = await axios.get(url, {
+        responseType: "blob",
+      });
+
+      // Create download link
+      const blob = new Blob([response.data]);
+      const downloadUrl = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `leads_export_${Date.now()}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+
+    } catch (error) {
+      console.error(error);
+      Swal.fire("Error", "Excel export failed", "error");
+    } finally {
+      setLoading(false);
     }
-
-    // platform filter
-    if (platformFilter !== "All") {
-      queryParams += `&platform=${platformFilter}`;
-    }
-
-    // date filters
-    if (fromDate) {
-      queryParams += `&fromDate=${fromDate}`;
-    }
-
-    if (toDate) {
-      queryParams += `&toDate=${toDate}`;
-    }
-
-    if (fromDate || toDate) {
-      const apiDateType =
-        dateType === "updated"
-          ? "UpdatedDate"
-          : "CreatedDate";
-
-      queryParams += `&DateType=${apiDateType}`;
-    }
-
-    let url;
-
-    if (role === "Admin") {
-      url = `${API_BASE}ServiceLeads/ExportLeadsWithQuestions?${queryParams}`;
-    } else {
-      url = `${API_BASE}ServiceLeads/ExportLeadsWithQuestions?${queryParams}&EmployeeId=${employeeData?.Id}&RoleName=${employeeData?.RoleName}`;
-    }
-
-    const response = await axios.get(url, {
-      responseType: "blob",
-    });
-
-    // Create download link
-    const blob = new Blob([response.data]);
-    const downloadUrl = window.URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = downloadUrl;
-    link.download = `leads_export_${Date.now()}.xlsx`;
-    document.body.appendChild(link);
-    link.click();
-
-    link.remove();
-    window.URL.revokeObjectURL(downloadUrl);
-
-  } catch (error) {
-    console.error(error);
-    Swal.fire("Error", "Excel export failed", "error");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
 
   const handleBulkUpload = async (e) => {

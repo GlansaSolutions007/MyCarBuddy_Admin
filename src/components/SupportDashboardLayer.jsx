@@ -121,6 +121,21 @@ const SupportDashboardLayer = () => {
                 </div>
               </div>
 
+              {/* Card 2.1 */}
+              <div className="col">
+                <div className="card shadow-none border bg-gradient-start-3 h-100">
+                  <div className="card-body p-20">
+                    <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                      <div><p className="fw-medium text-primary-light mb-1">Not Interested</p>
+                      <h6 className="mb-0">{dashboardData.notInterested}</h6></div>
+                      <div className="w-50-px h-50-px bg-success-main rounded-circle d-flex justify-content-center align-items-center">
+                        <Icon icon="solar:heart-bold" className="text-white text-2xl" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Card 3 */}
               <div className="col">
                 <div className="card shadow-none border bg-gradient-start-3 h-100">

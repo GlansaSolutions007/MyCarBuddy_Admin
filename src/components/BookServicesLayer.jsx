@@ -380,45 +380,45 @@ const BookServicesLayer = () => {
   };
 
   const handleStatusChange = async (index, selectedStatus) => {
-  const item = addedItems[index];
+    const item = addedItems[index];
 
-  if (!item?._apiId) {
-    return Swal.fire("Error", "AddOn ID not found", "error");
-  }
-
-  try {
-    const payload = {
-      addOnID: item._apiId,
-      is_Completed: selectedStatus === "ServiceCompleted",
-      completedBy: parseInt(localStorage.getItem("userId")) || 0,
-      completedRole: dealer,
-      statusName: selectedStatus,
-    };
-
-    const response = await axios.put(
-      `${API_BASE}Supervisor/UpdateAddOnCompletion`,
-      payload,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    if (response.status === 200 || response.status === 201) {
-      Swal.fire("Success!", "Status updated successfully.", "success");
-      await fetchBookingData();
+    if (!item?._apiId) {
+      return Swal.fire("Error", "AddOn ID not found", "error");
     }
-  } catch (error) {
-    console.error(error);
-    Swal.fire(
-      "Error",
-      error.response?.data?.message || "Failed to update status",
-      "error"
-    );
-  }
-};
+
+    try {
+      const payload = {
+        addOnID: item._apiId,
+        is_Completed: selectedStatus === "ServiceCompleted",
+        completedBy: parseInt(localStorage.getItem("userId")) || 0,
+        completedRole: dealer,
+        statusName: selectedStatus,
+      };
+
+      const response = await axios.put(
+        `${API_BASE}Supervisor/UpdateAddOnCompletion`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        Swal.fire("Success!", "Status updated successfully.", "success");
+        await fetchBookingData();
+      }
+    } catch (error) {
+      console.error(error);
+      Swal.fire(
+        "Error",
+        error.response?.data?.message || "Failed to update status",
+        "error"
+      );
+    }
+  };
 
 
   const fetchAllPackages = async () => {
@@ -1159,6 +1159,16 @@ const BookServicesLayer = () => {
   };
 
   const handleRemoveItem = (index) => {
+    // NEW CONDITION: Check if only one service exists
+    if (addedItems.length === 1) {
+      Swal.fire({
+        icon: "error",
+        title: "Cannot Delete",
+        text: "Single service cannot be deleted. At least one service is required.",
+      });
+      return; // Exit the function early
+    }
+
     const item = addedItems[index];
     Swal.fire({
       title: "Are you sure?",
@@ -1168,6 +1178,7 @@ const BookServicesLayer = () => {
       confirmButtonText: "Yes, remove",
     }).then(async (result) => {
       if (!result.isConfirmed) return;
+
       // CASE 1: DELETE FROM API (existing booking item)
       if (item._apiId) {
         try {
@@ -1175,7 +1186,7 @@ const BookServicesLayer = () => {
             `${API_BASE}Supervisor/Id?id=${item._apiId}`,
             {
               headers: token ? { Authorization: `Bearer ${token}` } : {},
-            },
+            }
           );
 
           if (response.status === 200) {
@@ -2204,53 +2215,53 @@ const BookServicesLayer = () => {
       width: "120px",
       sortable: true,
     },
-     {
-  name: "Service Status",
-  width: "160px",
-  cell: (row) => {
-    const isApproved =
-      row.isDealer_Confirm?.toString().trim().toLowerCase() === "approved";
+    {
+      name: "Service Status",
+      width: "160px",
+      cell: (row) => {
+        const isApproved =
+          row.isDealer_Confirm?.toString().trim().toLowerCase() === "approved";
 
-    const status = row.addOnStatus?.toString().trim();
+        const status = row.addOnStatus?.toString().trim();
 
-    const isCompleted =
-      status?.toLowerCase() === "servicecompleted";
+        const isCompleted =
+          status?.toLowerCase() === "servicecompleted";
 
-    return !row.isInclude ? (
-      <div className="d-flex gap-2 align-items-center">
+        return !row.isInclude ? (
+          <div className="d-flex gap-2 align-items-center">
 
-        {/* ✅ If Approved AND status is NULL → Show Complete Button */}
-        {isApproved && !status && (
-          <button
-            className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-            onClick={() => handleServiceCompleted(row.addedItemsIndex)}
-            title="Mark as Completed"
-          >
-            <Icon icon="mingcute:check-circle-fill" />
-          </button>
-        )}
+            {/* ✅ If Approved AND status is NULL → Show Complete Button */}
+            {isApproved && !status && (
+              <button
+                className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                onClick={() => handleServiceCompleted(row.addedItemsIndex)}
+                title="Mark as Completed"
+              >
+                <Icon icon="mingcute:check-circle-fill" />
+              </button>
+            )}
 
-        {/* ✅ If status exists → Show Dropdown */}
-        {isApproved && status && (
-          <select
-            className="form-select form-select-sm"
-            value={status}
-            onChange={(e) =>
-              handleStatusChange(row.addedItemsIndex, e.target.value)
-            }
-          >
-            <option value="Pending">Pending</option>
-            <option value="ServiceCompleted">Completed</option>
-            <option value="Rework">Rework</option>
-            <option value="InProgress">In-Progress</option>
-          </select>
-        )}
-      </div>
-    ) : null;
-  },
-  ignoreRowClick: true,
-  allowOverflow: true,
-},
+            {/* ✅ If status exists → Show Dropdown */}
+            {isApproved && status && (
+              <select
+                className="form-select form-select-sm"
+                value={status}
+                onChange={(e) =>
+                  handleStatusChange(row.addedItemsIndex, e.target.value)
+                }
+              >
+                <option value="Pending">Pending</option>
+                <option value="ServiceCompleted">Completed</option>
+                <option value="Rework">Rework</option>
+                <option value="InProgress">In-Progress</option>
+              </select>
+            )}
+          </div>
+        ) : null;
+      },
+      ignoreRowClick: true,
+      allowOverflow: true,
+    },
     {
       name: "Actions",
       cell: (row) => {
@@ -2279,7 +2290,7 @@ const BookServicesLayer = () => {
       ignoreRowClick: true,
       allowOverflow: true,
     },
-   
+
   ];
 
   const itemTotal = addedItems.reduce((sum, item) => {
