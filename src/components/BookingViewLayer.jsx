@@ -1131,7 +1131,7 @@ const BookingViewLayer = () => {
     hasAtLeastOneService &&
     (bookingData?.BookingAddOns || []).every(isSupervisorConfirmed) &&
     (bookingData?.SupervisorBookings || []).every(isSupervisorConfirmed);
-  const showEstimationButton = hasAtLeastOneService && allSupervisorConfirmed;
+  const showEstimationButton = allSupervisorConfirmed;
   const showFinalButton = remainingAmount === 0 && hasAtLeastOneService && allSupervisorConfirmed && totalAmount > 0;
   const showEnterPaymentButton = remainingAmount > 0 && hasAtLeastOneService && allSupervisorConfirmed && totalAmount > 0;
   const showDealerInvoiceButton =  hasAtLeastOneService && allSupervisorConfirmed && totalAmount > 0;

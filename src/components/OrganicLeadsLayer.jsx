@@ -1010,87 +1010,135 @@ const OrganicLeadsLayer = () => {
       <div className="col-12">
         <div className="card overflow-hidden py-3">
           <div className="card-header">
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <form className="navbar-search ">
-                <input
-                  type="text"
-                  className="form-control w-auto"
-                  placeholder="Search Leads, Name, Phone, Email..."
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                />
-                <Icon icon="ion:search-outline" className="icon" />
-              </form>
-              <div className="d-flex gap-2 align-items-center">
-                <div className="d-flex align-items-center gap-2">
-                  <div className="d-flex align-items-center gap-2">
-                    <label className="text-sm fw-semibold mb-0">
-                      Lead Status:
-                    </label>
-                    <select
-                      className="form-control radius-8 px-14 py-6 text-sm w-auto"
-                      value={callOutcome}
-                      onChange={(e) => setCallOutcome(e.target.value)}
-                    >
-                      <option value="">All</option>
-                      <option value="Interested">Interested</option>
-                      <option value="Not Interested">Not Interested</option>
-                      <option value="No Follow Up">No Follow Up</option>
-                      <option value="Need More Info">Need More Info</option>
-                      <option value="Converted to Customer">Converted to Customer</option>
-                      <option value="Not Converted">Not Converted</option>
-                      <option value="Not Having Car">Not Having Car</option>
-                      <option value="Ringing But Not Responded">Ringing But Not Responded</option>
-                      <option value="Busy">Busy</option>
-                      <option value="Not Reachable">Not Reachable</option>
-                      <option value="Switched Off">Switched Off</option>
-                      <option value="Temporary Out of Service">Temporary Out of Service</option>
-                      <option value="Number Does Not Exist">Number Does Not Exist</option>
-                      <option value="DND">DND</option>
-                    </select>
-                  </div>
-                  <label className="text-sm fw-semibold mb-0">Date Type:</label>
-                  <div className="position-relative d-inline-block">
-                    <select
-                      className="form-control radius-8 px-14 py-6 text-sm w-auto"
-                      value={dateType}
-                      onChange={(e) => setDateType(e.target.value)}
-                    >
-                      <option value="created">Created Date</option>
-                      <option value="updated">Updated Date</option>
-                    </select>
-                  </div>
+            <div className="d-flex flex-column gap-2">
+
+              {/* 🔹 First Row */}
+              <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+                {/* Search */}
+                <form className="navbar-search">
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Search Leads, Name, Phone, Email..."
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                  />
+                  <Icon icon="ion:search-outline" className="icon" />
+                </form>
+
+                {/* Lead Status + Date Type */}
+                <div className="d-flex align-items-center gap-2 flex-wrap">
+                  <label className="text-sm fw-semibold mb-0">
+                    Lead Status:
+                  </label>
+
+                  <select
+                    className="form-control radius-8 px-14 py-6 text-sm w-auto"
+                    value={callOutcome}
+                    onChange={(e) => setCallOutcome(e.target.value)}
+                  >
+                    <option value="">All</option>
+                    <option value="Interested">Interested</option>
+                    <option value="Not Interested">Not Interested</option>
+                    <option value="No Follow Up">No Follow Up</option>
+                    <option value="Need More Info">Need More Info</option>
+                    <option value="Converted to Customer">Converted to Customer</option>
+                    <option value="Not Converted">Not Converted</option>
+                    <option value="Not Having Car">Not Having Car</option>
+                    <option value="Ringing But Not Responded">Ringing But Not Responded</option>
+                    <option value="Busy">Busy</option>
+                    <option value="Not Reachable">Not Reachable</option>
+                    <option value="Switched Off">Switched Off</option>
+                    <option value="Temporary Out of Service">Temporary Out of Service</option>
+                    <option value="Number Does Not Exist">Number Does Not Exist</option>
+                    <option value="DND">DND</option>
+                  </select>
+
+                  <label className="text-sm fw-semibold mb-0">
+                    Date Type:
+                  </label>
+
+                  <select
+                    className="form-control radius-8 px-14 py-6 text-sm w-auto"
+                    value={dateType}
+                    onChange={(e) => setDateType(e.target.value)}
+                  >
+                    <option value="created">Created Date</option>
+                    <option value="updated">Updated Date</option>
+                  </select>
+                  <label className="text-sm fw-semibold mb-0">Platform:</label>
+                  <select
+                    className="form-control radius-8 px-14 py-6 text-sm w-auto"
+                    value={platformFilter}
+                    onChange={(e) => setPlatformFilter(e.target.value)}
+                  >
+                    <option value="All">All</option>
+                    <option value="Organic">Organic</option>
+                    <option value="Web">Web</option>
+                    <option value="App">App</option>
+                  </select>
                 </div>
-                <label className="text-sm fw-semibold mb-0">From:</label>
-                <input type="date" className="form-control radius-8 px-14 py-6 text-sm w-auto" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
-                <label className="text-sm fw-semibold mb-0">To:</label>
-                <input type="date" className="form-control radius-8 px-14 py-6 text-sm w-auto" value={toDate} onChange={(e) => setToDate(e.target.value)} />
-
-                <select className="form-control radius-8 px-14 py-6 text-sm w-auto" value={platformFilter} onChange={(e) => setPlatformFilter(e.target.value)}>
-                  <option value="All">All</option>
-                  <option value="Organic">Organic</option>
-                  <option value="Web">Web</option>
-                  <option value="App">App</option>
-                </select>
-
-                <input type="file" id="organicUpload" style={{ display: "none" }} onChange={handleBulkUpload} />
-
-                {(role === "Admin" || roleName === "Telecaller Head") && (
-                  <button className="btn btn-primary-600 radius-8 px-14 py-6 text-sm" onClick={() => document.getElementById("organicUpload").click()} disabled={uploading}>
-                    <Icon icon="mdi:upload" className="icon text-xl" /> Bulk Upload
-                  </button>
-                )}
-
-                {hasPermission("createlead_add") && (
-                  <Link to="/create-lead" className="btn btn-primary-600 radius-8 px-14 py-6 text-sm">
-                    <Icon icon="ic:baseline-plus" className="icon text-xl" /> Add Lead
-                  </Link>
-                )}
-
-                <button className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center" onClick={exportToExcel}>
-                  <Icon icon="mdi:microsoft-excel" width="22" height="22" />
-                </button>
               </div>
+
+              {/* 🔹 Second Row */}
+              <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+                {/* ✅ LEFT SIDE */}
+                <div className="d-flex align-items-center gap-2 flex-wrap">
+                  <label className="text-sm fw-semibold mb-0">From:</label>
+                  <input
+                    type="date"
+                    className="form-control radius-8 px-14 py-6 text-sm w-auto"
+                    value={fromDate}
+                    onChange={(e) => setFromDate(e.target.value)}
+                  />
+
+                  <label className="text-sm fw-semibold mb-0">To:</label>
+                  <input
+                    type="date"
+                    className="form-control radius-8 px-14 py-6 text-sm w-auto"
+                    value={toDate}
+                    onChange={(e) => setToDate(e.target.value)}
+                  />
+
+
+                </div>
+
+                {/* ✅ RIGHT SIDE */}
+                <div className="d-flex align-items-center gap-2 flex-wrap">
+
+                  {(role === "Admin" || roleName === "Telecaller Head") && (
+                    <button
+                      className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
+                      onClick={() =>
+                        document.getElementById("organicUpload").click()
+                      }
+                      disabled={uploading}
+                    >
+                      <Icon icon="mdi:upload" className="icon text-xl" /> Bulk Upload
+                    </button>
+                  )}
+
+                  {hasPermission("createlead_add") && (
+                    <Link
+                      to="/create-lead"
+                      className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
+                    >
+                      <Icon icon="ic:baseline-plus" className="icon text-xl" /> Add Lead
+                    </Link>
+                  )}
+
+                  <button
+                    className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                    onClick={exportToExcel}
+                  >
+                    <Icon icon="mdi:microsoft-excel" width="22" height="22" />
+                  </button>
+
+                </div>
+              </div>
+
             </div>
           </div>
 
