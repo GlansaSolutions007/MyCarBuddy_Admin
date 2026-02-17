@@ -216,6 +216,7 @@ function App() {
           <Route exact path='/leads' element={<LeadsPage />} />
           <Route exact path='/create-lead' element={<AddLeadPage />} />
           <Route exact path='/organic-leads' element={<OrganicLeadsPage />} />
+          <Route path="/organic-leads/:status" element={<OrganicLeadsPage />} />
           <Route exact path='/departments' element={<DepartmentsPage />} />
           <Route exact path="/contacts" element={<Contacts />} />
           <Route exact path="/dealer-service-price" element={<DealerServiceP />} />

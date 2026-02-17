@@ -615,7 +615,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { Icon } from "@iconify/react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { usePermissions } from "../context/PermissionContext";
 import * as XLSX from "xlsx";
@@ -645,6 +645,9 @@ const OrganicLeadsLayer = () => {
   const [totalRows, setTotalRows] = useState(0);
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [callOutcome, setCallOutcome] = useState("");
+  const { status } = useParams();
+  const decodedStatus = status ? decodeURIComponent(status) : "";
 
   // 1. Core Fetch Logic (Handles Chunking)
   const fetchLeadsChunk = useCallback(async (targetPage) => {
@@ -710,7 +713,8 @@ const OrganicLeadsLayer = () => {
         searchText ||
         platformFilter !== "All" ||
         fromDate ||
-        toDate
+        toDate ||
+        callOutcome
       ) {
         setPageNumber(1);
         fetchSearchLeads(searchText, 1);
@@ -724,7 +728,7 @@ const OrganicLeadsLayer = () => {
 
     return () => clearTimeout(delayDebounce);
 
-  }, [searchText, platformFilter, fromDate, toDate, dateType]);
+  }, [searchText, platformFilter, fromDate, toDate, dateType, callOutcome]);
 
   // Reset logic when filters change
   useEffect(() => {
@@ -767,13 +771,44 @@ const OrganicLeadsLayer = () => {
   const columns = [
     {
       name: "Lead ID",
-      selector: (row) => <Link to={`/lead-view/${row.Id}`} className="text-primary">{row.Id}</Link>,
+      cell: (row) => (
+        <div
+          className="d-flex align-items-center gap-1"
+          style={{ cursor: "pointer" }}
+          onMouseEnter={(e) => {
+            const arrow = e.currentTarget.querySelector(".arrow-icon");
+            if (arrow) arrow.style.transform = "translateX(8px)";
+          }}
+          onMouseLeave={(e) => {
+            const arrow = e.currentTarget.querySelector(".arrow-icon");
+            if (arrow) arrow.style.transform = "translateX(0px)";
+          }}
+        >
+          <Link
+            to={`/lead-view/${row.Id}`}
+            className="text-primary fw-semibold d-flex align-items-center"
+            style={{ textDecoration: "none" }}
+          >
+            {row.Id}
+          </Link>
+
+          <Icon
+            icon="mdi:arrow-right"
+            width="18"
+            className="text-primary arrow-icon"
+            style={{
+              transition: "transform 0.3s ease",
+            }}
+          />
+        </div>
+      ),
       sortable: true,
-      width: "120px",
+      width: "150px",
     },
     { name: "Customer Name", selector: (row) => row.FullName || "-", sortable: true, wrap: true, width: "180px" },
     { name: "Phone Number", selector: (row) => row.PhoneNumber || "-", sortable: true, width: "150px" },
     { name: "Email", selector: (row) => row.Email || "-", sortable: true, wrap: true, width: "180px" },
+    { name: "Lead Status", selector: (row) => row.FollowUpStatus || "No FollowUp Yet", width: "180px" },
     {
       name: "Created Date",
       selector: (row) => row.CreatedDate ? new Date(row.CreatedDate).toLocaleString("en-GB") : "-",
@@ -794,7 +829,6 @@ const OrganicLeadsLayer = () => {
       },
       minWidth: "200px",
     },
-    { name: "Lead Status", selector: (row) => row.FollowUpStatus || "No FollowUp Yet", width: "180px" },
     ...(hasPermission("leadview_view") ? [
       {
         name: "Action",
@@ -913,6 +947,10 @@ const OrganicLeadsLayer = () => {
         queryParams += `&platform=${platformFilter}`;
       }
 
+      if (callOutcome) {
+        queryParams += `&Status=${encodeURIComponent(callOutcome)}`;
+      }
+
       // ✅ NEW → Date Filters (SERVER SIDE)
       if (fromDate) {
         queryParams += `&fromDate=${fromDate}`;
@@ -953,6 +991,19 @@ const OrganicLeadsLayer = () => {
 
   }, [role, employeeData, platformFilter, fromDate, toDate, dateType]);
 
+  useEffect(() => {
+    if (decodedStatus) {
+      setCallOutcome(decodedStatus);   // set dropdown
+      setSearchText("");               // optional reset
+      setPlatformFilter("All");        // optional reset
+      setFromDate("");
+      setToDate("");
+      setPageNumber(1);
+    } else {
+      setCallOutcome("");
+    }
+  }, [decodedStatus]);
+
 
   return (
     <div className="row gy-4">
@@ -972,6 +1023,32 @@ const OrganicLeadsLayer = () => {
               </form>
               <div className="d-flex gap-2 align-items-center">
                 <div className="d-flex align-items-center gap-2">
+                  <div className="d-flex align-items-center gap-2">
+                    <label className="text-sm fw-semibold mb-0">
+                      Lead Status:
+                    </label>
+                    <select
+                      className="form-control radius-8 px-14 py-6 text-sm w-auto"
+                      value={callOutcome}
+                      onChange={(e) => setCallOutcome(e.target.value)}
+                    >
+                      <option value="">All</option>
+                      <option value="Interested">Interested</option>
+                      <option value="Not Interested">Not Interested</option>
+                      <option value="No Follow Up">No Follow Up</option>
+                      <option value="Need More Info">Need More Info</option>
+                      <option value="Converted to Customer">Converted to Customer</option>
+                      <option value="Not Converted">Not Converted</option>
+                      <option value="Not Having Car">Not Having Car</option>
+                      <option value="Ringing But Not Responded">Ringing But Not Responded</option>
+                      <option value="Busy">Busy</option>
+                      <option value="Not Reachable">Not Reachable</option>
+                      <option value="Switched Off">Switched Off</option>
+                      <option value="Temporary Out of Service">Temporary Out of Service</option>
+                      <option value="Number Does Not Exist">Number Does Not Exist</option>
+                      <option value="DND">DND</option>
+                    </select>
+                  </div>
                   <label className="text-sm fw-semibold mb-0">Date Type:</label>
                   <div className="position-relative d-inline-block">
                     <select
