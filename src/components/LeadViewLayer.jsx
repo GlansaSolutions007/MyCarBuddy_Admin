@@ -1250,6 +1250,9 @@ const LeadViewLayer = () => {
                               <option value="Ok for Inspection">
                                 Ok for Inspection
                               </option>
+                              <option value="Ok for Service">
+                                Ok for Service
+                              </option>
                               <option value="Schedule Meeting">
                                 Schedule Meeting
                               </option>

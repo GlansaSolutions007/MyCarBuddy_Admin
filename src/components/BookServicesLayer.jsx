@@ -2202,10 +2202,10 @@ const BookServicesLayer = () => {
       ]
       : []),
     {
-      name: "Status",
+      name: "Customer Status",
       selector: (row) => (row.isInclude ? "" : row.status),
       right: true,
-      width: "130px",
+      width: "160px",
       sortable: true,
     },
     {
@@ -2231,15 +2231,42 @@ const BookServicesLayer = () => {
           <div className="d-flex gap-2 align-items-center">
 
             {/* ✅ If Approved AND status is NULL → Show Complete Button */}
-            {isApproved && !status && (
-              <button
-                className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                onClick={() => handleServiceCompleted(row.addedItemsIndex)}
-                title="Mark as Completed"
-              >
-                <Icon icon="mingcute:check-circle-fill" />
-              </button>
-            )}
+           {isApproved && !status && (
+  <button
+    onClick={() => handleServiceCompleted(row.addedItemsIndex)}
+    title="Mark as Completed"
+    onMouseEnter={(e) => {
+      e.currentTarget.style.backgroundColor = "#157347";
+      e.currentTarget.style.transform = "scale(1.05)";
+      e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.backgroundColor = "#20c997";
+      e.currentTarget.style.transform = "scale(1)";
+      e.currentTarget.style.boxShadow = "none";
+    }}
+    style={{
+      height: "32px",
+      backgroundColor: "#20c997",
+      color: "#fff",
+      border: "none",
+      borderRadius: "6px",
+      padding: "0 10px",
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "6px",
+      cursor: "pointer",
+      transition: "all 0.3s ease",
+      fontSize: "12px",
+      fontWeight: "500"
+    }}
+  >
+    <Icon icon="mingcute:check-circle-fill" />
+    Complete
+  </button>
+)}
+
 
             {/* ✅ If status exists → Show Dropdown */}
             {isApproved && status && (

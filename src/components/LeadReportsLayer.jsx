@@ -35,8 +35,17 @@ const LeadReportsLayer = () => {
   const [selectedExportColumns, setSelectedExportColumns] = useState(
     EXPORT_COLUMNS.map((c) => c.key),
   );
-
   const token = localStorage.getItem("token");
+
+  const employeeDataRaw = localStorage.getItem("employeeData");
+  let employeeData = null;
+  try {
+    employeeData = employeeDataRaw ? JSON.parse(employeeDataRaw) : null;
+  } catch (err) {
+    console.warn("Invalid employeeData in localStorage", err);
+  }
+  console.log("Employee Data:", employeeData?.RoleName);
+
 
   useEffect(() => {
     fetchLeads();
@@ -239,20 +248,20 @@ const LeadReportsLayer = () => {
     },
     ...(hasPermission("empleadsreport_view")
       ? [
-          {
-            name: "Actions",
-            cell: (row) => (
-              <div>
-                <Link
-                  to={`/emp-leads-report/${row.EmpId}?fromDate=${fromDate}&toDate=${toDate}`}
-                  className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                >
-                  <Icon icon="lucide:eye" />
-                </Link>
-              </div>
-            ),
-          },
-        ]
+        {
+          name: "Actions",
+          cell: (row) => (
+            <div>
+              <Link
+                to={`/emp-leads-report/${row.EmpId}?fromDate=${fromDate}&toDate=${toDate}`}
+                className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+              >
+                <Icon icon="lucide:eye" />
+              </Link>
+            </div>
+          ),
+        },
+      ]
       : []),
   ];
 
