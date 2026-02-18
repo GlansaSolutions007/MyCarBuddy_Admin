@@ -156,6 +156,7 @@ function App() {
 
           <Route exact path='/bookings' element={<BookingPage />} />
           <Route exact path='/edit-bookings/:BookingID' element={<BookingPage />} />
+          <Route exact path='/edit-bookings/:Status' element={<BookingPage />} />
 
           <Route exact path='/service-category' element={<ServiceCategoriesPage />} />
           <Route exact path='/service-subcategory1' element={<ServiceSubCategories1Page />} />
