@@ -481,6 +481,54 @@ const BookingLayer = () => {
       sortable: true,
     },
     {
+      name: "Reg. Number",
+      selector: (row) => (
+        <>
+          <span className="fw-bold">
+            {row.VehicleDetails?.[0]?.RegistrationNumber || "Not Available"}
+          </span>
+        </>
+      ),
+      width: "150px",
+      sortable: true,
+    },
+    {
+      name: "Car Brand/Model",
+      selector: (row) => (
+        <>
+          <span className="fw-bold">
+            {row.VehicleDetails?.[0]?.BrandName || "Not Available"} <br />({row.VehicleDetails?.[0]?.ModelName || ""})
+          </span>
+        </>
+      ),
+      width: "150px",
+      sortable: true,
+    },
+    {
+      name: "Car YOP",
+      selector: (row) => (
+        <>
+          <span className="fw-bold">
+            {row.VehicleDetails?.[0]?.YearOfPurchase || "Not Available"}
+          </span>
+        </>
+      ),
+      width: "150px",
+      sortable: true,
+    },
+    {
+      name: "Fuel Type",
+      selector: (row) => (
+        <>
+          <span className="fw-bold">
+            {row.VehicleDetails?.[0]?.FuelTypeName || "Not Available"}
+          </span>
+        </>
+      ),
+      width: "150px",
+      sortable: true,
+    },
+    {
       name: "Booking Status",
       cell: (row) => {
         let status = row?.BookingStatus ?? "-";
@@ -608,11 +656,19 @@ const BookingLayer = () => {
 
   // Filter columns based on role - hide Amount, Cust. Name, Booking Status, Payment Status for Dealer
   const columns = allColumns.filter((col) => {
-    if (role === "Dealer") {
-      return !["Amount", "Cust. Name", "Booking Status", "Payment Status"].includes(col.name);
-    }
-    return true;
-  });
+  // 👇 Show this column ONLY for Dealer
+  if (["Reg. Number", "Car Brand/Model", "Car YOP", "Fuel Type"].includes(col.name)) {
+    return role === "Dealer";
+  }
+
+  // 👇 Existing logic (hide some columns for Dealer)
+  if (role === "Dealer") {
+    return !["Amount", "Cust. Name", "Booking Status", "Payment Status"].includes(col.name);
+  }
+
+  return true;
+});
+
 
   const filteredBookings = bookings.filter((booking) => {
     const matchesSearch =

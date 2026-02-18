@@ -12,22 +12,12 @@ const SupervisorHeadDashboardLayer = () => {
     : null;
   const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState({
-    totalAssigned: 0,
-    noFollowUpYet: 0,
-    ringingButNotResponded: 0,
-    busy: 0,
-    notReachable: 0,
-    switchedOff: 0,
-    temporaryOutofService: 0,
-    numberDoesNotExist: 0,
-    dnd: 0,
-    interested: 0,
-    notInterested: 0,
-    needMoreInfo: 0,
-    convertedCustomer: 0,
-    notConverted: 0,
-    notHavingCar: 0,
+    totalBookings: 0,
+    todaysAssignedBookings: 0,
+    ongoingBookings: 0,
+    completedBookings: 0,
   });
+
 
   const [loading, setLoading] = useState(false);
 
@@ -40,35 +30,25 @@ const SupervisorHeadDashboardLayer = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      let url =
-        employeeData.Is_Head === 1
-          ? `${API_BASE}Leads/telecaller-headcount?headAssignId=${employeeData.Id}`
-          : `${API_BASE}Leads/telecaller-headcount?empId=${employeeData.Id}`;
 
-      const res = await axios.get(url);
+      const supervisorHeadId = employeeData?.Id;
+
+      const res = await axios.get(
+        `${API_BASE}Supervisor/supervisor-booking-summary?supervisorHeadId=${supervisorHeadId}`
+      );
 
       if (res.data && res.data.length > 0) {
         const data = res.data[0];
+
         setDashboardData({
-          totalAssigned: data.TotalAssigned || 0,
-          noFollowUpYet: data.NoFollowUpYet || 0,
-          ringingButNotResponded: data.RingingButNotResponded || 0,
-          busy: data.Busy || 0,
-          notReachable: data.NotReachable || 0,
-          switchedOff: data.SwitchedOff || 0,
-          temporaryOutofService: data.TemporaryOutofService || 0,
-          numberDoesNotExist: data.NumberDoesNotExist || 0,
-          dnd: data.DND || 0,
-          interested: data.Interested || 0,
-          notInterested: data.NotInterested || 0,
-          needMoreInfo: data.NeedMoreInfo || 0,
-          convertedCustomer: data.ConvertedCustomer || 0,
-          notConverted: data.NotConverted || 0,
-          notHavingCar: data.NotHavingCar || 0,
+          totalBookings: data.TotalBookings || 0,
+          todaysAssignedBookings: data.TodaysAssignedBookings || 0,
+          ongoingBookings: data.OngoingBookings || 0,
+          completedBookings: data.CompletedBookings || 0,
         });
       }
     } catch (error) {
-      console.error("Dashboard API error:", error);
+      console.error("Supervisor summary API error:", error);
     } finally {
       setLoading(false);
     }
@@ -76,7 +56,7 @@ const SupervisorHeadDashboardLayer = () => {
 
   const handleCardClick = (statusName) => {
     const encodedStatus = encodeURIComponent(statusName);
-    navigate(`/edit-bookings/${encodedStatus}`);
+    navigate(`/bookings/${encodedStatus}`);
   };
 
   return (
@@ -110,7 +90,7 @@ const SupervisorHeadDashboardLayer = () => {
                 <div
                   className="card shadow-none border bg-gradient-start-1 h-100"
                   style={{ cursor: "pointer" }}
-                  onClick={() => handleCardClick("Total Bookings")}
+                  onClick={() => handleCardClick("")}
                 >
                   <div className="card-body p-20">
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -118,7 +98,7 @@ const SupervisorHeadDashboardLayer = () => {
                         <p className="fw-medium text-primary-light mb-1">
                           Total Bookings
                         </p>
-                        <h6 className="mb-0">{dashboardData.totalAssigned}</h6>
+                        <h6 className="mb-0">{dashboardData.totalBookings}</h6>
                       </div>
                       <div className="w-50-px h-50-px bg-primary-600 rounded-circle d-flex justify-content-center align-items-center">
                         <Icon
@@ -136,45 +116,19 @@ const SupervisorHeadDashboardLayer = () => {
                 <div
                   className="card shadow-none border bg-gradient-start-2 h-100"
                   style={{ cursor: "pointer" }}
-                  onClick={() => handleCardClick("Pending Bookings")}
+                  onClick={() => handleCardClick("")}
                 >
                   <div className="card-body p-20">
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
                       <div>
                         <p className="fw-medium text-primary-light mb-1">
-                          Pending Bookings
+                          Today’s Assigned Bookings
                         </p>
-                        <h6 className="mb-0">{dashboardData.interested}</h6>
+                        <h6 className="mb-0">{dashboardData.todaysAssignedBookings}</h6>
                       </div>
                       <div className="w-50-px h-50-px bg-warning rounded-circle d-flex justify-content-center align-items-center">
                         <Icon
                           icon="mdi:clock-outline"
-                          className="text-white text-2xl"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 2.1 */}
-              <div className="col">
-                <div
-                  className="card shadow-none border bg-gradient-start-3 h-100"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => handleCardClick("Conformed Bookings")}
-                >
-                  <div className="card-body p-20">
-                    <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                      <div>
-                        <p className="fw-medium text-primary-light mb-1">
-                          Conformed Bookings
-                        </p>
-                        <h6 className="mb-0">{dashboardData.notInterested}</h6>
-                      </div>
-                      <div className="w-50-px h-50-px bg-success-main rounded-circle d-flex justify-content-center align-items-center">
-                        <Icon
-                          icon="mdi:check-circle-outline"
                           className="text-white text-2xl"
                         />
                       </div>
@@ -188,21 +142,19 @@ const SupervisorHeadDashboardLayer = () => {
                 <div
                   className="card shadow-none border bg-gradient-start-3 h-100"
                   style={{ cursor: "pointer" }}
-                  onClick={() => handleCardClick("Reached Bookings")}
+                  onClick={() => handleCardClick("")}
                 >
                   <div className="card-body p-20">
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
                       <div>
                         <p className="fw-medium text-primary-light mb-1">
-                          Reached Bookings
+                          Ongoing Bookings
                         </p>
-                        <h6 className="mb-0">
-                          {dashboardData.ringingButNotResponded}
-                        </h6>
+                        <h6 className="mb-0">{dashboardData.ongoingBookings}</h6>
                       </div>
-                      <div className="w-50-px h-50-px bg-warning rounded-circle d-flex justify-content-center align-items-center">
+                      <div className="w-50-px h-50-px bg-success-main rounded-circle d-flex justify-content-center align-items-center">
                         <Icon
-                          icon="mdi:map-marker-check-outline"
+                          icon="mdi:check-circle-outline"
                           className="text-white text-2xl"
                         />
                       </div>
@@ -210,41 +162,12 @@ const SupervisorHeadDashboardLayer = () => {
                   </div>
                 </div>
               </div>
-
               {/* Card 4 */}
               <div className="col">
                 <div
-                  className="card shadow-none border bg-gradient-start-4 h-100"
+                  className="card shadow-none border bg-gradient-start-2 h-100"
                   style={{ cursor: "pointer" }}
-                  onClick={() => handleCardClick("Service Started Bookings")}
-                >
-                  <div className="card-body p-20">
-                    <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                      <div>
-                        <p className="fw-medium text-primary-light mb-1">
-                          Service Started Bookings
-                        </p>
-                        <h6 className="mb-0">
-                          {dashboardData.convertedCustomer}
-                        </h6>
-                      </div>
-                      <div className="w-50-px h-50-px bg-info rounded-circle d-flex justify-content-center align-items-center">
-                        <Icon
-                          icon="mdi:tools"
-                          className="text-white text-2xl"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 5 */}
-              <div className="col">
-                <div
-                  className="card shadow-none border bg-gradient-start-5 h-100"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => handleCardClick("Completed Bookings")}
+                  onClick={() => handleCardClick("")}
                 >
                   <div className="card-body p-20">
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -252,11 +175,11 @@ const SupervisorHeadDashboardLayer = () => {
                         <p className="fw-medium text-primary-light mb-1">
                           Completed Bookings
                         </p>
-                        <h6 className="mb-0">{dashboardData.noFollowUpYet}</h6>
+                        <h6 className="mb-0">{dashboardData.completedBookings}</h6>
                       </div>
-                      <div className="w-50-px h-50-px bg-success-main rounded-circle d-flex justify-content-center align-items-center">
+                      <div className="w-50-px h-50-px bg-warning rounded-circle d-flex justify-content-center align-items-center">
                         <Icon
-                          icon="mdi:check-circle-outline"
+                          icon="mdi:clock-outline"
                           className="text-white text-2xl"
                         />
                       </div>

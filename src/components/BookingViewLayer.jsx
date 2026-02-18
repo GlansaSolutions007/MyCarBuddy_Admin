@@ -879,15 +879,15 @@ const BookingViewLayer = () => {
   };
 
   const showGenerateInvoiceConfirm = (name, generateHandler, invoiceType) => {
-    const bookingTotal =
-      Number(bookingData?.TotalPrice || 0) +
-      Number(bookingData?.GSTAmount || 0) +
-      Number(bookingData?.LabourCharges || 0) -
-      Number(bookingData?.CouponAmount || 0);
-    if (bookingTotal <= 0) {
-      Swal.fire("Error", "Please check amount.", "error");
-      return;
-    }
+    // const bookingTotal =
+    //   Number(bookingData?.TotalPrice || 0) +
+    //   Number(bookingData?.GSTAmount || 0) +
+    //   Number(bookingData?.LabourCharges || 0) -
+    //   Number(bookingData?.CouponAmount || 0);
+    // if (bookingTotal <= 0) {
+    //   Swal.fire("Error", "Please check amount.", "error");
+    //   return;
+    // }
     Swal.fire({
       title: name,
       html: "Do you want to <strong>generate a new invoice</strong> or <strong>view the existing invoice</strong>?",
@@ -1849,6 +1849,7 @@ const BookingViewLayer = () => {
                               </div>
                             </div>
                             <div className="d-flex align-items-center gap-2 flex-wrap">
+                              <span className="ms-2 small">Payment Status:</span>
                               {(() => {
                                 const payments = bookingData?.Payments;
 
@@ -1879,6 +1880,7 @@ const BookingViewLayer = () => {
                                 );
                               })()}
 
+                              <span className="ms-2 small">Booking Status:</span>
                               <span
                                 className={`badge px-3 py-1 rounded-pill ${
                                   bookingData.BookingStatus === "Completed"

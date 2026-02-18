@@ -817,6 +817,18 @@ const OrganicLeadsLayer = () => {
     },
     { name: "City", selector: (row) => row.City || "-", sortable: true, width: "180px" },
     { name: "Platform", selector: (row) => row.Platform || "-", width: "120px" },
+    ...(employeeData?.RoleName !== "Telecaller"
+      ? [{
+        name: "Head Assigned D/T",
+        selector: (row) =>
+          row.HeadAssignDate
+            ? new Date(row.HeadAssignDate).toLocaleString("en-GB")
+            : "-",
+        width: "170px",
+      }]
+      : []),
+
+    { name: "Emp. Assigned D/T", selector: (row) => row.EmployeeAssignDate ? new Date(row.EmployeeAssignDate).toLocaleString("en-GB") : "-", width: "170px" },
     {
       name: "Lead Category",
       cell: (row) => {
