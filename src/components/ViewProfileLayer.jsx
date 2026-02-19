@@ -31,7 +31,7 @@ const ViewProfileLayer = () => {
     Status: true,
   });
   const [imagePreview, setImagePreview] = useState(
-    "/assets/images/user-grid/user-grid-img13.png" // default placeholder
+    "/assets/images/user-grid/user-grid-img13.png" 
   );
   const [file, setFile] = useState(null);
 
@@ -115,17 +115,17 @@ const ViewProfileLayer = () => {
   };
 
   // Image upload preview
-  const readURL = (input) => {
-    if (input.target.files && input.target.files[0]) {
-      setFile(input.target.files[0]);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        // Show preview of newly uploaded image
-        setImagePreview(e.target.result);
-      };
-      reader.readAsDataURL(input.target.files[0]);
-    }
-  };
+  // const readURL = (input) => {
+  //   if (input.target.files && input.target.files[0]) {
+  //     setFile(input.target.files[0]);
+  //     const reader = new FileReader();
+  //     reader.onload = (e) => {
+  //       // Show preview of newly uploaded image
+  //       setImagePreview(e.target.result);
+  //     };
+  //     reader.readAsDataURL(input.target.files[0]);
+  //   }
+  // };
 
   const isValidPhoneNumber = (phone) => {
     const phoneRegex = /^[6-9]\d{9}$/;
@@ -253,7 +253,7 @@ const ViewProfileLayer = () => {
                 {/* Upload Image Start */}
                 <div className="mb-24 mt-16 justify-content-center d-flex">
                   <div className="avatar-upload">
-                    <div className="avatar-edit position-absolute bottom-0 end-0 me-24 mt-16 z-1 cursor-pointer">
+                    {/* <div className="avatar-edit position-absolute bottom-0 end-0 me-24 mt-16 z-1 cursor-pointer">
                       <input
                         type="file"
                         id="imageUpload"
@@ -267,7 +267,7 @@ const ViewProfileLayer = () => {
                       >
                         <Icon icon="solar:camera-outline" className="icon" />
                       </label>
-                    </div>
+                    </div> */}
                     <div className="avatar-preview">
                       <div
                         id="imagePreview"

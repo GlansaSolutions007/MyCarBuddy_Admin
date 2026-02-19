@@ -486,6 +486,13 @@ const MasterLayout = ({ children }) => {
           permission: "closedleads_view",
           page: "Closed Leads",
         },
+        {
+          title: "Book Service",
+          to: "/book-service",
+          color: "text-primary-600",
+          permission: "bookservice_view",
+          page: "Book Service",
+        },
       ],
     },
     {
@@ -1468,7 +1475,7 @@ const MasterLayout = ({ children }) => {
                       src={
                         userImage
                           ? `${API_IMAGE}${userImage}` // full path
-                          : "/assets/images/user.png" // fallback if not available
+                          : "assets/images/user-grid/user-grid-img13.png" // fallback if not available
                       }
                       alt="image_user"
                       className="w-40-px h-40-px object-fit-cover rounded-circle"
