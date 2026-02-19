@@ -806,7 +806,7 @@ const BookingViewLayer = () => {
   };
 
   const handleAddOnStatusChange = async (addon, selectedStatus) => {
-    const addOnID = addon?.AddOnID ?? addon?.addOnID;
+    const addOnID = addon?.AddOnID ?? addon?.addOnID ?? addon?.Id ?? addon?.id;
     if (!addOnID) {
       Swal.fire("Error", "AddOn ID not found", "error");
       return;
@@ -1291,15 +1291,18 @@ const BookingViewLayer = () => {
         <div className="card h-100">
           <div className="card-body p-24">
             {bookingData ? (
-              <Accordion className="mb-3">
-                <Accordion.Item eventKey="0">
-                  <Accordion.Header>
-                    <h6 className="mb-2 fw-bold text-primary">
-                      👤 Personal Information
-                    </h6>
-                  </Accordion.Header>
+              <div className="row g-4">
+                {/* ================= LEFT SIDE: PERSONAL INFORMATION ================= */}
+                <div className="col-lg-8 col-md-12">
+                  <Accordion className="mb-3">
+                    <Accordion.Item eventKey="0">
+                      <Accordion.Header>
+                        <h6 className="mb-2 fw-bold text-primary">
+                          👤 Personal Information
+                        </h6>
+                      </Accordion.Header>
 
-                  <Accordion.Body>
+                      <Accordion.Body>
                     <div className="row g-4 align-items-start">
                       {/* ================= IMAGE ================= */}
                       <div className="col-lg-3 col-md-4 col-12 text-center">
@@ -1308,13 +1311,13 @@ const BookingViewLayer = () => {
                             <img
                               src={`${API_IMAGE}${bookingData.ProfileImage}`}
                               alt="User"
-                              className="border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover"
+                              className="border br-white border-width-2-px w-120-px h-120-px rounded-circle object-fit-cover"
                             />
                           ) : (
                             <img
                               src="/assets/images/user-grid/user-grid-img14.png"
                               alt="Default User"
-                              className="border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover"
+                              className="border br-white border-width-2-px w-120-px h-120-px rounded-circle object-fit-cover"
                             />
                           )}
                         </div>
@@ -1324,19 +1327,19 @@ const BookingViewLayer = () => {
                       <div className="col-lg-9 col-md-8 col-12">
                         <ul className="mb-0">
                           <li className="d-flex align-items-center gap-1 mb-12">
-                            <span className="w-50 fw-semibold text-primary-light">
+                            <span className=" w-50 fw-semibold text-primary-light">
                               Customer Name :
                             </span>
-                            <span className="w-70 text-secondary-light fw-bold">
+                            <span className="w-50 text-secondary-light fw-bold">
                               {bookingData.CustomerName || "N/A"}
                             </span>
                           </li>
 
                           <li className="d-flex align-items-center gap-1 mb-12">
-                            <span className="w-50 fw-semibold text-primary-light">
+                            <span className=" w-50 fw-semibold text-primary-light">
                               Phone Number :
                             </span>
-                            <span className="w-70 text-secondary-light fw-bold">
+                            <span className="w-50 text-secondary-light fw-bold">
                               {bookingData.PhoneNumber || "—"}
                             </span>
                           </li>
@@ -1350,21 +1353,21 @@ const BookingViewLayer = () => {
                             </span>
                           </li> */}
                           <li className="d-flex align-items-center gap-1 mb-12">
-                            <span className="w-50 fw-semibold text-primary-light">
+                            <span className=" w-50 fw-semibold text-primary-light">
                               Full Address :
                             </span>
-                            <span className="w-70 text-secondary-light fw-bold">
-                              {bookingData.FullAddress || "—"}
+                            <span className="w-50 text-secondary-light fw-bold">
+                              {bookingData.FullAddress || "N/A"}
                             </span>
                           </li>
                           {/* Assigned To */}
                           {!bookingData.TechFullName &&
                           !bookingData.SupervisorName ? (
                             <li className="d-flex align-items-center gap-1 mb-12">
-                              <span className="w-50 fw-semibold text-primary-light">
-                                Assigned To :
+                              <span className=" w-50 fw-semibold text-primary-light">
+                                Technician Assigned To :
                               </span>
-                              <span className="w-70 text-secondary-light fw-bold">
+                              <span className="w-50 text-secondary-light fw-bold">
                                 N/A
                               </span>
                             </li>
@@ -1376,7 +1379,7 @@ const BookingViewLayer = () => {
                                     <span className="w-50 fw-semibold text-primary-light">
                                       Technician :
                                     </span>
-                                    <span className="w-70 text-secondary-light fw-bold">
+                                    <span className="w-50 text-secondary-light fw-bold">
                                       {bookingData.TechFullName}
                                     </span>
                                   </li>
@@ -1386,7 +1389,7 @@ const BookingViewLayer = () => {
                                       <span className="w-50 fw-semibold text-primary-light">
                                         Technician Number :
                                       </span>
-                                      <span className="w-70 text-secondary-light fw-bold">
+                                      <span className="w-50 text-secondary-light fw-bold">
                                         {bookingData.TechPhoneNumber}
                                       </span>
                                     </li>
@@ -1399,7 +1402,7 @@ const BookingViewLayer = () => {
                                     <span className="w-50 fw-semibold text-primary-light">
                                       Car Pickup Date & Time :
                                     </span>
-                                    <span className="w-70 text-secondary-light fw-bold">
+                                    <span className="w-50 text-secondary-light fw-bold">
                                       {displayDate(pickupDate)}
                                       {pickupTime && ` : ${pickupTime}`}
                                       {/* OR use displayTime(pickupTime) */}
@@ -1410,7 +1413,7 @@ const BookingViewLayer = () => {
                                     <span className="w-50 fw-semibold text-primary-light">
                                       Car Drop Date & Time :
                                     </span>
-                                    <span className="w-70 text-secondary-light fw-bold">
+                                    <span className="w-50 text-secondary-light fw-bold">
                                       {displayDate(dropDate)}
                                       {dropTime && ` : ${dropTime}`}
                                     </span>
@@ -1424,7 +1427,7 @@ const BookingViewLayer = () => {
                                     <span className="w-50 fw-semibold text-primary-light">
                                       Supervisor :
                                     </span>
-                                    <span className="w-70 text-secondary-light fw-bold">
+                                    <span className="w-50 text-secondary-light fw-bold">
                                       {bookingData.SupervisorName}
                                     </span>
                                   </li>
@@ -1434,7 +1437,7 @@ const BookingViewLayer = () => {
                                       <span className="w-50 fw-semibold text-primary-light">
                                         Supervisor Number :
                                       </span>
-                                      <span className="w-70 text-secondary-light fw-bold">
+                                      <span className="w-50 text-secondary-light fw-bold">
                                         {bookingData.SupervisorPhoneNumber}
                                       </span>
                                     </li>
@@ -1449,6 +1452,110 @@ const BookingViewLayer = () => {
                   </Accordion.Body>
                 </Accordion.Item>
               </Accordion>
+                </div>
+
+                {/* ================= RIGHT SIDE: VEHICLE DETAILS ================= */}
+                <div className="col-lg-4 col-md-12">
+                  <Accordion className="mb-3">
+                    <Accordion.Item eventKey="1">
+                      <Accordion.Header>
+                        <h6 className="mb-2 fw-bold text-primary">
+                          🚗 Vehicle Details
+                        </h6>
+                      </Accordion.Header>
+
+                      <Accordion.Body>
+                        {bookingData.VehicleDetails && 
+                         Array.isArray(bookingData.VehicleDetails) && 
+                         bookingData.VehicleDetails.length > 0 ? (
+                          <div>
+                            {bookingData.VehicleDetails.map((vehicle, index) => (
+                              <div key={index} className={index > 0 ? "mt-4 pt-4 border-top" : ""}>
+                                {/* <div className="d-flex align-items-center gap-2 mb-3">
+                                  <Icon 
+                                    icon="mdi:car" 
+                                    className="text-primary fs-5" 
+                                  />
+                                  <span className="fw-bold text-primary">
+                                    Vehicle {bookingData.VehicleDetails.length > 1 ? `${index + 1}` : ""} Details
+                                  </span>
+                                </div> */}
+                                <ul className="mb-0">
+                                  {vehicle.RegistrationNumber && (
+                                    <li className="d-flex align-items-center gap-1 mb-12">
+                                      <span className="fw-semibold text-primary-light">
+                                        Registration Number :
+                                      </span>
+                                      <span className="text-secondary-light fw-bold ms-2">
+                                        {vehicle.RegistrationNumber}
+                                      </span>
+                                    </li>
+                                  )}
+                                  {vehicle.BrandName && (
+                                    <li className="d-flex align-items-center gap-1 mb-12">
+                                      <span className="fw-semibold text-primary-light">
+                                        Brand :
+                                      </span>
+                                      <span className="text-secondary-light fw-bold ms-2">
+                                        {vehicle.BrandName}
+                                      </span>
+                                    </li>
+                                  )}
+                                  {vehicle.ModelName && (
+                                    <li className="d-flex align-items-center gap-1 mb-12">
+                                      <span className="fw-semibold text-primary-light">
+                                        Model :
+                                      </span>
+                                      <span className="text-secondary-light fw-bold ms-2">
+                                        {vehicle.ModelName}
+                                      </span>
+                                    </li>
+                                  )}
+                                  {vehicle.FuelTypeName && (
+                                    <li className="d-flex align-items-center gap-1 mb-12">
+                                      <span className="fw-semibold text-primary-light">
+                                        Fuel Type :
+                                      </span>
+                                      <span className="text-secondary-light fw-bold ms-2">
+                                        {vehicle.FuelTypeName}
+                                      </span>
+                                    </li>
+                                  )}
+                                  {vehicle.KmDriven !== null && vehicle.KmDriven !== undefined && (
+                                    <li className="d-flex align-items-center gap-1 mb-12">
+                                      <span className="fw-semibold text-primary-light">
+                                        KM Driven :
+                                      </span>
+                                      <span className="text-secondary-light fw-bold ms-2">
+                                        {vehicle.KmDriven.toLocaleString()} km
+                                      </span>
+                                    </li>
+                                  )}
+                                  {vehicle.YearOfPurchase !== null && vehicle.YearOfPurchase !== undefined && (
+                                    <li className="d-flex align-items-center gap-1 mb-12">
+                                      <span className="fw-semibold text-primary-light">
+                                        Year of Purchase :
+                                      </span>
+                                      <span className="text-secondary-light fw-bold ms-2">
+                                        {vehicle.YearOfPurchase}
+                                      </span>
+                                    </li>
+                                  )}
+                                </ul>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center text-muted py-4">
+                            <Icon icon="mdi:car-off" className="fs-1 mb-2" />
+                            <p className="mb-0">No vehicle details available</p>
+                          </div>
+                        )}
+                      </Accordion.Body>
+                    </Accordion.Item>
+                  </Accordion>
+                </div>
+              </div>
             ) : (
               <div className="pb-24 ms-16 mb-24 me-16 text-center">
                 <img
@@ -2022,6 +2129,9 @@ const BookingViewLayer = () => {
 
                           {bookingData?.BookingAddOns?.length > 0 && (
                             <div className="card mb-4 mt-4">
+                              <div className="card-header bg-success text-white">
+                                <h6 className="mb-0 fw-bold">Customer Confirmed Services</h6>
+                              </div>
                               <div className="card-body p-0">
                                 <div
                                   className="table-responsive"
@@ -2309,6 +2419,306 @@ const BookingViewLayer = () => {
                               </div>
                             </div>
                           )}
+
+                          {bookingData?.SupervisorBookings?.length > 0 && (
+                            <div className="card mb-4 mt-4">
+                              <div className="card-header bg-warning text-dark">
+                                <h6 className="mb-0 fw-bold">Customer Not Confirmed Services</h6>
+                              </div>
+                              <div className="card-body p-0">
+                                <div
+                                  className="table-responsive"
+                                  style={{
+                                    maxHeight: "800px",
+                                    overflowX: "auto",
+                                  }}
+                                >
+                                  <table
+                                    className="table table-sm table-striped table-hover align-middle mb-0"
+                                    style={{
+                                      tableLayout: "fixed",
+                                      minWidth: "1200px",
+                                    }}
+                                  >
+                                    <thead
+                                      className="table-light sticky-top position-relative"
+                                      style={{ zIndex: 1 }}
+                                    >
+                                      <tr>
+                                        <th
+                                          style={{ width: "60px" }}
+                                          className="text-center"
+                                        >
+                                          S.No
+                                        </th>
+                                        <th style={{ width: "100px" }}>Type</th>
+                                        <th style={{ width: "180px" }}>
+                                          Service Name
+                                        </th>
+                                        <th style={{ width: "100px" }}>Date</th>
+                                        <th
+                                          style={{ width: "100px" }}
+                                          className="text-end"
+                                        >
+                                          Part Price
+                                        </th>
+                                        <th
+                                          style={{ width: "125px" }}
+                                          className="text-end"
+                                        >
+                                          DLR Part Price
+                                        </th>
+                                        <th
+                                          style={{ width: "70px" }}
+                                          className="text-end"
+                                        >
+                                          Qty
+                                        </th>
+                                        <th
+                                          style={{ width: "100px" }}
+                                          className="text-end"
+                                        >
+                                          Part Total
+                                        </th>
+                                        <th
+                                          style={{ width: "120px" }}
+                                          className="text-end"
+                                        >
+                                          DLR Part Total
+                                        </th>
+                                        <th
+                                          style={{ width: "120px" }}
+                                          className="text-end"
+                                        >
+                                          Service Chg.
+                                        </th>
+                                        <th
+                                          style={{ width: "145px" }}
+                                          className="text-end"
+                                        >
+                                          DLR Service Chg.
+                                        </th>
+                                        <th
+                                          style={{ width: "90px" }}
+                                          className="text-end"
+                                        >
+                                          GST %
+                                        </th>
+                                        <th
+                                          style={{ width: "120px" }}
+                                          className="text-end"
+                                        >
+                                          DLR GST %
+                                        </th>
+                                        <th
+                                          style={{ width: "100px" }}
+                                          className="text-end"
+                                        >
+                                          GST Amt.
+                                        </th>
+                                        <th
+                                          style={{ width: "120px" }}
+                                          className="text-end"
+                                        >
+                                          DLR GST Amt.
+                                        </th>
+                                        <th
+                                          style={{ width: "100px" }}
+                                          className="text-end"
+                                        >
+                                          Our %
+                                        </th>
+                                        <th
+                                          style={{ width: "100px" }}
+                                          className="text-end"
+                                        >
+                                          Our Amt.
+                                        </th>
+                                        <th style={{ width: "200px" }}
+                                          className="text-center">
+                                          Selected Dealer
+                                        </th>
+                                        <th
+                                          style={{ width: "160px" }}
+                                          className="text-center"
+                                        >
+                                          Service Status
+                                        </th>
+                                        <th
+                                          style={{ width: "100px" }}
+                                          className="text-end"
+                                        >
+                                          Total Amt
+                                        </th>
+                                      </tr>
+                                    </thead>
+
+                                    <tbody>
+                                      {bookingData.SupervisorBookings.map(
+                                        (supervisorBooking, index) => {
+                                          const totalPrice = 
+                                            (Number(supervisorBooking.Price || 0)) +
+                                            (Number(supervisorBooking.GSTAmount || 0)) +
+                                            (Number(supervisorBooking.LabourCharges || 0));
+                                          
+                                          return (
+                                            <tr key={supervisorBooking.Id || index}>
+                                              <td className="text-center">
+                                                {index + 1}.
+                                              </td>
+                                              <td className="normal">
+                                                {supervisorBooking.ServiceType || "—"}
+                                              </td>
+                                              <td className="normal">
+                                                <div className="normal">
+                                                  {supervisorBooking.ServiceName || "—"}
+                                                  {supervisorBooking.Includes &&
+                                                    (Array.isArray(supervisorBooking.Includes) 
+                                                      ? supervisorBooking.Includes.length > 0 && (
+                                                          <ul className="text-muted small ps-3 mb-0 mt-2">
+                                                            {supervisorBooking.Includes.map(
+                                                              (inc) => (
+                                                                <li
+                                                                  key={
+                                                                    inc.IncludeID ||
+                                                                    inc.id ||
+                                                                    inc
+                                                                  }
+                                                                >
+                                                                  {inc.IncludeName ||
+                                                                    inc.name ||
+                                                                    inc}
+                                                                </li>
+                                                              ),
+                                                            )}
+                                                          </ul>
+                                                        )
+                                                      : typeof supervisorBooking.Includes === 'string' && supervisorBooking.Includes.trim() !== '' && (
+                                                          <div className="text-muted small mt-2">
+                                                            {supervisorBooking.Includes}
+                                                          </div>
+                                                        )
+                                                    )}
+                                                </div>
+                                              </td>
+
+                                              <td className="normal">
+                                                {supervisorBooking.CreatedDate
+                                                  ? new Date(
+                                                      supervisorBooking.CreatedDate,
+                                                    ).toLocaleDateString("en-IN")
+                                                  : "—"}
+                                              </td>
+                                              <td className="text-end">
+                                                {Number(
+                                                  supervisorBooking.BasePrice || 0,
+                                                ).toFixed(2)}
+                                              </td>
+                                              <td className="text-end">
+                                                {Number(
+                                                  supervisorBooking.DealerBasePrice || 0,
+                                                ).toFixed(2)}
+                                              </td>
+                                              <td className="text-end">
+                                                {supervisorBooking.Quantity ?? "1"}
+                                              </td>
+                                              <td className="text-end">
+                                                {Number(
+                                                  supervisorBooking.Price || 0,
+                                                ).toFixed(2)}
+                                              </td>
+                                              <td className="text-end">
+                                                {Number(
+                                                  supervisorBooking.DealerSparePrice || 0,
+                                                ).toFixed(2)}
+                                              </td>
+                                              <td className="text-end">
+                                                {Number(
+                                                  supervisorBooking.LabourCharges || 0,
+                                                ).toFixed(2)}
+                                              </td>
+                                              <td className="text-end">
+                                                {Number(
+                                                  supervisorBooking.DealerPrice || 0,
+                                                ).toFixed(2)}
+                                              </td>
+                                              <td className="text-end">
+                                                {supervisorBooking.GSTPercent ?? 0}%
+                                              </td>
+                                              <td className="text-end">
+                                                {supervisorBooking.DealerGSTPercent ?? 0}%
+                                              </td>
+                                              <td className="text-end">
+                                                {Number(
+                                                  supervisorBooking.GSTAmount || 0,
+                                                ).toFixed(2)}
+                                              </td>
+                                              <td className="text-end">
+                                                {Number(
+                                                  supervisorBooking.DealerGSTAmount || 0,
+                                                ).toFixed(2)}
+                                              </td>
+                                              <td className="text-end">
+                                                {supervisorBooking.Percentage ?? "0"}%
+                                              </td>
+                                              <td className="text-end">
+                                                {Number(
+                                                  supervisorBooking.Our_Earnings || 0,
+                                                ).toFixed(2)}
+                                              </td>
+                                              <td
+                                                className="normal text-center"
+                                                style={{
+                                                  whiteSpace: "normal",
+                                                  wordBreak: "break-word",
+                                                }}
+                                              >
+                                                {supervisorBooking.DealerName || "—"}
+                                              </td>
+                                              <td className="text-center align-middle">
+                                                {(() => {
+                                                  const isApproved =
+                                                    (supervisorBooking.IsDealer_Confirm ?? supervisorBooking.isDealer_Confirm)
+                                                      ?.toString()
+                                                      .trim()
+                                                      .toLowerCase() === "approved";
+                                                  const status = (supervisorBooking.StatusName ?? supervisorBooking.statusName ?? supervisorBooking.AddOnStatus ?? supervisorBooking.addOnStatus)
+                                                    ?.toString()
+                                                    .trim();
+                                                  return (
+                                                    <div className="d-flex gap-2 align-items-center justify-content-center">
+                                                      {isApproved && (
+                                                        <select
+                                                          className="form-select form-select-sm"
+                                                          value={status}
+                                                          onChange={(e) =>
+                                                            handleAddOnStatusChange(supervisorBooking, e.target.value)
+                                                          }
+                                                        >
+                                                          <option value="">Select Status</option>
+                                                          <option value="Pending">Pending</option>
+                                                          <option value="ServiceCompleted">Completed</option>
+                                                          <option value="Rework">Rework</option>
+                                                          <option value="InProgress">In-Progress</option>
+                                                        </select>
+                                                      )}
+                                                    </div>
+                                                  );
+                                                })()}
+                                              </td>
+                                              <td className="text-end fw-bold text-primary">
+                                                {totalPrice.toFixed(2)}
+                                              </td>
+                                            </tr>
+                                          );
+                                        },
+                                      )}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                           {/* <div className="d-flex justify-content-between align-items-center mb-2 mt-2">
                             <h6 className="fw-bold mb-0">Billing Summary</h6>
                           </div> */}
@@ -2347,7 +2757,7 @@ const BookingViewLayer = () => {
                                   </span>
                                 </li> */}
                                 <li className="list-group-item d-flex justify-content-between p-0">
-                                  <span className="text-secondary">SGST</span>
+                                  <span className="text-secondary">SGST(9%)</span>
                                   <span>
                                     ₹
                                     {(
@@ -2356,7 +2766,7 @@ const BookingViewLayer = () => {
                                   </span>
                                 </li>
                                 <li className="list-group-item d-flex justify-content-between p-0">
-                                  <span className="text-secondary">CGST</span>
+                                  <span className="text-secondary">CGST(9%)</span>
                                   <span>
                                     ₹
                                     {(

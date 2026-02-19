@@ -18,6 +18,8 @@ const getEmployeeData = () => {
 
 const BookServicesLayer = () => {
   const { Id } = useParams();
+  const { bookingId } = useParams();
+  const { bookingTrackID } = useParams();
   const leadId = Id;
   const API_BASE = import.meta.env.VITE_APIURL;
   const token = localStorage.getItem("token");
@@ -62,6 +64,16 @@ const BookServicesLayer = () => {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const hasNewItem = addedItems.some((item) => !item._apiId);
   const dealer = localStorage.getItem("role") || "Admin";
+  const [showBookingChoiceModal, setShowBookingChoiceModal] = useState(false);
+  const [bookingMode, setBookingMode] = useState(null);
+  // null | "service" | "inspection"
+
+  const [inspectionType, setInspectionType] = useState("");
+  const [inspectionDate, setInspectionDate] = useState("");
+  const [inspectionTimeSlot, setInspectionTimeSlot] = useState([]);
+  const [inspectionPackages, setInspectionPackages] = useState([]);
+  const [selectedInspectionPackage, setSelectedInspectionPackage] = useState(null);
+
 
   const getItemFingerprint = (item) =>
     JSON.stringify({
@@ -99,7 +111,37 @@ const BookServicesLayer = () => {
 
   useEffect(() => {
     fetchAllPackages();
+    fetchInspectionPackages();
   }, []);
+
+  const fetchInspectionPackages = async () => {
+    try {
+      const res = await axios.get(
+        `${API_BASE}PlanPackage/GetPlanPackagesDetails`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+
+      // Filter packages where PackageID is 174 or 175
+      const inspectionPkgs = res.data
+        .filter((pkg) => (pkg.PackageID === 174 || pkg.PackageID === 175) && pkg.IsActive)
+        .map((pkg) => ({
+          id: pkg.PackageID,
+          name: pkg.PackageName,
+          price: pkg.Total_Offer_Price,
+          defaultPrice: pkg.Default_Price,
+          description: pkg.Description,
+          categoryId: pkg.CategoryID,
+          categoryName: pkg.CategoryName,
+        }));
+
+      setInspectionPackages(inspectionPkgs);
+      return inspectionPkgs;
+    } catch (error) {
+      console.error("Failed to load inspection packages", error);
+      setInspectionPackages([]);
+      return [];
+    }
+  };
 
   useEffect(() => {
     if (hasNewItem || hasEdits) {
@@ -1035,8 +1077,8 @@ const BookServicesLayer = () => {
           basePrice: Number(row.basePrice) || 0,
           quantity: row.quantity,
           price: Number(row.price) || 0,
-          gstPercent: row.gstPercent,
-          gstAmount: row.gstPrice,
+          gstPercent: row.gstPercent || 0,
+          gstAmount: row.gstPrice || 0,
           description: row.description,
           dealerID: row.dealerID != null && row.dealerID !== "" ? Number(row.dealerID) : 0,
           percentage: row.percentage || 0,
@@ -1122,8 +1164,8 @@ const BookServicesLayer = () => {
           basePrice: Number(row.basePrice) || 0,
           quantity: row.quantity,
           price: Number(row.price) || 0,
-          gstPercent: row.gstPercent,
-          gstAmount: row.gstPrice,
+          gstPercent: row.gstPercent || 0,
+          gstAmount: row.gstPrice || 0,
           description: row.description,
           dealerID: row.dealerID != null && row.dealerID !== "" ? Number(row.dealerID) : 0,
           percentage: row.percentage || 0,
@@ -1245,6 +1287,26 @@ const BookServicesLayer = () => {
     }
   };
 
+  useEffect(() => {
+    // Only show modal if no items exist AND no existing booking data was found AND booking mode is not set
+    const hasExistingData = addedItems.length > 0 ||
+      (bookingData && (bookingData.bookingDate || bookingData.timeSlot));
+
+    if (!hasExistingData && !loading && !bookingMode) {
+      setShowBookingChoiceModal(true);
+    } else if (hasExistingData) {
+      // If there's existing data, close modal and set to service mode
+      setShowBookingChoiceModal(false);
+      if (!bookingMode) {
+        setBookingMode("service");
+      }
+    } else if (bookingMode) {
+      // If booking mode is set, close the modal
+      setShowBookingChoiceModal(false);
+    }
+  }, [addedItems.length, loading, bookingData, bookingMode]);
+
+
   const handleSubmit = async (skipSuccessSwal = false) => {
     if (addedItems.length === 0) {
       await Swal.fire("Error", "No items to submit", "error");
@@ -1357,6 +1419,8 @@ const BookServicesLayer = () => {
         createdBy: parseInt(localStorage.getItem("userId")),
         leadId: leadId,
         services: services,
+        bookingId: bookingId,
+        bookingTrackID: bookingTrackID,
       };
       //  IF booking already exists → include booking details
       if (existingBookingItem) {
@@ -1433,6 +1497,193 @@ const BookServicesLayer = () => {
       return false;
     }
   };
+  const handleInspectionSubmit = async () => {
+    if (!inspectionType || !inspectionDate) {
+      return Swal.fire("Error", "Please fill all inspection details", "error");
+    }
+
+    if (!Array.isArray(inspectionTimeSlot) || inspectionTimeSlot.length === 0) {
+      return Swal.fire(
+        "Error",
+        "Please select at least one time slot",
+        "error",
+      );
+    }
+
+    if (!leadId) {
+      return Swal.fire("Error", "Lead ID is required", "error");
+    }
+
+    if (!selectedInspectionPackage) {
+      return Swal.fire("Error", "Please select an inspection package", "error");
+    }
+
+    try {
+      const timeSlotString = inspectionTimeSlot
+        .map((slot) => slot.label)
+        .join(",");
+
+      // Build services array with the selected inspection package
+      // Format description to include Package Name, Price, and Description
+      const formattedDescription = `Package Name: ${selectedInspectionPackage.name}\nPrice: ₹${selectedInspectionPackage.price}\n${selectedInspectionPackage.description || ""}`;
+
+      const services = [{
+        serviceType: "Package",
+        serviceName: selectedInspectionPackage.name,
+        basePrice: Number(selectedInspectionPackage.price) || 0,
+        quantity: 1,
+        price: Number(selectedInspectionPackage.price) || 0,
+        gstPercent: 0,
+        gstAmount: 0,
+        description: "",
+        dealerID: 0,
+        percentage: 0,
+        our_Earnings: 0,
+        labourCharges: 0,
+        serviceId: Number(selectedInspectionPackage.id),
+        isUserClicked: false,
+        includes: "",
+      }];
+
+      const payload = {
+        createdBy: parseInt(localStorage.getItem("userId")),
+        leadId: leadId,
+        bookingId: bookingId,
+        bookingTrackID: bookingTrackID,
+        services: services,
+        inspectionType: inspectionType,
+        inspectionDate: inspectionDate,
+        inspectionTimeSlot: timeSlotString,
+      };
+
+      // Check if booking already exists
+      const existingBookingItem = addedItems.find((item) => item._bookingId);
+      if (existingBookingItem) {
+        payload.bookingID = existingBookingItem._bookingId;
+        payload.bookingTrackID = existingBookingItem._bookingTrackId;
+      }
+
+      const response = await axios.post(
+        `${API_BASE}Supervisor/InsertSupervisorBooking`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        const { bookingId } = response.data;
+
+        // Update booking with inspection date and time slot
+        await axios.put(
+          `${API_BASE}Supervisor/Booking`,
+          {
+            bookingID: bookingId,
+            bookingDate: inspectionDate,
+            TimeSlot: timeSlotString,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        Swal.fire({
+          icon: "success",
+          title: "Success!",
+          text: "Inspection has been successfully scheduled.",
+        }).then(() => {
+          navigate(-1);
+        });
+
+        await fetchBookingData();
+        setInspectionType("");
+        setInspectionDate("");
+        setInspectionTimeSlot([]);
+        setSelectedInspectionPackage(null);
+        return true;
+      } else {
+        throw new Error(response.data?.message || "Failed to create inspection");
+      }
+    } catch (error) {
+      console.error("API Error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to submit inspection. Please try again.",
+      });
+      return false;
+    }
+  };
+
+  const handleInspectionConfirm = async () => {
+    if (!inspectionType || !inspectionDate || !inspectionTimeSlot) {
+      return Swal.fire("Error", "Please fill all inspection details", "error");
+    }
+
+    const result = await Swal.fire({
+      title: "Please Check Before Confirmation",
+      text: "Please check the inspection details before confirmation, as this will be sent directly to the customer.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Confirm",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#0d9488",
+      cancelButtonColor: "#6b7280",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      // First submit the inspection
+      const submitted = await handleInspectionSubmit();
+      if (!submitted) return;
+
+      // Then confirm it (if there's a booking ID)
+      const bookingItem = addedItems.find((item) => item._bookingId);
+      if (bookingItem && bookingItem._apiId) {
+        const payload = {
+          ids: [bookingItem._apiId],
+          supervisorId: userId,
+        };
+
+        await axios.post(
+          `${API_BASE}Leads/confirm-booking-addons-by-supervisor`,
+          payload,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+      }
+
+      Swal.fire(
+        "Confirmed",
+        "Inspection has been confirmed successfully",
+        "success",
+      ).then(() => {
+        navigate(-1);
+      });
+    } catch (error) {
+      console.error(error);
+      Swal.fire(
+        "Error",
+        error.response?.data?.message || "Failed to confirm inspection",
+        "error",
+      );
+    }
+  };
+
   const handleConfirmBooking = async () => {
     // collect only saved items
     const ids = addedItems
@@ -1476,6 +1727,8 @@ const BookServicesLayer = () => {
     if (!result.isConfirmed) return;
     const payload = {
       ids: ids,
+      bookingId: bookingId,
+      bookingTrackID: bookingTrackID,
       supervisorId: userId,
     };
     try {
@@ -2391,234 +2644,325 @@ const BookServicesLayer = () => {
   const isScheduleAlreadySet =
     !!bookingData?.bookingDate && !!bookingData?.timeSlot;
   return (
-    <div className="row gy-4">
-      <div className="col-12">
-        <div className="card overflow-hidden p-3">
-          <div className="card-body">
-            {/* SINGLE FORM */}
-            <h6 className="mb-3">Add Service / Spare Part</h6>
+    <>
+      {/* Inspection Form */}
+      {bookingMode === "inspection" && (
+        <div className="row gy-4">
+          <div className="col-12">
+            <div className="card overflow-hidden p-3">
+              <div className="card-body">
+                <h6 className="mb-3">Inspection Details</h6>
 
-            <div className="row g-3 align-items-end">
-              <div className="col-md-2">
-                <label className="form-label">Select Type</label>
-                <select
-                  className="form-select"
-                  value={itemType}
-                  onChange={(e) => {
-                    resetForm();
-                    setItemType(e.target.value);
-                    // Clear Service Group specific state when switching types
-                    if (e.target.value !== "Service Group") {
-                      setSelectedServices([]);
-                    }
-                    // Clear other type-specific states
-                    if (e.target.value !== "Package") {
-                      setSelectedPackage(null);
-                      setSelectedIncludes([]);
-                    }
-                    if (e.target.value !== "Service") {
-                      setSelectedIncludes(null);
-                    }
-                  }}
-                >
-                  <option value="Service">Service</option>
-                  <option value="Spare Part">Spare Part</option>
-                  <option value="Package">Package</option>
-                  <option value="Service Group">Service Group</option>
-                </select>
-              </div>
-              {itemType === "Spare Part" && (
-                <div className="col-md-3">
-                  <label className="form-label">Spare Part</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={name}
-                    onChange={(e) => {
-                      let val = e.target.value;
-                      if (val.length > 0) {
-                        val = val.replace(
-                          /^(\s*)(\S)/,
-                          (_, space, char) => space + char.toUpperCase(),
+                <div className="row g-3 align-items-end">
+                  <div className="col-md-4">
+                    <label className="form-label">Inspection Type</label>
+                    <select
+                      className="form-select"
+                      value={inspectionType}
+                      onChange={(e) => {
+                        const selectedValue = e.target.value;
+                        setInspectionType(selectedValue);
+                        // Find and store the selected package
+                        const selectedPkg = inspectionPackages.find(
+                          (pkg) => pkg.id.toString() === selectedValue
                         );
-                      }
-                      setName(val);
-                    }}
-                    placeholder="Enter Spare Name"
-                  />
-                </div>
-              )}
+                        setSelectedInspectionPackage(selectedPkg || null);
+                      }}
+                    >
+                      <option value="">Select Inspection Package</option>
+                      {inspectionPackages.map((pkg) => (
+                        <option key={pkg.id} value={pkg.id}>
+                          {pkg.name} - ₹{pkg.price}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              {itemType === "Service" && (
-                <div className="col-md-3">
-                  <label className="form-label">Select Service</label>
-                  <CreatableSelect
-                    isSearchable
-                    className="react-select-container text-sm"
-                    classNamePrefix="react-select"
-                    placeholder="Search Services..."
-                    options={includesList.map((inc) => ({
-                      value: inc.IncludeID,
-                      label: inc.IncludeName,
-                    }))}
-                    value={selectedIncludes}
-                    onChange={(selected) => {
-                      if (!selected) {
-                        setSelectedIncludes(null);
-                        setName("");
-                        return;
-                      }
+                  <div className="col-md-4">
+                    <label className="form-label">Select Date</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={inspectionDate}
+                      min={new Date().toISOString().split("T")[0]}
+                      onChange={(e) => setInspectionDate(e.target.value)}
+                    />
+                  </div>
 
-                      if (selected.__isNew__) {
-                        setSelectedIncludes({
-                          value: "new",
-                          label: selected.label,
-                        });
-                        setName(selected.label);
-                      } else {
-                        setSelectedIncludes(selected);
-                        setName(selected.label);
-                      }
-                    }}
-                    styles={{
-                      menuList: (base) => ({
-                        ...base,
-                        maxHeight: 5 * 38,
-                        overflowY: "auto",
-                      }),
-                    }}
-                  />
+                  <div className="col-md-4">
+                    <label className="form-label">Select Time Slot</label>
+                    <Select
+                      isMulti
+                      className="react-select-container text-sm"
+                      classNamePrefix="react-select"
+                      placeholder="Select time slots..."
+                      isClearable
+                      closeMenuOnSelect={false}
+                      options={timeSlots.map((slot) => ({
+                        value: slot.TsID,
+                        label: `${slot.StartTime} - ${slot.EndTime}`,
+                      }))}
+                      menuPlacement="auto"
+                      menuPortalTarget={document.body}
+                      styles={{
+                        menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                      }}
+                      value={inspectionTimeSlot}
+                      onChange={(options) => setInspectionTimeSlot(options || [])}
+                    />
+                  </div>
                 </div>
-              )}
-              {/* PACKAGE DROPDOWN visible only when itemType = Package */}
-              {itemType === "Package" && (
-                <div className="col-md-3">
-                  <label className="form-label">Select Package</label>
-                  <CreatableSelect
-                    className="react-select-container text-sm"
-                    classNamePrefix="react-select"
-                    isClearable
-                    placeholder="Search packages..."
-                    value={
-                      selectedPackage
-                        ? {
-                          value: selectedPackage,
-                          label:
-                            packagesList.find((p) => p.id == selectedPackage)
-                              ?.name || selectedPackage,
+
+                {/* Submit Button for Inspection */}
+                <div className="mt-4">
+                  {(isSupervisorHead || isFieldAdvisor || isAdmin || isTelecaller || isTelecallerHead) && (
+                    <div className="d-flex justify-content-center gap-3 mt-10">
+                      <button
+                        className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
+                        onClick={handleInspectionSubmit}
+                        disabled={!inspectionType || !inspectionDate || !Array.isArray(inspectionTimeSlot) || inspectionTimeSlot.length === 0}
+                      >
+                        Submit
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Service Booking Form */}
+      {bookingMode === "service" && (
+        <div className="row gy-4">
+          <div className="col-12">
+            <div className="card overflow-hidden p-3">
+              <div className="card-body">
+                {/* SINGLE FORM */}
+                <h6 className="mb-3">Add Service / Spare Part</h6>
+
+                <div className="row g-3 align-items-end">
+                  <div className="col-md-2">
+                    <label className="form-label">Select Type</label>
+                    <select
+                      className="form-select"
+                      value={itemType}
+                      onChange={(e) => {
+                        resetForm();
+                        setItemType(e.target.value);
+                        // Clear Service Group specific state when switching types
+                        if (e.target.value !== "Service Group") {
+                          setSelectedServices([]);
                         }
-                        : null
-                    }
-                    options={packagesList.map((pkg) => ({
-                      value: pkg.id,
-                      label: pkg.name,
-                    }))}
-                    onChange={(option) => {
-                      if (!option) {
-                        setSelectedPackage(null);
-                        setName("");
-                        setSelectedIncludes([]);
-                        setIsExistingPackage(false);
-                        setPrice(0);
-                        return;
-                      }
+                        // Clear other type-specific states
+                        if (e.target.value !== "Package") {
+                          setSelectedPackage(null);
+                          setSelectedIncludes([]);
+                        }
+                        if (e.target.value !== "Service") {
+                          setSelectedIncludes(null);
+                        }
+                      }}
+                    >
+                      <option value="Service">Service</option>
+                      <option value="Spare Part">Spare Part</option>
+                      <option value="Package">Package</option>
+                      <option value="Service Group">Service Group</option>
+                    </select>
+                  </div>
+                  {itemType === "Spare Part" && (
+                    <div className="col-md-3">
+                      <label className="form-label">Spare Part</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={name}
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          if (val.length > 0) {
+                            val = val.replace(
+                              /^(\s*)(\S)/,
+                              (_, space, char) => space + char.toUpperCase(),
+                            );
+                          }
+                          setName(val);
+                        }}
+                        placeholder="Enter Spare Name"
+                      />
+                    </div>
+                  )}
 
-                      const pkg = packagesList.find(
-                        (p) => p.id == option.value,
-                      );
+                  {itemType === "Service" && (
+                    <div className="col-md-3">
+                      <label className="form-label">Select Service</label>
+                      <CreatableSelect
+                        isSearchable
+                        className="react-select-container text-sm"
+                        classNamePrefix="react-select"
+                        placeholder="Search Services..."
+                        options={includesList.map((inc) => ({
+                          value: inc.IncludeID,
+                          label: inc.IncludeName,
+                        }))}
+                        value={selectedIncludes}
+                        onChange={(selected) => {
+                          if (!selected) {
+                            setSelectedIncludes(null);
+                            setName("");
+                            return;
+                          }
 
-                      setSelectedPackage(option.value);
-                      setName(option.label);
+                          if (selected.__isNew__) {
+                            setSelectedIncludes({
+                              value: "new",
+                              label: selected.label,
+                            });
+                            setName(selected.label);
+                          } else {
+                            setSelectedIncludes(selected);
+                            setName(selected.label);
+                          }
+                        }}
+                        styles={{
+                          menuList: (base) => ({
+                            ...base,
+                            maxHeight: 5 * 38,
+                            overflowY: "auto",
+                          }),
+                        }}
+                      />
+                    </div>
+                  )}
+                  {/* PACKAGE DROPDOWN visible only when itemType = Package */}
+                  {itemType === "Package" && (
+                    <div className="col-md-3">
+                      <label className="form-label">Select Package</label>
+                      <CreatableSelect
+                        className="react-select-container text-sm"
+                        classNamePrefix="react-select"
+                        isClearable
+                        placeholder="Search packages..."
+                        value={
+                          selectedPackage
+                            ? {
+                              value: selectedPackage,
+                              label:
+                                packagesList.find((p) => p.id == selectedPackage)
+                                  ?.name || selectedPackage,
+                            }
+                            : null
+                        }
+                        options={packagesList.map((pkg) => ({
+                          value: pkg.id,
+                          label: pkg.name,
+                        }))}
+                        onChange={(option) => {
+                          if (!option) {
+                            setSelectedPackage(null);
+                            setName("");
+                            setSelectedIncludes([]);
+                            setIsExistingPackage(false);
+                            setPrice(0);
+                            return;
+                          }
 
-                      if (pkg) {
-                        setIsExistingPackage(true);
-                        setSelectedIncludes(
-                          pkg.includes?.map((inc) => Number(inc.id)) || [],
-                        );
-                        setPrice(Number(pkg.offerPrice) || 0);
-                      } else {
-                        //  NEW PACKAGE (fallback)
-                        setIsExistingPackage(false);
-                        setSelectedIncludes([]);
-                        setPrice(0);
-                      }
-                    }}
-                    /** When user creates a new package */
-                    onCreateOption={(inputValue) => {
-                      const newId = `new-${Date.now()}`;
+                          const pkg = packagesList.find(
+                            (p) => p.id == option.value,
+                          );
 
-                      const newPackage = {
-                        id: newId,
-                        name: inputValue,
-                        includes: [],
-                      };
-                      setPackagesList((prev) => [...prev, newPackage]);
-                      setSelectedPackage(newId);
-                      setName(inputValue);
-                      // NEW PACKAGE = editable includes
-                      setIsExistingPackage(false);
-                      setSelectedIncludes([]);
-                      setPrice(0);
-                    }}
-                    styles={{
-                      menuList: (base) => ({
-                        ...base,
-                        maxHeight: 5 * 38,
-                        overflowY: "auto",
-                      }),
-                    }}
-                  />
-                </div>
-              )}
+                          setSelectedPackage(option.value);
+                          setName(option.label);
 
-              <div className="col-md-3">
-                <label className="form-label">Price</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={price}
-                  min={0}
-                  // onChange={(e) => setPrice(Number(e.target.value) || 0)}
-                  onChange={(e) => setPrice(e.target.value)}
-                  placeholder="0.00"
-                />
-              </div>
-              <div className="col-md-2">
-                <label className="form-label">Quantity</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  min={1}
-                  value={quantity === "" ? "" : quantity}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === "") {
-                      setQuantity("");
-                      return;
-                    }
-                    const num = Number(val);
-                    if (isNaN(num) || num < 1) return;
-                    setQuantity(num);
-                  }}
-                  onBlur={() => {
-                    if (quantity === "") {
-                      setQuantity(1);
-                    }
-                  }}
-                />
-              </div>
-              <div className="col-md-2">
-                <label className="form-label">GST %</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={gstPercent}
-                  min={0}
-                  onChange={(e) => handleGstPercentChange(e.target.value)}
-                />
-              </div>
+                          if (pkg) {
+                            setIsExistingPackage(true);
+                            setSelectedIncludes(
+                              pkg.includes?.map((inc) => Number(inc.id)) || [],
+                            );
+                            setPrice(Number(pkg.offerPrice) || 0);
+                          } else {
+                            //  NEW PACKAGE (fallback)
+                            setIsExistingPackage(false);
+                            setSelectedIncludes([]);
+                            setPrice(0);
+                          }
+                        }}
+                        /** When user creates a new package */
+                        onCreateOption={(inputValue) => {
+                          const newId = `new-${Date.now()}`;
 
-              {/* <div className="col-md-2">
+                          const newPackage = {
+                            id: newId,
+                            name: inputValue,
+                            includes: [],
+                          };
+                          setPackagesList((prev) => [...prev, newPackage]);
+                          setSelectedPackage(newId);
+                          setName(inputValue);
+                          // NEW PACKAGE = editable includes
+                          setIsExistingPackage(false);
+                          setSelectedIncludes([]);
+                          setPrice(0);
+                        }}
+                        styles={{
+                          menuList: (base) => ({
+                            ...base,
+                            maxHeight: 5 * 38,
+                            overflowY: "auto",
+                          }),
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  <div className="col-md-3">
+                    <label className="form-label">Price</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={price}
+                      min={0}
+                      // onChange={(e) => setPrice(Number(e.target.value) || 0)}
+                      onChange={(e) => setPrice(e.target.value)}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="col-md-2">
+                    <label className="form-label">Quantity</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      min={1}
+                      value={quantity === "" ? "" : quantity}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "") {
+                          setQuantity("");
+                          return;
+                        }
+                        const num = Number(val);
+                        if (isNaN(num) || num < 1) return;
+                        setQuantity(num);
+                      }}
+                      onBlur={() => {
+                        if (quantity === "") {
+                          setQuantity(1);
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="col-md-2">
+                    <label className="form-label">GST %</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={gstPercent}
+                      min={0}
+                      onChange={(e) => handleGstPercentChange(e.target.value)}
+                    />
+                  </div>
+
+                  {/* <div className="col-md-2">
                 <label className="form-label">GST Price</label>
                 <input
                   type="number"
@@ -2628,355 +2972,909 @@ const BookServicesLayer = () => {
                   onChange={(e) => handleGstAmountChange(e.target.value)}
                 />
               </div> */}
-              {itemType === "Package" && selectedPackage && (
-                <div className="col-md-12">
-                  <label className="form-label">Select Includes</label>
+                  {itemType === "Package" && selectedPackage && (
+                    <div className="col-md-12">
+                      <label className="form-label">Select Includes</label>
 
-                  <Select
-                    isMulti
-                    isSearchable={!isExistingPackage}
-                    isDisabled={isExistingPackage}
-                    closeMenuOnSelect={!isExistingPackage}
-                    hideSelectedOptions={false}
-                    className="react-select-container text-sm"
-                    classNamePrefix="react-select"
-                    options={includesList.map((inc) => ({
-                      value: inc.IncludeID,
-                      label: inc.IncludeName,
-                    }))}
-                    value={includesList
-                      .filter((inc) =>
-                        selectedIncludes.includes(Number(inc.IncludeID)),
-                      )
-                      .map((inc) => ({
-                        value: inc.IncludeID,
-                        label: inc.IncludeName,
-                      }))}
-                    onChange={(selected) => {
-                      if (isExistingPackage) return;
-                      setSelectedIncludes(selected.map((s) => Number(s.value)));
-                    }}
-                    components={{ Option: CheckboxOption }}
-                    placeholder="Select items included in package"
-                  />
-                </div>
-              )}
-
-              {itemType === "Service Group" && (
-                <div className="col-md-12">
-                  <label className="form-label">
-                    Select Services (Multiple){" "}
-                    <span className="text-danger">*</span>
-                  </label>
-                  <CreatableSelect
-                    isMulti
-                    isSearchable
-                    closeMenuOnSelect={false}
-                    hideSelectedOptions={false}
-                    className="react-select-container text-sm"
-                    classNamePrefix="react-select"
-                    options={includesList.map((inc) => ({
-                      value: inc.IncludeID,
-                      label: inc.IncludeName,
-                    }))}
-                    value={selectedServices}
-                    onChange={(selected) => {
-                      setSelectedServices(selected || []);
-                      // Set name to first selected service name
-                      if (selected && selected.length > 0) {
-                        setName(selected[0].label);
-                      } else {
-                        setName("");
-                      }
-                    }}
-                    components={{ Option: CheckboxOption }}
-                    placeholder="Search or create services for group..."
-                    styles={{
-                      menuList: (base) => ({
-                        ...base,
-                        maxHeight: 5 * 38,
-                        overflowY: "auto",
-                      }),
-                    }}
-                  />
-                  {selectedServices.length > 0 && (
-                    <small className="text-muted d-block mt-1">
-                      First service ({selectedServices[0].label}) will be the
-                      main service. Others will be included.
-                    </small>
+                      <Select
+                        isMulti
+                        isSearchable={!isExistingPackage}
+                        isDisabled={isExistingPackage}
+                        closeMenuOnSelect={!isExistingPackage}
+                        hideSelectedOptions={false}
+                        className="react-select-container text-sm"
+                        classNamePrefix="react-select"
+                        options={includesList.map((inc) => ({
+                          value: inc.IncludeID,
+                          label: inc.IncludeName,
+                        }))}
+                        value={includesList
+                          .filter((inc) =>
+                            selectedIncludes.includes(Number(inc.IncludeID)),
+                          )
+                          .map((inc) => ({
+                            value: inc.IncludeID,
+                            label: inc.IncludeName,
+                          }))}
+                        onChange={(selected) => {
+                          if (isExistingPackage) return;
+                          setSelectedIncludes(selected.map((s) => Number(s.value)));
+                        }}
+                        components={{ Option: CheckboxOption }}
+                        placeholder="Select items included in package"
+                      />
+                    </div>
                   )}
-                </div>
-              )}
 
-              <div className="col-12">
-                <label className="form-label">Description</label>
-                <textarea
-                  className="form-control"
-                  rows={2}
-                  value={description}
-                  onChange={(e) => {
-                    let val = e.target.value;
-                    if (val.length > 0) {
-                      val = val.replace(
-                        /^(\s*)(\S)/,
-                        (_, space, char) => space + char.toUpperCase(),
-                      );
-                    }
-                    setDescription(val);
-                  }}
-                  placeholder="Short description"
-                />
-              </div>
+                  {itemType === "Service Group" && (
+                    <div className="col-md-12">
+                      <label className="form-label">
+                        Select Services (Multiple){" "}
+                        <span className="text-danger">*</span>
+                      </label>
+                      <CreatableSelect
+                        isMulti
+                        isSearchable
+                        closeMenuOnSelect={false}
+                        hideSelectedOptions={false}
+                        className="react-select-container text-sm"
+                        classNamePrefix="react-select"
+                        options={includesList.map((inc) => ({
+                          value: inc.IncludeID,
+                          label: inc.IncludeName,
+                        }))}
+                        value={selectedServices}
+                        onChange={(selected) => {
+                          setSelectedServices(selected || []);
+                          // Set name to first selected service name
+                          if (selected && selected.length > 0) {
+                            setName(selected[0].label);
+                          } else {
+                            setName("");
+                          }
+                        }}
+                        components={{ Option: CheckboxOption }}
+                        placeholder="Search or create services for group..."
+                        styles={{
+                          menuList: (base) => ({
+                            ...base,
+                            maxHeight: 5 * 38,
+                            overflowY: "auto",
+                          }),
+                        }}
+                      />
+                      {selectedServices.length > 0 && (
+                        <small className="text-muted d-block mt-1">
+                          First service ({selectedServices[0].label}) will be the
+                          main service. Others will be included.
+                        </small>
+                      )}
+                    </div>
+                  )}
 
-              <div className="col-12 d-flex gap-2 justify-content-end">
-                <button
-                  className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
-                  onClick={handleAddOrSave}
-                >
-                  Add Item
-                </button>
-              </div>
-            </div>
-            {/* SINGLE TABLE FOR BOTH */}
-            <div className="editable-table">
-              <h6>Added Services + Spare Parts</h6>
-              <DataTable
-                columns={columns}
-                data={flattenedRows}
-                fixedHeader
-                fixedHeaderScrollHeight="420px"
-                // pagination
-                highlightOnHover
-                responsive
-                striped
-                persistTableHead
-                noDataComponent="No items added yet"
-                conditionalRowStyles={[
-                  {
-                    when: (row) =>
-                      row._apiId &&
-                      !row.isInclude &&
-                      initialItemsSnapshot[row._apiId] !== undefined &&
-                      getItemFingerprint(row) !== initialItemsSnapshot[row._apiId],
-                    style: {
-                      backgroundColor: "rgba(13, 148, 136, 0.12)",
-                    },
-                  },
-                ]}
-              />
-            </div>
-            {/* Totals */}
-            {addedItems.length > 0 && (
-              <div className="mt-3 p-3 border rounded bg-light">
-                <div className="d-flex justify-content-between">
-                  <div>Items Subtotal</div>
-                  <div>₹{itemTotal.toFixed(2)}</div>
+                  <div className="col-12">
+                    <label className="form-label">Description</label>
+                    <textarea
+                      className="form-control"
+                      rows={2}
+                      value={description}
+                      onChange={(e) => {
+                        let val = e.target.value;
+                        if (val.length > 0) {
+                          val = val.replace(
+                            /^(\s*)(\S)/,
+                            (_, space, char) => space + char.toUpperCase(),
+                          );
+                        }
+                        setDescription(val);
+                      }}
+                      placeholder="Short description"
+                    />
+                  </div>
+
+                  <div className="col-12 d-flex gap-2 justify-content-end">
+                    <button
+                      className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
+                      onClick={handleAddOrSave}
+                    >
+                      Add Item
+                    </button>
+                  </div>
                 </div>
-                <div className="d-flex justify-content-between">
-                  <div>Service Charges</div>
-                  <div>₹{labourTotal.toFixed(2)}</div>
+                {/* SINGLE TABLE FOR BOTH */}
+                <div className="editable-table">
+                  <h6>Added Services + Spare Parts</h6>
+                  <DataTable
+                    columns={columns}
+                    data={flattenedRows}
+                    fixedHeader
+                    fixedHeaderScrollHeight="420px"
+                    // pagination
+                    highlightOnHover
+                    responsive
+                    striped
+                    persistTableHead
+                    noDataComponent="No items added yet"
+                    conditionalRowStyles={[
+                      {
+                        when: (row) =>
+                          row._apiId &&
+                          !row.isInclude &&
+                          initialItemsSnapshot[row._apiId] !== undefined &&
+                          getItemFingerprint(row) !== initialItemsSnapshot[row._apiId],
+                        style: {
+                          backgroundColor: "rgba(13, 148, 136, 0.12)",
+                        },
+                      },
+                    ]}
+                  />
                 </div>
-                {/* <div className="d-flex justify-content-between">
+                {/* Totals */}
+                {addedItems.length > 0 && (
+                  <div className="mt-3 p-3 border rounded bg-light">
+                    <div className="d-flex justify-content-between">
+                      <div>Items Subtotal</div>
+                      <div>₹{itemTotal.toFixed(2)}</div>
+                    </div>
+                    <div className="d-flex justify-content-between">
+                      <div>Service Charges</div>
+                      <div>₹{labourTotal.toFixed(2)}</div>
+                    </div>
+                    {/* <div className="d-flex justify-content-between">
                   <div>Total GST</div>
                   <div>₹{totalGst.toFixed(2)}</div>
                 </div> */}
-                <div className="d-flex justify-content-between">
-                  <div>SGST</div>
-                  <div>₹{(totalGst / 2).toFixed(2)}</div>
-                </div>
-                <div className="d-flex justify-content-between">
-                  <div>CGST</div>
-                  <div>₹{(totalGst / 2).toFixed(2)}</div>
-                </div>
-                <hr />
-                <div className="d-flex justify-content-between fw-bold">
-                  <div>Grand Total</div>
-                  <div>₹{grandTotal.toFixed(2)}</div>
-                </div>
-              </div>
-            )}
-            {/* Service Date & Time Slot Selection */}
-            {addedItems.length > 0 && (
-              <div className="row mt-3 align-items-center g-3">
-                {/* ---------- Service Date ---------- */}
-                <div className="col-md-6">
-                  <div className="row align-items-center g-2">
-                    <div className="col-auto">
-                      <label className="form-label fw-semibold mb-0">
-                        Service Date
-                      </label>
+                    <div className="d-flex justify-content-between">
+                      <div>SGST(9%)</div>
+                      <div>₹{(totalGst / 2).toFixed(2)}</div>
                     </div>
-
-                    <div className="col">
-                      {isScheduleAlreadySet ? (
-                        <input
-                          type="text"
-                          className="form-control"
-                          value={
-                            bookingData?.bookingDate
-                              ? new Date(
-                                bookingData.bookingDate,
-                              ).toLocaleDateString("en-IN")
-                              : "—"
-                          }
-                          readOnly
-                        />
-                      ) : (
-                        <input
-                          type="date"
-                          className="form-control"
-                          value={serviceDate}
-                          onChange={(e) => setServiceDate(e.target.value)}
-                          min={new Date().toISOString().split("T")[0]}
-                        />
-                      )}
+                    <div className="d-flex justify-content-between">
+                      <div>CGST(9%)</div>
+                      <div>₹{(totalGst / 2).toFixed(2)}</div>
+                    </div>
+                    <hr />
+                    <div className="d-flex justify-content-between fw-bold">
+                      <div>Grand Total</div>
+                      <div>₹{grandTotal.toFixed(2)}</div>
                     </div>
                   </div>
-                </div>
+                )}
+                {/* Service Date & Time Slot Selection */}
+                {addedItems.length > 0 && (
+                  <div className="row mt-3 align-items-center g-3">
+                    {/* ---------- Service Date ---------- */}
+                    <div className="col-md-6">
+                      <div className="row align-items-center g-2">
+                        <div className="col-auto">
+                          <label className="form-label fw-semibold mb-0">
+                            Service Date
+                          </label>
+                        </div>
 
-                {/* ---------- Time Slot ---------- */}
-                <div className="col-md-6">
-                  <div className="row align-items-center g-2">
-                    <div className="col-auto">
-                      <label className="form-label fw-semibold mb-0">
-                        Time Slot
-                      </label>
-                    </div>
-
-                    <div className="col">
-                      {isScheduleAlreadySet ? (
-                        <input
-                          type="text"
-                          className="form-control"
-                          value={(() => {
-                            if (!bookingData?.timeSlot) return "—";
-
-                            // case 1: already string
-                            if (typeof bookingData.timeSlot === "string") {
-                              return bookingData.timeSlot;
-                            }
-                            // case 2: slots not loaded yet
-                            if (timeSlots.length === 0) {
-                              return "Loading time slot...";
-                            }
-
-                            // case 3: ID → label
-                            const slot = timeSlots.find(
-                              (t) => t.TsID === bookingData.timeSlot,
-                            );
-
-                            return slot
-                              ? `${slot.StartTime} - ${slot.EndTime}`
-                              : "—";
-                          })()}
-                          readOnly
-                        />
-                      ) : (
-                        <Select
-                          isMulti
-                          className="react-select-container text-sm"
-                          classNamePrefix="react-select"
-                          placeholder="Select time slots..."
-                          isClearable
-                          closeMenuOnSelect={false}
-                          options={timeSlots.map((slot) => ({
-                            value: slot.TsID,
-                            label: `${slot.StartTime} - ${slot.EndTime}`,
-                          }))}
-                          menuPlacement="auto"
-                          menuPortalTarget={document.body}
-                          styles={{
-                            menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                          }}
-                          value={selectedTimeSlot}
-                          onChange={(options) =>
-                            setSelectedTimeSlot(options || [])
-                          }
-                        />
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            {/* Submit & Confirm Button */}
-            {addedItems.length > 0 && (
-              <div className="mt-3">
-                {/* Verification Checkbox - Visible to Admin and Supervisor Head */}
-                {(isSupervisorHead || isAdmin) &&
-                  employeeData?.DepartmentName !== "Support" && (
-                    <div className="mb-3 p-3 border rounded bg-light">
-                      <div className="d-flex align-items-start">
-                        <input
-                          type="checkbox"
-                          id="verifyAddons"
-                          className="form-check-input mt-1"
-                          checked={isVerified}
-                          onChange={(e) => setIsVerified(e.target.checked)}
-                          style={{
-                            cursor: "pointer",
-                            width: "18px",
-                            height: "18px",
-                            border: "2px solid #0d9488",
-                            borderRadius: "3px",
-                            flexShrink: 0,
-                            marginRight: "10px",
-                          }}
-                        />
-                        <label
-                          htmlFor="verifyAddons"
-                          className="form-check-label mb-0"
-                          style={{
-                            cursor: "pointer",
-                            lineHeight: "1.5",
-                            userSelect: "none",
-                            paddingLeft: "4px",
-                          }}
-                        >
-                          I have carefully checked and verified all booking add-ons and agree to proceed with the confirmation.
-                        </label>
+                        <div className="col">
+                          {isScheduleAlreadySet ? (
+                            <input
+                              type="text"
+                              className="form-control"
+                              value={
+                                bookingData?.bookingDate
+                                  ? new Date(
+                                    bookingData.bookingDate,
+                                  ).toLocaleDateString("en-IN")
+                                  : "—"
+                              }
+                              readOnly
+                            />
+                          ) : (
+                            <input
+                              type="date"
+                              className="form-control"
+                              value={serviceDate}
+                              onChange={(e) => setServiceDate(e.target.value)}
+                              min={new Date().toISOString().split("T")[0]}
+                            />
+                          )}
+                        </div>
                       </div>
                     </div>
-                  )}
-                {(
-                  (isSupervisorHead || isAdmin) &&
-                  employeeData?.DepartmentName !== "Support" &&
-                  (hasNewItem || hasEdits)
-                ) && (
-                    <div className="text-primary text-center mt-2 mb-4 fw-semibold">
-                      You’ve added new items. Please submit them first to proceed
-                      with booking confirmation.
+
+                    {/* ---------- Time Slot ---------- */}
+                    <div className="col-md-6">
+                      <div className="row align-items-center g-2">
+                        <div className="col-auto">
+                          <label className="form-label fw-semibold mb-0">
+                            Time Slot
+                          </label>
+                        </div>
+
+                        <div className="col">
+                          {isScheduleAlreadySet ? (
+                            <input
+                              type="text"
+                              className="form-control"
+                              value={(() => {
+                                if (!bookingData?.timeSlot) return "—";
+
+                                // case 1: already string
+                                if (typeof bookingData.timeSlot === "string") {
+                                  return bookingData.timeSlot;
+                                }
+                                // case 2: slots not loaded yet
+                                if (timeSlots.length === 0) {
+                                  return "Loading time slot...";
+                                }
+
+                                // case 3: ID → label
+                                const slot = timeSlots.find(
+                                  (t) => t.TsID === bookingData.timeSlot,
+                                );
+
+                                return slot
+                                  ? `${slot.StartTime} - ${slot.EndTime}`
+                                  : "—";
+                              })()}
+                              readOnly
+                            />
+                          ) : (
+                            <Select
+                              isMulti
+                              className="react-select-container text-sm"
+                              classNamePrefix="react-select"
+                              placeholder="Select time slots..."
+                              isClearable
+                              closeMenuOnSelect={false}
+                              options={timeSlots.map((slot) => ({
+                                value: slot.TsID,
+                                label: `${slot.StartTime} - ${slot.EndTime}`,
+                              }))}
+                              menuPlacement="auto"
+                              menuPortalTarget={document.body}
+                              styles={{
+                                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                              }}
+                              value={selectedTimeSlot}
+                              onChange={(options) =>
+                                setSelectedTimeSlot(options || [])
+                              }
+                            />
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  )}
-                <div className="d-flex justify-content-center gap-3 mt-6">
-                  {showSubmitButton &&
-                    (isSupervisorHead || isFieldAdvisor || isAdmin || isTelecaller || isTelecallerHead) && (
-                      <button
-                        className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
-                        onClick={handleCombinedSubmit}
-                      >
-                        Submit
-                      </button>
-                    )}
-                  {(isSupervisorHead ||
-                    isAdmin) &&
-                    employeeData?.DepartmentName !== "Support" && (
-                      <button
-                        className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
-                        onClick={handleConfirmBooking}
-                        disabled={hasNewItem || hasEdits || !isVerified}
-                      >
-                        Confirm Booking
-                      </button>
-                    )}
+                  </div>
+                )}
+                {/* Submit & Confirm Button */}
+                {addedItems.length > 0 && (
+                  <div className="mt-3">
+                    {/* Verification Checkbox - Visible to Admin and Supervisor Head */}
+                    {(isSupervisorHead || isAdmin) &&
+                      employeeData?.DepartmentName !== "Support" && (
+                        <div className="mb-3 p-3 border rounded bg-light">
+                          <div className="d-flex align-items-start">
+                            <input
+                              type="checkbox"
+                              id="verifyAddons"
+                              className="form-check-input mt-1"
+                              checked={isVerified}
+                              onChange={(e) => setIsVerified(e.target.checked)}
+                              style={{
+                                cursor: "pointer",
+                                width: "18px",
+                                height: "18px",
+                                border: "2px solid #0d9488",
+                                borderRadius: "3px",
+                                flexShrink: 0,
+                                marginRight: "10px",
+                              }}
+                            />
+                            <label
+                              htmlFor="verifyAddons"
+                              className="form-check-label mb-0"
+                              style={{
+                                cursor: "pointer",
+                                lineHeight: "1.5",
+                                userSelect: "none",
+                                paddingLeft: "4px",
+                              }}
+                            >
+                              I have carefully checked and verified all booking add-ons and agree to proceed with the confirmation.
+                            </label>
+                          </div>
+                        </div>
+                      )}
+                    {(
+                      (isSupervisorHead || isAdmin) &&
+                      employeeData?.DepartmentName !== "Support" &&
+                      (hasNewItem || hasEdits)
+                    ) && (
+                        <div className="text-primary text-center mt-2 mb-4 fw-semibold">
+                          You’ve added new items. Please submit them first to proceed
+                          with booking confirmation.
+                        </div>
+                      )}
+                    <div className="d-flex justify-content-center gap-3 mt-6">
+                      {showSubmitButton &&
+                        (isSupervisorHead || isFieldAdvisor || isAdmin || isTelecaller || isTelecallerHead) && (
+                          <button
+                            className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
+                            onClick={handleCombinedSubmit}
+                          >
+                            Submit
+                          </button>
+                        )}
+                      {(isSupervisorHead ||
+                        isAdmin) &&
+                        employeeData?.DepartmentName !== "Support" && (
+                          <button
+                            className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
+                            onClick={handleConfirmBooking}
+                            disabled={hasNewItem || hasEdits || !isVerified}
+                          >
+                            Confirm Booking
+                          </button>
+                        )}
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showBookingChoiceModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#ffffff",
+              width: "95%",
+              maxWidth: "500px",
+              borderRadius: "28px",
+              padding: "40px 36px",
+              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+              position: "relative",
+              animation: "fadeIn 0.3s ease-out",
+            }}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                // Navigate to lead view page
+                navigate(`/lead-view/${leadId}`);
+              }}
+              style={{
+                position: "absolute",
+                top: "24px",
+                right: "24px",
+                border: "none",
+                background: "rgba(0, 0, 0, 0.05)",
+                width: "36px",
+                height: "36px",
+                borderRadius: "50%",
+                cursor: "pointer",
+                color: "#64748b",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "18px",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(0, 0, 0, 0.1)";
+                e.currentTarget.style.transform = "rotate(90deg)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(0, 0, 0, 0.05)";
+                e.currentTarget.style.transform = "rotate(0deg)";
+              }}
+            >
+              <Icon icon="mingcute:close-line" width={20} />
+            </button>
+
+            {/* Header */}
+            <div style={{ marginBottom: "32px", paddingRight: "40px" }}>
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                marginBottom: "12px"
+              }}>
+                <div style={{
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "14px",
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
+                }}>
+                  <Icon
+                    icon={bookingMode === "inspection" ? "mingcute:file-search-line" : "mingcute:calendar-schedule-line"}
+                    width={24}
+                    style={{ color: "#fff" }}
+                  />
+                </div>
+                <h5
+                  onClick={() => {
+                    if (bookingMode === "inspection") {
+                      // Go back to booking type selection
+                      setBookingMode(null);
+                    } else {
+                      // Close modal (same as cross button)
+                      setShowBookingChoiceModal(false);
+                      if (addedItems.length === 0 && !bookingData?.bookingDate && !bookingData?.timeSlot) {
+                        setBookingMode(null);
+                      }
+                    }
+                  }}
+                  style={{
+                    fontWeight: "700",
+                    fontSize: "1.75rem",
+                    margin: 0,
+                    color: "#1e293b",
+                    letterSpacing: "-0.02em",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "#667eea";
+                    e.currentTarget.style.transform = "translateX(-2px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "#1e293b";
+                    e.currentTarget.style.transform = "translateX(0)";
+                  }}
+                >
+                  {bookingMode === "inspection" ? "Inspection Details" : "Booking Type"}
+                </h5>
+              </div>
+              <p style={{
+                color: "#64748b",
+                fontSize: "0.95rem",
+                margin: 0,
+                lineHeight: "1.6",
+                marginLeft: "60px",
+              }}>
+                {bookingMode === "inspection"
+                  ? "Please select your preferred date and time."
+                  : "Choose the service you wish to schedule for this vehicle."}
+              </p>
+            </div>
+
+            {/* ---------- SCREEN 1: THE CARDS ---------- */}
+            {!bookingMode && (
+              <div style={{ display: "flex", gap: "20px", flexDirection: "column" }}>
+                {/* Service Card */}
+                <div
+                  onClick={() => {
+                    setBookingMode("service");
+                    setShowBookingChoiceModal(false);
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-4px) scale(1.02)";
+                    e.currentTarget.style.boxShadow = "0 12px 32px rgba(34, 197, 94, 0.25)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0) scale(1)";
+                    e.currentTarget.style.boxShadow = "0 4px 16px rgba(34, 197, 94, 0.15)";
+                  }}
+                  style={{
+                    padding: "28px 24px",
+                    borderRadius: "20px",
+                    background: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)",
+                    border: "2px solid #22c55e",
+                    cursor: "pointer",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    position: "relative",
+                    overflow: "hidden",
+                  }}
+                >
+                  <div style={{
+                    position: "absolute",
+                    top: "-20px",
+                    right: "-20px",
+                    width: "100px",
+                    height: "100px",
+                    borderRadius: "50%",
+                    background: "rgba(34, 197, 94, 0.1)",
+                    opacity: 0.5,
+                  }} />
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "16px",
+                    position: "relative",
+                    zIndex: 1,
+                  }}>
+                    <div style={{
+                      width: "64px",
+                      height: "64px",
+                      borderRadius: "16px",
+                      background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: "0 4px 12px rgba(34, 197, 94, 0.3)",
+                      flexShrink: 0,
+                    }}>
+                      <Icon icon="mingcute:tools-line" width={32} style={{ color: "#fff" }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{
+                        fontWeight: "700",
+                        fontSize: "1.15rem",
+                        color: "#15803d",
+                        marginBottom: "4px",
+                      }}>
+                        Book Service
+                      </div>
+                      <div style={{
+                        fontSize: "0.875rem",
+                        color: "#16a34a",
+                        opacity: 0.8,
+                      }}>
+                        Schedule vehicle maintenance
+                      </div>
+                    </div>
+                    <Icon
+                      icon="mingcute:arrow-right-line"
+                      width={24}
+                      style={{ color: "#22c55e" }}
+                    />
+                  </div>
+                </div>
+
+                {/* Inspection Card */}
+                <div
+                  onClick={() => setBookingMode("inspection")}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-4px) scale(1.02)";
+                    e.currentTarget.style.boxShadow = "0 12px 32px rgba(251, 146, 60, 0.25)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0) scale(1)";
+                    e.currentTarget.style.boxShadow = "0 4px 16px rgba(251, 146, 60, 0.15)";
+                  }}
+                  style={{
+                    padding: "28px 24px",
+                    borderRadius: "20px",
+                    background: "linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)",
+                    border: "2px solid #fb923c",
+                    cursor: "pointer",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    position: "relative",
+                    overflow: "hidden",
+                  }}
+                >
+                  <div style={{
+                    position: "absolute",
+                    top: "-20px",
+                    right: "-20px",
+                    width: "100px",
+                    height: "100px",
+                    borderRadius: "50%",
+                    background: "rgba(251, 146, 60, 0.1)",
+                    opacity: 0.5,
+                  }} />
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "16px",
+                    position: "relative",
+                    zIndex: 1,
+                  }}>
+                    <div style={{
+                      width: "64px",
+                      height: "64px",
+                      borderRadius: "16px",
+                      background: "linear-gradient(135deg, #fb923c 0%, #f97316 100%)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: "0 4px 12px rgba(251, 146, 60, 0.3)",
+                      flexShrink: 0,
+                    }}>
+                      <Icon icon="mingcute:file-search-line" width={32} style={{ color: "#fff" }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{
+                        fontWeight: "700",
+                        fontSize: "1.15rem",
+                        color: "#c2410c",
+                        marginBottom: "4px",
+                      }}>
+                        Inspection
+                      </div>
+                      <div style={{
+                        fontSize: "0.875rem",
+                        color: "#ea580c",
+                        opacity: 0.8,
+                      }}>
+                        Vehicle inspection & assessment
+                      </div>
+                    </div>
+                    <Icon
+                      icon="mingcute:arrow-right-line"
+                      width={24}
+                      style={{ color: "#fb923c" }}
+                    />
+                  </div>
                 </div>
               </div>
             )}
 
+            {/* ---------- SCREEN 2: INSPECTION FORM ---------- */}
+            {bookingMode === "inspection" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+
+                <div>
+                  <label style={{
+                    fontSize: "0.75rem",
+                    fontWeight: "600",
+                    color: "#64748b",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    marginBottom: "8px",
+                    display: "block",
+                  }}>
+                    <Icon icon="mingcute:file-list-line" width={14} style={{ marginRight: "6px", verticalAlign: "middle" }} />
+                    Inspection Type
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <Icon
+                      icon="mingcute:file-search-line"
+                      width={20}
+                      style={{
+                        position: "absolute",
+                        left: "14px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        color: "#94a3b8",
+                        zIndex: 1,
+                      }}
+                    />
+                    <select
+                      className="form-select"
+                      style={{
+                        borderRadius: "14px",
+                        padding: "12px 12px 12px 44px",
+                        border: "2px solid #e2e8f0",
+                        fontSize: "14px",
+                        fontWeight: "500",
+                        color: "#1e293b",
+                        background: "#fff",
+                        transition: "all 0.2s ease",
+                        cursor: "pointer",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "#fb923c";
+                        e.target.style.boxShadow = "0 0 0 3px rgba(251, 146, 60, 0.1)";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = "#e2e8f0";
+                        e.target.style.boxShadow = "none";
+                      }}
+                      value={inspectionType}
+                      onChange={(e) => {
+                        const selectedValue = e.target.value;
+                        setInspectionType(selectedValue);
+                        // Find and store the selected package
+                        const selectedPkg = inspectionPackages.find(
+                          (pkg) => pkg.id.toString() === selectedValue
+                        );
+                        setSelectedInspectionPackage(selectedPkg || null);
+                      }}
+                    >
+                      <option value="">Select Inspection Package</option>
+                      {inspectionPackages.map((pkg) => (
+                        <option key={pkg.id} value={pkg.id}>
+                          {pkg.name} - ₹{pkg.price}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{
+                    fontSize: "0.75rem",
+                    fontWeight: "600",
+                    color: "#64748b",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    marginBottom: "8px",
+                    display: "block",
+                  }}>
+                    <Icon icon="mingcute:calendar-line" width={14} style={{ marginRight: "6px", verticalAlign: "middle" }} />
+                    Select Date
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <Icon
+                      icon="mingcute:calendar-2-line"
+                      width={20}
+                      style={{
+                        position: "absolute",
+                        left: "14px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        color: "#94a3b8",
+                        zIndex: 1,
+                        pointerEvents: "none",
+                      }}
+                    />
+                    <input
+                      type="date"
+                      className="form-control"
+                      style={{
+                        borderRadius: "14px",
+                        padding: "12px 12px 12px 44px",
+                        border: "2px solid #e2e8f0",
+                        fontSize: "14px",
+                        fontWeight: "500",
+                        color: "#1e293b",
+                        background: "#fff",
+                        transition: "all 0.2s ease",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "#fb923c";
+                        e.target.style.boxShadow = "0 0 0 3px rgba(251, 146, 60, 0.1)";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = "#e2e8f0";
+                        e.target.style.boxShadow = "none";
+                      }}
+                      value={inspectionDate}
+                      min={new Date().toISOString().split("T")[0]}
+                      onChange={(e) => setInspectionDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{
+                    fontSize: "0.75rem",
+                    fontWeight: "600",
+                    color: "#64748b",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    marginBottom: "8px",
+                    display: "block",
+                  }}>
+                    <Icon icon="mingcute:time-line" width={14} style={{ marginRight: "6px", verticalAlign: "middle" }} />
+                    Select Time Slot
+                  </label>
+                  <Select
+                    isMulti
+                    className="text-sm"
+                    isClearable
+                    closeMenuOnSelect={false}
+                    styles={{
+                      control: (base, state) => ({
+                        ...base,
+                        borderRadius: "14px",
+                        padding: "4px 4px 4px 4px",
+                        borderColor: state.isFocused ? "#fb923c" : "#e2e8f0",
+                        borderWidth: "2px",
+                        boxShadow: state.isFocused ? "0 0 0 3px rgba(251, 146, 60, 0.1)" : "none",
+                        minHeight: "44px",
+                        "&:hover": {
+                          borderColor: "#fb923c",
+                        },
+                      }),
+                      placeholder: (base) => ({
+                        ...base,
+                        color: "#94a3b8",
+                      }),
+                    }}
+                    options={timeSlots.map((slot) => ({
+                      value: slot.TsID,
+                      label: `${slot.StartTime} - ${slot.EndTime}`,
+                    }))}
+                    value={inspectionTimeSlot}
+                    onChange={(options) => setInspectionTimeSlot(options || [])}
+                    placeholder="Choose time slots..."
+                  />
+                </div>
+
+                <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+                  <button
+                    onClick={() => setBookingMode(null)}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#e2e8f0";
+                      e.currentTarget.style.transform = "translateY(-1px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "#f1f5f9";
+                      e.currentTarget.style.transform = "translateY(0)";
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: "14px 20px",
+                      borderRadius: "14px",
+                      border: "none",
+                      background: "#f1f5f9",
+                      fontWeight: "600",
+                      color: "#475569",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <Icon icon="mingcute:arrow-left-line" width={18} />
+                    Back
+                  </button>
+
+                  <button
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "linear-gradient(135deg, #f97316 0%, #ea580c 100%)";
+                      e.currentTarget.style.transform = "translateY(-1px)";
+                      e.currentTarget.style.boxShadow = "0 8px 20px rgba(251, 146, 60, 0.4)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "linear-gradient(135deg, #fb923c 0%, #f97316 100%)";
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "0 4px 15px rgba(251, 146, 60, 0.3)";
+                    }}
+                    style={{
+                      flex: 2,
+                      padding: "14px 20px",
+                      borderRadius: "14px",
+                      border: "none",
+                      background: "linear-gradient(135deg, #fb923c 0%, #f97316 100%)",
+                      color: "#fff",
+                      fontWeight: "700",
+                      cursor: "pointer",
+                      boxShadow: "0 4px 15px rgba(251, 146, 60, 0.3)",
+                      transition: "all 0.2s ease",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                    }}
+                    onClick={() => {
+                      if (!inspectionType || !inspectionDate) {
+                        Swal.fire("Error", "Please fill all inspection details", "error");
+                        return;
+                      }
+                      if (!Array.isArray(inspectionTimeSlot) || inspectionTimeSlot.length === 0) {
+                        Swal.fire("Error", "Please select at least one time slot", "error");
+                        return;
+                      }
+                      setBookingMode("inspection");
+                      setShowBookingChoiceModal(false);
+                    }}
+                  >
+                    Continue
+                    <Icon icon="mingcute:arrow-right-line" width={18} />
+                  </button>
+                </div>
+
+              </div>
+            )}
           </div>
         </div>
-      </div>
-    </div>
+      )}
+
+    </>
   );
 };
 
