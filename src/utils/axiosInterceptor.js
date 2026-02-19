@@ -42,9 +42,10 @@ export const setupAxiosInterceptor = () => {
     async (error) => {
       const originalRequest = error.config;
 
-      // Don't retry if already retried or if it's the refresh endpoint
+      // Don't retry if already retried or if it's the refresh/login endpoint
       const isRefreshEndpoint = originalRequest?.url?.includes("Auth/refresh");
-      if (isRefreshEndpoint || originalRequest._retry) {
+      const isLoginEndpoint = originalRequest?.url?.includes("Auth/Admin-login");
+      if ((isRefreshEndpoint || isLoginEndpoint) || originalRequest._retry) {
         if (isRefreshEndpoint) {
           clearAuthAndRedirect();
         }
