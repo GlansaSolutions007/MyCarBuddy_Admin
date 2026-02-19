@@ -1735,7 +1735,7 @@ const LeadViewLayer = () => {
                                       </Link>
                                       {!isLeadClosed && (
                                         <Link
-                                          to={`/book-service/${b.LeadId}`}
+                                          to={`/book-service/${b.LeadId}/${b.BookingID}/${b.BookingTrackID}`}
                                           className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
                                           title="Edit"
                                         >

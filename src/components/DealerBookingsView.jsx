@@ -1292,11 +1292,11 @@ const DealerBookingsView = () => {
                   <div>₹{totalGst.toFixed(2)}</div>
                 </div> */}
                 <div className="d-flex justify-content-between">
-                  <div>SGST</div>
+                  <div>SGST(9%)</div>
                   <div>₹{(totalGst / 2).toFixed(2)}</div>
                 </div>
                 <div className="d-flex justify-content-between">
-                  <div>CGST</div>
+                  <div>CGST(9%)</div>
                   <div>₹{(totalGst / 2).toFixed(2)}</div>
                 </div>
                 <hr />

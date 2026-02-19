@@ -248,6 +248,7 @@ function App() {
           <Route exact path="/closed-leads" element={<ClosedLeadsPage />} />
           <Route exact path="/book-service" element={<BookServicesPage />} />
           <Route exact path="/book-service/:Id" element={<BookServicesPage />} />
+          <Route exact path="/book-service/:Id/:bookingId/:bookingTrackID" element={<BookServicesPage />} />
           <Route exact path='/booking-reports' element={<BookingReportPage/>} />
           <Route exact path='/explanations' element={<ExplanationsPage/>} />
           <Route exact path='/add-explanations' element={<ExplanationsAddPage/>} />
