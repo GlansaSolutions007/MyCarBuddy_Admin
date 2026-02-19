@@ -153,6 +153,7 @@ const TicketsViewLayer = () => {
           // hour12: true,
         });
       },
+      sortField: "CreatedDate",
       wrap: true,
       sortable: true,
     },
@@ -372,6 +373,8 @@ const TicketsViewLayer = () => {
               }
               onChangePage={handlePageChange}
               onChangeRowsPerPage={handleRowsPerPageChange}
+              defaultSortField="CreatedDate"
+              defaultSortAsc={false}
             />
         </div>
       </div>

@@ -227,6 +227,8 @@ const DepartmentsLayer = () => {
             striped
             persistTableHead
             noDataComponent="No departments available"
+            defaultSortField="id"
+            defaultSortAsc={false}
           />
         </div>
       </div>

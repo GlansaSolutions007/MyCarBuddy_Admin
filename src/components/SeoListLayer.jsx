@@ -179,6 +179,8 @@ const SeoListLayer = () => {
             noDataComponent={
               searchText ? "No matching SEO records" : "No Seo available"
             }
+            defaultSortField="seo_id"
+            defaultSortAsc={false}
           />
         </div>
       </div>

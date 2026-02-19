@@ -813,8 +813,32 @@ const OrganicLeadsLayer = () => {
       name: "Created Date",
       selector: (row) => row.CreatedDate ? new Date(row.CreatedDate).toLocaleString("en-GB") : "-",
       sortable: true,
+      sortField: "CreatedDate",
       width: "150px",
     },
+    // {
+    //   name: "Assigned Date",
+    //   selector: (row) => {
+    //     if (row.AssignedDate) {
+    //       return new Date(row.AssignedDate).toLocaleString("en-GB");
+    //     }
+    //     const headDate = row.HeadAssignDate ? new Date(row.HeadAssignDate) : null;
+    //     const empDate = row.EmployeeAssignDate ? new Date(row.EmployeeAssignDate) : null;
+        
+    //     if (headDate && empDate) {
+    //       return new Date(Math.min(headDate, empDate)).toLocaleString("en-GB");
+    //     }
+    //     if (headDate) {
+    //       return new Date(headDate).toLocaleString("en-GB");
+    //     }
+    //     if (empDate) {
+    //       return new Date(empDate).toLocaleString("en-GB");
+    //     }
+    //     return "-";
+    //   },
+    //   sortable: true,
+    //   width: "150px",
+    // },
     { name: "City", selector: (row) => row.City || "-", sortable: true, width: "180px" },
     { name: "Platform", selector: (row) => row.Platform || "-", width: "120px" },
     ...(employeeData?.RoleName !== "Telecaller"
@@ -1167,6 +1191,8 @@ const OrganicLeadsLayer = () => {
             paginationDefaultPage={pageNumber}
             onChangePage={handlePageChange}
             onChangeRowsPerPage={handleRowsChange}
+            defaultSortField="CreatedDate"
+            defaultSortAsc={false}
           />
         </div>
       </div>

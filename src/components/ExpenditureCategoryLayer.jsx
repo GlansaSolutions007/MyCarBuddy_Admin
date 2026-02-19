@@ -282,6 +282,8 @@ hasPermission("expenditurecat_delete")
               striped
               persistTableHead
               noDataComponent="No categories found"
+              defaultSortField="ExpenseCategoryID"
+              defaultSortAsc={false}
             />
           </div>
         </div>

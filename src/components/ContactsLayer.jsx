@@ -74,6 +74,8 @@ const ContactsLayer = () => {
             striped
             persistTableHead
             noDataComponent="No Customers available"
+            defaultSortField="Id"
+            defaultSortAsc={false}
           />
         </div>
       </div>

@@ -334,6 +334,8 @@ const DesignationLayer = () => {
             striped
             persistTableHead
             noDataComponent="No designations available"
+            defaultSortField="id"
+            defaultSortAsc={false}
           />
         </div>
       </div>

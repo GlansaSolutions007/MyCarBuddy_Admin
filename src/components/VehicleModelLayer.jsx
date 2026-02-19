@@ -391,6 +391,8 @@ const VehicleModelLayer = () => {
             responsive
             striped
             noDataComponent="No Model Found"
+            defaultSortField="ModelID"
+            defaultSortAsc={false}
           />
         </div>
       </div>

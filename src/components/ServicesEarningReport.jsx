@@ -182,6 +182,8 @@ const ServicesEarningReport = () => {
             responsive
             striped
             persistTableHead
+            defaultSortField="CreatedDate"
+            defaultSortAsc={false}
             noDataComponent={
               loading
                 ? "Loading Service / Spare Part Earnings Report..."

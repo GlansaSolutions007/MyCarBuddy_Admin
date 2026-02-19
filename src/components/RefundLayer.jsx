@@ -272,6 +272,8 @@ const RefundLayer = () => {
             striped
             persistTableHead
             noDataComponent="No Refunds available"
+            defaultSortField="CreatedDate"
+            defaultSortAsc={false}
           />
         </div>
       </div>

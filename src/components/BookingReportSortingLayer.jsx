@@ -588,6 +588,8 @@ const BookingReportSortingLayer = () => {
                         striped
                         persistTableHead
                         noDataComponent="No Bookings available"
+                        defaultSortField="CreatedDate"
+                        defaultSortAsc={false}
                     />
                     <div className="text-center mt-2" >
                         <Link

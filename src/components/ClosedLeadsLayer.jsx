@@ -353,6 +353,8 @@ const ClosedLeadsLayer = () => {
             noDataComponent={
               loading ? "Loading leads..." : "No leads available"
             }
+            defaultSortField="CreatedDate"
+            defaultSortAsc={false}
           />
         </div>
       </div>

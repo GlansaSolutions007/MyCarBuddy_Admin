@@ -162,7 +162,16 @@ const EmployeeLayer = () => {
       width: "60px",
       center: true,
     },
-    { name: "ID", selector: (row) => row.Id, sortable: true, width: "70px" },
+    { 
+      name: "ID", 
+      selector: (row) => (
+        <Link to={`/view-employee/${row.Id}`} className="text-primary">
+          {row.Id}
+        </Link>
+      ), 
+      sortable: true, 
+      width: "70px" 
+    },
     { name: "Emp. Name", selector: (row) => row.Name, sortable: true, width: "150px" },
     { name: "Email", selector: (row) => row.Email, sortable: true, wrap: true, width: "180px" },
     { name: "Phone Number", selector: (row) => row.PhoneNumber, sortable: true, width: "150px"},
@@ -204,7 +213,10 @@ const EmployeeLayer = () => {
       name: "Actions",
       cell: (row) => (
         <div>
-          <Link to={`/edit-employee/${row.Id}`} className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'>
+          <Link to={`/view-employee/${row.Id}`} className='w-32-px h-32-px me-8 bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center' title="View">
+            <Icon icon='lucide:eye' />
+          </Link>
+          <Link to={`/edit-employee/${row.Id}`} className='w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center' title="Edit">
             <Icon icon='lucide:edit' />
           </Link>
         </div>
@@ -264,6 +276,8 @@ const EmployeeLayer = () => {
               responsive
               highlightOnHover
               pointerOnHover
+              defaultSortField="Id"
+              defaultSortAsc={false}
               noDataComponent={
                 <div className="text-center py-4">
                   <Icon icon="lucide:users" size={48} className="text-muted mb-3" />

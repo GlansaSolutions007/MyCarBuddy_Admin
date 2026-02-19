@@ -372,6 +372,8 @@ const VehicleFuelLayer = () => {
             striped
             persistTableHead
             noDataComponent="No Fuel Type available"
+            defaultSortField="FuelTypeID"
+            defaultSortAsc={false}
           />
         </div>
       </div>

@@ -321,6 +321,8 @@ const ServiceCategoriesLayer = () => {
               striped
               persistTableHead
               noDataComponent="No Service Categories available"
+              defaultSortField="CategoryID"
+              defaultSortAsc={false}
             />
           </div>
         </div>

@@ -264,6 +264,8 @@ const CouponsPage = () => {
             striped
             highlightOnHover
             persistTableHead
+            defaultSortField="CouponID"
+            defaultSortAsc={false}
           />
         </div>
       </div>

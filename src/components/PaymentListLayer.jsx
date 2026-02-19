@@ -432,6 +432,8 @@ const PaymentsListLayer = () => {
             responsive
             striped
             persistTableHead
+            defaultSortField="CreatedDate"
+            defaultSortAsc={false}
             noDataComponent="No Payments available"
           />
         </div>

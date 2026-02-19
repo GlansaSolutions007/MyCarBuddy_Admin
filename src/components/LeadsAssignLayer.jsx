@@ -657,6 +657,8 @@ const LeadsAssignLayer = () => {
                 pagination
                 striped
                 persistTableHead
+                defaultSortField="CreatedDate"
+                defaultSortAsc={false}
                 noDataComponent={
                   loading
                     ? "Loading leads..."

@@ -167,7 +167,7 @@ const MasterLayout = ({ children }) => {
     "/organic-leads": ["/lead-view/"],
     "/todays-lead": [],
     "/closed-leads": [],
-    "/lead-reports": ["/emp-leads-report/"],
+    "/lead-reports": ["/emp-leads-report/", "/lead-view-only/"],
     "/ticket-reports": ["/dept-employee-reports/", "/view-employee-report/"],
     "/employees": ["/add-employee", "/edit-employee/"],
     "/technicians": [
@@ -489,11 +489,18 @@ const MasterLayout = ({ children }) => {
       ],
     },
     {
-      title: "Telecaller Assign",
+      title: "Support",
       icon: "hugeicons:user-check-02",
       children: [
         // { title: "Assign Bookings", to: "/telecaler-bookings", color: "text-warning-main", permission: "telecaler_booking_view", page: "Telecaler_Bookings" },
         // { title: "Telecaller Tickets", to: "/telecaler-tickets", color: "text-info-main", permission: "telecaler_ticket_view", page: "Telecaler_Tickets" },
+          {
+          title: "Tickets",
+          to: "/tickets",
+          color: "text-info-danger",
+          permission: "tickets_view",
+          page: "Tickets",
+        },
         {
           title: "Assign Tickets",
           to: "/assign-tickets",
@@ -501,6 +508,7 @@ const MasterLayout = ({ children }) => {
           permission: "assigntickets_view",
           page: "Assign Tickets",
         },
+        
 
         // { title: "Employee Tickets", to: "/employee-tickets", color: "text-danger-main", permission: "employee_ticket_view", page: "Employee_Tickets" },
       ],
@@ -537,13 +545,7 @@ const MasterLayout = ({ children }) => {
           permission: "payments_view",
           page: "Payments",
         },
-        {
-          title: "Tickets",
-          to: "/tickets",
-          color: "text-info-danger",
-          permission: "tickets_view",
-          page: "Tickets",
-        },
+      
       ],
     },
     {

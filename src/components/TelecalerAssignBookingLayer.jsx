@@ -484,6 +484,8 @@ const TelecalerAssignBookingLayer = () => {
             striped
             persistTableHead
             noDataComponent="No Bookings available"
+            defaultSortField="CreatedDate"
+            defaultSortAsc={false}
           />
         </div>
       </div>

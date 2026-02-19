@@ -134,6 +134,8 @@ const DeptWiseTicketReport = () => {
               responsive
               striped
               persistTableHead
+              defaultSortField="CreatedDate"
+              defaultSortAsc={false}
               noDataComponent={
                 loading ? "Loading departments..." : "No departments available"
               }

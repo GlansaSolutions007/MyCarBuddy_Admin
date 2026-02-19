@@ -406,6 +406,7 @@ const BookingLayer = () => {
           date.getMonth() + 1,
         ).padStart(2, "0")}/${date.getFullYear()}`;
       },
+      sortField: "CreatedDate",
       width: "120px",
       sortable: true,
     },
@@ -842,6 +843,8 @@ const BookingLayer = () => {
             responsive
             striped
             persistTableHead
+            defaultSortField="CreatedDate"
+            defaultSortAsc={false}
             noDataComponent="No Bookings available"
           />
         </div>

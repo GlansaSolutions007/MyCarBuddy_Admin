@@ -733,6 +733,8 @@ const DealerPaymentsLayer = () => {
               striped
               persistTableHead
               progressPending={loading}
+              defaultSortField="CreatedDate"
+              defaultSortAsc={false}
               noDataComponent="No payments found"
             />
           </div>

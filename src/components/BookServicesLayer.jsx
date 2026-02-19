@@ -2751,6 +2751,8 @@ const BookServicesLayer = () => {
                 striped
                 persistTableHead
                 noDataComponent="No items added yet"
+                defaultSortField="CreatedDate"
+                defaultSortAsc={false}
                 conditionalRowStyles={[
                   {
                     when: (row) =>

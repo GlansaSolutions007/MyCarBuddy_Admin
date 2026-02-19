@@ -197,6 +197,8 @@ const ServicePlanPriceListLayer = () => {
             striped
             persistTableHead
             noDataComponent="No service plan prices available"
+            defaultSortField="PlanPriceID"
+            defaultSortAsc={false}
           />
         </div>
       </div>

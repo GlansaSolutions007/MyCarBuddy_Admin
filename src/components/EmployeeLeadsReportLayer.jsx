@@ -201,7 +201,7 @@ const EmployeeLeadsReportLayer = ({
             name: "Action",
             cell: (row) => (
               <Link
-                to={`/lead-view/${row.Id}`}
+                to={`/lead-view-only/${row.Id}`}
                 className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
                 title="View"
               >
@@ -330,6 +330,8 @@ const EmployeeLeadsReportLayer = ({
             responsive
             striped
             persistTableHead
+            defaultSortField="CreatedDate"
+            defaultSortAsc={false}
             noDataComponent={
               loading
                 ? "Loading employee lead Reports..."
