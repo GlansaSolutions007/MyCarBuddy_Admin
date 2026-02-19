@@ -442,6 +442,70 @@ const MasterLayout = ({ children }) => {
       to: "/dashboard",
     },
     {
+      title: "Leads",
+      icon: "mdi:account-multiple",
+
+      children: [
+        {
+          title: "Organic Leads",
+          to: "/organic-leads",
+          color: "text-success-main",
+          permission: "organicleads_view",
+          page: "Organic Leads",
+        },
+        {
+          title: "Assign Leads",
+          to: "/assign-leads",
+          color: "text-danger-main",
+          permission: "assignleads_view",
+          page: "Assign Leads",
+        },
+        {
+          title: "Social Leads",
+          to: "/leads",
+          color: "text-info-danger",
+          permission: "leads_view",
+          page: "Social Leads",
+        },
+
+        ...(role !== "Admin"
+          ? [
+              {
+                title: "Today Pending Leads",
+                to: "/todays-lead",
+                color: "text-black",
+                permission: "todayslead_view",
+                page: "Today Pending Leads",
+              },
+            ]
+          : []),
+        {
+          title: "Closed Leads",
+          to: "/closed-leads",
+          color: "text-warning-main",
+          permission: "closedleads_view",
+          page: "Closed Leads",
+        },
+      ],
+    },
+    {
+      title: "Telecaller Assign",
+      icon: "hugeicons:user-check-02",
+      children: [
+        // { title: "Assign Bookings", to: "/telecaler-bookings", color: "text-warning-main", permission: "telecaler_booking_view", page: "Telecaler_Bookings" },
+        // { title: "Telecaller Tickets", to: "/telecaler-tickets", color: "text-info-main", permission: "telecaler_ticket_view", page: "Telecaler_Tickets" },
+        {
+          title: "Assign Tickets",
+          to: "/assign-tickets",
+          color: "text-success-main",
+          permission: "assigntickets_view",
+          page: "Assign Tickets",
+        },
+
+        // { title: "Employee Tickets", to: "/employee-tickets", color: "text-danger-main", permission: "employee_ticket_view", page: "Employee_Tickets" },
+      ],
+    },
+    {
       title: "Customer Details",
       icon: "flowbite:users-group-outline",
       children: [
@@ -571,29 +635,6 @@ const MasterLayout = ({ children }) => {
       ],
     },
     {
-      title: "Telecaller Assign",
-      icon: "hugeicons:user-check-02",
-      children: [
-        // { title: "Assign Bookings", to: "/telecaler-bookings", color: "text-warning-main", permission: "telecaler_booking_view", page: "Telecaler_Bookings" },
-        // { title: "Telecaller Tickets", to: "/telecaler-tickets", color: "text-info-main", permission: "telecaler_ticket_view", page: "Telecaler_Tickets" },
-        {
-          title: "Assign Tickets",
-          to: "/assign-tickets",
-          color: "text-success-main",
-          permission: "assigntickets_view",
-          page: "Assign Tickets",
-        },
-        {
-          title: "Assign Leads",
-          to: "/assign-leads",
-          color: "text-danger-main",
-          permission: "assignleads_view",
-          page: "Assign Leads",
-        },
-        // { title: "Employee Tickets", to: "/employee-tickets", color: "text-danger-main", permission: "employee_ticket_view", page: "Employee_Tickets" },
-      ],
-    },
-    {
       title: "Digital Marketing",
       icon: "mdi:bullhorn-outline",
       children: [
@@ -628,44 +669,6 @@ const MasterLayout = ({ children }) => {
       ],
     },
     {
-      title: "Support",
-      icon: "mdi:headset-mic",
-      children: [
-        {
-          title: "Social Leads",
-          to: "/leads",
-          color: "text-info-danger",
-          permission: "leads_view",
-          page: "Social Leads",
-        },
-        {
-          title: "Organic Leads",
-          to: "/organic-leads",
-          color: "text-success-main",
-          permission: "organicleads_view",
-          page: "Organic Leads",
-        },
-        ...(role !== "Admin"
-          ? [
-            {
-              title: "Today Pending Leads",
-              to: "/todays-lead",
-              color: "text-black",
-              permission: "todayslead_view",
-              page: "Today Pending Leads",
-            },
-          ]
-          : []),
-        {
-          title: "Closed Leads",
-          to: "/closed-leads",
-          color: "text-warning-main",
-          permission: "closedleads_view",
-          page: "Closed Leads",
-        },
-      ],
-    },
-    {
       title: "Reports",
       icon: "ion:document-text-outline",
       children: [
@@ -694,14 +697,14 @@ const MasterLayout = ({ children }) => {
         },
         ...(role === "Dealer"
           ? [
-            {
-              title: "Dealer Report",
-              to: "/dealer-report",
-              color: "text-success-main",
-              permission: "dealerreport_view",
-              page: "Dealer Report",
-            },
-          ]
+              {
+                title: "Dealer Report",
+                to: "/dealer-report",
+                color: "text-success-main",
+                permission: "dealerreport_view",
+                page: "Dealer Report",
+              },
+            ]
           : []),
       ],
     },
@@ -950,8 +953,8 @@ const MasterLayout = ({ children }) => {
   ];
 
   if (!token) {
-  return null; 
-}
+    return null;
+  }
   return (
     <section className={mobileMenu ? "overlay active" : "overlay "}>
       {/* sidebar */}
@@ -997,21 +1000,21 @@ const MasterLayout = ({ children }) => {
                 const hasChildren = Array.isArray(item.children);
                 const visibleChildren = hasChildren
                   ? item.children.filter((child) => {
-                    // Check role-based access first
-                    if (child.roles && child.roles.includes(role))
-                      return true;
+                      // Check role-based access first
+                      if (child.roles && child.roles.includes(role))
+                        return true;
 
-                    // For Admin users, show all children
-                    if (role === "Admin") return true;
+                      // For Admin users, show all children
+                      if (role === "Admin") return true;
 
-                    // Check permissions for non-admin users
-                    if (child.permission && child.page) {
-                      return hasPermission(child.permission, child.page);
-                    }
+                      // Check permissions for non-admin users
+                      if (child.permission && child.page) {
+                        return hasPermission(child.permission, child.page);
+                      }
 
-                    // Hide if no permission defined
-                    return false;
-                  })
+                      // Hide if no permission defined
+                      return false;
+                    })
                   : [];
 
                 if (hasChildren && visibleChildren.length === 0) return null;
@@ -1378,8 +1381,9 @@ const MasterLayout = ({ children }) => {
                           <Link
                             key={notification.id}
                             to="#"
-                            className={`px-24 py-12 d-flex align-items-start gap-3 mb-2 ${!notification.read ? "bg-neutral-50" : ""
-                              }`}
+                            className={`px-24 py-12 d-flex align-items-start gap-3 mb-2 ${
+                              !notification.read ? "bg-neutral-50" : ""
+                            }`}
                             onClick={() => {
                               // Mark as read
                               setNotifications((prev) =>
@@ -1395,7 +1399,7 @@ const MasterLayout = ({ children }) => {
                                   notification.id,
                                   userId,
                                 );
-                              } catch (_) { }
+                              } catch (_) {}
                             }}
                           >
                             <div className="text-black hover-bg-transparent hover-text-primary d-flex align-items-start gap-3">
