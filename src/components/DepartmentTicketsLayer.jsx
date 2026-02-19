@@ -199,6 +199,8 @@ const DepartmentTicketsLayer = ({ deptId }) => {
                 responsive
                 highlightOnHover
                 pointerOnHover
+                defaultSortField="Id"
+                defaultSortAsc={false}
                 noDataComponent={
                   <div className="text-center py-4">
                     <Icon icon="lucide:users" size={48} className="text-muted mb-3" />

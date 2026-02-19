@@ -576,6 +576,8 @@ const AreaLayer = () => {
             striped
             persistTableHead
             noDataComponent="No cities available"
+            defaultSortField="AreaID"
+            defaultSortAsc={false}
           />
         </div>
       </div>

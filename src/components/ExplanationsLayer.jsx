@@ -216,6 +216,8 @@ const ExplanationsLayer = () => {
             striped
             persistTableHead
             noDataComponent={loading ? "Loading Explanations..." : "No Explanations available"}
+            defaultSortField="id"
+            defaultSortAsc={false}
           />
         </div>
       </div>

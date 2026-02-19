@@ -870,7 +870,7 @@ const LeadViewLayer = () => {
 
               <div className="text-center border-bottom pb-16">
                 <img
-                  src="/assets/images/user-grid/user-grid-img14.png"
+                  src="/assets/images/user-grid/user-grid-img13.png"
                   alt="customer"
                   className="border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover"
                 />
@@ -1061,14 +1061,41 @@ const LeadViewLayer = () => {
               ) : lead ? (
                 <>
                   {!["Supervisor Head", "Supervisor"].includes(roleName) && (
-                    <div className="d-flex justify-content-between align-items-center">
-                      <h6 className="card-title">Update Status</h6>
-                      <Icon
-                        icon="ic:baseline-whatsapp"
-                        fontSize={28}
-                        style={{ color: "#25D366", cursor: "pointer" }}
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <h6 className="card-title mb-0">Update Status</h6>
+                      <button
+                        type="button"
                         onClick={handleWhatsapp}
-                      />
+                        className="btn btn-sm d-flex align-items-center justify-content-center gap-2"
+                        style={{
+                          backgroundColor: "#25D366",
+                          color: "#ffffff",
+                          border: "none",
+                          borderRadius: "8px",
+                          padding: "6px 12px",
+                          transition: "all 0.2s ease",
+                          fontSize: "14px",
+                          fontWeight: "500",
+                        }}
+                        title="Send WhatsApp Message"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = "#20ba5a";
+                          e.currentTarget.style.transform = "translateY(-1px)";
+                          e.currentTarget.style.boxShadow = "0 2px 4px rgba(37, 211, 102, 0.3)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "#25D366";
+                          e.currentTarget.style.transform = "translateY(0)";
+                          e.currentTarget.style.boxShadow = "none";
+                        }}
+                      >
+                        <Icon
+                          icon="ic:baseline-whatsapp"
+                          fontSize={20}
+                          style={{ color: "#ffffff" }}
+                        />
+                        <span>WhatsApp</span>
+                      </button>
                     </div>
                   )}
                   {!["Supervisor Head", "Supervisor"].includes(roleName) && (
@@ -1645,7 +1672,7 @@ const LeadViewLayer = () => {
 
               {/* ================= CUSTOMER NOT CONVERTED ================= */}
               {!isCustomerConverted ? (
-                <div className="alert alert-warning d-flex justify-content-between align-items-center mt-3">
+                <div className="alert alert-warning d-flex justify-content-between align-items-center mt-3 ">
                   <span className="fw-semibold">
                     This lead has not yet been converted to a customer. Please
                     confirm the conversion to proceed with booking.
@@ -1875,6 +1902,14 @@ const LeadViewLayer = () => {
           <Modal.Title className="h6 fw-bold">Assign Supervisor</Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          <div className="mb-3 pb-3 border-bottom">
+            <label className="form-label fw-semibold text-primary-light mb-2">Customer Address</label>
+            <div className="p-2 bg-light rounded">
+              <p className="mb-0 text-secondary-light fw-medium">
+                {lead?.City || personalFullAddress || "No address available"}
+              </p>
+            </div>
+          </div>
           <div className="mb-3">
             <label className="form-label fw-semibold">Select Area</label>
             <Select

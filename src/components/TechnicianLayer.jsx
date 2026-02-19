@@ -170,6 +170,8 @@ const TechnicianLayer = () => {
             striped
             persistTableHead
             noDataComponent="No technicians available"
+            defaultSortField="Id"
+            defaultSortAsc={false}
           />
         </div>
       </div>

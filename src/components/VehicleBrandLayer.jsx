@@ -390,6 +390,8 @@ const VehicleBrandLayer = () => {
             striped
             persistTableHead
             noDataComponent="No Brand available"
+            defaultSortField="BrandID"
+            defaultSortAsc={false}
           />
         </div>
       </div>

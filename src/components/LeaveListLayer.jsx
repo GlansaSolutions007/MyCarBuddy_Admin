@@ -145,6 +145,8 @@ const LeaveListLayer = () => {
         pagination
         highlightOnHover
         striped
+        defaultSortField="FromDate"
+        defaultSortAsc={false}
       />
     </div>
   );

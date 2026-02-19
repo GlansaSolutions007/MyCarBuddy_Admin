@@ -27,6 +27,7 @@ import CityPage from "./pages/CityPage";
 import DistributorPage from "./pages/DistributorPage";
 import DealerPage from "./pages/DealerPage";
 import DealerAddPage from "./pages/DealerAddPage";
+import DealerViewPage from "./pages/DealerViewPage";
 import TechnicianPage from "./pages/TechnicianPage";
 import TechnicianAddPage from "./pages/TechnicianAddPage";
 import TechnicianViewPage from "./pages/TechnicianViewPage";
@@ -66,6 +67,7 @@ import RolePermissionPage from "./pages/RolePermissionPage";
 import PermissionPage from "./pages/PermissionPage";
 import EmployeePage from "./pages/EmployeePage";
 import EmployeeAddPage from "./pages/EmployeeAddPage";
+import EmployeeViewPage from "./pages/EmployeeViewPage";
 
 import Contacts from "./pages/Contacts"
 import DealerServiceP from "./pages/DealerServicePrice";
@@ -92,6 +94,7 @@ import FaqsPage from "./pages/FaqsPage";
 import FaqsAddPage from "./pages/FaqsAddPage";
 import LeadsAssignPage from "./pages/LeadsAssignPage";
 import LeadViewPage from "./pages/LeadViewPage";
+import LeadViewOnlyPage from "./pages/LeadViewOnlyPage";
 import LeadReportsPage from "./pages/LeadReportsPage";
 import BookingReportPage from "./pages/BookingReportPage"
 import EmployeeLeadsReportPage from "./pages/EmployeeLeadsReportPage";
@@ -139,6 +142,7 @@ function App() {
           <Route exact path='/dealers' element={<DealerPage />} />
           <Route exact path='/add-dealers' element={<DealerAddPage />} />
           <Route exact path='/edit-dealers/:DealerID' element={<DealerAddPage />} />
+          <Route exact path='/view-dealer/:DealerID' element={<DealerViewPage />} />
 
           <Route exact path='/technicians' element={<TechnicianPage />} />
           <Route exact path='/technicians/add' element={<TechnicianAddPage />} />
@@ -209,6 +213,7 @@ function App() {
           <Route exact path="/employees" element={<EmployeePage />} />
           <Route exact path="/add-employee" element={<EmployeeAddPage />} />
           <Route exact path="/edit-employee/:EmployeeID" element={<EmployeeAddPage />} />
+          <Route exact path="/view-employee/:EmployeeID" element={<EmployeeViewPage />} />
           <Route exact path="/notifications" element={<NotificationPage />} />
           <Route exact path='/todays-booking' element={<TodaysBookingPage />} />
           <Route exact path='/ticket-reports' element={<DeptWiseTicketReportPage />} />
@@ -236,6 +241,7 @@ function App() {
           <Route exact path='/add-faqs' element={<FaqsAddPage />} />
           <Route exact path='/assign-leads' element={<LeadsAssignPage />} />
           <Route exact path='/lead-view/:leadId' element={<LeadViewPage />} />
+          <Route exact path='/lead-view-only/:leadId' element={<LeadViewOnlyPage />} />
           <Route exact path='/lead-reports' element={<LeadReportsPage />} />
           <Route exact path="/emp-leads-report/:employeeId" element={<EmployeeLeadsReportPage />} />
           <Route exact path="/todays-lead" element={<TodayLeadsPage />} />

@@ -231,6 +231,8 @@ const SkillLayer = () => {
               striped
               persistTableHead
               noDataComponent="No skills found"
+              defaultSortField="SkillID"
+              defaultSortAsc={false}
             />
           </div>
         </div>

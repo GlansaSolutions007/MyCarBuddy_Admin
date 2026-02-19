@@ -366,6 +366,8 @@ const DealerReportLayer = () => {
             responsive
             striped
             persistTableHead
+            defaultSortField="CreatedDate"
+            defaultSortAsc={false}
             noDataComponent={
               loading ? "Loading report..." : "No data available"
             }

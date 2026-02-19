@@ -102,12 +102,22 @@ const DealerLayer = () => {
     {
       name: "Actions",
       cell: (row) => (
-        <Link
-          to={`/edit-dealers/${row.DealerID}`}
-          className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-        >
-          <Icon icon="lucide:edit" />
-        </Link>
+        <div>
+          {/* <Link
+            to={`/view-dealer/${row.DealerID}`}
+            className="w-32-px h-32-px me-8 bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+            title="View"
+          >
+            <Icon icon="lucide:eye" />
+          </Link> */}
+          <Link
+            to={`/edit-dealers/${row.DealerID}`}
+            className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+            title="Edit"
+          >
+            <Icon icon="lucide:edit" />
+          </Link>
+        </div>
       ),
     },
     ]
@@ -167,6 +177,8 @@ const DealerLayer = () => {
             striped
             persistTableHead
             noDataComponent="No dealers available"
+            defaultSortField="DealerID"
+            defaultSortAsc={false}
           />
         </div>
       </div>

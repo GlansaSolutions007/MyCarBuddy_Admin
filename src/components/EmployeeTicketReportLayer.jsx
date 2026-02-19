@@ -307,6 +307,8 @@ const EmployeeTicketReportLayer = ({ employeeId }) => {
               responsive
               striped
               persistTableHead
+              defaultSortField="CreatedDate"
+              defaultSortAsc={false}
               noDataComponent={
                 loading ? "Loading ticket Reports..." : "No ticket Reports available"
               }

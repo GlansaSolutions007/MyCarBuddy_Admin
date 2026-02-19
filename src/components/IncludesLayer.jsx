@@ -510,6 +510,8 @@ const IncludesLayer = () => {
             striped
             persistTableHead
             noDataComponent="No includes available"
+            defaultSortField="IncludeID"
+            defaultSortAsc={false}
           />
         </div>
       </div>

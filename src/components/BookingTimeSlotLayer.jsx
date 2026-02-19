@@ -348,6 +348,8 @@ const BookingTimeSlotLayer = () => {
             striped
             persistTableHead
             noDataComponent="No time slots available"
+            defaultSortField="TsID"
+            defaultSortAsc={false}
           />
         </div>
       </div>

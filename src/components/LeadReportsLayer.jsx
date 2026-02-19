@@ -358,6 +358,8 @@ const LeadReportsLayer = () => {
             responsive
             striped
             persistTableHead
+            defaultSortField="CreatedDate"
+            defaultSortAsc={false}
             noDataComponent={
               loading
                 ? "Loading leads..."

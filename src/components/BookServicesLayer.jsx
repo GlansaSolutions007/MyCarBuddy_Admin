@@ -3019,6 +3019,8 @@ const BookServicesLayer = () => {
                         hideSelectedOptions={false}
                         className="react-select-container text-sm"
                         classNamePrefix="react-select"
+                        defaultSortField="CreatedDate"
+                        defaultSortAsc={false}
                         options={includesList.map((inc) => ({
                           value: inc.IncludeID,
                           label: inc.IncludeName,

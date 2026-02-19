@@ -491,6 +491,8 @@ const TodayLeadsLayer = () => {
             paginationPerPage={pageSize}
             paginationTotalRows={searchTerm ? displayLeads.length : totalRows}
             paginationRowsPerPageOptions={[10, 25, 50]}
+            defaultSortField="CreatedDate"
+            defaultSortAsc={false}
             onChangePage={(newPage) => {
               setPage(newPage);
 

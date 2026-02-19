@@ -43,6 +43,9 @@ const DashBoardLayerTen = () => {
       {role === "Admin" && (
         <>
           {/* RevenueReportCharts */}
+          <TopCustomer />
+                    <RecentTransactions />
+
           <RevenueReportCharts />
 
           {/* IncomeVsExpense */}
@@ -55,7 +58,6 @@ const DashBoardLayerTen = () => {
           {/* <TopSuppliers /> */}
 
           {/* TopCustomer */}
-          <TopCustomer />
 
           {/* OverallReport */}
           {/* <OverallReport /> */}
@@ -64,7 +66,6 @@ const DashBoardLayerTen = () => {
           {/* <PurchaseAndSales /> */}
 
           {/* RecentTransactions */}
-          <RecentTransactions />
 
           {/* TodayBookingsLayer */}
           <TodaysBookings />

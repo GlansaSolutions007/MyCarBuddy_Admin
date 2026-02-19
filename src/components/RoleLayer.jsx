@@ -311,6 +311,8 @@ const RoleLayer = () => {
             striped
             persistTableHead
             noDataComponent="No roles available"
+            defaultSortField="RoleID"
+            defaultSortAsc={false}
           />
         </div>
       </div>

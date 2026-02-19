@@ -216,6 +216,8 @@ const FaqsLayer = () => {
             striped
             persistTableHead
             noDataComponent={loading ? "Loading FAQs..." : "No FAQs available"}
+            defaultSortField="id"
+            defaultSortAsc={false}
           />
         </div>
       </div>

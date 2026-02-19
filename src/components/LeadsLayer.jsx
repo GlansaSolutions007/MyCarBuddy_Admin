@@ -163,6 +163,7 @@ const LeadsLayer = () => {
         });
       },
       sortable: true,
+      sortField: "CreatedDate",
       wrap: true,
       width: "150px",
     },
@@ -388,6 +389,8 @@ const LeadsLayer = () => {
               noDataComponent={
                 loading ? "Loading leads..." : "No leads available"
               }
+              defaultSortField="CreatedDate"
+              defaultSortAsc={false}
             />
           )}
         </div>

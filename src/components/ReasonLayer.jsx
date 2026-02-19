@@ -225,6 +225,8 @@ export default function ReasonLayer() {
             pagination
             highlightOnHover
             striped
+            defaultSortField="CreatedDate"
+            defaultSortAsc={false}
           />
         </div>
       </div>

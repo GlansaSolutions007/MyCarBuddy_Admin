@@ -182,6 +182,8 @@ const TodayBookingsLayer = () => {
             striped
             persistTableHead
             noDataComponent="No today's bookings available"
+            defaultSortField="CreatedDate"
+            defaultSortAsc={false}
           />
         </div>
       </div>

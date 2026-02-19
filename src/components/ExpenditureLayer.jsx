@@ -914,6 +914,8 @@ const ExpenditureLayer = () => {
             pagination
             highlightOnHover
             striped
+            defaultSortField="ExpenseDate"
+            defaultSortAsc={false}
           />
         </div>
       </div>

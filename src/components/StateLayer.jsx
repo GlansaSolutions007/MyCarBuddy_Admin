@@ -304,6 +304,8 @@ const StateLayer = () => {
             striped
             persistTableHead
             noDataComponent="No states available"
+            defaultSortField="StateID"
+            defaultSortAsc={false}
           />
         </div>
       </div>

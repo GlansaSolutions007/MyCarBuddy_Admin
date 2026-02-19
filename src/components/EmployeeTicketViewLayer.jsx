@@ -225,6 +225,8 @@ const EmployeeTicketViewLayer = () => {
                 responsive
                 striped
                 persistTableHead
+                defaultSortField="CreatedDate"
+                defaultSortAsc={false}
                 noDataComponent={
                   loading ? "Loading tickets..." : "No assigned tickets available"
                 }

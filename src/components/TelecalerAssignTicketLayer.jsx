@@ -655,6 +655,8 @@ const TelecalerAssignTicketLayer = () => {
               pagination
               striped
               persistTableHead
+              defaultSortField="CreatedDate"
+              defaultSortAsc={false}
               noDataComponent={
                 role === "Employee"
                   ? "No assigned tickets available"

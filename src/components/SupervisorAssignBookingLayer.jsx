@@ -824,6 +824,8 @@ const SupervisorAssignBookingLayer = () => {
               striped
               persistTableHead
               noDataComponent={fromDate || toDate ? "No bookings found for the selected date range" : `No ${role === "Employee" ? "assigned" : "unassigned"} bookings available`}
+              defaultSortField="CreatedDate"
+              defaultSortAsc={false}
             />
           </div>
         </div>

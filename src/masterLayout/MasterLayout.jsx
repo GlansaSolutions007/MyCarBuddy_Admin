@@ -160,14 +160,14 @@ const MasterLayout = ({ children }) => {
   // Mapping of parent routes to their child route patterns
   const parentToChildRoutes = {
     "/customers": ["/view-customer/", "/edit-customer/", "/add-customer"],
-    "/bookings": ["/booking-view/", "/edit-bookings/"],
+    "/bookings": ["/booking-view/", "/edit-bookings/", "/book-service/"],
     "/payments": ["/invoice-preview/", "/invoice-view/"],
     "/tickets": ["/tickets/", "/add-tickets", "/edit-tickets/"],
-    "/leads": ["/lead-view/", "/create-lead"],
+    "/leads": ["/create-lead"],
     "/organic-leads": ["/lead-view/"],
-    "/todays-lead": ["/lead-view/"],
-    "/closed-leads": ["/lead-view/"],
-    "/lead-reports": ["/emp-leads-report/"],
+    "/todays-lead": [],
+    "/closed-leads": [],
+    "/lead-reports": ["/emp-leads-report/", "/lead-view-only/"],
     "/ticket-reports": ["/dept-employee-reports/", "/view-employee-report/"],
     "/employees": ["/add-employee", "/edit-employee/"],
     "/technicians": [
@@ -489,11 +489,18 @@ const MasterLayout = ({ children }) => {
       ],
     },
     {
-      title: "Telecaller Assign",
+      title: "Support",
       icon: "hugeicons:user-check-02",
       children: [
         // { title: "Assign Bookings", to: "/telecaler-bookings", color: "text-warning-main", permission: "telecaler_booking_view", page: "Telecaler_Bookings" },
         // { title: "Telecaller Tickets", to: "/telecaler-tickets", color: "text-info-main", permission: "telecaler_ticket_view", page: "Telecaler_Tickets" },
+          {
+          title: "Tickets",
+          to: "/tickets",
+          color: "text-info-danger",
+          permission: "tickets_view",
+          page: "Tickets",
+        },
         {
           title: "Assign Tickets",
           to: "/assign-tickets",
@@ -501,6 +508,7 @@ const MasterLayout = ({ children }) => {
           permission: "assigntickets_view",
           page: "Assign Tickets",
         },
+        
 
         // { title: "Employee Tickets", to: "/employee-tickets", color: "text-danger-main", permission: "employee_ticket_view", page: "Employee_Tickets" },
       ],
@@ -537,13 +545,7 @@ const MasterLayout = ({ children }) => {
           permission: "payments_view",
           page: "Payments",
         },
-        {
-          title: "Tickets",
-          to: "/tickets",
-          color: "text-info-danger",
-          permission: "tickets_view",
-          page: "Tickets",
-        },
+      
       ],
     },
     {
@@ -1468,7 +1470,7 @@ const MasterLayout = ({ children }) => {
                       src={
                         userImage
                           ? `${API_IMAGE}${userImage}` // full path
-                          : "/assets/images/user.png" // fallback if not available
+                          : "assets/images/user-grid/user-grid-img13.png" // fallback if not available
                       }
                       alt="image_user"
                       className="w-40-px h-40-px object-fit-cover rounded-circle"

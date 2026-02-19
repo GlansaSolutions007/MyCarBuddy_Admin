@@ -365,6 +365,8 @@ const DistributorLayer = () => {
             striped
             persistTableHead
             noDataComponent="No distributors available"
+            defaultSortField="DistributorID"
+            defaultSortAsc={false}
           />
         </div>
       </div>
