@@ -829,18 +829,18 @@ const OrganicLeadsLayer = () => {
       : []),
 
     { name: "Emp. Assigned D/T", selector: (row) => row.EmployeeAssignDate ? new Date(row.EmployeeAssignDate).toLocaleString("en-GB") : "-", width: "170px" },
-    {
-      name: "Lead Category",
-      cell: (row) => {
-        const clicked = row.BookingAddOns?.filter((addon) => addon.IsUserClicked === true);
-        return clicked?.length > 0 ? (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-            {clicked.map((addon) => <span key={addon.AddOnId}>{addon.ServiceName}</span>)}
-          </div>
-        ) : <span>-</span>;
-      },
-      minWidth: "200px",
-    },
+    // {
+    //   name: "Lead Category",
+    //   cell: (row) => {
+    //     const clicked = row.BookingAddOns?.filter((addon) => addon.IsUserClicked === true);
+    //     return clicked?.length > 0 ? (
+    //       <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+    //         {clicked.map((addon) => <span key={addon.AddOnId}>{addon.ServiceName}</span>)}
+    //       </div>
+    //     ) : <span>-</span>;
+    //   },
+    //   minWidth: "200px",
+    // },
     ...(hasPermission("leadview_view") ? [
       {
         name: "Action",

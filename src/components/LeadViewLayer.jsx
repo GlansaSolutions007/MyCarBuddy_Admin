@@ -1221,24 +1221,6 @@ const LeadViewLayer = () => {
                           </div>
                           <div className="col-12">
                             <label className="form-label fw-semibold text-primary-light">
-                              Discussion Notes
-                            </label>
-                            <textarea
-                              className="form-control"
-                              rows={3}
-                              placeholder="Add discussion notes"
-                              value={discussionNotes}
-                              onChange={(e) => {
-                                setDiscussionNotes(e.target.value);
-                                e.target.style.height = "auto";
-                                e.target.style.height =
-                                  e.target.scrollHeight + "px";
-                              }}
-                              style={{ overflow: "hidden", resize: "none" }}
-                            />
-                          </div>
-                          <div className="col-12">
-                            <label className="form-label fw-semibold text-primary-light">
                               Next Action
                             </label>
                             <select
@@ -1263,6 +1245,24 @@ const LeadViewLayer = () => {
                               <option value="Send Details">Send Details</option>
                               <option value="Lead Closed">Lead Closed</option>
                             </select>
+                          </div>
+                          <div className="col-12">
+                            <label className="form-label fw-semibold text-primary-light">
+                              Discussion Notes
+                            </label>
+                            <textarea
+                              className="form-control"
+                              rows={3}
+                              placeholder="Add discussion notes"
+                              value={discussionNotes}
+                              onChange={(e) => {
+                                setDiscussionNotes(e.target.value);
+                                e.target.style.height = "auto";
+                                e.target.style.height =
+                                  e.target.scrollHeight + "px";
+                              }}
+                              style={{ overflow: "hidden", resize: "none" }}
+                            />
                           </div>
                           {nextAction && nextAction !== "Lead Closed" && (
                             <div className="col-12">

@@ -2231,41 +2231,41 @@ const BookServicesLayer = () => {
           <div className="d-flex gap-2 align-items-center">
 
             {/* ✅ If Approved AND status is NULL → Show Complete Button */}
-           {isApproved && !status && (
-  <button
-    onClick={() => handleServiceCompleted(row.addedItemsIndex)}
-    title="Mark as Completed"
-    onMouseEnter={(e) => {
-      e.currentTarget.style.backgroundColor = "#157347";
-      e.currentTarget.style.transform = "scale(1.05)";
-      e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.backgroundColor = "#20c997";
-      e.currentTarget.style.transform = "scale(1)";
-      e.currentTarget.style.boxShadow = "none";
-    }}
-    style={{
-      height: "32px",
-      backgroundColor: "#20c997",
-      color: "#fff",
-      border: "none",
-      borderRadius: "6px",
-      padding: "0 10px",
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: "6px",
-      cursor: "pointer",
-      transition: "all 0.3s ease",
-      fontSize: "12px",
-      fontWeight: "500"
-    }}
-  >
-    <Icon icon="mingcute:check-circle-fill" />
-    Complete
-  </button>
-)}
+            {isApproved && !status && (
+              <button
+                onClick={() => handleServiceCompleted(row.addedItemsIndex)}
+                title="Mark as Completed"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#157347";
+                  e.currentTarget.style.transform = "scale(1.05)";
+                  e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "#20c997";
+                  e.currentTarget.style.transform = "scale(1)";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+                style={{
+                  height: "32px",
+                  backgroundColor: "#20c997",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "6px",
+                  padding: "0 10px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                  fontSize: "12px",
+                  fontWeight: "500"
+                }}
+              >
+                <Icon icon="mingcute:check-circle-fill" />
+                Complete
+              </button>
+            )}
 
 
             {/* ✅ If status exists → Show Dropdown */}
@@ -2938,7 +2938,17 @@ const BookServicesLayer = () => {
                       </div>
                     </div>
                   )}
-                <div className="d-flex justify-content-center gap-3">
+                {(
+                  (isSupervisorHead || isAdmin) &&
+                  employeeData?.DepartmentName !== "Support" &&
+                  (hasNewItem || hasEdits)
+                ) && (
+                    <div className="text-primary text-center mt-2 mb-4 fw-semibold">
+                      You’ve added new items. Please submit them first to proceed
+                      with booking confirmation.
+                    </div>
+                  )}
+                <div className="d-flex justify-content-center gap-3 mt-6">
                   {showSubmitButton &&
                     (isSupervisorHead || isFieldAdvisor || isAdmin || isTelecaller || isTelecallerHead) && (
                       <button
@@ -2962,16 +2972,7 @@ const BookServicesLayer = () => {
                 </div>
               </div>
             )}
-            {(
-              (isSupervisorHead || isAdmin) &&
-              employeeData?.DepartmentName !== "Support" &&
-              (hasNewItem || hasEdits)
-            ) && (
-                <div className="text-danger text-center mt-2 fw-semibold">
-                  You’ve added new items. Please submit them first to proceed
-                  with booking confirmation.
-                </div>
-              )}
+
           </div>
         </div>
       </div>
