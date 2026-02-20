@@ -24,6 +24,8 @@ const EXPORT_COLUMNS = [
   { key: "DealerPaidAmount", label: "Payment Amount" },
   { key: "DealerPaymentMode", label: "Payment Mode" },
   { key: "DealerPaymentStatus", label: "Payment Status" },
+  { key: "DealerTotalPrice", label: "Dealer Total", format: "currency" },
+  { key: "DealerRemainingPrice", label: "Remain Amount", format: "currency" },
 ];
 
 const DealerReportLayer = () => {
@@ -87,6 +89,9 @@ const DealerReportLayer = () => {
         let value = item[col.key];
         if (col.format === "date" && value) {
           value = new Date(value).toLocaleString("en-GB");
+        }
+        if (col.format === "currency" && value != null && value !== "") {
+          value = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value));
         }
         row[col.label] = value ?? "-";
       });
@@ -179,6 +184,20 @@ const DealerReportLayer = () => {
       width: "120px",
     },
     {
+      name: "Dealer Total",
+      selector: (r) =>
+        r.DealerTotalPrice != null
+          ? new Intl.NumberFormat("en-IN", {
+              style: "currency",
+              currency: "INR",
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }).format(Number(r.DealerTotalPrice))
+          : "-",
+      sortable: true,
+      width: "130px",
+    },
+    {
       name: "Company %",
       selector: (r) => r.OurPercentage ?? "-",
       sortable: true,
@@ -190,6 +209,23 @@ const DealerReportLayer = () => {
       sortable: true,
       width: "150px",
     },
+
+
+    {
+      name: "Remain Amount",
+      selector: (r) =>
+        r.DealerRemainingPrice != null
+          ? new Intl.NumberFormat("en-IN", {
+              style: "currency",
+              currency: "INR",
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }).format(Number(r.DealerRemainingPrice))
+          : "-",
+      sortable: true,
+      width: "130px",
+    },
+
     {
       name: "Pay. Date",
       selector: (r) =>
@@ -249,6 +285,7 @@ const DealerReportLayer = () => {
       sortable: true,
       width: "140px",
     },
+
   ];
   // ---------------- UI ----------------
   return (
