@@ -186,7 +186,12 @@ const SignInLayer = () => {
                   Forgot Password?
                 </Link>
               </div>
-              {apiError && <div className="text-danger mt-3">{apiError}</div>}
+              {apiError && (
+                <div className="alert alert-danger d-flex align-items-center gap-2 mt-3 mb-0 p-3 radius-12" role="alert">
+                  <Icon icon="mdi:alert-circle" fontSize={20} className="flex-shrink-0" />
+                  <span className="text-sm fw-medium">{apiError}</span>
+                </div>
+              )}
             </div>
             <button
               type="submit"
