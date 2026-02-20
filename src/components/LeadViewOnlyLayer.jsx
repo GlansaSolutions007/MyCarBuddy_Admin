@@ -307,7 +307,7 @@ const LeadViewOnlyLayer = () => {
                             </div>
                             <div className="col-md-6">
                               <label className="form-label fw-semibold text-primary-light">
-                                GST Name
+                                Organisation Name
                               </label>
                               <div className="form-control bg-white">
                                 {lead?.GSTName || "N/A"}

@@ -1391,7 +1391,7 @@ const LeadViewLayer = () => {
                         </div>
                         <div className="col-md-6">
                           <label className="form-label fw-semibold text-primary-light">
-                            GST Name
+                            Organisation Name
                           </label>
                           <input
                             type="text"
@@ -1405,7 +1405,7 @@ const LeadViewLayer = () => {
                               }
                               setGstName(val);
                             }}
-                            placeholder="Enter GST Name"
+                            placeholder="Enter Organisation Name"
                             disabled={isLeadClosed}
                           />
                         </div>

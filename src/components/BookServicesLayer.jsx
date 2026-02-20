@@ -3407,7 +3407,7 @@ const BookServicesLayer = () => {
                   boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
                 }}>
                   <Icon
-                    icon={bookingMode === "inspection" ? "mingcute:file-search-line" : "mingcute:calendar-schedule-line"}
+                    icon={bookingMode === "inspection" ? "lucide:clipboard-search" : "lucide:calendar-check"}
                     width={24}
                     style={{ color: "#fff" }}
                   />
@@ -3515,7 +3515,7 @@ const BookServicesLayer = () => {
                       boxShadow: "0 4px 12px rgba(34, 197, 94, 0.3)",
                       flexShrink: 0,
                     }}>
-                      <Icon icon="mingcute:tools-line" width={32} style={{ color: "#fff" }} />
+                      <Icon icon="lucide:calendar-check" width={32} style={{ color: "#fff" }} />
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{

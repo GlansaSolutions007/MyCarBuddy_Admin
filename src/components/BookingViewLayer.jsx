@@ -1340,7 +1340,7 @@ const BookingViewLayer = () => {
                               Phone Number :
                             </span>
                             <span className="w-50 text-secondary-light fw-bold">
-                              {bookingData.PhoneNumber || "—"}
+                              {bookingData.PhoneNumber || "N/A"}
                             </span>
                           </li>
 
@@ -1483,61 +1483,51 @@ const BookingViewLayer = () => {
                                 <ul className="mb-0">
                                   {vehicle.RegistrationNumber && (
                                     <li className="d-flex align-items-center gap-1 mb-12">
-                                      <span className="fw-semibold text-primary-light">
-                                        Registration Number :
+                                      <span className="w-70 fw-semibold text-primary-light">
+                                        Reg. Number :
                                       </span>
-                                      <span className="text-secondary-light fw-bold ms-2">
+                                      <span className="w-70 text-secondary-light fw-bold ms-2">
                                         {vehicle.RegistrationNumber}
                                       </span>
                                     </li>
                                   )}
-                                  {vehicle.BrandName && (
+                                  {vehicle.BrandName && vehicle.ModelName && (
                                     <li className="d-flex align-items-center gap-1 mb-12">
-                                      <span className="fw-semibold text-primary-light">
+                                      <span className="w-70 fw-semibold text-primary-light">
                                         Brand :
                                       </span>
-                                      <span className="text-secondary-light fw-bold ms-2">
-                                        {vehicle.BrandName}
+                                      <span className="w-70 text-secondary-light fw-bold ms-2">
+                                        {vehicle.BrandName} ({vehicle.ModelName || "N/A"})
                                       </span>
                                     </li>
                                   )}
-                                  {vehicle.ModelName && (
+                                  {vehicle.YearOfPurchase && (
                                     <li className="d-flex align-items-center gap-1 mb-12">
-                                      <span className="fw-semibold text-primary-light">
-                                        Model :
+                                      <span className="w-70 fw-semibold text-primary-light">
+                                        Year of Purchase :
                                       </span>
-                                      <span className="text-secondary-light fw-bold ms-2">
-                                        {vehicle.ModelName}
+                                      <span className="w-70 text-secondary-light fw-bold ms-2">
+                                        {vehicle.YearOfPurchase || "N/A"}
                                       </span>
                                     </li>
                                   )}
                                   {vehicle.FuelTypeName && (
                                     <li className="d-flex align-items-center gap-1 mb-12">
-                                      <span className="fw-semibold text-primary-light">
+                                      <span className="w-70 fw-semibold text-primary-light">
                                         Fuel Type :
                                       </span>
-                                      <span className="text-secondary-light fw-bold ms-2">
+                                      <span className="w-70 text-secondary-light fw-bold ms-2">
                                         {vehicle.FuelTypeName}
                                       </span>
                                     </li>
                                   )}
                                   {vehicle.KmDriven !== null && vehicle.KmDriven !== undefined && (
                                     <li className="d-flex align-items-center gap-1 mb-12">
-                                      <span className="fw-semibold text-primary-light">
+                                      <span className="w-70 fw-semibold text-primary-light">
                                         KM Driven :
                                       </span>
-                                      <span className="text-secondary-light fw-bold ms-2">
+                                      <span className="w-70 text-secondary-light fw-bold ms-2">
                                         {vehicle.KmDriven.toLocaleString()} km
-                                      </span>
-                                    </li>
-                                  )}
-                                  {vehicle.YearOfPurchase !== null && vehicle.YearOfPurchase !== undefined && (
-                                    <li className="d-flex align-items-center gap-1 mb-12">
-                                      <span className="fw-semibold text-primary-light">
-                                        Year of Purchase :
-                                      </span>
-                                      <span className="text-secondary-light fw-bold ms-2">
-                                        {vehicle.YearOfPurchase}
                                       </span>
                                     </li>
                                   )}
@@ -1895,7 +1885,7 @@ const BookingViewLayer = () => {
                     ?.PaymentStatus === "Success"
                 ) && (
                   <Link
-                    to={`/book-service/${bookingData?.LeadId}`}
+                    to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
                     className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
                     title="Add"
                   >
@@ -2129,8 +2119,8 @@ const BookingViewLayer = () => {
 
                           {bookingData?.BookingAddOns?.length > 0 && (
                             <div className="card mb-4 mt-4">
-                              <div className="card-header bg-success text-white">
-                                <h6 className="mb-0 fw-bold">Customer Confirmed Services</h6>
+                              <div className="card-header bg-success">
+                                <h6 className="mb-0 fw-bold text-white">Customer Confirmed Services</h6>
                               </div>
                               <div className="card-body p-0">
                                 <div
