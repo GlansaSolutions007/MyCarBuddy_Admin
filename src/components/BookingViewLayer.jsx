@@ -1307,19 +1307,11 @@ const BookingViewLayer = () => {
                       {/* ================= IMAGE ================= */}
                       <div className="col-lg-3 col-md-4 col-12 text-center">
                         <div className="pb-3">
-                          {bookingData.ProfileImage ? (
-                            <img
-                              src={`${API_IMAGE}${bookingData.ProfileImage}`}
-                              alt="User"
-                              className="border br-white border-width-2-px w-120-px h-120-px rounded-circle object-fit-cover"
-                            />
-                          ) : (
-                            <img
-                              src="/assets/images/user-grid/user-grid-img14.png"
-                              alt="Default User"
-                              className="border br-white border-width-2-px w-120-px h-120-px rounded-circle object-fit-cover"
-                            />
-                          )}
+                          <img
+                            src="/assets/images/user-grid/user-grid-img13.png"
+                            alt="User"
+                            className="border br-white border-width-2-px w-120-px h-120-px rounded-circle object-fit-cover"
+                          />
                         </div>
                       </div>
 
@@ -1549,7 +1541,7 @@ const BookingViewLayer = () => {
             ) : (
               <div className="pb-24 ms-16 mb-24 me-16 text-center">
                 <img
-                  src="/assets/images/user-grid/user-grid-img14.png"
+                  src="/assets/images/user-grid/user-grid-img13.png"
                   alt="Default User"
                   className="border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover"
                 />
