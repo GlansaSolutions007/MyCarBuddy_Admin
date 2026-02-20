@@ -1289,8 +1289,18 @@ const BookServicesLayer = () => {
 
   useEffect(() => {
     // Only show modal if no items exist AND no existing booking data was found AND booking mode is not set
+    // AND bookingId is not present in URL
     const hasExistingData = addedItems.length > 0 ||
       (bookingData && (bookingData.bookingDate || bookingData.timeSlot));
+
+    // Don't show modal if bookingId exists in URL
+    if (bookingId) {
+      setShowBookingChoiceModal(false);
+      if (!bookingMode) {
+        setBookingMode("service");
+      }
+      return;
+    }
 
     if (!hasExistingData && !loading && !bookingMode) {
       setShowBookingChoiceModal(true);
@@ -1304,7 +1314,7 @@ const BookServicesLayer = () => {
       // If booking mode is set, close the modal
       setShowBookingChoiceModal(false);
     }
-  }, [addedItems.length, loading, bookingData, bookingMode]);
+  }, [addedItems.length, loading, bookingData, bookingMode, bookingId]);
 
 
   const handleSubmit = async (skipSuccessSwal = false) => {
@@ -3115,7 +3125,7 @@ const BookServicesLayer = () => {
                 {addedItems.length > 0 && (
                   <div className="mt-3 p-3 border rounded bg-light">
                     <div className="d-flex justify-content-between">
-                      <div>Items Subtotal</div>
+                      <div>Parts Subtotal</div>
                       <div>₹{itemTotal.toFixed(2)}</div>
                     </div>
                     <div className="d-flex justify-content-between">
@@ -3324,7 +3334,7 @@ const BookServicesLayer = () => {
           </div>
         </div>
       )}
-      {showBookingChoiceModal && (
+      {showBookingChoiceModal && !bookingId && (
         <div
           style={{
             position: "fixed",

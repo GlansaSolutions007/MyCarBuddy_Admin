@@ -61,6 +61,8 @@ const BookingViewLayer = () => {
     useState(null);
   const token = localStorage.getItem("token");
   const roleId = localStorage.getItem("roleId");
+  const roleIdInt = {confirmedBy: roleId ? Number(roleId) : null, };
+  const role = localStorage.getItem("role");
   const duserId = localStorage.getItem("userId");
   const [previewServices, setPreviewServices] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
@@ -70,6 +72,16 @@ const BookingViewLayer = () => {
   const [assignType, setAssignType] = useState("technician");
   const [selectedSupervisor, setSelectedSupervisor] = useState(null);
   const [supervisors, setSupervisors] = useState([]);
+  // States for initial assignment modal (separate from reassign modal)
+  const [initialAssignModalOpen, setInitialAssignModalOpen] = useState(false);
+  const [initialAssignType, setInitialAssignType] = useState("technician");
+  const [selectedInitialTechnician, setSelectedInitialTechnician] = useState(null);
+  const [selectedInitialSupervisor, setSelectedInitialSupervisor] = useState(null);
+  const [selectedInitialFieldAdvisor, setSelectedInitialFieldAdvisor] = useState(null);
+  const [selectedInitialTimeSlot, setSelectedInitialTimeSlot] = useState(null);
+  const [fieldAdvisors, setFieldAdvisors] = useState([]);
+  const [showCustomerConfirmationModal, setShowCustomerConfirmationModal] = useState(false);
+  const [confirmationDescription, setConfirmationDescription] = useState("");
   const [pickupDate, setPickupDate] = useState("");
   const [pickupTime, setPickupTime] = useState("");
   const [dropDate, setDropDate] = useState("");
@@ -204,6 +216,7 @@ const BookingViewLayer = () => {
     fetchBookingData();
     fetchTimeSlots();
     fetchSupervisors();
+    fetchFieldAdvisors();
     fetchServiceTypes();
     fetchTempServices();
   }, [bookingId]);
@@ -234,6 +247,34 @@ const BookingViewLayer = () => {
     } catch (error) {
       console.error("Failed to fetch supervisors:", error);
       setSupervisors([]);
+    }
+  };
+
+  const fetchFieldAdvisors = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}Employee`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const employees = Array.isArray(res.data)
+        ? res.data
+        : res.data?.data || [];
+
+      const fieldAdvisorList = employees
+        .filter(
+          (emp) =>
+            emp.DepartmentName?.toLowerCase() === "field advisor" ||
+            emp.RoleName?.toLowerCase() === "field advisor",
+        )
+        .map((emp) => ({
+          value: emp.Id,
+          label: `${emp.Name} (${emp.PhoneNumber || "N/A"})`,
+        }));
+
+      setFieldAdvisors(fieldAdvisorList);
+    } catch (error) {
+      console.error("Failed to fetch field advisors:", error);
+      setFieldAdvisors([]);
     }
   };
 
@@ -399,6 +440,168 @@ const BookingViewLayer = () => {
           `Failed to assign ${assignType}. Please try again.`,
       });
     }
+  };
+
+  // Handler for initial assignment (similar to BookingLayer)
+  const handleInitialAssignClick = () => {
+    setInitialAssignType("technician");
+    setSelectedInitialTechnician(null);
+    setSelectedInitialSupervisor(null);
+    setSelectedInitialFieldAdvisor(null);
+
+    // Set time slot if booking has only one slot
+    if (bookingData && bookingData.TimeSlot) {
+      const slots = bookingData.TimeSlot.split(",").map((s) => s.trim());
+      if (slots.length === 1) {
+        const slot = slots[0];
+        const [start, end] = slot.split(" - ");
+        setSelectedInitialTimeSlot({
+          value: slot,
+          label: `${formatTime(start)} - ${formatTime(end)}`,
+        });
+      } else {
+        setSelectedInitialTimeSlot(null);
+      }
+    }
+    setInitialAssignModalOpen(true);
+  };
+
+  const handleInitialAssignConfirm = async () => {
+    // Time slot validation only for technician and supervisor
+    if (initialAssignType !== "fieldAdvisor" && !selectedInitialTimeSlot) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Please select a time slot",
+      });
+      return;
+    }
+
+    let payload;
+    let apiUrl;
+    let method;
+
+    // Handle Field Advisor assignment
+    if (initialAssignType === "fieldAdvisor") {
+      if (!selectedInitialFieldAdvisor) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Please select a field advisor before assigning.",
+        });
+        return;
+      }
+
+      payload = {
+        bookingIds: [bookingId],
+        supervisorHeadId: Number(userId),
+        fieldAdvisorId: selectedInitialFieldAdvisor.value,
+      };
+      apiUrl = `${API_BASE}Supervisor/AssignToFieldAdvisor`;
+      method = "post";
+    } else {
+      // Common payload format for technician and supervisor
+      payload = {
+        bookingID: bookingId,
+        techID:
+          initialAssignType === "technician"
+            ? selectedInitialTechnician?.value
+            : selectedInitialSupervisor?.value,
+        assingedTimeSlot: selectedInitialTimeSlot.value,
+        role: initialAssignType === "technician" ? "Technician" : "Supervisor",
+      };
+
+      // API URL and method differ based on assign type
+      if (initialAssignType === "technician") {
+        if (!selectedInitialTechnician) {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Please select a technician before assigning.",
+          });
+          return;
+        }
+        apiUrl = `${API_BASE}Bookings/assign-technician`;
+        method = "put";
+      } else {
+        if (!selectedInitialSupervisor) {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Please select a supervisor before assigning.",
+          });
+          return;
+        }
+        apiUrl = `${API_BASE}Bookings/assign-technician`;
+        method = "put";
+      }
+    }
+
+    try {
+      const res = await axios({
+        method: method,
+        url: apiUrl,
+        data: payload,
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.status === 200 || res.status === 201) {
+        const assignTypeLabel =
+          initialAssignType === "technician"
+            ? "Technician"
+            : initialAssignType === "supervisor"
+              ? "Supervisor"
+              : "Field Advisor";
+
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: res.data.message || `${assignTypeLabel} assigned successfully`,
+        });
+        fetchBookingData();
+        setInitialAssignModalOpen(false);
+        setSelectedInitialTechnician(null);
+        setSelectedInitialSupervisor(null);
+        setSelectedInitialFieldAdvisor(null);
+        setSelectedInitialTimeSlot(null);
+        setInitialAssignType("technician");
+      } else {
+        const assignTypeLabel =
+          initialAssignType === "technician"
+            ? "technician"
+            : initialAssignType === "supervisor"
+              ? "supervisor"
+              : "field advisor";
+
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: res.data.message || `Failed to assign ${assignTypeLabel}`,
+        });
+      }
+    } catch (error) {
+      console.error("Assignment failed:", error);
+      Swal.fire({
+        icon: "error",
+        title: "API Error",
+        text:
+          error.response?.data?.message ||
+          `Error while assigning ${initialAssignType}. Please check the console for details.`,
+      });
+    }
+  };
+
+  // Get time slot options for initial assignment
+  const getInitialTimeSlotOptions = () => {
+    if (!bookingData || !bookingData.TimeSlot) return [];
+    return bookingData.TimeSlot.split(",").map((slot) => {
+      const trimmed = slot.trim();
+      const [start, end] = trimmed.split(" - ");
+      return {
+        value: trimmed,
+        label: `${formatTime(start)} - ${formatTime(end)}`,
+      };
+    });
   };
 
   const handleCancel = async () => {
@@ -1022,7 +1225,7 @@ const BookingViewLayer = () => {
     setDiscountAmount("");
   };
 
-  const handleCustomerConfirmation = async () => {
+  const handleCustomerConfirmation = () => {
     if (!bookingData?.BookingID) {
       Swal.fire("Error", "Booking data not available.", "error");
       return;
@@ -1077,9 +1280,30 @@ const BookingViewLayer = () => {
       return;
     }
 
+    // Open the confirmation modal
+    setConfirmationDescription("");
+    setShowCustomerConfirmationModal(true);
+  };
+
+  const handleCustomerConfirmationSubmit = async () => {
+    if (!confirmationDescription || confirmationDescription.trim() === "") {
+      Swal.fire({
+        icon: "warning",
+        title: "Description Required",
+        text: "Please provide a description for the confirmation.",
+      });
+      return;
+    }
+
     try {
       await axios.post(
         `${API_BASE}Supervisor/MoveSupervisorBookings?bookingId=${bookingData.BookingID}`,
+        {
+          confirmDescription: confirmationDescription.trim(),
+          confirmedBy: roleIdInt.confirmedBy,
+          confirmRole: roleName,
+          bookingId: bookingData.BookingID,
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -1087,6 +1311,8 @@ const BookingViewLayer = () => {
         },
       );
       Swal.fire("Success", "Customer confirmation completed successfully.", "success");
+      setShowCustomerConfirmationModal(false);
+      setConfirmationDescription("");
       fetchBookingData();
     } catch (error) {
       console.error("Customer Confirmation Error:", error);
@@ -2733,7 +2959,7 @@ const BookingViewLayer = () => {
                               <ul className="list-group list-group-flush ">
                                 <li className="list-group-item d-flex justify-content-between p-0">
                                   <span className="text-secondary">
-                                    Items Subtotal
+                                    Parts Subtotal
                                   </span>
                                   <span>
                                     ₹
@@ -2862,14 +3088,27 @@ const BookingViewLayer = () => {
                                     Enter Payment
                                   </button>
                                 )}
-                                {showEstimationButton && (
+                                {/* Assign Button - similar to BookingLayer */}
+                                {(role === "Admin" || roleName === "Supervisor Head" || roleName === "Field Advisor") &&
+                                  !(
+                                    bookingData?.BookingStatus === "Completed" &&
+                                    bookingData?.PaymentStatus === "Success"
+                                  ) && (
+                                    <button
+                                      className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                                      onClick={handleInitialAssignClick}
+                                    >
+                                      Assign To
+                                    </button>
+                                  )}
+                                {/* {showEstimationButton && ( */}
                                   <button
                                     className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                                     onClick={() => showGenerateInvoiceConfirm("Generate Estimation Invoice", handleGenerateEstimationInvoice, "Estimation")}
                                   >
                                     Generate Estimation Invoice
                                   </button>
-                                )}
+                                {/* )} */}
 
                                 {/* Final Invoice: show only after full payment is completed */}
                                 {showFinalButton && (
@@ -3204,6 +3443,269 @@ const BookingViewLayer = () => {
                   onClick={handleConfirmPayment}
                 >
                   Confirm Payment
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Initial Assign Modal - similar to BookingLayer */}
+      {initialAssignModalOpen && (
+        <div
+          className="modal fade show d-block"
+          style={{ background: "#00000080" }}
+        >
+          <div
+            className="modal-dialog modal-dialog-centered"
+            style={{ maxWidth: "500px", width: "90%" }}
+          >
+            <div className="modal-content">
+              <div className="modal-header">
+                <h6 className="modal-title">Assign</h6>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => {
+                    setInitialAssignModalOpen(false);
+                    setInitialAssignType("technician");
+                    setSelectedInitialTechnician(null);
+                    setSelectedInitialSupervisor(null);
+                    setSelectedInitialFieldAdvisor(null);
+                    setSelectedInitialTimeSlot(null);
+                  }}
+                />
+              </div>
+
+              <div className="modal-body">
+                {/* Assignment Type Checkboxes */}
+                <div className="d-flex justify-content-center align-items-center gap-4 mb-3">
+                  {/* Field Advisor Checkbox */}
+                  {roleName !== "Field Advisor" && (
+                    <div className="form-check d-flex align-items-center gap-2 m-0">
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        id="assignInitialFieldAdvisor"
+                        checked={initialAssignType === "fieldAdvisor"}
+                        onChange={() => {
+                          setInitialAssignType("fieldAdvisor");
+                          setSelectedInitialTechnician(null);
+                          setSelectedInitialSupervisor(null);
+                        }}
+                        style={{ width: "18px", height: "18px", margin: 0 }}
+                      />
+                      <label
+                        htmlFor="assignInitialFieldAdvisor"
+                        className="form-check-label mb-0"
+                      >
+                        Field Advisor
+                      </label>
+                    </div>
+                  )}
+                  {/* Technician Checkbox: always show */}
+                  <div className="form-check d-flex align-items-center gap-2 m-0">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id="assignInitialTech"
+                      checked={initialAssignType === "technician"}
+                      onChange={() => {
+                        setInitialAssignType("technician");
+                        setSelectedInitialSupervisor(null);
+                        setSelectedInitialFieldAdvisor(null);
+                      }}
+                      style={{ width: "18px", height: "18px", margin: 0 }}
+                    />
+                    <label
+                      htmlFor="assignInitialTech"
+                      className="form-check-label mb-0"
+                    >
+                      Technician
+                    </label>
+                  </div>
+                  {/* Supervisor Checkbox: show only if roleId is NOT 8 */}
+                  {/* {roleId !== "8" && roleName !== "Field Advisor" && (
+                    <div className="form-check d-flex align-items-center gap-2 m-0">
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        id="assignInitialSup"
+                        checked={initialAssignType === "supervisor"}
+                        onChange={() => {
+                          setInitialAssignType("supervisor");
+                          setSelectedInitialTechnician(null);
+                          setSelectedInitialFieldAdvisor(null);
+                        }}
+                        style={{ width: "18px", height: "18px", margin: 0 }}
+                      />
+                      <label
+                        htmlFor="assignInitialSup"
+                        className="form-check-label mb-0"
+                      >
+                        Supervisor
+                      </label>
+                    </div>
+                  )} */}
+                </div>
+
+                {/* Time Slot Selection - Hide for Field Advisor */}
+                {initialAssignType !== "fieldAdvisor" && (
+                  <div className="mb-3">
+                    {bookingData?.TimeSlot?.split(",").length === 1 ? (
+                      <Select
+                        value={selectedInitialTimeSlot}
+                        isDisabled
+                        styles={{
+                          control: (base) => ({
+                            ...base,
+                            backgroundColor: "#f5f5f5",
+                            cursor: "not-allowed",
+                          }),
+                          singleValue: (base) => ({
+                            ...base,
+                            color: "#495057",
+                          }),
+                        }}
+                      />
+                    ) : (
+                      <Select
+                        options={getInitialTimeSlotOptions()}
+                        value={selectedInitialTimeSlot}
+                        onChange={(val) => setSelectedInitialTimeSlot(val)}
+                        placeholder="Select TimeSlot"
+                      />
+                    )}
+                  </div>
+                )}
+
+                {/* Employee Selection based on assignType */}
+                {initialAssignType === "technician" ? (
+                  <Select
+                    options={technicians}
+                    value={selectedInitialTechnician}
+                    onChange={(val) => setSelectedInitialTechnician(val)}
+                    placeholder="Select Technician"
+                  />
+                ) : initialAssignType === "supervisor" ? (
+                  <Select
+                    options={supervisors}
+                    value={selectedInitialSupervisor}
+                    onChange={(val) => setSelectedInitialSupervisor(val)}
+                    placeholder="Select Supervisor"
+                  />
+                ) : (
+                  <Select
+                    options={fieldAdvisors}
+                    value={selectedInitialFieldAdvisor}
+                    onChange={(val) => setSelectedInitialFieldAdvisor(val)}
+                    placeholder="Select Field Advisor"
+                  />
+                )}
+              </div>
+              <div className="modal-footer d-inline-flex align-items-center justify-content-center">
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => {
+                    setInitialAssignModalOpen(false);
+                    setInitialAssignType("technician");
+                    setSelectedInitialTechnician(null);
+                    setSelectedInitialSupervisor(null);
+                    setSelectedInitialFieldAdvisor(null);
+                    setSelectedInitialTimeSlot(null);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
+                  onClick={handleInitialAssignConfirm}
+                  disabled={
+                    (initialAssignType !== "fieldAdvisor" && !selectedInitialTimeSlot) ||
+                    (initialAssignType === "technician" && !selectedInitialTechnician) ||
+                    (initialAssignType === "supervisor" && !selectedInitialSupervisor) ||
+                    (initialAssignType === "fieldAdvisor" && !selectedInitialFieldAdvisor)
+                  }
+                >
+                  Assign
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Customer Confirmation Modal */}
+      {showCustomerConfirmationModal && (
+        <div
+          className="modal fade show d-block"
+          style={{ background: "rgba(0, 0, 0, 0.5)", backdropFilter: "blur(5px)" }}
+        >
+          <div
+            className="modal-dialog modal-dialog-centered"
+            style={{ maxWidth: "600px", width: "90%" }}
+          >
+            <div className="modal-content">
+              <div className="modal-header">
+                <h6 className="modal-title fw-bold">Customer Confirmation</h6>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => {
+                    setShowCustomerConfirmationModal(false);
+                    setConfirmationDescription("");
+                  }}
+                />
+              </div>
+
+              <div className="modal-body">
+                {/* Explanation Section */}
+                <div className="alert alert-info mb-3">
+                  <h6 className="fw-bold mb-2">Why is confirmation required?</h6>
+                  <p className="mb-0 small">
+                    Customer confirmation is required to finalize the booking and move all services 
+                    from temporary status to confirmed status. This ensures that the customer has 
+                    reviewed and approved all services before proceeding with the booking process. 
+                    Once confirmed, the services will be moved to the main booking and cannot be 
+                    easily modified.
+                  </p>
+                </div>
+
+                {/* Description Field */}
+                <div className="mb-3">
+                  <label className="form-label fw-semibold">
+                    Description <span className="text-danger">*</span>
+                  </label>
+                  <textarea
+                    className="form-control"
+                    rows="4"
+                    placeholder="Please provide a description for this confirmation..."
+                    value={confirmationDescription}
+                    onChange={(e) => setConfirmationDescription(e.target.value)}
+                    required
+                  />
+                  <small className="text-muted">
+                    This description will be recorded along with your confirmation.
+                  </small>
+                </div>
+              </div>
+
+              <div className="modal-footer justify-content-center">
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => {
+                    setShowCustomerConfirmationModal(false);
+                    setConfirmationDescription("");
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-primary-600 btn-sm"
+                  onClick={handleCustomerConfirmationSubmit}
+                  disabled={!confirmationDescription || confirmationDescription.trim() === ""}
+                >
+                  Confirm
                 </button>
               </div>
             </div>

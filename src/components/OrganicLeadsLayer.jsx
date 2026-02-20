@@ -824,7 +824,7 @@ const OrganicLeadsLayer = () => {
     //     }
     //     const headDate = row.HeadAssignDate ? new Date(row.HeadAssignDate) : null;
     //     const empDate = row.EmployeeAssignDate ? new Date(row.EmployeeAssignDate) : null;
-        
+
     //     if (headDate && empDate) {
     //       return new Date(Math.min(headDate, empDate)).toLocaleString("en-GB");
     //     }
@@ -839,20 +839,46 @@ const OrganicLeadsLayer = () => {
     //   sortable: true,
     //   width: "150px",
     // },
+    { name: "Updated Date", selector: (row) => row.Updated_At ? new Date(row.Updated_At).toLocaleString("en-GB") : "-", sortable: true, width: "180px" },
     { name: "City", selector: (row) => row.City || "-", sortable: true, width: "180px" },
     { name: "Platform", selector: (row) => row.Platform || "-", width: "120px" },
     ...(employeeData?.RoleName !== "Telecaller"
       ? [{
         name: "Head Assigned D/T",
         selector: (row) =>
-          row.HeadAssignDate
-            ? new Date(row.HeadAssignDate).toLocaleString("en-GB")
-            : "-",
+        (
+          <div>
+            <div style={{ fontWeight: 600 }}>
+              {row.HeadAssignName || "-"}
+            </div>
+            <div style={{ fontSize: "12px", color: "#6c757d" }}>
+              {row.HeadAssignDate
+                ? new Date(row.HeadAssignDate).toLocaleString("en-GB")
+                : "-"}
+            </div>
+          </div>
+        ),
+        // row.HeadAssignDate
+        //   ? new Date(row.HeadAssignDate).toLocaleString("en-GB")
+        //   : "-",
         width: "170px",
       }]
       : []),
 
-    { name: "Emp. Assigned D/T", selector: (row) => row.EmployeeAssignDate ? new Date(row.EmployeeAssignDate).toLocaleString("en-GB") : "-", width: "170px" },
+    {
+      name: "Emp. Assigned D/T", selector: (row) => (
+        <div>
+          <div style={{ fontWeight: 600 }}>
+            {row.EmployeeAssignName || "-"}
+          </div>
+          <div style={{ fontSize: "12px", color: "#6c757d" }}>
+            {row.EmployeeAssignDate
+              ? new Date(row.EmployeeAssignDate).toLocaleString("en-GB")
+              : "-"}
+          </div>
+        </div>
+      ), width: "170px"
+    },
     // {
     //   name: "Lead Category",
     //   cell: (row) => {
@@ -906,8 +932,8 @@ const OrganicLeadsLayer = () => {
 
       if (fromDate || toDate) {
         const apiDateType =
-          dateType === "updated"
-            ? "UpdatedDate"
+          dateType === "ModifiedDate"
+            ? "ModifiedDate"
             : "CreatedDate";
 
         queryParams += `&DateType=${apiDateType}`;
@@ -997,9 +1023,9 @@ const OrganicLeadsLayer = () => {
       }
 
       if (fromDate || toDate) {
-        const apiDateType = dateType === "updated"
-          ? "UpdatedDate"
-          : "CreatedDate";
+        const apiDateType = dateType === "CreatedDate"
+          ? "CreatedDate"
+          : "ModifiedDate";
 
         queryParams += `&DateType=${apiDateType}`;
       }
@@ -1091,18 +1117,6 @@ const OrganicLeadsLayer = () => {
                     <option value="DND">DND</option>
                   </select>
 
-                  <label className="text-sm fw-semibold mb-0">
-                    Date Type:
-                  </label>
-
-                  <select
-                    className="form-control radius-8 px-14 py-6 text-sm w-auto"
-                    value={dateType}
-                    onChange={(e) => setDateType(e.target.value)}
-                  >
-                    <option value="created">Created Date</option>
-                    <option value="updated">Updated Date</option>
-                  </select>
                   <label className="text-sm fw-semibold mb-0">Platform:</label>
                   <select
                     className="form-control radius-8 px-14 py-6 text-sm w-auto"
@@ -1122,6 +1136,17 @@ const OrganicLeadsLayer = () => {
 
                 {/* ✅ LEFT SIDE */}
                 <div className="d-flex align-items-center gap-2 flex-wrap">
+                  <label className="text-sm fw-semibold mb-0">
+                    Date Type:
+                  </label>
+                  <select
+                    className="form-control radius-8 px-14 py-6 text-sm w-auto"
+                    value={dateType}
+                    onChange={(e) => setDateType(e.target.value)}
+                  >
+                    <option value="CreatedDate">Created Date</option>
+                    <option value="ModifiedDate">Updated Date</option>
+                  </select>
                   <label className="text-sm fw-semibold mb-0">From:</label>
                   <input
                     type="date"

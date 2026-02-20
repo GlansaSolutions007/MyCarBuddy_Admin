@@ -39,6 +39,37 @@ We will be happy to assist you.`,
   },
 ];
 
+// Mapping object for Discussion Result to Next Action options
+const DISCUSSION_RESULT_TO_ACTIONS = {
+  "Interested": [
+    "Ok for Inspection",
+    "Ok for Service",
+    "Schedule Meeting",
+    "Send Details",
+    "Follow-up Needed"
+  ],
+  "Need More Info": [
+    "Send Details",
+    "Follow-up Needed",
+    "Schedule Meeting"
+  ],
+  "Converted to Customer": [
+    "Ok for Service",
+    "Ok for Inspection",
+    "Lead Closed"
+  ],
+  "Not Interested": [
+    "Lead Closed"
+  ],
+  "Not Converted": [
+    "Follow-up Needed",
+    "Lead Closed"
+  ],
+  "Not Having Car": [
+    "Lead Closed"
+  ]
+};
+
 const LeadViewLayer = () => {
   const addressRef = useRef(null);
   const { hasPermission } = usePermissions();
@@ -822,6 +853,12 @@ const LeadViewLayer = () => {
     });
   };
   const handleConvertCustomer = async () => {
+    // Check if at least one follow-up exists
+    if (!hasAtLeastOneFollowUp) {
+      showFollowUpRequiredAlert();
+      return;
+    }
+
     try {
       await axios.post(`${API_BASE}Leads/ConvertLead`, null, {
         params: {
@@ -1224,7 +1261,20 @@ const LeadViewLayer = () => {
                             <select
                               className="form-select"
                               value={callOutcome}
-                              onChange={(e) => setCallOutcome(e.target.value)}
+                              onChange={(e) => {
+                                const selectedOutcome = e.target.value;
+                                setCallOutcome(selectedOutcome);
+                                
+                                // Clear nextAction if it's not in the new list of available actions
+                                if (selectedOutcome && DISCUSSION_RESULT_TO_ACTIONS[selectedOutcome]) {
+                                  const availableActions = DISCUSSION_RESULT_TO_ACTIONS[selectedOutcome];
+                                  if (nextAction && !availableActions.includes(nextAction)) {
+                                    setNextAction("");
+                                  }
+                                } else {
+                                  setNextAction("");
+                                }
+                              }}
                             >
                               <option value="">Select outcome</option>
                               <option value="Interested">Interested</option>
@@ -1254,23 +1304,33 @@ const LeadViewLayer = () => {
                               className="form-select"
                               value={nextAction}
                               onChange={(e) => setNextAction(e.target.value)}
+                              disabled={!callOutcome}
                             >
                               <option value="">Select action</option>
-                              <option value="Ok for Inspection">
-                                Ok for Inspection
-                              </option>
-                              <option value="Ok for Service">
-                                Ok for Service
-                              </option>
-                              <option value="Schedule Meeting">
-                                Schedule Meeting
-                              </option>
-                              <option value="Price Issue">Price Issue</option>
-                              <option value="Follow-up Needed">
-                                Follow-up Needed
-                              </option>
-                              <option value="Send Details">Send Details</option>
-                              <option value="Lead Closed">Lead Closed</option>
+                              {callOutcome && DISCUSSION_RESULT_TO_ACTIONS[callOutcome] ? (
+                                DISCUSSION_RESULT_TO_ACTIONS[callOutcome].map((action) => (
+                                  <option key={action} value={action}>
+                                    {action}
+                                  </option>
+                                ))
+                              ) : (
+                                <>
+                                  <option value="Ok for Inspection">
+                                    Ok for Inspection
+                                  </option>
+                                  <option value="Ok for Service">
+                                    Ok for Service
+                                  </option>
+                                  <option value="Schedule Meeting">
+                                    Schedule Meeting
+                                  </option>
+                                  <option value="Follow-up Needed">
+                                    Follow-up Needed
+                                  </option>
+                                  <option value="Send Details">Send Details</option>
+                                  <option value="Lead Closed">Lead Closed</option>
+                                </>
+                              )}
                             </select>
                           </div>
                           <div className="col-12">
@@ -1405,7 +1465,7 @@ const LeadViewLayer = () => {
                               }
                               setGstName(val);
                             }}
-                            placeholder="Enter Organisation Name"
+                            placeholder="Enter Org. Name"
                             disabled={isLeadClosed}
                           />
                         </div>
