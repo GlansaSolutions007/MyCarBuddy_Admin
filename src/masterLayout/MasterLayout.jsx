@@ -1467,11 +1467,7 @@ const MasterLayout = ({ children }) => {
                     data-bs-toggle="dropdown"
                   >
                     <img
-                      src={
-                        userImage
-                          ? `${API_IMAGE}${userImage}` // full path
-                          : "assets/images/user-grid/user-grid-img13.png" // fallback if not available
-                      }
+                      src="/assets/images/user-grid/user-grid-img13.png"
                       alt="image_user"
                       className="w-40-px h-40-px object-fit-cover rounded-circle"
                     />

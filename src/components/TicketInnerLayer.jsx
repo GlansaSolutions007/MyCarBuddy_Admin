@@ -269,13 +269,7 @@ const TicketInnerLayer = () => {
 
             <div className="text-center border-bottom pb-16">
               <img
-                src={
-                  ticket?.BookingDetails?.ProfileImage
-                    ? `${import.meta.env.VITE_APIURL_IMAGE}${
-                        ticket.BookingDetails.ProfileImage
-                      }`
-                    : "/assets/images/user-grid/user-grid-img14.png"
-                }
+                src="/assets/images/user-grid/user-grid-img13.png"
                 alt="customer"
                 className="border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover"
               />

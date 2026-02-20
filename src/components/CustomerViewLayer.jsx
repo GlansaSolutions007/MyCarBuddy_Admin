@@ -82,11 +82,7 @@ const CustomerViewLayer = () => {
           <div className="pb-24 ms-16 mb-24 me-16">
             <div className="text-center border border-top-0 border-start-0 border-end-0">
               <img
-                src={
-                  profile.ProfileImage
-                    ? `${API_IMAGE}${profile.ProfileImage}`
-                    : "/assets/images/user-grid/user-grid-img14.png"
-                }
+                src="/assets/images/user-grid/user-grid-img13.png"
                 alt="Profile"
                 className="border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover"
               />

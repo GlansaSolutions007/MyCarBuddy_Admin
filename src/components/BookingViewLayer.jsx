@@ -1566,7 +1566,7 @@ const BookingViewLayer = () => {
             ) : (
               <div className="pb-24 ms-16 mb-24 me-16 text-center">
                 <img
-                  src="/assets/images/user-grid/user-grid-img14.png"
+                  src="/assets/images/user-grid/user-grid-img13.png"
                   alt="Default User"
                   className="border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover"
                 />

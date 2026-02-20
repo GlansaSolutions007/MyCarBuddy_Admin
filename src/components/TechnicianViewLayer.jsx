@@ -93,18 +93,10 @@ const TechnicianViewLayer = () => {
           /> */}
           <div className="p-3 text-center ">
             <img
-              src={
-                technician?.ProfileImage
-                  ? `${API_IMAGE}${technician.ProfileImage}`
-                  : "/assets/images/user-grid/user-grid-img13.png"
-              }
+              src="/assets/images/user-grid/user-grid-img13.png"
               alt={technician?.TechnicianName || "Technician"}
               className="border border-2 border-white w-150-px h-150-px rounded-circle object-fit-cover"
               style={{ width: "150px", height: "150px" }}
-              onError={(e) => {
-                e.target.onerror = null; // Prevent infinite loop
-                e.target.src = "/assets/images/user-grid/user-grid-img13.png";
-              }}
             />
             <h5 className="mt-3 mb-1">{technician?.TechnicianName || "N/A"}</h5>
             <span className="text-muted">{technician?.Email || "No email"}</span>

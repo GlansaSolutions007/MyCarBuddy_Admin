@@ -52,18 +52,10 @@ const DealerViewLayer = () => {
         <div className="user-grid-card border radius-16 overflow-hidden bg-base h-100">
           <div className="p-3 text-center">
             <img
-              src={
-                dealer.ProfileImage
-                  ? `${API_IMAGE}${dealer.ProfileImage}`
-                  : "/assets/images/user-grid/user-grid-img14.png"
-              }
+              src="/assets/images/user-grid/user-grid-img13.png"
               alt={dealer.FullName || "Dealer"}
               className="border border-2 border-white w-150-px h-150-px rounded-circle object-fit-cover"
               style={{ width: "150px", height: "150px" }}
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "/assets/images/user-grid/user-grid-img14.png";
-              }}
             />
             <h5 className="mt-3 mb-1">{dealer.FullName || "N/A"}</h5>
             <span className="text-muted">{dealer.Email || "No email"}</span>

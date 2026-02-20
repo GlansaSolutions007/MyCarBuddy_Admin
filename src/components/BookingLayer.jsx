@@ -394,7 +394,7 @@ const BookingLayer = () => {
     },
 
     {
-      name: "Date",
+      name: "Booking Date",
       selector: (row) => {
         const rawDate = row.BookingDate || row.CreatedDate;
         if (!rawDate) return "-";
@@ -407,7 +407,7 @@ const BookingLayer = () => {
         ).padStart(2, "0")}/${date.getFullYear()}`;
       },
       sortField: "CreatedDate",
-      width: "120px",
+      width: "150px",
       sortable: true,
     },
     {
