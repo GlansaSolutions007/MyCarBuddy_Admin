@@ -369,8 +369,7 @@ const BookingViewLayer = () => {
           title: "Success",
           text:
             res.data.message ||
-            `${
-              assignType === "technician" ? "Technician" : "Supervisor"
+            `${assignType === "technician" ? "Technician" : "Supervisor"
             } assigned successfully`,
         });
 
@@ -386,8 +385,7 @@ const BookingViewLayer = () => {
           title: "Error",
           text:
             res.data.message ||
-            `${
-              assignType === "technician" ? "Technician" : "Supervisor"
+            `${assignType === "technician" ? "Technician" : "Supervisor"
             } assignment failed.`,
         });
       }
@@ -619,9 +617,9 @@ const BookingViewLayer = () => {
   // Calculate Add Service total dynamically
   const addServiceTotal = bookingData?.BookingAddOns
     ? bookingData.BookingAddOns.reduce(
-        (sum, item) => sum + (item.TotalPrice || 0),
-        0,
-      )
+      (sum, item) => sum + (item.TotalPrice || 0),
+      0,
+    )
     : 0;
 
   const handleAddLocalService = async () => {
@@ -966,7 +964,7 @@ const BookingViewLayer = () => {
       Swal.fire(
         "Error",
         error?.response?.data?.message ||
-          "Failed to generate Estimation invoice.",
+        "Failed to generate Estimation invoice.",
         "error",
       );
     }
@@ -1134,7 +1132,7 @@ const BookingViewLayer = () => {
   const showEstimationButton = allSupervisorConfirmed;
   const showFinalButton = remainingAmount === 0 && hasAtLeastOneService && allSupervisorConfirmed && totalAmount > 0;
   const showEnterPaymentButton = remainingAmount > 0 && hasAtLeastOneService && allSupervisorConfirmed && totalAmount > 0;
-  const showDealerInvoiceButton =  hasAtLeastOneService && allSupervisorConfirmed && totalAmount > 0;
+  const showDealerInvoiceButton = hasAtLeastOneService && allSupervisorConfirmed && totalAmount > 0;
 
   const handleConfirmPayment = async () => {
     try {
@@ -1276,7 +1274,7 @@ const BookingViewLayer = () => {
     return selected < now;
   };
   const displayDate = (date) => {
-    if (!date) return "--";
+    if (!date) return "N/A";
     return new Date(date).toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "short",
@@ -1303,48 +1301,48 @@ const BookingViewLayer = () => {
                       </Accordion.Header>
 
                       <Accordion.Body>
-                    <div className="row g-4 align-items-start">
-                      {/* ================= IMAGE ================= */}
-                      <div className="col-lg-3 col-md-4 col-12 text-center">
-                        <div className="pb-3">
-                          {bookingData.ProfileImage ? (
-                            <img
-                              src={`${API_IMAGE}${bookingData.ProfileImage}`}
-                              alt="User"
-                              className="border br-white border-width-2-px w-120-px h-120-px rounded-circle object-fit-cover"
-                            />
-                          ) : (
-                            <img
-                              src="/assets/images/user-grid/user-grid-img14.png"
-                              alt="Default User"
-                              className="border br-white border-width-2-px w-120-px h-120-px rounded-circle object-fit-cover"
-                            />
-                          )}
-                        </div>
-                      </div>
+                        <div className="row g-4 align-items-start">
+                          {/* ================= IMAGE ================= */}
+                          <div className="col-lg-3 col-md-4 col-12 text-center">
+                            <div className="pb-3">
+                              {bookingData.ProfileImage ? (
+                                <img
+                                  src={`${API_IMAGE}${bookingData.ProfileImage}`}
+                                  alt="User"
+                                  className="border br-white border-width-2-px w-120-px h-120-px rounded-circle object-fit-cover"
+                                />
+                              ) : (
+                                <img
+                                  src="/assets/images/user-grid/user-grid-img14.png"
+                                  alt="Default User"
+                                  className="border br-white border-width-2-px w-120-px h-120-px rounded-circle object-fit-cover"
+                                />
+                              )}
+                            </div>
+                          </div>
 
-                      {/* ================= PERSONAL INFO ================= */}
-                      <div className="col-lg-9 col-md-8 col-12">
-                        <ul className="mb-0">
-                          <li className="d-flex align-items-center gap-1 mb-12">
-                            <span className=" w-50 fw-semibold text-primary-light">
-                              Customer Name :
-                            </span>
-                            <span className="w-50 text-secondary-light fw-bold">
-                              {bookingData.CustomerName || "N/A"}
-                            </span>
-                          </li>
+                          {/* ================= PERSONAL INFO ================= */}
+                          <div className="col-lg-9 col-md-8 col-12">
+                            <ul className="mb-0">
+                              <li className="d-flex align-items-center gap-1 mb-12">
+                                <span className=" w-50 fw-semibold text-primary-light">
+                                  Customer Name :
+                                </span>
+                                <span className="w-50 text-secondary-light fw-bold">
+                                  {bookingData.CustomerName || "N/A"}
+                                </span>
+                              </li>
 
-                          <li className="d-flex align-items-center gap-1 mb-12">
-                            <span className=" w-50 fw-semibold text-primary-light">
-                              Phone Number :
-                            </span>
-                            <span className="w-50 text-secondary-light fw-bold">
-                              {bookingData.PhoneNumber || "N/A"}
-                            </span>
-                          </li>
+                              <li className="d-flex align-items-center gap-1 mb-12">
+                                <span className=" w-50 fw-semibold text-primary-light">
+                                  Phone Number :
+                                </span>
+                                <span className="w-50 text-secondary-light fw-bold">
+                                  {bookingData.PhoneNumber || "N/A"}
+                                </span>
+                              </li>
 
-                          {/* <li className="d-flex align-items-center gap-1 mb-12">
+                              {/* <li className="d-flex align-items-center gap-1 mb-12">
                             <span className="w-50 fw-semibold text-primary-light">
                               Vehicle Number :
                             </span>
@@ -1352,106 +1350,125 @@ const BookingViewLayer = () => {
                               {bookingData.VehicleNumber || "—"}
                             </span>
                           </li> */}
-                          <li className="d-flex align-items-center gap-1 mb-12">
-                            <span className=" w-50 fw-semibold text-primary-light">
-                              Full Address :
-                            </span>
-                            <span className="w-50 text-secondary-light fw-bold">
-                              {bookingData.FullAddress || "N/A"}
-                            </span>
-                          </li>
-                          {/* Assigned To */}
-                          {!bookingData.TechFullName &&
-                          !bookingData.SupervisorName ? (
-                            <li className="d-flex align-items-center gap-1 mb-12">
+                              <li className="d-flex align-items-center gap-1 mb-12">
+                                <span className=" w-50 fw-semibold text-primary-light">
+                                  Full Address :
+                                </span>
+                                <span className="w-50 text-secondary-light fw-bold">
+                                  {bookingData.FullAddress || "N/A"}
+                                </span>
+                              </li>
+                              {/* Assigned To */}
+                              {/* {!bookingData.TechFullName && */}
+                              {/* // !bookingData.SupervisorName ? ( */}
+                              {/* <li className="d-flex align-items-center gap-1 mb-12">
                               <span className=" w-50 fw-semibold text-primary-light">
                                 Technician Assigned To :
                               </span>
                               <span className="w-50 text-secondary-light fw-bold">
                                 N/A
                               </span>
-                            </li>
-                          ) : (
-                            <>
-                              {bookingData.TechFullName && (
+                            </li> */}
+                              {/* ) : ( */}
+                              <>
+                                {/* {bookingData.TechFullName && ( */}
                                 <>
                                   <li className="d-flex align-items-center gap-1 mb-12">
                                     <span className="w-50 fw-semibold text-primary-light">
-                                      Technician :
+                                      Technician Name :
                                     </span>
                                     <span className="w-50 text-secondary-light fw-bold">
-                                      {bookingData.TechFullName}
+                                      {bookingData.TechFullName || "N/A"}
                                     </span>
                                   </li>
 
-                                  {bookingData.TechPhoneNumber && (
-                                    <li className="d-flex align-items-center gap-1 mb-12">
-                                      <span className="w-50 fw-semibold text-primary-light">
-                                        Technician Number :
-                                      </span>
-                                      <span className="w-50 text-secondary-light fw-bold">
-                                        {bookingData.TechPhoneNumber}
-                                      </span>
-                                    </li>
-                                  )}
-                                </>
-                              )}
-                              {(pickupDate || dropDate) && (
-                                <>
+                                  {/* {bookingData.TechPhoneNumber && ( */}
                                   <li className="d-flex align-items-center gap-1 mb-12">
                                     <span className="w-50 fw-semibold text-primary-light">
-                                      Car Pickup Date & Time :
+                                      Technician Number :
                                     </span>
                                     <span className="w-50 text-secondary-light fw-bold">
-                                      {displayDate(pickupDate)}
-                                      {pickupTime && ` : ${pickupTime}`}
-                                      {/* OR use displayTime(pickupTime) */}
+                                      {bookingData.TechPhoneNumber || "N/A"}
                                     </span>
                                   </li>
-
-                                  <li className="d-flex align-items-center gap-1 mb-12">
-                                    <span className="w-50 fw-semibold text-primary-light">
-                                      Car Drop Date & Time :
-                                    </span>
-                                    <span className="w-50 text-secondary-light fw-bold">
-                                      {displayDate(dropDate)}
-                                      {dropTime && ` : ${dropTime}`}
-                                    </span>
-                                  </li>
+                                  {/* )} */}
                                 </>
-                              )}
+                                {/* )} */}
+                                {/* {(pickupDate || dropDate) && ( */}
+                                <li className="d-flex align-items-center gap-1 mb-12">
+                                  <span className="w-50 fw-semibold text-primary-light">
+                                    Supervisor Name :
+                                  </span>
+                                  <span className="w-50 text-secondary-light fw-bold">
+                                    {bookingData.SupervisorName || "N/A"}
+                                  </span>
+                                </li>
 
-                              {bookingData.SupervisorName && (
-                                <>
-                                  <li className="d-flex align-items-center gap-1 mb-12">
-                                    <span className="w-50 fw-semibold text-primary-light">
-                                      Supervisor :
-                                    </span>
-                                    <span className="w-50 text-secondary-light fw-bold">
-                                      {bookingData.SupervisorName}
-                                    </span>
-                                  </li>
+                                {/* {bookingData.SupervisorPhoneNumber && ( */}
+                                <li className="d-flex align-items-center gap-1 mb-12">
+                                  <span className="w-50 fw-semibold text-primary-light">
+                                    Supervisor Number :
+                                  </span>
+                                  <span className="w-50 text-secondary-light fw-bold">
+                                    {bookingData.SupervisorPhoneNumber || "N/A"}
+                                  </span>
+                                </li>
+                                <li className="d-flex align-items-center gap-1 mb-12">
+                                  <span className="w-50 fw-semibold text-primary-light">
+                                    Field Advisor Name :
+                                  </span>
+                                  <span className="w-50 text-secondary-light fw-bold">
+                                    {bookingData.FieldAdvisorName || "N/A"}
+                                  </span>
+                                </li>
 
-                                  {bookingData.SupervisorPhoneNumber && (
-                                    <li className="d-flex align-items-center gap-1 mb-12">
-                                      <span className="w-50 fw-semibold text-primary-light">
-                                        Supervisor Number :
-                                      </span>
-                                      <span className="w-50 text-secondary-light fw-bold">
-                                        {bookingData.SupervisorPhoneNumber}
-                                      </span>
-                                    </li>
-                                  )}
-                                </>
-                              )}
-                            </>
-                          )}
-                        </ul>
-                      </div>
-                    </div>
-                  </Accordion.Body>
-                </Accordion.Item>
-              </Accordion>
+                                {/* {bookingData.SupervisorPhoneNumber && ( */}
+                                <li className="d-flex align-items-center gap-1 mb-12">
+                                  <span className="w-50 fw-semibold text-primary-light">
+                                    Field Advisor Number :
+                                  </span>
+                                  <span className="w-50 text-secondary-light fw-bold">
+                                    {bookingData.FieldAdvisorPhoneNumber || "N/A"}
+                                  </span>
+                                </li>
+                                {/* <> */}
+                                <li className="d-flex align-items-center gap-1 mb-12">
+                                  <span className="w-50 fw-semibold text-primary-light">
+                                    Car Pickup Date & Time :
+                                  </span>
+                                  <span className="w-50 text-secondary-light fw-bold">
+                                    {displayDate(pickupDate)}
+                                    {pickupTime && ` : ${pickupTime}`}
+                                    {/* OR use displayTime(pickupTime) */}
+                                  </span>
+                                </li>
+
+                                <li className="d-flex align-items-center gap-1 mb-12">
+                                  <span className="w-50 fw-semibold text-primary-light">
+                                    Car Drop Date & Time :
+                                  </span>
+                                  <span className="w-50 text-secondary-light fw-bold">
+                                    {displayDate(dropDate)}
+                                    {dropTime && ` : ${dropTime}`}
+                                  </span>
+                                </li>
+                                {/* </> */}
+                                {/* )} */}
+
+                                {/* {bookingData.SupervisorName && ( */}
+                                {/* <> */}
+
+                                {/* )} */}
+                                {/* </> */}
+                                {/* )} */}
+                              </>
+                              {/* )} */}
+                            </ul>
+                          </div>
+                        </div>
+                      </Accordion.Body>
+                    </Accordion.Item>
+                  </Accordion>
                 </div>
 
                 {/* ================= RIGHT SIDE: VEHICLE DETAILS ================= */}
@@ -1465,9 +1482,9 @@ const BookingViewLayer = () => {
                       </Accordion.Header>
 
                       <Accordion.Body>
-                        {bookingData.VehicleDetails && 
-                         Array.isArray(bookingData.VehicleDetails) && 
-                         bookingData.VehicleDetails.length > 0 ? (
+                        {bookingData.VehicleDetails &&
+                          Array.isArray(bookingData.VehicleDetails) &&
+                          bookingData.VehicleDetails.length > 0 ? (
                           <div>
                             {bookingData.VehicleDetails.map((vehicle, index) => (
                               <div key={index} className={index > 0 ? "mt-4 pt-4 border-top" : ""}>
@@ -1481,56 +1498,56 @@ const BookingViewLayer = () => {
                                   </span>
                                 </div> */}
                                 <ul className="mb-0">
-                                  {vehicle.RegistrationNumber && (
-                                    <li className="d-flex align-items-center gap-1 mb-12">
-                                      <span className="w-70 fw-semibold text-primary-light">
-                                        Reg. Number :
-                                      </span>
-                                      <span className="w-70 text-secondary-light fw-bold ms-2">
-                                        {vehicle.RegistrationNumber}
-                                      </span>
-                                    </li>
-                                  )}
-                                  {vehicle.BrandName && vehicle.ModelName && (
-                                    <li className="d-flex align-items-center gap-1 mb-12">
-                                      <span className="w-70 fw-semibold text-primary-light">
-                                        Brand :
-                                      </span>
-                                      <span className="w-70 text-secondary-light fw-bold ms-2">
-                                        {vehicle.BrandName} ({vehicle.ModelName || "N/A"})
-                                      </span>
-                                    </li>
-                                  )}
-                                  {vehicle.YearOfPurchase && (
-                                    <li className="d-flex align-items-center gap-1 mb-12">
-                                      <span className="w-70 fw-semibold text-primary-light">
-                                        Year of Purchase :
-                                      </span>
-                                      <span className="w-70 text-secondary-light fw-bold ms-2">
-                                        {vehicle.YearOfPurchase || "N/A"}
-                                      </span>
-                                    </li>
-                                  )}
-                                  {vehicle.FuelTypeName && (
-                                    <li className="d-flex align-items-center gap-1 mb-12">
-                                      <span className="w-70 fw-semibold text-primary-light">
-                                        Fuel Type :
-                                      </span>
-                                      <span className="w-70 text-secondary-light fw-bold ms-2">
-                                        {vehicle.FuelTypeName}
-                                      </span>
-                                    </li>
-                                  )}
-                                  {vehicle.KmDriven !== null && vehicle.KmDriven !== undefined && (
-                                    <li className="d-flex align-items-center gap-1 mb-12">
-                                      <span className="w-70 fw-semibold text-primary-light">
-                                        KM Driven :
-                                      </span>
-                                      <span className="w-70 text-secondary-light fw-bold ms-2">
-                                        {vehicle.KmDriven.toLocaleString()} km
-                                      </span>
-                                    </li>
-                                  )}
+                                  {/* {vehicle.RegistrationNumber && ( */}
+                                  <li className="d-flex align-items-center gap-1 mb-12">
+                                    <span className="w-70 fw-semibold text-primary-light">
+                                      Reg. Number :
+                                    </span>
+                                    <span className="w-70 text-secondary-light fw-bold ms-2">
+                                      {vehicle.RegistrationNumber || "N/A"}
+                                    </span>
+                                  </li>
+                                  {/* )} */}
+                                  {/* {vehicle.BrandName && vehicle.ModelName && ( */}
+                                  <li className="d-flex align-items-center gap-1 mb-12">
+                                    <span className="w-70 fw-semibold text-primary-light">
+                                      Brand :
+                                    </span>
+                                    <span className="w-70 text-secondary-light fw-bold ms-2">
+                                      {vehicle.BrandName} ({vehicle.ModelName || "N/A"})
+                                    </span>
+                                  </li>
+                                  {/* )} */}
+                                  {/* {vehicle.YearOfPurchase && ( */}
+                                  <li className="d-flex align-items-center gap-1 mb-12">
+                                    <span className="w-70 fw-semibold text-primary-light">
+                                      Year of Purchase :
+                                    </span>
+                                    <span className="w-70 text-secondary-light fw-bold ms-2">
+                                      {vehicle.YearOfPurchase || "N/A"}
+                                    </span>
+                                  </li>
+                                  {/* )} */}
+                                  {/* {vehicle.FuelTypeName && ( */}
+                                  <li className="d-flex align-items-center gap-1 mb-12">
+                                    <span className="w-70 fw-semibold text-primary-light">
+                                      Fuel Type :
+                                    </span>
+                                    <span className="w-70 text-secondary-light fw-bold ms-2">
+                                      {vehicle.FuelTypeName || "N/A"}
+                                    </span>
+                                  </li>
+                                  {/* )} */}
+                                  {/* {vehicle.KmDriven !== null && vehicle.KmDriven !== undefined && ( */}
+                                  <li className="d-flex align-items-center gap-1 mb-12">
+                                    <span className="w-70 fw-semibold text-primary-light">
+                                      KM Driven :
+                                    </span>
+                                    <span className="w-70 text-secondary-light fw-bold ms-2">
+                                      {vehicle.KmDriven !== null && vehicle.KmDriven !== undefined ? vehicle.KmDriven.toLocaleString() : "N/A"} km
+                                    </span>
+                                  </li>
+                                  {/* )} */}
                                 </ul>
                               </div>
                             ))}
@@ -1654,7 +1671,7 @@ const BookingViewLayer = () => {
                           min={
                             pickupDate === dropDate
                               ? pickupTime ||
-                                (pickupDate === today ? nowTime : undefined)
+                              (pickupDate === today ? nowTime : undefined)
                               : undefined
                           }
                           onChange={(e) => {
@@ -1836,19 +1853,19 @@ const BookingViewLayer = () => {
                 >
                   View Lead
                 </Link>
-               
+
                 {/* Reschedule & Reassign Buttons */}
                 {bookingData &&
                   !["Completed", "Cancelled", "Refunded"].includes(
                     bookingData.BookingStatus,
                   ) && (
                     <div className="d-flex gap-2 flex-wrap">
-                       <button
-                                  className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                  onClick={handleCustomerConfirmation}
-                                >
-                                  Customer Confirmation
-                  </button>
+                      <button
+                        className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                        onClick={handleCustomerConfirmation}
+                      >
+                        Customer Confirmation
+                      </button>
                       <button
                         className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                         onClick={() => setShowReschedule(!showReschedule)}
@@ -1884,16 +1901,16 @@ const BookingViewLayer = () => {
                   bookingData?.Payments?.[bookingData.Payments.length - 1]
                     ?.PaymentStatus === "Success"
                 ) && (
-                  <Link
-                    to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
-                    className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
-                    title="Add"
-                  >
-                    Add / Edit Services
-                  </Link>
-                )}
+                    <Link
+                      to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
+                      className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
+                      title="Add"
+                    >
+                      Add / Edit Services
+                    </Link>
+                  )}
 
-                  
+
               </li>
 
               {/* {bookingData &&
@@ -1979,13 +1996,12 @@ const BookingViewLayer = () => {
 
                               <span className="ms-2 small">Booking Status:</span>
                               <span
-                                className={`badge px-3 py-1 rounded-pill ${
-                                  bookingData.BookingStatus === "Completed"
+                                className={`badge px-3 py-1 rounded-pill ${bookingData.BookingStatus === "Completed"
                                     ? "bg-success"
                                     : bookingData.BookingStatus === "Confirmed"
                                       ? "bg-primary"
                                       : "bg-warning text-dark"
-                                }`}
+                                  }`}
                               >
                                 {bookingData.BookingStatus}
                               </span>
@@ -2029,34 +2045,34 @@ const BookingViewLayer = () => {
                                                 {pkg.Category
                                                   ?.SubCategories?.[0]?.Includes
                                                   ?.length > 0 && (
-                                                  <ul className="text-muted small ps-3 mb-0">
-                                                    {pkg.Category.SubCategories[0].Includes.map(
-                                                      (inc) => (
-                                                        <li key={inc.IncludeID}>
-                                                          {inc.IncludeName}
-                                                        </li>
-                                                      ),
-                                                    )}
-                                                  </ul>
-                                                )}
+                                                    <ul className="text-muted small ps-3 mb-0">
+                                                      {pkg.Category.SubCategories[0].Includes.map(
+                                                        (inc) => (
+                                                          <li key={inc.IncludeID}>
+                                                            {inc.IncludeName}
+                                                          </li>
+                                                        ),
+                                                      )}
+                                                    </ul>
+                                                  )}
                                               </div>
 
                                               <span className="badge bg-success-subtle text-success border border-success">
                                                 ⏱ Duration:{" "}
                                                 {pkg.EstimatedDurationMinutes >=
-                                                60
+                                                  60
                                                   ? (() => {
-                                                      const hours = Math.floor(
-                                                        pkg.EstimatedDurationMinutes /
-                                                          60,
-                                                      );
-                                                      const minutes =
-                                                        pkg.EstimatedDurationMinutes %
-                                                        60;
-                                                      return minutes === 0
-                                                        ? `${hours} hr`
-                                                        : `${hours} hr ${minutes} mins`;
-                                                    })()
+                                                    const hours = Math.floor(
+                                                      pkg.EstimatedDurationMinutes /
+                                                      60,
+                                                    );
+                                                    const minutes =
+                                                      pkg.EstimatedDurationMinutes %
+                                                      60;
+                                                    return minutes === 0
+                                                      ? `${hours} hr`
+                                                      : `${hours} hr ${minutes} mins`;
+                                                  })()
                                                   : `${pkg.EstimatedDurationMinutes} mins`}
                                               </span>
                                             </div>
@@ -2189,7 +2205,7 @@ const BookingViewLayer = () => {
                                         >
                                           Service Chg.
                                         </th>
-                                          <th
+                                        <th
                                           style={{ width: "145px" }}
                                           className="text-end"
                                         >
@@ -2231,8 +2247,8 @@ const BookingViewLayer = () => {
                                         >
                                           Our Amt.
                                         </th>
-                                         <th style={{ width: "200px" }}
-                                            className="text-center">
+                                        <th style={{ width: "200px" }}
+                                          className="text-center">
                                           Selected Dealer
                                         </th>
                                         <th
@@ -2247,7 +2263,7 @@ const BookingViewLayer = () => {
                                         >
                                           Total Amt
                                         </th>
-                                       
+
                                       </tr>
                                     </thead>
 
@@ -2293,8 +2309,8 @@ const BookingViewLayer = () => {
                                             <td className="normal">
                                               {addon.CreatedDate
                                                 ? new Date(
-                                                    addon.CreatedDate,
-                                                  ).toLocaleDateString("en-IN")
+                                                  addon.CreatedDate,
+                                                ).toLocaleDateString("en-IN")
                                                 : "—"}
                                             </td>
                                             <td className="text-end">
@@ -2325,7 +2341,7 @@ const BookingViewLayer = () => {
                                                 addon.LabourCharges || 0,
                                               ).toFixed(2)}
                                             </td>
-                                             <td className="text-end">
+                                            <td className="text-end">
                                               {Number(
                                                 addon.DealerPrice || 0,
                                               ).toFixed(2)}
@@ -2333,7 +2349,7 @@ const BookingViewLayer = () => {
                                             <td className="text-end">
                                               {addon.GSTPercent ?? 0}%
                                             </td>
-                                             <td className="text-end">
+                                            <td className="text-end">
                                               {addon.DealerGSTPercent ?? 0}%
                                             </td>
                                             <td className="text-end">
@@ -2399,7 +2415,7 @@ const BookingViewLayer = () => {
                                                 addon.TotalPrice || 0,
                                               ).toFixed(2)}
                                             </td>
-                                            
+
                                           </tr>
                                         ),
                                       )}
@@ -2546,11 +2562,11 @@ const BookingViewLayer = () => {
                                     <tbody>
                                       {bookingData.SupervisorBookings.map(
                                         (supervisorBooking, index) => {
-                                          const totalPrice = 
+                                          const totalPrice =
                                             (Number(supervisorBooking.Price || 0)) +
                                             (Number(supervisorBooking.GSTAmount || 0)) +
                                             (Number(supervisorBooking.LabourCharges || 0));
-                                          
+
                                           return (
                                             <tr key={supervisorBooking.Id || index}>
                                               <td className="text-center">
@@ -2563,31 +2579,31 @@ const BookingViewLayer = () => {
                                                 <div className="normal">
                                                   {supervisorBooking.ServiceName || "—"}
                                                   {supervisorBooking.Includes &&
-                                                    (Array.isArray(supervisorBooking.Includes) 
+                                                    (Array.isArray(supervisorBooking.Includes)
                                                       ? supervisorBooking.Includes.length > 0 && (
-                                                          <ul className="text-muted small ps-3 mb-0 mt-2">
-                                                            {supervisorBooking.Includes.map(
-                                                              (inc) => (
-                                                                <li
-                                                                  key={
-                                                                    inc.IncludeID ||
-                                                                    inc.id ||
-                                                                    inc
-                                                                  }
-                                                                >
-                                                                  {inc.IncludeName ||
-                                                                    inc.name ||
-                                                                    inc}
-                                                                </li>
-                                                              ),
-                                                            )}
-                                                          </ul>
-                                                        )
+                                                        <ul className="text-muted small ps-3 mb-0 mt-2">
+                                                          {supervisorBooking.Includes.map(
+                                                            (inc) => (
+                                                              <li
+                                                                key={
+                                                                  inc.IncludeID ||
+                                                                  inc.id ||
+                                                                  inc
+                                                                }
+                                                              >
+                                                                {inc.IncludeName ||
+                                                                  inc.name ||
+                                                                  inc}
+                                                              </li>
+                                                            ),
+                                                          )}
+                                                        </ul>
+                                                      )
                                                       : typeof supervisorBooking.Includes === 'string' && supervisorBooking.Includes.trim() !== '' && (
-                                                          <div className="text-muted small mt-2">
-                                                            {supervisorBooking.Includes}
-                                                          </div>
-                                                        )
+                                                        <div className="text-muted small mt-2">
+                                                          {supervisorBooking.Includes}
+                                                        </div>
+                                                      )
                                                     )}
                                                 </div>
                                               </td>
@@ -2595,8 +2611,8 @@ const BookingViewLayer = () => {
                                               <td className="normal">
                                                 {supervisorBooking.CreatedDate
                                                   ? new Date(
-                                                      supervisorBooking.CreatedDate,
-                                                    ).toLocaleDateString("en-IN")
+                                                    supervisorBooking.CreatedDate,
+                                                  ).toLocaleDateString("en-IN")
                                                   : "—"}
                                               </td>
                                               <td className="text-end">
@@ -2787,9 +2803,9 @@ const BookingViewLayer = () => {
                                     ₹
                                     {Number(
                                       (bookingData.TotalPrice || 0) +
-                                        (bookingData.GSTAmount || 0) +
-                                        (bookingData.LabourCharges || 0) -
-                                        (bookingData.CouponAmount || 0),
+                                      (bookingData.GSTAmount || 0) +
+                                      (bookingData.LabourCharges || 0) -
+                                      (bookingData.CouponAmount || 0),
                                     ).toFixed(2)}
                                   </span>
                                 </li>
@@ -2812,9 +2828,9 @@ const BookingViewLayer = () => {
                                     {Math.max(
                                       Number(
                                         (bookingData.TotalPrice || 0) +
-                                          (bookingData.GSTAmount || 0) +
-                                          (bookingData.LabourCharges || 0) -
-                                          (bookingData.CouponAmount || 0),
+                                        (bookingData.GSTAmount || 0) +
+                                        (bookingData.LabourCharges || 0) -
+                                        (bookingData.CouponAmount || 0),
                                       ) - alreadyPaid,
                                       0,
                                     ).toFixed(2)}
@@ -2832,7 +2848,7 @@ const BookingViewLayer = () => {
                                   </div>
                                 )}
                               <div className="d-flex justify-content-center gap-2 mt-3 mb-3 flex-wrap">
-                                
+
                                 {/* Show Confirm Payment only if not paid */}
                                 {showEnterPaymentButton && (
                                   <button
@@ -2845,7 +2861,7 @@ const BookingViewLayer = () => {
                                   >
                                     Enter Payment
                                   </button>
-                                 )} 
+                                )}
                                 {showEstimationButton && (
                                   <button
                                     className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
@@ -2866,12 +2882,12 @@ const BookingViewLayer = () => {
                                 )}
                                 {showDealerInvoiceButton && (
                                   <button
-                                  className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                  onClick={() => showGenerateInvoiceConfirm("Generate Dealer Invoice", handleGenerateDealerInvoice, "Dealer")}
-                                >
-                                  Generate Dealer Invoice
-                                </button>
-                                  )}
+                                    className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                                    onClick={() => showGenerateInvoiceConfirm("Generate Dealer Invoice", handleGenerateDealerInvoice, "Dealer")}
+                                  >
+                                    Generate Dealer Invoice
+                                  </button>
+                                )}
                               </div>
                               <div className="small text-muted mt-2 mb-0 fw-bold">
                                 <strong>Note:</strong> Estimation button displays when at least one service exists and supervisor has confirmed all services. Final Invoice button displays after full payment is completed.
@@ -2968,7 +2984,7 @@ const BookingViewLayer = () => {
                       Technician
                     </label>
                   </div>
-                  {roleId !== "8" && roleName !== "Field Advisor" &&(
+                  {roleId !== "8" && roleName !== "Field Advisor" && (
                     <div className="form-check d-flex align-items-center gap-2 m-0">
                       <input
                         type="checkbox"
