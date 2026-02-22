@@ -61,7 +61,7 @@ const BookingViewLayer = () => {
     useState(null);
   const token = localStorage.getItem("token");
   const roleId = localStorage.getItem("roleId");
-  const roleIdInt = {confirmedBy: roleId ? Number(roleId) : null, };
+  const roleIdInt = { confirmedBy: roleId ? Number(roleId) : null, };
   const role = localStorage.getItem("role");
   const duserId = localStorage.getItem("userId");
   const [previewServices, setPreviewServices] = useState([]);
@@ -1302,7 +1302,6 @@ const BookingViewLayer = () => {
           confirmDescription: confirmationDescription.trim(),
           confirmedBy: roleIdInt.confirmedBy,
           confirmRole: roleName,
-          bookingId: bookingData.BookingID,
         },
         {
           headers: {
@@ -1359,6 +1358,9 @@ const BookingViewLayer = () => {
   const showFinalButton = remainingAmount === 0 && hasAtLeastOneService && allSupervisorConfirmed && totalAmount > 0;
   const showEnterPaymentButton = remainingAmount > 0 && hasAtLeastOneService && allSupervisorConfirmed && totalAmount > 0;
   const showDealerInvoiceButton = hasAtLeastOneService && allSupervisorConfirmed && totalAmount > 0;
+  const confirmationData = bookingData?.BookingAddOns?.find(
+    (item) => item?.ConfirmedBy && item?.ConfirmRole && item?.ConfirmDescription
+  );
 
   const handleConfirmPayment = async () => {
     try {
@@ -1550,7 +1552,7 @@ const BookingViewLayer = () => {
                           {/* ================= PERSONAL INFO ================= */}
                           <div className="col-lg-9 col-md-8 col-12">
                             <ul className="mb-0">
-                              <li className="d-flex align-items-center gap-1 mb-12">
+                              <li className="d-flex align-items-center gap-1">
                                 <span className=" w-50 fw-semibold text-primary-light">
                                   Customer Name :
                                 </span>
@@ -1559,7 +1561,7 @@ const BookingViewLayer = () => {
                                 </span>
                               </li>
 
-                              <li className="d-flex align-items-center gap-1 mb-12">
+                              <li className="d-flex align-items-center gap-1">
                                 <span className=" w-50 fw-semibold text-primary-light">
                                   Phone Number :
                                 </span>
@@ -1567,16 +1569,7 @@ const BookingViewLayer = () => {
                                   {bookingData.PhoneNumber || "N/A"}
                                 </span>
                               </li>
-
-                              {/* <li className="d-flex align-items-center gap-1 mb-12">
-                            <span className="w-50 fw-semibold text-primary-light">
-                              Vehicle Number :
-                            </span>
-                            <span className="w-70 text-secondary-light fw-bold">
-                              {bookingData.VehicleNumber || "—"}
-                            </span>
-                          </li> */}
-                              <li className="d-flex align-items-center gap-1 mb-12">
+                              <li className="d-flex align-items-center gap-1">
                                 <span className=" w-50 fw-semibold text-primary-light">
                                   Full Address :
                                 </span>
@@ -1584,92 +1577,67 @@ const BookingViewLayer = () => {
                                   {bookingData.FullAddress || "N/A"}
                                 </span>
                               </li>
-                              {/* Assigned To */}
-                              {/* {!bookingData.TechFullName && */}
-                              {/* // !bookingData.SupervisorName ? ( */}
-                              {/* <li className="d-flex align-items-center gap-1 mb-12">
-                              <span className=" w-50 fw-semibold text-primary-light">
-                                Technician Assigned To :
-                              </span>
-                              <span className="w-50 text-secondary-light fw-bold">
-                                N/A
-                              </span>
-                            </li> */}
-                              {/* ) : ( */}
                               <>
                                 {/* {bookingData.TechFullName && ( */}
                                 <>
-                                  <li className="d-flex align-items-center gap-1 mb-12">
+                                  <li className="d-flex align-items-center gap-1">
                                     <span className="w-50 fw-semibold text-primary-light">
-                                      Technician Name :
+                                      Technician Name/Number :
                                     </span>
                                     <span className="w-50 text-secondary-light fw-bold">
-                                      {bookingData.TechFullName || "N/A"}
+                                      {bookingData?.TechFullName || bookingData?.TechPhoneNumber ? (
+                                        <>
+                                          {bookingData?.TechFullName || ""}
+                                          {bookingData?.TechPhoneNumber ? ` (${bookingData.TechPhoneNumber})` : ""}
+                                        </>
+                                      ) : (
+                                        "N/A"
+                                      )}
                                     </span>
                                   </li>
-
-                                  {/* {bookingData.TechPhoneNumber && ( */}
-                                  <li className="d-flex align-items-center gap-1 mb-12">
-                                    <span className="w-50 fw-semibold text-primary-light">
-                                      Technician Number :
-                                    </span>
-                                    <span className="w-50 text-secondary-light fw-bold">
-                                      {bookingData.TechPhoneNumber || "N/A"}
-                                    </span>
-                                  </li>
-                                  {/* )} */}
                                 </>
-                                {/* )} */}
                                 {/* {(pickupDate || dropDate) && ( */}
-                                <li className="d-flex align-items-center gap-1 mb-12">
+                                <li className="d-flex align-items-center gap-1">
                                   <span className="w-50 fw-semibold text-primary-light">
-                                    Supervisor Name :
+                                    Supervisor Name/Number :
                                   </span>
                                   <span className="w-50 text-secondary-light fw-bold">
-                                    {bookingData.SupervisorName || "N/A"}
+                                    {bookingData?.SupervisorName || bookingData?.SupervisorPhoneNumber ? (
+                                      <>
+                                        {bookingData?.SupervisorName || ""}
+                                        {bookingData?.SupervisorPhoneNumber ? ` (${bookingData.SupervisorPhoneNumber})` : ""}
+                                      </>
+                                    ) : (
+                                      "N/A"
+                                    )}
                                   </span>
                                 </li>
-
-                                {/* {bookingData.SupervisorPhoneNumber && ( */}
-                                <li className="d-flex align-items-center gap-1 mb-12">
+                                <li className="d-flex align-items-center gap-1">
                                   <span className="w-50 fw-semibold text-primary-light">
-                                    Supervisor Number :
+                                    Field Advisor Name/Number :
                                   </span>
                                   <span className="w-50 text-secondary-light fw-bold">
-                                    {bookingData.SupervisorPhoneNumber || "N/A"}
+                                    {bookingData?.FieldAdvisorName || bookingData?.FieldAdvisorPhoneNumber ? (
+                                      <>
+                                        {bookingData?.FieldAdvisorName || ""}
+                                        {bookingData?.FieldAdvisorPhoneNumber ? ` (${bookingData.FieldAdvisorPhoneNumber})` : ""}
+                                      </>
+                                    ) : (
+                                      "N/A"
+                                    )}
                                   </span>
                                 </li>
-                                <li className="d-flex align-items-center gap-1 mb-12">
-                                  <span className="w-50 fw-semibold text-primary-light">
-                                    Field Advisor Name :
-                                  </span>
-                                  <span className="w-50 text-secondary-light fw-bold">
-                                    {bookingData.FieldAdvisorName || "N/A"}
-                                  </span>
-                                </li>
-
-                                {/* {bookingData.SupervisorPhoneNumber && ( */}
-                                <li className="d-flex align-items-center gap-1 mb-12">
-                                  <span className="w-50 fw-semibold text-primary-light">
-                                    Field Advisor Number :
-                                  </span>
-                                  <span className="w-50 text-secondary-light fw-bold">
-                                    {bookingData.FieldAdvisorPhoneNumber || "N/A"}
-                                  </span>
-                                </li>
-                                {/* <> */}
-                                <li className="d-flex align-items-center gap-1 mb-12">
+                                <li className="d-flex align-items-center gap-1">
                                   <span className="w-50 fw-semibold text-primary-light">
                                     Car Pickup Date & Time :
                                   </span>
                                   <span className="w-50 text-secondary-light fw-bold">
                                     {displayDate(pickupDate)}
                                     {pickupTime && ` : ${pickupTime}`}
-                                    {/* OR use displayTime(pickupTime) */}
                                   </span>
                                 </li>
 
-                                <li className="d-flex align-items-center gap-1 mb-12">
+                                <li className="d-flex align-items-center gap-1">
                                   <span className="w-50 fw-semibold text-primary-light">
                                     Car Drop Date & Time :
                                   </span>
@@ -1678,17 +1646,7 @@ const BookingViewLayer = () => {
                                     {dropTime && ` : ${dropTime}`}
                                   </span>
                                 </li>
-                                {/* </> */}
-                                {/* )} */}
-
-                                {/* {bookingData.SupervisorName && ( */}
-                                {/* <> */}
-
-                                {/* )} */}
-                                {/* </> */}
-                                {/* )} */}
                               </>
-                              {/* )} */}
                             </ul>
                           </div>
                         </div>
@@ -1725,7 +1683,7 @@ const BookingViewLayer = () => {
                                 </div> */}
                                 <ul className="mb-0">
                                   {/* {vehicle.RegistrationNumber && ( */}
-                                  <li className="d-flex align-items-center gap-1 mb-12">
+                                  <li className="d-flex align-items-center gap-1">
                                     <span className="w-70 fw-semibold text-primary-light">
                                       Reg. Number :
                                     </span>
@@ -1735,7 +1693,7 @@ const BookingViewLayer = () => {
                                   </li>
                                   {/* )} */}
                                   {/* {vehicle.BrandName && vehicle.ModelName && ( */}
-                                  <li className="d-flex align-items-center gap-1 mb-12">
+                                  <li className="d-flex align-items-center gap-1">
                                     <span className="w-70 fw-semibold text-primary-light">
                                       Brand :
                                     </span>
@@ -1745,7 +1703,7 @@ const BookingViewLayer = () => {
                                   </li>
                                   {/* )} */}
                                   {/* {vehicle.YearOfPurchase && ( */}
-                                  <li className="d-flex align-items-center gap-1 mb-12">
+                                  <li className="d-flex align-items-center gap-1">
                                     <span className="w-70 fw-semibold text-primary-light">
                                       Year of Purchase :
                                     </span>
@@ -1755,7 +1713,7 @@ const BookingViewLayer = () => {
                                   </li>
                                   {/* )} */}
                                   {/* {vehicle.FuelTypeName && ( */}
-                                  <li className="d-flex align-items-center gap-1 mb-12">
+                                  <li className="d-flex align-items-center gap-1">
                                     <span className="w-70 fw-semibold text-primary-light">
                                       Fuel Type :
                                     </span>
@@ -1765,7 +1723,7 @@ const BookingViewLayer = () => {
                                   </li>
                                   {/* )} */}
                                   {/* {vehicle.KmDriven !== null && vehicle.KmDriven !== undefined && ( */}
-                                  <li className="d-flex align-items-center gap-1 mb-12">
+                                  <li className="d-flex align-items-center gap-1">
                                     <span className="w-70 fw-semibold text-primary-light">
                                       KM Driven :
                                     </span>
@@ -2091,6 +2049,85 @@ const BookingViewLayer = () => {
                         onClick={handleCustomerConfirmation}
                       >
                         Customer Confirmation
+                        {confirmationData && (
+                          <div
+                            style={{
+                              position: "relative",
+                              display: "inline-block",
+                              marginLeft: "8px",
+                            }}
+                          >
+                            {/* Exclamation Icon */}
+                            <span
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: "18px",
+                                height: "18px",
+                                fontSize: "12px",
+                                borderRadius: "50%",
+                                backgroundColor: "#dc3545",
+                                color: "#fff",
+                                cursor: "pointer",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.nextSibling.style.opacity = "1";
+                                e.currentTarget.nextSibling.style.visibility = "visible";
+                                e.currentTarget.nextSibling.style.transform = "translateY(0)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.nextSibling.style.opacity = "0";
+                                e.currentTarget.nextSibling.style.visibility = "hidden";
+                                e.currentTarget.nextSibling.style.transform = "translateY(8px)";
+                              }}
+                            >
+                              !
+                            </span>
+
+                            {/* Tooltip Box */}
+                            <div
+                              style={{
+                                position: "absolute",
+                                bottom: "130%",
+                                right: "0",
+                                width: "240px",
+                                background: "linear-gradient(135deg, #2c2f36, #1f2228)",
+                                color: "#fff",
+                                padding: "12px 14px",
+                                borderRadius: "12px",
+                                fontSize: "13px",
+                                boxShadow: "0 8px 20px rgba(0,0,0,0.25)",
+                                opacity: 0,
+                                visibility: "hidden",
+                                transform: "translateY(8px)",
+                                transition: "all 0.25s ease",
+                                zIndex: 999,
+                              }}
+                            >
+                              <div style={{ fontWeight: 600, marginBottom: "4px" }}>
+                                Confirmed By: {confirmationData.ConfirmRole}
+                              </div>
+                              <div style={{ fontSize: "12px", opacity: 0.85 }}>
+                                {confirmationData.ConfirmDescription}
+                              </div>
+
+                              {/* Arrow */}
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  top: "100%",
+                                  right: "15px",
+                                  width: 0,
+                                  height: 0,
+                                  borderLeft: "8px solid transparent",
+                                  borderRight: "8px solid transparent",
+                                  borderTop: "8px solid #1f2228",
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
                       </button>
                       <button
                         className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
@@ -2223,10 +2260,10 @@ const BookingViewLayer = () => {
                               <span className="ms-2 small">Booking Status:</span>
                               <span
                                 className={`badge px-3 py-1 rounded-pill ${bookingData.BookingStatus === "Completed"
-                                    ? "bg-success"
-                                    : bookingData.BookingStatus === "Confirmed"
-                                      ? "bg-primary"
-                                      : "bg-warning text-dark"
+                                  ? "bg-success"
+                                  : bookingData.BookingStatus === "Confirmed"
+                                    ? "bg-primary"
+                                    : "bg-warning text-dark"
                                   }`}
                               >
                                 {bookingData.BookingStatus}
@@ -2481,7 +2518,7 @@ const BookingViewLayer = () => {
                                           style={{ width: "160px" }}
                                           className="text-center"
                                         >
-                                          Service Status
+                                          Dlr. Service Status
                                         </th>
                                         <th
                                           style={{ width: "100px" }}
@@ -2631,7 +2668,11 @@ const BookingViewLayer = () => {
                                                         <option value="Rework">Rework</option>
                                                         <option value="InProgress">In-Progress</option>
                                                       </select>
-                                                    )}
+                                                    ) || (
+                                                        <span className="badge bg-warning text-dark px-3 py-4 rounded-pill">
+                                                          Dealer Pending
+                                                        </span>
+                                                      )}
                                                   </div>
                                                 );
                                               })()}
@@ -3045,6 +3086,28 @@ const BookingViewLayer = () => {
                                     - ₹{alreadyPaid.toFixed(2)}
                                   </span>
                                 </li>
+                                {bookingData?.SupervisorBookings?.length > 0 && (
+                                  <li className="list-group-item d-flex justify-content-between border-top p-0">
+                                    <span className="fw-bold text-dark">
+                                      Customer Not Confirmed Services Amount
+                                    </span>
+                                    <span className="fw-bold text-warning">
+                                      ₹
+                                      {Math.max(
+                                        (
+                                          (bookingData?.SupervisorBookings || []).reduce((total, booking) => {
+                                            return (
+                                              total +
+                                              Number(booking?.Price || 0) +
+                                              Number(booking?.GSTAmount || 0) +
+                                              Number(booking?.LabourCharges || 0)
+                                            );
+                                          }, 0)
+                                        )
+                                      ).toFixed(2)}
+                                    </span>
+                                  </li>
+                                )}
                                 <li className="list-group-item d-flex justify-content-between border-top p-0">
                                   <span className="fw-bold text-dark">
                                     Remaining Amount
@@ -3102,12 +3165,12 @@ const BookingViewLayer = () => {
                                     </button>
                                   )}
                                 {/* {showEstimationButton && ( */}
-                                  <button
-                                    className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                    onClick={() => showGenerateInvoiceConfirm("Generate Estimation Invoice", handleGenerateEstimationInvoice, "Estimation")}
-                                  >
-                                    Generate Estimation Invoice
-                                  </button>
+                                <button
+                                  className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                                  onClick={() => showGenerateInvoiceConfirm("Generate Estimation Invoice", handleGenerateEstimationInvoice, "Estimation")}
+                                >
+                                  Generate Estimation Invoice
+                                </button>
                                 {/* )} */}
 
                                 {/* Final Invoice: show only after full payment is completed */}
@@ -3663,10 +3726,10 @@ const BookingViewLayer = () => {
                 <div className="alert alert-info mb-3">
                   <h6 className="fw-bold mb-2">Why is confirmation required?</h6>
                   <p className="mb-0 small">
-                    Customer confirmation is required to finalize the booking and move all services 
-                    from temporary status to confirmed status. This ensures that the customer has 
-                    reviewed and approved all services before proceeding with the booking process. 
-                    Once confirmed, the services will be moved to the main booking and cannot be 
+                    Customer confirmation is required to finalize the booking and move all services
+                    from temporary status to confirmed status. This ensures that the customer has
+                    reviewed and approved all services before proceeding with the booking process.
+                    Once confirmed, the services will be moved to the main booking and cannot be
                     easily modified.
                   </p>
                 </div>

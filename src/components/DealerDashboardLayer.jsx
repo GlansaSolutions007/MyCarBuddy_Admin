@@ -66,11 +66,12 @@ const getAddonServiceId = (addon) => {
 // Car details only (no customer name)
 const getCarDetails = (b) => {
   const parts = [];
-  if (b?.VehicleNumber?.trim()) parts.push(b.VehicleNumber.trim());
-  if (b?.VehicleName?.trim()) parts.push(b.VehicleName.trim());
-  if (b?.ModelName?.trim()) parts.push(b.ModelName.trim());
-  if (b?.BrandName?.trim()) parts.push(b.BrandName.trim());
-  if (b?.VehicleModel?.trim()) parts.push(b.VehicleModel.trim());
+  if (b?.VehicleDetails?.[0]?.RegistrationNumber?.trim()) parts.push(b.VehicleDetails[0].RegistrationNumber.trim());
+  // if (b?.VehicleDetails?.[0]?.BrandName?.trim()) parts.push(b.VehicleDetails[0].BrandName.trim());
+  // if (b?.VehicleDetails?.[0]?.ModelName?.trim()) parts.push(b.VehicleDetails[0].ModelName.trim());
+  // if (b?.VehicleDetails?.[0]?.FuelTypeName?.trim()) parts.push(b.VehicleDetails[0].FuelTypeName.trim());
+  // if (b?.VehicleDetails?.[0]?.KmDriven?.trim()) parts.push(b.VehicleDetails[0].KmDriven.trim());
+  // if (b?.VehicleDetails?.[0]?.YearOfPurchase?.trim()) parts.push(b.VehicleDetails[0].YearOfPurchase.trim());
   return parts.length ? parts.join(" · ") : "—";
 };
 
