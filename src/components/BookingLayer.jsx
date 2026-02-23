@@ -57,7 +57,7 @@ const BookingLayer = () => {
   // New states for Supervisor Assignment
   const [supervisors, setSupervisors] = useState([]);
   const [selectedSupervisor, setSelectedSupervisor] = useState(null);
-  const [assignType, setAssignType] = useState("technician"); // 'technician' | 'supervisor' | 'fieldAdvisor'
+  const [assignType, setAssignType] = useState("fieldAdvisor"); // 'technician' | 'supervisor' | 'fieldAdvisor'
 
   // States for Field Advisor Assignment
   const [fieldAdvisors, setFieldAdvisors] = useState([]);
@@ -194,7 +194,7 @@ const BookingLayer = () => {
     setSelectedTechnician(null);
     setSelectedSupervisor(null); // Reset supervisor selection
     setSelectedFieldAdvisor(null); // Reset field advisor selection
-    setAssignType("technician"); // Default to technician when opening modal
+    setAssignType("fieldAdvisor"); // Default to Field Advisor when opening modal
 
     const slots = booking.TimeSlot?.split(",").map((s) => s.trim()) || [];
     if (slots.length === 1) {
@@ -307,7 +307,7 @@ const BookingLayer = () => {
         setSelectedTechnician(null);
         setSelectedSupervisor(null);
         setSelectedFieldAdvisor(null);
-        setAssignType("technician");
+        setAssignType("fieldAdvisor");
       } else {
         const assignTypeLabel =
           assignType === "technician"
@@ -919,7 +919,7 @@ const BookingLayer = () => {
                   </div>
                   )}
                   {/* Technician Checkbox: always show */}
-                  <div className="form-check d-flex align-items-center gap-2 m-0">
+                  {/* <div className="form-check d-flex align-items-center gap-2 m-0">
                     <input
                       type="checkbox"
                       className="form-check-input"
@@ -935,7 +935,7 @@ const BookingLayer = () => {
                     >
                       Technician
                     </label>
-                  </div>
+                  </div> */}
                 </div>
 
                 {/* Time Slot Selection - Hide for Field Advisor */}
@@ -994,7 +994,7 @@ const BookingLayer = () => {
                   className="btn btn-secondary btn-sm"
                   onClick={() => {
                     setAssignModalOpen(false);
-                    setAssignType("technician");
+                    setAssignType("fieldAdvisor");
                     setSelectedTechnician(null);
                     setSelectedSupervisor(null);
                     setSelectedFieldAdvisor(null);

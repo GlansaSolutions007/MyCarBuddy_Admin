@@ -82,11 +82,37 @@ const BookingViewLayer = () => {
   const [fieldAdvisors, setFieldAdvisors] = useState([]);
   const [showCustomerConfirmationModal, setShowCustomerConfirmationModal] = useState(false);
   const [confirmationDescription, setConfirmationDescription] = useState("");
+  // Assign flow: step 1 = service location choice (doorstep vs garage)
+  const [showAssignStep1Modal, setShowAssignStep1Modal] = useState(false);
+  const [assignServiceLocation, setAssignServiceLocation] = useState(null); // "doorstep" | "garage"
+  // Garage flow (service at garage): pickup/drop and dealer/driver flow
+  const [showGarageFlowModal, setShowGarageFlowModal] = useState(false);
+  const [garageStep, setGarageStep] = useState("task"); // "task" | "route" | "details" | "return"
+  const [garageTask, setGarageTask] = useState(null); // "carPickup" | "carDrop"
+  const [garageRoute, setGarageRoute] = useState(null); // "customerToDealer" | "dealerToDealer"
+  const [garagePickupDealer, setGaragePickupDealer] = useState(null);
+  const [garageDeliverDealer, setGarageDeliverDealer] = useState(null);
+  const [garageDriver, setGarageDriver] = useState(null);
+  const [garageServiceDone, setGarageServiceDone] = useState(false);
+  // Pickup date & time for garage flow
+  const [garagePickupDate, setGaragePickupDate] = useState("");
+  const [garagePickupTime, setGaragePickupTime] = useState("");
+  const [garageDeliveryDate, setGarageDeliveryDate] = useState("");
+  const [garageDeliveryTime, setGarageDeliveryTime] = useState("");
+  // Dealers from this booking's add-ons (unique by DealerID) for garage flow dropdowns
+  const garageDealerOptions = (() => {
+    const addOns = bookingData?.BookingAddOns || [];
+    const seen = new Set();
+    return addOns
+      .filter((a) => a.DealerID != null && a.DealerName && !seen.has(Number(a.DealerID)) && (seen.add(Number(a.DealerID)), true))
+      .map((a) => ({ value: Number(a.DealerID), label: a.DealerName }));
+  })();
   const [pickupDate, setPickupDate] = useState("");
   const [pickupTime, setPickupTime] = useState("");
   const [dropDate, setDropDate] = useState("");
   const [dropTime, setDropTime] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentTypeChoice, setPaymentTypeChoice] = useState(null); // null | "online" | "other"
   const [paymentMode, setPaymentMode] = useState("");
   const [payAmount, setPayAmount] = useState("");
   const [isDiscountApplicable, setIsDiscountApplicable] = useState(false);
@@ -120,6 +146,13 @@ const BookingViewLayer = () => {
   useEffect(() => {
     setIsPaid(!!bookingData?.Payments);
   }, [bookingData]);
+
+  // Keep discount amount not more than entered amount
+  useEffect(() => {
+    const pay = Number(payAmount || 0);
+    const discount = Number(discountAmount || 0);
+    if (pay >= 0 && discount > pay) setDiscountAmount(String(pay));
+  }, [payAmount, discountAmount]);
 
   const fetchBookingData = async () => {
     try {
@@ -442,14 +475,19 @@ const BookingViewLayer = () => {
     }
   };
 
-  // Handler for initial assignment (similar to BookingLayer)
+  // Handler for initial assignment: first show service location (doorstep vs garage)
   const handleInitialAssignClick = () => {
+    setAssignServiceLocation(null);
+    setShowAssignStep1Modal(true);
+  };
+
+  // After user selects "Service at doorstep" → open employee selection modal
+  const openDoorstepAssignModal = () => {
+    setShowAssignStep1Modal(false);
     setInitialAssignType("technician");
     setSelectedInitialTechnician(null);
     setSelectedInitialSupervisor(null);
     setSelectedInitialFieldAdvisor(null);
-
-    // Set time slot if booking has only one slot
     if (bookingData && bookingData.TimeSlot) {
       const slots = bookingData.TimeSlot.split(",").map((s) => s.trim());
       if (slots.length === 1) {
@@ -464,6 +502,98 @@ const BookingViewLayer = () => {
       }
     }
     setInitialAssignModalOpen(true);
+  };
+
+  // After user selects "Service at garage" → open garage flow modal
+  const openGarageFlowModal = () => {
+    setShowAssignStep1Modal(false);
+    setGarageStep("task");
+    setGarageTask(null);
+    setGarageRoute(null);
+    setGaragePickupDealer(null);
+    setGarageDeliverDealer(null);
+    setGarageDriver(null);
+    setGarageServiceDone(false);
+    setGaragePickupDate(new Date().toISOString().split("T")[0]);
+    setGaragePickupTime(new Date().toTimeString().slice(0, 5));
+    setGarageDeliveryDate("");
+    setGarageDeliveryTime("");
+    setShowGarageFlowModal(true);
+  };
+
+  const closeGarageFlowModal = () => {
+    setShowGarageFlowModal(false);
+    setGarageStep("task");
+    setGarageTask(null);
+    setGarageRoute(null);
+    setGaragePickupDealer(null);
+    setGarageDeliverDealer(null);
+    setGarageDriver(null);
+    setGarageServiceDone(false);
+    setGaragePickupDate("");
+    setGaragePickupTime("");
+    setGarageDeliveryDate("");
+    setGarageDeliveryTime("");
+  };
+
+  // Format time as HH:mm:ss for SavePickupDeliveryTime API
+  const toTimeApi = (t) => {
+    if (!t || typeof t !== "string") return "";
+    const s = t.trim();
+    if (/^\d{1,2}:\d{2}:\d{2}$/.test(s)) return s;
+    const m = s.match(/^(\d{1,2}):(\d{2})/);
+    return m ? `${m[1].padStart(2, "0")}:${m[2]}:00` : "";
+  };
+
+  const savePickupDeliveryTime = async (payload) => {
+    try {
+      const res = await axios.post(
+        `${API_BASE}Supervisor/SavePickupDeliveryTime`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return { ok: true, data: res.data };
+    } catch (err) {
+      console.error("SavePickupDeliveryTime error:", err);
+      return { ok: false, message: err.response?.data?.message || err.message };
+    }
+  };
+
+  const buildGaragePayload = () => {
+    const bid = Number(bookingId) || bookingData?.BookingID;
+    const leadId = bookingData?.LeadId || "";
+    if (!bid || !leadId) return null;
+    const pickType = garageTask === "carPickup" ? "CarPick" : "CarDrop";
+    const routeType = garageRoute === "customerToDealer" ? "CustomerToDealer" : "DealerToDealer";
+    let pickFrom = 0;
+    let pickTo = 0;
+    if (garageRoute === "customerToDealer") {
+      if (garageTask === "carPickup") {
+        pickFrom = 0;
+        pickTo = garageDeliverDealer?.value ?? 0;
+      } else {
+        pickFrom = garagePickupDealer?.value ?? 0;
+        pickTo = 0;
+      }
+    } else {
+      pickFrom = garagePickupDealer?.value ?? 0;
+      pickTo = garageDeliverDealer?.value ?? 0;
+    }
+    return {
+      bookingID: bid,
+      leadId,
+      serviceType: "ServiceAtGarage",
+      pickType,
+      routeType,
+      pickFrom,
+      pickTo,
+      pickupDate: garagePickupDate || "",
+      pickupTime: toTimeApi(garagePickupTime),
+      deliveryDate: garageDeliveryDate || "",
+      deliveryTime: toTimeApi(garageDeliveryTime),
+      techID: garageDriver?.value ?? 0,
+      assignDate: new Date().toISOString(),
+    };
   };
 
   const handleInitialAssignConfirm = async () => {
@@ -1219,6 +1349,7 @@ const BookingViewLayer = () => {
 
   const closePaymentModal = () => {
     setShowPaymentModal(false);
+    setPaymentTypeChoice(null);
     setPaymentMode("");
     setPayAmount("");
     setIsDiscountApplicable(false);
@@ -1364,7 +1495,8 @@ const BookingViewLayer = () => {
 
   const handleConfirmPayment = async () => {
     try {
-      if (!paymentMode) {
+      const isOnline = paymentTypeChoice === "online";
+      if (!isOnline && !paymentMode) {
         Swal.fire("Validation", "Please select payment mode", "warning");
         return;
       }
@@ -1374,20 +1506,9 @@ const BookingViewLayer = () => {
         return;
       }
 
-      if (isDiscountApplicable) {
-        if (!discountAmount || discountAmount <= 0) {
-          Swal.fire("Validation", "Enter valid discount amount", "warning");
-          return;
-        }
-
-        if (discountAmount > payAmount) {
-          Swal.fire(
-            "Validation",
-            "Discount cannot exceed entered amount",
-            "warning",
-          );
-          return;
-        }
+      if (Number(discountAmount || 0) > Number(payAmount || 0)) {
+        Swal.fire("Validation", "Discount cannot exceed entered amount", "warning");
+        return;
       }
 
       if (payAmount > remainingAmount) {
@@ -1414,9 +1535,9 @@ const BookingViewLayer = () => {
       const payload = {
         bookingID: bookingData.BookingID,
         amountPaid: finalAmount,
-        paymentMode, // ex: Cash / UPI / Card
-        paymentStatus: "Success", // 🔒 static
-        paymentType: "Static", // 🔒 static
+        paymentMode: isOnline ? "Online" : paymentMode,
+        paymentStatus: "Success",
+        paymentType: "Static",
         createdBy: userId,
       };
 
@@ -1511,168 +1632,187 @@ const BookingViewLayer = () => {
   };
 
   return (
-    <div className="row gy-4 mt-3">
-      {/* Right Tabs Content */}
-      <div className="col-lg-12">
-        <div className="card h-100">
-          <div className="card-body p-24">
-            {bookingData ? (
-              <div className="row g-4">
-                {/* ================= LEFT SIDE: PERSONAL INFORMATION ================= */}
-                <div className="col-lg-8 col-md-12">
-                  <Accordion className="mb-3">
-                    <Accordion.Item eventKey="0">
-                      <Accordion.Header>
-                        <h6 className="mb-2 fw-bold text-primary">
-                          👤 Personal Information
-                        </h6>
-                      </Accordion.Header>
+    <>
+      <style>{`
+        .btn-press-effect {
+          transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, opacity 0.15s ease;
+        }
+        .btn-press-effect:active {
+          transform: scale(0.96);
+        }
+        .btn-press-effect:hover:active {
+          transform: translateY(-1px) scale(0.96);
+        }
+        .btn-close-press:active {
+          transform: scale(0.88);
+          opacity: 0.8;
+        }
+        .btn-close-press {
+          transition: transform 0.15s ease, opacity 0.15s ease;
+        }
+      `}</style>
+      <div className="row gy-4 mt-3">
+        {/* Right Tabs Content */}
+        <div className="col-lg-12">
+          <div className="card h-100">
+            <div className="card-body p-24">
+              {bookingData ? (
+                <div className="row g-4">
+                  {/* ================= LEFT SIDE: PERSONAL INFORMATION ================= */}
+                  <div className="col-lg-8 col-md-12">
+                    <Accordion className="mb-3">
+                      <Accordion.Item eventKey="0">
+                        <Accordion.Header>
+                          <h6 className="mb-2 fw-bold text-primary">
+                            👤 Personal Information
+                          </h6>
+                        </Accordion.Header>
 
-                      <Accordion.Body>
-                        <div className="row g-4 align-items-start">
-                          {/* ================= IMAGE ================= */}
-                          <div className="col-lg-3 col-md-4 col-12 text-center">
-                            <div className="pb-3">
-                              {bookingData.ProfileImage ? (
-                                <img
-                                  src={`${API_IMAGE}${bookingData.ProfileImage}`}
-                                  alt="User"
-                                  className="border br-white border-width-2-px w-120-px h-120-px rounded-circle object-fit-cover"
-                                />
-                              ) : (
-                                <img
-                                  src="/assets/images/user-grid/user-grid-img14.png"
-                                  alt="Default User"
-                                  className="border br-white border-width-2-px w-120-px h-120-px rounded-circle object-fit-cover"
-                                />
-                              )}
+                        <Accordion.Body>
+                          <div className="row g-4 align-items-start">
+                            {/* ================= IMAGE ================= */}
+                            <div className="col-lg-3 col-md-4 col-12 text-center">
+                              <div className="pb-3">
+                                {bookingData.ProfileImage ? (
+                                  <img
+                                    src={`${API_IMAGE}${bookingData.ProfileImage}`}
+                                    alt="User"
+                                    className="border br-white border-width-2-px w-120-px h-120-px rounded-circle object-fit-cover"
+                                  />
+                                ) : (
+                                  <img
+                                    src="/assets/images/user-grid/user-grid-img14.png"
+                                    alt="Default User"
+                                    className="border br-white border-width-2-px w-120-px h-120-px rounded-circle object-fit-cover"
+                                  />
+                                )}
+                              </div>
                             </div>
-                          </div>
 
-                          {/* ================= PERSONAL INFO ================= */}
-                          <div className="col-lg-9 col-md-8 col-12">
-                            <ul className="mb-0">
-                              <li className="d-flex align-items-center gap-1">
-                                <span className=" w-50 fw-semibold text-primary-light">
-                                  Customer Name :
-                                </span>
-                                <span className="w-50 text-secondary-light fw-bold">
-                                  {bookingData.CustomerName || "N/A"}
-                                </span>
-                              </li>
+                            {/* ================= PERSONAL INFO ================= */}
+                            <div className="col-lg-9 col-md-8 col-12">
+                              <ul className="mb-0">
+                                <li className="d-flex align-items-center gap-1">
+                                  <span className=" w-50 fw-semibold text-primary-light">
+                                    Customer Name :
+                                  </span>
+                                  <span className="w-50 text-secondary-light fw-bold">
+                                    {bookingData.CustomerName || "N/A"}
+                                  </span>
+                                </li>
 
-                              <li className="d-flex align-items-center gap-1">
-                                <span className=" w-50 fw-semibold text-primary-light">
-                                  Phone Number :
-                                </span>
-                                <span className="w-50 text-secondary-light fw-bold">
-                                  {bookingData.PhoneNumber || "N/A"}
-                                </span>
-                              </li>
-                              <li className="d-flex align-items-center gap-1">
-                                <span className=" w-50 fw-semibold text-primary-light">
-                                  Full Address :
-                                </span>
-                                <span className="w-50 text-secondary-light fw-bold">
-                                  {bookingData.FullAddress || "N/A"}
-                                </span>
-                              </li>
-                              <>
-                                {/* {bookingData.TechFullName && ( */}
+                                <li className="d-flex align-items-center gap-1">
+                                  <span className=" w-50 fw-semibold text-primary-light">
+                                    Phone Number :
+                                  </span>
+                                  <span className="w-50 text-secondary-light fw-bold">
+                                    {bookingData.PhoneNumber || "N/A"}
+                                  </span>
+                                </li>
+                                <li className="d-flex align-items-center gap-1">
+                                  <span className=" w-50 fw-semibold text-primary-light">
+                                    Full Address :
+                                  </span>
+                                  <span className="w-50 text-secondary-light fw-bold">
+                                    {bookingData.FullAddress || "N/A"}
+                                  </span>
+                                </li>
                                 <>
+                                  {/* {bookingData.TechFullName && ( */}
+                                  <>
+                                    <li className="d-flex align-items-center gap-1">
+                                      <span className="w-50 fw-semibold text-primary-light">
+                                        Technician Name/Number :
+                                      </span>
+                                      <span className="w-50 text-secondary-light fw-bold">
+                                        {bookingData?.TechFullName || bookingData?.TechPhoneNumber ? (
+                                          <>
+                                            {bookingData?.TechFullName || ""}
+                                            {bookingData?.TechPhoneNumber ? ` (${bookingData.TechPhoneNumber})` : ""}
+                                          </>
+                                        ) : (
+                                          "N/A"
+                                        )}
+                                      </span>
+                                    </li>
+                                  </>
+                                  {/* {(pickupDate || dropDate) && ( */}
                                   <li className="d-flex align-items-center gap-1">
                                     <span className="w-50 fw-semibold text-primary-light">
-                                      Technician Name/Number :
+                                      Supervisor Name/Number :
                                     </span>
                                     <span className="w-50 text-secondary-light fw-bold">
-                                      {bookingData?.TechFullName || bookingData?.TechPhoneNumber ? (
+                                      {bookingData?.SupervisorName || bookingData?.SupervisorPhoneNumber ? (
                                         <>
-                                          {bookingData?.TechFullName || ""}
-                                          {bookingData?.TechPhoneNumber ? ` (${bookingData.TechPhoneNumber})` : ""}
+                                          {bookingData?.SupervisorName || ""}
+                                          {bookingData?.SupervisorPhoneNumber ? ` (${bookingData.SupervisorPhoneNumber})` : ""}
                                         </>
                                       ) : (
                                         "N/A"
                                       )}
                                     </span>
                                   </li>
+                                  <li className="d-flex align-items-center gap-1">
+                                    <span className="w-50 fw-semibold text-primary-light">
+                                      Field Advisor Name/Number :
+                                    </span>
+                                    <span className="w-50 text-secondary-light fw-bold">
+                                      {bookingData?.FieldAdvisorName || bookingData?.FieldAdvisorPhoneNumber ? (
+                                        <>
+                                          {bookingData?.FieldAdvisorName || ""}
+                                          {bookingData?.FieldAdvisorPhoneNumber ? ` (${bookingData.FieldAdvisorPhoneNumber})` : ""}
+                                        </>
+                                      ) : (
+                                        "N/A"
+                                      )}
+                                    </span>
+                                  </li>
+                                  <li className="d-flex align-items-center gap-1">
+                                    <span className="w-50 fw-semibold text-primary-light">
+                                      Car Pickup Date & Time :
+                                    </span>
+                                    <span className="w-50 text-secondary-light fw-bold">
+                                      {displayDate(pickupDate)}
+                                      {pickupTime && ` : ${pickupTime}`}
+                                    </span>
+                                  </li>
+
+                                  <li className="d-flex align-items-center gap-1">
+                                    <span className="w-50 fw-semibold text-primary-light">
+                                      Car Drop Date & Time :
+                                    </span>
+                                    <span className="w-50 text-secondary-light fw-bold">
+                                      {displayDate(dropDate)}
+                                      {dropTime && ` : ${dropTime}`}
+                                    </span>
+                                  </li>
                                 </>
-                                {/* {(pickupDate || dropDate) && ( */}
-                                <li className="d-flex align-items-center gap-1">
-                                  <span className="w-50 fw-semibold text-primary-light">
-                                    Supervisor Name/Number :
-                                  </span>
-                                  <span className="w-50 text-secondary-light fw-bold">
-                                    {bookingData?.SupervisorName || bookingData?.SupervisorPhoneNumber ? (
-                                      <>
-                                        {bookingData?.SupervisorName || ""}
-                                        {bookingData?.SupervisorPhoneNumber ? ` (${bookingData.SupervisorPhoneNumber})` : ""}
-                                      </>
-                                    ) : (
-                                      "N/A"
-                                    )}
-                                  </span>
-                                </li>
-                                <li className="d-flex align-items-center gap-1">
-                                  <span className="w-50 fw-semibold text-primary-light">
-                                    Field Advisor Name/Number :
-                                  </span>
-                                  <span className="w-50 text-secondary-light fw-bold">
-                                    {bookingData?.FieldAdvisorName || bookingData?.FieldAdvisorPhoneNumber ? (
-                                      <>
-                                        {bookingData?.FieldAdvisorName || ""}
-                                        {bookingData?.FieldAdvisorPhoneNumber ? ` (${bookingData.FieldAdvisorPhoneNumber})` : ""}
-                                      </>
-                                    ) : (
-                                      "N/A"
-                                    )}
-                                  </span>
-                                </li>
-                                <li className="d-flex align-items-center gap-1">
-                                  <span className="w-50 fw-semibold text-primary-light">
-                                    Car Pickup Date & Time :
-                                  </span>
-                                  <span className="w-50 text-secondary-light fw-bold">
-                                    {displayDate(pickupDate)}
-                                    {pickupTime && ` : ${pickupTime}`}
-                                  </span>
-                                </li>
-
-                                <li className="d-flex align-items-center gap-1">
-                                  <span className="w-50 fw-semibold text-primary-light">
-                                    Car Drop Date & Time :
-                                  </span>
-                                  <span className="w-50 text-secondary-light fw-bold">
-                                    {displayDate(dropDate)}
-                                    {dropTime && ` : ${dropTime}`}
-                                  </span>
-                                </li>
-                              </>
-                            </ul>
+                              </ul>
+                            </div>
                           </div>
-                        </div>
-                      </Accordion.Body>
-                    </Accordion.Item>
-                  </Accordion>
-                </div>
+                        </Accordion.Body>
+                      </Accordion.Item>
+                    </Accordion>
+                  </div>
 
-                {/* ================= RIGHT SIDE: VEHICLE DETAILS ================= */}
-                <div className="col-lg-4 col-md-12">
-                  <Accordion className="mb-3">
-                    <Accordion.Item eventKey="1">
-                      <Accordion.Header>
-                        <h6 className="mb-2 fw-bold text-primary">
-                          🚗 Vehicle Details
-                        </h6>
-                      </Accordion.Header>
+                  {/* ================= RIGHT SIDE: VEHICLE DETAILS ================= */}
+                  <div className="col-lg-4 col-md-12">
+                    <Accordion className="mb-3">
+                      <Accordion.Item eventKey="1">
+                        <Accordion.Header>
+                          <h6 className="mb-2 fw-bold text-primary">
+                            🚗 Vehicle Details
+                          </h6>
+                        </Accordion.Header>
 
-                      <Accordion.Body>
-                        {bookingData.VehicleDetails &&
-                          Array.isArray(bookingData.VehicleDetails) &&
-                          bookingData.VehicleDetails.length > 0 ? (
-                          <div>
-                            {bookingData.VehicleDetails.map((vehicle, index) => (
-                              <div key={index} className={index > 0 ? "mt-4 pt-4 border-top" : ""}>
-                                {/* <div className="d-flex align-items-center gap-2 mb-3">
+                        <Accordion.Body>
+                          {bookingData.VehicleDetails &&
+                            Array.isArray(bookingData.VehicleDetails) &&
+                            bookingData.VehicleDetails.length > 0 ? (
+                            <div>
+                              {bookingData.VehicleDetails.map((vehicle, index) => (
+                                <div key={index} className={index > 0 ? "mt-4 pt-4 border-top" : ""}>
+                                  {/* <div className="d-flex align-items-center gap-2 mb-3">
                                   <Icon 
                                     icon="mdi:car" 
                                     className="text-primary fs-5" 
@@ -1681,307 +1821,268 @@ const BookingViewLayer = () => {
                                     Vehicle {bookingData.VehicleDetails.length > 1 ? `${index + 1}` : ""} Details
                                   </span>
                                 </div> */}
-                                <ul className="mb-0">
-                                  {/* {vehicle.RegistrationNumber && ( */}
-                                  <li className="d-flex align-items-center gap-1">
-                                    <span className="w-70 fw-semibold text-primary-light">
-                                      Reg. Number :
-                                    </span>
-                                    <span className="w-70 text-secondary-light fw-bold ms-2">
-                                      {vehicle.RegistrationNumber || "N/A"}
-                                    </span>
-                                  </li>
-                                  {/* )} */}
-                                  {/* {vehicle.BrandName && vehicle.ModelName && ( */}
-                                  <li className="d-flex align-items-center gap-1">
-                                    <span className="w-70 fw-semibold text-primary-light">
-                                      Brand :
-                                    </span>
-                                    <span className="w-70 text-secondary-light fw-bold ms-2">
-                                      {vehicle.BrandName} ({vehicle.ModelName || "N/A"})
-                                    </span>
-                                  </li>
-                                  {/* )} */}
-                                  {/* {vehicle.YearOfPurchase && ( */}
-                                  <li className="d-flex align-items-center gap-1">
-                                    <span className="w-70 fw-semibold text-primary-light">
-                                      Year of Purchase :
-                                    </span>
-                                    <span className="w-70 text-secondary-light fw-bold ms-2">
-                                      {vehicle.YearOfPurchase || "N/A"}
-                                    </span>
-                                  </li>
-                                  {/* )} */}
-                                  {/* {vehicle.FuelTypeName && ( */}
-                                  <li className="d-flex align-items-center gap-1">
-                                    <span className="w-70 fw-semibold text-primary-light">
-                                      Fuel Type :
-                                    </span>
-                                    <span className="w-70 text-secondary-light fw-bold ms-2">
-                                      {vehicle.FuelTypeName || "N/A"}
-                                    </span>
-                                  </li>
-                                  {/* )} */}
-                                  {/* {vehicle.KmDriven !== null && vehicle.KmDriven !== undefined && ( */}
-                                  <li className="d-flex align-items-center gap-1">
-                                    <span className="w-70 fw-semibold text-primary-light">
-                                      KM Driven :
-                                    </span>
-                                    <span className="w-70 text-secondary-light fw-bold ms-2">
-                                      {vehicle.KmDriven !== null && vehicle.KmDriven !== undefined ? vehicle.KmDriven.toLocaleString() : "N/A"} km
-                                    </span>
-                                  </li>
-                                  {/* )} */}
-                                </ul>
+                                  <ul className="mb-0">
+                                    {/* {vehicle.RegistrationNumber && ( */}
+                                    <li className="d-flex align-items-center gap-1">
+                                      <span className="w-70 fw-semibold text-primary-light">
+                                        Reg. Number :
+                                      </span>
+                                      <span className="w-70 text-secondary-light fw-bold ms-2">
+                                        {vehicle.RegistrationNumber || "N/A"}
+                                      </span>
+                                    </li>
+                                    {/* )} */}
+                                    {/* {vehicle.BrandName && vehicle.ModelName && ( */}
+                                    <li className="d-flex align-items-center gap-1">
+                                      <span className="w-70 fw-semibold text-primary-light">
+                                        Brand :
+                                      </span>
+                                      <span className="w-70 text-secondary-light fw-bold ms-2">
+                                        {vehicle.BrandName} ({vehicle.ModelName || "N/A"})
+                                      </span>
+                                    </li>
+                                    {/* )} */}
+                                    {/* {vehicle.YearOfPurchase && ( */}
+                                    <li className="d-flex align-items-center gap-1">
+                                      <span className="w-70 fw-semibold text-primary-light">
+                                        Year of Purchase :
+                                      </span>
+                                      <span className="w-70 text-secondary-light fw-bold ms-2">
+                                        {vehicle.YearOfPurchase || "N/A"}
+                                      </span>
+                                    </li>
+                                    {/* )} */}
+                                    {/* {vehicle.FuelTypeName && ( */}
+                                    <li className="d-flex align-items-center gap-1">
+                                      <span className="w-70 fw-semibold text-primary-light">
+                                        Fuel Type :
+                                      </span>
+                                      <span className="w-70 text-secondary-light fw-bold ms-2">
+                                        {vehicle.FuelTypeName || "N/A"}
+                                      </span>
+                                    </li>
+                                    {/* )} */}
+                                    {/* {vehicle.KmDriven !== null && vehicle.KmDriven !== undefined && ( */}
+                                    <li className="d-flex align-items-center gap-1">
+                                      <span className="w-70 fw-semibold text-primary-light">
+                                        KM Driven :
+                                      </span>
+                                      <span className="w-70 text-secondary-light fw-bold ms-2">
+                                        {vehicle.KmDriven !== null && vehicle.KmDriven !== undefined ? vehicle.KmDriven.toLocaleString() : "N/A"} km
+                                      </span>
+                                    </li>
+                                    {/* )} */}
+                                  </ul>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center text-muted py-4">
+                              <Icon icon="mdi:car-off" className="fs-1 mb-2" />
+                              <p className="mb-0">No vehicle details available</p>
+                            </div>
+                          )}
+                        </Accordion.Body>
+                      </Accordion.Item>
+                    </Accordion>
+                  </div>
+                </div>
+              ) : (
+                <div className="pb-24 ms-16 mb-24 me-16 text-center">
+                  <img
+                    src="/assets/images/user-grid/user-grid-img13.png"
+                    alt="Default User"
+                    className="border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover"
+                  />
+                  <h6 className="mb-0 mt-16">Loading...</h6>
+                </div>
+              )}
+              {/* ================= CAR PICKUP / DROP ACCORDION ================= */}
+              <div className="accordion mb-3" id="carPickupDropAccordion">
+                <div className="accordion-item border radius-16">
+                  <h2 className="accordion-header" id="headingPickupDrop">
+                    <button
+                      className="accordion-button collapsed fw-semibold gap-2"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#collapsePickupDrop"
+                      aria-expanded="false"
+                      aria-controls="collapsePickupDrop"
+                    >
+                      <i className="bi bi-car-front-fill"></i>
+                      <span className="fw-semibold text-primary">
+                        Car Pickup & Drop Details
+                      </span>
+                    </button>
+                  </h2>
+
+                  <div
+                    id="collapsePickupDrop"
+                    className="accordion-collapse collapse"
+                    aria-labelledby="headingPickupDrop"
+                    data-bs-parent="#carPickupDropAccordion"
+                  >
+                    <div className="mt-3">
+                      <div className="rounded-3 overflow-hidden border-0 shadow-sm" style={{ backgroundColor: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.08)" }}>
+                        {/* Header – dark teal with BID, OTP, Payment, action */}
+                        <div
+                          className="px-3 py-2 d-flex align-items-center justify-content-between flex-wrap gap-2"
+                          style={{ backgroundColor: "#0d9488", color: "#fff", minHeight: "48px" }}
+                        >
+                          <span className="d-flex align-items-center gap-2 small fw-semibold text-white">
+                            <Icon icon="mdi:clipboard-check-outline" width={20} height={20} />
+                            BID : #{bookingData?.BookingTrackID || "—"}
+                            <span className="opacity-90 fw-normal"> &nbsp; Date : {displayDate(bookingData?.BookingDate)}</span>
+                          </span>
+                        </div>
+                        {/* Timeline – white body, center icons + segment connectors */}
+                        <div className="p-4 position-relative" style={{ backgroundColor: "#fff" }}>
+                          <div className="d-flex align-items-flex-start py-20 justify-content-between position-relative">
+                            {[
+                              { key: "pickup", label: "Pickup Scheduled", sub: pickupDate && pickupTime ? `${displayDate(pickupDate)} ${pickupTime}` : "22/02/2026 09:30", icon: "mdi:calendar-check", done: true },
+                              { key: "picked", label: "Vehicle Picked Up", sub: "22/02/2026", icon: "mdi:car-pickup", done: true },
+                              { key: "dealer", label: "At Dealer", sub: "22/02/2026", icon: "mdi:garage", done: true },
+                              { key: "delivery", label: "Delivery Scheduled", sub: dropDate && dropTime ? `${displayDate(dropDate)} ${dropTime}` : "23/02/2026 18:00", icon: "mdi:calendar-clock", done: false },
+                              { key: "done", label: "Completed", sub: "Pending", icon: "mdi:check-circle-outline", done: false },
+                            ].map((step, idx) => (
+                              <div key={step.key} className="d-flex flex-column align-items-center position-relative" style={{ flex: "1 1 0", minWidth: 0, zIndex: 2 }}>
+                                {/* Segment line to the right (teal if current step done, gray otherwise) */}
+                                {idx < 4 && (
+                                  <div
+                                    className="position-absolute d-none d-md-block"
+                                    style={{
+                                      top: 20,
+                                      left: "calc(50% + 24px)",
+                                      width: "calc(100% - 28px)",
+                                      height: 3,
+                                      borderRadius: 2,
+                                      backgroundColor: step.done ? "#0d9488" : "#e5e7eb",
+                                      zIndex: 0,
+                                    }}
+                                  />
+                                )}
+                                <div
+                                  className="d-flex align-items-center justify-content-center rounded-circle mb-2"
+                                  style={{
+                                    width: 44,
+                                    height: 44,
+                                    backgroundColor: step.done ? "#0d9488" : "#e5e7eb",
+                                    color: step.done ? "#fff" : "#9ca3af",
+                                    boxShadow: step.done ? "0 2px 6px rgba(13,148,136,0.35)" : "0 1px 3px rgba(0,0,0,0.08)",
+                                  }}
+                                >
+                                  <Icon icon={step.icon} width={22} height={22} />
+                                </div>
+                                <span className="small fw-bold text-center text-dark" style={{ fontSize: "12px", lineHeight: 1.25 }}>{step.label}</span>
+                                <span className="small text-muted text-center mt-1" style={{ fontSize: "11px" }}>{step.sub}</span>
                               </div>
                             ))}
                           </div>
-                        ) : (
-                          <div className="text-center text-muted py-4">
-                            <Icon icon="mdi:car-off" className="fs-1 mb-2" />
-                            <p className="mb-0">No vehicle details available</p>
-                          </div>
-                        )}
-                      </Accordion.Body>
-                    </Accordion.Item>
-                  </Accordion>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            ) : (
-              <div className="pb-24 ms-16 mb-24 me-16 text-center">
-                <img
-                  src="/assets/images/user-grid/user-grid-img13.png"
-                  alt="Default User"
-                  className="border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover"
-                />
-                <h6 className="mb-0 mt-16">Loading...</h6>
-              </div>
-            )}
-            {/* ================= CAR PICKUP / DROP ACCORDION ================= */}
-            <div className="accordion mb-3" id="carPickupDropAccordion">
-              <div className="accordion-item border radius-16">
-                <h2 className="accordion-header" id="headingPickupDrop">
-                  <button
-                    className="accordion-button collapsed fw-semibold gap-2"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#collapsePickupDrop"
-                    aria-expanded="false"
-                    aria-controls="collapsePickupDrop"
-                  >
-                    <i className="bi bi-car-front-fill"></i>
-                    <span className="fw-semibold text-primary">
-                      Car Pickup & Drop Details
-                    </span>
-                  </button>
-                </h2>
+              {/* ================= RESCHEDULE SECTION ================= */}
+              {showReschedule && bookingData && (
+                <div className="card border radius-16 mb-3">
+                  <div className="card-body p-24">
+                    <h6 className="fw-bold mb-3 text-primary">
+                      Reschedule Booking
+                    </h6>
 
-                <div
-                  id="collapsePickupDrop"
-                  className="accordion-collapse collapse"
-                  aria-labelledby="headingPickupDrop"
-                  data-bs-parent="#carPickupDropAccordion"
-                >
-                  <div className="accordion-body">
                     <div className="row g-3">
-                      {/* Pickup Date */}
-                      <div className="col-md-3">
-                        <label className="form-label fw-bold">
-                          Pickup Date
-                        </label>
+                      <div className="col-md-4">
+                        <label className="form-label">Reschedule Date</label>
                         <input
                           type="date"
-                          className="form-control"
+                          className="form-control py-2"
                           min={today}
-                          value={pickupDate}
+                          value={newDate}
                           onChange={(e) => {
-                            setPickupDate(e.target.value);
-                            setPickupTime("");
-                            setDropDate("");
-                            setDropTime("");
+                            setNewDate(e.target.value);
                           }}
                         />
                       </div>
 
-                      {/* Pickup Time */}
-                      <div className="col-md-3">
-                        <label className="form-label fw-bold">
-                          Pickup Time
-                        </label>
-                        <input
-                          type="time"
-                          className="form-control"
-                          value={pickupTime}
-                          min={pickupDate === today ? nowTime : undefined}
-                          disabled={!pickupDate}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (
-                              pickupDate === today &&
-                              isPastTimeToday(value)
-                            ) {
-                              return;
-                            }
-                            setPickupTime(value);
-                            setDropTime("");
-                          }}
-                        />
-                      </div>
+                      <div className="col-md-4">
+                        <label className="form-label">Time Slot</label>
+                        <Select
+                          isMulti
+                          options={timeSlots
+                            .filter((slot) => {
+                              if (!slot.IsActive) return false;
 
-                      {/* Drop Date */}
-                      <div className="col-md-3">
-                        <label className="form-label fw-bold">Drop Date</label>
-                        <input
-                          type="date"
-                          className="form-control"
-                          min={pickupDate || today}
-                          value={dropDate}
-                          onChange={(e) => {
-                            setDropDate(e.target.value);
-                            setDropTime("");
-                          }}
-                          disabled={!pickupDate}
-                        />
-                      </div>
+                              if (newDate !== today) return true;
 
-                      {/* Drop Time */}
-                      <div className="col-md-3">
-                        <label className="form-label fw-bold">Drop Time</label>
-                        <input
-                          type="time"
-                          className="form-control"
-                          value={dropTime}
-                          disabled={!pickupDate || !pickupTime}
-                          min={
-                            pickupDate === dropDate
-                              ? pickupTime ||
-                              (pickupDate === today ? nowTime : undefined)
-                              : undefined
+                              const now = new Date();
+                              const [h, m] =
+                                slot.StartTime.split(":").map(Number);
+
+                              const slotTime = new Date();
+                              slotTime.setHours(h, m, 0, 0);
+
+                              return slotTime > now;
+                            })
+                            .sort((a, b) => {
+                              const [aH, aM] = a.StartTime.split(":").map(Number);
+                              const [bH, bM] = b.StartTime.split(":").map(Number);
+                              return aH * 60 + aM - (bH * 60 + bM);
+                            })
+                            .map((slot) => ({
+                              value: `${slot.StartTime} - ${slot.EndTime}`,
+                              label: `${formatTime(
+                                slot.StartTime,
+                              )} - ${formatTime(slot.EndTime)}`,
+                            }))}
+                          value={selectedTimeSlot.map((val) => ({
+                            value: val,
+                            label: formatTimeSlot(val),
+                          }))}
+                          onChange={(selectedOptions) =>
+                            setSelectedTimeSlot(
+                              selectedOptions
+                                ? selectedOptions.map((opt) => opt.value)
+                                : [],
+                            )
                           }
-                          onChange={(e) => {
-                            const value = e.target.value;
+                          placeholder="Select time slots"
+                          isDisabled={!newDate}
+                        />
+                      </div>
 
-                            if (pickupDate === dropDate && value < pickupTime) {
-                              return;
-                            }
-                            setDropTime(value);
-                          }}
+                      <div className="col-md-4">
+                        <label className="form-label">Reason</label>
+                        <textarea
+                          className="form-control"
+                          rows="1"
+                          placeholder="Enter reason"
+                          value={reason}
+                          onChange={(e) => setReason(e.target.value)}
                         />
                       </div>
                     </div>
 
-                    {/* Action buttons */}
-                    <div className="d-flex justify-content-center gap-2 mt-4">
+                    <div className="mt-3 d-flex justify-content-center gap-2">
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setShowReschedule(false)}
+                      >
+                        Cancel Reschedule
+                      </button>
                       <button
                         className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
-                        onClick={handleSubmitPickupDetails}
+                        onClick={handleReschedule}
                       >
-                        Submit Details
+                        Submit Reschedule
                       </button>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-            {/* ================= RESCHEDULE SECTION ================= */}
-            {showReschedule && bookingData && (
-              <div className="card border radius-16 mb-3">
-                <div className="card-body p-24">
-                  <h6 className="fw-bold mb-3 text-primary">
-                    Reschedule Booking
-                  </h6>
+              )}
 
-                  <div className="row g-3">
-                    <div className="col-md-4">
-                      <label className="form-label">Reschedule Date</label>
-                      <input
-                        type="date"
-                        className="form-control py-2"
-                        min={today}
-                        value={newDate}
-                        onChange={(e) => {
-                          setNewDate(e.target.value);
-                        }}
-                      />
-                    </div>
-
-                    <div className="col-md-4">
-                      <label className="form-label">Time Slot</label>
-                      <Select
-                        isMulti
-                        options={timeSlots
-                          .filter((slot) => {
-                            if (!slot.IsActive) return false;
-
-                            if (newDate !== today) return true;
-
-                            const now = new Date();
-                            const [h, m] =
-                              slot.StartTime.split(":").map(Number);
-
-                            const slotTime = new Date();
-                            slotTime.setHours(h, m, 0, 0);
-
-                            return slotTime > now;
-                          })
-                          .sort((a, b) => {
-                            const [aH, aM] = a.StartTime.split(":").map(Number);
-                            const [bH, bM] = b.StartTime.split(":").map(Number);
-                            return aH * 60 + aM - (bH * 60 + bM);
-                          })
-                          .map((slot) => ({
-                            value: `${slot.StartTime} - ${slot.EndTime}`,
-                            label: `${formatTime(
-                              slot.StartTime,
-                            )} - ${formatTime(slot.EndTime)}`,
-                          }))}
-                        value={selectedTimeSlot.map((val) => ({
-                          value: val,
-                          label: formatTimeSlot(val),
-                        }))}
-                        onChange={(selectedOptions) =>
-                          setSelectedTimeSlot(
-                            selectedOptions
-                              ? selectedOptions.map((opt) => opt.value)
-                              : [],
-                          )
-                        }
-                        placeholder="Select time slots"
-                        isDisabled={!newDate}
-                      />
-                    </div>
-
-                    <div className="col-md-4">
-                      <label className="form-label">Reason</label>
-                      <textarea
-                        className="form-control"
-                        rows="1"
-                        placeholder="Enter reason"
-                        value={reason}
-                        onChange={(e) => setReason(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-3 d-flex justify-content-center gap-2">
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => setShowReschedule(false)}
-                    >
-                      Cancel Reschedule
-                    </button>
-                    <button
-                      className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
-                      onClick={handleReschedule}
-                    >
-                      Submit Reschedule
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* <div className="d-flex justify-content-end mb-3">
+              {/* <div className="d-flex justify-content-end mb-3">
               <button
                 className="btn btn-primary"
                 onClick={handleGenerateFinalInvoice}
@@ -1989,27 +2090,27 @@ const BookingViewLayer = () => {
                 Final Invoice
               </button>
             </div> */}
-            <ul className="nav border-gradient-tab nav-pills mb-20">
-              <li className="nav-item">
-                <button
-                  className="nav-link active"
-                  data-bs-toggle="pill"
-                  data-bs-target="#booking"
-                >
-                  Bookings
-                </button>
-              </li>
+              <ul className="nav border-gradient-tab nav-pills mb-20">
+                <li className="nav-item">
+                  <button
+                    className="nav-link active"
+                    data-bs-toggle="pill"
+                    data-bs-target="#booking"
+                  >
+                    Bookings
+                  </button>
+                </li>
 
-              {/* Push button to the end */}
-              <li className="nav-item ms-auto m-1 d-flex gap-2">
-                {/* Invoice and Refund buttons */}
-                {bookingData &&
-                  bookingData.Payments &&
-                  bookingData.Payments[0] &&
-                  (bookingData.Payments[0].FolderPath ||
-                    bookingData.Payments[0].IsRefunded) && (
-                    <div className="d-flex gap-2">
-                      {/* {bookingData.Payments[0].FolderPath && (
+                {/* Push button to the end */}
+                <li className="nav-item ms-auto m-1 d-flex gap-2">
+                  {/* Invoice and Refund buttons */}
+                  {bookingData &&
+                    bookingData.Payments &&
+                    bookingData.Payments[0] &&
+                    (bookingData.Payments[0].FolderPath ||
+                      bookingData.Payments[0].IsRefunded) && (
+                      <div className="d-flex gap-2">
+                        {/* {bookingData.Payments[0].FolderPath && (
                         <a
                           href={bookingData.Payments[0].FolderPath}
                           target="_blank"
@@ -2020,125 +2121,56 @@ const BookingViewLayer = () => {
                         </a>
                       )} */}
 
-                      {bookingData.Payments[0].IsRefunded && (
-                        <button
-                          onClick={() => handleRefund(bookingData.Payments[0])}
-                          className="btn btn-danger btn-sm"
-                        >
-                          Refund
-                        </button>
-                      )}
-                    </div>
-                  )}
-                <Link
-                  to={`/lead-view/${bookingData?.LeadId}`}
-                  className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
-                  title="View"
-                >
-                  View Lead
-                </Link>
-
-                {/* Reschedule & Reassign Buttons */}
-                {bookingData &&
-                  !["Completed", "Cancelled", "Refunded"].includes(
-                    bookingData.BookingStatus,
-                  ) && (
-                    <div className="d-flex gap-2 flex-wrap">
-                      <button
-                        className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                        onClick={handleCustomerConfirmation}
-                      >
-                        Customer Confirmation
-                        {confirmationData && (
-                          <div
-                            style={{
-                              position: "relative",
-                              display: "inline-block",
-                              marginLeft: "8px",
-                            }}
+                        {bookingData.Payments[0].IsRefunded && (
+                          <button
+                            onClick={() => handleRefund(bookingData.Payments[0])}
+                            className="btn btn-danger btn-sm"
                           >
-                            {/* Exclamation Icon */}
-                            <span
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                width: "18px",
-                                height: "18px",
-                                fontSize: "12px",
-                                borderRadius: "50%",
-                                backgroundColor: "#dc3545",
-                                color: "#fff",
-                                cursor: "pointer",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.nextSibling.style.opacity = "1";
-                                e.currentTarget.nextSibling.style.visibility = "visible";
-                                e.currentTarget.nextSibling.style.transform = "translateY(0)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.nextSibling.style.opacity = "0";
-                                e.currentTarget.nextSibling.style.visibility = "hidden";
-                                e.currentTarget.nextSibling.style.transform = "translateY(8px)";
-                              }}
-                            >
-                              !
-                            </span>
-
-                            {/* Tooltip Box */}
-                            <div
-                              style={{
-                                position: "absolute",
-                                bottom: "130%",
-                                right: "0",
-                                width: "240px",
-                                background: "linear-gradient(135deg, #2c2f36, #1f2228)",
-                                color: "#fff",
-                                padding: "12px 14px",
-                                borderRadius: "12px",
-                                fontSize: "13px",
-                                boxShadow: "0 8px 20px rgba(0,0,0,0.25)",
-                                opacity: 0,
-                                visibility: "hidden",
-                                transform: "translateY(8px)",
-                                transition: "all 0.25s ease",
-                                zIndex: 999,
-                              }}
-                            >
-                              <div style={{ fontWeight: 600, marginBottom: "4px" }}>
-                                Confirmed By: {confirmationData.ConfirmRole}
-                              </div>
-                              <div style={{ fontSize: "12px", opacity: 0.85 }}>
-                                {confirmationData.ConfirmDescription}
-                              </div>
-
-                              {/* Arrow */}
-                              <div
-                                style={{
-                                  position: "absolute",
-                                  top: "100%",
-                                  right: "15px",
-                                  width: 0,
-                                  height: 0,
-                                  borderLeft: "8px solid transparent",
-                                  borderRight: "8px solid transparent",
-                                  borderTop: "8px solid #1f2228",
-                                }}
-                              />
-                            </div>
-                          </div>
+                            Refund
+                          </button>
                         )}
-                      </button>
-                      <button
-                        className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                        onClick={() => setShowReschedule(!showReschedule)}
-                      >
-                        Reschedule
-                      </button>
+                      </div>
+                    )}
+                  <Link
+                    to={`/lead-view/${bookingData?.LeadId}`}
+                    className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
+                    title="View"
+                  >
+                    View Lead
+                  </Link>
 
-                      {/* BUTTON 1 — your current condition, but ONLY when roleId !== "8" */}
-                      {roleId !== "8" &&
-                        (bookingData.TechID || bookingData.SupervisorID) && (
+                  {/* Reschedule & Reassign Buttons */}
+                  {bookingData &&
+                    !["Completed", "Cancelled", "Refunded"].includes(
+                      bookingData.BookingStatus,
+                    ) && (
+                      <div className="d-flex gap-2 flex-wrap">
+                        <button
+                          className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                          onClick={handleCustomerConfirmation}
+                        >
+                          Customer Confirmation
+                        </button>
+                        <button
+                          className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                          onClick={() => setShowReschedule(!showReschedule)}
+                        >
+                          Reschedule
+                        </button>
+
+                        {/* BUTTON 1 — your current condition, but ONLY when roleId !== "8" */}
+                        {roleId !== "8" &&
+                          (bookingData.TechID || bookingData.SupervisorID) && (
+                            <button
+                              className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                              onClick={() => handleAssignClick()}
+                            >
+                              Reassign
+                            </button>
+                          )}
+
+                        {/* BUTTON 2 — only for roleId = "8" AND TechID available */}
+                        {roleId === "8" && bookingData.TechID && (
                           <button
                             className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                             onClick={() => handleAssignClick()}
@@ -2146,37 +2178,27 @@ const BookingViewLayer = () => {
                             Reassign
                           </button>
                         )}
-
-                      {/* BUTTON 2 — only for roleId = "8" AND TechID available */}
-                      {roleId === "8" && bookingData.TechID && (
-                        <button
-                          className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                          onClick={() => handleAssignClick()}
-                        >
-                          Reassign
-                        </button>
-                      )}
-                    </div>
-                  )}
-                {!(
-                  bookingData?.BookingStatus === "Completed" &&
-                  bookingData?.Payments?.length > 0 &&
-                  bookingData?.Payments?.[bookingData.Payments.length - 1]
-                    ?.PaymentStatus === "Success"
-                ) && (
-                    <Link
-                      to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
-                      className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
-                      title="Add"
-                    >
-                      Add / Edit Services
-                    </Link>
-                  )}
+                      </div>
+                    )}
+                  {!(
+                    bookingData?.BookingStatus === "Completed" &&
+                    bookingData?.Payments?.length > 0 &&
+                    bookingData?.Payments?.[bookingData.Payments.length - 1]
+                      ?.PaymentStatus === "Success"
+                  ) && (
+                      <Link
+                        to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
+                        className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
+                        title="Add"
+                      >
+                        Add / Edit Services
+                      </Link>
+                    )}
 
 
-              </li>
+                </li>
 
-              {/* {bookingData &&
+                {/* {bookingData &&
                 bookingData.BookingStatus !== "Cancelled" &&
                 bookingData.BookingStatus !== "Failed" &&
                 bookingData.BookingStatus !== "Completed" && (
@@ -2190,772 +2212,480 @@ const BookingViewLayer = () => {
                     </button>
                   </li>
                 )} */}
-              {/* You might want a payment tab here to view past payments */}
-              {/* <li className='nav-item'><button className='nav-link' data-bs-toggle='pill' data-bs-target='#payment'>Payments</button></li> */}
-            </ul>
+                {/* You might want a payment tab here to view past payments */}
+                {/* <li className='nav-item'><button className='nav-link' data-bs-toggle='pill' data-bs-target='#payment'>Payments</button></li> */}
+              </ul>
 
-            <div className="tab-content">
-              {/* ====================== BOOKINGS TAB ====================== */}
-              <div className="tab-pane fade show active" id="booking">
-                {bookingData ? (
-                  <Accordion
-                    defaultActiveKey="0"
-                    className="styled-booking-accordion"
-                  >
-                    <Accordion.Item
-                      eventKey="0"
-                      key={bookingData.BookingID}
-                      className="mb-3 shadow-sm rounded-3 border border-light"
+              <div className="tab-content">
+                {/* ====================== BOOKINGS TAB ====================== */}
+                <div className="tab-pane fade show active" id="booking">
+                  {bookingData ? (
+                    <Accordion
+                      defaultActiveKey="0"
+                      className="styled-booking-accordion"
                     >
-                      <Accordion.Header>
-                        <div className="d-flex flex-column w-100">
-                          <div className="d-flex justify-content-between align-items-center w-100">
-                            <div className="d-flex align-items-center gap-3">
-                              <Icon
-                                icon="mdi:calendar-check"
-                                className="text-primary fs-4"
-                              />
-                              <div>
-                                <h6 className="mb-0 text-dark fw-bold">
-                                  Booking #{bookingData.BookingTrackID}
-                                </h6>
-                                <small className="text-muted">
-                                  Scheduled: {bookingData.BookingDate} (
-                                  {bookingData.TimeSlot})
-                                </small>
-                              </div>
-                            </div>
-                            <div className="d-flex align-items-center gap-2 flex-wrap">
-                              <span className="ms-2 small">Payment Status:</span>
-                              {(() => {
-                                const payments = bookingData?.Payments;
-
-                                let label = "Pending";
-                                let badgeClass = "bg-warning text-dark";
-
-                                if (payments?.length > 0) {
-                                  const lastPayment =
-                                    payments[payments.length - 1];
-                                  const status = lastPayment?.PaymentStatus;
-
-                                  if (status === "Success") {
-                                    label = "Paid";
-                                    badgeClass = "bg-success";
-                                  } else if (status === "Partialpaid") {
-                                    label = "Partial Paid";
-                                    badgeClass = "bg-primary";
-                                  }
-                                }
-                                return (
-                                  <span className="fw-semibold d-flex align-items-center">
-                                    <span
-                                      className={`badge px-3 py-1 rounded-pill ${badgeClass}`}
-                                    >
-                                      {label}
-                                    </span>
-                                  </span>
-                                );
-                              })()}
-
-                              <span className="ms-2 small">Booking Status:</span>
-                              <span
-                                className={`badge px-3 py-1 rounded-pill ${bookingData.BookingStatus === "Completed"
-                                  ? "bg-success"
-                                  : bookingData.BookingStatus === "Confirmed"
-                                    ? "bg-primary"
-                                    : "bg-warning text-dark"
-                                  }`}
-                              >
-                                {bookingData.BookingStatus}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </Accordion.Header>
-
-                      <Accordion.Body className="bg-white">
-                        <div className="container-fluid">
-                          {/* ============= Packages Section ============= */}
-                          {bookingData?.Packages?.length > 0 && (
-                            <Accordion defaultActiveKey="pkg1" className="mb-4">
-                              <Accordion.Item eventKey="pkg1">
-                                <Accordion.Header>
-                                  <h6 className="text-success fw-bold mb-0">
-                                    📦 Packages
+                      <Accordion.Item
+                        eventKey="0"
+                        key={bookingData.BookingID}
+                        className="mb-3 shadow-sm rounded-3 border border-light"
+                      >
+                        <Accordion.Header>
+                          <div className="d-flex flex-column w-100">
+                            <div className="d-flex justify-content-between align-items-center w-100">
+                              <div className="d-flex align-items-center gap-3">
+                                <Icon
+                                  icon="mdi:calendar-check"
+                                  className="text-primary fs-4"
+                                />
+                                <div>
+                                  <h6 className="mb-0 text-dark fw-bold">
+                                    Booking #{bookingData.BookingTrackID}
                                   </h6>
-                                </Accordion.Header>
-
-                                <Accordion.Body>
-                                  <div
-                                    className="overflow-auto"
-                                    style={{
-                                      maxHeight: "300px",
-                                      paddingRight: "3px",
-                                    }}
-                                  >
-                                    <ul className="list-group list-group-flush">
-                                      {bookingData.Packages.map(
-                                        (pkg, index) => (
-                                          <li
-                                            key={pkg.PackageID || index}
-                                            className="list-group-item border rounded-3 shadow-sm mb-2 bg-light"
-                                          >
-                                            <div className="d-flex justify-content-between align-items-start">
-                                              <div>
-                                                <strong className="text-dark">
-                                                  {pkg.PackageName}
-                                                </strong>
-                                                {pkg.Category
-                                                  ?.SubCategories?.[0]?.Includes
-                                                  ?.length > 0 && (
-                                                    <ul className="text-muted small ps-3 mb-0">
-                                                      {pkg.Category.SubCategories[0].Includes.map(
-                                                        (inc) => (
-                                                          <li key={inc.IncludeID}>
-                                                            {inc.IncludeName}
-                                                          </li>
-                                                        ),
-                                                      )}
-                                                    </ul>
-                                                  )}
-                                              </div>
-
-                                              <span className="badge bg-success-subtle text-success border border-success">
-                                                ⏱ Duration:{" "}
-                                                {pkg.EstimatedDurationMinutes >=
-                                                  60
-                                                  ? (() => {
-                                                    const hours = Math.floor(
-                                                      pkg.EstimatedDurationMinutes /
-                                                      60,
-                                                    );
-                                                    const minutes =
-                                                      pkg.EstimatedDurationMinutes %
-                                                      60;
-                                                    return minutes === 0
-                                                      ? `${hours} hr`
-                                                      : `${hours} hr ${minutes} mins`;
-                                                  })()
-                                                  : `${pkg.EstimatedDurationMinutes} mins`}
-                                              </span>
-                                            </div>
-                                          </li>
-                                        ),
-                                      )}
-                                    </ul>
-                                  </div>
-                                </Accordion.Body>
-                              </Accordion.Item>
-                            </Accordion>
-                          )}
-
-                          {/* ============= Additional Services ============= */}
-                          {bookingData?.AddonServices?.length > 0 && (
-                            <Accordion defaultActiveKey="1" className="mb-4">
-                              <Accordion.Item eventKey="1">
-                                <Accordion.Header>
-                                  <h6 className="text-primary fw-bold mb-0">
-                                    🛠️ Additional Services
-                                  </h6>
-                                </Accordion.Header>
-                                <Accordion.Body>
-                                  <div
-                                    className="overflow-auto"
-                                    style={{ maxHeight: "300px" }}
-                                  >
-                                    <ul className="list-group list-group-flush">
-                                      {bookingData.AddonServices.map(
-                                        (addon, index) => (
-                                          <li
-                                            key={index}
-                                            className="list-group-item d-flex justify-content-between align-items-center flex-wrap"
-                                          >
-                                            <div>
-                                              <strong className="text-dark">
-                                                {addon.ServiceName}
-                                              </strong>
-                                              {addon.Description && (
-                                                <p className="mb-0 text-muted small">
-                                                  {addon.Description}
-                                                </p>
-                                              )}
-                                            </div>
-                                            <span className="badge bg-secondary rounded-pill">
-                                              ₹
-                                              {Number(
-                                                addon.ServicePrice,
-                                              ).toFixed(2)}
-                                            </span>
-                                          </li>
-                                        ),
-                                      )}
-                                    </ul>
-                                  </div>
-                                </Accordion.Body>
-                              </Accordion.Item>
-                            </Accordion>
-                          )}
-
-                          {bookingData?.BookingAddOns?.length > 0 && (
-                            <div className="card mb-4 mt-4">
-                              <div className="card-header bg-success">
-                                <h6 className="mb-0 fw-bold text-white">Customer Confirmed Services</h6>
-                              </div>
-                              <div className="card-body p-0">
-                                <div
-                                  className="table-responsive"
-                                  style={{
-                                    maxHeight: "800px",
-                                    overflowX: "auto",
-                                  }}
-                                >
-                                  <table
-                                    className="table table-sm table-striped table-hover align-middle mb-0"
-                                    style={{
-                                      tableLayout: "fixed",
-                                      minWidth: "1200px",
-                                    }}
-                                  >
-                                    <thead
-                                      className="table-light sticky-top position-relative"
-                                      style={{ zIndex: 1 }}
-                                    >
-                                      <tr>
-                                        <th
-                                          style={{ width: "60px" }}
-                                          className="text-center"
-                                        >
-                                          S.No
-                                        </th>
-                                        <th style={{ width: "100px" }}>Type</th>
-                                        <th style={{ width: "180px" }}>
-                                          Service Name
-                                        </th>
-                                        <th style={{ width: "100px" }}>Date</th>
-                                        <th
-                                          style={{ width: "100px" }}
-                                          className="text-end"
-                                        >
-                                          Part Price
-                                        </th>
-                                        <th
-                                          style={{ width: "125px" }}
-                                          className="text-end"
-                                        >
-                                          DLR Part Price
-                                        </th>
-                                        <th
-                                          style={{ width: "70px" }}
-                                          className="text-end"
-                                        >
-                                          Qty
-                                        </th>
-                                        <th
-                                          style={{ width: "100px" }}
-                                          className="text-end"
-                                        >
-                                          Part Total
-                                        </th>
-                                        <th
-                                          style={{ width: "120px" }}
-                                          className="text-end"
-                                        >
-                                          DLR Part Total
-                                        </th>
-                                        <th
-                                          style={{ width: "120px" }}
-                                          className="text-end"
-                                        >
-                                          Service Chg.
-                                        </th>
-                                        <th
-                                          style={{ width: "145px" }}
-                                          className="text-end"
-                                        >
-                                          DLR Service Chg.
-                                        </th>
-                                        <th
-                                          style={{ width: "90px" }}
-                                          className="text-end"
-                                        >
-                                          GST %
-                                        </th>
-                                        <th
-                                          style={{ width: "120px" }}
-                                          className="text-end"
-                                        >
-                                          DLR GST %
-                                        </th>
-                                        <th
-                                          style={{ width: "100px" }}
-                                          className="text-end"
-                                        >
-                                          GST Amt.
-                                        </th>
-                                        <th
-                                          style={{ width: "120px" }}
-                                          className="text-end"
-                                        >
-                                          DLR GST Amt.
-                                        </th>
-                                        <th
-                                          style={{ width: "100px" }}
-                                          className="text-end"
-                                        >
-                                          Our %
-                                        </th>
-                                        <th
-                                          style={{ width: "100px" }}
-                                          className="text-end"
-                                        >
-                                          Our Amt.
-                                        </th>
-                                        <th style={{ width: "200px" }}
-                                          className="text-center">
-                                          Selected Dealer
-                                        </th>
-                                        <th
-                                          style={{ width: "160px" }}
-                                          className="text-center"
-                                        >
-                                          Dlr. Service Status
-                                        </th>
-                                        <th
-                                          style={{ width: "100px" }}
-                                          className="text-end"
-                                        >
-                                          Total Amt
-                                        </th>
-
-                                      </tr>
-                                    </thead>
-
-                                    <tbody>
-                                      {bookingData.BookingAddOns.map(
-                                        (addon, index) => (
-                                          <tr key={addon.AddOnID || index}>
-                                            <td className="text-center">
-                                              {index + 1}.
-                                            </td>
-                                            <td className="normal">
-                                              {addon.ServiceType || "—"}
-                                            </td>
-                                            <td className="normal">
-                                              <div className="normal">
-                                                {/* <strong > */}
-                                                {addon.ServiceName || "—"}
-                                                {/* </strong> */}
-                                                {addon.Includes &&
-                                                  Array.isArray(
-                                                    addon.Includes,
-                                                  ) &&
-                                                  addon.Includes.length > 0 && (
-                                                    <ul className="text-muted small ps-3 mb-0 mt-2">
-                                                      {addon.Includes.map(
-                                                        (inc) => (
-                                                          <li
-                                                            key={
-                                                              inc.IncludeID ||
-                                                              inc.id
-                                                            }
-                                                          >
-                                                            {inc.IncludeName ||
-                                                              inc.name}
-                                                          </li>
-                                                        ),
-                                                      )}
-                                                    </ul>
-                                                  )}
-                                              </div>
-                                            </td>
-
-                                            <td className="normal">
-                                              {addon.CreatedDate
-                                                ? new Date(
-                                                  addon.CreatedDate,
-                                                ).toLocaleDateString("en-IN")
-                                                : "—"}
-                                            </td>
-                                            <td className="text-end">
-                                              {Number(
-                                                addon.BasePrice || 0,
-                                              ).toFixed(2)}
-                                            </td>
-                                            <td className="text-end">
-                                              {Number(
-                                                addon.DealerBasePrice || 0,
-                                              ).toFixed(2)}
-                                            </td>
-                                            <td className="text-end">
-                                              {addon.Quantity ?? "1"}
-                                            </td>
-                                            <td className="text-end">
-                                              {Number(
-                                                addon.ServicePrice || 0,
-                                              ).toFixed(2)}
-                                            </td>
-                                            <td className="text-end">
-                                              {Number(
-                                                addon.DealerSparePrice || 0,
-                                              ).toFixed(2)}
-                                            </td>
-                                            <td className="text-end">
-                                              {Number(
-                                                addon.LabourCharges || 0,
-                                              ).toFixed(2)}
-                                            </td>
-                                            <td className="text-end">
-                                              {Number(
-                                                addon.DealerPrice || 0,
-                                              ).toFixed(2)}
-                                            </td>
-                                            <td className="text-end">
-                                              {addon.GSTPercent ?? 0}%
-                                            </td>
-                                            <td className="text-end">
-                                              {addon.DealerGSTPercent ?? 0}%
-                                            </td>
-                                            <td className="text-end">
-                                              {Number(
-                                                addon.GSTPrice || 0,
-                                              ).toFixed(2)}
-                                            </td>
-                                            <td className="text-end">
-                                              {Number(
-                                                addon.DealerGSTAmount || 0,
-                                              ).toFixed(2)}
-                                            </td>
-                                            <td className="text-end">
-                                              {addon.Percentage ?? "0"}%
-                                            </td>
-                                            <td className="text-end">
-                                              {Number(
-                                                addon.Our_Earnings || 0,
-                                              ).toFixed(2)}
-                                            </td>
-                                            <td
-                                              className=" normal text-center"
-                                              style={{
-                                                whiteSpace: "normal",
-                                                wordBreak: "break-word",
-                                              }}
-                                            >
-                                              {addon.DealerName || "—"}
-                                            </td>
-                                            <td className="text-center align-middle">
-                                              {(() => {
-                                                const isApproved =
-                                                  (addon.IsDealer_Confirm ?? addon.isDealer_Confirm)
-                                                    ?.toString()
-                                                    .trim()
-                                                    .toLowerCase() === "approved";
-                                                const status = (addon.StatusName ?? addon.statusName ?? addon.AddOnStatus ?? addon.addOnStatus)
-                                                  ?.toString()
-                                                  .trim();
-                                                return (
-                                                  <div className="d-flex gap-2 align-items-center justify-content-center">
-                                                    {isApproved && (
-                                                      <select
-                                                        className="form-select form-select-sm"
-                                                        value={status}
-                                                        onChange={(e) =>
-                                                          handleAddOnStatusChange(addon, e.target.value)
-                                                        }
-                                                      >
-                                                        <option value="">Select Status</option>
-                                                        <option value="Pending">Pending</option>
-                                                        <option value="ServiceCompleted">Completed</option>
-                                                        <option value="Rework">Rework</option>
-                                                        <option value="InProgress">In-Progress</option>
-                                                      </select>
-                                                    ) || (
-                                                        <span className="badge bg-warning text-dark px-3 py-4 rounded-pill">
-                                                          Dealer Pending
-                                                        </span>
-                                                      )}
-                                                  </div>
-                                                );
-                                              })()}
-                                            </td>
-                                            <td className="text-end fw-bold text-primary">
-                                              {Number(
-                                                addon.TotalPrice || 0,
-                                              ).toFixed(2)}
-                                            </td>
-
-                                          </tr>
-                                        ),
-                                      )}
-                                    </tbody>
-                                  </table>
+                                  <small className="text-muted">
+                                    Scheduled: {bookingData.BookingDate} (
+                                    {bookingData.TimeSlot})
+                                  </small>
                                 </div>
                               </div>
-                            </div>
-                          )}
+                              <div className="d-flex align-items-center gap-2 flex-wrap">
+                                <span className="ms-2 small">Payment Status:</span>
+                                {(() => {
+                                  const payments = bookingData?.Payments;
 
-                          {bookingData?.SupervisorBookings?.length > 0 && (
-                            <div className="card mb-4 mt-4">
-                              <div className="card-header bg-warning text-dark">
-                                <h6 className="mb-0 fw-bold">Customer Not Confirmed Services</h6>
-                              </div>
-                              <div className="card-body p-0">
-                                <div
-                                  className="table-responsive"
-                                  style={{
-                                    maxHeight: "800px",
-                                    overflowX: "auto",
-                                  }}
+                                  let label = "Pending";
+                                  let badgeClass = "bg-warning text-dark";
+
+                                  if (payments?.length > 0) {
+                                    const lastPayment =
+                                      payments[payments.length - 1];
+                                    const status = lastPayment?.PaymentStatus;
+
+                                    if (status === "Success") {
+                                      label = "Paid";
+                                      badgeClass = "bg-success";
+                                    } else if (status === "Partialpaid") {
+                                      label = "Partial Paid";
+                                      badgeClass = "bg-primary";
+                                    }
+                                  }
+                                  return (
+                                    <span className="fw-semibold d-flex align-items-center">
+                                      <span
+                                        className={`badge px-3 py-1 rounded-pill ${badgeClass}`}
+                                      >
+                                        {label}
+                                      </span>
+                                    </span>
+                                  );
+                                })()}
+
+                                <span className="ms-2 small">Booking Status:</span>
+                                <span
+                                  className={`badge px-3 py-1 rounded-pill ${bookingData.BookingStatus === "Completed"
+                                    ? "bg-success"
+                                    : bookingData.BookingStatus === "Confirmed"
+                                      ? "bg-primary"
+                                      : "bg-warning text-dark"
+                                    }`}
                                 >
-                                  <table
-                                    className="table table-sm table-striped table-hover align-middle mb-0"
+                                  {bookingData.BookingStatus}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </Accordion.Header>
+
+                        <Accordion.Body className="bg-white">
+                          <div className="container-fluid">
+                            {/* ============= Packages Section ============= */}
+                            {bookingData?.Packages?.length > 0 && (
+                              <Accordion defaultActiveKey="pkg1" className="mb-4">
+                                <Accordion.Item eventKey="pkg1">
+                                  <Accordion.Header>
+                                    <h6 className="text-success fw-bold mb-0">
+                                      📦 Packages
+                                    </h6>
+                                  </Accordion.Header>
+
+                                  <Accordion.Body>
+                                    <div
+                                      className="overflow-auto"
+                                      style={{
+                                        maxHeight: "300px",
+                                        paddingRight: "3px",
+                                      }}
+                                    >
+                                      <ul className="list-group list-group-flush">
+                                        {bookingData.Packages.map(
+                                          (pkg, index) => (
+                                            <li
+                                              key={pkg.PackageID || index}
+                                              className="list-group-item border rounded-3 shadow-sm mb-2 bg-light"
+                                            >
+                                              <div className="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                  <strong className="text-dark">
+                                                    {pkg.PackageName}
+                                                  </strong>
+                                                  {pkg.Category
+                                                    ?.SubCategories?.[0]?.Includes
+                                                    ?.length > 0 && (
+                                                      <ul className="text-muted small ps-3 mb-0">
+                                                        {pkg.Category.SubCategories[0].Includes.map(
+                                                          (inc) => (
+                                                            <li key={inc.IncludeID}>
+                                                              {inc.IncludeName}
+                                                            </li>
+                                                          ),
+                                                        )}
+                                                      </ul>
+                                                    )}
+                                                </div>
+
+                                                <span className="badge bg-success-subtle text-success border border-success">
+                                                  ⏱ Duration:{" "}
+                                                  {pkg.EstimatedDurationMinutes >=
+                                                    60
+                                                    ? (() => {
+                                                      const hours = Math.floor(
+                                                        pkg.EstimatedDurationMinutes /
+                                                        60,
+                                                      );
+                                                      const minutes =
+                                                        pkg.EstimatedDurationMinutes %
+                                                        60;
+                                                      return minutes === 0
+                                                        ? `${hours} hr`
+                                                        : `${hours} hr ${minutes} mins`;
+                                                    })()
+                                                    : `${pkg.EstimatedDurationMinutes} mins`}
+                                                </span>
+                                              </div>
+                                            </li>
+                                          ),
+                                        )}
+                                      </ul>
+                                    </div>
+                                  </Accordion.Body>
+                                </Accordion.Item>
+                              </Accordion>
+                            )}
+
+                            {/* ============= Additional Services ============= */}
+                            {bookingData?.AddonServices?.length > 0 && (
+                              <Accordion defaultActiveKey="1" className="mb-4">
+                                <Accordion.Item eventKey="1">
+                                  <Accordion.Header>
+                                    <h6 className="text-primary fw-bold mb-0">
+                                      🛠️ Additional Services
+                                    </h6>
+                                  </Accordion.Header>
+                                  <Accordion.Body>
+                                    <div
+                                      className="overflow-auto"
+                                      style={{ maxHeight: "300px" }}
+                                    >
+                                      <ul className="list-group list-group-flush">
+                                        {bookingData.AddonServices.map(
+                                          (addon, index) => (
+                                            <li
+                                              key={index}
+                                              className="list-group-item d-flex justify-content-between align-items-center flex-wrap"
+                                            >
+                                              <div>
+                                                <strong className="text-dark">
+                                                  {addon.ServiceName}
+                                                </strong>
+                                                {addon.Description && (
+                                                  <p className="mb-0 text-muted small">
+                                                    {addon.Description}
+                                                  </p>
+                                                )}
+                                              </div>
+                                              <span className="badge bg-secondary rounded-pill">
+                                                ₹
+                                                {Number(
+                                                  addon.ServicePrice,
+                                                ).toFixed(2)}
+                                              </span>
+                                            </li>
+                                          ),
+                                        )}
+                                      </ul>
+                                    </div>
+                                  </Accordion.Body>
+                                </Accordion.Item>
+                              </Accordion>
+                            )}
+
+                            {bookingData?.BookingAddOns?.length > 0 && (
+                              <div className="card mb-4 mt-4">
+                                <div className="card-header bg-success">
+                                  <h6 className="mb-0 fw-bold text-white">Customer Confirmed Services</h6>
+                                </div>
+                                <div className="card-body p-0">
+                                  <div
+                                    className="table-responsive"
                                     style={{
-                                      tableLayout: "fixed",
-                                      minWidth: "1200px",
+                                      maxHeight: "800px",
+                                      overflowX: "auto",
                                     }}
                                   >
-                                    <thead
-                                      className="table-light sticky-top position-relative"
-                                      style={{ zIndex: 1 }}
+                                    <table
+                                      className="table table-sm table-striped table-hover align-middle mb-0"
+                                      style={{
+                                        tableLayout: "fixed",
+                                        minWidth: "1200px",
+                                      }}
                                     >
-                                      <tr>
-                                        <th
-                                          style={{ width: "60px" }}
-                                          className="text-center"
-                                        >
-                                          S.No
-                                        </th>
-                                        <th style={{ width: "100px" }}>Type</th>
-                                        <th style={{ width: "180px" }}>
-                                          Service Name
-                                        </th>
-                                        <th style={{ width: "100px" }}>Date</th>
-                                        <th
-                                          style={{ width: "100px" }}
-                                          className="text-end"
-                                        >
-                                          Part Price
-                                        </th>
-                                        <th
-                                          style={{ width: "125px" }}
-                                          className="text-end"
-                                        >
-                                          DLR Part Price
-                                        </th>
-                                        <th
-                                          style={{ width: "70px" }}
-                                          className="text-end"
-                                        >
-                                          Qty
-                                        </th>
-                                        <th
-                                          style={{ width: "100px" }}
-                                          className="text-end"
-                                        >
-                                          Part Total
-                                        </th>
-                                        <th
-                                          style={{ width: "120px" }}
-                                          className="text-end"
-                                        >
-                                          DLR Part Total
-                                        </th>
-                                        <th
-                                          style={{ width: "120px" }}
-                                          className="text-end"
-                                        >
-                                          Service Chg.
-                                        </th>
-                                        <th
-                                          style={{ width: "145px" }}
-                                          className="text-end"
-                                        >
-                                          DLR Service Chg.
-                                        </th>
-                                        <th
-                                          style={{ width: "90px" }}
-                                          className="text-end"
-                                        >
-                                          GST %
-                                        </th>
-                                        <th
-                                          style={{ width: "120px" }}
-                                          className="text-end"
-                                        >
-                                          DLR GST %
-                                        </th>
-                                        <th
-                                          style={{ width: "100px" }}
-                                          className="text-end"
-                                        >
-                                          GST Amt.
-                                        </th>
-                                        <th
-                                          style={{ width: "120px" }}
-                                          className="text-end"
-                                        >
-                                          DLR GST Amt.
-                                        </th>
-                                        <th
-                                          style={{ width: "100px" }}
-                                          className="text-end"
-                                        >
-                                          Our %
-                                        </th>
-                                        <th
-                                          style={{ width: "100px" }}
-                                          className="text-end"
-                                        >
-                                          Our Amt.
-                                        </th>
-                                        <th style={{ width: "200px" }}
-                                          className="text-center">
-                                          Selected Dealer
-                                        </th>
-                                        <th
-                                          style={{ width: "160px" }}
-                                          className="text-center"
-                                        >
-                                          Service Status
-                                        </th>
-                                        <th
-                                          style={{ width: "100px" }}
-                                          className="text-end"
-                                        >
-                                          Total Amt
-                                        </th>
-                                      </tr>
-                                    </thead>
+                                      <thead
+                                        className="table-light sticky-top position-relative"
+                                        style={{ zIndex: 1 }}
+                                      >
+                                        <tr>
+                                          <th
+                                            style={{ width: "60px" }}
+                                            className="text-center"
+                                          >
+                                            S.No
+                                          </th>
+                                          <th style={{ width: "100px" }}>Type</th>
+                                          <th style={{ width: "180px" }}>
+                                            Service Name
+                                          </th>
+                                          <th style={{ width: "100px" }}>Date</th>
+                                          <th
+                                            style={{ width: "100px" }}
+                                            className="text-end"
+                                          >
+                                            Part Price
+                                          </th>
+                                          <th
+                                            style={{ width: "125px" }}
+                                            className="text-end"
+                                          >
+                                            DLR Part Price
+                                          </th>
+                                          <th
+                                            style={{ width: "70px" }}
+                                            className="text-end"
+                                          >
+                                            Qty
+                                          </th>
+                                          <th
+                                            style={{ width: "100px" }}
+                                            className="text-end"
+                                          >
+                                            Part Total
+                                          </th>
+                                          <th
+                                            style={{ width: "120px" }}
+                                            className="text-end"
+                                          >
+                                            DLR Part Total
+                                          </th>
+                                          <th
+                                            style={{ width: "120px" }}
+                                            className="text-end"
+                                          >
+                                            Service Chg.
+                                          </th>
+                                          <th
+                                            style={{ width: "145px" }}
+                                            className="text-end"
+                                          >
+                                            DLR Service Chg.
+                                          </th>
+                                          <th
+                                            style={{ width: "90px" }}
+                                            className="text-end"
+                                          >
+                                            GST %
+                                          </th>
+                                          <th
+                                            style={{ width: "120px" }}
+                                            className="text-end"
+                                          >
+                                            DLR GST %
+                                          </th>
+                                          <th
+                                            style={{ width: "100px" }}
+                                            className="text-end"
+                                          >
+                                            GST Amt.
+                                          </th>
+                                          <th
+                                            style={{ width: "120px" }}
+                                            className="text-end"
+                                          >
+                                            DLR GST Amt.
+                                          </th>
+                                          <th
+                                            style={{ width: "100px" }}
+                                            className="text-end"
+                                          >
+                                            Our %
+                                          </th>
+                                          <th
+                                            style={{ width: "100px" }}
+                                            className="text-end"
+                                          >
+                                            Our Amt.
+                                          </th>
+                                          <th style={{ width: "180px" }}
+                                            className="text-center">
+                                            Selected Dealer
+                                          </th>
+                                          <th style={{ width: "180px" }}
+                                            className="text-center">
+                                            Confirm Service
+                                          </th>
+                                          <th
+                                            style={{ width: "160px" }}
+                                            className="text-center"
+                                          >
+                                            Dlr. Service Status
+                                          </th>
+                                          <th
+                                            style={{ width: "100px" }}
+                                            className="text-end"
+                                          >
+                                            Total Amt
+                                          </th>
 
-                                    <tbody>
-                                      {bookingData.SupervisorBookings.map(
-                                        (supervisorBooking, index) => {
-                                          const totalPrice =
-                                            (Number(supervisorBooking.Price || 0)) +
-                                            (Number(supervisorBooking.GSTAmount || 0)) +
-                                            (Number(supervisorBooking.LabourCharges || 0));
+                                        </tr>
+                                      </thead>
 
-                                          return (
-                                            <tr key={supervisorBooking.Id || index}>
+                                      <tbody>
+                                        {bookingData.BookingAddOns.map(
+                                          (addon, index) => (
+                                            <tr key={addon.AddOnID || index}>
                                               <td className="text-center">
                                                 {index + 1}.
                                               </td>
                                               <td className="normal">
-                                                {supervisorBooking.ServiceType || "—"}
+                                                {addon.ServiceType || "—"}
                                               </td>
                                               <td className="normal">
                                                 <div className="normal">
-                                                  {supervisorBooking.ServiceName || "—"}
-                                                  {supervisorBooking.Includes &&
-                                                    (Array.isArray(supervisorBooking.Includes)
-                                                      ? supervisorBooking.Includes.length > 0 && (
-                                                        <ul className="text-muted small ps-3 mb-0 mt-2">
-                                                          {supervisorBooking.Includes.map(
-                                                            (inc) => (
-                                                              <li
-                                                                key={
-                                                                  inc.IncludeID ||
-                                                                  inc.id ||
-                                                                  inc
-                                                                }
-                                                              >
-                                                                {inc.IncludeName ||
-                                                                  inc.name ||
-                                                                  inc}
-                                                              </li>
-                                                            ),
-                                                          )}
-                                                        </ul>
-                                                      )
-                                                      : typeof supervisorBooking.Includes === 'string' && supervisorBooking.Includes.trim() !== '' && (
-                                                        <div className="text-muted small mt-2">
-                                                          {supervisorBooking.Includes}
-                                                        </div>
-                                                      )
+                                                  {/* <strong > */}
+                                                  {addon.ServiceName || "—"}
+                                                  {/* </strong> */}
+                                                  {addon.Includes &&
+                                                    Array.isArray(
+                                                      addon.Includes,
+                                                    ) &&
+                                                    addon.Includes.length > 0 && (
+                                                      <ul className="text-muted small ps-3 mb-0 mt-2">
+                                                        {addon.Includes.map(
+                                                          (inc) => (
+                                                            <li
+                                                              key={
+                                                                inc.IncludeID ||
+                                                                inc.id
+                                                              }
+                                                            >
+                                                              {inc.IncludeName ||
+                                                                inc.name}
+                                                            </li>
+                                                          ),
+                                                        )}
+                                                      </ul>
                                                     )}
                                                 </div>
                                               </td>
 
                                               <td className="normal">
-                                                {supervisorBooking.CreatedDate
+                                                {addon.CreatedDate
                                                   ? new Date(
-                                                    supervisorBooking.CreatedDate,
+                                                    addon.CreatedDate,
                                                   ).toLocaleDateString("en-IN")
                                                   : "—"}
                                               </td>
                                               <td className="text-end">
                                                 {Number(
-                                                  supervisorBooking.BasePrice || 0,
+                                                  addon.BasePrice || 0,
                                                 ).toFixed(2)}
                                               </td>
                                               <td className="text-end">
                                                 {Number(
-                                                  supervisorBooking.DealerBasePrice || 0,
+                                                  addon.DealerBasePrice || 0,
                                                 ).toFixed(2)}
                                               </td>
                                               <td className="text-end">
-                                                {supervisorBooking.Quantity ?? "1"}
+                                                {addon.Quantity ?? "1"}
                                               </td>
                                               <td className="text-end">
                                                 {Number(
-                                                  supervisorBooking.Price || 0,
-                                                ).toFixed(2)}
-                                              </td>
-                                              <td className="text-end">
-                                                {Number(
-                                                  supervisorBooking.DealerSparePrice || 0,
+                                                  addon.ServicePrice || 0,
                                                 ).toFixed(2)}
                                               </td>
                                               <td className="text-end">
                                                 {Number(
-                                                  supervisorBooking.LabourCharges || 0,
+                                                  addon.DealerSparePrice || 0,
                                                 ).toFixed(2)}
                                               </td>
                                               <td className="text-end">
                                                 {Number(
-                                                  supervisorBooking.DealerPrice || 0,
-                                                ).toFixed(2)}
-                                              </td>
-                                              <td className="text-end">
-                                                {supervisorBooking.GSTPercent ?? 0}%
-                                              </td>
-                                              <td className="text-end">
-                                                {supervisorBooking.DealerGSTPercent ?? 0}%
-                                              </td>
-                                              <td className="text-end">
-                                                {Number(
-                                                  supervisorBooking.GSTAmount || 0,
+                                                  addon.LabourCharges || 0,
                                                 ).toFixed(2)}
                                               </td>
                                               <td className="text-end">
                                                 {Number(
-                                                  supervisorBooking.DealerGSTAmount || 0,
+                                                  addon.DealerPrice || 0,
                                                 ).toFixed(2)}
                                               </td>
                                               <td className="text-end">
-                                                {supervisorBooking.Percentage ?? "0"}%
+                                                {addon.GSTPercent ?? 0}%
+                                              </td>
+                                              <td className="text-end">
+                                                {addon.DealerGSTPercent ?? 0}%
                                               </td>
                                               <td className="text-end">
                                                 {Number(
-                                                  supervisorBooking.Our_Earnings || 0,
+                                                  addon.GSTPrice || 0,
+                                                ).toFixed(2)}
+                                              </td>
+                                              <td className="text-end">
+                                                {Number(
+                                                  addon.DealerGSTAmount || 0,
+                                                ).toFixed(2)}
+                                              </td>
+                                              <td className="text-end">
+                                                {addon.Percentage ?? "0"}%
+                                              </td>
+                                              <td className="text-end">
+                                                {Number(
+                                                  addon.Our_Earnings || 0,
                                                 ).toFixed(2)}
                                               </td>
                                               <td
-                                                className="normal text-center"
+                                                className=" normal text-center"
                                                 style={{
                                                   whiteSpace: "normal",
                                                   wordBreak: "break-word",
                                                 }}
                                               >
-                                                {supervisorBooking.DealerName || "—"}
+                                                {addon.DealerName || "—"}
+                                              </td>
+                                              <td
+                                                className=" normal text-center"
+                                                style={{
+                                                  whiteSpace: "normal",
+                                                  wordBreak: "break-word",
+                                                }}
+                                                title={addon.ConfirmDescription || ""}
+                                              >
+                                                {addon.ConfirmRole || "—"}
                                               </td>
                                               <td className="text-center align-middle">
                                                 {(() => {
                                                   const isApproved =
-                                                    (supervisorBooking.IsDealer_Confirm ?? supervisorBooking.isDealer_Confirm)
+                                                    (addon.IsDealer_Confirm ?? addon.isDealer_Confirm)
                                                       ?.toString()
                                                       .trim()
                                                       .toLowerCase() === "approved";
-                                                  const status = (supervisorBooking.StatusName ?? supervisorBooking.statusName ?? supervisorBooking.AddOnStatus ?? supervisorBooking.addOnStatus)
+                                                  const status = (addon.StatusName ?? addon.statusName ?? addon.AddOnStatus ?? addon.addOnStatus)
                                                     ?.toString()
                                                     .trim();
                                                   return (
@@ -2965,7 +2695,7 @@ const BookingViewLayer = () => {
                                                           className="form-select form-select-sm"
                                                           value={status}
                                                           onChange={(e) =>
-                                                            handleAddOnStatusChange(supervisorBooking, e.target.value)
+                                                            handleAddOnStatusChange(addon, e.target.value)
                                                           }
                                                         >
                                                           <option value="">Select Status</option>
@@ -2974,53 +2704,359 @@ const BookingViewLayer = () => {
                                                           <option value="Rework">Rework</option>
                                                           <option value="InProgress">In-Progress</option>
                                                         </select>
-                                                      )}
+                                                      ) || (
+                                                          <span className="badge bg-warning text-dark px-3 py-4 rounded-pill">
+                                                            Dealer Pending
+                                                          </span>
+                                                        )}
                                                     </div>
                                                   );
                                                 })()}
                                               </td>
                                               <td className="text-end fw-bold text-primary">
-                                                {totalPrice.toFixed(2)}
+                                                {Number(
+                                                  addon.TotalPrice || 0,
+                                                ).toFixed(2)}
                                               </td>
+
                                             </tr>
-                                          );
-                                        },
-                                      )}
-                                    </tbody>
-                                  </table>
+                                          ),
+                                        )}
+                                      </tbody>
+                                    </table>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          )}
-                          {/* <div className="d-flex justify-content-between align-items-center mb-2 mt-2">
+                            )}
+
+                            {bookingData?.SupervisorBookings?.length > 0 && (
+                              <div className="card mb-4 mt-4">
+                                <div className="card-header bg-warning text-dark">
+                                  <h6 className="mb-0 fw-bold">Customer Not Confirmed Services</h6>
+                                </div>
+                                <div className="card-body p-0">
+                                  <div
+                                    className="table-responsive"
+                                    style={{
+                                      maxHeight: "800px",
+                                      overflowX: "auto",
+                                    }}
+                                  >
+                                    <table
+                                      className="table table-sm table-striped table-hover align-middle mb-0"
+                                      style={{
+                                        tableLayout: "fixed",
+                                        minWidth: "1200px",
+                                      }}
+                                    >
+                                      <thead
+                                        className="table-light sticky-top position-relative"
+                                        style={{ zIndex: 1 }}
+                                      >
+                                        <tr>
+                                          <th
+                                            style={{ width: "60px" }}
+                                            className="text-center"
+                                          >
+                                            S.No
+                                          </th>
+                                          <th style={{ width: "100px" }}>Type</th>
+                                          <th style={{ width: "180px" }}>
+                                            Service Name
+                                          </th>
+                                          <th style={{ width: "100px" }}>Date</th>
+                                          <th
+                                            style={{ width: "100px" }}
+                                            className="text-end"
+                                          >
+                                            Part Price
+                                          </th>
+                                          <th
+                                            style={{ width: "125px" }}
+                                            className="text-end"
+                                          >
+                                            DLR Part Price
+                                          </th>
+                                          <th
+                                            style={{ width: "70px" }}
+                                            className="text-end"
+                                          >
+                                            Qty
+                                          </th>
+                                          <th
+                                            style={{ width: "100px" }}
+                                            className="text-end"
+                                          >
+                                            Part Total
+                                          </th>
+                                          <th
+                                            style={{ width: "120px" }}
+                                            className="text-end"
+                                          >
+                                            DLR Part Total
+                                          </th>
+                                          <th
+                                            style={{ width: "120px" }}
+                                            className="text-end"
+                                          >
+                                            Service Chg.
+                                          </th>
+                                          <th
+                                            style={{ width: "145px" }}
+                                            className="text-end"
+                                          >
+                                            DLR Service Chg.
+                                          </th>
+                                          <th
+                                            style={{ width: "90px" }}
+                                            className="text-end"
+                                          >
+                                            GST %
+                                          </th>
+                                          <th
+                                            style={{ width: "120px" }}
+                                            className="text-end"
+                                          >
+                                            DLR GST %
+                                          </th>
+                                          <th
+                                            style={{ width: "100px" }}
+                                            className="text-end"
+                                          >
+                                            GST Amt.
+                                          </th>
+                                          <th
+                                            style={{ width: "120px" }}
+                                            className="text-end"
+                                          >
+                                            DLR GST Amt.
+                                          </th>
+                                          <th
+                                            style={{ width: "100px" }}
+                                            className="text-end"
+                                          >
+                                            Our %
+                                          </th>
+                                          <th
+                                            style={{ width: "100px" }}
+                                            className="text-end"
+                                          >
+                                            Our Amt.
+                                          </th>
+                                          <th style={{ width: "200px" }}
+                                            className="text-center">
+                                            Selected Dealer
+                                          </th>
+                                          <th
+                                            style={{ width: "160px" }}
+                                            className="text-center"
+                                          >
+                                            Service Status
+                                          </th>
+                                          <th
+                                            style={{ width: "100px" }}
+                                            className="text-end"
+                                          >
+                                            Total Amt
+                                          </th>
+                                        </tr>
+                                      </thead>
+
+                                      <tbody>
+                                        {bookingData.SupervisorBookings.map(
+                                          (supervisorBooking, index) => {
+                                            const totalPrice =
+                                              (Number(supervisorBooking.Price || 0)) +
+                                              (Number(supervisorBooking.GSTAmount || 0)) +
+                                              (Number(supervisorBooking.LabourCharges || 0));
+
+                                            return (
+                                              <tr key={supervisorBooking.Id || index}>
+                                                <td className="text-center">
+                                                  {index + 1}.
+                                                </td>
+                                                <td className="normal">
+                                                  {supervisorBooking.ServiceType || "—"}
+                                                </td>
+                                                <td className="normal">
+                                                  <div className="normal">
+                                                    {supervisorBooking.ServiceName || "—"}
+                                                    {supervisorBooking.Includes &&
+                                                      (Array.isArray(supervisorBooking.Includes)
+                                                        ? supervisorBooking.Includes.length > 0 && (
+                                                          <ul className="text-muted small ps-3 mb-0 mt-2">
+                                                            {supervisorBooking.Includes.map(
+                                                              (inc) => (
+                                                                <li
+                                                                  key={
+                                                                    inc.IncludeID ||
+                                                                    inc.id ||
+                                                                    inc
+                                                                  }
+                                                                >
+                                                                  {inc.IncludeName ||
+                                                                    inc.name ||
+                                                                    inc}
+                                                                </li>
+                                                              ),
+                                                            )}
+                                                          </ul>
+                                                        )
+                                                        : typeof supervisorBooking.Includes === 'string' && supervisorBooking.Includes.trim() !== '' && (
+                                                          <div className="text-muted small mt-2">
+                                                            {supervisorBooking.Includes}
+                                                          </div>
+                                                        )
+                                                      )}
+                                                  </div>
+                                                </td>
+
+                                                <td className="normal">
+                                                  {supervisorBooking.CreatedDate
+                                                    ? new Date(
+                                                      supervisorBooking.CreatedDate,
+                                                    ).toLocaleDateString("en-IN")
+                                                    : "—"}
+                                                </td>
+                                                <td className="text-end">
+                                                  {Number(
+                                                    supervisorBooking.BasePrice || 0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                <td className="text-end">
+                                                  {Number(
+                                                    supervisorBooking.DealerBasePrice || 0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                <td className="text-end">
+                                                  {supervisorBooking.Quantity ?? "1"}
+                                                </td>
+                                                <td className="text-end">
+                                                  {Number(
+                                                    supervisorBooking.Price || 0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                <td className="text-end">
+                                                  {Number(
+                                                    supervisorBooking.DealerSparePrice || 0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                <td className="text-end">
+                                                  {Number(
+                                                    supervisorBooking.LabourCharges || 0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                <td className="text-end">
+                                                  {Number(
+                                                    supervisorBooking.DealerPrice || 0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                <td className="text-end">
+                                                  {supervisorBooking.GSTPercent ?? 0}%
+                                                </td>
+                                                <td className="text-end">
+                                                  {supervisorBooking.DealerGSTPercent ?? 0}%
+                                                </td>
+                                                <td className="text-end">
+                                                  {Number(
+                                                    supervisorBooking.GSTAmount || 0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                <td className="text-end">
+                                                  {Number(
+                                                    supervisorBooking.DealerGSTAmount || 0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                <td className="text-end">
+                                                  {supervisorBooking.Percentage ?? "0"}%
+                                                </td>
+                                                <td className="text-end">
+                                                  {Number(
+                                                    supervisorBooking.Our_Earnings || 0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                <td
+                                                  className="normal text-center"
+                                                  style={{
+                                                    whiteSpace: "normal",
+                                                    wordBreak: "break-word",
+                                                  }}
+                                                >
+                                                  {supervisorBooking.DealerName || "—"}
+                                                </td>
+                                                <td className="text-center align-middle">
+                                                  {(() => {
+                                                    const isApproved =
+                                                      (supervisorBooking.IsDealer_Confirm ?? supervisorBooking.isDealer_Confirm)
+                                                        ?.toString()
+                                                        .trim()
+                                                        .toLowerCase() === "approved";
+                                                    const status = (supervisorBooking.StatusName ?? supervisorBooking.statusName ?? supervisorBooking.AddOnStatus ?? supervisorBooking.addOnStatus)
+                                                      ?.toString()
+                                                      .trim();
+                                                    return (
+                                                      <div className="d-flex gap-2 align-items-center justify-content-center">
+                                                        {isApproved && (
+                                                          <select
+                                                            className="form-select form-select-sm"
+                                                            value={status}
+                                                            onChange={(e) =>
+                                                              handleAddOnStatusChange(supervisorBooking, e.target.value)
+                                                            }
+                                                          >
+                                                            <option value="">Select Status</option>
+                                                            <option value="Pending">Pending</option>
+                                                            <option value="ServiceCompleted">Completed</option>
+                                                            <option value="Rework">Rework</option>
+                                                            <option value="InProgress">In-Progress</option>
+                                                          </select>
+                                                        )}
+                                                      </div>
+                                                    );
+                                                  })()}
+                                                </td>
+                                                <td className="text-end fw-bold text-primary">
+                                                  {totalPrice.toFixed(2)}
+                                                </td>
+                                              </tr>
+                                            );
+                                          },
+                                        )}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            {/* <div className="d-flex justify-content-between align-items-center mb-2 mt-2">
                             <h6 className="fw-bold mb-0">Billing Summary</h6>
                           </div> */}
-                          {bookingData ? (
-                            <>
-                              <ul className="list-group list-group-flush ">
-                                <li className="list-group-item d-flex justify-content-between p-0">
-                                  <span className="text-secondary">
-                                    Parts Subtotal
-                                  </span>
-                                  <span>
-                                    ₹
-                                    {Number(
-                                      bookingData.TotalPrice || 0,
-                                    ).toFixed(2)}
-                                  </span>
-                                </li>
-                                <li className="list-group-item d-flex justify-content-between p-0">
-                                  <span className="text-secondary">
-                                    Service Charges
-                                  </span>
-                                  <span>
-                                    ₹
-                                    {Number(
-                                      bookingData.LabourCharges || 0,
-                                    ).toFixed(2)}
-                                  </span>
-                                </li>
-                                {/* <li className="list-group-item d-flex justify-content-between p-0">
+                            {bookingData ? (
+                              <>
+                                <ul className="list-group list-group-flush ">
+                                  <li className="list-group-item d-flex justify-content-between p-0">
+                                    <span className="text-secondary">
+                                      Parts Subtotal
+                                    </span>
+                                    <span>
+                                      ₹
+                                      {Number(
+                                        bookingData.TotalPrice || 0,
+                                      ).toFixed(2)}
+                                    </span>
+                                  </li>
+                                  <li className="list-group-item d-flex justify-content-between p-0">
+                                    <span className="text-secondary">
+                                      Service Charges
+                                    </span>
+                                    <span>
+                                      ₹
+                                      {Number(
+                                        bookingData.LabourCharges || 0,
+                                      ).toFixed(2)}
+                                    </span>
+                                  </li>
+                                  {/* <li className="list-group-item d-flex justify-content-between p-0">
                                   <span className="text-secondary">
                                     GST Total
                                   </span>
@@ -3029,566 +3065,705 @@ const BookingViewLayer = () => {
                                     {Number(bookingData.GSTAmount || 0).toFixed(2)}
                                   </span>
                                 </li> */}
-                                <li className="list-group-item d-flex justify-content-between p-0">
-                                  <span className="text-secondary">SGST(9%)</span>
-                                  <span>
-                                    ₹
-                                    {(
-                                      Number(bookingData.GSTAmount || 0) / 2
-                                    ).toFixed(2)}
-                                  </span>
-                                </li>
-                                <li className="list-group-item d-flex justify-content-between p-0">
-                                  <span className="text-secondary">CGST(9%)</span>
-                                  <span>
-                                    ₹
-                                    {(
-                                      Number(bookingData.GSTAmount || 0) / 2
-                                    ).toFixed(2)}
-                                  </span>
-                                </li>
-
-                                {bookingData.CouponAmount ? (
                                   <li className="list-group-item d-flex justify-content-between p-0">
-                                    <span className="fw-semibold text-secondary">
-                                      Coupon
-                                    </span>
+                                    <span className="text-secondary">SGST(9%)</span>
                                     <span>
-                                      - ₹
-                                      {Number(
-                                        bookingData.CouponAmount || 0,
+                                      ₹
+                                      {(
+                                        Number(bookingData.GSTAmount || 0) / 2
                                       ).toFixed(2)}
                                     </span>
                                   </li>
-                                ) : null}
+                                  <li className="list-group-item d-flex justify-content-between p-0">
+                                    <span className="text-secondary">CGST(9%)</span>
+                                    <span>
+                                      ₹
+                                      {(
+                                        Number(bookingData.GSTAmount || 0) / 2
+                                      ).toFixed(2)}
+                                    </span>
+                                  </li>
 
-                                <li className="list-group-item d-flex justify-content-between border-top p-0">
-                                  <span className="fw-bold text-dark">
-                                    Total Amount
-                                  </span>
-                                  <span className="fw-bold text-success">
-                                    ₹
-                                    {Number(
-                                      (bookingData.TotalPrice || 0) +
-                                      (bookingData.GSTAmount || 0) +
-                                      (bookingData.LabourCharges || 0) -
-                                      (bookingData.CouponAmount || 0),
-                                    ).toFixed(2)}
-                                  </span>
-                                </li>
-                                {/* {alreadyPaid > 0 && (
-                                <> */}
-                                <li className="list-group-item d-flex justify-content-between p-0">
-                                  <span className="text-secondary">
-                                    Already Paid
-                                  </span>
-                                  <span className="text-primary">
-                                    - ₹{alreadyPaid.toFixed(2)}
-                                  </span>
-                                </li>
-                                {bookingData?.SupervisorBookings?.length > 0 && (
+                                  {bookingData.CouponAmount ? (
+                                    <li className="list-group-item d-flex justify-content-between p-0">
+                                      <span className="fw-semibold text-secondary">
+                                        Coupon
+                                      </span>
+                                      <span>
+                                        - ₹
+                                        {Number(
+                                          bookingData.CouponAmount || 0,
+                                        ).toFixed(2)}
+                                      </span>
+                                    </li>
+                                  ) : null}
+
                                   <li className="list-group-item d-flex justify-content-between border-top p-0">
                                     <span className="fw-bold text-dark">
-                                      Customer Not Confirmed Services Amount
+                                      Total Amount
                                     </span>
-                                    <span className="fw-bold text-warning">
+                                    <span className="fw-bold text-success">
                                       ₹
-                                      {Math.max(
-                                        (
-                                          (bookingData?.SupervisorBookings || []).reduce((total, booking) => {
-                                            return (
-                                              total +
-                                              Number(booking?.Price || 0) +
-                                              Number(booking?.GSTAmount || 0) +
-                                              Number(booking?.LabourCharges || 0)
-                                            );
-                                          }, 0)
-                                        )
-                                      ).toFixed(2)}
-                                    </span>
-                                  </li>
-                                )}
-                                <li className="list-group-item d-flex justify-content-between border-top p-0">
-                                  <span className="fw-bold text-dark">
-                                    Remaining Amount
-                                  </span>
-                                  <span className="fw-bold text-success">
-                                    ₹
-                                    {Math.max(
-                                      Number(
+                                      {Number(
                                         (bookingData.TotalPrice || 0) +
                                         (bookingData.GSTAmount || 0) +
                                         (bookingData.LabourCharges || 0) -
                                         (bookingData.CouponAmount || 0),
-                                      ) - alreadyPaid,
-                                      0,
-                                    ).toFixed(2)}
-                                  </span>
-                                </li>
-                                {/* </>
+                                      ).toFixed(2)}
+                                    </span>
+                                  </li>
+                                  {/* {alreadyPaid > 0 && (
+                                <> */}
+                                  <li className="list-group-item d-flex justify-content-between p-0">
+                                    <span className="text-secondary">
+                                      Already Paid
+                                    </span>
+                                    <span className="text-primary">
+                                      - ₹{alreadyPaid.toFixed(2)}
+                                    </span>
+                                  </li>
+                                  {bookingData?.SupervisorBookings?.length > 0 && (
+                                    <li className="list-group-item d-flex justify-content-between border-top bg-warning p-0">
+                                      <span className="fw-bold text-dark">
+                                        Customer Not Confirmed Services Amount
+                                      </span>
+                                      <span className="fw-bold text-dark">
+                                        ₹
+                                        {Math.max(
+                                          (
+                                            (bookingData?.SupervisorBookings || []).reduce((total, booking) => {
+                                              return (
+                                                total +
+                                                Number(booking?.Price || 0) +
+                                                Number(booking?.GSTAmount || 0) +
+                                                Number(booking?.LabourCharges || 0)
+                                              );
+                                            }, 0)
+                                          )
+                                        ).toFixed(2)}
+                                      </span>
+                                    </li>
+                                  )}
+                                  <li className="list-group-item d-flex justify-content-between border-top p-0">
+                                    <span className="fw-bold text-dark">
+                                      Remaining Amount
+                                    </span>
+                                    <span className="fw-bold text-success">
+                                      ₹
+                                      {Math.max(
+                                        Number(
+                                          (bookingData.TotalPrice || 0) +
+                                          (bookingData.GSTAmount || 0) +
+                                          (bookingData.LabourCharges || 0) -
+                                          (bookingData.CouponAmount || 0),
+                                        ) - alreadyPaid,
+                                        0,
+                                      ).toFixed(2)}
+                                    </span>
+                                  </li>
+                                  {/* </>
                               )} */}
-                              </ul>
-                              {bookingData?.SupervisorBookings &&
-                                bookingData.SupervisorBookings.length > 0 && (
-                                  <div className="alert alert-info py-2 px-3 mb-2 mb-md-3 small">
-                                    There are{" "}
-                                    <strong>{bookingData.SupervisorBookings.length}</strong>{" "}
-                                    booking(s) that need to be confirmed by the customer.
-                                  </div>
-                                )}
-                              <div className="d-flex justify-content-center gap-2 mt-3 mb-3 flex-wrap">
+                                </ul>
+                                {bookingData?.SupervisorBookings &&
+                                  bookingData.SupervisorBookings.length > 0 && (
+                                    <div className="alert alert-info py-2 px-3 mb-2 mb-md-3 small">
+                                      There are{" "}
+                                      <strong>{bookingData.SupervisorBookings.length}</strong>{" "}
+                                      booking(s) that need to be confirmed by the customer.
+                                    </div>
+                                  )}
+                                <div className="d-flex justify-content-center gap-2 mt-3 mb-3 flex-wrap">
 
-                                {/* Show Confirm Payment only if not paid */}
-                                {showEnterPaymentButton && (
-                                  <button
-                                    className="btn btn-primary-600 btn-sm"
-                                    onClick={() => {
-                                      setPaymentMode("");
-                                      setPayAmount(remainingAmount);
-                                      setShowPaymentModal(true);
-                                    }}
-                                  >
-                                    Enter Payment
-                                  </button>
-                                )}
-                                {/* Assign Button - similar to BookingLayer */}
-                                {(role === "Admin" || roleName === "Supervisor Head" || roleName === "Field Advisor") &&
-                                  !(
-                                    bookingData?.BookingStatus === "Completed" &&
-                                    bookingData?.PaymentStatus === "Success"
-                                  ) && (
+                                  {/* Show Confirm Payment only if not paid */}
+                                  {showEnterPaymentButton && (
                                     <button
-                                      className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                      onClick={handleInitialAssignClick}
+                                      className="btn btn-primary-600 btn-sm"
+                                      onClick={() => {
+                                        setPaymentMode("");
+                                        setPayAmount(remainingAmount);
+                                        setShowPaymentModal(true);
+                                      }}
                                     >
-                                      Assign To
+                                      Enter Payment
                                     </button>
                                   )}
-                                {/* {showEstimationButton && ( */}
-                                <button
-                                  className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                  onClick={() => showGenerateInvoiceConfirm("Generate Estimation Invoice", handleGenerateEstimationInvoice, "Estimation")}
-                                >
-                                  Generate Estimation Invoice
-                                </button>
-                                {/* )} */}
+                                  {/* Assign Button - similar to BookingLayer */}
+                                  {(role === "Admin" || roleName === "Supervisor Head" || roleName === "Field Advisor") &&
+                                    !(
+                                      bookingData?.BookingStatus === "Completed" &&
+                                      bookingData?.PaymentStatus === "Success"
+                                    ) && (
+                                      <button
+                                        className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center"
+                                        onClick={handleInitialAssignClick}
+                                      >
+                                        Service Assignment
+                                      </button>
+                                    )}
+                                  {/* {showEstimationButton && ( */}
+                                  <button
+                                    className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                                    onClick={() => showGenerateInvoiceConfirm("Generate Estimation Invoice", handleGenerateEstimationInvoice, "Estimation")}
+                                  >
+                                    Generate Estimation Invoice
+                                  </button>
+                                  {/* )} */}
 
-                                {/* Final Invoice: show only after full payment is completed */}
-                                {showFinalButton && (
-                                  <button
-                                    className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                    onClick={() => showGenerateInvoiceConfirm("Generate Final Invoice", handleGenerateFinalInvoice, "Final")}
-                                  >
-                                    Generate Final Invoice
-                                  </button>
-                                )}
-                                {showDealerInvoiceButton && (
-                                  <button
-                                    className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                    onClick={() => showGenerateInvoiceConfirm("Generate Dealer Invoice", handleGenerateDealerInvoice, "Dealer")}
-                                  >
-                                    Generate Dealer Invoice
-                                  </button>
-                                )}
-                              </div>
-                              <div className="small text-muted mt-2 mb-0 fw-bold">
-                                <strong>Note:</strong> Estimation button displays when at least one service exists and supervisor has confirmed all services. Final Invoice button displays after full payment is completed.
-                              </div>
-                            </>
-                          ) : (
-                            <p className="text-muted mb-0">
-                              Loading summary...
-                            </p>
-                          )}
-                          {/* ============= Location Map ============= */}
-                          {bookingData?.Latitude && bookingData?.Longitude && (
-                            <Accordion defaultActiveKey="3">
-                              <Accordion.Item eventKey="3">
-                                <Accordion.Header>
-                                  <h6 className="text-info fw-bold mb-0">
-                                    🗺️ Location
-                                  </h6>
-                                </Accordion.Header>
-                                <Accordion.Body>
-                                  <div
-                                    className="rounded border overflow-hidden shadow-sm"
-                                    style={{ height: "250px" }}
-                                  >
-                                    <iframe
-                                      title={`map-${bookingData.BookingID}`}
-                                      width="100%"
-                                      height="100%"
-                                      frameBorder="0"
-                                      src={`https://maps.google.com/maps?q=${bookingData.Latitude},${bookingData.Longitude}&z=15&output=embed`}
-                                      allowFullScreen
-                                      loading="lazy"
-                                    ></iframe>
-                                  </div>
-                                </Accordion.Body>
-                              </Accordion.Item>
-                            </Accordion>
-                          )}
-                        </div>
-                      </Accordion.Body>
-                    </Accordion.Item>
-                  </Accordion>
-                ) : (
-                  <p>Loading booking details...</p>
-                )}
+                                  {/* Final Invoice: show only after full payment is completed */}
+                                  {showFinalButton && (
+                                    <button
+                                      className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                                      onClick={() => showGenerateInvoiceConfirm("Generate Final Invoice", handleGenerateFinalInvoice, "Final")}
+                                    >
+                                      Generate Final Invoice
+                                    </button>
+                                  )}
+                                  {showDealerInvoiceButton && (
+                                    <button
+                                      className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                                      onClick={() => showGenerateInvoiceConfirm("Generate Dealer Invoice", handleGenerateDealerInvoice, "Dealer")}
+                                    >
+                                      Generate Dealer Invoice
+                                    </button>
+                                  )}
+                                </div>
+                                <div className="small text-muted mt-2 mb-0 fw-bold">
+                                  <strong>Note:</strong> Estimation button displays when at least one service exists and supervisor has confirmed all services. Final Invoice button displays after full payment is completed.
+                                </div>
+                              </>
+                            ) : (
+                              <p className="text-muted mb-0">
+                                Loading summary...
+                              </p>
+                            )}
+                            {/* ============= Location Map ============= */}
+                            {bookingData?.Latitude && bookingData?.Longitude && (
+                              <Accordion defaultActiveKey="3">
+                                <Accordion.Item eventKey="3">
+                                  <Accordion.Header>
+                                    <h6 className="text-info fw-bold mb-0">
+                                      🗺️ Location
+                                    </h6>
+                                  </Accordion.Header>
+                                  <Accordion.Body>
+                                    <div
+                                      className="rounded border overflow-hidden shadow-sm"
+                                      style={{ height: "250px" }}
+                                    >
+                                      <iframe
+                                        title={`map-${bookingData.BookingID}`}
+                                        width="100%"
+                                        height="100%"
+                                        frameBorder="0"
+                                        src={`https://maps.google.com/maps?q=${bookingData.Latitude},${bookingData.Longitude}&z=15&output=embed`}
+                                        allowFullScreen
+                                        loading="lazy"
+                                      ></iframe>
+                                    </div>
+                                  </Accordion.Body>
+                                </Accordion.Item>
+                              </Accordion>
+                            )}
+                          </div>
+                        </Accordion.Body>
+                      </Accordion.Item>
+                    </Accordion>
+                  ) : (
+                    <p>Loading booking details...</p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Assign Technician/Supervisor Modal */}
-      {assignModalOpen && (
-        <div
-          className="modal fade show d-block"
-          style={{ background: "#00000080" }}
-        >
+        {/* Assign Technician/Supervisor Modal */}
+        {assignModalOpen && (
           <div
-            className="modal-dialog modal-dialog-centered"
-            style={{ maxWidth: "500px", width: "90%" }}
+            className="modal fade show d-block"
+            style={{ background: "#00000080" }}
           >
-            <div className="modal-content">
-              <div className="modal-header">
-                <h6 className="modal-title">Assign</h6>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => {
-                    setAssignModalOpen(false);
-                    setAssignType("technician");
-                    setSelectedTechnician(null);
-                    setSelectedSupervisor(null);
-                  }}
-                />
-              </div>
-              <div className="modal-body">
-                <div className="d-flex justify-content-center align-items-center gap-4 mb-3 ">
-                  <div className="form-check d-flex align-items-center gap-2 m-0">
-                    <input
-                      type="checkbox"
-                      className="form-check-input"
-                      id="assignTech"
-                      checked={assignType === "technician"}
-                      onChange={() => {
-                        setAssignType("technician");
-                        setSelectedSupervisor(null);
-                      }}
-                      style={{ width: "18px", height: "18px", margin: 0 }}
-                    />
-                    <label
-                      htmlFor="assignTech"
-                      className="form-check-label mb-0"
-                    >
-                      Technician
-                    </label>
-                  </div>
-                  {roleId !== "8" && roleName !== "Field Advisor" && (
+            <div
+              className="modal-dialog modal-dialog-centered"
+              style={{ maxWidth: "500px", width: "90%" }}
+            >
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h6 className="modal-title">Assign</h6>
+                  <button
+                    type="button"
+                    className="btn-close btn-close-press"
+                    onClick={() => {
+                      setAssignModalOpen(false);
+                      setAssignType("technician");
+                      setSelectedTechnician(null);
+                      setSelectedSupervisor(null);
+                    }}
+                  />
+                </div>
+                <div className="modal-body">
+                  <div className="d-flex justify-content-center align-items-center gap-4 mb-3 ">
                     <div className="form-check d-flex align-items-center gap-2 m-0">
                       <input
                         type="checkbox"
                         className="form-check-input"
-                        id="assignSup"
-                        checked={assignType === "supervisor"}
+                        id="assignTech"
+                        checked={assignType === "technician"}
                         onChange={() => {
-                          setAssignType("supervisor");
-                          setSelectedTechnician(null);
+                          setAssignType("technician");
+                          setSelectedSupervisor(null);
                         }}
                         style={{ width: "18px", height: "18px", margin: 0 }}
                       />
                       <label
-                        htmlFor="assignSup"
+                        htmlFor="assignTech"
                         className="form-check-label mb-0"
                       >
-                        Supervisor
+                        Technician
                       </label>
                     </div>
-                  )}
-                </div>
+                    {roleId !== "8" && roleName !== "Field Advisor" && (
+                      <div className="form-check d-flex align-items-center gap-2 m-0">
+                        <input
+                          type="checkbox"
+                          className="form-check-input"
+                          id="assignSup"
+                          checked={assignType === "supervisor"}
+                          onChange={() => {
+                            setAssignType("supervisor");
+                            setSelectedTechnician(null);
+                          }}
+                          style={{ width: "18px", height: "18px", margin: 0 }}
+                        />
+                        <label
+                          htmlFor="assignSup"
+                          className="form-check-label mb-0"
+                        >
+                          Supervisor
+                        </label>
+                      </div>
+                    )}
+                  </div>
 
-                <div className="mb-3">
-                  {/* <label className="form-label">Time Slot</label> */}
-                  <Select
-                    options={getSelectedTimeSlotOptions()}
-                    value={selectedReassignTimeSlot}
-                    onChange={(val) => setSelectedReassignTimeSlot(val)}
-                    placeholder="Select Time Slot"
-                    isDisabled={
-                      !getSelectedTimeSlotOptions().length ||
-                      getSelectedTimeSlotOptions().length <= 1
-                    }
-                  />
-                </div>
-
-                {assignType === "technician" ? (
-                  <div>
-                    {/* <label className="form-label">Technician</label> */}
-                    <Select
-                      options={filteredTechnicians}
-                      value={selectedTechnician}
-                      onChange={(val) => setSelectedTechnician(val)}
-                      placeholder="Select Technician"
-                      isDisabled={!filteredTechnicians.length}
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    {/* <label className="form-label">Supervisor</label> */}
-                    <Select
-                      options={filteredSupervisors}
-                      value={selectedSupervisor}
-                      onChange={(val) => setSelectedSupervisor(val)}
-                      placeholder="Select Supervisor"
-                      isDisabled={!supervisors.length}
-                    />
-                  </div>
-                )}
-              </div>
-              <div className=" modal-footer mt-3 d-flex justify-content-center gap-2">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => {
-                    setAssignModalOpen(false);
-                    setAssignType("technician");
-                    setSelectedTechnician(null);
-                    setSelectedSupervisor(null);
-                    setSelectedReassignTimeSlot(null);
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="btn btn-primary-600 btn-sm"
-                  onClick={handleAssignConfirm}
-                  disabled={
-                    !selectedReassignTimeSlot ||
-                    (assignType === "technician" && !selectedTechnician) ||
-                    (assignType === "supervisor" && !selectedSupervisor)
-                  }
-                >
-                  Assign
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {showPaymentModal && (
-        <div
-          className="modal fade show d-block"
-          tabIndex="-1"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-        >
-          <div className="modal-dialog modal-md modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header justify-content-center">
-                <h6 className="modal-title">Enter Payment Details</h6>
-              </div>
-
-              <div className="modal-body">
-                {/* Payment Mode */}
-                <div className="mb-3">
-                  <label className="form-label fw-semibold">Payment Mode</label>
-                  <select
-                    className="form-select"
-                    value={paymentMode}
-                    onChange={(e) => setPaymentMode(e.target.value)}
-                  >
-                    <option value="">Select payment mode</option>
-                    <option value="Cash">Cash</option>
-                    <option value="UPI">UPI</option>
-                    <option value="Card">Card</option>
-                    <option value="NetBanking">Net Banking</option>
-                  </select>
-                </div>
-
-                {/* Amount Details */}
-                <div className="border rounded p-3 bg-light mb-3">
-                  <div className="d-flex justify-content-between">
-                    <span>Total Amount</span>
-                    <strong>₹{totalAmount.toFixed(2)}</strong>
-                  </div>
-                  <div className="d-flex justify-content-between">
-                    <span>Already Paid</span>
-                    <strong>₹{alreadyPaid.toFixed(2)}</strong>
-                  </div>
-                  <div className="d-flex justify-content-between text-success">
-                    <span>Remaining</span>
-                    <strong>₹{remainingAmount.toFixed(2)}</strong>
-                  </div>
-                </div>
-                {/* Discount Section */}
-                {/* <div className="mb-3">
-                  <div className="form-check d-flex align-items-center gap-2">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id="discountApplicable"
-                      checked={isDiscountApplicable}
-                      onChange={(e) => {
-                        setIsDiscountApplicable(e.target.checked);
-                        if (!e.target.checked) {
-                          setDiscountAmount("");
-                        }
-                      }}
-                    />
-                    <label
-                      className="form-check-label fw-semibold"
-                      htmlFor="discountApplicable"
-                    >
-                      {" "}
-                      Is Discount Applicable
-                    </label>
-                  </div>
-                </div> */}
-
-                {/* {isDiscountApplicable && (
                   <div className="mb-3">
-                    <label className="form-label fw-semibold">
-                      Enter Discount Amount
-                    </label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      min={0}
-                      max={remainingAmount}
-                      value={discountAmount}
-                      onChange={(e) =>
-                        setDiscountAmount(Math.max(0, Number(e.target.value)))
+                    {/* <label className="form-label">Time Slot</label> */}
+                    <Select
+                      options={getSelectedTimeSlotOptions()}
+                      value={selectedReassignTimeSlot}
+                      onChange={(val) => setSelectedReassignTimeSlot(val)}
+                      placeholder="Select Time Slot"
+                      isDisabled={
+                        !getSelectedTimeSlotOptions().length ||
+                        getSelectedTimeSlotOptions().length <= 1
                       }
-                      placeholder="Enter discount amount"
                     />
                   </div>
-                )}
-                {isDiscountApplicable && (
-                  <div className="border rounded p-2 bg-warning-subtle mb-3">
-                    <div className="d-flex justify-content-between">
-                      <span className="fw-semibold">Final Payable</span>
-                      <strong>
-                        ₹
-                        {Math.max(
-                          Number(payAmount || 0) - Number(discountAmount || 0),
-                          0
-                        ).toFixed(2)}
-                      </strong>
+
+                  {assignType === "technician" ? (
+                    <div>
+                      {/* <label className="form-label">Technician</label> */}
+                      <Select
+                        options={filteredTechnicians}
+                        value={selectedTechnician}
+                        onChange={(val) => setSelectedTechnician(val)}
+                        placeholder="Select Technician"
+                        isDisabled={!filteredTechnicians.length}
+                      />
                     </div>
-                  </div>
-                )} */}
-                {/* Pay Amount */}
-                <div className="mb-3">
-                  <label className="form-label fw-semibold">Enter Amount</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    min={1}
-                    max={remainingAmount}
-                    value={payAmount}
-                    onChange={(e) =>
-                      setPayAmount(Math.max(0, Number(e.target.value)))
-                    }
-                  />
+                  ) : (
+                    <div>
+                      {/* <label className="form-label">Supervisor</label> */}
+                      <Select
+                        options={filteredSupervisors}
+                        value={selectedSupervisor}
+                        onChange={(val) => setSelectedSupervisor(val)}
+                        placeholder="Select Supervisor"
+                        isDisabled={!supervisors.length}
+                      />
+                    </div>
+                  )}
                 </div>
-              </div>
-
-              <div className="modal-footer justify-content-center">
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={closePaymentModal}
-                >
-                  Cancel
-                </button>
-
-                <button
-                  className="btn btn-primary-600 btn-sm"
-                  onClick={handleConfirmPayment}
-                >
-                  Confirm Payment
-                </button>
+                <div className=" modal-footer mt-3 d-flex justify-content-center gap-2">
+                  <button
+                    className="btn btn-press-effect btn-secondary"
+                    onClick={() => {
+                      setAssignModalOpen(false);
+                      setAssignType("technician");
+                      setSelectedTechnician(null);
+                      setSelectedSupervisor(null);
+                      setSelectedReassignTimeSlot(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="btn btn-press-effect btn-primary-600 btn-sm"
+                    onClick={handleAssignConfirm}
+                    disabled={
+                      !selectedReassignTimeSlot ||
+                      (assignType === "technician" && !selectedTechnician) ||
+                      (assignType === "supervisor" && !selectedSupervisor)
+                    }
+                  >
+                    Assign
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Initial Assign Modal - similar to BookingLayer */}
-      {initialAssignModalOpen && (
-        <div
-          className="modal fade show d-block"
-          style={{ background: "#00000080" }}
-        >
+        )}
+        {showPaymentModal && (
           <div
-            className="modal-dialog modal-dialog-centered"
-            style={{ maxWidth: "500px", width: "90%" }}
+            className="modal fade show d-block"
+            tabIndex="-1"
+            style={{ backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
           >
-            <div className="modal-content">
-              <div className="modal-header">
-                <h6 className="modal-title">Assign</h6>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => {
-                    setInitialAssignModalOpen(false);
-                    setInitialAssignType("technician");
-                    setSelectedInitialTechnician(null);
-                    setSelectedInitialSupervisor(null);
-                    setSelectedInitialFieldAdvisor(null);
-                    setSelectedInitialTimeSlot(null);
-                  }}
-                />
-              </div>
+            <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: paymentTypeChoice ? "420px" : "440px", width: "90%" }}>
+              <div className="modal-content border-0 shadow-lg rounded-3 overflow-hidden">
+                <div className="modal-header border-0">
+                  <h6 className="modal-title fw-bold">
+                    {!paymentTypeChoice ? "Payment" : paymentTypeChoice === "online" ? "Pay through online" : "Enter Payment Details"}
+                  </h6>
+                  <button type="button" className="btn-close btn-close-press" onClick={closePaymentModal} />
+                </div>
 
-              <div className="modal-body">
-                {/* Assignment Type Checkboxes */}
-                <div className="d-flex justify-content-center align-items-center gap-4 mb-3">
-                  {/* Field Advisor Checkbox */}
-                  {roleName !== "Field Advisor" && (
+                <div className="modal-body">
+                  {/* Step 1: Choose payment type */}
+                  {!paymentTypeChoice && (
+                    <>
+                      <p className="text-muted small mb-3">Choose how you want to pay.</p>
+                      <div className="d-flex flex-column gap-2">
+                        <button
+                          type="button"
+                          className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
+                          style={{ minHeight: "56px", border: "1px solid #dee2e6" }}
+                          onClick={() => {
+                            setPaymentTypeChoice("online");
+                            setPaymentMode("Online");
+                            setPayAmount(remainingAmount);
+                          }}
+                        >
+                          <span className="d-flex align-items-center gap-2 fw-semibold text-dark">
+                            <Icon icon="mdi:credit-card-outline" width={24} height={24} className="text-primary" />
+                            Pay through online
+                          </span>
+                          <Icon icon="mdi:chevron-right" width={22} height={22} className="text-secondary opacity-75" />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
+                          style={{ minHeight: "56px", border: "1px solid #dee2e6" }}
+                          onClick={() => {
+                            setPaymentTypeChoice("other");
+                            setPaymentMode("");
+                            setPayAmount(remainingAmount);
+                          }}
+                        >
+                          <span className="d-flex align-items-center gap-2 fw-semibold text-dark">
+                            <Icon icon="mdi:cash-multiple" width={24} height={24} className="text-primary" />
+                            Pay through other method
+                          </span>
+                          <Icon icon="mdi:chevron-right" width={22} height={22} className="text-secondary opacity-75" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Step 2a: Pay through online – amount + discount only */}
+                  {paymentTypeChoice === "online" && (
+                    <>
+                      <div className="border rounded-3 p-3 bg-light mb-3">
+                        <div className="d-flex justify-content-between small">
+                          <span>Remaining</span>
+                          <strong>₹{remainingAmount.toFixed(2)}</strong>
+                        </div>
+                      </div>
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Enter Amount</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          min={0}
+                          max={remainingAmount}
+                          value={payAmount}
+                          onChange={(e) => setPayAmount(Math.max(0, Number(e.target.value)))}
+                          placeholder="Amount"
+                        />
+                      </div>
+                      <div className="mb-0">
+                        <label className="form-label fw-semibold">Discount Amount</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          min={0}
+                          max={Math.max(0, Number(payAmount || 0))}
+                          value={discountAmount}
+                          onChange={(e) => {
+                            const pay = Number(payAmount || 0);
+                            const val = Math.max(0, Number(e.target.value));
+                            setDiscountAmount(val > pay ? pay : val);
+                          }}
+                          placeholder="0"
+                        />
+                        {Number(payAmount || 0) > 0 && (
+                          <small className="text-muted">Max: ₹{Number(payAmount || 0).toFixed(2)}</small>
+                        )}
+                      </div>
+                      {Number(discountAmount || 0) > 0 && (
+                        <div className="mt-2 small text-muted">
+                          Final payable: ₹{Math.max(Number(payAmount || 0) - Number(discountAmount || 0), 0).toFixed(2)}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* Step 2b: Pay through other – full form (mode + amount + discount) */}
+                  {paymentTypeChoice === "other" && (
+                    <>
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Payment Mode</label>
+                        <select
+                          className="form-select"
+                          value={paymentMode}
+                          onChange={(e) => setPaymentMode(e.target.value)}
+                        >
+                          <option value="">Select payment mode</option>
+                          <option value="Cash">Cash</option>
+                          <option value="UPI">UPI</option>
+                          <option value="Card">Card</option>
+                          <option value="NetBanking">Net Banking</option>
+                        </select>
+                      </div>
+                      <div className="border rounded-3 p-3 bg-light mb-3">
+                        <div className="d-flex justify-content-between small">
+                          <span>Total Amount</span>
+                          <strong>₹{totalAmount.toFixed(2)}</strong>
+                        </div>
+                        <div className="d-flex justify-content-between small">
+                          <span>Already Paid</span>
+                          <strong>₹{alreadyPaid.toFixed(2)}</strong>
+                        </div>
+                        <div className="d-flex justify-content-between small text-success">
+                          <span>Remaining</span>
+                          <strong>₹{remainingAmount.toFixed(2)}</strong>
+                        </div>
+                      </div>
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Enter Amount</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          min={0}
+                          max={remainingAmount}
+                          value={payAmount}
+                          onChange={(e) => setPayAmount(Math.max(0, Number(e.target.value)))}
+                          placeholder="Amount"
+                        />
+                      </div>
+                      <div className="mb-0">
+                        <label className="form-label fw-semibold">Discount Amount</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          min={0}
+                          max={Math.max(0, Number(payAmount || 0))}
+                          value={discountAmount}
+                          onChange={(e) => {
+                            const pay = Number(payAmount || 0);
+                            const val = Math.max(0, Number(e.target.value));
+                            setDiscountAmount(val > pay ? pay : val);
+                          }}
+                          placeholder="0"
+                        />
+                        {Number(payAmount || 0) > 0 && (
+                          <small className="text-muted">Max: ₹{Number(payAmount || 0).toFixed(2)}</small>
+                        )}
+                      </div>
+                      {Number(discountAmount || 0) > 0 && (
+                        <div className="mt-2 small text-muted">
+                          Final payable: ₹{Math.max(Number(payAmount || 0) - Number(discountAmount || 0), 0).toFixed(2)}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {(paymentTypeChoice === "online" || paymentTypeChoice === "other") && (
+                  <div className="modal-footer border-0 justify-content-center gap-2">
+                    <button type="button" className="btn btn-press-effect btn-outline-secondary btn-sm" onClick={() => { setPaymentTypeChoice(null); setPaymentMode(""); setPayAmount(remainingAmount); setDiscountAmount(""); }}>
+                      Back
+                    </button>
+                    <button type="button" className="btn btn-press-effect btn-primary-600 btn-sm" onClick={handleConfirmPayment}>
+                      Confirm Payment
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 1: Assign - Service at doorstep vs Service at garage (tap card to proceed) */}
+        {showAssignStep1Modal && (
+          <div
+            className="modal fade show d-block"
+            style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          >
+            <div
+              className="modal-dialog modal-dialog-centered"
+              style={{ maxWidth: "460px", width: "90%" }}
+            >
+              <div className="modal-content border-0 shadow-lg p-3 rounded-3 overflow-hidden">
+                <div className="modal-header border-0 pb-0">
+                  <h6 className="modal-title fw-bold">Assign To</h6>
+                  <button
+                    type="button"
+                    className="btn-close btn-close-press"
+                    onClick={() => {
+                      setShowAssignStep1Modal(false);
+                      setAssignServiceLocation(null);
+                    }}
+                  />
+                </div>
+                <div className="modal-body pt-1 pb-4">
+                  <p className="text-muted small mb-3">Tap an option to proceed.</p>
+                  <div className="d-flex flex-column gap-3">
+                    <button
+                      type="button"
+                      className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white position-relative overflow-hidden transition"
+                      style={{
+                        minHeight: "72px",
+                        transition: "all 0.2s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "";
+                        e.currentTarget.style.boxShadow = "";
+                      }}
+                      onClick={openDoorstepAssignModal}
+                    >
+                      <div className="d-flex align-items-center gap-3">
+                        <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
+                          <Icon icon="mdi:home-circle-outline" width={26} height={26} className="text-primary" />
+                        </span>
+                        <div>
+                          <span className="fw-semibold d-block text-dark">Service at doorstep</span>
+                          <span className="small text-muted">Technician visits customer location</span>
+                        </div>
+                      </div>
+                      <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white position-relative overflow-hidden"
+                      style={{ minHeight: "72px", transition: "all 0.2s ease" }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "";
+                        e.currentTarget.style.boxShadow = "";
+                      }}
+                      onClick={openGarageFlowModal}
+                    >
+                      <div className="d-flex align-items-center gap-3">
+                        <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
+                          <Icon icon="mdi:garage" width={26} height={26} className="text-primary" />
+                        </span>
+                        <div>
+                          <span className="fw-semibold d-block text-dark">Service at garage</span>
+                          <span className="small text-muted">Pickup/drop & dealer flow</span>
+                        </div>
+                      </div>
+                      <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Initial Assign Modal - similar to BookingLayer */}
+        {initialAssignModalOpen && (
+          <div
+            className="modal fade show d-block"
+            style={{ background: "#00000080" }}
+          >
+            <div
+              className="modal-dialog modal-dialog-centered"
+              style={{ maxWidth: "500px", width: "90%" }}
+            >
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h6 className="modal-title">Assign</h6>
+                  <button
+                    type="button"
+                    className="btn-close btn-close-press"
+                    onClick={() => {
+                      setInitialAssignModalOpen(false);
+                      setInitialAssignType("technician");
+                      setSelectedInitialTechnician(null);
+                      setSelectedInitialSupervisor(null);
+                      setSelectedInitialFieldAdvisor(null);
+                      setSelectedInitialTimeSlot(null);
+                    }}
+                  />
+                </div>
+
+                <div className="modal-body">
+                  {/* Assignment Type Checkboxes */}
+                  <div className="d-flex justify-content-center align-items-center gap-4 mb-3">
+                    {/* Field Advisor Checkbox */}
+                    {roleName !== "Field Advisor" && (
+                      <div className="form-check d-flex align-items-center gap-2 m-0">
+                        <input
+                          type="checkbox"
+                          className="form-check-input"
+                          id="assignInitialFieldAdvisor"
+                          checked={initialAssignType === "fieldAdvisor"}
+                          onChange={() => {
+                            setInitialAssignType("fieldAdvisor");
+                            setSelectedInitialTechnician(null);
+                            setSelectedInitialSupervisor(null);
+                          }}
+                          style={{ width: "18px", height: "18px", margin: 0 }}
+                        />
+                        <label
+                          htmlFor="assignInitialFieldAdvisor"
+                          className="form-check-label mb-0"
+                        >
+                          Field Advisor
+                        </label>
+                      </div>
+                    )}
+                    {/* Technician Checkbox: always show */}
                     <div className="form-check d-flex align-items-center gap-2 m-0">
                       <input
                         type="checkbox"
                         className="form-check-input"
-                        id="assignInitialFieldAdvisor"
-                        checked={initialAssignType === "fieldAdvisor"}
+                        id="assignInitialTech"
+                        checked={initialAssignType === "technician"}
                         onChange={() => {
-                          setInitialAssignType("fieldAdvisor");
-                          setSelectedInitialTechnician(null);
+                          setInitialAssignType("technician");
                           setSelectedInitialSupervisor(null);
+                          setSelectedInitialFieldAdvisor(null);
                         }}
                         style={{ width: "18px", height: "18px", margin: 0 }}
                       />
                       <label
-                        htmlFor="assignInitialFieldAdvisor"
+                        htmlFor="assignInitialTech"
                         className="form-check-label mb-0"
                       >
-                        Field Advisor
+                        Technician
                       </label>
                     </div>
-                  )}
-                  {/* Technician Checkbox: always show */}
-                  <div className="form-check d-flex align-items-center gap-2 m-0">
-                    <input
-                      type="checkbox"
-                      className="form-check-input"
-                      id="assignInitialTech"
-                      checked={initialAssignType === "technician"}
-                      onChange={() => {
-                        setInitialAssignType("technician");
-                        setSelectedInitialSupervisor(null);
-                        setSelectedInitialFieldAdvisor(null);
-                      }}
-                      style={{ width: "18px", height: "18px", margin: 0 }}
-                    />
-                    <label
-                      htmlFor="assignInitialTech"
-                      className="form-check-label mb-0"
-                    >
-                      Technician
-                    </label>
-                  </div>
-                  {/* Supervisor Checkbox: show only if roleId is NOT 8 */}
-                  {/* {roleId !== "8" && roleName !== "Field Advisor" && (
+                    {/* Supervisor Checkbox: show only if roleId is NOT 8 */}
+                    {/* {roleId !== "8" && roleName !== "Field Advisor" && (
                     <div className="form-check d-flex align-items-center gap-2 m-0">
                       <input
                         type="checkbox"
@@ -3610,172 +3785,517 @@ const BookingViewLayer = () => {
                       </label>
                     </div>
                   )} */}
-                </div>
+                  </div>
 
-                {/* Time Slot Selection - Hide for Field Advisor */}
-                {initialAssignType !== "fieldAdvisor" && (
-                  <div className="mb-3">
-                    {bookingData?.TimeSlot?.split(",").length === 1 ? (
-                      <Select
-                        value={selectedInitialTimeSlot}
-                        isDisabled
-                        styles={{
-                          control: (base) => ({
-                            ...base,
-                            backgroundColor: "#f5f5f5",
-                            cursor: "not-allowed",
-                          }),
-                          singleValue: (base) => ({
-                            ...base,
-                            color: "#495057",
-                          }),
+                  {/* Time Slot Selection - Hide for Field Advisor */}
+                  {initialAssignType !== "fieldAdvisor" && (
+                    <div className="mb-3">
+                      {bookingData?.TimeSlot?.split(",").length === 1 ? (
+                        <Select
+                          value={selectedInitialTimeSlot}
+                          isDisabled
+                          styles={{
+                            control: (base) => ({
+                              ...base,
+                              backgroundColor: "#f5f5f5",
+                              cursor: "not-allowed",
+                            }),
+                            singleValue: (base) => ({
+                              ...base,
+                              color: "#495057",
+                            }),
+                          }}
+                        />
+                      ) : (
+                        <Select
+                          options={getInitialTimeSlotOptions()}
+                          value={selectedInitialTimeSlot}
+                          onChange={(val) => setSelectedInitialTimeSlot(val)}
+                          placeholder="Select TimeSlot"
+                        />
+                      )}
+                    </div>
+                  )}
+
+                  {/* Employee Selection based on assignType */}
+                  {initialAssignType === "technician" ? (
+                    <Select
+                      options={technicians}
+                      value={selectedInitialTechnician}
+                      onChange={(val) => setSelectedInitialTechnician(val)}
+                      placeholder="Select Technician"
+                    />
+                  ) : initialAssignType === "supervisor" ? (
+                    <Select
+                      options={supervisors}
+                      value={selectedInitialSupervisor}
+                      onChange={(val) => setSelectedInitialSupervisor(val)}
+                      placeholder="Select Supervisor"
+                    />
+                  ) : (
+                    <Select
+                      options={fieldAdvisors}
+                      value={selectedInitialFieldAdvisor}
+                      onChange={(val) => setSelectedInitialFieldAdvisor(val)}
+                      placeholder="Select Field Advisor"
+                    />
+                  )}
+                </div>
+                <div className="modal-footer d-inline-flex align-items-center justify-content-center">
+                  <button
+                    className="btn btn-press-effect btn-secondary btn-sm"
+                    onClick={() => {
+                      setInitialAssignModalOpen(false);
+                      setInitialAssignType("technician");
+                      setSelectedInitialTechnician(null);
+                      setSelectedInitialSupervisor(null);
+                      setSelectedInitialFieldAdvisor(null);
+                      setSelectedInitialTimeSlot(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="btn btn-press-effect btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
+                    onClick={handleInitialAssignConfirm}
+                    disabled={
+                      (initialAssignType !== "fieldAdvisor" && !selectedInitialTimeSlot) ||
+                      (initialAssignType === "technician" && !selectedInitialTechnician) ||
+                      (initialAssignType === "supervisor" && !selectedInitialSupervisor) ||
+                      (initialAssignType === "fieldAdvisor" && !selectedInitialFieldAdvisor)
+                    }
+                  >
+                    Assign
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Garage flow modal: Car pickup / Car drop → dealer/driver flow */}
+        {showGarageFlowModal && (
+          <div
+            className="modal fade show d-block"
+            style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          >
+            <div
+              className="modal-dialog modal-dialog-centered modal-dialog-scrollable"
+              style={{ maxWidth: "520px", width: "90%" }}
+            >
+              <div className="modal-content border-0 shadow-lg rounded-3 overflow-hidden">
+                <div className="modal-header border-0 flex-column align-items-stretch">
+                  <div className="d-flex align-items-center justify-content-between w-100">
+                    <h6 className="modal-title fw-bold mb-0">
+                      {garageStep === "task" && "Service at garage"}
+                      {garageStep === "route" && (garageTask === "carPickup" ? "Car pickup" : "Car drop")}
+                      {garageStep === "details" && "Assign pickup & delivery"}
+                    </h6>
+                    <button type="button" className="btn-close btn-close-press" onClick={closeGarageFlowModal} />
+                  </div>
+                  {/* Stepper */}
+                  <div className="d-flex align-items-center gap-1 mt-2" style={{ gap: "4px" }}>
+                    {["task", "route", "details"].map((step) => {
+                      const steps = ["task", "route", "details"];
+                      const idx = steps.indexOf(garageStep);
+                      const thisIdx = steps.indexOf(step);
+                      const active = step === garageStep || thisIdx < idx;
+                      return (
+                        <div
+                          key={step}
+                          className="rounded-pill flex-grow-1"
+                          style={{
+                            height: "4px",
+                            backgroundColor: active ? "var(--bs-primary)" : "var(--bs-border-color)",
+                            opacity: active ? 1 : 0.4,
+                            transition: "all 0.25s ease",
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="modal-body">
+                  {/* Step: Car pickup vs Car drop — tap to advance */}
+                  {garageStep === "task" && (
+                    <>
+                      <p className="text-muted small mb-3">Tap an option to continue.</p>
+                      <div className="d-flex flex-column gap-3">
+                        <button
+                          type="button"
+                          className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
+                          style={{ minHeight: "72px", transition: "all 0.2s ease" }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = "translateY(-2px)";
+                            e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = "";
+                            e.currentTarget.style.boxShadow = "";
+                          }}
+                          onClick={() => { setGarageTask("carPickup"); setGarageStep("route"); }}
+                        >
+                          <div className="d-flex align-items-center gap-3">
+                            <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
+                              <Icon icon="mdi:car-pickup" width={26} height={26} className="text-primary" />
+                            </span>
+                            <div>
+                              <span className="fw-semibold d-block text-dark">Car pickup</span>
+                              <span className="small text-muted">Pick up vehicle and take to dealer</span>
+                            </div>
+                          </div>
+                          <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
+                          style={{ minHeight: "72px", transition: "all 0.2s ease" }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = "translateY(-2px)";
+                            e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = "";
+                            e.currentTarget.style.boxShadow = "";
+                          }}
+                          onClick={() => { setGarageTask("carDrop"); setGarageStep("route"); }}
+                        >
+                          <div className="d-flex align-items-center gap-3">
+                            <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
+                              <Icon icon="mdi:car-side" width={26} height={26} className="text-primary" />
+                            </span>
+                            <div>
+                              <span className="fw-semibold d-block text-dark">Car drop</span>
+                              <span className="small text-muted">Deliver vehicle back to customer</span>
+                            </div>
+                          </div>
+                          <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Step: Customer to dealer vs Dealer to dealer — tap to advance */}
+                  {garageStep === "route" && (
+                    <>
+                      <p className="text-muted small mb-3">Tap an option to continue.</p>
+                      <div className="d-flex flex-column gap-3">
+                        <button
+                          type="button"
+                          className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
+                          style={{ minHeight: "72px", transition: "all 0.2s ease" }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = "translateY(-2px)";
+                            e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = "";
+                            e.currentTarget.style.boxShadow = "";
+                          }}
+                          onClick={() => { setGarageRoute("customerToDealer"); setGarageStep("details"); }}
+                        >
+                          <div className="d-flex align-items-center gap-3">
+                            <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
+                              <Icon icon="mdi:account-arrow-right" width={24} height={24} className="text-primary" />
+                            </span>
+                            <div>
+                              <span className="fw-semibold d-block text-dark">Customer to dealer</span>
+                              <span className="small text-muted">
+                                {garageTask === "carPickup" ? "Pickup at customer → Deliver at dealer" : "Pickup at dealer → Deliver at customer"}
+                              </span>
+                            </div>
+                          </div>
+                          <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
+                        </button>
+                        {garageTask === "carPickup" && (
+                          <button
+                            type="button"
+                            className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
+                            style={{ minHeight: "72px", transition: "all 0.2s ease" }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = "translateY(-2px)";
+                              e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = "";
+                              e.currentTarget.style.boxShadow = "";
+                            }}
+                            onClick={() => { setGarageRoute("dealerToDealer"); setGarageStep("details"); }}
+                          >
+                            <div className="d-flex align-items-center gap-3">
+                              <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
+                                <Icon icon="mdi:swap-horizontal" width={24} height={24} className="text-primary" />
+                              </span>
+                              <div>
+                                <span className="fw-semibold d-block text-dark">Dealer to dealer</span>
+                                <span className="small text-muted">Pickup at one dealer → Deliver at another</span>
+                              </div>
+                            </div>
+                            <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Step: Details – pickup/deliver locations + driver */}
+                  {garageStep === "details" && (
+                    <>
+                      <div className="small text-muted mb-2 fw-semibold">Pickup & deliver</div>
+                      {garageRoute === "customerToDealer" && garageTask === "carPickup" && (
+                        <div className="rounded-3 border p-3 mb-3 bg-light">
+                          <div className="mb-2">
+                            <span className="small text-muted d-block">Pickup at</span>
+                            <span className="fw-semibold">
+                              {bookingData?.Address || "Customer location"}
+                            </span>
+                          </div>
+                          <div className="mb-0">
+                            <label className="form-label small mb-1">Deliver at (dealer)</label>
+                            <Select
+                              options={garageDealerOptions}
+                              value={garageDeliverDealer}
+                              onChange={setGarageDeliverDealer}
+                              placeholder="Select dealer"
+                            />
+                          </div>
+                        </div>
+                      )}
+                      {garageRoute === "customerToDealer" && garageTask === "carDrop" && (
+                        <div className="rounded-3 border p-3 mb-3 bg-light">
+                          <div className="mb-2">
+                            <label className="form-label small mb-1">Pickup at (dealer)</label>
+                            <Select
+                              options={garageDealerOptions}
+                              value={garagePickupDealer}
+                              onChange={setGaragePickupDealer}
+                              placeholder="Select dealer"
+                            />
+                          </div>
+                          <div className="mb-0">
+                            <span className="small text-muted d-block">Deliver at</span>
+                            <span className="fw-semibold">{bookingData?.Address || "Customer location"}</span>
+                          </div>
+                        </div>
+                      )}
+                      {garageRoute === "dealerToDealer" && (
+                        <div className="rounded-3 border p-3 mb-3 bg-light">
+                          <div className="mb-3">
+                            <label className="form-label small mb-1">Pickup at (dealer)</label>
+                            <Select
+                              options={garageDealerOptions}
+                              value={garagePickupDealer}
+                              onChange={setGaragePickupDealer}
+                              placeholder="Select pickup dealer"
+                            />
+                          </div>
+                          <div>
+                            <label className="form-label small mb-1">Deliver at (dealer)</label>
+                            <Select
+                              options={garageDealerOptions}
+                              value={garageDeliverDealer}
+                              onChange={setGarageDeliverDealer}
+                              placeholder="Select deliver dealer"
+                            />
+                          </div>
+                        </div>
+                      )}
+                      <div className="mb-3">
+                        <label className="form-label small mb-1">Assign driver</label>
+                        <Select
+                          options={technicians}
+                          value={garageDriver}
+                          onChange={setGarageDriver}
+                          placeholder="Select driver"
+                        />
+                      </div>
+                      <div className="row g-2">
+                        <div className="col-6">
+                          <label className="form-label small mb-1">Date</label>
+                          <input
+                            type="date"
+                            className="form-control form-control-sm"
+                            min={today}
+                            value={garagePickupDate}
+                            onChange={(e) => setGaragePickupDate(e.target.value)}
+                          />
+                        </div>
+                        <div className="col-6">
+                          <label className="form-label small mb-1">Time</label>
+                          <input
+                            type="time"
+                            className="form-control form-control-sm"
+                            value={garagePickupTime}
+                            onChange={(e) => setGaragePickupTime(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                </div>
+                <div className="modal-footer border-0 d-flex justify-content-between gap-2 flex-wrap">
+                  <div>
+                    {garageStep !== "task" && (
+                      <button
+                        type="button"
+                        className="btn btn-press-effect btn-outline-secondary btn-sm"
+                        onClick={() => {
+                          if (garageStep === "details") setGarageStep("route");
+                          else setGarageStep("task");
                         }}
-                      />
-                    ) : (
-                      <Select
-                        options={getInitialTimeSlotOptions()}
-                        value={selectedInitialTimeSlot}
-                        onChange={(val) => setSelectedInitialTimeSlot(val)}
-                        placeholder="Select TimeSlot"
-                      />
+                      >
+                        Back
+                      </button>
                     )}
                   </div>
-                )}
-
-                {/* Employee Selection based on assignType */}
-                {initialAssignType === "technician" ? (
-                  <Select
-                    options={technicians}
-                    value={selectedInitialTechnician}
-                    onChange={(val) => setSelectedInitialTechnician(val)}
-                    placeholder="Select Technician"
-                  />
-                ) : initialAssignType === "supervisor" ? (
-                  <Select
-                    options={supervisors}
-                    value={selectedInitialSupervisor}
-                    onChange={(val) => setSelectedInitialSupervisor(val)}
-                    placeholder="Select Supervisor"
-                  />
-                ) : (
-                  <Select
-                    options={fieldAdvisors}
-                    value={selectedInitialFieldAdvisor}
-                    onChange={(val) => setSelectedInitialFieldAdvisor(val)}
-                    placeholder="Select Field Advisor"
-                  />
-                )}
-              </div>
-              <div className="modal-footer d-inline-flex align-items-center justify-content-center">
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => {
-                    setInitialAssignModalOpen(false);
-                    setInitialAssignType("technician");
-                    setSelectedInitialTechnician(null);
-                    setSelectedInitialSupervisor(null);
-                    setSelectedInitialFieldAdvisor(null);
-                    setSelectedInitialTimeSlot(null);
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
-                  onClick={handleInitialAssignConfirm}
-                  disabled={
-                    (initialAssignType !== "fieldAdvisor" && !selectedInitialTimeSlot) ||
-                    (initialAssignType === "technician" && !selectedInitialTechnician) ||
-                    (initialAssignType === "supervisor" && !selectedInitialSupervisor) ||
-                    (initialAssignType === "fieldAdvisor" && !selectedInitialFieldAdvisor)
-                  }
-                >
-                  Assign
-                </button>
+                  <div className="d-flex gap-2">
+                    {garageStep === "details" && garageRoute !== "dealerToDealer" && (
+                      <button
+                        type="button"
+                        className="btn btn-press-effect btn-primary btn-sm"
+                        disabled={
+                          (garageRoute === "customerToDealer" && garageTask === "carPickup" && !garageDeliverDealer) ||
+                          (garageRoute === "customerToDealer" && garageTask === "carDrop" && !garagePickupDealer) ||
+                          !garageDriver ||
+                          !garagePickupDate ||
+                          !garagePickupTime
+                        }
+                        onClick={async () => {
+                          const payload = buildGaragePayload();
+                          if (!payload) {
+                            Swal.fire({ icon: "error", title: "Error", text: "Booking/Lead info missing." });
+                            return;
+                          }
+                          const result = await savePickupDeliveryTime(payload);
+                          if (result.ok) {
+                            Swal.fire({ icon: "success", title: "Assigned", text: result.data?.message || "Pickup/delivery saved successfully." });
+                            closeGarageFlowModal();
+                            fetchBookingData();
+                          } else {
+                            Swal.fire({ icon: "error", title: "Error", text: result.message || "Failed to save." });
+                          }
+                        }}
+                      >
+                        Assign
+                      </button>
+                    )}
+                    {garageStep === "details" && garageRoute === "dealerToDealer" && (
+                      <button
+                        type="button"
+                        className="btn btn-press-effect btn-primary btn-sm"
+                        disabled={
+                          !garagePickupDealer ||
+                          !garageDeliverDealer ||
+                          !garageDriver ||
+                          !garagePickupDate ||
+                          !garagePickupTime
+                        }
+                        onClick={async () => {
+                          const payload = buildGaragePayload();
+                          if (!payload) {
+                            Swal.fire({ icon: "error", title: "Error", text: "Booking/Lead info missing." });
+                            return;
+                          }
+                          const result = await savePickupDeliveryTime(payload);
+                          if (result.ok) {
+                            Swal.fire({ icon: "success", title: "Saved", text: result.data?.message || "Pickup/delivery saved successfully." });
+                            closeGarageFlowModal();
+                            fetchBookingData();
+                          } else {
+                            Swal.fire({ icon: "error", title: "Error", text: result.message || "Failed to save." });
+                          }
+                        }}
+                      >
+                        Submit
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Customer Confirmation Modal */}
-      {showCustomerConfirmationModal && (
-        <div
-          className="modal fade show d-block"
-          style={{ background: "rgba(0, 0, 0, 0.5)", backdropFilter: "blur(5px)" }}
-        >
+        {/* Customer Confirmation Modal */}
+        {showCustomerConfirmationModal && (
           <div
-            className="modal-dialog modal-dialog-centered"
-            style={{ maxWidth: "600px", width: "90%" }}
+            className="modal fade show d-block"
+            style={{ background: "rgba(0, 0, 0, 0.5)", backdropFilter: "blur(5px)" }}
           >
-            <div className="modal-content">
-              <div className="modal-header">
-                <h6 className="modal-title fw-bold">Customer Confirmation</h6>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => {
-                    setShowCustomerConfirmationModal(false);
-                    setConfirmationDescription("");
-                  }}
-                />
-              </div>
-
-              <div className="modal-body">
-                {/* Explanation Section */}
-                <div className="alert alert-info mb-3">
-                  <h6 className="fw-bold mb-2">Why is confirmation required?</h6>
-                  <p className="mb-0 small">
-                    Customer confirmation is required to finalize the booking and move all services
-                    from temporary status to confirmed status. This ensures that the customer has
-                    reviewed and approved all services before proceeding with the booking process.
-                    Once confirmed, the services will be moved to the main booking and cannot be
-                    easily modified.
-                  </p>
-                </div>
-
-                {/* Description Field */}
-                <div className="mb-3">
-                  <label className="form-label fw-semibold">
-                    Description <span className="text-danger">*</span>
-                  </label>
-                  <textarea
-                    className="form-control"
-                    rows="4"
-                    placeholder="Please provide a description for this confirmation..."
-                    value={confirmationDescription}
-                    onChange={(e) => setConfirmationDescription(e.target.value)}
-                    required
+            <div
+              className="modal-dialog modal-dialog-centered"
+              style={{ maxWidth: "600px", width: "90%" }}
+            >
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h6 className="modal-title fw-bold">Customer Confirmation</h6>
+                  <button
+                    type="button"
+                    className="btn-close btn-close-press"
+                    onClick={() => {
+                      setShowCustomerConfirmationModal(false);
+                      setConfirmationDescription("");
+                    }}
                   />
-                  <small className="text-muted">
-                    This description will be recorded along with your confirmation.
-                  </small>
                 </div>
-              </div>
 
-              <div className="modal-footer justify-content-center">
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => {
-                    setShowCustomerConfirmationModal(false);
-                    setConfirmationDescription("");
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="btn btn-primary-600 btn-sm"
-                  onClick={handleCustomerConfirmationSubmit}
-                  disabled={!confirmationDescription || confirmationDescription.trim() === ""}
-                >
-                  Confirm
-                </button>
+                <div className="modal-body">
+                  {/* Explanation Section */}
+                  <div className="alert alert-info mb-3">
+                    <h6 className="fw-bold mb-2">Why is confirmation required?</h6>
+                    <p className="mb-0 small">
+                      Customer confirmation is required to finalize the booking and move all services
+                      from temporary status to confirmed status. This ensures that the customer has
+                      reviewed and approved all services before proceeding with the booking process.
+                      Once confirmed, the services will be moved to the main booking and cannot be
+                      easily modified.
+                    </p>
+                  </div>
+
+                  {/* Description Field */}
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">
+                      Description <span className="text-danger">*</span>
+                    </label>
+                    <textarea
+                      className="form-control"
+                      rows="4"
+                      placeholder="Please provide a description for this confirmation..."
+                      value={confirmationDescription}
+                      onChange={(e) => setConfirmationDescription(e.target.value)}
+                      required
+                    />
+                    <small className="text-muted">
+                      This description will be recorded along with your confirmation.
+                    </small>
+                  </div>
+                </div>
+
+                <div className="modal-footer justify-content-center">
+                  <button
+                    className="btn btn-press-effect btn-secondary btn-sm"
+                    onClick={() => {
+                      setShowCustomerConfirmationModal(false);
+                      setConfirmationDescription("");
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="btn btn-press-effect btn-primary-600 btn-sm"
+                    onClick={handleCustomerConfirmationSubmit}
+                    disabled={!confirmationDescription || confirmationDescription.trim() === ""}
+                  >
+                    Confirm
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 };
 
