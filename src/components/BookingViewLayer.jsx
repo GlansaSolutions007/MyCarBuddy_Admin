@@ -79,7 +79,7 @@ const BookingViewLayer = () => {
   const [selectedInitialSupervisor, setSelectedInitialSupervisor] = useState(null);
   const [selectedInitialFieldAdvisor, setSelectedInitialFieldAdvisor] = useState(null);
   const [selectedInitialTimeSlot, setSelectedInitialTimeSlot] = useState(null);
-  const [selectedServiceType, setSelectedServiceType] = useState(null);
+  const [selectedServiceType, setSelectedServiceType] = useState([]);
   const [fieldAdvisors, setFieldAdvisors] = useState([]);
   const [showCustomerConfirmationModal, setShowCustomerConfirmationModal] = useState(false);
   const [confirmationDescription, setConfirmationDescription] = useState("");
@@ -100,6 +100,7 @@ const BookingViewLayer = () => {
   const [garagePickupTime, setGaragePickupTime] = useState("");
   const [garageDeliveryDate, setGarageDeliveryDate] = useState("");
   const [garageDeliveryTime, setGarageDeliveryTime] = useState("");
+  const [hasExistingCustomerToDealerRoute, setHasExistingCustomerToDealerRoute] = useState(false);
   // Dealers from this booking's add-ons (unique by DealerID) for garage flow dropdowns
   const garageDealerOptions = (() => {
     const addOns = bookingData?.BookingAddOns || [];
@@ -173,6 +174,12 @@ const BookingViewLayer = () => {
       });
       setBookingData(res.data[0]);
       console.log("Booking Data:", res.data[0]);
+      
+      // Check if any CarPickUpDelivery has RouteType = "CustomerToDealer"
+      const carPickUpDelivery = res.data?.[0]?.CarPickUpDelivery || [];
+      const hasRoute = carPickUpDelivery.some((item) => item.RouteType === "CustomerToDealer");
+      setHasExistingCustomerToDealerRoute(hasRoute);
+      
       const formatDate = (date) => {
         if (!date) return "";
         if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -550,6 +557,20 @@ const BookingViewLayer = () => {
     return m ? `${m[1].padStart(2, "0")}:${m[2]}:00` : "";
   };
 
+  // Get local time in ISO format (not UTC)
+  const getLocalISODateTime = () => {
+    const now = new Date();
+    const pad = (n) => (n < 10 ? "0" + n : n);
+    const year = now.getFullYear();
+    const month = pad(now.getMonth() + 1);
+    const day = pad(now.getDate());
+    const hours = pad(now.getHours());
+    const minutes = pad(now.getMinutes());
+    const seconds = pad(now.getSeconds());
+    const ms = String(now.getMilliseconds()).padStart(3, "0");
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}Z`;
+  };
+
   const savePickupDeliveryTime = async (payload) => {
     try {
       const res = await axios.post(
@@ -626,7 +647,7 @@ const BookingViewLayer = () => {
       deliveryDate: "",
       deliveryTime: "",
       techID: garageDriver?.value ?? 0,
-      assignDate: new Date().toISOString(),
+      assignDate: getLocalISODateTime(),
     };
   };
 
@@ -685,8 +706,33 @@ const BookingViewLayer = () => {
           });
           return;
         }
-        apiUrl = `${API_BASE}Bookings/assign-technician`;
-        method = "put";
+        if (!selectedServiceType || selectedServiceType.length === 0) {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Please select a service type before assigning.",
+          });
+          return;
+        }
+
+        // Get addOnIds based on selected service types (comma-separated)
+        const selectedServiceTypeValues = selectedServiceType.map((st) => st.value);
+        const selectedAddOns = (bookingData?.BookingAddOns || []).filter(
+          (addon) => selectedServiceTypeValues.includes(addon.ServiceType)
+        );
+        const addOnIds = selectedAddOns.map((addon) => String(addon.AddOnID)).join(",") || "0";
+        
+        payload = {
+          bookingID: bookingData.BookingID,
+          assingedTimeSlot: selectedInitialTimeSlot.value,
+          role: "Technician",
+          techID: selectedInitialTechnician?.value,
+          addOnId: addOnIds,
+          leadId: bookingData.LeadId,
+          ServiceType: "ServiceAtHome",
+        };
+        apiUrl = `${API_BASE}Supervisor/SavePickupDeliveryTime`;
+        method = "post";
       } else {
         if (!selectedInitialSupervisor) {
           Swal.fire({
@@ -696,8 +742,8 @@ const BookingViewLayer = () => {
           });
           return;
         }
-        apiUrl = `${API_BASE}Bookings/assign-technician`;
-        method = "put";
+        apiUrl = `${API_BASE}Supervisor/SavePickupDeliveryTime`;
+        method = "post";
       }
     }
 
@@ -728,7 +774,7 @@ const BookingViewLayer = () => {
         setSelectedInitialSupervisor(null);
         setSelectedInitialFieldAdvisor(null);
         setSelectedInitialTimeSlot(null);
-        setSelectedServiceType(null);
+        setSelectedServiceType([]);
         setInitialAssignType("technician");
       } else {
         const assignTypeLabel =
@@ -3901,7 +3947,7 @@ const BookingViewLayer = () => {
                       setSelectedInitialSupervisor(null);
                       setSelectedInitialFieldAdvisor(null);
                       setSelectedInitialTimeSlot(null);
-                      setSelectedServiceType(null);
+                      setSelectedServiceType([]);
                     }}
                   />
                 </div>
@@ -3921,7 +3967,7 @@ const BookingViewLayer = () => {
                             setInitialAssignType("fieldAdvisor");
                             setSelectedInitialTechnician(null);
                             setSelectedInitialSupervisor(null);
-                            setSelectedServiceType(null);
+                            setSelectedServiceType([]);
                           }}
                           style={{ width: "18px", height: "18px", margin: 0 }}
                         />
@@ -3944,7 +3990,7 @@ const BookingViewLayer = () => {
                           setInitialAssignType("technician");
                           setSelectedInitialSupervisor(null);
                           setSelectedInitialFieldAdvisor(null);
-                          setSelectedServiceType(null);
+                          setSelectedServiceType([]);
                         }}
                         style={{ width: "18px", height: "18px", margin: 0 }}
                       />
@@ -4035,9 +4081,10 @@ const BookingViewLayer = () => {
                               }))
                               : []
                           }
+                          isMulti
                           value={selectedServiceType}
-                          onChange={(val) => setSelectedServiceType(val)}
-                          placeholder="Select Service Type"
+                          onChange={(val) => setSelectedServiceType(val || [])}
+                          placeholder="Select Service Type(s)"
                         />
                       </div>
                     </>
@@ -4067,7 +4114,7 @@ const BookingViewLayer = () => {
                       setSelectedInitialSupervisor(null);
                       setSelectedInitialFieldAdvisor(null);
                       setSelectedInitialTimeSlot(null);
-                      setSelectedServiceType(null);
+                      setSelectedServiceType([]);
                     }}
                   >
                     Cancel
@@ -4079,7 +4126,8 @@ const BookingViewLayer = () => {
                       (initialAssignType !== "fieldAdvisor" && !selectedInitialTimeSlot) ||
                       (initialAssignType === "technician" && !selectedInitialTechnician) ||
                       (initialAssignType === "supervisor" && !selectedInitialSupervisor) ||
-                      (initialAssignType === "fieldAdvisor" && !selectedInitialFieldAdvisor)
+                      (initialAssignType === "fieldAdvisor" && !selectedInitialFieldAdvisor) || 
+                      (initialAssignType === "technician" && selectedServiceType.length === 0)
                     }
                   >
                     Assign
@@ -4197,35 +4245,38 @@ const BookingViewLayer = () => {
                     <>
                       <p className="text-muted small mb-3">Tap an option to continue.</p>
                       <div className="d-flex flex-column gap-3">
-                        <button
-                          type="button"
-                          className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
-                          style={{ minHeight: "72px", transition: "all 0.2s ease" }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = "translateY(-2px)";
-                            e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = "";
-                            e.currentTarget.style.boxShadow = "";
-                          }}
-                          onClick={() => { setGarageRoute("customerToDealer"); setGarageStep("details"); }}
-                        >
-                          <div className="d-flex align-items-center gap-3">
-                            <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
-                              <Icon icon="mdi:account-arrow-right" width={24} height={24} className="text-primary" />
-                            </span>
-                            <div>
-                              <span className="fw-semibold d-block text-dark">
-                                {garageTask === "carDrop" ? "Dealer to Customer" : "Customer to Dealer"}
+                        {/* Hide Customer to Dealer button if already exists (only when carPickup) */}
+                        {(!hasExistingCustomerToDealerRoute || garageTask === "carDrop") && (
+                          <button
+                            type="button"
+                            className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
+                            style={{ minHeight: "72px", transition: "all 0.2s ease" }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = "translateY(-2px)";
+                              e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = "";
+                              e.currentTarget.style.boxShadow = "";
+                            }}
+                            onClick={() => { setGarageRoute("customerToDealer"); setGarageStep("details"); }}
+                          >
+                            <div className="d-flex align-items-center gap-3">
+                              <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
+                                <Icon icon="mdi:account-arrow-right" width={24} height={24} className="text-primary" />
                               </span>
-                              <span className="small text-muted">
-                                {garageTask === "carPickup" ? "Pickup at customer → Deliver at dealer" : "Pickup at dealer → Deliver at customer"}
-                              </span>
+                              <div>
+                                <span className="fw-semibold d-block text-dark">
+                                  {garageTask === "carDrop" ? "Dealer to Customer" : "Customer to Dealer"}
+                                </span>
+                                <span className="small text-muted">
+                                  {garageTask === "carPickup" ? "Pickup at customer → Deliver at dealer" : "Pickup at dealer → Deliver at customer"}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                          <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
-                        </button>
+                            <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
+                          </button>
+                        )}
                         {garageTask === "carPickup" && (
                           <button
                             type="button"
