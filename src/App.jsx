@@ -117,6 +117,7 @@ import AssignSupervisorAreaPage from "./pages/AssignSupervisorAreaPage";
 import DealerPaymentsPage from "./pages/DealerPaymentsPage";
 import DealerReportPage from "./pages/DealerRepportPage";
 import NoInternetModal from "./components/NoInternetModal";
+import CompleteServiceReportPage from "./pages/CompleteServiceReportPage";
 
 function App() {
   return (
@@ -263,6 +264,7 @@ function App() {
           <Route exact path='/dealer-booking-view/:Id' element={<DealerBookingsViewPage/>} />
           <Route exact path='/dealer-expenditure' element={<DealerPaymentsPage/>} />
           <Route exact path='/dealer-report' element={<DealerReportPage/>} />
+          <Route exact path='/complete-service-reports' element={<CompleteServiceReportPage />} />
           
         </Route>
 

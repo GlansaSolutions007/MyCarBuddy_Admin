@@ -136,6 +136,8 @@ const LeadViewLayer = () => {
   const hasAtLeastOneFollowUp =
     Array.isArray(lead?.FollowUps) && lead.FollowUps.length > 0;
   const hasCurrentLeadBooking = currentBookings.length > 0;
+  const isSupervisorAssigned =
+    lead?.TrackingHistory?.[0]?.StatusName === "Assigned to supervisor head";
   const isCustomerConverted = lead?.CustID !== null;
   const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
@@ -1052,8 +1054,17 @@ const LeadViewLayer = () => {
                           setAssignModalOpen(true);
                         }}
                       >
-                        <Icon icon="mdi:account-plus" className="fs-5" />
-                        Assign Supervisor
+                        <Icon
+                          icon={
+                            isSupervisorAssigned
+                              ? "mdi:account-edit"
+                              : "mdi:account-plus"
+                          }
+                          className="fs-5"
+                        />
+                        {isSupervisorAssigned
+                          ? "Reassign Supervisor"
+                          : "Assign Supervisor"}
                       </button>
                     )}
                   {hasPermission("bookservice_view") &&
@@ -1959,7 +1970,9 @@ const LeadViewLayer = () => {
         centered
       >
         <Modal.Header closeButton>
-          <Modal.Title className="h6 fw-bold">Assign Supervisor</Modal.Title>
+          <Modal.Title className="h6 fw-bold">
+            {isSupervisorAssigned ? "Reassign Supervisor" : "Assign Supervisor"}
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <div className="mb-3 pb-3 border-bottom">
@@ -2006,7 +2019,7 @@ const LeadViewLayer = () => {
           </Button>
           <Button className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
                   title="View" onClick={handleAssignSupervisor}>
-            Assign
+            {isSupervisorAssigned ? "Reassign" : "Assign"}
           </Button>
         </Modal.Footer>
       </Modal>

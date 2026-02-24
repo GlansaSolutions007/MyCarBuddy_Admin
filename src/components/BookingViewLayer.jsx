@@ -559,6 +559,35 @@ const BookingViewLayer = () => {
     }
   };
 
+  const handleFieldAdvisorConfirm = async (addon) => {
+    const addOnId = addon?.AddOnID ?? addon?.addOnId;
+    const employeeId = userId ? Number(userId) : Number(localStorage.getItem("userId") || 0);
+    if (!addOnId || !employeeId) {
+      Swal.fire({ icon: "warning", title: "Invalid data", text: "AddOn ID or Employee ID missing." });
+      return;
+    }
+    try {
+      const res = await axios.post(
+        `${API_BASE}Supervisor/confirm`,
+        { addOnId, employeeId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data != null && res.status >= 200 && res.status < 300) {
+        Swal.fire({ icon: "success", title: "Confirmed", text: "Service confirmed successfully." });
+        fetchBookingData();
+      } else {
+        Swal.fire({ icon: "error", title: "Error", text: res.data?.message || "Failed to confirm." });
+      }
+    } catch (err) {
+      console.error("Supervisor/confirm error:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.response?.data?.message || err.message || "Failed to confirm service.",
+      });
+    }
+  };
+
   const buildGaragePayload = () => {
     const bid = Number(bookingId) || bookingData?.BookingID;
     const leadId = bookingData?.LeadId || "";
@@ -587,10 +616,10 @@ const BookingViewLayer = () => {
       routeType,
       pickFrom,
       pickTo,
-      pickupDate: garagePickupDate || "",
-      pickupTime: toTimeApi(garagePickupTime),
-      deliveryDate: garageDeliveryDate || "",
-      deliveryTime: toTimeApi(garageDeliveryTime),
+      pickupDate: "",
+      pickupTime: "",
+      deliveryDate: "",
+      deliveryTime: "",
       techID: garageDriver?.value ?? 0,
       assignDate: new Date().toISOString(),
     };
@@ -1742,10 +1771,10 @@ const BookingViewLayer = () => {
                                       Supervisor Name/Number :
                                     </span>
                                     <span className="w-50 text-secondary-light fw-bold">
-                                      {bookingData?.SupervisorName || bookingData?.SupervisorPhoneNumber ? (
+                                      {bookingData?.SupervisorHeadName || bookingData?.SupervisorHeadPhoneNumber ? (
                                         <>
-                                          {bookingData?.SupervisorName || ""}
-                                          {bookingData?.SupervisorPhoneNumber ? ` (${bookingData.SupervisorPhoneNumber})` : ""}
+                                          {bookingData?.SupervisorHeadName || ""}
+                                          {bookingData?.SupervisorHeadPhoneNumber ? ` (${bookingData.SupervisorHeadPhoneNumber})` : ""}
                                         </>
                                       ) : (
                                         "N/A"
@@ -1932,52 +1961,82 @@ const BookingViewLayer = () => {
                           <span className="d-flex align-items-center gap-2 small fw-semibold text-white">
                             <Icon icon="mdi:clipboard-check-outline" width={20} height={20} />
                             BID : #{bookingData?.BookingTrackID || "—"}
-                            <span className="opacity-90 fw-normal"> &nbsp; Date : {displayDate(bookingData?.BookingDate)}</span>
                           </span>
+                          <span className="opacity-90 fw-normal text-white ms-auto">Date : {displayDate(bookingData?.BookingDate)}</span>
                         </div>
-                        {/* Timeline – white body, center icons + segment connectors */}
+                        {/* Timeline – dynamic from CarPickUpDelivery API */}
                         <div className="p-4 position-relative" style={{ backgroundColor: "#fff" }}>
-                          <div className="d-flex align-items-flex-start py-20 justify-content-between position-relative">
-                            {[
-                              { key: "pickup", label: "Pickup Scheduled", sub: pickupDate && pickupTime ? `${displayDate(pickupDate)} ${pickupTime}` : "22/02/2026 09:30", icon: "mdi:calendar-check", done: true },
-                              { key: "picked", label: "Vehicle Picked Up", sub: "22/02/2026", icon: "mdi:car-pickup", done: true },
-                              { key: "dealer", label: "At Dealer", sub: "22/02/2026", icon: "mdi:garage", done: true },
-                              { key: "delivery", label: "Delivery Scheduled", sub: dropDate && dropTime ? `${displayDate(dropDate)} ${dropTime}` : "23/02/2026 18:00", icon: "mdi:calendar-clock", done: false },
-                              { key: "done", label: "Completed", sub: "Pending", icon: "mdi:check-circle-outline", done: false },
-                            ].map((step, idx) => (
-                              <div key={step.key} className="d-flex flex-column align-items-center position-relative" style={{ flex: "1 1 0", minWidth: 0, zIndex: 2 }}>
-                                {/* Segment line to the right (teal if current step done, gray otherwise) */}
-                                {idx < 4 && (
-                                  <div
-                                    className="position-absolute d-none d-md-block"
-                                    style={{
-                                      top: 20,
-                                      left: "calc(50% + 24px)",
-                                      width: "calc(100% - 28px)",
-                                      height: 3,
-                                      borderRadius: 2,
-                                      backgroundColor: step.done ? "#0d9488" : "#e5e7eb",
-                                      zIndex: 0,
-                                    }}
-                                  />
-                                )}
-                                <div
-                                  className="d-flex align-items-center justify-content-center rounded-circle mb-2"
-                                  style={{
-                                    width: 44,
-                                    height: 44,
-                                    backgroundColor: step.done ? "#0d9488" : "#e5e7eb",
-                                    color: step.done ? "#fff" : "#9ca3af",
-                                    boxShadow: step.done ? "0 2px 6px rgba(13,148,136,0.35)" : "0 1px 3px rgba(0,0,0,0.08)",
-                                  }}
-                                >
-                                  <Icon icon={step.icon} width={22} height={22} />
-                                </div>
-                                <span className="small fw-bold text-center text-dark" style={{ fontSize: "12px", lineHeight: 1.25 }}>{step.label}</span>
-                                <span className="small text-muted text-center mt-1" style={{ fontSize: "11px" }}>{step.sub}</span>
+                          {(() => {
+                            const list = bookingData?.CarPickUpDelivery ?? [];
+                            const formatTimeOnly = (t) => {
+                              if (!t) return "";
+                              const m = String(t).trim().match(/^(\d{1,2}):(\d{2})/);
+                              return m ? `${m[1].padStart(2, "0")}:${m[2]}` : "";
+                            };
+                            const steps = list.map((record, idx) => {
+                              const pickType = record.PickType || "";
+                              const routeType = record.RouteType || "";
+                              const isPick = pickType.toLowerCase().includes("pick");
+                              const label = [pickType, routeType].filter(Boolean).join(" – ") || "Pickup/Drop";
+                              const assignStr = record.AssignDate
+                                ? new Date(record.AssignDate).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+                                : "—";
+                              const sub = record.PickupDate && record.PickupTime
+                                ? `${displayDate(record.PickupDate)} ${formatTimeOnly(record.PickupTime)}`
+                                : record.DeliveryDate && record.DeliveryTime
+                                  ? `${displayDate(record.DeliveryDate)} ${formatTimeOnly(record.DeliveryTime)}`
+                                  : assignStr;
+                              const done = !!(record.PickupDate || record.DeliveryDate);
+                              return {
+                                key: record.Id ?? idx,
+                                label,
+                                sub,
+                                icon: isPick ? "mdi:car-pickup" : "mdi:car-side",
+                                done,
+                              };
+                            });
+                            if (steps.length === 0) {
+                              return (
+                                <p className="text-muted small mb-0 text-center py-3">No pickup/drop records for this booking.</p>
+                              );
+                            }
+                            return (
+                              <div className="d-flex align-items-flex-start py-20 justify-content-between position-relative">
+                                {steps.map((step, idx) => (
+                                  <div key={step.key} className="d-flex flex-column align-items-center position-relative" style={{ flex: "1 1 0", minWidth: 0, zIndex: 2 }}>
+                                    {idx < steps.length - 1 && (
+                                      <div
+                                        className="position-absolute d-none d-md-block"
+                                        style={{
+                                          top: 20,
+                                          left: "calc(50% + 24px)",
+                                          width: "calc(100% - 28px)",
+                                          height: 3,
+                                          borderRadius: 2,
+                                          backgroundColor: step.done ? "#0d9488" : "#0d9488",
+                                          zIndex: 0,
+                                        }}
+                                      />
+                                    )}
+                                    <div
+                                      className="d-flex align-items-center justify-content-center rounded-circle mb-2"
+                                      style={{
+                                        width: 44,
+                                        height: 44,
+                                        backgroundColor: step.done ? "#0d9488" : "#0d9488",
+                                        color: step.done ? "#fff" : "#fff",
+                                        boxShadow: step.done ? "0 2px 6px rgba(13,148,136,0.35)" : "0 1px 3px rgba(0,0,0,0.08)",
+                                      }}
+                                    >
+                                      <Icon icon={step.icon} width={22} height={22} />
+                                    </div>
+                                    <span className="small fw-bold text-center text-dark" style={{ fontSize: "12px", lineHeight: 1.25 }}>{step.label}</span>
+                                    <span className="small text-muted text-center mt-1" style={{ fontSize: "11px" }}>{step.sub}</span>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
-                          </div>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -2547,6 +2606,12 @@ const BookingViewLayer = () => {
                                             Dlr. Service Status
                                           </th>
                                           <th
+                                            style={{ width: "160px" }}
+                                            className="text-center"
+                                          >
+                                            F.A. Confirm
+                                          </th>
+                                          <th
                                             style={{ width: "100px" }}
                                             className="text-end"
                                           >
@@ -2712,6 +2777,24 @@ const BookingViewLayer = () => {
                                                     </div>
                                                   );
                                                 })()}
+                                              </td>
+                                              <td className="text-center align-middle">
+                                                {addon.IsCompleted_Confirmation === 1 ||
+                                                addon.isCompleted_Confirmation === 1 ? (
+                                                  <div className="d-flex gap-2 align-items-center justify-content-center">
+                                                    <span className="badge bg-success px-3 py-3 py-4 rounded-pill">
+                                                      {addon.EmployeeName ?? addon.employeeName ?? "—"}
+                                                    </span>
+                                                  </div>
+                                                ) : (
+                                                  <button
+                                                    type="button"
+                                                    className="btn btn-primary-600 btn-sm"
+                                                    onClick={() => handleFieldAdvisorConfirm(addon)}
+                                                  >
+                                                    Confirm
+                                                  </button>
+                                                )}
                                               </td>
                                               <td className="text-end fw-bold text-primary">
                                                 {Number(
@@ -3187,12 +3270,15 @@ const BookingViewLayer = () => {
                                       Enter Payment
                                     </button>
                                   )}
-                                  {/* Assign Button - similar to BookingLayer */}
+                                  {/* Assign Button - show only when BookingAddOns has at least one service */}
                                   {(role === "Admin" || roleName === "Supervisor Head" || roleName === "Field Advisor") &&
                                     !(
                                       bookingData?.BookingStatus === "Completed" &&
                                       bookingData?.PaymentStatus === "Success"
-                                    ) && (
+                                    ) &&
+                                    bookingData?.BookingAddOns != null &&
+                                    Array.isArray(bookingData.BookingAddOns) &&
+                                    bookingData.BookingAddOns.length > 0 && (
                                       <button
                                         className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center"
                                         onClick={handleInitialAssignClick}
@@ -3999,7 +4085,7 @@ const BookingViewLayer = () => {
                               <Icon icon="mdi:account-arrow-right" width={24} height={24} className="text-primary" />
                             </span>
                             <div>
-                              <span className="fw-semibold d-block text-dark">Customer to dealer</span>
+                              <span className="fw-semibold d-block text-dark">Customer to Dealer</span>
                               <span className="small text-muted">
                                 {garageTask === "carPickup" ? "Pickup at customer → Deliver at dealer" : "Pickup at dealer → Deliver at customer"}
                               </span>
@@ -4109,7 +4195,7 @@ const BookingViewLayer = () => {
                           placeholder="Select driver"
                         />
                       </div>
-                      <div className="row g-2">
+                      {/* <div className="row g-2">
                         <div className="col-6">
                           <label className="form-label small mb-1">Date</label>
                           <input
@@ -4129,7 +4215,7 @@ const BookingViewLayer = () => {
                             onChange={(e) => setGaragePickupTime(e.target.value)}
                           />
                         </div>
-                      </div>
+                      </div> */}
                     </>
                   )}
 

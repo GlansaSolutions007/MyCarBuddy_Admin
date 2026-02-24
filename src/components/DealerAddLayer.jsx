@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useMemo, useLayoutEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
 import Select from "react-select";
+import { Autocomplete, useJsApiLoader } from "@react-google-maps/api";
 import useFormError from "../hook/useFormError";
 import FormError from "../components/FormError";
 import { Icon } from "@iconify/react";
@@ -26,6 +27,8 @@ const DealerAddLayer = ({ setPageTitle }) => {
   const [showPassword, setShowPassword] = useState(false);
   const { errors, validate, clearAllErrors } = useFormError();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const addressRef = useRef(null);
+  const [autocomplete, setAutocomplete] = useState(null);
 
   const dealerTypeOptions = [
     { value: "service", label: "Service Provider" },
@@ -95,6 +98,46 @@ const DealerAddLayer = ({ setPageTitle }) => {
     setSelectedCategories([]);
     setSelectedDealerTypes([]);
   };
+
+  const onLoadAutocomplete = (auto) => {
+    setAutocomplete(auto);
+  };
+
+  const onPlaceChanged = () => {
+    if (!autocomplete) return;
+    const place = autocomplete.getPlace();
+    setFormData((prev) => {
+      const next = { ...prev };
+      if (place?.formatted_address) next.Address = place.formatted_address;
+      if (place?.geometry?.location) {
+        next.Latitude = place.geometry.location.lat();
+        next.Longitude = place.geometry.location.lng();
+      }
+      return next;
+    });
+  };
+
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_KEY,
+    libraries: ["places"],
+  });
+
+  const isApiLoaded = useMemo(
+    () =>
+      isLoaded &&
+      typeof window !== "undefined" &&
+      window.google?.maps?.places,
+    [isLoaded]
+  );
+
+  useLayoutEffect(() => {
+    if (!addressRef.current) return;
+    const el = addressRef.current;
+    requestAnimationFrame(() => {
+      el.style.height = "auto";
+      el.style.height = el.scrollHeight + "px";
+    });
+  }, [formData.Address]);
 
   useEffect(() => {
     setPageTitle(isEditing ? "Edit - Dealer" : "Add - Dealer");
@@ -726,13 +769,32 @@ const DealerAddLayer = ({ setPageTitle }) => {
             <label className="form-label text-sm fw-semibold text-primary-light mb-8">
               Address
             </label>
+            {isApiLoaded && (
+              <Autocomplete
+                onLoad={onLoadAutocomplete}
+                onPlaceChanged={onPlaceChanged}
+              >
+                <input
+                  type="text"
+                  className="form-control radius-8 mb-2"
+                  placeholder="Search address from Google"
+                  autoComplete="off"
+                />
+              </Autocomplete>
+            )}
             <textarea
+              ref={addressRef}
               rows="2"
               name="Address"
               className="form-control radius-8"
               value={formData.Address}
               onChange={handleChange}
-              placeholder="Enter Address "
+              placeholder={
+                isApiLoaded
+                  ? "Selected address appears here (or type manually)"
+                  : "Loading address search…"
+              }
+              style={{ minHeight: "60px" }}
             />
           </div>
           {/* Password */}
