@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import { usePermissions } from "../context/PermissionContext";
 
-const API_BASE = "https://api.mycarsbuddy.com/api/Coupons";
+const API_BASE = import.meta.env.VITE_APIURL + "Coupons";
 
 const CouponsPage = () => {
   const { hasPermission } = usePermissions();

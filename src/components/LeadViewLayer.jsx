@@ -1940,9 +1940,12 @@ const LeadViewLayer = () => {
                                     )
                                   : "-"}
                               </div>
-                              <div className="text-sm text-secondary-light">
+                              <div
+                                className="text-sm text-secondary-light"
+                                style={{ whiteSpace: "pre-line" }}
+                              >
                                 <strong>Description: </strong>
-                                {item.Description || "-"}
+                                {(item.Description || "-").replace(/<br\s*\/?>/gi, "\n")}
                               </div>
                               <div className="text-sm text-secondary-light">
                                 <strong>Updated By: </strong>

@@ -79,6 +79,7 @@ const BookingViewLayer = () => {
   const [selectedInitialSupervisor, setSelectedInitialSupervisor] = useState(null);
   const [selectedInitialFieldAdvisor, setSelectedInitialFieldAdvisor] = useState(null);
   const [selectedInitialTimeSlot, setSelectedInitialTimeSlot] = useState(null);
+  const [selectedServiceType, setSelectedServiceType] = useState(null);
   const [fieldAdvisors, setFieldAdvisors] = useState([]);
   const [showCustomerConfirmationModal, setShowCustomerConfirmationModal] = useState(false);
   const [confirmationDescription, setConfirmationDescription] = useState("");
@@ -117,6 +118,8 @@ const BookingViewLayer = () => {
   const [payAmount, setPayAmount] = useState("");
   const [isDiscountApplicable, setIsDiscountApplicable] = useState(false);
   const [discountAmount, setDiscountAmount] = useState("");
+  const [couponOffers, setCouponOffers] = useState([]);
+  const [selectedCoupon, setSelectedCoupon] = useState("");
   const employeeData = JSON.parse(localStorage.getItem("employeeData"));
   const userId = employeeData?.Id;
   const roleName = employeeData?.RoleName;
@@ -153,6 +156,8 @@ const BookingViewLayer = () => {
     const discount = Number(discountAmount || 0);
     if (pay >= 0 && discount > pay) setDiscountAmount(String(pay));
   }, [payAmount, discountAmount]);
+
+
 
   const fetchBookingData = async () => {
     try {
@@ -723,6 +728,7 @@ const BookingViewLayer = () => {
         setSelectedInitialSupervisor(null);
         setSelectedInitialFieldAdvisor(null);
         setSelectedInitialTimeSlot(null);
+        setSelectedServiceType(null);
         setInitialAssignType("technician");
       } else {
         const assignTypeLabel =
@@ -1591,6 +1597,52 @@ const BookingViewLayer = () => {
       Swal.fire("Error", "Something went wrong", "error");
     }
   };
+
+    // Fetch coupons from API and filter by min booking amount
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      try {
+        const res = await axios.get("https://dev-api.mycarsbuddy.com/api/Coupons");
+        const raw = Array.isArray(res.data) ? res.data : res.data?.jsonResult || [];
+        const total = Number(totalAmount || 0);
+        const list = raw
+          .filter((c) => c.IsActive && c.Status && Number(c.MinBookingAmount || 0) <= total)
+          .map((c) => ({
+            code: c.Code,
+            label:
+              c.DiscountType === "percentage"
+                ? `${c.Code} - ${c.DiscountValue}%`
+                : `${c.Code} - ₹${c.DiscountValue}`,
+            discountType: c.DiscountType,
+            discountValue: Number(c.DiscountValue || 0),
+          }));
+        // Always include a no-coupon option
+        setCouponOffers([{ code: "", label: "No coupon", discountType: null, discountValue: 0 }, ...list]);
+      } catch (err) {
+        console.error("Failed to fetch coupons:", err);
+        setCouponOffers([{ code: "", label: "No coupon", discountType: null, discountValue: 0 }]);
+      }
+    };
+    fetchCoupons();
+  }, [totalAmount]);
+
+  // Apply coupon when selection or pay amount changes
+  useEffect(() => {
+    const offer = couponOffers.find((c) => c.code === selectedCoupon);
+    const pay = Number(payAmount || 0);
+    if (!offer || !selectedCoupon) {
+      setDiscountAmount("");
+      return;
+    }
+    let applied = 0;
+    if (offer.discountType === "percentage") {
+      applied = (pay * Number(offer.discountValue || 0)) / 100;
+    } else {
+      applied = Number(offer.discountValue || 0);
+    }
+    applied = Math.min(applied, pay);
+    setDiscountAmount(Number(applied.toFixed(2)));
+  }, [selectedCoupon, payAmount, couponOffers]);
 
   const handleSubmitPickupDetails = async () => {
     if (!pickupDate || !pickupTime || !dropDate || !dropTime) {
@@ -3560,6 +3612,14 @@ const BookingViewLayer = () => {
                     <>
                       <div className="border rounded-3 p-3 bg-light mb-3">
                         <div className="d-flex justify-content-between small">
+                          <span>Total Amount</span>
+                          <strong>₹{totalAmount.toFixed(2)}</strong>
+                        </div>
+                        <div className="d-flex justify-content-between small">
+                          <span>Already Paid</span>
+                          <strong>₹{alreadyPaid.toFixed(2)}</strong>
+                        </div>
+                        <div className="d-flex justify-content-between small text-success">
                           <span>Remaining</span>
                           <strong>₹{remainingAmount.toFixed(2)}</strong>
                         </div>
@@ -3576,29 +3636,51 @@ const BookingViewLayer = () => {
                           placeholder="Amount"
                         />
                       </div>
-                      <div className="mb-0">
-                        <label className="form-label fw-semibold">Discount Amount</label>
-                        <input
-                          type="number"
-                          className="form-control"
-                          min={0}
-                          max={Math.max(0, Number(payAmount || 0))}
-                          value={discountAmount}
-                          onChange={(e) => {
-                            const pay = Number(payAmount || 0);
-                            const val = Math.max(0, Number(e.target.value));
-                            setDiscountAmount(val > pay ? pay : val);
-                          }}
-                          placeholder="0"
-                        />
-                        {Number(payAmount || 0) > 0 && (
-                          <small className="text-muted">Max: ₹{Number(payAmount || 0).toFixed(2)}</small>
-                        )}
-                      </div>
-                      {Number(discountAmount || 0) > 0 && (
-                        <div className="mt-2 small text-muted">
-                          Final payable: ₹{Math.max(Number(payAmount || 0) - Number(discountAmount || 0), 0).toFixed(2)}
-                        </div>
+                      {alreadyPaid === 0 && (
+                        <>
+                          <div className="mb-0">
+                            <label className="form-label fw-semibold">Apply Coupon</label>
+                            <select
+                              className="form-select mb-2"
+                              value={selectedCoupon}
+                              onChange={(e) => setSelectedCoupon(e.target.value)}
+                            >
+                              {couponOffers.map((o) => (
+                                <option key={o.code} value={o.code}>{o.label}</option>
+                              ))}
+                            </select>
+                            {(() => {
+                              const sel = couponOffers.find((c) => c.code === selectedCoupon);
+                              if (!sel || sel.discountValue === 0) return null;
+                              return (
+                                <small className="text-muted d-block mb-2">Offer: {sel.discountType === "percentage" ? `${sel.discountValue}%` : `₹${Number(sel.discountValue).toFixed(2)}`}</small>
+                              );
+                            })()}
+                            {/* <label className="form-label fw-semibold">Discount Amount</label>
+                            <input
+                              type="number"
+                              className="form-control"
+                              disabled
+                              min={0}
+                              max={Math.max(0, Number(payAmount || 0))}
+                              value={discountAmount}
+                              onChange={(e) => {
+                                const pay = Number(payAmount || 0);
+                                const val = Math.max(0, Number(e.target.value));
+                                setDiscountAmount(val > pay ? pay : val);
+                              }}
+                              placeholder="0"
+                            /> */}
+                            {Number(payAmount || 0) > 0 && (
+                              <small className="text-muted">Max: ₹{Number(payAmount || 0).toFixed(2)}</small>
+                            )}
+                          </div>
+                          {Number(discountAmount || 0) > 0 && (
+                            <div className="mt-2 small text-muted">
+                              Final payable: ₹{Math.max(Number(payAmount || 0) - Number(discountAmount || 0), 0).toFixed(2)}
+                            </div>
+                          )}
+                        </>
                       )}
                     </>
                   )}
@@ -3646,29 +3728,51 @@ const BookingViewLayer = () => {
                           placeholder="Amount"
                         />
                       </div>
-                      <div className="mb-0">
-                        <label className="form-label fw-semibold">Discount Amount</label>
-                        <input
-                          type="number"
-                          className="form-control"
-                          min={0}
-                          max={Math.max(0, Number(payAmount || 0))}
-                          value={discountAmount}
-                          onChange={(e) => {
-                            const pay = Number(payAmount || 0);
-                            const val = Math.max(0, Number(e.target.value));
-                            setDiscountAmount(val > pay ? pay : val);
-                          }}
-                          placeholder="0"
-                        />
-                        {Number(payAmount || 0) > 0 && (
-                          <small className="text-muted">Max: ₹{Number(payAmount || 0).toFixed(2)}</small>
-                        )}
-                      </div>
-                      {Number(discountAmount || 0) > 0 && (
-                        <div className="mt-2 small text-muted">
-                          Final payable: ₹{Math.max(Number(payAmount || 0) - Number(discountAmount || 0), 0).toFixed(2)}
-                        </div>
+                      {alreadyPaid === 0 && (
+                        <>
+                          <div className="mb-0">
+                            <label className="form-label fw-semibold">Apply Coupon</label>
+                            <select
+                              className="form-select mb-2"
+                              value={selectedCoupon}
+                              onChange={(e) => setSelectedCoupon(e.target.value)}
+                            >
+                              {couponOffers.map((o) => (
+                                <option key={o.code} value={o.code}>{o.label}</option>
+                              ))}
+                            </select>
+                            {(() => {
+                              const sel = couponOffers.find((c) => c.code === selectedCoupon);
+                              if (!sel || sel.discountValue === 0) return null;
+                              return (
+                                <small className="text-muted d-block mb-2">Offer: {sel.discountType === "percentage" ? `${sel.discountValue}%` : `₹${Number(sel.discountValue).toFixed(2)}`}</small>
+                              );
+                            })()}
+                            {/* <label className="form-label fw-semibold">Discount Amount</label>
+                            <input
+                              type="number"
+                              className="form-control"
+                              disabled
+                              min={0}
+                              max={Math.max(0, Number(payAmount || 0))}
+                              value={discountAmount}
+                              onChange={(e) => {
+                                const pay = Number(payAmount || 0);
+                                const val = Math.max(0, Number(e.target.value));
+                                setDiscountAmount(val > pay ? pay : val);
+                              }}
+                              placeholder="0"
+                            /> */}
+                            {Number(payAmount || 0) > 0 && (
+                              <small className="text-muted">Max: ₹{Number(payAmount || 0).toFixed(2)}</small>
+                            )}
+                          </div>
+                          {Number(discountAmount || 0) > 0 && (
+                            <div className="mt-2 small text-muted">
+                              Final payable: ₹{Math.max(Number(payAmount || 0) - Number(discountAmount || 0), 0).toFixed(2)}
+                            </div>
+                          )}
+                        </>
                       )}
                     </>
                   )}
@@ -3797,6 +3901,7 @@ const BookingViewLayer = () => {
                       setSelectedInitialSupervisor(null);
                       setSelectedInitialFieldAdvisor(null);
                       setSelectedInitialTimeSlot(null);
+                      setSelectedServiceType(null);
                     }}
                   />
                 </div>
@@ -3816,6 +3921,7 @@ const BookingViewLayer = () => {
                             setInitialAssignType("fieldAdvisor");
                             setSelectedInitialTechnician(null);
                             setSelectedInitialSupervisor(null);
+                            setSelectedServiceType(null);
                           }}
                           style={{ width: "18px", height: "18px", margin: 0 }}
                         />
@@ -3838,6 +3944,7 @@ const BookingViewLayer = () => {
                           setInitialAssignType("technician");
                           setSelectedInitialSupervisor(null);
                           setSelectedInitialFieldAdvisor(null);
+                          setSelectedServiceType(null);
                         }}
                         style={{ width: "18px", height: "18px", margin: 0 }}
                       />
@@ -3905,12 +4012,35 @@ const BookingViewLayer = () => {
 
                   {/* Employee Selection based on assignType */}
                   {initialAssignType === "technician" ? (
-                    <Select
-                      options={technicians}
-                      value={selectedInitialTechnician}
-                      onChange={(val) => setSelectedInitialTechnician(val)}
-                      placeholder="Select Technician"
-                    />
+                    <>
+                      <Select
+                        options={technicians}
+                        value={selectedInitialTechnician}
+                        onChange={(val) => setSelectedInitialTechnician(val)}
+                        placeholder="Select Technician"
+                      />
+                      <div className="mt-3">
+                        <Select
+                          options={
+                            bookingData?.BookingAddOns
+                              ? Array.from(
+                                new Set(
+                                  bookingData.BookingAddOns
+                                    .map((addon) => addon.ServiceType)
+                                    .filter(Boolean),
+                                ),
+                              ).map((serviceType) => ({
+                                value: serviceType,
+                                label: serviceType,
+                              }))
+                              : []
+                          }
+                          value={selectedServiceType}
+                          onChange={(val) => setSelectedServiceType(val)}
+                          placeholder="Select Service Type"
+                        />
+                      </div>
+                    </>
                   ) : initialAssignType === "supervisor" ? (
                     <Select
                       options={supervisors}
@@ -3937,6 +4067,7 @@ const BookingViewLayer = () => {
                       setSelectedInitialSupervisor(null);
                       setSelectedInitialFieldAdvisor(null);
                       setSelectedInitialTimeSlot(null);
+                      setSelectedServiceType(null);
                     }}
                   >
                     Cancel
@@ -4085,7 +4216,9 @@ const BookingViewLayer = () => {
                               <Icon icon="mdi:account-arrow-right" width={24} height={24} className="text-primary" />
                             </span>
                             <div>
-                              <span className="fw-semibold d-block text-dark">Customer to Dealer</span>
+                              <span className="fw-semibold d-block text-dark">
+                                {garageTask === "carDrop" ? "Dealer to Customer" : "Customer to Dealer"}
+                              </span>
                               <span className="small text-muted">
                                 {garageTask === "carPickup" ? "Pickup at customer → Deliver at dealer" : "Pickup at dealer → Deliver at customer"}
                               </span>
