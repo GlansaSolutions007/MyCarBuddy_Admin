@@ -658,14 +658,14 @@ const BookingViewLayer = () => {
 
   const handleInitialAssignConfirm = async () => {
     // Time slot validation only for technician and supervisor
-    if (initialAssignType !== "fieldAdvisor" && !selectedInitialTimeSlot) {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Please select a time slot",
-      });
-      return;
-    }
+    // if (initialAssignType !== "fieldAdvisor" && !selectedInitialTimeSlot) {
+    //   Swal.fire({
+    //     icon: "error",
+    //     title: "Error",
+    //     text: "Please select a time slot",
+    //   });
+    //   return;
+    // }
 
     let payload;
     let apiUrl;
@@ -691,18 +691,18 @@ const BookingViewLayer = () => {
       method = "post";
     } else {
       // Common payload format for technician and supervisor
-      payload = {
-        bookingID: bookingId,
-        techID:
-          initialAssignType === "technician"
-            ? selectedInitialTechnician?.value
-            : selectedInitialSupervisor?.value,
-        assingedTimeSlot: selectedInitialTimeSlot.value,
-        role: initialAssignType === "technician" ? "Technician" : "Supervisor",
-      };
-
+      // payload = {
+      //   bookingID: bookingId,
+      //   techID:
+      //     initialAssignType === "technician"
+      //       ? selectedInitialTechnician?.value
+      //       : selectedInitialSupervisor?.value,
+      //   assingedTimeSlot: selectedInitialTimeSlot.value,
+      //   role: initialAssignType === "technician" ? "Technician" : "Supervisor",
+      // };
+    //  alert(initialAssignType);
       // API URL and method differ based on assign type
-      if (initialAssignType === "technician") {
+      if (initialAssignType == "technician") {
         if (!selectedInitialTechnician) {
           Swal.fire({
             icon: "error",
@@ -3978,6 +3978,7 @@ const BookingViewLayer = () => {
                 <div className="modal-body pt-1 pb-4">
                   <p className="text-muted small mb-3">Tap an option to proceed.</p>
                   <div className="d-flex flex-column gap-3">
+                    {bookingData?.ServiceType !== "ServiceAtHome" && (
                     <button
                       type="button"
                       className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white position-relative overflow-hidden transition"
@@ -4006,6 +4007,7 @@ const BookingViewLayer = () => {
                       </div>
                       <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
                     </button>
+                    )}
                     <button
                       type="button"
                       className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white position-relative overflow-hidden"
@@ -4261,10 +4263,10 @@ const BookingViewLayer = () => {
                     className="btn btn-press-effect btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
                     onClick={handleInitialAssignConfirm}
                     disabled={
-                      (initialAssignType !== "fieldAdvisor" && !selectedInitialTimeSlot) ||
-                      (initialAssignType === "technician" && !selectedInitialTechnician) ||
-                      (initialAssignType === "supervisor" && !selectedInitialSupervisor) ||
-                      (initialAssignType === "fieldAdvisor" && !selectedInitialFieldAdvisor) ||
+                    //   (initialAssignType !== "fieldAdvisor" && !seleInitialTimeSlot) ||
+                      (initialAssignType === "technician" && !selectedInitialTechnician)  ||
+                    //   (initialAssignType === "supervisor" && !selectedInitialSupervisor) ||
+                    //   (initialAssignType === "fieldAdvisor" && !selectedInitialFieldAdvisor) ||
                       (initialAssignType === "technician" && selectedServiceType.length === 0)
                     }
                   >

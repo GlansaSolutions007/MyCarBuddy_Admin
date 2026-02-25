@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Icon } from "@iconify/react";
 import axios from "axios";
 import { Link } from "react-router-dom";
@@ -190,6 +190,7 @@ const [actionStatus, setActionStatus] = useState(null);
       const list = Array.isArray(res.data) ? res.data : res.data?.data || [];
       const rows = getPendingAddonRows(list, userId);
       setPendingRows(rows);
+      setDisplayCount(10);
     } catch (err) {
       console.error("Pending bookings fetch error:", err);
       setPendingRows([]);
@@ -346,6 +347,20 @@ const [actionStatus, setActionStatus] = useState(null);
     return isNaN(dt) ? d : dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
   };
 
+  const visibleRows = pendingRows.slice(0, displayCount);
+  const hasMore = displayCount < pendingRows.length;
+
+  const handleScroll = useCallback(
+    (e) => {
+      const el = e.target;
+      const bottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 80;
+      if (bottom && hasMore && !pendingLoading) {
+        setDisplayCount((c) => Math.min(c + 10, pendingRows.length));
+      }
+    },
+    [hasMore, pendingLoading, pendingRows.length]
+  );
+
   return (
     <div className="row gy-4">
       <div className="col-12">
@@ -434,9 +449,13 @@ const [actionStatus, setActionStatus] = useState(null);
                       <p className="mb-0 mt-2">No pending confirmations</p>
                     </div>
                   ) : (
-                    <div className="table-responsive">
+                    <div
+                      className="table-responsive"
+                      style={{ maxHeight: "420px", overflowY: "auto" }}
+                      onScroll={handleScroll}
+                    >
                       <table className="table dealer-table-trend align-middle mb-0">
-                        <thead>
+                        <thead className="sticky-top" style={{ zIndex: 1, background: "#f8fafc" }}>
                           <tr>
                             <th className="text-nowrap ps-4">Booking ID</th>
                             <th className="text-nowrap">Date</th>
@@ -446,7 +465,7 @@ const [actionStatus, setActionStatus] = useState(null);
                           </tr>
                         </thead>
                         <tbody>
-                          {pendingRows.map((row) => (
+                          {visibleRows.map((row) => (
                             <tr key={row.rowId}>
                               <td className="ps-4">
                                 <Link
@@ -497,6 +516,13 @@ const [actionStatus, setActionStatus] = useState(null);
                           ))}
                         </tbody>
                       </table>
+                      {hasMore && (
+                        <div className="text-center py-3 border-top bg-light">
+                          <span className="text-muted small">
+                            Showing {visibleRows.length} of {pendingRows.length} — scroll for more
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
