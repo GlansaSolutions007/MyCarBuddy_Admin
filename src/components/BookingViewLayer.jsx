@@ -179,12 +179,12 @@ const BookingViewLayer = () => {
       });
       setBookingData(res.data[0]);
       console.log("Booking Data:", res.data[0]);
-      
+
       // Check if any CarPickUpDelivery has RouteType = "CustomerToDealer"
       const carPickUpDelivery = res.data?.[0]?.CarPickUpDelivery || [];
       const hasRoute = carPickUpDelivery.some((item) => item.RouteType === "CustomerToDealer");
       setHasExistingCustomerToDealerRoute(hasRoute);
-      
+
       const formatDate = (date) => {
         if (!date) return "";
         if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -647,12 +647,12 @@ const BookingViewLayer = () => {
       routeType,
       pickFrom,
       pickTo,
-      pickupDate:"",
+      pickupDate:  "",
       pickupTime:  "",
-      deliveryDate:  "",
-      deliveryTime:  "",
+      deliveryDate: "",
+      deliveryTime: "",
       techID: garageDriver?.value ?? 0,
-      assignDate: getLocalISODateTime(),
+      assignDate: garagePickupDate && garagePickupTime ? `${garagePickupDate}T${garagePickupTime}:00` : getLocalISODateTime(),
     };
   };
 
@@ -720,16 +720,16 @@ const BookingViewLayer = () => {
           return;
         }
 
-        // Get addOnIds based on selected service types (comma-separated)
-        const selectedServiceTypeValues = selectedServiceType.map((st) => st.value);
+        // Get addOnIds based on selected service names (comma-separated)
+        const selectedServiceNames = selectedServiceType.map((st) => st.value);
         const selectedAddOns = (bookingData?.BookingAddOns || []).filter(
-          (addon) => selectedServiceTypeValues.includes(addon.ServiceType)
+          (addon) => addon.ServiceName && selectedServiceNames.includes(addon.ServiceName)
         );
         const addOnIds = selectedAddOns.map((addon) => String(addon.AddOnID)).join(",") || "0";
-        
+
         payload = {
           bookingID: bookingData.BookingID,
-          assignDate: selectedInitialTimeSlot.value,
+          assignDate: garagePickupDate + "T" + garagePickupTime,
           role: "Technician",
           techID: selectedInitialTechnician?.value,
           addOnId: addOnIds,
@@ -1619,16 +1619,16 @@ const BookingViewLayer = () => {
       }
 
       // ✅ Validate email for online payment
-      if (isOnline && !paymentEmail) {
-        Swal.fire("Validation", "Please enter email address", "warning");
-        return;
-      }
+      // if (isOnline && !paymentEmail) {
+      //   Swal.fire("Validation", "Please enter email address", "warning");
+      //   return;
+      // }
 
       // ✅ Validate email format for online payment
-      if (isOnline && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paymentEmail)) {
-        Swal.fire("Validation", "Please enter valid email address", "warning");
-        return;
-      }
+      // if (isOnline && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paymentEmail)) {
+      //   Swal.fire("Validation", "Please enter valid email address", "warning");
+      //   return;
+      // }
 
       // ✅ If online payment, call final-payment-link API first
       if (isOnline) {
@@ -1636,7 +1636,7 @@ const BookingViewLayer = () => {
           bookingId: bookingData.BookingID,
           paymentAmount: finalAmount,
           phoneNumber: bookingData.PhoneNumber,
-          email: paymentEmail,
+          email: bookingData.CustEmail,
           customerId: bookingData.CustID,
         };
 
@@ -1652,12 +1652,12 @@ const BookingViewLayer = () => {
           if (onlineRes?.data?.success || onlineRes?.data?.paymentLinkUrl) {
             // Payment link created successfully
             const paymentLink = onlineRes.data.paymentLinkUrl || onlineRes.data.paymentLinkUrl;
-            
+
             Swal.fire({
-              title: "Payment Link Generated",
-              text: "You will be redirected to the payment gateway",
+              title: "Payment Successful",
+              text: "Your payment Link has been send to customer email and phone number.",
               icon: "success",
-              confirmButtonText: "Proceed",
+              confirmButtonText: "Ok",
             }).then(() => {
               // if (paymentLink) {
               //   window.open(paymentLink, "_blank");
@@ -1713,7 +1713,7 @@ const BookingViewLayer = () => {
     }
   };
 
-    // Fetch coupons from API and filter by min booking amount
+  // Fetch coupons from API and filter by min booking amount
   useEffect(() => {
     const fetchCoupons = async () => {
       try {
@@ -1759,20 +1759,25 @@ const BookingViewLayer = () => {
     setDiscountAmount(Number(applied.toFixed(2)));
   }, [selectedCoupon, payAmount, couponOffers]);
 
-  // Auto-set pickup dealer from last CarPickUpDelivery entry
+  // Auto-set pickup dealer from last CarPickUpDelivery entry, or fallback to dealer from BookingAddOns
   useEffect(() => {
-    if (garageStep === "details" && (garageTask === "carDrop" || garageRoute === "dealerToDealer")) {
+    if (garageStep === "details" && (garageTask === "carDrop" || garageRoute === "dealerToDealer") && !garagePickupDealer) {
       const carPickUpDelivery = bookingData?.CarPickUpDelivery || [];
       if (carPickUpDelivery.length > 0) {
         const lastEntry = carPickUpDelivery[carPickUpDelivery.length - 1];
         const pickedDealerId = lastEntry.PickTo || lastEntry.PickFrom;
-        
+
         if (pickedDealerId) {
           const dealerOption = garageDealerOptions.find((opt) => opt.value === Number(pickedDealerId));
-          if (dealerOption && !garagePickupDealer) {
+          if (dealerOption) {
             setGaragePickupDealer(dealerOption);
+            return;
           }
         }
+      }
+      // Fallback: use dealer from BookingAddOns (where car is / service is done)
+      if (garageDealerOptions.length > 0) {
+        setGaragePickupDealer(garageDealerOptions[0]);
       }
     }
   }, [garageStep, garageTask, garageRoute, bookingData, garageDealerOptions]);
@@ -2965,7 +2970,7 @@ const BookingViewLayer = () => {
                                               </td>
                                               <td className="text-center align-middle">
                                                 {addon.IsCompleted_Confirmation === 1 ||
-                                                addon.isCompleted_Confirmation === 1 ? (
+                                                  addon.isCompleted_Confirmation === 1 ? (
                                                   <div className="d-flex gap-2 align-items-center justify-content-center">
                                                     <span className="badge bg-success px-3 py-3 py-4 rounded-pill">
                                                       {addon.EmployeeName ?? addon.employeeName ?? "—"}
@@ -3618,7 +3623,7 @@ const BookingViewLayer = () => {
 
                   <div className="mb-3">
                     {/* <label className="form-label">Time Slot</label> */}
-                    <Select
+                    {/* <Select
                       options={getSelectedTimeSlotOptions()}
                       value={selectedReassignTimeSlot}
                       onChange={(val) => setSelectedReassignTimeSlot(val)}
@@ -3627,7 +3632,28 @@ const BookingViewLayer = () => {
                         !getSelectedTimeSlotOptions().length ||
                         getSelectedTimeSlotOptions().length <= 1
                       }
-                    />
+                    /> */}
+                    <div class="row g-2">
+                      <div class="col-6">
+                        <label class="form-label small mb-1">Date</label>
+                        <input
+                          type="date"
+                          className="form-control form-control-sm"
+                          min={today}
+                          value={garagePickupDate}
+                          onChange={(e) => setGaragePickupDate(e.target.value)}
+                        />
+                      </div>
+                      <div class="col-6">
+                        <label class="form-label small mb-1">Time</label>
+                        <input
+                          type="time"
+                          className="form-control form-control-sm"
+                          value={garagePickupTime}
+                          onChange={(e) => setGaragePickupTime(e.target.value)}
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   {assignType === "technician" ? (
@@ -3815,17 +3841,7 @@ const BookingViewLayer = () => {
                           )}
                         </>
                       )}
-                      <div className="mb-3">
-                        <label className="form-label fw-semibold">Email Address</label>
-                        <input
-                          type="email"
-                          className="form-control"
-                          value={paymentEmail}
-                          onChange={(e) => setPaymentEmail(e.target.value.trim())}
-                          placeholder="Enter email address"
-                        />
-                        <small className="text-muted">Payment link will be sent to this email</small>
-                      </div>
+
                     </>
                   )}
 
@@ -4125,7 +4141,7 @@ const BookingViewLayer = () => {
                   </div>
 
                   {/* Time Slot Selection - Hide for Field Advisor */}
-                  {initialAssignType !== "fieldAdvisor" && (
+                  {/* {initialAssignType !== "fieldAdvisor" && (
                     <div className="mb-3">
                       {bookingData?.TimeSlot?.split(",").length === 1 ? (
                         <Select
@@ -4152,7 +4168,9 @@ const BookingViewLayer = () => {
                         />
                       )}
                     </div>
-                  )}
+                  )} */}
+
+                 
 
                   {/* Employee Selection based on assignType */}
                   {initialAssignType === "technician" ? (
@@ -4170,12 +4188,12 @@ const BookingViewLayer = () => {
                               ? Array.from(
                                 new Set(
                                   bookingData.BookingAddOns
-                                    .map((addon) => addon.ServiceType)
+                                    .map((addon) => addon.ServiceName)
                                     .filter(Boolean),
                                 ),
-                              ).map((serviceType) => ({
-                                value: serviceType,
-                                label: serviceType,
+                              ).map((serviceName) => ({
+                                value: serviceName,
+                                label: serviceName,
                               }))
                               : []
                           }
@@ -4201,6 +4219,28 @@ const BookingViewLayer = () => {
                       placeholder="Select Field Advisor"
                     />
                   )}
+
+                   <div class="row g-2 mb-2">
+                    <div class="col-6">
+                      <label class="form-label small mb-1">Date</label>
+                      <input
+                        type="date"
+                        className="form-control form-control-sm"
+                        min={today}
+                        value={garagePickupDate}
+                        onChange={(e) => setGaragePickupDate(e.target.value)}
+                      />
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label small mb-1">Time</label>
+                      <input
+                        type="time"
+                        className="form-control form-control-sm"
+                        value={garagePickupTime}
+                        onChange={(e) => setGaragePickupTime(e.target.value)}
+                      />
+                    </div>
+                  </div>
                 </div>
                 <div className="modal-footer d-inline-flex align-items-center justify-content-center">
                   <button
@@ -4224,7 +4264,7 @@ const BookingViewLayer = () => {
                       (initialAssignType !== "fieldAdvisor" && !selectedInitialTimeSlot) ||
                       (initialAssignType === "technician" && !selectedInitialTechnician) ||
                       (initialAssignType === "supervisor" && !selectedInitialSupervisor) ||
-                      (initialAssignType === "fieldAdvisor" && !selectedInitialFieldAdvisor) || 
+                      (initialAssignType === "fieldAdvisor" && !selectedInitialFieldAdvisor) ||
                       (initialAssignType === "technician" && selectedServiceType.length === 0)
                     }
                   >
@@ -4439,8 +4479,8 @@ const BookingViewLayer = () => {
                             <Select
                               options={garageDealerOptions}
                               value={garagePickupDealer}
-                              onChange={setGaragePickupDealer}
                               isDisabled={true}
+                              onChange={setGaragePickupDealer}
                               placeholder="Select dealer"
                             />
                           </div>
@@ -4535,6 +4575,24 @@ const BookingViewLayer = () => {
                           !garagePickupTime
                         }
                         onClick={async () => {
+                          // Check if all BookingAddOns have IsCompleted_Confirmation = 1 for carDrop
+                          if (garageTask === "carDrop") {
+                            const bookingAddOns = bookingData?.BookingAddOns || [];
+                            const allConfirmed = bookingAddOns.every(addon => addon.IsCompleted_Confirmation === 1);
+                            if (!allConfirmed) {
+                              const unconfirmedServices = bookingAddOns
+                                .filter(addon => addon.IsCompleted_Confirmation !== 1)
+                                .map(addon => addon.ServiceName)
+                                .join(", ");
+                              Swal.fire({
+                                icon: "warning",
+                                title: "Service Completion Not Confirmed",
+                                html: `All services must be completed by Field Advisor before car drop.<br/><br/><strong>Pending services:</strong><br/>${unconfirmedServices || "Some services"}`
+                              });
+                              return;
+                            }
+                          }
+                          
                           const payload = buildGaragePayload();
                           if (!payload) {
                             Swal.fire({ icon: "error", title: "Error", text: "Booking/Lead info missing." });

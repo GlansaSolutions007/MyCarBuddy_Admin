@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Icon } from "@iconify/react";
 import axios from "axios";
 import { Link } from "react-router-dom";
@@ -6,319 +6,74 @@ import Swal from "sweetalert2";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
-// Pending status check for addon
-const isPendingDealerConfirm = (val) =>
-  (val?.IsDealer_Confirm ?? val?.isDealer_Confirm)?.toString()?.trim() === "Pending";
-
-// Match addon to current dealer (DealerID can be number or string)
-const addonMatchesDealer = (addon, dealerId) => {
-  const d = addon?.DealerID ?? addon?.dealerId;
-  if (d == null || d === "") return false;
-  return String(d) === String(dealerId) || Number(d) === Number(dealerId);
-};
-
-// Build flat list of pending addon rows: only BookingAddOns (and BookingsTempAddons) where DealerID matches and IsDealer_Confirm is Pending
-const getPendingAddonRows = (bookings, dealerId) => {
-  const rows = [];
-  (Array.isArray(bookings) ? bookings : []).forEach((booking) => {
-    const addonSources = [
-      ...(booking?.BookingAddOns || []).map((a) => ({ addon: a, source: "BookingAddOns" })),
-      ...(booking?.BookingsTempAddons || []).map((a) => ({ addon: a, source: "BookingsTempAddons" })),
-    ];
-    addonSources.forEach(({ addon, source }, idx) => {
-      if (!addonMatchesDealer(addon, dealerId)) return;
-      if (!isPendingDealerConfirm(addon)) return;
-      const addonId = addon?.AddOnID ?? addon?.AddOnId ?? addon?.Id ?? addon?.id ?? idx;
-      rows.push({
-        rowId: `${booking.BookingID}-${addonId}-${idx}`,
-        booking,
-        addon,
-        source,
-      });
-    });
-  });
-  return rows;
-};
-
-// Single service name from addon
-const getAddonServiceName = (addon) =>
-  addon?.AddOnName ?? addon?.ServiceName ?? addon?.Name ?? "Service";
-
-// Normalize includes for UpdateSupervisorBooking: comma-separated string of IDs
-const getAddonIncludes = (addon) => {
-  const raw = addon?.Includes ?? addon?.includes ?? addon?.IncludeIds ?? addon?.includeIds;
-  if (raw == null || raw === "") return "";
-  if (typeof raw === "string") return raw.trim();
-  if (Array.isArray(raw)) {
-    const ids = raw.map((i) => (typeof i === "object" ? i?.IncludeID ?? i?.includeID ?? i?.id : i));
-    return ids.filter((id) => id != null && id !== "").join(",");
-  }
-  return "";
-};
-
-// serviceId for API: Package → packageId; Service → serviceId/includeId
-const getAddonServiceId = (addon) => {
-  const st = (addon?.ServiceType ?? addon?.serviceType ?? "Service").toString();
-  if (st === "Package") return Number(addon?.PackageId ?? addon?.packageId ?? addon?.ServiceId ?? addon?.serviceId ?? 0) || 0;
-  return Number(addon?.ServiceId ?? addon?.serviceId ?? addon?.IncludeId ?? addon?.includeId ?? 0) || 0;
-};
-
-// Car details only (no customer name)
-const getCarDetails = (b) => {
-  const parts = [];
-  if (b?.VehicleDetails?.[0]?.RegistrationNumber?.trim()) parts.push(b.VehicleDetails[0].RegistrationNumber.trim());
-  return parts.length ? parts.join(" · ") : "—";
-};
-
 const FieldAdvisorDashboardLayer = () => {
- const [dashboardData, setDashboardData] = useState({
-  totalBookings: 0,
-  todaysAssignedBookings: 0,
-  ongoingBookings: 0,
-  completedBookings: 0,
-});
-const [loading, setLoading] = useState(false);
-const [pendingRows, setPendingRows] = useState([]);
-const [pendingLoading, setPendingLoading] = useState(false);
-const [actionRowId, setActionRowId] = useState(null);
-const [actionStatus, setActionStatus] = useState(null);
-  const [showPriceModal, setShowPriceModal] = useState(false);
-  const [priceModalRow, setPriceModalRow] = useState(null);
-  const [priceForm, setPriceForm] = useState({
-    priceType: "Service price",
-    amount: "",
-    gstPercent: 18,
-    gstAmount: "",
+  const [approvingBookingId, setApprovingBookingId] = useState(null);
+  const [dashboardData, setDashboardData] = useState({
+    totalBookings: 0,
+    todaysAssignedBookings: 0,
+    ongoingBookings: 0,
+    completedBookings: 0,
   });
-  const [priceSubmitLoading, setPriceSubmitLoading] = useState(false);
-  const [priceModalAddonEnriched, setPriceModalAddonEnriched] = useState(null);
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
+  const [displayCount, setDisplayCount] = useState(10);
+  const [confirmedByCache, setConfirmedByCache] = useState({}); // bookingId -> confirmerName (optimistic after approve)
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
-  
-  // Format currency
-  const formatCurrency = (amount = 0) => {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(amount || 0);
-};
 
-  // 🔹 API integration
-  useEffect(() => {
-  if (userId) {
-    fetchDashboardData();
-    fetchPendingBookings();
-  }
-}, [userId]);
+  const formatCurrency = (amount = 0) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(amount || 0);
 
   useEffect(() => {
-    if (!showPriceModal || !priceModalRow?.booking?.BookingID) return;
-    const addonId = priceModalRow.addon?.AddOnID ?? priceModalRow.addon?.AddOnId ?? priceModalRow.addon?.id;
-    if (getAddonIncludes(priceModalRow.addon) !== "" && getAddonServiceId(priceModalRow.addon) !== 0) {
-      return;
+    if (userId) {
+      fetchFieldAdvisorData();
     }
-    const fetchBookingForIncludes = async () => {
-      try {
-        const res = await axios.get(
-          `${API_BASE}Bookings/BookingId?Id=${priceModalRow.booking.BookingID}&dealerId=${userId}`,
-          { headers: token ? { Authorization: `Bearer ${token}` } : {} }
-        );
-        const booking = Array.isArray(res.data) ? res.data[0] : res.data;
-        const addons = [
-          ...(booking?.BookingAddOns || []),
-          ...(booking?.BookingsTempAddons || []),
-        ];
-        const fullAddon = addons.find(
-          (a) => (a?.AddOnID ?? a?.AddOnId ?? a?.id) == addonId
-        );
-        if (fullAddon) setPriceModalAddonEnriched({ ...priceModalRow.addon, ...fullAddon });
-      } catch (e) {
-        console.error("Fetch booking for includes:", e);
-      }
-    };
-    fetchBookingForIncludes();
-  }, [showPriceModal, priceModalRow?.booking?.BookingID, priceModalRow?.rowId]);
+  }, [userId]);
 
-  const fetchDashboardData = async () => {
-    try {
-       setLoading(true);
-      const res = await axios.get(
-        `https://dev-api.mycarsbuddy.com/api/Supervisor/supervisor-booking-summary?supervisorHeadId=${userId}`
-      );
-      const data = Array.isArray(res.data) ? res.data[0] : res.data;
-      setDashboardData({
-        totalBookings: data.TotalBookings || 0,
-        todaysAssignedBookings: data.TodaysAssignedBookings || 0,
-        ongoingBookings: data.OngoingBookings || 0,
-        completedBookings: data.CompletedBookings || 0,
-      });
-    } 
-    catch (error) {
-      console.error("Dashboard API error:", error);
-    } finally {
-    setLoading(false);
-  }
-  };
-
-  const fetchPendingBookings = async () => {
+  const fetchFieldAdvisorData = async () => {
     if (!userId) return;
     try {
-      setPendingLoading(true);
+      setLoading(true);
+      setBookingsLoading(true);
       const res = await axios.get(
-        `${API_BASE}Bookings?type=Dealer&dealerid=${userId}`,
+        `${API_BASE}Bookings?employeeId=${userId}`,
         { headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
       const list = Array.isArray(res.data) ? res.data : res.data?.data || [];
-      const rows = getPendingAddonRows(list, userId);
-      setPendingRows(rows);
-    } catch (err) {
-      console.error("Pending bookings fetch error:", err);
-      setPendingRows([]);
-    } finally {
-      setPendingLoading(false);
-    }
-  };
+      setBookings(list);
+      setDisplayCount(10);
 
-  const confirmAddon = async (row, status) => {
-    setActionRowId(row.rowId);
-    setActionStatus(status);
-    const addon = row.addon;
-    const addonId = addon?.AddOnID ?? addon?.AddOnId ?? addon?.Id ?? addon?.id;
-    if (!addonId) {
-      Swal.fire({ icon: "error", title: "Error", text: "Item ID not found." });
-      setActionRowId(null);
-      setActionStatus(null);
-      return;
-    }
-    const type = row.source === "BookingAddOns" ? "AddOn" : "TempAddon";
-    const dealerId = addon?.DealerID ?? addon?.dealerId ?? userId;
-    try {
-      const res = await axios.post(
-        `${API_BASE}Dealer/DealerApproveBookingBulk`,
-        {
-          ids: String(addonId),
-          type,
-          status,
-          dealerId: Number(dealerId) || dealerId,
-          createdBy: userId,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        }
-      );
-      if (res.status === 200 || res.status === 201 || res.data?.success !== false) {
-        setPendingRows((prev) => prev.filter((r) => r.rowId !== row.rowId));
-        if (status === "Approved") {
-          setPriceForm({ priceType: "Service price", amount: "", gstPercent: 18, gstAmount: "" });
-          setPriceModalAddonEnriched(null);
-          setPriceModalRow(row);
-          setShowPriceModal(true);
-        } else {
-          Swal.fire({
-            icon: "success",
-            title: "Rejected",
-            text: "Service rejected.",
-            timer: 2000,
-            showConfirmButton: false,
-          });
-        }
-      } else {
-        throw new Error(res.data?.message || "Request failed");
-      }
-    } catch (err) {
-      const msg = err.response?.data?.message || err.message || "Request failed.";
-      Swal.fire({ icon: "error", title: "Error", text: msg });
-    } finally {
-      setActionRowId(null);
-      setActionStatus(null);
-    }
-  };
+      const today = new Date().toISOString().split("T")[0];
+      const isToday = (d) => {
+        if (!d) return false;
+        const dt = new Date(d);
+        return dt.toISOString().split("T")[0] === today;
+      };
+      const isOngoing = (b) => {
+        const s = (b?.BookingStatus ?? "").toString().toLowerCase();
+        return ["confirmed", "reached", "service started", "in progress", "pending"].includes(s);
+      };
+      const isCompleted = (b) =>
+        (b?.BookingStatus ?? "").toString().toLowerCase() === "completed";
 
-  const handleAccept = (row) => () => confirmAddon(row, "Approved");
-  const handleReject = (row) => () => confirmAddon(row, "Rejected");
-  const rowBusy = (row) => actionRowId === row.rowId;
-  const acceptBusy = (row) => rowBusy(row) && actionStatus === "Approved";
-  const rejectBusy = (row) => rowBusy(row) && actionStatus === "Rejected";
-
-  const updatePriceForm = (updates) => {
-    setPriceForm((prev) => {
-      const next = { ...prev, ...updates };
-      if (updates.amount !== undefined || updates.gstPercent !== undefined) {
-        const amt = Number(updates.amount ?? prev.amount) || 0;
-        const pct = Number(updates.gstPercent ?? prev.gstPercent) || 18;
-        next.gstAmount = amt > 0 ? (amt * pct / 100).toFixed(2) : "";
-      }
-      return next;
-    });
-  };
-
-  const handlePriceSubmit = async () => {
-    if (!priceModalRow) return;
-    const amt = Number(priceForm.amount);
-    if (isNaN(amt) || amt < 0) {
-      Swal.fire({ icon: "warning", title: "Invalid Amount", text: "Please enter a valid amount." });
-      return;
-    }
-    const row = priceModalRow;
-    const addon = priceModalAddonEnriched || row.addon;
-    const booking = row.booking;
-    const addonId = addon?.AddOnID ?? addon?.AddOnId ?? addon?.Id ?? addon?.id;
-    const isPartPrice = priceForm.priceType === "Part price";
-    const basePrice = isPartPrice ? amt : 0;
-    const labourCharges = isPartPrice ? 0 : amt;
-    const partTotal = isPartPrice ? amt : 0;
-    const gstPercent = Number(priceForm.gstPercent) || 18;
-    const gstAmount = Number(priceForm.gstAmount) || 0;
-
-    const payload = {
-      id: addonId,
-      bookingId: booking.BookingID,
-      bookingTrackID: booking.BookingTrackID || "",
-      leadId: booking.LeadId ?? booking.LeadID ?? "",
-      serviceType: addon?.ServiceType ?? addon?.serviceType ?? "Service",
-      serviceName: getAddonServiceName(addon),
-      basePrice,
-      quantity: 1,
-      price: partTotal,
-      gstPercent,
-      gstAmount,
-      description: addon?.Description ?? addon?.description ?? "",
-      dealerID: addon?.DealerID ?? addon?.dealerId ?? userId,
-      percentage: Number(addon?.percentage ?? addon?.Percentage) || 0,
-      our_Earnings: 0,
-      labourCharges,
-      modifiedBy: parseInt(userId, 10) || 0,
-      isActive: true,
-      type: "Confirm",
-      includes: getAddonIncludes(addon),
-      serviceId: getAddonServiceId(addon),
-      dealerType: "dealer",
-    };
-
-    setPriceSubmitLoading(true);
-    try {
-      await axios.put(
-        `${API_BASE}Supervisor/UpdateSupervisorBooking`,
-        payload,
-        { headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) } }
-      );
-      Swal.fire({ icon: "success", title: "Saved", text: "Price details saved successfully." });
-      setShowPriceModal(false);
-      setPriceModalRow(null);
-      setPriceModalAddonEnriched(null);
-      setPriceForm({ priceType: "Service price", amount: "", gstPercent: 18, gstAmount: "" });
-    } catch (err) {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: err.response?.data?.message || err.message || "Failed to save.",
+      setDashboardData({
+        totalBookings: list.length,
+        todaysAssignedBookings: list.filter((b) => isToday(b.BookingDate || b.CreatedDate)).length,
+        ongoingBookings: list.filter(isOngoing).length,
+        completedBookings: list.filter(isCompleted).length,
       });
+    } catch (error) {
+      console.error("Field Advisor dashboard error:", error);
+      setBookings([]);
+      setDashboardData({ totalBookings: 0, todaysAssignedBookings: 0, ongoingBookings: 0, completedBookings: 0 });
     } finally {
-      setPriceSubmitLoading(false);
+      setLoading(false);
+      setBookingsLoading(false);
     }
   };
 
@@ -328,36 +83,127 @@ const [actionStatus, setActionStatus] = useState(null);
     return isNaN(dt) ? d : dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
   };
 
+  const getCarDetails = (b) => {
+    const reg = b?.VehicleDetails?.[0]?.RegistrationNumber?.trim();
+    return reg || "—";
+  };
+
+  const getCustomerName = (b) =>
+    b?.CustFullName ?? b?.CustomerName ?? b?.CustName ?? "—";
+
+  // F.A. Confirm status: same logic as BookingViewLayer (addon-level IsCompleted_Confirmation + EmployeeName)
+  const getBookingConfirmationStatus = (booking) => {
+    const addons = [
+      ...(booking?.BookingAddOns || []),
+      ...(booking?.BookingsTempAddons || []),
+    ];
+    if (addons.length === 0) return { allConfirmed: false, confirmerName: null };
+    const allConfirmed = addons.every(
+      (a) => (a.IsCompleted_Confirmation ?? a.isCompleted_Confirmation) === 1
+    );
+    const firstConfirmed = addons.find(
+      (a) => (a.IsCompleted_Confirmation ?? a.isCompleted_Confirmation) === 1
+    );
+    const confirmerName = firstConfirmed?.EmployeeName ?? firstConfirmed?.employeeName ?? null;
+    return { allConfirmed, confirmerName };
+  };
+
+  const visibleBookings = bookings.slice(0, displayCount);
+  const hasMore = displayCount < bookings.length;
+
+  const handleScroll = useCallback(
+    (e) => {
+      const el = e.target;
+      const bottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 80;
+      if (bottom && hasMore && !bookingsLoading) {
+        setDisplayCount((c) => Math.min(c + 10, bookings.length));
+      }
+    },
+    [hasMore, bookingsLoading, bookings.length]
+  );
+
+  const handleFieldAdvisorConfirm = async (booking) => {
+    const bookingId = booking?.BookingID ?? booking?.BookingId;
+    if (!bookingId) {
+      Swal.fire({ icon: "warning", title: "Invalid data", text: "Booking ID missing." });
+      return;
+    }
+    const employeeId = userId ? Number(userId) : Number(localStorage.getItem("userId") || 0);
+    if (!employeeId) {
+      Swal.fire({ icon: "warning", title: "Invalid data", text: "Employee ID missing." });
+      return;
+    }
+    setApprovingBookingId(bookingId);
+    try {
+      const res = await axios.get(
+        `${API_BASE}Bookings/BookingId?Id=${bookingId}`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+      const fullBooking = Array.isArray(res.data) ? res.data[0] : res.data;
+      const addons = [
+        ...(fullBooking?.BookingAddOns || []),
+        ...(fullBooking?.BookingsTempAddons || []),
+      ].filter((a) => (a.IsCompleted_Confirmation ?? a.isCompleted_Confirmation) !== 1);
+      if (addons.length === 0) {
+        Swal.fire({ icon: "info", title: "Done", text: "No addons pending confirmation." });
+        setApprovingBookingId(null);
+        return;
+      }
+      let confirmed = 0;
+      for (const addon of addons) {
+        const addOnId = addon?.AddOnID ?? addon?.AddOnId ?? addon?.Id ?? addon?.id;
+        if (!addOnId) continue;
+        await axios.post(
+          `${API_BASE}Supervisor/confirm`,
+          { addOnId, employeeId },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        confirmed++;
+      }
+      Swal.fire({ icon: "success", title: "Confirmed", text: `${confirmed} service(s) confirmed successfully.` });
+      const confirmerName = localStorage.getItem("name") || "Field Advisor";
+      setConfirmedByCache((prev) => ({ ...prev, [bookingId]: confirmerName }));
+      fetchFieldAdvisorData();
+    } catch (err) {
+      console.error("Supervisor/confirm error:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.response?.data?.message || err.message || "Failed to confirm.",
+      });
+    } finally {
+      setApprovingBookingId(null);
+    }
+  };
+
   return (
     <div className="row gy-4">
       <div className="col-12">
         <div className="card">
           <div className="card-body">
-             <div className="card radius-8 col-md-12 bg-none">
-                <div className="card-body dashboard-first-section radius-8">
-                  <div className="position-absolute">
-                    <div className=" text-2xl font-semibold text-primary-foreground">
-                      Welcome {localStorage.getItem("name")}!
-                    </div>
-                  </div>
-
-                  {/* Character Image */}
-                  <div className="position-relative text-end">
-                    <img
-                      alt="user"
-                      loading="lazy"
-                      width="80"
-                      height="201"
-                      decoding="async"
-                      className="w-full h-full object-cover"
-                      src="/assets/images/admin.webp"
-                      style={{ color: "transparent" }}
-                    />
+            <div className="card radius-8 col-md-12 bg-none">
+              <div className="card-body dashboard-first-section radius-8">
+                <div className="position-absolute">
+                  <div className="text-2xl font-semibold text-primary-foreground">
+                    Welcome {localStorage.getItem("name")}!
                   </div>
                 </div>
+                <div className="position-relative text-end">
+                  <img
+                    alt="user"
+                    loading="lazy"
+                    width="80"
+                    height="201"
+                    decoding="async"
+                    className="w-full h-full object-cover"
+                    src="/assets/images/admin.webp"
+                    style={{ color: "transparent" }}
+                  />
+                </div>
               </div>
+            </div>
 
-            {/* Services to confirm — pending IsDealer_Confirm */}
+            {/* My Assigned Bookings – Field Advisor only */}
             <div className="col-12 mt-4">
               <style>{`
                 @keyframes dealer-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
@@ -377,192 +223,187 @@ const [actionStatus, setActionStatus] = useState(null);
                 <div className="card-header card-header-trend d-flex align-items-center justify-content-between flex-wrap gap-2 py-3 px-4">
                   <div className="d-flex align-items-center gap-2">
                     <span className="dealer-dot-pending flex-shrink-0" />
-                    <h6 className="mb-0 fw-bold">Services to confirm</h6>
-                    {pendingRows.length > 0 && (
-                      <span className="badge bg-success bg-opacity-25 text-success ms-2">{pendingRows.length}</span>
+                    <h6 className="mb-0 fw-bold">My Assigned Bookings</h6>
+                    {bookings.length > 0 && (
+                      <span className="badge bg-success bg-opacity-25 text-success ms-2">{bookings.length}</span>
                     )}
                   </div>
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-success"
-                    onClick={fetchPendingBookings}
-                    disabled={pendingLoading}
+                    onClick={fetchFieldAdvisorData}
+                    disabled={bookingsLoading}
                   >
                     <Icon icon="solar:refresh-bold" className="me-1" />
                     Refresh
                   </button>
                 </div>
                 <div className="card-body p-0 bg-white">
-                  {pendingLoading ? (
+                  {bookingsLoading ? (
                     <div className="text-center py-5 text-secondary">
                       <Icon icon="solar:loading-bold" className="fs-2" style={{ animation: "spin 1s linear infinite" }} />
                       <p className="mb-0 mt-2">Loading...</p>
                     </div>
-                  ) : pendingRows.length === 0 ? (
+                  ) : bookings.length === 0 ? (
                     <div className="text-center py-5 text-secondary">
                       <Icon icon="solar:check-circle-bold" className="fs-1 text-success" />
-                      <p className="mb-0 mt-2">No pending confirmations</p>
+                      <p className="mb-0 mt-2">No bookings assigned</p>
                     </div>
                   ) : (
-                    <div className="table-responsive">
+                    <div
+                      className="table-responsive"
+                      style={{ maxHeight: "420px", overflowY: "auto" }}
+                      onScroll={handleScroll}
+                    >
                       <table className="table dealer-table-trend align-middle mb-0">
-                        <thead>
+                        <thead className="sticky-top" style={{ zIndex: 1, background: "#f8fafc" }}>
                           <tr>
                             <th className="text-nowrap ps-4">Booking ID</th>
                             <th className="text-nowrap">Date</th>
-                            <th className="text-nowrap">Service name</th>
-                            <th className="text-nowrap">Car details</th>
+                            <th className="text-nowrap">Customer</th>
+                            <th className="text-nowrap">Vehicle</th>
+                            <th className="text-nowrap">Status</th>
                             <th className="text-nowrap text-end pe-4">Action</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {pendingRows.map((row) => (
-                            <tr key={row.rowId}>
+                          {visibleBookings.map((row) => (
+                            <tr key={row.BookingID}>
                               <td className="ps-4">
                                 <Link
-                                  to={`/dealer-booking-view/${row.booking.LeadId}`}
+                                  to={`/booking-view/${row.BookingID}`}
                                   className="text-primary text-decoration-none fw-semibold"
                                 >
-                                  {row.booking.BookingTrackID || row.booking.BookingID}
+                                  {row.BookingTrackID || row.BookingID}
                                 </Link>
                               </td>
-                              <td>{formatDate(row.booking.BookingDate)}</td>
-                              <td>{getAddonServiceName(row.addon)}</td>
-                              <td>{getCarDetails(row.booking)}</td>
+                              <td>{formatDate(row.BookingDate || row.CreatedDate)}</td>
+                              <td>{getCustomerName(row)}</td>
+                              <td>{getCarDetails(row)}</td>
+                              <td>
+                                <span className="badge bg-warning bg-opacity-25 text-warning">
+                                  {row.BookingStatus || "—"}
+                                </span>
+                              </td>
                               <td className="text-end pe-4">
-                                <div className="d-flex gap-2 justify-content-end">
-                                  <button
-                                    type="button"
-                                    className="btn btn-sm btn-success"
-                                    onClick={handleAccept(row)}
-                                    disabled={rowBusy(row)}
+                                <div className="d-flex gap-2 justify-content-end align-items-center">
+                                  {(() => {
+                                    const bid = row.BookingID ?? row.BookingId;
+                                    const fromCache = confirmedByCache[bid];
+                                    const { allConfirmed, confirmerName } = fromCache
+                                      ? { allConfirmed: true, confirmerName: fromCache }
+                                      : getBookingConfirmationStatus(row);
+                                    if (allConfirmed) {
+                                      return (
+                                        <span className="badge bg-success px-3 py-1 rounded-pill">
+                                          {confirmerName ?? "—"}
+                                        </span>
+                                      );
+                                    }
+                                    return (
+                                      <button
+                                        type="button"
+                                        className="btn btn-sm btn-success"
+                                        onClick={() => handleFieldAdvisorConfirm(row)}
+                                        disabled={approvingBookingId === bid}
+                                      >
+                                        {approvingBookingId === bid ? (
+                                          <Icon icon="solar:loading-bold" className="fs-6" style={{ animation: "spin 1s linear infinite" }} />
+                                        ) : (
+                                          <>
+                                            <Icon icon="solar:check-circle-bold" className="me-1" />
+                                            Approve
+                                          </>
+                                        )}
+                                      </button>
+                                    );
+                                  })()}
+                                  <Link
+                                    to={`/booking-view/${row.BookingID}`}
+                                    className="btn btn-sm btn-outline-primary"
                                   >
-                                    {acceptBusy(row) ? (
-                                      <Icon icon="solar:loading-bold" className="fs-6" style={{ animation: "spin 1s linear infinite" }} />
-                                    ) : (
-                                      <>
-                                        <Icon icon="solar:check-circle-bold" className="me-1" />
-                                        Accept
-                                      </>
-                                    )}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="btn btn-sm btn-outline-danger"
-                                    onClick={handleReject(row)}
-                                    disabled={rowBusy(row)}
-                                  >
-                                    {rejectBusy(row) ? (
-                                      <Icon icon="solar:loading-bold" className="fs-6" style={{ animation: "spin 1s linear infinite" }} />
-                                    ) : (
-                                      <>
-                                        <Icon icon="solar:close-circle-bold" className="me-1" />
-                                        Reject
-                                      </>
-                                    )}
-                                  </button>
+                                    <Icon icon="solar:eye-bold" className="me-1" />
+                                    View
+                                  </Link>
                                 </div>
                               </td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
+                      {hasMore && (
+                        <div className="text-center py-3 border-top bg-light">
+                          <span className="text-muted small">
+                            Showing {visibleBookings.length} of {bookings.length} — scroll for more
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
               </div>
             </div>
 
+            {/* Stat cards – same layout as DealerDashboardLayer */}
             <div className="row row-cols-xxxl-4 row-cols-lg-3 row-cols-md-2 row-cols-1 gy-4 mt-2">
-             
-              {/* Total Bookings */}
               <div className="col">
                 <div className="card shadow-none border bg-gradient-start-1 h-100">
                   <div className="card-body p-20">
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
                       <div>
-                        <p className="fw-medium text-primary-light mb-1">
-                          Total Bookings
-                        </p>
+                        <p className="fw-medium text-primary-light mb-1">Total Bookings</p>
                         <h6 className="mb-0">{dashboardData.totalBookings}</h6>
                       </div>
                       <div className="w-50-px h-50-px bg-primary-600 rounded-circle d-flex justify-content-center align-items-center">
-                        <Icon
-                          icon="solar:calendar-bold"
-                          className="text-white text-2xl mb-0"
-                        />
+                        <Icon icon="solar:calendar-bold" className="text-white text-2xl mb-0" />
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Accepted Bookings */}
               <div className="col">
                 <div className="card shadow-none border bg-gradient-start-2 h-100">
                   <div className="card-body p-20">
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
                       <div>
-                        <p className="fw-medium text-primary-light mb-1">
-                          Today’s Assigned Bookings
-                        </p>
-                        <h6 className="mb-0">
-                          {dashboardData.todaysAssignedBookings}
-                        </h6>
+                        <p className="fw-medium text-primary-light mb-1">Today&apos;s Assigned</p>
+                        <h6 className="mb-0">{dashboardData.todaysAssignedBookings}</h6>
                       </div>
                       <div className="w-50-px h-50-px bg-success-main rounded-circle d-flex justify-content-center align-items-center">
-                        <Icon
-                          icon="solar:check-circle-bold"
-                          className="text-white text-2xl mb-0"
-                        />
+                        <Icon icon="solar:check-circle-bold" className="text-white text-2xl mb-0" />
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Rejected Bookings */}
               <div className="col">
                 <div className="card shadow-none border bg-gradient-start-3 h-100">
                   <div className="card-body p-20">
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
                       <div>
-                        <p className="fw-medium text-primary-light mb-1">
-                          Ongoing Bookings
-                        </p>
-                        <h6 className="mb-0">
-                          {dashboardData.ongoingBookings}
-                        </h6>
+                        <p className="fw-medium text-primary-light mb-1">Ongoing Bookings</p>
+                        <h6 className="mb-0">{dashboardData.ongoingBookings}</h6>
                       </div>
-                      <div className="w-50-px h-50-px bg-danger-main rounded-circle d-flex justify-content-center align-items-center">
-                        <Icon
-                          icon="solar:close-circle-bold"
-                          className="text-white text-2xl mb-0"
-                        />
+                      <div className="w-50-px h-50-px bg-warning rounded-circle d-flex justify-content-center align-items-center">
+                        <Icon icon="solar:clock-circle-bold" className="text-white text-2xl mb-0" />
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-            {/* Completed Bookings */}
               <div className="col">
                 <div className="card shadow-none border bg-gradient-start-4 h-100">
                   <div className="card-body p-20">
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
                       <div>
-                        <p className="fw-medium text-primary-light mb-1">
-                          Completed Bookings
-                        </p>
-                        <h6 className="mb-0">
-                          {dashboardData.completedBookings}
-                        </h6>
+                        <p className="fw-medium text-primary-light mb-1">Completed Bookings</p>
+                        <h6 className="mb-0">{dashboardData.completedBookings}</h6>
                       </div>
-                      <div className="w-50-px h-50-px bg-warning rounded-circle d-flex justify-content-center align-items-center">
-                        <Icon
-                          icon="solar:check-circle-bold"
-                          className="text-white text-2xl mb-0"
-                        />
+                      <div className="w-50-px h-50-px bg-info rounded-circle d-flex justify-content-center align-items-center">
+                        <Icon icon="solar:check-circle-bold" className="text-white text-2xl mb-0" />
                       </div>
                     </div>
                   </div>
@@ -572,117 +413,6 @@ const [actionStatus, setActionStatus] = useState(null);
           </div>
         </div>
       </div>
-
-      {/* Price modal after approve */}
-      {showPriceModal && priceModalRow && (
-        <div
-          className="modal d-block bg-black bg-opacity-50"
-          tabIndex={-1}
-          style={{ zIndex: 1050 }}
-          onClick={() => {
-            setShowPriceModal(false);
-            setPriceModalRow(null);
-            setPriceModalAddonEnriched(null);
-          }}
-        >
-          <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Add price details</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => {
-                    setShowPriceModal(false);
-                    setPriceModalRow(null);
-                    setPriceModalAddonEnriched(null);
-                  }}
-                  aria-label="Close"
-                />
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <label className="form-label fw-semibold">Service name</label>
-                  <div className="form-control bg-light">{getAddonServiceName(priceModalRow.addon)}</div>
-                </div>
-                <div className="mb-3">
-                  <label className="form-label fw-semibold">Price type</label>
-                  <select
-                    className="form-select"
-                    value={priceForm.priceType}
-                    onChange={(e) => updatePriceForm({ priceType: e.target.value })}
-                  >
-                    <option value="Service price">Service price</option>
-                    <option value="Part price">Part price</option>
-                  </select>
-                </div>
-                <div className="mb-3">
-                  <label className="form-label fw-semibold">Amount</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    min={0}
-                    step={0.01}
-                    placeholder="0"
-                    value={priceForm.amount}
-                    onChange={(e) => updatePriceForm({ amount: e.target.value })}
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label fw-semibold">GST %</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    min={0}
-                    max={100}
-                    step={0.01}
-                    value={priceForm.gstPercent}
-                    onChange={(e) => updatePriceForm({ gstPercent: e.target.value })}
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label fw-semibold">GST amount</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    min={0}
-                    step={0.01}
-                    placeholder="Auto from Amount × GST %"
-                    value={priceForm.gstAmount}
-                    onChange={(e) => setPriceForm((p) => ({ ...p, gstAmount: e.target.value }))}
-                  />
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary"
-                  onClick={() => {
-                    setShowPriceModal(false);
-                    setPriceModalRow(null);
-                    setPriceModalAddonEnriched(null);
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-success"
-                  onClick={handlePriceSubmit}
-                  disabled={priceSubmitLoading}
-                >
-                  {priceSubmitLoading ? (
-                    <Icon icon="solar:loading-bold" className="fs-6" style={{ animation: "spin 1s linear infinite" }} />
-                  ) : (
-                    "Submit"
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 };

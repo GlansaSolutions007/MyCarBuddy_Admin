@@ -102,6 +102,7 @@ const [actionStatus, setActionStatus] = useState(null);
   });
   const [priceSubmitLoading, setPriceSubmitLoading] = useState(false);
   const [priceModalAddonEnriched, setPriceModalAddonEnriched] = useState(null);
+  const [displayCount, setDisplayCount] = useState(10);
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
   

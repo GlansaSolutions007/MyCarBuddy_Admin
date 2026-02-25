@@ -467,20 +467,20 @@ const BookingLayer = () => {
       width: "150px",
       sortable: true,
     },
-    {
-      name: "Technician",
-      selector: (row) => (
-        <>
-          <span className="fw-bold">
-            {row.TechFullName ? row.TechFullName : "Not Assigned"}
-          </span>
-          <br />
-          {row.TechPhoneNumber || ""}
-        </>
-      ),
-      width: "150px",
-      sortable: true,
-    },
+    // {
+    //   name: "Technician",
+    //   selector: (row) => (
+    //     <>
+    //       <span className="fw-bold">
+    //         {row.TechFullName ? row.TechFullName : "Not Assigned"}
+    //       </span>
+    //       <br />
+    //       {row.TechPhoneNumber || ""}
+    //     </>
+    //   ),
+    //   width: "150px",
+    //   sortable: true,
+    // },
     {
       name: "Reg. Number",
       selector: (row) => (
