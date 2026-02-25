@@ -109,6 +109,10 @@ const BookingViewLayer = () => {
       .filter((a) => a.DealerID != null && a.DealerName && !seen.has(Number(a.DealerID)) && (seen.add(Number(a.DealerID)), true))
       .map((a) => ({ value: Number(a.DealerID), label: a.DealerName }));
   })();
+  // Filter out selected pickup dealer from delivery dealer options
+  const garageDeliverDealerOptions = garageDealerOptions.filter(
+    (dealer) => !garagePickupDealer || dealer.value !== garagePickupDealer.value
+  );
   const [pickupDate, setPickupDate] = useState("");
   const [pickupTime, setPickupTime] = useState("");
   const [dropDate, setDropDate] = useState("");
@@ -121,6 +125,7 @@ const BookingViewLayer = () => {
   const [discountAmount, setDiscountAmount] = useState("");
   const [couponOffers, setCouponOffers] = useState([]);
   const [selectedCoupon, setSelectedCoupon] = useState("");
+  const [paymentEmail, setPaymentEmail] = useState("");
   const employeeData = JSON.parse(localStorage.getItem("employeeData"));
   const userId = employeeData?.Id;
   const roleName = employeeData?.RoleName;
@@ -642,10 +647,10 @@ const BookingViewLayer = () => {
       routeType,
       pickFrom,
       pickTo,
-      pickupDate: "",
-      pickupTime: "",
-      deliveryDate: "",
-      deliveryTime: "",
+      pickupDate:"",
+      pickupTime:  "",
+      deliveryDate:  "",
+      deliveryTime:  "",
       techID: garageDriver?.value ?? 0,
       assignDate: getLocalISODateTime(),
     };
@@ -724,7 +729,7 @@ const BookingViewLayer = () => {
         
         payload = {
           bookingID: bookingData.BookingID,
-          assingedTimeSlot: selectedInitialTimeSlot.value,
+          assignDate: selectedInitialTimeSlot.value,
           role: "Technician",
           techID: selectedInitialTechnician?.value,
           addOnId: addOnIds,
@@ -1435,6 +1440,7 @@ const BookingViewLayer = () => {
     setPayAmount("");
     setIsDiscountApplicable(false);
     setDiscountAmount("");
+    setPaymentEmail("");
   };
 
   const handleCustomerConfirmation = () => {
@@ -1612,11 +1618,74 @@ const BookingViewLayer = () => {
         return;
       }
 
-      // ✅ NEW PAYLOAD
+      // ✅ Validate email for online payment
+      if (isOnline && !paymentEmail) {
+        Swal.fire("Validation", "Please enter email address", "warning");
+        return;
+      }
+
+      // ✅ Validate email format for online payment
+      if (isOnline && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paymentEmail)) {
+        Swal.fire("Validation", "Please enter valid email address", "warning");
+        return;
+      }
+
+      // ✅ If online payment, call final-payment-link API first
+      if (isOnline) {
+        const onlinePaymentPayload = {
+          bookingId: bookingData.BookingID,
+          paymentAmount: finalAmount,
+          phoneNumber: bookingData.PhoneNumber,
+          email: paymentEmail,
+          customerId: bookingData.CustID,
+        };
+
+        try {
+          const onlineRes = await axios.post(
+            `${API_BASE}Payments/final-payment-link`,
+            onlinePaymentPayload,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            },
+          );
+
+          if (onlineRes?.data?.success || onlineRes?.data?.paymentLinkUrl) {
+            // Payment link created successfully
+            const paymentLink = onlineRes.data.paymentLinkUrl || onlineRes.data.paymentLinkUrl;
+            
+            Swal.fire({
+              title: "Payment Link Generated",
+              text: "You will be redirected to the payment gateway",
+              icon: "success",
+              confirmButtonText: "Proceed",
+            }).then(() => {
+              // if (paymentLink) {
+              //   window.open(paymentLink, "_blank");
+              // }
+              setShowPaymentModal(false);
+              fetchBookingData(); // Refresh booking data
+            });
+            return;
+          } else {
+            Swal.fire("Error", "Failed to generate payment link", "error");
+            return;
+          }
+        } catch (onlineErr) {
+          console.error("Online Payment Error:", onlineErr);
+          Swal.fire(
+            "Error",
+            onlineErr?.response?.data?.message || "Failed to initiate online payment",
+            "error",
+          );
+          return;
+        }
+      }
+
+      // ✅ For offline payment, call the existing payment API
       const payload = {
         bookingID: bookingData.BookingID,
         amountPaid: finalAmount,
-        paymentMode: isOnline ? "Online" : paymentMode,
+        paymentMode: paymentMode,
         paymentStatus: "Success",
         paymentType: "Static",
         createdBy: userId,
@@ -1690,56 +1759,74 @@ const BookingViewLayer = () => {
     setDiscountAmount(Number(applied.toFixed(2)));
   }, [selectedCoupon, payAmount, couponOffers]);
 
-  const handleSubmitPickupDetails = async () => {
-    if (!pickupDate || !pickupTime || !dropDate || !dropTime) {
-      Swal.fire(
-        "Validation",
-        "Please fill all pickup and drop details",
-        "warning",
-      );
-      return;
-    }
-
-    const payload = {
-      bookingID: bookingData.BookingID,
-      leadId: bookingData.LeadId,
-      pickupDate,
-      pickupTime: pickupTime + ":00",
-      deliveryDate: dropDate,
-      deliveryTime: dropTime + ":00",
-    };
-
-    try {
-      const res = await axios.post(
-        `${API_BASE}Supervisor/SavePickupDeliveryTime`,
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-
-      if (res.data.success || res.status === 200) {
-        Swal.fire(
-          "Success",
-          "Pickup and Drop details saved successfully!",
-          "success",
-        );
-        // Reset form
-        setPickupDate("");
-        setPickupTime("");
-        setDropDate("");
-        setDropTime("");
-        fetchBookingData(); // Refresh booking data
-      } else {
-        Swal.fire(
-          "Error",
-          res.data.message || "Failed to save details",
-          "error",
-        );
+  // Auto-set pickup dealer from last CarPickUpDelivery entry
+  useEffect(() => {
+    if (garageStep === "details" && (garageTask === "carDrop" || garageRoute === "dealerToDealer")) {
+      const carPickUpDelivery = bookingData?.CarPickUpDelivery || [];
+      if (carPickUpDelivery.length > 0) {
+        const lastEntry = carPickUpDelivery[carPickUpDelivery.length - 1];
+        const pickedDealerId = lastEntry.PickTo || lastEntry.PickFrom;
+        
+        if (pickedDealerId) {
+          const dealerOption = garageDealerOptions.find((opt) => opt.value === Number(pickedDealerId));
+          if (dealerOption && !garagePickupDealer) {
+            setGaragePickupDealer(dealerOption);
+          }
+        }
       }
-    } catch (error) {
-      console.error("Error saving pickup details:", error);
-      Swal.fire("Error", "Failed to save pickup and delivery details", "error");
     }
-  };
+  }, [garageStep, garageTask, garageRoute, bookingData, garageDealerOptions]);
+
+  // const handleSubmitPickupDetails = async () => {
+  //   if (!pickupDate || !pickupTime || !dropDate || !dropTime) {
+  //     Swal.fire(
+  //       "Validation",
+  //       "Please fill all pickup and drop details",
+  //       "warning",
+  //     );
+  //     return;
+  //   }
+
+  //   const payload = {
+  //     bookingID: bookingData.BookingID,
+  //     leadId: bookingData.LeadId,
+  //     pickupDate,
+  //     pickupTime: pickupTime + ":00",
+  //     deliveryDate: dropDate,
+  //     deliveryTime: dropTime + ":00",
+  //   };
+
+  //   try {
+  //     const res = await axios.post(
+  //       `${API_BASE}Supervisor/SavePickupDeliveryTime`,
+  //       payload,
+  //       { headers: { Authorization: `Bearer ${token}` } },
+  //     );
+
+  //     if (res.data.success || res.status === 200) {
+  //       Swal.fire(
+  //         "Success",
+  //         "Pickup and Drop details saved successfully!",
+  //         "success",
+  //       );
+  //       // Reset form
+  //       setPickupDate("");
+  //       setPickupTime("");
+  //       setDropDate("");
+  //       setDropTime("");
+  //       fetchBookingData(); // Refresh booking data
+  //     } else {
+  //       Swal.fire(
+  //         "Error",
+  //         res.data.message || "Failed to save details",
+  //         "error",
+  //       );
+  //     }
+  //   } catch (error) {
+  //     console.error("Error saving pickup details:", error);
+  //     Swal.fire("Error", "Failed to save pickup and delivery details", "error");
+  //   }
+  // };
 
   const isPastTimeToday = (selectedTime) => {
     const now = new Date();
@@ -3728,6 +3815,17 @@ const BookingViewLayer = () => {
                           )}
                         </>
                       )}
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Email Address</label>
+                        <input
+                          type="email"
+                          className="form-control"
+                          value={paymentEmail}
+                          onChange={(e) => setPaymentEmail(e.target.value.trim())}
+                          placeholder="Enter email address"
+                        />
+                        <small className="text-muted">Payment link will be sent to this email</small>
+                      </div>
                     </>
                   )}
 
@@ -4211,31 +4309,34 @@ const BookingViewLayer = () => {
                           </div>
                           <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
                         </button>
-                        <button
-                          type="button"
-                          className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
-                          style={{ minHeight: "72px", transition: "all 0.2s ease" }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = "translateY(-2px)";
-                            e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = "";
-                            e.currentTarget.style.boxShadow = "";
-                          }}
-                          onClick={() => { setGarageTask("carDrop"); setGarageStep("route"); }}
-                        >
-                          <div className="d-flex align-items-center gap-3">
-                            <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
-                              <Icon icon="mdi:car-side" width={26} height={26} className="text-primary" />
-                            </span>
-                            <div>
-                              <span className="fw-semibold d-block text-dark">Car drop</span>
-                              <span className="small text-muted">Deliver vehicle back to customer</span>
+                        {/* Hide Car drop when CustomerToDealer route does NOT exist */}
+                        {hasExistingCustomerToDealerRoute && (
+                          <button
+                            type="button"
+                            className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
+                            style={{ minHeight: "72px", transition: "all 0.2s ease" }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = "translateY(-2px)";
+                              e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = "";
+                              e.currentTarget.style.boxShadow = "";
+                            }}
+                            onClick={() => { setGarageTask("carDrop"); setGarageStep("route"); }}
+                          >
+                            <div className="d-flex align-items-center gap-3">
+                              <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
+                                <Icon icon="mdi:car-side" width={26} height={26} className="text-primary" />
+                              </span>
+                              <div>
+                                <span className="fw-semibold d-block text-dark">Car drop</span>
+                                <span className="small text-muted">Deliver vehicle back to customer</span>
+                              </div>
                             </div>
-                          </div>
-                          <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
-                        </button>
+                            <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
+                          </button>
+                        )}
                       </div>
                     </>
                   )}
@@ -4277,7 +4378,7 @@ const BookingViewLayer = () => {
                             <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
                           </button>
                         )}
-                        {garageTask === "carPickup" && (
+                        {garageTask === "carPickup" && hasExistingCustomerToDealerRoute && (
                           <button
                             type="button"
                             className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
@@ -4339,6 +4440,7 @@ const BookingViewLayer = () => {
                               options={garageDealerOptions}
                               value={garagePickupDealer}
                               onChange={setGaragePickupDealer}
+                              isDisabled={true}
                               placeholder="Select dealer"
                             />
                           </div>
@@ -4356,13 +4458,14 @@ const BookingViewLayer = () => {
                               options={garageDealerOptions}
                               value={garagePickupDealer}
                               onChange={setGaragePickupDealer}
+                              isDisabled={true}
                               placeholder="Select pickup dealer"
                             />
                           </div>
                           <div>
                             <label className="form-label small mb-1">Deliver at (dealer)</label>
                             <Select
-                              options={garageDealerOptions}
+                              options={garageDeliverDealerOptions}
                               value={garageDeliverDealer}
                               onChange={setGarageDeliverDealer}
                               placeholder="Select deliver dealer"
@@ -4379,7 +4482,7 @@ const BookingViewLayer = () => {
                           placeholder="Select driver"
                         />
                       </div>
-                      {/* <div className="row g-2">
+                      <div className="row g-2">
                         <div className="col-6">
                           <label className="form-label small mb-1">Date</label>
                           <input
@@ -4399,7 +4502,7 @@ const BookingViewLayer = () => {
                             onChange={(e) => setGaragePickupTime(e.target.value)}
                           />
                         </div>
-                      </div> */}
+                      </div>
                     </>
                   )}
 
