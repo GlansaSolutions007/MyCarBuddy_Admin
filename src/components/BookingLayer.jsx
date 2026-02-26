@@ -394,7 +394,7 @@ const BookingLayer = () => {
     },
 
     {
-      name: "Booking Date",
+      name: "Service Date",
       selector: (row) => {
         const rawDate = row.BookingDate || row.CreatedDate;
         if (!rawDate) return "-";

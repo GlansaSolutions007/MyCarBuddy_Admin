@@ -808,15 +808,15 @@ const BookingViewLayer = () => {
   };
 
   const handleInitialAssignConfirm = async () => {
-    // Time slot validation only for technician and supervisor
-    // if (initialAssignType !== "fieldAdvisor" && !selectedInitialTimeSlot) {
-    //   Swal.fire({
-    //     icon: "error",
-    //     title: "Error",
-    //     text: "Please select a time slot",
-    //   });
-    //   return;
-    // }
+    // Time slot validation for all assignment types
+    if (!pickupDropReassignTimeSlot || pickupDropReassignTimeSlot.length === 0) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Please select at least one time slot",
+      });
+      return;
+    }
 
     let payload;
     let apiUrl;
@@ -833,10 +833,13 @@ const BookingViewLayer = () => {
         return;
       }
 
+      const assignTimeSlot = pickupDropReassignTimeSlot.join(",");
+
       payload = {
         bookingIds: [bookingId],
         supervisorHeadId: Number(userId),
         fieldAdvisorId: selectedInitialFieldAdvisor.value,
+        assignTimeSlot: assignTimeSlot,
       };
       apiUrl = `${API_BASE}Supervisor/AssignToFieldAdvisor`;
       method = "post";
@@ -877,6 +880,7 @@ const BookingViewLayer = () => {
           (addon) => addon.ServiceName && selectedServiceNames.includes(addon.ServiceName)
         );
         const addOnIds = selectedAddOns.map((addon) => String(addon.AddOnID)).join(",") || "0";
+        const assignTimeSlot = pickupDropReassignTimeSlot.join(",");
 
         payload = {
           bookingID: bookingData.BookingID,
@@ -886,6 +890,7 @@ const BookingViewLayer = () => {
           addOnId: addOnIds,
           leadId: bookingData.LeadId,
           ServiceType: "ServiceAtHome",
+          assignTimeSlot: assignTimeSlot,
         };
         apiUrl = `${API_BASE}Supervisor/SavePickupDeliveryTime`;
         method = "post";
@@ -898,6 +903,18 @@ const BookingViewLayer = () => {
           });
           return;
         }
+        
+        const assignTimeSlot = pickupDropReassignTimeSlot.join(",");
+        
+        payload = {
+          bookingID: bookingData.BookingID,
+          assignDate: garagePickupDate + "T" + garagePickupTime,
+          role: "Supervisor",
+          techID: selectedInitialSupervisor?.value,
+          leadId: bookingData.LeadId,
+          ServiceType: "ServiceAtHome",
+          timeSlot: assignTimeSlot,
+        };
         apiUrl = `${API_BASE}Supervisor/SavePickupDeliveryTime`;
         method = "post";
       }
@@ -932,6 +949,9 @@ const BookingViewLayer = () => {
         setSelectedInitialTimeSlot(null);
         setSelectedServiceType([]);
         setInitialAssignType("technician");
+        setPickupDropReassignTimeSlot([]);
+        setGaragePickupDate("");
+        setGaragePickupTime("");
       } else {
         const assignTypeLabel =
           initialAssignType === "technician"
@@ -1666,7 +1686,7 @@ const BookingViewLayer = () => {
 
     try {
       await axios.post(
-        `${API_BASE}Supervisor/MoveSupervisorBookings?bookingId=${bookingData.BookingID}`,
+        `${API_BASE}Supervisor/MoveSupervisorBookings?bookingId=${bookingData.BookingID}&custId=${bookingData.CustID}`,
         {
           confirmDescription: confirmationDescription.trim(),
           confirmedBy: roleIdInt.confirmedBy,
@@ -2271,7 +2291,11 @@ const BookingViewLayer = () => {
                 </div>
               )}
               {/* ================= CAR PICKUP / DROP ACCORDION ================= */}
-              <div className="accordion mb-3" id="carPickupDropAccordion">
+              <div
+                className="accordion mb-3"
+                id="carPickupDropAccordion"
+                style={{ scrollMarginTop: "4.5rem" }}
+              >
                 <div className="accordion-item border radius-16">
                   <h2 className="accordion-header" id="headingPickupDrop">
                     <button
@@ -2296,7 +2320,10 @@ const BookingViewLayer = () => {
                     data-bs-parent="#carPickupDropAccordion"
                   >
                     <div className="mt-3">
-                      <div className="rounded-3 overflow-hidden border-0 shadow-sm" style={{ backgroundColor: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.08)" }}>
+                      <div
+                        className="rounded-3 overflow-hidden border-0 shadow-sm position-relative"
+                        style={{ backgroundColor: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.08)", zIndex: 1, isolation: "isolate" }}
+                      >
                         {/* Header – dark teal with BID, OTP, Payment, action */}
                         <div
                           className="px-3 py-2 d-flex align-items-center justify-content-between flex-wrap gap-2"
@@ -2347,7 +2374,7 @@ const BookingViewLayer = () => {
                             return (
                               <div className="d-flex align-items-flex-start py-20 justify-content-between position-relative">
                                 {steps.map((step, idx) => (
-                                  <div key={step.key} className="d-flex flex-column align-items-center position-relative" style={{ flex: "1 1 0", minWidth: 0, zIndex: 2 }}>
+                                  <div key={step.key} className="d-flex flex-column align-items-center position-relative" style={{ flex: "1 1 0", minWidth: 0, zIndex: 1 }}>
                                     {idx < steps.length - 1 && (
                                       <div
                                         className="position-absolute d-none d-md-block"
@@ -2448,7 +2475,7 @@ const BookingViewLayer = () => {
                                             {row.Status ?? "—"}
                                           </span>
                                         </td>
-                                        { row.IsCancelled === 0 && (
+                                        { row.IsCancelled === 0  && row.Status !== "completed" && (
                                         <td className="text-center pe-4 py-3">
                                           <div className="d-flex gap-2 justify-content-center flex-wrap">
                                             <button
@@ -4502,6 +4529,40 @@ const BookingViewLayer = () => {
                       />
                     </div>
                   </div>
+                  <div className="col-12">
+                      <label className="form-label small fw-semibold">Time Slot</label>
+                      <Select
+                        isMulti
+                        menuPortalTarget={document.body}
+                        menuPosition="fixed"
+                        styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+                        options={timeSlots
+                          ?.filter((slot) => {
+                            if (!slot?.IsActive) return false;
+                            if (pickupDropReassignDate !== today) return true;
+                            const now = new Date();
+                            const [h, m] = (slot.StartTime || "00:00").split(":").map(Number);
+                            const slotTime = new Date();
+                            slotTime.setHours(h, m, 0, 0);
+                            return slotTime > now;
+                          })
+                          ?.sort((a, b) => {
+                            const [aH, aM] = (a.StartTime || "00:00").split(":").map(Number);
+                            const [bH, bM] = (b.StartTime || "00:00").split(":").map(Number);
+                            return aH * 60 + aM - (bH * 60 + bM);
+                          })
+                          ?.map((slot) => {
+                            const val = `${slot.StartTime} - ${slot.EndTime}`;
+                            return { value: val, label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}` };
+                          }) ?? []}
+                        value={pickupDropReassignTimeSlot?.map((val) => {
+                          const [s, e] = (val || "").split(/\s*-\s*/);
+                          return { value: val, label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}` };
+                        }) ?? []}
+                        onChange={(opts) => setPickupDropReassignTimeSlot(opts ? opts.map((o) => o.value) : [])}
+                        placeholder="Select time slot(s)"
+                      />
+                    </div>
                 </div>
                 <div className="modal-footer d-inline-flex align-items-center justify-content-center">
                   <button
@@ -4514,6 +4575,7 @@ const BookingViewLayer = () => {
                       setSelectedInitialFieldAdvisor(null);
                       setSelectedInitialTimeSlot(null);
                       setSelectedServiceType([]);
+                      setPickupDropReassignTimeSlot([]);
                     }}
                   >
                     Cancel
@@ -5012,10 +5074,22 @@ const BookingViewLayer = () => {
                     <div className="col-12">
                       <label className="form-label small fw-semibold">New Technician</label>
                       <Select
-                        options={technicians}
+                        options={(() => {
+                          const row = pickupDropReassignRow;
+                          const rowTechId = row?.TechnicianID ?? row?.TechID ?? row?.EmployeeID ?? row?.EmployeeId;
+                          const rowTechName = (row?.TechnicinaName ?? row?.TechnicianName ?? "").toString().trim();
+                          return technicians.filter((t) => {
+                            if (rowTechId != null && t.value == rowTechId) return false;
+                            if (rowTechName && t.label && String(t.label).toLowerCase().includes(rowTechName.toLowerCase())) return false;
+                            return true;
+                          });
+                        })()}
                         value={pickupDropReassignTech}
                         onChange={setPickupDropReassignTech}
                         placeholder="Select technician"
+                        menuPortalTarget={document.body}
+                        menuPosition="fixed"
+                        styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
                       />
                     </div>
                     <div className="col-12">

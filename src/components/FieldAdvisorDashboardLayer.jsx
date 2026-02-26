@@ -128,29 +128,25 @@ const FieldAdvisorDashboardLayer = () => {
       Swal.fire({ icon: "warning", title: "Invalid data", text: "Booking ID missing." });
       return;
     }
-    const employeeId = userId ? Number(userId) : Number(localStorage.getItem("userId") || 0);
+    // employeeId from Bookings API response (EmployeeId) or fallback to logged-in user
+    const employeeId = Number(booking?.EmployeeId ?? userId ?? (localStorage.getItem("userId") || 0));
     if (!employeeId) {
       Swal.fire({ icon: "warning", title: "Invalid data", text: "Employee ID missing." });
       return;
     }
+    const addons = [
+      ...(booking?.BookingAddOns || []),
+      ...(booking?.BookingsTempAddons || []),
+    ].filter((a) => (a.IsCompleted_Confirmation ?? a.isCompleted_Confirmation) !== 1);
+    if (addons.length === 0) {
+      Swal.fire({ icon: "info", title: "Done", text: "No addons pending confirmation." });
+      return;
+    }
     setApprovingBookingId(bookingId);
     try {
-      const res = await axios.get(
-        `${API_BASE}Bookings/BookingId?Id=${bookingId}`,
-        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
-      );
-      const fullBooking = Array.isArray(res.data) ? res.data[0] : res.data;
-      const addons = [
-        ...(fullBooking?.BookingAddOns || []),
-        ...(fullBooking?.BookingsTempAddons || []),
-      ].filter((a) => (a.IsCompleted_Confirmation ?? a.isCompleted_Confirmation) !== 1);
-      if (addons.length === 0) {
-        Swal.fire({ icon: "info", title: "Done", text: "No addons pending confirmation." });
-        setApprovingBookingId(null);
-        return;
-      }
       let confirmed = 0;
       for (const addon of addons) {
+        // addOnId from AddOnID (BookingAddOns) or Id (BookingsTempAddons)
         const addOnId = addon?.AddOnID ?? addon?.AddOnId ?? addon?.Id ?? addon?.id;
         if (!addOnId) continue;
         await axios.post(
@@ -258,18 +254,18 @@ const FieldAdvisorDashboardLayer = () => {
                       <table className="table dealer-table-trend align-middle mb-0">
                         <thead className="sticky-top" style={{ zIndex: 1, background: "#f8fafc" }}>
                           <tr>
-                            <th className="text-nowrap ps-4">Booking ID</th>
-                            <th className="text-nowrap">Date</th>
-                            <th className="text-nowrap">Customer</th>
-                            <th className="text-nowrap">Vehicle</th>
-                            <th className="text-nowrap">Status</th>
-                            <th className="text-nowrap text-end pe-4">Action</th>
+                            <th className="text-nowrap text-center">Booking ID</th>
+                            <th className="text-nowrap text-center">Date</th>
+                            <th className="text-nowrap text-center">Customer</th>
+                            <th className="text-nowrap text-center">Vehicle</th>
+                            <th className="text-nowrap text-center">Status</th>
+                            <th className="text-nowrap text-center">Action</th>
                           </tr>
                         </thead>
                         <tbody>
                           {visibleBookings.map((row) => (
                             <tr key={row.BookingID}>
-                              <td className="ps-4">
+                              <td className="text-center">
                                 <Link
                                   to={`/booking-view/${row.BookingID}`}
                                   className="text-primary text-decoration-none fw-semibold"
@@ -277,22 +273,24 @@ const FieldAdvisorDashboardLayer = () => {
                                   {row.BookingTrackID || row.BookingID}
                                 </Link>
                               </td>
-                              <td>{formatDate(row.BookingDate || row.CreatedDate)}</td>
-                              <td>{getCustomerName(row)}</td>
-                              <td>{getCarDetails(row)}</td>
-                              <td>
+                              <td className="text-center">{formatDate(row.BookingDate || row.CreatedDate)}</td>
+                              <td className="text-center">{getCustomerName(row)}</td>
+                              <td className="text-center">{getCarDetails(row)}</td>
+                              <td className="text-center">
                                 <span className="badge bg-warning bg-opacity-25 text-warning">
                                   {row.BookingStatus || "—"}
                                 </span>
                               </td>
-                              <td className="text-end pe-4">
-                                <div className="d-flex gap-2 justify-content-end align-items-center">
+                              <td className="text-center">
+                                <div className="d-flex gap-2 justify-content-center align-items-center">
                                   {(() => {
                                     const bid = row.BookingID ?? row.BookingId;
                                     const fromCache = confirmedByCache[bid];
-                                    const { allConfirmed, confirmerName } = fromCache
-                                      ? { allConfirmed: true, confirmerName: fromCache }
-                                      : getBookingConfirmationStatus(row);
+                                    const confirmation = getBookingConfirmationStatus(row);
+                                    const allConfirmed = fromCache ? true : confirmation.allConfirmed;
+                                    const confirmerName = fromCache ? fromCache : confirmation.confirmerName;
+
+                                    // If there's a cached confirmer or all addons are confirmed, show confirmer badge
                                     if (allConfirmed) {
                                       return (
                                         <span className="badge bg-success px-3 py-1 rounded-pill">
