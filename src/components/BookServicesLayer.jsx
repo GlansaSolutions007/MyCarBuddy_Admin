@@ -1418,6 +1418,7 @@ const BookServicesLayer = () => {
             description: item.description || "",
             dealerID: Number(item.dealerID) || 0,
             percentage: Number(item.percentage) || 0,
+            isSupervisor: true,
             our_Earnings: Number(item.percentAmount) || 0,
             labourCharges: Number(item.labourCharge) || 0,
             serviceId: serviceId,
@@ -1439,6 +1440,7 @@ const BookServicesLayer = () => {
         services: services,
         bookingId: bookingId,
         bookingTrackID: bookingTrackID,
+        supervisorRole: employeeData?.RoleName || "",
       };
       //  IF booking already exists → include booking details
       if (existingBookingItem) {
@@ -1557,6 +1559,7 @@ const BookServicesLayer = () => {
         dealerID: 0,
         percentage: 0,
         our_Earnings: 0,
+        isSupervisor: true,
         labourCharges: 0,
         serviceId: Number(selectedInspectionPackage.id),
         isUserClicked: false,
@@ -1572,6 +1575,7 @@ const BookServicesLayer = () => {
         inspectionType: inspectionType,
         inspectionDate: inspectionDate,
         inspectionTimeSlot: timeSlotString,
+        supervisorRole: employeeData?.RoleName || "",
       };
 
       // Check if booking already exists

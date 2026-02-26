@@ -1732,6 +1732,8 @@ const BookingViewLayer = () => {
     .reduce((sum, payment) => {
       return sum + Number(payment.AmountPaid || 0);
     }, 0);
+  const couponAmount = Number(bookingData?.CouponAmount ?? 0) || 0;
+  const alreadyPaidDisplay = alreadyPaid + couponAmount;
   const remainingAmount = Math.max(totalAmount - alreadyPaid, 0);
 
   const hasAtLeastOneService =
@@ -1808,6 +1810,8 @@ const BookingViewLayer = () => {
           paymentAmount: finalAmount,
           phoneNumber: bookingData.PhoneNumber,
           email: bookingData.CustEmail,
+          couponCode: selectedCoupon || "",
+          couponAmount: discountAmount || 0,
           customerId: bookingData.CustID,
         };
 
@@ -1859,6 +1863,8 @@ const BookingViewLayer = () => {
         paymentMode: paymentMode,
         paymentStatus: "Success",
         paymentType: "Static",
+        couponAmount: discountAmount || 0,
+        couponCode: selectedCoupon || "",
         createdBy: userId,
       };
 
@@ -2042,6 +2048,14 @@ const BookingViewLayer = () => {
         }
         .pickup-drop-row:hover {
           background-color: #f8fafc !important;
+        }
+        .dlr-column {
+          background-color: rgba(251, 191, 36, 0.12) !important;
+          color: #92400e;
+        }
+        .table-center-all th,
+        .table-center-all td {
+          text-align: center !important;
         }
       `}</style>
       <div className="row gy-4 mt-3">
@@ -2428,7 +2442,7 @@ const BookingViewLayer = () => {
                             >
                               <div className="table-responsive">
                                 <table
-                                  className="table align-middle mb-0"
+                                  className="table align-middle mb-0 table-center-all"
                                   style={{
                                     fontSize: "0.875rem",
                                   }}
@@ -2967,7 +2981,7 @@ const BookingViewLayer = () => {
                                     }}
                                   >
                                     <table
-                                      className="table table-sm table-striped table-hover align-middle mb-0"
+                                      className="table table-sm table-striped table-hover align-middle mb-0 table-center-all"
                                       style={{
                                         tableLayout: "fixed",
                                         minWidth: "1200px",
@@ -2997,7 +3011,7 @@ const BookingViewLayer = () => {
                                           </th>
                                           <th
                                             style={{ width: "125px" }}
-                                            className="text-end"
+                                            className="text-end dlr-column"
                                           >
                                             DLR Part Price
                                           </th>
@@ -3015,7 +3029,7 @@ const BookingViewLayer = () => {
                                           </th>
                                           <th
                                             style={{ width: "120px" }}
-                                            className="text-end"
+                                            className="text-end dlr-column"
                                           >
                                             DLR Part Total
                                           </th>
@@ -3027,7 +3041,7 @@ const BookingViewLayer = () => {
                                           </th>
                                           <th
                                             style={{ width: "145px" }}
-                                            className="text-end"
+                                            className="text-end dlr-column"
                                           >
                                             DLR Service Chg.
                                           </th>
@@ -3039,7 +3053,7 @@ const BookingViewLayer = () => {
                                           </th>
                                           <th
                                             style={{ width: "120px" }}
-                                            className="text-end"
+                                            className="text-end dlr-column"
                                           >
                                             DLR GST %
                                           </th>
@@ -3051,7 +3065,7 @@ const BookingViewLayer = () => {
                                           </th>
                                           <th
                                             style={{ width: "120px" }}
-                                            className="text-end"
+                                            className="text-end dlr-column"
                                           >
                                             DLR GST Amt.
                                           </th>
@@ -3148,7 +3162,7 @@ const BookingViewLayer = () => {
                                                   addon.BasePrice || 0,
                                                 ).toFixed(2)}
                                               </td>
-                                              <td className="text-end">
+                                              <td className="text-end dlr-column">
                                                 {Number(
                                                   addon.DealerBasePrice || 0,
                                                 ).toFixed(2)}
@@ -3161,7 +3175,7 @@ const BookingViewLayer = () => {
                                                   addon.ServicePrice || 0,
                                                 ).toFixed(2)}
                                               </td>
-                                              <td className="text-end">
+                                              <td className="text-end dlr-column">
                                                 {Number(
                                                   addon.DealerSparePrice || 0,
                                                 ).toFixed(2)}
@@ -3171,7 +3185,7 @@ const BookingViewLayer = () => {
                                                   addon.LabourCharges || 0,
                                                 ).toFixed(2)}
                                               </td>
-                                              <td className="text-end">
+                                              <td className="text-end dlr-column">
                                                 {Number(
                                                   addon.DealerPrice || 0,
                                                 ).toFixed(2)}
@@ -3179,7 +3193,7 @@ const BookingViewLayer = () => {
                                               <td className="text-end">
                                                 {addon.GSTPercent ?? 0}%
                                               </td>
-                                              <td className="text-end">
+                                              <td className="text-end dlr-column">
                                                 {addon.DealerGSTPercent ?? 0}%
                                               </td>
                                               <td className="text-end">
@@ -3187,7 +3201,7 @@ const BookingViewLayer = () => {
                                                   addon.GSTPrice || 0,
                                                 ).toFixed(2)}
                                               </td>
-                                              <td className="text-end">
+                                              <td className="text-end dlr-column">
                                                 {Number(
                                                   addon.DealerGSTAmount || 0,
                                                 ).toFixed(2)}
@@ -3221,17 +3235,19 @@ const BookingViewLayer = () => {
                                               </td>
                                               <td className="text-center align-middle">
                                                 {(() => {
-                                                  const isApproved =
+                                                  const dealerConfirm =
                                                     (addon.IsDealer_Confirm ?? addon.isDealer_Confirm)
                                                       ?.toString()
                                                       .trim()
-                                                      .toLowerCase() === "approved";
+                                                      .toLowerCase();
+                                                  const isApproved = dealerConfirm === "approved";
+                                                  const isRejected = dealerConfirm === "rejected";
                                                   const status = (addon.StatusName ?? addon.statusName ?? addon.AddOnStatus ?? addon.addOnStatus)
                                                     ?.toString()
                                                     .trim();
                                                   return (
                                                     <div className="d-flex gap-2 align-items-center justify-content-center">
-                                                      {isApproved && (
+                                                      {isApproved ? (
                                                         <select
                                                           className="form-select form-select-sm"
                                                           value={status}
@@ -3245,11 +3261,15 @@ const BookingViewLayer = () => {
                                                           <option value="Rework">Rework</option>
                                                           <option value="InProgress">In-Progress</option>
                                                         </select>
-                                                      ) || (
-                                                          <span className="badge bg-warning text-dark px-3 py-4 rounded-pill">
-                                                            Dealer Pending
-                                                          </span>
-                                                        )}
+                                                      ) : isRejected ? (
+                                                        <span className="badge bg-danger text-white px-3 py-4 rounded-pill">
+                                                          Rejected
+                                                        </span>
+                                                      ) : (
+                                                        <span className="badge bg-warning text-dark px-3 py-4 rounded-pill">
+                                                          Dealer Pending
+                                                        </span>
+                                                      )}
                                                     </div>
                                                   );
                                                 })()}
@@ -3308,7 +3328,7 @@ const BookingViewLayer = () => {
                                     }}
                                   >
                                     <table
-                                      className="table table-sm table-striped table-hover align-middle mb-0"
+                                      className="table table-sm table-striped table-hover align-middle mb-0 table-center-all"
                                       style={{
                                         tableLayout: "fixed",
                                         minWidth: "1200px",
@@ -3338,7 +3358,7 @@ const BookingViewLayer = () => {
                                           </th>
                                           <th
                                             style={{ width: "125px" }}
-                                            className="text-end"
+                                            className="text-end dlr-column"
                                           >
                                             DLR Part Price
                                           </th>
@@ -3356,7 +3376,7 @@ const BookingViewLayer = () => {
                                           </th>
                                           <th
                                             style={{ width: "120px" }}
-                                            className="text-end"
+                                            className="text-end dlr-column"
                                           >
                                             DLR Part Total
                                           </th>
@@ -3368,7 +3388,7 @@ const BookingViewLayer = () => {
                                           </th>
                                           <th
                                             style={{ width: "145px" }}
-                                            className="text-end"
+                                            className="text-end dlr-column"
                                           >
                                             DLR Service Chg.
                                           </th>
@@ -3380,7 +3400,7 @@ const BookingViewLayer = () => {
                                           </th>
                                           <th
                                             style={{ width: "120px" }}
-                                            className="text-end"
+                                            className="text-end dlr-column"
                                           >
                                             DLR GST %
                                           </th>
@@ -3392,7 +3412,7 @@ const BookingViewLayer = () => {
                                           </th>
                                           <th
                                             style={{ width: "120px" }}
-                                            className="text-end"
+                                            className="text-end dlr-column"
                                           >
                                             DLR GST Amt.
                                           </th>
@@ -3488,7 +3508,7 @@ const BookingViewLayer = () => {
                                                     supervisorBooking.BasePrice || 0,
                                                   ).toFixed(2)}
                                                 </td>
-                                                <td className="text-end">
+                                                <td className="text-end dlr-column">
                                                   {Number(
                                                     supervisorBooking.DealerBasePrice || 0,
                                                   ).toFixed(2)}
@@ -3501,7 +3521,7 @@ const BookingViewLayer = () => {
                                                     supervisorBooking.Price || 0,
                                                   ).toFixed(2)}
                                                 </td>
-                                                <td className="text-end">
+                                                <td className="text-end dlr-column">
                                                   {Number(
                                                     supervisorBooking.DealerSparePrice || 0,
                                                   ).toFixed(2)}
@@ -3511,7 +3531,7 @@ const BookingViewLayer = () => {
                                                     supervisorBooking.LabourCharges || 0,
                                                   ).toFixed(2)}
                                                 </td>
-                                                <td className="text-end">
+                                                <td className="text-end dlr-column">
                                                   {Number(
                                                     supervisorBooking.DealerPrice || 0,
                                                   ).toFixed(2)}
@@ -3519,7 +3539,7 @@ const BookingViewLayer = () => {
                                                 <td className="text-end">
                                                   {supervisorBooking.GSTPercent ?? 0}%
                                                 </td>
-                                                <td className="text-end">
+                                                <td className="text-end dlr-column">
                                                   {supervisorBooking.DealerGSTPercent ?? 0}%
                                                 </td>
                                                 <td className="text-end">
@@ -3527,7 +3547,7 @@ const BookingViewLayer = () => {
                                                     supervisorBooking.GSTAmount || 0,
                                                   ).toFixed(2)}
                                                 </td>
-                                                <td className="text-end">
+                                                <td className="text-end dlr-column">
                                                   {Number(
                                                     supervisorBooking.DealerGSTAmount || 0,
                                                   ).toFixed(2)}
@@ -3684,7 +3704,7 @@ const BookingViewLayer = () => {
                                       Already Paid
                                     </span>
                                     <span className="text-primary">
-                                      - ₹{alreadyPaid.toFixed(2)}
+                                      - ₹{alreadyPaidDisplay.toFixed(2)}
                                     </span>
                                   </li>
                                   {bookingData?.SupervisorBookings?.length > 0 && (
@@ -3737,6 +3757,37 @@ const BookingViewLayer = () => {
                                       booking(s) that need to be confirmed by the customer.
                                     </div>
                                   )}
+                                {(() => {
+                                  const addons = [
+                                    ...(bookingData?.BookingAddOns || []),
+                                    ...(bookingData?.BookingsTempAddons || []),
+                                  ];
+                                  const supervisorItems = [...addons, ...(bookingData?.SupervisorBookings || [])];
+                                  const dlrPendingCount = addons.filter((a) => {
+                                    const s = (a.StatusName ?? a.statusName ?? a.AddOnStatus ?? a.addOnStatus ?? a.Status)
+                                      ?.toString()
+                                      .trim()
+                                      .toLowerCase();
+                                    return s !== "servicecompleted" && s !== "completed";
+                                  }).length;
+                                  const supervisorPendingCount = supervisorItems.filter(
+                                    (a) => (a.IsSupervisor_Confirm ?? a.isSupervisor_Confirm) !== 1
+                                  ).length;
+                                  return (
+                                    <>
+                                      {dlrPendingCount > 0 && (
+                                        <div className="alert alert-warning py-2 px-3 mb-2 mb-md-3 small">
+                                          <strong>{dlrPendingCount}</strong> dealer side service(s) remaining (Dealer Service Status not completed).
+                                        </div>
+                                      )}
+                                      {supervisorPendingCount > 0 && (
+                                        <div className="alert alert-secondary py-2 px-3 mb-2 mb-md-3 small">
+                                          <strong>{supervisorPendingCount}</strong> supervisor side not confirm (Supervisor Confirm pending).
+                                        </div>
+                                      )}
+                                    </>
+                                  );
+                                })()}
                                 <div className="d-flex justify-content-center gap-2 mt-3 mb-3 flex-wrap">
 
                                   {/* Show Confirm Payment only if not paid */}

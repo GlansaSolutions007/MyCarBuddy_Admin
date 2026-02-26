@@ -1078,8 +1078,8 @@ const DealerBookingsView = () => {
       allowOverflow: true,
     },
    {
-  name: "Service Status",
-  width: "130px",
+  name: "Service Action/Status",
+  width: "180px",
   cell: (row) => {
     const isApproved = row.isDealer_Confirm?.toString().trim().toLowerCase() === "approved";
     const isCompleted = row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted";
