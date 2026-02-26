@@ -1168,7 +1168,13 @@ const OrganicLeadsLayer = () => {
 
                 {/* ✅ RIGHT SIDE */}
                 <div className="d-flex align-items-center gap-2 flex-wrap">
-
+                <input
+                  type="file"
+                  accept=".xlsx, .xls"
+                  id="organicUpload"
+                  style={{ display: "none" }}
+                  onChange={handleBulkUpload}
+                />
                   {(role === "Admin" || roleName === "Telecaller Head") && (
                     <button
                       className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
