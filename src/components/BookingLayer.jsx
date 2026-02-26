@@ -562,7 +562,7 @@ const BookingLayer = () => {
         );
       },
       wrap: true,
-      width: "150px",
+      width: "160px",
       sortable: true,
     },
     {

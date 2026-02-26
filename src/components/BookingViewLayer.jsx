@@ -3262,15 +3262,21 @@ const BookingViewLayer = () => {
                                                       {addon.EmployeeName ?? addon.employeeName ?? "—"}
                                                     </span>
                                                   </div>
-                                                ) : (
-                                                  <button
-                                                    type="button"
-                                                    className="btn btn-primary-600 btn-sm"
-                                                    onClick={() => handleFieldAdvisorConfirm(addon)}
-                                                  >
-                                                    Confirm
-                                                  </button>
-                                                )}
+                                                ) : (() => {
+                                                  const status = (addon.StatusName ?? addon.statusName ?? addon.AddOnStatus ?? addon.addOnStatus)
+                                                    ?.toString()
+                                                    .trim();
+                                                  const isServiceCompleted = status === "ServiceCompleted";
+                                                  return isServiceCompleted ? (
+                                                    <button
+                                                      type="button"
+                                                      className="btn btn-primary-600 btn-sm"
+                                                      onClick={() => handleFieldAdvisorConfirm(addon)}
+                                                    >
+                                                      Confirm
+                                                    </button>
+                                                  ) : null;
+                                                })()}
                                               </td>
                                               <td className="text-end fw-bold text-primary">
                                                 {Number(

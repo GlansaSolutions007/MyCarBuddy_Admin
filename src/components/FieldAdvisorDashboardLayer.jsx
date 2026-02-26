@@ -200,7 +200,7 @@ const FieldAdvisorDashboardLayer = () => {
             </div>
 
             {/* My Assigned Bookings – Field Advisor only */}
-            <div className="col-12 mt-4">
+            {/* <div className="col-12 mt-4">
               <style>{`
                 @keyframes dealer-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
                 @keyframes spin { to { transform: rotate(360deg); } }
@@ -340,7 +340,7 @@ const FieldAdvisorDashboardLayer = () => {
                   )}
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Stat cards – same layout as DealerDashboardLayer */}
             <div className="row row-cols-xxxl-4 row-cols-lg-3 row-cols-md-2 row-cols-1 gy-4 mt-2">

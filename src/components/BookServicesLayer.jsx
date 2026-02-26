@@ -406,7 +406,15 @@ const BookServicesLayer = () => {
       );
 
       if (response.status === 200 || response.status === 201) {
-        Swal.fire("Success!", "Service marked as completed.", "success");
+        const apiData = response.data;
+        const successMsg =
+          apiData?.message ||
+          apiData?.Message ||
+          (typeof apiData === "string" ? apiData : null) ||
+          (apiData && Object.keys(apiData).length ? JSON.stringify(apiData) : null) ||
+          "Service marked as completed.";
+
+        Swal.fire("Success!", successMsg, "success");
 
         // Refresh table data
         await fetchBookingData();
