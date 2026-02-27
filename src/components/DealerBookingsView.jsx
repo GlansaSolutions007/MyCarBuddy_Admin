@@ -1307,7 +1307,7 @@ const DealerBookingsView = () => {
               </div>
             )}
             {/* Submit button - below, centered */}
-            {showSubmitButton && (
+            {/* {showSubmitButton && ( */}
               <div className="mt-3 d-flex justify-content-center">
                 <button
                   className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
@@ -1316,7 +1316,7 @@ const DealerBookingsView = () => {
                   Submit
                 </button>
               </div>
-            )}
+            {/* )} */}
           </div>
         </div>
       </div>

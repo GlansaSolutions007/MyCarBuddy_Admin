@@ -842,8 +842,7 @@ const OrganicLeadsLayer = () => {
     { name: "Updated Date", selector: (row) => row.Updated_At ? new Date(row.Updated_At).toLocaleString("en-GB") : "-", sortable: true, width: "180px" },
     { name: "City", selector: (row) => row.City || "-", sortable: true, width: "180px" },
     { name: "Platform", selector: (row) => row.Platform || "-", width: "120px" },
-    ...(employeeData?.RoleName !== "Telecaller"
-      ? [{
+    {
         name: "Head Assigned D/T",
         selector: (row) =>
         (
@@ -858,14 +857,11 @@ const OrganicLeadsLayer = () => {
             </div>
           </div>
         ),
-        // row.HeadAssignDate
-        //   ? new Date(row.HeadAssignDate).toLocaleString("en-GB")
-        //   : "-",
         width: "170px",
-      }]
-      : []),
+      },
 
-    {
+    ...(employeeData?.RoleName !== "Telecaller"
+      ? [{
       name: "Emp. Assigned D/T", selector: (row) => (
         <div>
           <div style={{ fontWeight: 600 }}>
@@ -878,7 +874,8 @@ const OrganicLeadsLayer = () => {
           </div>
         </div>
       ), width: "170px"
-    },
+    }]
+      : []),
     // {
     //   name: "Lead Category",
     //   cell: (row) => {

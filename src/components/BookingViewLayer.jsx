@@ -2322,7 +2322,7 @@ const BookingViewLayer = () => {
                     >
                       <i className="bi bi-car-front-fill"></i>
                       <span className="fw-semibold text-primary">
-                        Car Pickup & Drop Details
+                        Service Tracking
                       </span>
                     </button>
                   </h2>
@@ -2362,7 +2362,7 @@ const BookingViewLayer = () => {
                               const pickType = record.PickType || "";
                               const routeType = record.RouteType || "";
                               const isPick = pickType.toLowerCase().includes("pick");
-                              const label = [pickType, routeType].filter(Boolean).join(" – ") || "Pickup/Drop";
+                              const label = [pickType, routeType].filter(Boolean).join(" – ") || "Service at Doorstep";
                               const assignStr = record.AssignDate
                                 ? new Date(record.AssignDate).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
                                 : "—";
@@ -2434,7 +2434,7 @@ const BookingViewLayer = () => {
                               >
                                 <Icon icon="mdi:format-list-bulleted" width={18} height={18} className="text-primary" />
                               </span>
-                              <h6 className="mb-0 fw-bold text-dark">Technician Pickup / Drop Records</h6>
+                              <h6 className="mb-0 fw-bold text-dark">Technician Details</h6>
                             </div>
                             <div
                               className="rounded-3 overflow-hidden border"

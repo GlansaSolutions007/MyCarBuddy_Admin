@@ -1372,6 +1372,7 @@ const LeadViewLayer = () => {
                                 placeholder="DD-MM-YYYY"
                                 className="form-control"
                                 value={nextFollowUpDate}
+                                min={new Date().toISOString().split("T")[0]}
                                 onChange={(e) =>
                                   setNextFollowUpDate(e.target.value)
                                 }
