@@ -231,6 +231,47 @@ const BookServicesLayer = () => {
     fetchTimeSlots();
   }, []);
 
+  // Filter time slots by date: upcoming = all slots, today = only future slots
+  const getFilteredTimeSlotsForDate = (selectedDate) => {
+    if (!selectedDate || !Array.isArray(timeSlots) || timeSlots.length === 0) {
+      return timeSlots;
+    }
+    const today = new Date().toISOString().split("T")[0];
+    if (selectedDate > today) {
+      return timeSlots; // Upcoming date: show all slots
+    }
+    if (selectedDate === today) {
+      const now = new Date();
+      const currentTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+      return timeSlots.filter((slot) => {
+        const slotEnd = (slot.EndTime || slot.StartTime || "23:59").substring(0, 5);
+        return slotEnd > currentTimeStr;
+      });
+    }
+    return []; // Past date: show none
+  };
+
+  // Clear selected time slots when date changes and some slots are no longer valid
+  useEffect(() => {
+    const filtered = getFilteredTimeSlotsForDate(serviceDate);
+    const validIds = new Set(filtered.map((s) => s.TsID));
+    setSelectedTimeSlot((prev) => {
+      if (!Array.isArray(prev) || prev.length === 0) return prev;
+      const kept = prev.filter((opt) => validIds.has(opt.value));
+      return kept.length === prev.length ? prev : kept;
+    });
+  }, [serviceDate, timeSlots]);
+
+  useEffect(() => {
+    const filtered = getFilteredTimeSlotsForDate(inspectionDate);
+    const validIds = new Set(filtered.map((s) => s.TsID));
+    setInspectionTimeSlot((prev) => {
+      if (!Array.isArray(prev) || prev.length === 0) return prev;
+      const kept = prev.filter((opt) => validIds.has(opt.value));
+      return kept.length === prev.length ? prev : kept;
+    });
+  }, [inspectionDate, timeSlots]);
+
   const fetchBookingData = async () => {
     try {
       setLoading(true);
@@ -2720,7 +2761,7 @@ const BookServicesLayer = () => {
                       placeholder="Select time slots..."
                       isClearable
                       closeMenuOnSelect={false}
-                      options={timeSlots.map((slot) => ({
+                      options={getFilteredTimeSlotsForDate(inspectionDate).map((slot) => ({
                         value: slot.TsID,
                         label: `${slot.StartTime} - ${slot.EndTime}`,
                       }))}
@@ -3247,7 +3288,7 @@ const BookServicesLayer = () => {
                               placeholder="Select time slots..."
                               isClearable
                               closeMenuOnSelect={false}
-                              options={timeSlots.map((slot) => ({
+                              options={getFilteredTimeSlotsForDate(serviceDate).map((slot) => ({
                                 value: slot.TsID,
                                 label: `${slot.StartTime} - ${slot.EndTime}`,
                               }))}
@@ -3782,7 +3823,7 @@ const BookServicesLayer = () => {
                     display: "block",
                   }}>
                     <Icon icon="mingcute:time-line" width={14} style={{ marginRight: "6px", verticalAlign: "middle" }} />
-                    Select Time Slot
+                    Select Time Slotaaaa
                   </label>
                   <Select
                     isMulti
@@ -3807,7 +3848,7 @@ const BookServicesLayer = () => {
                         color: "#94a3b8",
                       }),
                     }}
-                    options={timeSlots.map((slot) => ({
+                    options={getFilteredTimeSlotsForDate(inspectionDate).map((slot) => ({
                       value: slot.TsID,
                       label: `${slot.StartTime} - ${slot.EndTime}`,
                     }))}
