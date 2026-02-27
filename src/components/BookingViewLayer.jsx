@@ -3137,7 +3137,7 @@ const BookingViewLayer = () => {
                                             style={{ width: "160px" }}
                                             className="text-center"
                                           >
-                                            F.A. Confirm
+                                            F.A. Confirm By
                                           </th>
                                           <th
                                             style={{ width: "100px" }}

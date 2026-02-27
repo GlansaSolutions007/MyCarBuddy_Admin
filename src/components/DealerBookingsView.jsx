@@ -365,11 +365,49 @@ const DealerBookingsView = () => {
     });
   };
 
+  const getRowTotalAmount = (row) => {
+    const partTotal =
+      row.dealerSparePrice !== null &&
+      row.dealerSparePrice !== undefined &&
+      row.dealerSparePrice !== ""
+        ? Number(row.dealerSparePrice)
+        : 0;
+    const serviceCharge =
+      row.dealerServicePrice !== null &&
+      row.dealerServicePrice !== undefined &&
+      row.dealerServicePrice !== ""
+        ? Number(row.dealerServicePrice)
+        : 0;
+    let gstAmount = 0;
+    if (
+      row.gstPrice !== null &&
+      row.gstPrice !== undefined &&
+      row.gstPrice !== ""
+    ) {
+      gstAmount = Number(row.gstPrice);
+    } else {
+      const gstPercent = row.gstPercent || 18;
+      gstAmount = ((partTotal + serviceCharge) * Number(gstPercent)) / 100;
+    }
+    return partTotal + serviceCharge + gstAmount;
+  };
+
   const handleDealerApproveReject = async (index, action) => {
     const item = addedItems[index];
 
     if (!item._apiId) {
       return Swal.fire("Error", "Item ID not found", "error");
+    }
+
+    if (action?.toLowerCase() === "approve") {
+      const totalAmt = getRowTotalAmount(item);
+      if (totalAmt <= 0) {
+        return Swal.fire({
+          icon: "warning",
+          title: "Add Service Amount",
+          text: "Please add service amount, then approve this service.",
+        });
+      }
     }
 
     const status =
