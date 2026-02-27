@@ -644,10 +644,40 @@ const BookingViewLayer = () => {
   };
 
   // Handler for initial assignment: first show service location (doorstep vs garage)
+  // const handleInitialAssignClick = () => {
+  //   setAssignServiceLocation(null);
+  //   setShowAssignStep1Modal(true);
+  // };
+
   const handleInitialAssignClick = () => {
+  const routes = bookingData?.CarPickUpDelivery || [];
+
+  if (routes.length === 0) {
+    // No previous assignment → allow
     setAssignServiceLocation(null);
     setShowAssignStep1Modal(true);
-  };
+    return;
+  }
+
+  // Get last route (latest created)
+  const lastRoute = routes[routes.length - 1];
+
+  const lastStatus = lastRoute?.Status?.toLowerCase();
+
+  if (lastStatus === "completed" || lastStatus === "cancelled") {
+    // Allow new assignment
+    setAssignServiceLocation(null);
+    setShowAssignStep1Modal(true);
+  } else {
+    // Block assignment
+    // alert("Assigned technician not completed");
+    Swal.fire({
+      icon: "warning",
+      title: "Cannot Assign",
+      text: "The previously assigned technician has not completed the service. Please wait until the current assignment is completed before assigning a new technician.",
+    });
+  }
+};
 
   // After user selects "Service at doorstep" → open employee selection modal
   const openDoorstepAssignModal = () => {
@@ -798,8 +828,8 @@ const BookingViewLayer = () => {
       routeType,
       pickFrom,
       pickTo,
-      pickupDate:  "",
-      pickupTime:  "",
+      pickupDate: "",
+      pickupTime: "",
       deliveryDate: "",
       deliveryTime: "",
       techID: garageDriver?.value ?? 0,
@@ -854,7 +884,7 @@ const BookingViewLayer = () => {
       //   assingedTimeSlot: selectedInitialTimeSlot.value,
       //   role: initialAssignType === "technician" ? "Technician" : "Supervisor",
       // };
-    //  alert(initialAssignType);
+      //  alert(initialAssignType);
       // API URL and method differ based on assign type
       if (initialAssignType == "technician") {
         if (!selectedInitialTechnician) {
@@ -903,9 +933,9 @@ const BookingViewLayer = () => {
           });
           return;
         }
-        
+
         const assignTimeSlot = pickupDropReassignTimeSlot.join(",");
-        
+
         payload = {
           bookingID: bookingData.BookingID,
           assignDate: garagePickupDate + "T" + garagePickupTime,
@@ -1418,7 +1448,15 @@ const BookingViewLayer = () => {
         },
       );
       if (response.status === 200 || response.status === 201) {
-        Swal.fire("Success!", "Status updated successfully.", "success");
+
+          if(response.data.success)
+        {
+         Swal.fire("Success!", "Status updated successfully.", "success");
+        }
+        else{
+          Swal.fire("Error", response.data.message || "Failed to update service completion", "error");
+        }
+        
         await fetchBookingData();
       }
     } catch (error) {
@@ -2126,7 +2164,7 @@ const BookingViewLayer = () => {
                                 </li>
                                 <>
                                   {/* {bookingData.TechFullName && ( */}
-                                  <>
+                                  {/* <>
                                     <li className="d-flex align-items-center gap-1">
                                       <span className="w-50 fw-semibold text-primary-light">
                                         Technician Name/Number :
@@ -2142,7 +2180,7 @@ const BookingViewLayer = () => {
                                         )}
                                       </span>
                                     </li>
-                                  </>
+                                  </> */}
                                   {/* {(pickupDate || dropDate) && ( */}
                                   <li className="d-flex align-items-center gap-1">
                                     <span className="w-50 fw-semibold text-primary-light">
@@ -2174,7 +2212,7 @@ const BookingViewLayer = () => {
                                       )}
                                     </span>
                                   </li>
-                                  <li className="d-flex align-items-center gap-1">
+                                  {/* <li className="d-flex align-items-center gap-1">
                                     <span className="w-50 fw-semibold text-primary-light">
                                       Car Pickup Date & Time :
                                     </span>
@@ -2182,9 +2220,9 @@ const BookingViewLayer = () => {
                                       {displayDate(pickupDate)}
                                       {pickupTime && ` : ${pickupTime}`}
                                     </span>
-                                  </li>
+                                  </li> */}
 
-                                  <li className="d-flex align-items-center gap-1">
+                                  {/* <li className="d-flex align-items-center gap-1">
                                     <span className="w-50 fw-semibold text-primary-light">
                                       Car Drop Date & Time :
                                     </span>
@@ -2192,7 +2230,7 @@ const BookingViewLayer = () => {
                                       {displayDate(dropDate)}
                                       {dropTime && ` : ${dropTime}`}
                                     </span>
-                                  </li>
+                                  </li> */}
                                 </>
                               </ul>
                             </div>
@@ -2489,38 +2527,38 @@ const BookingViewLayer = () => {
                                             {row.Status ?? "—"}
                                           </span>
                                         </td>
-                                        { row.IsCancelled === 0  && row.Status !== "completed" && (
-                                        <td className="text-center pe-4 py-3">
-                                          <div className="d-flex gap-2 justify-content-center flex-wrap">
-                                            <button
-                                              type="button"
-                                              className="btn btn-press-effect btn-danger btn-sm d-inline-flex align-items-center gap-1"
-                                              onClick={() => handlePickupDropCancel(row)}
-                                              disabled={pickupDropActionLoading}
-                                            >
-                                              <Icon icon="mdi:close-circle-outline" width={16} height={16} />
-                                              Cancel
-                                            </button>
-                                            <button
-                                              type="button"
-                                              className="btn btn-press-effect btn-warning btn-sm d-inline-flex align-items-center gap-1 text-dark"
-                                              onClick={() => openPickupDropReassignModal(row)}
-                                              disabled={pickupDropActionLoading}
-                                            >
-                                              <Icon icon="mdi:account-switch-outline" width={16} height={16} />
-                                              Reassign
-                                            </button>
-                                            <button
-                                              type="button"
-                                              className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center gap-1"
-                                              onClick={() => openPickupDropRescheduleModal(row)}
-                                              disabled={pickupDropActionLoading}
-                                            >
-                                              <Icon icon="mdi:calendar-edit-outline" width={16} height={16} />
-                                              Reschedule
-                                            </button>
-                                          </div>
-                                        </td>
+                                        {row.IsCancelled === 0 && row.Status !== "completed" && (
+                                          <td className="text-center pe-4 py-3">
+                                            <div className="d-flex gap-2 justify-content-center flex-wrap">
+                                              <button
+                                                type="button"
+                                                className="btn btn-press-effect btn-danger btn-sm d-inline-flex align-items-center gap-1"
+                                                onClick={() => handlePickupDropCancel(row)}
+                                                disabled={pickupDropActionLoading}
+                                              >
+                                                <Icon icon="mdi:close-circle-outline" width={16} height={16} />
+                                                Cancel
+                                              </button>
+                                              <button
+                                                type="button"
+                                                className="btn btn-press-effect btn-warning btn-sm d-inline-flex align-items-center gap-1 text-dark"
+                                                onClick={() => openPickupDropReassignModal(row)}
+                                                disabled={pickupDropActionLoading}
+                                              >
+                                                <Icon icon="mdi:account-switch-outline" width={16} height={16} />
+                                                Reassign
+                                              </button>
+                                              <button
+                                                type="button"
+                                                className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center gap-1"
+                                                onClick={() => openPickupDropRescheduleModal(row)}
+                                                disabled={pickupDropActionLoading}
+                                              >
+                                                <Icon icon="mdi:calendar-edit-outline" width={16} height={16} />
+                                                Reschedule
+                                              </button>
+                                            </div>
+                                          </td>
                                         )}
                                       </tr>
                                     ))}
@@ -3083,12 +3121,12 @@ const BookingViewLayer = () => {
                                           </th>
                                           <th style={{ width: "180px" }}
                                             className="text-center">
-                                            Selected Dealer
+                                            Dealer Name
                                           </th>
-                                          <th style={{ width: "180px" }}
+                                          {/* <th style={{ width: "180px" }}
                                             className="text-center">
                                             Confirm Service
-                                          </th>
+                                          </th> */}
                                           <th
                                             style={{ width: "160px" }}
                                             className="text-center"
@@ -3221,9 +3259,16 @@ const BookingViewLayer = () => {
                                                   wordBreak: "break-word",
                                                 }}
                                               >
-                                                {addon.DealerName || "—"}
+                                                {addon.DealerName || "—"} {addon.IsDealer_Confirm && addon.DealerName ? <span
+                                                  className={`badge px-3 py-2 rounded-pill ${addon.IsDealer_Confirm === "Approved"
+                                                      ? "bg-success text-white"
+                                                      : "bg-warning text-dark"
+                                                    }`}
+                                                >
+                                                  {addon.IsDealer_Confirm}
+                                                </span> : ""}
                                               </td>
-                                              <td
+                                              {/* <td
                                                 className=" normal text-center"
                                                 style={{
                                                   whiteSpace: "normal",
@@ -3232,8 +3277,8 @@ const BookingViewLayer = () => {
                                                 title={addon.ConfirmDescription || ""}
                                               >
                                                 {addon.ConfirmRole || "—"}
-                                              </td>
-                                              <td className="text-center align-middle">
+                                              </td> */}
+                                              <td className="text-center ">
                                                 {(() => {
                                                   const dealerConfirm =
                                                     (addon.IsDealer_Confirm ?? addon.isDealer_Confirm)
@@ -3266,8 +3311,8 @@ const BookingViewLayer = () => {
                                                           Rejected
                                                         </span>
                                                       ) : (
-                                                        <span className="badge bg-warning text-dark px-3 py-4 rounded-pill">
-                                                          Dealer Pending
+                                                        <span className={` ${addon.DealerName ? " badge bg-warning text-dark  px-3 py-4 rounded-pill" : ""}`}>
+                                                          {addon.DealerName ? `Pending` : "—"}
                                                         </span>
                                                       )}
                                                     </div>
@@ -3430,7 +3475,7 @@ const BookingViewLayer = () => {
                                           </th>
                                           <th style={{ width: "200px" }}
                                             className="text-center">
-                                            Selected Dealer
+                                            Dealer Name
                                           </th>
                                           <th
                                             style={{ width: "160px" }}
@@ -3567,7 +3612,7 @@ const BookingViewLayer = () => {
                                                     wordBreak: "break-word",
                                                   }}
                                                 >
-                                                  {supervisorBooking.DealerName || "—"}
+                                                  {supervisorBooking.DealerName || "Not Assigned"}
                                                 </td>
                                                 <td className="text-center align-middle">
                                                   {(() => {
@@ -3782,7 +3827,7 @@ const BookingViewLayer = () => {
                                       )}
                                       {supervisorPendingCount > 0 && (
                                         <div className="alert alert-secondary py-2 px-3 mb-2 mb-md-3 small">
-                                          <strong>{supervisorPendingCount}</strong> supervisor side not confirm (Supervisor Confirm pending).
+                                          {supervisorPendingCount} service{supervisorPendingCount !== 1 ? "s" : ""} need{supervisorPendingCount === 1 ? "s" : ""} to be confirmed by the supervisor.
                                         </div>
                                       )}
                                     </>
@@ -4322,34 +4367,34 @@ const BookingViewLayer = () => {
                   <p className="text-muted small mb-3">Tap an option to proceed.</p>
                   <div className="d-flex flex-column gap-3">
                     {bookingData?.ServiceType !== "ServiceAtHome" && (
-                    <button
-                      type="button"
-                      className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white position-relative overflow-hidden transition"
-                      style={{
-                        minHeight: "72px",
-                        transition: "all 0.2s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "translateY(-2px)";
-                        e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "";
-                        e.currentTarget.style.boxShadow = "";
-                      }}
-                      onClick={openDoorstepAssignModal}
-                    >
-                      <div className="d-flex align-items-center gap-3">
-                        <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
-                          <Icon icon="mdi:home-circle-outline" width={26} height={26} className="text-primary" />
-                        </span>
-                        <div>
-                          <span className="fw-semibold d-block text-dark">Service at doorstep</span>
-                          <span className="small text-muted">Technician visits customer location</span>
+                      <button
+                        type="button"
+                        className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white position-relative overflow-hidden transition"
+                        style={{
+                          minHeight: "72px",
+                          transition: "all 0.2s ease",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = "translateY(-2px)";
+                          e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = "";
+                          e.currentTarget.style.boxShadow = "";
+                        }}
+                        onClick={openDoorstepAssignModal}
+                      >
+                        <div className="d-flex align-items-center gap-3">
+                          <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
+                            <Icon icon="mdi:home-circle-outline" width={26} height={26} className="text-primary" />
+                          </span>
+                          <div>
+                            <span className="fw-semibold d-block text-dark">Service at doorstep</span>
+                            <span className="small text-muted">Technician visits customer location</span>
+                          </div>
                         </div>
-                      </div>
-                      <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
-                    </button>
+                        <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
+                      </button>
                     )}
                     <button
                       type="button"
@@ -4515,7 +4560,7 @@ const BookingViewLayer = () => {
                     </div>
                   )} */}
 
-                 
+
 
                   {/* Employee Selection based on assignType */}
                   {initialAssignType === "technician" ? (
@@ -4565,7 +4610,7 @@ const BookingViewLayer = () => {
                     />
                   )}
 
-                   <div class="row g-2 mb-2">
+                  <div class="row g-2 mb-2">
                     <div class="col-6">
                       <label class="form-label small mb-1">Date</label>
                       <input
@@ -4587,39 +4632,39 @@ const BookingViewLayer = () => {
                     </div>
                   </div>
                   <div className="col-12">
-                      <label className="form-label small fw-semibold">Time Slot</label>
-                      <Select
-                        isMulti
-                        menuPortalTarget={document.body}
-                        menuPosition="fixed"
-                        styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
-                        options={timeSlots
-                          ?.filter((slot) => {
-                            if (!slot?.IsActive) return false;
-                            if (pickupDropReassignDate !== today) return true;
-                            const now = new Date();
-                            const [h, m] = (slot.StartTime || "00:00").split(":").map(Number);
-                            const slotTime = new Date();
-                            slotTime.setHours(h, m, 0, 0);
-                            return slotTime > now;
-                          })
-                          ?.sort((a, b) => {
-                            const [aH, aM] = (a.StartTime || "00:00").split(":").map(Number);
-                            const [bH, bM] = (b.StartTime || "00:00").split(":").map(Number);
-                            return aH * 60 + aM - (bH * 60 + bM);
-                          })
-                          ?.map((slot) => {
-                            const val = `${slot.StartTime} - ${slot.EndTime}`;
-                            return { value: val, label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}` };
-                          }) ?? []}
-                        value={pickupDropReassignTimeSlot?.map((val) => {
-                          const [s, e] = (val || "").split(/\s*-\s*/);
-                          return { value: val, label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}` };
+                    <label className="form-label small fw-semibold">Time Slot</label>
+                    <Select
+                      isMulti
+                      menuPortalTarget={document.body}
+                      menuPosition="fixed"
+                      styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+                      options={timeSlots
+                        ?.filter((slot) => {
+                          if (!slot?.IsActive) return false;
+                          if (pickupDropReassignDate !== today) return true;
+                          const now = new Date();
+                          const [h, m] = (slot.StartTime || "00:00").split(":").map(Number);
+                          const slotTime = new Date();
+                          slotTime.setHours(h, m, 0, 0);
+                          return slotTime > now;
+                        })
+                        ?.sort((a, b) => {
+                          const [aH, aM] = (a.StartTime || "00:00").split(":").map(Number);
+                          const [bH, bM] = (b.StartTime || "00:00").split(":").map(Number);
+                          return aH * 60 + aM - (bH * 60 + bM);
+                        })
+                        ?.map((slot) => {
+                          const val = `${slot.StartTime} - ${slot.EndTime}`;
+                          return { value: val, label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}` };
                         }) ?? []}
-                        onChange={(opts) => setPickupDropReassignTimeSlot(opts ? opts.map((o) => o.value) : [])}
-                        placeholder="Select time slot(s)"
-                      />
-                    </div>
+                      value={pickupDropReassignTimeSlot?.map((val) => {
+                        const [s, e] = (val || "").split(/\s*-\s*/);
+                        return { value: val, label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}` };
+                      }) ?? []}
+                      onChange={(opts) => setPickupDropReassignTimeSlot(opts ? opts.map((o) => o.value) : [])}
+                      placeholder="Select time slot(s)"
+                    />
+                  </div>
                 </div>
                 <div className="modal-footer d-inline-flex align-items-center justify-content-center">
                   <button
@@ -4641,10 +4686,10 @@ const BookingViewLayer = () => {
                     className="btn btn-press-effect btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
                     onClick={handleInitialAssignConfirm}
                     disabled={
-                    //   (initialAssignType !== "fieldAdvisor" && !seleInitialTimeSlot) ||
-                      (initialAssignType === "technician" && !selectedInitialTechnician)  ||
-                    //   (initialAssignType === "supervisor" && !selectedInitialSupervisor) ||
-                    //   (initialAssignType === "fieldAdvisor" && !selectedInitialFieldAdvisor) ||
+                      //   (initialAssignType !== "fieldAdvisor" && !seleInitialTimeSlot) ||
+                      (initialAssignType === "technician" && !selectedInitialTechnician) ||
+                      //   (initialAssignType === "supervisor" && !selectedInitialSupervisor) ||
+                      //   (initialAssignType === "fieldAdvisor" && !selectedInitialFieldAdvisor) ||
                       (initialAssignType === "technician" && selectedServiceType.length === 0)
                     }
                   >
@@ -4972,7 +5017,7 @@ const BookingViewLayer = () => {
                               return;
                             }
                           }
-                          
+
                           const payload = buildGaragePayload();
                           if (!payload) {
                             Swal.fire({ icon: "error", title: "Error", text: "Booking/Lead info missing." });

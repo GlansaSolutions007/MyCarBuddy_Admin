@@ -16,7 +16,7 @@ const DealerBookingsView = () => {
   const [addedItems, setAddedItems] = useState([]);
   const [includesList, setIncludesList] = useState([]);
   const [initialItemsSnapshot, setInitialItemsSnapshot] = useState({});
-  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [rowsWithAmountEntered, setRowsWithAmountEntered] = useState(() => new Set());
   const dealer = localStorage.getItem("role") || "Dealer";
 
   const getItemFingerprint = (item) =>
@@ -45,7 +45,20 @@ const DealerBookingsView = () => {
         getItemFingerprint(item) !== initialItemsSnapshot[item._apiId]
     );
 
-  const showSubmitButton = hasEdits && !submitSuccess;
+  const markRowAmountEntered = (index) => {
+    setRowsWithAmountEntered((prev) => new Set([...prev, index]));
+  };
+
+  const hasAmountEnteredForRow = (row) => {
+    if (!row || row.isInclude) return false;
+    const idx = row.addedItemsIndex;
+    if (rowsWithAmountEntered.has(idx)) return true;
+    const v = (x) => x !== "" && x !== null && x !== undefined && Number(x) > 0;
+    return (
+      v(row.dealerBasePrice) || v(row.dealerSparePrice) || v(row.dealerServicePrice) ||
+      v(row.gstPercent) || v(row.gstPrice) || (row.quantity !== "" && Number(row.quantity) > 0)
+    );
+  };
 
   useEffect(() => {
     if (leadId) {
@@ -54,12 +67,8 @@ const DealerBookingsView = () => {
       setAddedItems([]);
       setInitialItemsSnapshot({});
     }
-    setSubmitSuccess(false);
+    setRowsWithAmountEntered(new Set());
   }, [leadId]);
-
-  useEffect(() => {
-    if (hasEdits) setSubmitSuccess(false);
-  }, [hasEdits]);
 
   useEffect(() => {
     const fetchIncludes = async () => {
@@ -117,7 +126,13 @@ const DealerBookingsView = () => {
     );
 
     if (response.status === 200 || response.status === 201) {
-      Swal.fire("Success!", "Service marked as completed.", "success");
+ if(response.data.success)
+        {
+         Swal.fire("Success!", "Status updated successfully.", "success");
+        }
+        else{
+          Swal.fire("Error", response.data.message || "Failed to update service completion", "error");
+        }
 
       // Refresh table data
       await fetchBookingData();
@@ -264,164 +279,54 @@ const DealerBookingsView = () => {
     }
   };
 
-  const handleSaveAll = async () => {
-    const itemsToSave = addedItems.filter((item) => item._apiId);
-    if (itemsToSave.length === 0) {
-      Swal.fire({ icon: "info", title: "Nothing to Save", text: "No items to save." });
-      return false;
-    }
-
-    const editableItems = itemsToSave.filter(
-      (item) => item.isDealer_Confirm === "Confirmed" || item.isDealer_Confirm === "Approved"
-    );
-    if (editableItems.length === 0) {
-      Swal.fire({ icon: "info", title: "No Editable Items", text: "Only Confirmed/Approved items can be edited." });
-      return false;
-    }
-
-    try {
-      for (let i = 0; i < addedItems.length; i++) {
-        const row = addedItems[i];
-        if (!row._apiId) continue;
-        if (row.isDealer_Confirm !== "Confirmed" && row.isDealer_Confirm !== "Approved") continue;
-
-        let includes = "";
-        let serviceId = 0;
-
-        if (row.type === "Package" && Array.isArray(row.includes)) {
-          includes = row.includes.join(",");
-          serviceId = Number(row.packageId);
-        } else if (row.type === "Service Group" && row.serviceGroupServices) {
-          const sgs = row.serviceGroupServices || [];
-          if (sgs.length > 0) {
-            serviceId = Number(sgs[0].id);
-            includes = sgs.slice(1).map((s) => s.id).join(",");
-          }
-        } else if (row.type === "Service") {
-          serviceId = Number(row.includeId);
-        }
-
-        const bookingType = row.status?.toLowerCase() === "confirmed" ? "Confirm" : "NotConfirm";
-
-        const payload = {
-          id: row._apiId,
-          bookingId: row._bookingId,
-          bookingTrackID: row._bookingTrackId,
-          leadId: leadId,
-          serviceType: row.type,
-          serviceName: row.name,
-          basePrice: Number(row.dealerBasePrice) || 0,
-          quantity: row.quantity || 1,
-          price: Number(row.dealerSparePrice) || 0,
-          gstPercent: row.gstPercent === "" || row.gstPercent === 0 ? 18 : Number(row.gstPercent),
-          gstAmount: Number(row.gstPrice) || 0,
-          description: row.description,
-          dealerID: row.dealerID != null && row.dealerID !== "" ? Number(row.dealerID) : 0,
-          percentage: Number(row.percentage) || 0,
-          our_Earnings: Number(row.percentAmount) || 0,
-          labourCharges: Number(row.dealerServicePrice) || 0,
-          modifiedBy: parseInt(localStorage.getItem("userId")) || 0,
-          isActive: true,
-          type: bookingType,
-          includes,
-          serviceId,
-          dealerType: "dealer",
-        };
-
-        await axios.put(
-          `${API_BASE}Supervisor/UpdateSupervisorBooking`,
-          payload,
-          { headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } }
-        );
-      }
-      setInitialItemsSnapshot(buildSnapshot(addedItems));
-      setSubmitSuccess(true);
-      Swal.fire("Success!", "Changes saved successfully.", "success");
-      await fetchBookingData();
-      return true;
-    } catch (err) {
-      console.error(err);
-      Swal.fire("Error", err.response?.data?.message || "Failed to save changes", "error");
-      throw err;
-    }
-  };
-
-  const handleSaveRow = async (index) => {
-    const row = addedItems[index];
+  const buildBookingPayload = (row) => {
     const bookingType =
       row.status?.toLowerCase() === "confirmed" ? "Confirm" : "NotConfirm";
 
-    try {
-      // 🔹 API UPDATE (existing item)
-      if (row._apiId) {
-        let includes = "";
-        let serviceId = 0;
+    let includes = "";
+    let serviceId = 0;
 
-        if (row.type === "Package" && Array.isArray(row.includes)) {
-          includes = row.includes.join(",");
-          serviceId = Number(row.packageId);
-        } else if (row.type === "Service Group" && row.serviceGroupServices) {
-          // For Service Group: first service is main, rest go to includes
-          const serviceGroupServices = row.serviceGroupServices || [];
-          if (serviceGroupServices.length > 0) {
-            serviceId = Number(serviceGroupServices[0].id);
-            const includeIds = serviceGroupServices
-              .slice(1)
-              .map((s) => s.id)
-              .join(",");
-            includes = includeIds;
-          }
-        } else if (row.type === "Service") {
-          serviceId = Number(row.includeId);
-        }
-
-        const payload = {
-          id: row._apiId,
-          bookingId: row._bookingId,
-          bookingTrackID: row._bookingTrackId,
-          leadId: leadId,
-          serviceType: row.type,
-          serviceName: row.name,
-          basePrice: Number(row.dealerBasePrice) || 0,
-          quantity: row.quantity || 1,
-          price: Number(row.dealerSparePrice) || 0, // Part Total
-          gstPercent: row.gstPercent === "" || row.gstPercent === 0 ? 18 : Number(row.gstPercent),
-          gstAmount: Number(row.gstPrice) || 0,
-          description: row.description,
-          dealerID: row.dealerID,
-          percentage: Number(row.percentage) || 0,
-          our_Earnings: Number(row.percentAmount) || 0,
-          labourCharges: Number(row.dealerServicePrice) || 0, // Service Chg.
-          modifiedBy: parseInt(localStorage.getItem("userId")),
-          isActive: true,
-          type: bookingType,
-          includes: includes,
-          serviceId: serviceId,
-          dealerType: "dealer"
-        };
-        // if (role === "Dealer") {
-        //   payload.dealerType = "Dealer";
-        // }
-        await axios.put(
-          `${API_BASE}Supervisor/UpdateSupervisorBooking`,
-          payload,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
+    if (row.type === "Package" && Array.isArray(row.includes)) {
+      includes = row.includes.join(",");
+      serviceId = Number(row.packageId);
+    } else if (row.type === "Service Group" && row.serviceGroupServices) {
+      const serviceGroupServices = row.serviceGroupServices || [];
+      if (serviceGroupServices.length > 0) {
+        serviceId = Number(serviceGroupServices[0].id);
+        const includeIds = serviceGroupServices
+          .slice(1)
+          .map((s) => s.id)
+          .join(",");
+        includes = includeIds;
       }
-      setAddedItems((prev) =>
-        prev.map((r, i) => (i === index ? { ...r, isEditing: false } : r)),
-      );
-
-      Swal.fire("Saved", "Item updated successfully", "success");
-    } catch (err) {
-      console.error(err);
-      Swal.fire("Error", "Failed to save changes", "error");
+    } else if (row.type === "Service") {
+      serviceId = Number(row.includeId);
     }
+
+    return {
+      id: row._apiId,
+      bookingId: row._bookingId,
+      bookingTrackID: row._bookingTrackId,
+      leadId: leadId,
+      serviceType: row.type,
+      serviceName: row.name,
+      basePrice: Number(row.dealerBasePrice) || 0,
+      quantity: row.quantity || 1,
+      price: Number(row.dealerSparePrice) || 0,
+      gstPercent: row.gstPercent === "" || row.gstPercent === 0 ? 18 : Number(row.gstPercent),
+      gstAmount: Number(row.gstPrice) || 0,
+      description: row.description,
+      dealerID: row.dealerID != null && row.dealerID !== "" ? Number(row.dealerID) : 0,
+      percentage: Number(row.percentage) || 0,
+      our_Earnings: Number(row.percentAmount) || 0,
+      labourCharges: Number(row.dealerServicePrice) || 0,
+      modifiedBy: parseInt(localStorage.getItem("userId")) || 0,
+      isActive: true,
+      type: bookingType,
+      includes,
+      serviceId,
+      dealerType: "dealer",
+    };
   };
 
   const handleRemoveItem = (index) => {
@@ -472,16 +377,22 @@ const DealerBookingsView = () => {
     const type =
       item.status?.toLowerCase() === "confirmed" ? "AddOn" : "TempAddon";
 
+    const requestBody = {
+      ids: item._apiId.toString(),
+      type: type,
+      status: status,
+      dealerId: item.dealerID,
+      createdBy: userId,
+    };
+
+    if (action?.toLowerCase() === "approve") {
+      requestBody.bookingData = buildBookingPayload(item);
+    }
+
     try {
       const response = await axios.post(
         `${API_BASE}Dealer/DealerApproveBookingBulk`,
-        {
-          ids: item._apiId.toString(),
-          type: type,
-          status: status,
-          dealerId: item.dealerID,
-          createdBy: userId,
-        },
+        requestBody,
         {
           headers: {
             "Content-Type": "application/json",
@@ -551,16 +462,14 @@ const DealerBookingsView = () => {
             min={0}
             placeholder="0"
             value={row.dealerBasePrice === "" || row.dealerBasePrice === 0 ? "" : row.dealerBasePrice}
-            disabled={row.isDealer_Confirm === "Pending" || row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted"}
+            disabled={row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted"}
             onChange={(e) => {
               const val = e.target.value;
-
-              // allow empty while typing
+              markRowAmountEntered(row.addedItemsIndex);
               if (val === "") {
                 updateTableRow(row.addedItemsIndex, { dealerBasePrice: "" });
                 return;
               }
-
               const dealerBasePrice = Number(val);
               if (isNaN(dealerBasePrice) || dealerBasePrice < 0) return;
 
@@ -627,15 +536,14 @@ const DealerBookingsView = () => {
             min={1}
             placeholder="1"
             value={row.quantity === "" ? "" : row.quantity}
-            disabled={row.isDealer_Confirm === "Pending" || row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted"}
+            disabled={row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted"}
             onChange={(e) => {
               const val = e.target.value;
-
+              markRowAmountEntered(row.addedItemsIndex);
               if (val === "") {
                 updateTableRow(row.addedItemsIndex, { quantity: "" });
                 return;
               }
-
               const quantity = Number(val);
               if (isNaN(quantity) || quantity < 1) return;
 
@@ -701,16 +609,14 @@ const DealerBookingsView = () => {
             className="form-control form-control-sm"
             placeholder="0"
             value={row.dealerSparePrice === "" || row.dealerSparePrice === 0 ? "" : Number(row.dealerSparePrice).toFixed(2)}
-            disabled={row.isDealer_Confirm === "Pending" || row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted"}
+            disabled={row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted"}
             onChange={(e) => {
               const val = e.target.value;
-
-              // allow empty while typing
+              markRowAmountEntered(row.addedItemsIndex);
               if (val === "") {
                 updateTableRow(row.addedItemsIndex, { dealerSparePrice: "" });
                 return;
               }
-
               const dealerSparePrice = Number(val);
               if (isNaN(dealerSparePrice) || dealerSparePrice < 0) return;
 
@@ -771,16 +677,14 @@ const DealerBookingsView = () => {
             placeholder="0"
             value={row.dealerServicePrice === "" || row.dealerServicePrice === 0 ? "" : row.dealerServicePrice}
             min={0}
-            disabled={row.isDealer_Confirm === "Pending" || row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted"}
+            disabled={row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted"}
             onChange={(e) => {
               const val = e.target.value;
-
-              // allow empty while typing
+              markRowAmountEntered(row.addedItemsIndex);
               if (val === "") {
                 updateTableRow(row.addedItemsIndex, { dealerServicePrice: "" });
                 return;
               }
-
               const dealerServicePrice = Number(val);
               if (isNaN(dealerServicePrice) || dealerServicePrice < 0) return;
 
@@ -841,16 +745,14 @@ const DealerBookingsView = () => {
             placeholder="0"
             value={row.gstPercent === "" || row.gstPercent === 0 ? "" : row.gstPercent}
             min={0}
-            disabled={row.isDealer_Confirm === "Pending" || row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted"}
+            disabled={row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted"}
             onChange={(e) => {
               const val = e.target.value;
-
-              // allow empty while typing
+              markRowAmountEntered(row.addedItemsIndex);
               if (val === "") {
                 updateTableRow(row.addedItemsIndex, { gstPercent: "" });
                 return;
               }
-
               const gstPercent = Number(val);
               if (isNaN(gstPercent) || gstPercent < 0) return;
 
@@ -916,18 +818,17 @@ const DealerBookingsView = () => {
             className="form-control form-control-sm"
             min={0}
             placeholder="0"
+            disabled
             // step="0.01"
             value={row.gstPrice === "" || row.gstPrice === 0 ? "" : (row.gstPrice !== null && row.gstPrice !== undefined && row.gstPrice !== "" ? Number(row.gstPrice).toFixed(2) : "")}
-            disabled={row.isDealer_Confirm === "Pending" || row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted"}
+            // disabled={row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted"}
             onChange={(e) => {
               const val = e.target.value;
-
-              // allow empty while typing
+              markRowAmountEntered(row.addedItemsIndex);
               if (val === "") {
                 updateTableRow(row.addedItemsIndex, { gstPrice: "" });
                 return;
               }
-
               const gstPrice = Number(val);
               if (isNaN(gstPrice) || gstPrice < 0) return;
 
@@ -1057,7 +958,8 @@ const DealerBookingsView = () => {
                   onClick={() =>
                     handleDealerApproveReject(row.addedItemsIndex, "approve")
                   }
-                  title="Accept"
+                  disabled={!hasAmountEnteredForRow(row)}
+                  title={hasAmountEnteredForRow(row) ? "Accept" : "Enter amount to enable"}
                 >
                   <Icon icon="mingcute:check-line" />
                 </button>
@@ -1306,17 +1208,6 @@ const DealerBookingsView = () => {
                 </div>
               </div>
             )}
-            {/* Submit button - below, centered */}
-            {/* {showSubmitButton && ( */}
-              <div className="mt-3 d-flex justify-content-center">
-                <button
-                  className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
-                  onClick={handleSaveAll}
-                >
-                  Submit
-                </button>
-              </div>
-            {/* )} */}
           </div>
         </div>
       </div>

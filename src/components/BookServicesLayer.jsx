@@ -1127,6 +1127,7 @@ const BookServicesLayer = () => {
           quantity: row.quantity,
           price: Number(row.price) || 0,
           gstPercent: row.gstPercent || 0,
+          supervisorRole: employeeData?.RoleName || "",
           gstAmount: row.gstPrice || 0,
           description: row.description,
           dealerID: row.dealerID != null && row.dealerID !== "" ? Number(row.dealerID) : 0,
@@ -1218,6 +1219,7 @@ const BookServicesLayer = () => {
           description: row.description,
           dealerID: row.dealerID != null && row.dealerID !== "" ? Number(row.dealerID) : 0,
           percentage: row.percentage || 0,
+          supervisorRole: employeeData?.RoleName || "",
           our_Earnings: row.percentAmount || 0,
           labourCharges: row.labourCharge || 0,
           modifiedBy: parseInt(userId) || parseInt(localStorage.getItem("userId")) || 0,
@@ -3364,11 +3366,17 @@ const BookServicesLayer = () => {
                           <button
                             className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
                             onClick={handleCombinedSubmit}
+                            disabled={
+                              (isSupervisorHead || isAdmin) &&
+                              employeeData?.DepartmentName !== "Support"
+                                ? !isVerified
+                                : false
+                            }
                           >
                             Submit
                           </button>
                         )}
-                      {(isSupervisorHead ||
+                      {/* {(isSupervisorHead ||
                         isAdmin) &&
                         employeeData?.DepartmentName !== "Support" && (
                           <button
@@ -3378,7 +3386,7 @@ const BookServicesLayer = () => {
                           >
                             Confirm Booking
                           </button>
-                        )}
+                        )} */}
                     </div>
                   </div>
                 )}
