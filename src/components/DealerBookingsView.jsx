@@ -5,14 +5,13 @@ import { Icon } from "@iconify/react";
 import Swal from "sweetalert2";
 import axios from "axios";
 const employeeData = JSON.parse(localStorage.getItem("employeeData"));
-const userId = localStorage.getItem("userId")
-const role = localStorage.getItem("role");
 
 const DealerBookingsView = () => {
   const { Id } = useParams();
   const leadId = Id;
   const API_BASE = import.meta.env.VITE_APIURL;
   const token = localStorage.getItem("token");
+  const userId = localStorage.getItem("userId");
   const [addedItems, setAddedItems] = useState([]);
   const [includesList, setIncludesList] = useState([]);
   const [initialItemsSnapshot, setInitialItemsSnapshot] = useState({});
@@ -68,7 +67,7 @@ const DealerBookingsView = () => {
       setInitialItemsSnapshot({});
     }
     setRowsWithAmountEntered(new Set());
-  }, [leadId]);
+  }, [leadId, userId]);
 
   useEffect(() => {
     const fetchIncludes = async () => {

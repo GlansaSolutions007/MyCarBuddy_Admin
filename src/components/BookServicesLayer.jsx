@@ -74,6 +74,10 @@ const BookServicesLayer = () => {
   const [inspectionPackages, setInspectionPackages] = useState([]);
   const [selectedInspectionPackage, setSelectedInspectionPackage] = useState(null);
 
+  const rolename = employeeData?.RoleName === "Supervisor Head" ? "supervisor"
+    : employeeData?.RoleName === "Admin" ? "admin"
+      : employeeData?.RoleName;
+
 
   const getItemFingerprint = (item) =>
     JSON.stringify({
@@ -1127,7 +1131,7 @@ const BookServicesLayer = () => {
           quantity: row.quantity,
           price: Number(row.price) || 0,
           gstPercent: row.gstPercent || 0,
-          supervisorRole: employeeData?.RoleName || "",
+          supervisorRole: rolename,
           gstAmount: row.gstPrice || 0,
           description: row.description,
           dealerID: row.dealerID != null && row.dealerID !== "" ? Number(row.dealerID) : 0,
@@ -1477,13 +1481,14 @@ const BookServicesLayer = () => {
       // detect existing booking (from any existing item)
       const existingBookingItem = addedItems.find((item) => item._bookingId);
 
+
       const payload = {
         createdBy: parseInt(localStorage.getItem("userId")),
         leadId: leadId,
         services: services,
         bookingId: bookingId,
         bookingTrackID: bookingTrackID,
-        supervisorRole: employeeData?.RoleName || "",
+        supervisorRole: rolename,
       };
       //  IF booking already exists → include booking details
       if (existingBookingItem) {

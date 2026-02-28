@@ -4366,7 +4366,7 @@ const BookingViewLayer = () => {
                 <div className="modal-body pt-1 pb-4">
                   <p className="text-muted small mb-3">Tap an option to proceed.</p>
                   <div className="d-flex flex-column gap-3">
-                    {bookingData?.ServiceType !== "ServiceAtHome" && (
+                    {bookingData?.ServiceType !== "ServiceAtGarage" && (
                       <button
                         type="button"
                         className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white position-relative overflow-hidden transition"
@@ -4843,7 +4843,12 @@ const BookingViewLayer = () => {
                             <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
                           </button>
                         )}
-                        {garageTask === "carPickup" && hasExistingCustomerToDealerRoute && (
+                        {garageTask === "carPickup" &&
+                          hasExistingCustomerToDealerRoute &&
+                          bookingData?.BookingAddOns &&
+                          new Set(
+                            bookingData.BookingAddOns.map(item => item.DealerName)
+                          ).size > 1 && (
                           <button
                             type="button"
                             className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
