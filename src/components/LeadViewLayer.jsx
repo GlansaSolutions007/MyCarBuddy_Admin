@@ -1230,7 +1230,7 @@ const LeadViewLayer = () => {
                               Next Follow-up Date
                             </label>
                             <input
-                              type="date"
+                              type="datetime-local"
                               placeholder="DD-MM-YYYY"
                               className="form-control"
                               value={notAnsweredFollowUpDate}
@@ -1368,7 +1368,7 @@ const LeadViewLayer = () => {
                                 Next Follow-up Date
                               </label>
                               <input
-                                type="date"
+                                type="datetime-local"
                                 placeholder="DD-MM-YYYY"
                                 className="form-control"
                                 value={nextFollowUpDate}

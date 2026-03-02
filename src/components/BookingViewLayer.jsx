@@ -83,6 +83,7 @@ const BookingViewLayer = () => {
   const [fieldAdvisors, setFieldAdvisors] = useState([]);
   const [showCustomerConfirmationModal, setShowCustomerConfirmationModal] = useState(false);
   const [confirmationDescription, setConfirmationDescription] = useState("");
+  const [confirmationFile, setConfirmationFile] = useState(null);
   // Assign flow: step 1 = service location choice (doorstep vs garage)
   const [showAssignStep1Modal, setShowAssignStep1Modal] = useState(false);
   const [assignServiceLocation, setAssignServiceLocation] = useState(null); // "doorstep" | "garage"
@@ -129,10 +130,14 @@ const BookingViewLayer = () => {
   const [pickupDropReassignDate, setPickupDropReassignDate] = useState("");
   const [pickupDropReassignTimeSlot, setPickupDropReassignTimeSlot] = useState([]);
   const [pickupDropActionLoading, setPickupDropActionLoading] = useState(false);
+  const [fullScreenImageUrl, setFullScreenImageUrl] = useState(null); // for pickup image fullscreen view
+  const [fullScreenImageClosing, setFullScreenImageClosing] = useState(false);
+  const [fullScreenImageVisible, setFullScreenImageVisible] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentTypeChoice, setPaymentTypeChoice] = useState(null); // null | "online" | "other"
   const [paymentMode, setPaymentMode] = useState("");
   const [payAmount, setPayAmount] = useState("");
+  const [paymentFile, setPaymentFile] = useState(null);
   const [isDiscountApplicable, setIsDiscountApplicable] = useState(false);
   const [discountAmount, setDiscountAmount] = useState("");
   const [couponOffers, setCouponOffers] = useState([]);
@@ -167,6 +172,19 @@ const BookingViewLayer = () => {
   useEffect(() => {
     setIsPaid(!!bookingData?.Payments);
   }, [bookingData]);
+
+  // Full-screen image: fade-in on open
+  useEffect(() => {
+    if (fullScreenImageUrl) {
+      setFullScreenImageVisible(false);
+      const t = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setFullScreenImageVisible(true));
+      });
+      return () => cancelAnimationFrame(t);
+    } else {
+      setFullScreenImageVisible(false);
+    }
+  }, [fullScreenImageUrl]);
 
   // Keep discount amount not more than entered amount
   useEffect(() => {
@@ -650,34 +668,34 @@ const BookingViewLayer = () => {
   // };
 
   const handleInitialAssignClick = () => {
-  const routes = bookingData?.CarPickUpDelivery || [];
+    const routes = bookingData?.CarPickUpDelivery || [];
 
-  if (routes.length === 0) {
-    // No previous assignment → allow
-    setAssignServiceLocation(null);
-    setShowAssignStep1Modal(true);
-    return;
-  }
+    if (routes.length === 0) {
+      // No previous assignment → allow
+      setAssignServiceLocation(null);
+      setShowAssignStep1Modal(true);
+      return;
+    }
 
-  // Get last route (latest created)
-  const lastRoute = routes[routes.length - 1];
+    // Get last route (latest created)
+    const lastRoute = routes[routes.length - 1];
 
-  const lastStatus = lastRoute?.Status?.toLowerCase();
+    const lastStatus = lastRoute?.Status?.toLowerCase();
 
-  if (lastStatus === "completed" || lastStatus === "cancelled") {
-    // Allow new assignment
-    setAssignServiceLocation(null);
-    setShowAssignStep1Modal(true);
-  } else {
-    // Block assignment
-    // alert("Assigned technician not completed");
-    Swal.fire({
-      icon: "warning",
-      title: "Cannot Assign",
-      text: "The previously assigned technician has not completed the service. Please wait until the current assignment is completed before assigning a new technician.",
-    });
-  }
-};
+    if (lastStatus === "completed" || lastStatus === "cancelled") {
+      // Allow new assignment
+      setAssignServiceLocation(null);
+      setShowAssignStep1Modal(true);
+    } else {
+      // Block assignment
+      // alert("Assigned technician not completed");
+      Swal.fire({
+        icon: "warning",
+        title: "Cannot Assign",
+        text: "The previously assigned technician has not completed the service. Please wait until the current assignment is completed before assigning a new technician.",
+      });
+    }
+  };
 
   // After user selects "Service at doorstep" → open employee selection modal
   const openDoorstepAssignModal = () => {
@@ -805,7 +823,13 @@ const BookingViewLayer = () => {
     const leadId = bookingData?.LeadId || "";
     if (!bid || !leadId) return null;
     const pickType = garageTask === "carPickup" ? "CarPick" : "CarDrop";
-    const routeType = garageRoute === "customerToDealer" ? "CustomerToDealer" : "DealerToDealer";
+    // const routeType = garageRoute === "customerToDealer" ? "CustomerToDealer" : "DealerToDealer";
+    const routeType =
+  pickType === "CarDrop"
+    ? "DealerToCustomer"
+    : garageRoute === "customerToDealer"
+    ? "CustomerToDealer"
+    : "DealerToDealer";
     let pickFrom = 0;
     let pickTo = 0;
     if (garageRoute === "customerToDealer") {
@@ -1449,14 +1473,13 @@ const BookingViewLayer = () => {
       );
       if (response.status === 200 || response.status === 201) {
 
-          if(response.data.success)
-        {
-         Swal.fire("Success!", "Status updated successfully.", "success");
+        if (response.data.success) {
+          Swal.fire("Success!", "Status updated successfully.", "success");
         }
-        else{
+        else {
           Swal.fire("Error", response.data.message || "Failed to update service completion", "error");
         }
-        
+
         await fetchBookingData();
       }
     } catch (error) {
@@ -1647,6 +1670,7 @@ const BookingViewLayer = () => {
     setPaymentTypeChoice(null);
     setPaymentMode("");
     setPayAmount("");
+    setPaymentFile(null);
     setIsDiscountApplicable(false);
     setDiscountAmount("");
     setPaymentEmail("");
@@ -1739,6 +1763,7 @@ const BookingViewLayer = () => {
       Swal.fire("Success", "Customer confirmation completed successfully.", "success");
       setShowCustomerConfirmationModal(false);
       setConfirmationDescription("");
+      setConfirmationFile(null);
       fetchBookingData();
     } catch (error) {
       console.error("Customer Confirmation Error:", error);
@@ -1796,6 +1821,11 @@ const BookingViewLayer = () => {
       const isOnline = paymentTypeChoice === "online";
       if (!isOnline && !paymentMode) {
         Swal.fire("Validation", "Please select payment mode", "warning");
+        return;
+      }
+
+      if (!isOnline && !paymentFile) {
+        Swal.fire("Validation", "Please attach payment proof file", "warning");
         return;
       }
 
@@ -1917,6 +1947,7 @@ const BookingViewLayer = () => {
       if (res?.data?.status) {
         Swal.fire("Success", "Payment confirmed successfully", "success");
         setShowPaymentModal(false);
+        setPaymentFile(null);
         setIsPaid(true);
         fetchBookingData(); // refresh booking & payments
       } else {
@@ -2391,6 +2422,8 @@ const BookingViewLayer = () => {
                         <div className="p-4 position-relative" style={{ backgroundColor: "#fff" }}>
                           {(() => {
                             const list = bookingData?.CarPickUpDelivery ?? [];
+
+
                             const formatTimeOnly = (t) => {
                               if (!t) return "";
                               const m = String(t).trim().match(/^(\d{1,2}):(\d{2})/);
@@ -2398,7 +2431,9 @@ const BookingViewLayer = () => {
                             };
                             const steps = list.map((record, idx) => {
                               const pickType = record.PickType || "";
-                              const routeType = record.RouteType || "";
+                              // const routeType = record.RouteType || "";
+                              const routeType = record.RouteType == 'CustomerToDealer' ? "Customer To Dealer" : record.RouteType == 'DealerToCustomer' ? "Dealer To Customer" : record.RouteType == 'DealerToDealer' ? "Dealer To Dealer" : "—";
+
                               const isPick = pickType.toLowerCase().includes("pick");
                               const label = [pickType, routeType].filter(Boolean).join(" – ") || "Service at Doorstep";
                               const assignStr = record.AssignDate
@@ -2464,6 +2499,7 @@ const BookingViewLayer = () => {
 
                         {/* Technician Pickup / Drop Records – modern table */}
                         {((bookingData?.CarPickUpDelivery ?? []).length > 0) && (
+
                           <div className="border-top mt-4 pt-4">
                             <div className="d-flex align-items-center gap-2 mb-3">
                               <span
@@ -2496,7 +2532,108 @@ const BookingViewLayer = () => {
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {(bookingData?.CarPickUpDelivery ?? []).map((row, idx) => (
+                                    {(bookingData?.CarPickUpDelivery ?? []).map((row, idx) => {
+
+                                      const pickupImages = (bookingData?.BookingImages ?? [])
+                                        .filter(img => img.PickId === row.Id);
+
+                                      return (
+                                        <>
+                                          <tr
+                                            key={row.Id ?? row.BookingID ?? idx}
+                                            style={{
+                                              backgroundColor: idx % 2 === 0 ? "#fff" : "#fafafa",
+                                              transition: "background 0.15s ease",
+                                              borderBottom: "1px solid #f1f5f9",
+                                            }}
+                                            className="pickup-drop-row"
+                                          >
+                                            <td className="text-center ps-4 py-3 fw-semibold" style={{ color: "#334155" }}>{row.TechnicinaName ?? "—"}</td>
+                                            <td className="text-center py-3" style={{ color: "#475569" }}>
+                                              {row.AssignDate
+                                                ? new Date(row.AssignDate).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+                                                : "—"}
+                                            </td>
+                                            <td className="text-center py-3" style={{ color: "#475569" }}>{row.RouteType == 'CustomerToDealer' ? "Customer To Dealer" : row.RouteType == 'DealerToCustomer' ? "Dealer To Customer" : row.RouteType == 'DealerToDealer' ? "Dealer To Dealer" : "—"}</td>
+                                            <td className="text-center py-3" style={{ color: "#475569" }}>{row.ServiceType == "ServiceAtGarage" ? "Service At Garage" : "Service At Home"}</td>
+                                            <td className="text-center py-3">
+                                              <span
+                                                className="badge rounded-pill px-2 py-1"
+                                                style={{
+                                                  fontSize: "0.7rem",
+                                                  fontWeight: 600,
+                                                  backgroundColor: (row.Status || "").toLowerCase() === "assigned" ? "rgba(13,148,136,0.15)" : "rgba(100,116,139,0.15)",
+                                                  color: (row.Status || "").toLowerCase() === "assigned" ? "#0d9488" : "#64748b",
+                                                }}
+                                              >
+                                                {row.Status ?? "—"}
+                                              </span>
+                                            </td>
+                                            <td className="text-center pe-4 py-3">
+                                              <div className="d-flex flex-column align-items-center gap-2">
+                                                {pickupImages.length > 0 && (
+                                                  <div className="d-flex gap-3 flex-wrap justify-content-center">
+                                                    {pickupImages.map((img) => (
+                                                      <img
+                                                        key={img.ImageID}
+                                                        src={`${API_IMAGE}/${img.ImageURL}`}
+                                                        alt="pickup"
+                                                        role="button"
+                                                        tabIndex={0}
+                                                        onClick={() => setFullScreenImageUrl(`${API_IMAGE}/${img.ImageURL}`)}
+                                                        onKeyDown={(e) => e.key === "Enter" && setFullScreenImageUrl(`${API_IMAGE}/${img.ImageURL}`)}
+                                                        style={{
+                                                          width: "70px",
+                                                          height: "70px",
+                                                          objectFit: "cover",
+                                                          borderRadius: "8px",
+                                                          cursor: "pointer",
+                                                        }}
+                                                      />
+                                                    ))}
+                                                  </div>
+                                                )}
+                                                {row.IsCancelled === 0 && row.Status !== "completed" && (
+                                                <div className="d-flex gap-2 justify-content-center flex-wrap">
+                                                  <button
+                                                    type="button"
+                                                    className="btn btn-press-effect btn-danger btn-sm d-inline-flex align-items-center gap-1"
+                                                    onClick={() => handlePickupDropCancel(row)}
+                                                    disabled={pickupDropActionLoading}
+                                                  >
+                                                    <Icon icon="mdi:close-circle-outline" width={16} height={16} />
+                                                    Cancel
+                                                  </button>
+                                                  <button
+                                                    type="button"
+                                                    className="btn btn-press-effect btn-warning btn-sm d-inline-flex align-items-center gap-1 text-dark"
+                                                    onClick={() => openPickupDropReassignModal(row)}
+                                                    disabled={pickupDropActionLoading}
+                                                  >
+                                                    <Icon icon="mdi:account-switch-outline" width={16} height={16} />
+                                                    Reassign
+                                                  </button>
+                                                  <button
+                                                    type="button"
+                                                    className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center gap-1"
+                                                    onClick={() => openPickupDropRescheduleModal(row)}
+                                                    disabled={pickupDropActionLoading}
+                                                  >
+                                                    <Icon icon="mdi:calendar-edit-outline" width={16} height={16} />
+                                                    Reschedule
+                                                  </button>
+                                                </div>
+                                                )}
+                                              </div>
+                                            </td>
+                                          </tr>
+
+
+                                        </>
+                                      );
+                                    })}
+                                    {/* {(bookingData?.CarPickUpDelivery ?? []).map((row, idx) => (
+                                      
                                       <tr
                                         key={row.Id ?? row.BookingID ?? idx}
                                         style={{
@@ -2512,8 +2649,8 @@ const BookingViewLayer = () => {
                                             ? new Date(row.AssignDate).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
                                             : "—"}
                                         </td>
-                                        <td className="text-center py-3" style={{ color: "#475569" }}>{row.RouteType ?? "—"}</td>
-                                        <td className="text-center py-3" style={{ color: "#475569" }}>{row.ServiceType ?? "—"}</td>
+                                        <td className="text-center py-3" style={{ color: "#475569" }}>{row.RouteType == 'CustomerToDealer' ? "Customer To Dealer" : row.RouteType == 'DealerToCustomer' ? "Dealer To Customer" :row.RouteType == 'DealerToDealer' ? "Dealer To Dealer" : "—"}</td>
+                                        <td className="text-center py-3" style={{ color: "#475569" }}>{row.ServiceType == "ServiceAtGarage" ? "Service At Garage" : "Service At Home"}</td>
                                         <td className="text-center py-3">
                                           <span
                                             className="badge rounded-pill px-2 py-1"
@@ -2561,7 +2698,7 @@ const BookingViewLayer = () => {
                                           </td>
                                         )}
                                       </tr>
-                                    ))}
+                                    ))} */}
                                   </tbody>
                                 </table>
                               </div>
@@ -2573,6 +2710,155 @@ const BookingViewLayer = () => {
                   </div>
                 </div>
               </div>
+
+              {/* ================= PAYMENTS ACCORDION ================= */}
+              <Accordion className="mb-3" defaultActiveKey="">
+                <Accordion.Item eventKey="payments">
+                  <Accordion.Header>
+                    <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
+                      <Icon icon="mdi:credit-card-multiple" width={20} height={20} />
+                      Payments
+                    </h6>
+                  </Accordion.Header>
+                  <Accordion.Body>
+                    {(bookingData?.Payments ?? []).length > 0 ? (
+                      <div className="table-responsive">
+                        <table className="table table-bordered table-hover align-middle mb-0" style={{ fontSize: "0.875rem" }}>
+                          <thead style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+                            <tr>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>#</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Amount Paid</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Payment Mode</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Transaction ID</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Payment Date</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Status</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Type</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Refunded</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(bookingData?.Payments ?? []).map((pay, idx) => (
+                              <tr key={pay.PaymentID ?? idx}>
+                                <td className="py-2 px-3">{pay.PaymentID ?? "—"}</td>
+                                <td className="py-2 px-3 fw-semibold">₹{(pay.AmountPaid ?? 0).toLocaleString("en-IN")}</td>
+                                <td className="py-2 px-3">{pay.PaymentMode ?? "—"}</td>
+                                <td className="py-2 px-3 text-nowrap" style={{ maxWidth: "180px" }} title={pay.TransactionID}>{pay.TransactionID ?? "—"}</td>
+                                <td className="py-2 px-3">
+                                  {pay.PaymentDate
+                                    ? new Date(pay.PaymentDate).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+                                    : "—"}
+                                </td>
+                                <td className="py-2 px-3">
+                                  <span
+                                    className="badge rounded-pill px-2 py-1"
+                                    style={{
+                                      fontSize: "0.7rem",
+                                      backgroundColor: (pay.PaymentStatus || "").toLowerCase() === "success" ? "rgba(34,197,94,0.15)" : "rgba(234,179,8,0.15)",
+                                      color: (pay.PaymentStatus || "").toLowerCase() === "success" ? "#16a34a" : "#ca8a04",
+                                    }}
+                                  >
+                                    {pay.PaymentStatus ?? "—"}
+                                  </span>
+                                </td>
+                                <td className="py-2 px-3">{pay.PaymentType ?? "—"}</td>
+                                <td className="py-2 px-3">{pay.IsRefunded ? "Yes" : "No"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p className="text-muted mb-0 text-center py-4">No payments recorded for this booking.</p>
+                    )}
+                  </Accordion.Body>
+                </Accordion.Item>
+              </Accordion>
+
+              {/* ================= INVOICES (ESTIMATION & FINAL) ACCORDION ================= */}
+              <Accordion className="mb-3" defaultActiveKey="">
+                <Accordion.Item eventKey="invoices">
+                  <Accordion.Header>
+                    <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
+                      <Icon icon="mdi:file-document-multiple" width={20} height={20} />
+                      Invoices (Estimation & Final)
+                    </h6>
+                  </Accordion.Header>
+                  <Accordion.Body>
+                    {(bookingData?.Invoices ?? []).length > 0 ? (
+                      <div className="table-responsive">
+                        <table className="table table-bordered table-hover align-middle mb-0" style={{ fontSize: "0.875rem" }}>
+                          <thead style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+                            <tr>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>#</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Invoice No</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Type</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Total</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Tax</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Discount</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Net Amount</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Status</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>View</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(bookingData?.Invoices ?? []).map((inv, idx) => (
+                              <tr key={inv.InvoiceID ?? idx}>
+                                <td className="py-2 px-3">{inv.InvoiceID ?? "—"}</td>
+                                <td className="py-2 px-3 fw-semibold">{inv.InvoiceNumber ?? "—"}</td>
+                                <td className="py-2 px-3">
+                                  <span
+                                    className="badge rounded-pill px-2 py-1"
+                                    style={{
+                                      fontSize: "0.7rem",
+                                      backgroundColor: (inv.InvoiceType || "").toLowerCase() === "final" ? "rgba(13,148,136,0.15)" : "rgba(59,130,246,0.15)",
+                                      color: (inv.InvoiceType || "").toLowerCase() === "final" ? "#0d9488" : "#2563eb",
+                                    }}
+                                  >
+                                    {inv.InvoiceType ?? "—"}
+                                  </span>
+                                </td>
+                                <td className="py-2 px-3">₹{(inv.TotalAmount ?? 0).toLocaleString("en-IN")}</td>
+                                <td className="py-2 px-3">₹{(inv.TaxAmount ?? 0).toLocaleString("en-IN")}</td>
+                                <td className="py-2 px-3">₹{(inv.DiscountAmount ?? 0).toLocaleString("en-IN")}</td>
+                                <td className="py-2 px-3 fw-bold">₹{(inv.NetAmount ?? 0).toLocaleString("en-IN")}</td>
+                                <td className="py-2 px-3">
+                                  <span
+                                    className="badge rounded-pill px-2 py-1"
+                                    style={{
+                                      fontSize: "0.7rem",
+                                      backgroundColor: (inv.InvoiceStatus || "").toLowerCase() === "generated" ? "rgba(34,197,94,0.15)" : "rgba(148,163,184,0.2)",
+                                      color: (inv.InvoiceStatus || "").toLowerCase() === "generated" ? "#16a34a" : "#64748b",
+                                    }}
+                                  >
+                                    {inv.InvoiceStatus ?? "—"}
+                                  </span>
+                                </td>
+                                <td className="py-2 px-3">
+                                  {inv.FolderPath ? (
+                                    <a
+                                      href={`${API_BASE.replace(/\/$/, "")}/${inv.FolderPath}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="btn btn-sm btn-outline-primary py-1 px-2"
+                                    >
+                                      <Icon icon="mdi:file-pdf-box" width={18} height={18} />
+                                    </a>
+                                  ) : (
+                                    "—"
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p className="text-muted mb-0 text-center py-4">No invoices recorded for this booking.</p>
+                    )}
+                  </Accordion.Body>
+                </Accordion.Item>
+              </Accordion>
+
               {/* ================= RESCHEDULE SECTION ================= */}
               {showReschedule && bookingData && (
                 <div className="card border radius-16 mb-3">
@@ -2844,7 +3130,7 @@ const BookingViewLayer = () => {
 
                                   if (payments?.length > 0) {
                                     const lastPayment =
-                                      payments[payments.length - 1];
+                                      payments[0];
                                     const status = lastPayment?.PaymentStatus;
 
                                     if (status === "Success") {
@@ -3261,8 +3547,8 @@ const BookingViewLayer = () => {
                                               >
                                                 {addon.DealerName || "—"} {addon.IsDealer_Confirm && addon.DealerName ? <span
                                                   className={`badge px-3 py-2 rounded-pill ${addon.IsDealer_Confirm === "Approved"
-                                                      ? "bg-success text-white"
-                                                      : "bg-warning text-dark"
+                                                    ? "bg-success text-white"
+                                                    : "bg-warning text-dark"
                                                     }`}
                                                 >
                                                   {addon.IsDealer_Confirm}
@@ -4322,16 +4608,36 @@ const BookingViewLayer = () => {
                           )}
                         </>
                       )}
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">
+                          Attach Payment Proof <span className="text-danger">*</span>
+                        </label>
+                        <input
+                          type="file"
+                          className="form-control"
+                          required
+                          onChange={(e) => setPaymentFile(e.target.files?.[0] ?? null)}
+                          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
+                        />
+                        {paymentFile && (
+                          <small className="text-muted d-block mt-1">Selected: {paymentFile.name}</small>
+                        )}
+                      </div>
                     </>
                   )}
                 </div>
 
                 {(paymentTypeChoice === "online" || paymentTypeChoice === "other") && (
                   <div className="modal-footer border-0 justify-content-center gap-2">
-                    <button type="button" className="btn btn-press-effect btn-outline-secondary btn-sm" onClick={() => { setPaymentTypeChoice(null); setPaymentMode(""); setPayAmount(remainingAmount); setDiscountAmount(""); }}>
+                    <button type="button" className="btn btn-press-effect btn-outline-secondary btn-sm" onClick={() => { setPaymentTypeChoice(null); setPaymentMode(""); setPayAmount(remainingAmount); setDiscountAmount(""); setPaymentFile(null); }}>
                       Back
                     </button>
-                    <button type="button" className="btn btn-press-effect btn-primary-600 btn-sm" onClick={handleConfirmPayment}>
+                    <button
+                      type="button"
+                      className="btn btn-press-effect btn-primary-600 btn-sm"
+                      onClick={handleConfirmPayment}
+                      disabled={paymentTypeChoice === "other" && !paymentFile}
+                    >
                       Confirm Payment
                     </button>
                   </div>
@@ -4849,32 +5155,32 @@ const BookingViewLayer = () => {
                           new Set(
                             bookingData.BookingAddOns.map(item => item.DealerName)
                           ).size > 1 && (
-                          <button
-                            type="button"
-                            className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
-                            style={{ minHeight: "72px", transition: "all 0.2s ease" }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = "translateY(-2px)";
-                              e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = "";
-                              e.currentTarget.style.boxShadow = "";
-                            }}
-                            onClick={() => { setGarageRoute("dealerToDealer"); setGarageStep("details"); }}
-                          >
-                            <div className="d-flex align-items-center gap-3">
-                              <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
-                                <Icon icon="mdi:swap-horizontal" width={24} height={24} className="text-primary" />
-                              </span>
-                              <div>
-                                <span className="fw-semibold d-block text-dark">Dealer to dealer</span>
-                                <span className="small text-muted">Pickup at one dealer → Deliver at another</span>
+                            <button
+                              type="button"
+                              className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
+                              style={{ minHeight: "72px", transition: "all 0.2s ease" }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = "translateY(-2px)";
+                                e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "";
+                                e.currentTarget.style.boxShadow = "";
+                              }}
+                              onClick={() => { setGarageRoute("dealerToDealer"); setGarageStep("details"); }}
+                            >
+                              <div className="d-flex align-items-center gap-3">
+                                <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
+                                  <Icon icon="mdi:swap-horizontal" width={24} height={24} className="text-primary" />
+                                </span>
+                                <div>
+                                  <span className="fw-semibold d-block text-dark">Dealer to dealer</span>
+                                  <span className="small text-muted">Pickup at one dealer → Deliver at another</span>
+                                </div>
                               </div>
-                            </div>
-                            <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
-                          </button>
-                        )}
+                              <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
+                            </button>
+                          )}
                       </div>
                     </>
                   )}
@@ -5288,6 +5594,7 @@ const BookingViewLayer = () => {
                     onClick={() => {
                       setShowCustomerConfirmationModal(false);
                       setConfirmationDescription("");
+                      setConfirmationFile(null);
                     }}
                   />
                 </div>
@@ -5322,6 +5629,22 @@ const BookingViewLayer = () => {
                       This description will be recorded along with your confirmation.
                     </small>
                   </div>
+
+                  {/* File Upload Field */}
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">Attach File</label>
+                    <input
+                      type="file"
+                      className="form-control"
+                      onChange={(e) => setConfirmationFile(e.target.files?.[0] ?? null)}
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
+                    />
+                    {confirmationFile && (
+                      <small className="text-muted d-block mt-1">
+                        Selected: {confirmationFile.name}
+                      </small>
+                    )}
+                  </div>
                 </div>
 
                 <div className="modal-footer justify-content-center">
@@ -5330,6 +5653,7 @@ const BookingViewLayer = () => {
                     onClick={() => {
                       setShowCustomerConfirmationModal(false);
                       setConfirmationDescription("");
+                      setConfirmationFile(null);
                     }}
                   >
                     Cancel
@@ -5344,6 +5668,90 @@ const BookingViewLayer = () => {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Full-screen pickup image viewer with open/close effects */}
+        {fullScreenImageUrl && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="View pickup image"
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 9999,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "rgba(0,0,0,0.92)",
+              backdropFilter: "blur(6px)",
+              WebkitBackdropFilter: "blur(6px)",
+              cursor: "pointer",
+              opacity: fullScreenImageClosing ? 0 : (fullScreenImageVisible ? 1 : 0),
+              transition: "opacity 0.25s ease-out",
+            }}
+            onClick={() => {
+              setFullScreenImageClosing(true);
+              setTimeout(() => {
+                setFullScreenImageUrl(null);
+                setFullScreenImageClosing(false);
+              }, 250);
+            }}
+          >
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={(e) => {
+                e.stopPropagation();
+                setFullScreenImageClosing(true);
+                setTimeout(() => {
+                  setFullScreenImageUrl(null);
+                  setFullScreenImageClosing(false);
+                }, 250);
+              }}
+              style={{
+                position: "absolute",
+                top: "16px",
+                right: "16px",
+                zIndex: 10001,
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                border: "none",
+                background: "rgba(255,255,255,0.2)",
+                color: "#fff",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "background 0.2s ease, transform 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.35)";
+                e.currentTarget.style.transform = "scale(1.08)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.2)";
+                e.currentTarget.style.transform = "scale(1)";
+              }}
+            >
+              <Icon icon="mdi:close" width={24} height={24} />
+            </button>
+            <img
+              src={fullScreenImageUrl}
+              alt="Pickup full size"
+              style={{
+                maxWidth: "90vw",
+                maxHeight: "90vh",
+                objectFit: "contain",
+                borderRadius: "8px",
+                transform: fullScreenImageClosing ? "scale(0.96)" : (fullScreenImageVisible ? "scale(1)" : "scale(0.96)"),
+                opacity: fullScreenImageClosing ? 0.9 : (fullScreenImageVisible ? 1 : 0.9),
+                transition: "transform 0.25s ease-out, opacity 0.25s ease-out",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
           </div>
         )}
       </div>

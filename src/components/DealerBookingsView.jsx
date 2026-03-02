@@ -407,6 +407,40 @@ const DealerBookingsView = () => {
           text: "Please add service amount, then approve this service.",
         });
       }
+
+      const confirmApprove = await Swal.fire({
+        title: "Are you sure?",
+        text: "Do you want to approve this item?",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Yes",
+        cancelButtonText: "No",
+        confirmButtonColor: "#28a745",
+        cancelButtonColor: "#6c757d",
+      });
+      if (!confirmApprove.isConfirmed) return;
+    }
+
+    let rejectionReason = null;
+    if (action?.toLowerCase() === "reject") {
+      const { value: reason } = await Swal.fire({
+        title: "Are you sure?",
+        input: "textarea",
+        inputLabel: "Reason for rejection",
+        inputPlaceholder: "Enter the reason for rejecting this item...",
+        inputValidator: (value) => {
+          if (!value || !value.trim()) {
+            return "Please provide a reason for rejection.";
+          }
+        },
+        showCancelButton: true,
+        confirmButtonText: "Yes, Reject",
+        cancelButtonText: "No",
+        confirmButtonColor: "#dc3545",
+        cancelButtonColor: "#6c757d",
+      });
+      if (reason === undefined) return; // User clicked Cancel
+      rejectionReason = reason.trim();
     }
 
     const status =
@@ -424,6 +458,10 @@ const DealerBookingsView = () => {
 
     if (action?.toLowerCase() === "approve") {
       requestBody.bookingData = buildBookingPayload(item);
+    }
+
+    if (action?.toLowerCase() === "reject" && rejectionReason) {
+      requestBody.reason = rejectionReason;
     }
 
     try {

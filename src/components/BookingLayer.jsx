@@ -481,18 +481,18 @@ const BookingLayer = () => {
     //   width: "150px",
     //   sortable: true,
     // },
-    {
-      name: "Reg. Number",
-      selector: (row) => (
-        <>
-          <span className="fw-bold">
-            {row.VehicleDetails?.[0]?.RegistrationNumber || "Not Available"}
-          </span>
-        </>
-      ),
-      width: "150px",
-      sortable: true,
-    },
+    // {
+    //   name: "Reg. Number",
+    //   selector: (row) => (
+    //     <>
+    //       <span className="fw-bold">
+    //         {row.VehicleDetails?.[0]?.RegistrationNumber || "Not Available"}
+    //       </span>
+    //     </>
+    //   ),
+    //   width: "150px",
+    //   sortable: true,
+    // },
     {
       name: "Car Brand/Model",
       selector: (row) => (
