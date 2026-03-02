@@ -197,6 +197,16 @@ const LeadViewLayer = () => {
     setSelectedSupervisorHead(null);
   }, [selectedArea, allSupervisors]);
 
+  // Prefill Call Answered checkbox from latest FollowUp's Is_Answered when lead loads
+  useEffect(() => {
+    if (!lead?.FollowUps?.length) return;
+    const withAnswer = lead.FollowUps.filter((f) => f.Is_Answered != null);
+    if (withAnswer.length === 0) return; // Is_Answered null → keep existing (no pre-select)
+    const latest = withAnswer.reduce((a, b) => (a.Id > b.Id ? a : b));
+    if (latest.Is_Answered === true) setCallAnswered("Ans");
+    else if (latest.Is_Answered === false) setCallAnswered("Not Ans");
+  }, [lead]);
+
   // Prefill Personal Information and Car Details fields with data from the lead
   useEffect(() => {
     if (lead) {

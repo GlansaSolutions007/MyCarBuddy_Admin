@@ -2139,8 +2139,9 @@ const BookingViewLayer = () => {
                     <Accordion className="mb-3">
                       <Accordion.Item eventKey="0">
                         <Accordion.Header>
-                          <h6 className="mb-2 fw-bold text-primary">
-                            👤 Personal Information
+                          <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
+                            <Icon icon="mdi:account-circle-outline" width={20} height={20} />
+                            Personal Information
                           </h6>
                         </Accordion.Header>
 
@@ -2183,6 +2184,14 @@ const BookingViewLayer = () => {
                                   </span>
                                   <span className="w-50 text-secondary-light fw-bold">
                                     {bookingData.PhoneNumber || "N/A"}
+                                  </span>
+                                </li>
+                                <li className="d-flex align-items-center gap-1">
+                                  <span className=" w-50 fw-semibold text-primary-light">
+                                    Email :
+                                  </span>
+                                  <span className="w-50 text-secondary-light fw-bold">
+                                    {bookingData.CustEmail || "N/A"}
                                   </span>
                                 </li>
                                 <li className="d-flex align-items-center gap-1">
@@ -2276,8 +2285,9 @@ const BookingViewLayer = () => {
                     <Accordion className="mb-3">
                       <Accordion.Item eventKey="1">
                         <Accordion.Header>
-                          <h6 className="mb-2 fw-bold text-primary">
-                            🚗 Vehicle Details
+                          <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
+                            <Icon icon="mdi:car" width={20} height={20} />
+                            Vehicle Details
                           </h6>
                         </Accordion.Header>
 
@@ -2310,7 +2320,7 @@ const BookingViewLayer = () => {
                                     {/* )} */}
                                     {/* {vehicle.BrandName && vehicle.ModelName && ( */}
                                     <li className="d-flex align-items-center gap-1">
-                                      <span className="w-70 fw-semibold text-primary-light">
+                                      <span className="fw-semibold text-primary-light">
                                         Brand :
                                       </span>
                                       <span className="w-70 text-secondary-light fw-bold ms-2">
@@ -2621,10 +2631,7 @@ const BookingViewLayer = () => {
                           <div className="d-flex flex-column w-100">
                             <div className="d-flex justify-content-between align-items-center w-100">
                               <div className="d-flex align-items-center gap-3">
-                                <Icon
-                                  icon="mdi:calendar-check"
-                                  className="text-primary fs-4"
-                                />
+                                <Icon icon="mdi:calendar-check" width={20} height={20} className="text-primary" />
                                 <div>
                                   <h6 className="mb-0 text-dark fw-bold">
                                     Booking #{bookingData.BookingTrackID}
@@ -2690,8 +2697,9 @@ const BookingViewLayer = () => {
                               <Accordion defaultActiveKey="pkg1" className="mb-4">
                                 <Accordion.Item eventKey="pkg1">
                                   <Accordion.Header>
-                                    <h6 className="text-success fw-bold mb-0">
-                                      📦 Packages
+                                    <h6 className="text-success fw-bold mb-0 d-flex align-items-center gap-2">
+                                      <Icon icon="mdi:package-variant" width={20} height={20} className="text-success" />
+                                      Packages
                                     </h6>
                                   </Accordion.Header>
 
@@ -2764,8 +2772,9 @@ const BookingViewLayer = () => {
                               <Accordion defaultActiveKey="1" className="mb-4">
                                 <Accordion.Item eventKey="1">
                                   <Accordion.Header>
-                                    <h6 className="text-primary fw-bold mb-0">
-                                      🛠️ Additional Services
+                                    <h6 className="text-primary fw-bold mb-0 d-flex align-items-center gap-2">
+                                      <Icon icon="mdi:wrench" width={20} height={20} />
+                                      Additional Services
                                     </h6>
                                   </Accordion.Header>
                                   <Accordion.Body>
@@ -2920,7 +2929,7 @@ const BookingViewLayer = () => {
                                           >
                                             Our Amt.
                                           </th>
-                                          <th style={{ width: "180px" }}
+                                          <th style={{ width: "170px" }}
                                             className="text-center">
                                             Dealer Name
                                           </th>
@@ -3063,7 +3072,7 @@ const BookingViewLayer = () => {
                                                 {addon.DealerName || "—"} {addon.IsDealer_Confirm && addon.DealerName ? <span
                                                   className={`badge px-3 py-2 rounded-pill ${addon.IsDealer_Confirm === "Approved"
                                                     ? "bg-success text-white"
-                                                    : "bg-warning text-dark"
+                                                    : "bg-danger text-white"
                                                     }`}
                                                 >
                                                   {addon.IsDealer_Confirm}
@@ -3274,7 +3283,7 @@ const BookingViewLayer = () => {
                                           >
                                             Our Amt.
                                           </th>
-                                          <th style={{ width: "200px" }}
+                                          <th style={{ width: "170px" }}
                                             className="text-center">
                                             Dealer Name
                                           </th>
@@ -3406,7 +3415,7 @@ const BookingViewLayer = () => {
                                                     supervisorBooking.Our_Earnings || 0,
                                                   ).toFixed(2)}
                                                 </td>
-                                                <td
+                                                {/* <td
                                                   className="normal text-center"
                                                   style={{
                                                     whiteSpace: "normal",
@@ -3414,8 +3423,32 @@ const BookingViewLayer = () => {
                                                   }}
                                                 >
                                                   {supervisorBooking.DealerName || "Not Assigned"}
+                                                </td> */}
+                                                <td
+                                                  className=" normal text-center"
+                                                  style={{
+                                                    whiteSpace: "normal",
+                                                    wordBreak: "break-word",
+                                                  }}
+                                                >
+                                                  {supervisorBooking.DealerName || "—"}
+
+                                                  {supervisorBooking.IsDealer_Confirm && supervisorBooking.DealerName && (
+                                                    <span
+                                                      className={`badge px-3 py-2 rounded-pill ${supervisorBooking.IsDealer_Confirm === "Approved"
+                                                          ? "bg-success text-white"
+                                                          : supervisorBooking.IsDealer_Confirm === "Rejected"
+                                                            ? "bg-danger text-white"
+                                                            : supervisorBooking.IsDealer_Confirm === "Pending"
+                                                              ? "bg-warning text-dark"
+                                                              : "bg-secondary text-white"
+                                                        }`}
+                                                    >
+                                                      {supervisorBooking.IsDealer_Confirm}
+                                                    </span>
+                                                  )}
                                                 </td>
-                                                <td className="text-center align-middle">
+                                                <td className="text-center">
                                                   {(() => {
                                                     const isApproved =
                                                       (supervisorBooking.IsDealer_Confirm ?? supervisorBooking.isDealer_Confirm)
@@ -3623,7 +3656,7 @@ const BookingViewLayer = () => {
                                     <>
                                       {dlrPendingCount > 0 && (
                                         <div className="alert alert-warning py-2 px-3 mb-2 mb-md-3 small">
-                                          <strong>{dlrPendingCount}</strong> dealer side service(s) remaining (Dealer Service Status not completed).
+                                          <strong>{dlrPendingCount}</strong> dealer side service(s) remaining.
                                         </div>
                                       )}
                                       {supervisorPendingCount > 0 && (
@@ -3755,7 +3788,7 @@ const BookingViewLayer = () => {
                       aria-expanded="false"
                       aria-controls="collapsePickupDrop"
                     >
-                      <i className="bi bi-car-front-fill"></i>
+                      <Icon icon="mdi:car-side" width={20} height={20} className="text-primary" />
                       <span className="fw-semibold text-primary">
                         Service Tracking
                       </span>
@@ -3852,7 +3885,7 @@ const BookingViewLayer = () => {
                                         boxShadow: step.done ? "0 2px 6px rgba(13,148,136,0.35)" : "0 1px 3px rgba(0,0,0,0.08)",
                                       }}
                                     >
-                                      <Icon icon={step.icon} width={22} height={22} />
+                                      <Icon icon={step.icon} width={20} height={20} />
                                     </div>
                                     <span className="small fw-bold text-center text-dark" style={{ fontSize: "12px", lineHeight: 1.25 }}>{step.label}</span>
                                     <span className="small text-muted text-center mt-1" style={{ fontSize: "11px" }}>{step.sub}</span>
@@ -3872,7 +3905,7 @@ const BookingViewLayer = () => {
                                 className="rounded-3 d-flex align-items-center justify-content-center"
                                 style={{ width: 36, height: 36, backgroundColor: "rgba(13,148,136,0.12)" }}
                               >
-                                <Icon icon="mdi:format-list-bulleted" width={18} height={18} className="text-primary" />
+                                <Icon icon="mdi:format-list-bulleted" width={20} height={20} className="text-primary" />
                               </span>
                               <h6 className="mb-0 fw-bold text-dark">Technician Details</h6>
                             </div>
@@ -3967,7 +4000,7 @@ const BookingViewLayer = () => {
                                                       onClick={() => handlePickupDropCancel(row)}
                                                       disabled={pickupDropActionLoading}
                                                     >
-                                                      <Icon icon="mdi:close-circle-outline" width={16} height={16} />
+                                                      <Icon icon="mdi:close-circle-outline" width={18} height={18} />
                                                       Cancel
                                                     </button>
                                                     <button
@@ -3976,7 +4009,7 @@ const BookingViewLayer = () => {
                                                       onClick={() => openPickupDropReassignModal(row)}
                                                       disabled={pickupDropActionLoading}
                                                     >
-                                                      <Icon icon="mdi:account-switch-outline" width={16} height={16} />
+                                                      <Icon icon="mdi:account-switch-outline" width={18} height={18} />
                                                       Reassign
                                                     </button>
                                                     <button
@@ -3985,7 +4018,7 @@ const BookingViewLayer = () => {
                                                       onClick={() => openPickupDropRescheduleModal(row)}
                                                       disabled={pickupDropActionLoading}
                                                     >
-                                                      <Icon icon="mdi:calendar-edit-outline" width={16} height={16} />
+                                                      <Icon icon="mdi:calendar-edit-outline" width={18} height={18} />
                                                       Reschedule
                                                     </button>
                                                   </div>
@@ -4039,7 +4072,7 @@ const BookingViewLayer = () => {
                                                 onClick={() => handlePickupDropCancel(row)}
                                                 disabled={pickupDropActionLoading}
                                               >
-                                                <Icon icon="mdi:close-circle-outline" width={16} height={16} />
+                                                <Icon icon="mdi:close-circle-outline" width={18} height={18} />
                                                 Cancel
                                               </button>
                                               <button
@@ -4048,7 +4081,7 @@ const BookingViewLayer = () => {
                                                 onClick={() => openPickupDropReassignModal(row)}
                                                 disabled={pickupDropActionLoading}
                                               >
-                                                <Icon icon="mdi:account-switch-outline" width={16} height={16} />
+                                                <Icon icon="mdi:account-switch-outline" width={18} height={18} />
                                                 Reassign
                                               </button>
                                               <button
@@ -4057,7 +4090,7 @@ const BookingViewLayer = () => {
                                                 onClick={() => openPickupDropRescheduleModal(row)}
                                                 disabled={pickupDropActionLoading}
                                               >
-                                                <Icon icon="mdi:calendar-edit-outline" width={16} height={16} />
+                                                <Icon icon="mdi:calendar-edit-outline" width={18} height={18} />
                                                 Reschedule
                                               </button>
                                             </div>
@@ -4266,7 +4299,7 @@ const BookingViewLayer = () => {
                                       rel="noopener noreferrer"
                                       className="btn btn-sm btn-outline-primary py-1 px-2"
                                     >
-                                      <Icon icon="mdi:file-pdf-box" width={18} height={18} />
+                                      <Icon icon="mdi:file-pdf-box" width={20} height={20} />
                                     </a>
                                   ) : (
                                     "—"
@@ -4478,7 +4511,7 @@ const BookingViewLayer = () => {
                             <Icon icon="mdi:credit-card-outline" width={24} height={24} className="text-primary" />
                             Pay through online
                           </span>
-                          <Icon icon="mdi:chevron-right" width={22} height={22} className="text-secondary opacity-75" />
+                          <Icon icon="mdi:chevron-right" width={20} height={20} className="text-secondary opacity-75" />
                         </button>
                         <button
                           type="button"
@@ -4494,7 +4527,7 @@ const BookingViewLayer = () => {
                             <Icon icon="mdi:cash-multiple" width={24} height={24} className="text-primary" />
                             Pay through other method
                           </span>
-                          <Icon icon="mdi:chevron-right" width={22} height={22} className="text-secondary opacity-75" />
+                          <Icon icon="mdi:chevron-right" width={20} height={20} className="text-secondary opacity-75" />
                         </button>
                       </div>
                     </>
@@ -4752,14 +4785,14 @@ const BookingViewLayer = () => {
                       >
                         <div className="d-flex align-items-center gap-3">
                           <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
-                            <Icon icon="mdi:home-circle-outline" width={26} height={26} className="text-primary" />
+                            <Icon icon="mdi:home-circle-outline" width={24} height={24} className="text-primary" />
                           </span>
                           <div>
                             <span className="fw-semibold d-block text-dark">Service at doorstep</span>
                             <span className="small text-muted">Technician visits customer location</span>
                           </div>
                         </div>
-                        <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
+                        <Icon icon="mdi:chevron-right" width={20} height={20} className="text-secondary opacity-75" />
                       </button>
                     )}
                     <button
@@ -4778,14 +4811,14 @@ const BookingViewLayer = () => {
                     >
                       <div className="d-flex align-items-center gap-3">
                         <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
-                          <Icon icon="mdi:garage" width={26} height={26} className="text-primary" />
+                          <Icon icon="mdi:garage" width={24} height={24} className="text-primary" />
                         </span>
                         <div>
                           <span className="fw-semibold d-block text-dark">Service at garage</span>
                           <span className="small text-muted">Pickup/drop & dealer flow</span>
                         </div>
                       </div>
-                      <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
+                      <Icon icon="mdi:chevron-right" width={20} height={20} className="text-secondary opacity-75" />
                     </button>
                   </div>
                 </div>
@@ -5131,14 +5164,14 @@ const BookingViewLayer = () => {
                         >
                           <div className="d-flex align-items-center gap-3">
                             <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
-                              <Icon icon="mdi:car-pickup" width={26} height={26} className="text-primary" />
+                              <Icon icon="mdi:car-pickup" width={24} height={24} className="text-primary" />
                             </span>
                             <div>
                               <span className="fw-semibold d-block text-dark">Car pickup</span>
                               <span className="small text-muted">Pick up vehicle and take to dealer</span>
                             </div>
                           </div>
-                          <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
+                          <Icon icon="mdi:chevron-right" width={20} height={20} className="text-secondary opacity-75" />
                         </button>
                         {/* Hide Car drop when CustomerToDealer route does NOT exist */}
                         {hasExistingCustomerToDealerRoute && (
@@ -5158,14 +5191,14 @@ const BookingViewLayer = () => {
                           >
                             <div className="d-flex align-items-center gap-3">
                               <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
-                                <Icon icon="mdi:car-side" width={26} height={26} className="text-primary" />
+                                <Icon icon="mdi:car-side" width={24} height={24} className="text-primary" />
                               </span>
                               <div>
                                 <span className="fw-semibold d-block text-dark">Car drop</span>
                                 <span className="small text-muted">Deliver vehicle back to customer</span>
                               </div>
                             </div>
-                            <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
+                            <Icon icon="mdi:chevron-right" width={20} height={20} className="text-secondary opacity-75" />
                           </button>
                         )}
                       </div>
@@ -5206,7 +5239,7 @@ const BookingViewLayer = () => {
                                 </span>
                               </div>
                             </div>
-                            <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
+                            <Icon icon="mdi:chevron-right" width={20} height={20} className="text-secondary opacity-75" />
                           </button>
                         )}
                         {garageTask === "carPickup" &&
@@ -5238,7 +5271,7 @@ const BookingViewLayer = () => {
                                   <span className="small text-muted">Pickup at one dealer → Deliver at another</span>
                                 </div>
                               </div>
-                              <Icon icon="mdi:chevron-right" width={24} height={24} className="text-secondary opacity-75" />
+                              <Icon icon="mdi:chevron-right" width={20} height={20} className="text-secondary opacity-75" />
                             </button>
                           )}
                       </div>

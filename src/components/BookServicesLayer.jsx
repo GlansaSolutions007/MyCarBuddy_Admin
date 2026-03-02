@@ -1159,6 +1159,8 @@ const BookServicesLayer = () => {
       if (!skipSuccessSwal) {
         Swal.fire("Saved", "All items updated successfully", "success");
       }
+      // 👇 Navigate using bookingId
+      navigate(`/booking-view/${addedItems[0]?._bookingId}`);
       setInitialItemsSnapshot(buildSnapshot(addedItems));
       return true;
     } catch (err) {
