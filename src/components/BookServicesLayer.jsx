@@ -2456,10 +2456,15 @@ const BookServicesLayer = () => {
           name: "Select Dealer",
           cell: (row, index) => {
             if (row.isInclude) return null;
-            const canModify =
+            const dealerConfirm = row.isDealer_Confirm?.toString().trim().toLowerCase();
+            const isApproved = dealerConfirm === "approved";
+            const isRejected = dealerConfirm === "rejected";
+            const canModifyBase =
               row.status !== "Confirmed" ||
-              isSupervisorHead ||
+              isSupervisorHead || isFieldAdvisor ||
               isAdmin;
+            const canModify =
+              isRejected ? true : isApproved ? false : canModifyBase;
             return (
               <div className="position-relative overflow-visible w-100">
                 <Select

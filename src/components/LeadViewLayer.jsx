@@ -700,6 +700,18 @@ const LeadViewLayer = () => {
     }
   };
 
+  // Send exact date & time user selected (no UTC conversion). datetime-local gives "YYYY-MM-DDTHH:mm"
+  const selectedDateTimeToPayload = (value) => {
+    if (!value || typeof value !== "string") return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    // Keep the exact date and time user selected: "2026-03-05T10:00" -> "2026-03-05T10:00:00"
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(trimmed)) return `${trimmed}:00`;
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(trimmed)) return trimmed.slice(0, 19);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return `${trimmed}T00:00:00`;
+    return null;
+  };
+
   // Handle Submit Status
   const handleSubmitStatus = async () => {
     if (!lead) return;
@@ -735,9 +747,7 @@ const LeadViewLayer = () => {
         descriptionNotes && descriptionNotes.trim() !== ""
           ? descriptionNotes.trim()
           : followUpStatus;
-      nextFollowUp_Date = notAnsweredFollowUpDate
-        ? new Date(notAnsweredFollowUpDate).toISOString()
-        : null;
+      nextFollowUp_Date = selectedDateTimeToPayload(notAnsweredFollowUpDate);
     }
 
     // ANSWERED flow
@@ -764,9 +774,7 @@ const LeadViewLayer = () => {
         discussionNotes && discussionNotes.trim() !== ""
           ? discussionNotes.trim()
           : callOutcome;
-      nextFollowUp_Date = nextFollowUpDate
-        ? new Date(nextFollowUpDate).toISOString()
-        : null;
+      nextFollowUp_Date = selectedDateTimeToPayload(nextFollowUpDate);
     }
     // build payload exactly as you requested:
     const payload = {
@@ -1375,7 +1383,7 @@ const LeadViewLayer = () => {
                           {nextAction && nextAction !== "Lead Closed" && (
                             <div className="col-12">
                               <label className="form-label fw-semibold text-primary-light">
-                                Next Follow-up Date
+                                Next Follow-up Date & Time
                               </label>
                               <input
                                 type="datetime-local"

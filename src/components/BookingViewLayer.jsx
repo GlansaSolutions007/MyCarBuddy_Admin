@@ -3129,7 +3129,7 @@ const BookingViewLayer = () => {
                                                   );
                                                 })()}
                                               </td>
-                                              <td className="text-center align-middle">
+                                              <td className="text-center">
                                                 {addon.IsCompleted_Confirmation === 1 ||
                                                   addon.isCompleted_Confirmation === 1 ? (
                                                   <div className="d-flex gap-2 align-items-center justify-content-center">

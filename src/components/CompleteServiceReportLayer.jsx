@@ -1,420 +1,818 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import DataTable from "react-data-table-component";
+import axios from "axios";
 
-const STATUS_OPTIONS = [
-  { value: "all", label: "All" },
-  { value: "Pending", label: "Pending" },
-  { value: "Confirmed", label: "Confirmed" },
-  { value: "In Progress", label: "In Progress" },
-  { value: "Completed", label: "Completed" },
-];
+const API_BASE = import.meta.env.VITE_APIURL || "https://dev-api.mycarsbuddy.com/api";
 
 const STATUS_BADGE_CLASS = {
-  Confirmed: "bg-info bg-opacity-15 text-info",
-  "In Progress": "bg-primary bg-opacity-15 text-primary",
-  Completed: "bg-success bg-opacity-15 text-success",
-  Pending: "bg-warning bg-opacity-15 text-warning",
+  Confirmed: "bg-info bg-opacity-25 text-info",
+  "In Progress": "bg-primary bg-opacity-25 text-primary",
+  InProgress: "bg-primary bg-opacity-25 text-primary",
+  ServiceCompleted: "bg-success bg-opacity-25 text-success",
+  Completed: "bg-success bg-opacity-25 text-success",
+  Pending: "bg-warning bg-opacity-25 text-warning",
+  Approved: "bg-success bg-opacity-25 text-success",
+  Rejected: "bg-danger bg-opacity-25 text-danger",
+  Assigned: "bg-info bg-opacity-25 text-info",
+  Success: "bg-success bg-opacity-25 text-success",
+  Cancelled: "bg-danger bg-opacity-25 text-danger",
+  "Not Assigned": "bg-secondary bg-opacity-25 text-secondary",
+  Paid: "bg-success bg-opacity-25 text-success",
+  Failed: "bg-danger bg-opacity-25 text-danger",
+  Refunded: "bg-info bg-opacity-25 text-info",
+  "Not Paid": "bg-secondary bg-opacity-25 text-secondary",
+  // Car pickup/delivery & driver tracking
+  completed: "bg-success bg-opacity-25 text-success",
+  pickup_started: "bg-primary bg-opacity-25 text-primary",
+  pickup_reached: "bg-info bg-opacity-25 text-info",
+  car_picked: "bg-info bg-opacity-25 text-info",
+  in_transit: "bg-warning bg-opacity-25 text-warning",
+  drop_reached: "bg-info bg-opacity-25 text-info",
+  // Booking status tracking
+  BuddyStarted: "bg-primary bg-opacity-25 text-primary",
+  BuddyReached: "bg-info bg-opacity-25 text-info",
+  CarPicked: "bg-info bg-opacity-25 text-info",
+  ServiceInProgress: "bg-warning bg-opacity-25 text-warning",
+  OutForDelivery: "bg-info bg-opacity-25 text-info",
 };
-const getStatusBadgeClass = (status) => STATUS_BADGE_CLASS[status] || "bg-secondary bg-opacity-15 text-secondary";
+const getStatusBadgeClass = (status) =>
+  status ? (STATUS_BADGE_CLASS[status] || "bg-secondary bg-opacity-25 text-secondary") : "bg-secondary bg-opacity-25 text-secondary";
 
-// Parse DD/MM/YYYY to Date
-const parseDDMMYYYY = (str) => {
-  if (!str) return null;
-  const [d, m, y] = str.split("/").map(Number);
-  if (!d || !m || !y) return null;
-  const date = new Date(y, m - 1, d);
-  return isNaN(date.getTime()) ? null : date;
+const formatCurrency = (n) => {
+  if (n == null || n === "" || isNaN(Number(n))) return "—";
+  return `₹ ${Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+const formatDate = (d) => {
+  if (!d) return "—";
+  const dt = new Date(d);
+  return isNaN(dt.getTime()) ? d : dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+};
+const formatDateTime = (d) => {
+  if (!d) return "—";
+  const dt = new Date(d);
+  return isNaN(dt.getTime()) ? d : dt.toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 };
 
-// Generate static list data (simulates 1000+ bookings – use API later)
-const buildStaticList = () => {
-  const customers = ["Aditya Soni", "Rahul Verma", "Priya Sharma", "Vikram Singh", "Anita Patel", "Suresh Kumar", "Kavita Nair", "Rajesh Mehta", "Pooja Reddy", "Amit Joshi", "Neha Gupta", "Sanjay Rao", "Divya Iyer", "Kiran Desai", "Meera Nair"];
-  const phones = ["8233341955", "9705577208", "9876543210", "9123456789", "9988776655", "9876501234", "9123409876", "9765432109", "9654321098", "9543210987", "9432109876", "9321098765", "9210987654", "9109876543", "9098765432"];
-  const sources = ["Website", "App", "Digital Marketing"];
-  const serviceTypes = ["Service at Garage", "Service at Doorstep"];
-  const statuses = ["Confirmed", "In Progress", "Completed", "Pending"];
-  const list = [];
-  for (let i = 1; i <= 48; i++) {
-    const date = new Date(2026, 1, 15 + (i % 14));
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    list.push({
-      id: i,
-      leadId: `MCBI${String(66000 + i).padStart(5, "0")}`,
-      bookingId: `MYCAR${String(2026022000 + i).toString(36).toUpperCase().slice(-6)}`,
-      customerName: customers[(i - 1) % customers.length],
-      phone: phones[(i - 1) % phones.length],
-      source: sources[(i - 1) % sources.length],
-      serviceType: serviceTypes[i % 2],
-      bookingStatus: statuses[i % 4],
-      createdAt: `${day}/${month}/${year}`,
-      dateForFilter: `${year}-${month}-${day}`,
-      amount: [0, 599, 1710, 5000, 16088, 25000][i % 6],
-    });
-  }
-  return list;
-};
-
-const STATIC_LIST = buildStaticList();
-
-// One full flow template (detail for any selected row – replace with API by id later)
-const getFlowDetailFor = (row) => ({
-  lead: {
-    id: row?.leadId ?? "MCBI06634",
-    source: row?.source ?? "Website",
-    alternateSource: "App / Digital Marketing",
-    createdAt: row?.createdAt ?? "21/02/2026",
-    customerName: row?.customerName ?? "Aditya Soni",
-    phone: "8233341955",
-    vehicle: "Swift Dzire • Petrol",
-    status: "Converted to Customer",
-  },
-  telecaller: {
-    adminAssignDate: "21/02/2026",
-    headName: "Telecaller Head (Ramesh)",
-    headAssignTo: "22/02/2026",
-    telecallerName: "Telecaller (Priya)",
-    assignedDate: "22/02/2026",
-    followUps: [
-      { date: "22/02/2026", outcome: "Interested", nextAction: "Ok for Service" },
-      { date: "22/02/2026", outcome: "Follow-up", nextAction: "Schedule Booking" },
-    ],
-    bookingCreatedBy: "Priya (Telecaller)",
-    bookingCreatedDate: "22/02/2026",
-  },
-  booking: {
-    bookingId: row?.bookingId ?? "MYCAR022026D70",
-    confirmedDate: "22/02/2026",
-    status: row?.bookingStatus ?? "Confirmed",
-    paymentStatus: "Pending",
-    totalAmount: "₹ 1,710",
-  },
-  supervisor: {
-    headName: "Madhukar (Supervisor Head)",
-    assignedDate: "22/02/2026",
-    inspectionDone: "22/02/2026",
-    dealerAssigned: "Glansa Dealer",
-    technicianAssigned: "Naveen Nagam (Tech)",
-    serviceType: row?.serviceType ?? "Service at Garage",
-    alternateType: "Service at Doorstep",
-  },
-  garageFlow: {
-    pickupType: "Customer to Dealer",
-    pickupDriver: "Driver – Rajesh",
-    pickupDate: "23/02/2026",
-    pickupTime: "09:30",
-    fromLocation: `Customer Location (${row?.customerName ?? "Aditya Soni"})`,
-    toLocation: "Glansa Dealer",
-    serviceTechnician: "Naveen Nagam",
-    dealerToDealer: "Car passed to dealer for service",
-    serviceDoneAtDealer: "23/02/2026",
-    estimationInvoice: "Generated – ₹ 1,710",
-    finalInvoice: "Generated – Full payment",
-    dealerInvoice: "Glansa Dealer invoice raised",
-    fieldAdvisor: "Mahendra Reddy",
-    fieldAdvisorCheckDate: "23/02/2026",
-    serviceStatusVerified: "Done",
-    deliveryDriver: "Driver – Rajesh",
-    deliveryTo: "Customer Location",
-    deliveryDate: "23/02/2026",
-    deliveryTime: "18:00",
-  },
-  doorstepFlow: {
-    technician: "Naveen Nagam",
-    serviceDate: "23/02/2026",
-    serviceAt: "Customer doorstep",
-    status: "Service completed at location",
-  },
-});
-
-const CardSection = ({ title, icon, children, badge, step }) => (
-  <div className="card border-0 shadow-sm rounded-3 mb-3 overflow-hidden border-start border-3 border-primary">
-    <div className="card-header bg-light border-0 py-3 px-4 d-flex align-items-center justify-content-between">
-      <span className="d-flex align-items-center gap-3">
-        {step != null && (
-          <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center fw-bold" style={{ width: 28, height: 28, fontSize: "0.8rem" }}>
-            {step}
-          </span>
-        )}
-        <span className="d-flex align-items-center gap-2 fw-semibold text-dark">
-          <Icon icon={icon} width={20} height={20} className="text-primary opacity-75" />
-          {title}
-        </span>
-      </span>
-      {badge && <span className="badge rounded-pill bg-primary-600 px-3">{badge}</span>}
+// Report card wrapper; borderVariant = "success" for completed
+const ReportCard = ({ title, icon, children, className = "", borderVariant }) => {
+  const borderColor = borderVariant === "success" ? "var(--bs-success)" : "var(--bs-primary)";
+  return (
+  <div className={`card border-0 shadow-sm rounded-3 overflow-hidden border-start border-3 ${className}`} style={{ borderLeftColor: borderColor }}>
+    <div className="card-header bg-light border-0 py-3 px-4 d-flex align-items-center gap-2">
+      {icon && <Icon icon={icon} width={22} height={22} className="text-primary" />}
+      <span className="fw-semibold text-dark">{title}</span>
     </div>
     <div className="card-body py-3 px-4">{children}</div>
   </div>
-);
+  );
+};
 
 function DetailRow({ label, value }) {
   return (
-    <div className="d-flex align-items-start gap-2 py-2 border-bottom border-light border-opacity-50">
-      <span className="text-muted small text-nowrap" style={{ minWidth: "100px" }}>{label}</span>
-      <span className="small fw-medium text-dark">{value}</span>
+    <div className="d-flex align-items-start gap-2 py-2 border-bottom border-light border-opacity-50 last-border-0">
+      <span className="text-muted small text-nowrap" style={{ minWidth: "120px" }}>{label}</span>
+      <span className="small fw-medium text-dark flex-grow-1">{value}</span>
     </div>
   );
 }
 
-function FlowDetailView({ row, onBack, activePath, setActivePath }) {
-  const d = useMemo(() => getFlowDetailFor(row), [row]);
+const API_IMAGE = import.meta.env.VITE_APIURL_IMAGE || "";
+
+// Complete Service Report view using API response
+function CompleteServiceReportView({ data, onBack }) {
+  const [fullscreenImageUrl, setFullscreenImageUrl] = useState(null);
+  if (!data) return null;
+  const addOns = data.BookingAddOns || [];
+  const vehicles = data.VehicleDetails || [];
+  const payments = data.Payments || [];
+  const carPickUpDelivery = data.CarPickUpDelivery || [];
+  const followUps = data.Lead_FollowUps || [];
+  const dealerApprovals = data.DealerAddOnApproval || [];
+  const bookingStatusTracking = data.BookingStatusTracking || [];
+  const bookingImages = data.BookingImages || [];
 
   return (
     <div className="mb-4">
+      {/* Header */}
       <div className="card border-0 shadow-sm rounded-3 mb-4 overflow-hidden">
-        <div className="card-body py-3 px-4 d-flex flex-wrap align-items-center justify-content-between gap-3 bg-light bg-opacity-50">
+        <div className="card-body py-4 px-4 d-flex flex-wrap align-items-center justify-content-between gap-3 bg-light bg-opacity-50">
           <button
             type="button"
             className="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2 rounded-pill px-3"
             onClick={onBack}
           >
-            <Icon icon="mdi:arrow-left" width={18} /> Back to list
+            <Icon icon="mdi:arrow-left" width={18} /> Back
           </button>
           <div className="d-flex flex-wrap align-items-center gap-3 small">
             <span className="d-inline-flex align-items-center gap-1">
-              <Icon icon="mdi:identifier" className="text-primary" />
-              <strong>Lead</strong> {d.lead.id}
+              <Icon icon="mdi:identifier" className="text-primary fs-5 " />
+              <strong>Lead</strong> {data.LeadId ?? "—"}
             </span>
             <span className="text-muted">|</span>
             <span className="d-inline-flex align-items-center gap-1">
               <Icon icon="mdi:calendar-check" className="text-primary" />
-              <strong>Booking</strong> {d.booking.bookingId}
+              <strong>Booking</strong> {data.BookingTrackID ?? "—"}
             </span>
             <span className="text-muted">|</span>
             <span className="d-inline-flex align-items-center gap-1">
               <Icon icon="mdi:account" className="text-primary" />
-              {d.lead.customerName}
+              {data.CustomerName ?? data.CustFullName ?? "—"}
             </span>
+            <span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(data.BookingStatus)}`}>{data.BookingStatus ?? "—"}</span>
           </div>
         </div>
       </div>
 
-      <div className="row g-3">
-        <div className="col-lg-6">
-          <CardSection step={1} title="Lead creation" icon="mdi:account-plus-outline" badge="Start">
+      <div className="row g-4">
+        {/* Booking overview */}
+        <div className="col-lg-4">
+          <ReportCard title="Booking overview" icon="mdi:clipboard-text-outline">
             <div className="small">
-              <DetailRow label="Lead ID" value={d.lead.id} />
-              <DetailRow label="Source" value={`${d.lead.source} / ${d.lead.alternateSource}`} />
-              <DetailRow label="Created" value={d.lead.createdAt} />
-              <DetailRow label="Customer" value={`${d.lead.customerName} · ${d.lead.phone}`} />
-              <DetailRow label="Vehicle" value={d.lead.vehicle} />
-              <DetailRow label="Status" value={<span className="badge bg-success">{d.lead.status}</span>} />
+              <DetailRow label="Booking ID" value={data.BookingID} />
+              <DetailRow label="Booking date" value={formatDate(data.BookingDate)} />
+              <DetailRow label="Time slot" value={data.TimeSlot ?? "—"} />
+              <DetailRow label="Status" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(data.BookingStatus)}`}>{data.BookingStatus ?? "—"}</span>} />
+              <DetailRow label="Total price" value={formatCurrency(data.TotalPrice)} />
+              <DetailRow label="GST amount" value={formatCurrency(data.GSTAmount)} />
+              <DetailRow label="Coupon amount" value={formatCurrency(data.CouponAmount)} />
+              <DetailRow label="Labour charges" value={formatCurrency(data.LabourCharges)} />
+              {data.Notes && <DetailRow label="Notes" value={data.Notes} />}
             </div>
-          </CardSection>
-          <CardSection step={2} title="Telecaller department" icon="mdi:phone-in-talk-outline">
-            <div className="small">
-              <DetailRow label="Admin → Head" value={`${d.telecaller.headName} · ${d.telecaller.headAssignTo}`} />
-              <DetailRow label="Head → Telecaller" value={`${d.telecaller.telecallerName} · ${d.telecaller.assignedDate}`} />
-              <DetailRow label="Follow-ups" value={`${d.telecaller.followUps.length} entries`} />
-              <DetailRow label="Booking created" value={`${d.telecaller.bookingCreatedBy} on ${d.telecaller.bookingCreatedDate}`} />
-            </div>
-          </CardSection>
-          <CardSection step={3} title="Booking confirmed" icon="mdi:calendar-check">
-            <div className="small">
-              <DetailRow label="Booking ID" value={d.booking.bookingId} />
-              <DetailRow label="Confirmed" value={d.booking.confirmedDate} />
-              <DetailRow label="Status" value={<span className={`badge ${getStatusBadgeClass(d.booking.status)}`}>{d.booking.status}</span>} />
-              <DetailRow label="Payment" value={`${d.booking.paymentStatus} · Total ${d.booking.totalAmount}`} />
-            </div>
-          </CardSection>
-          <CardSection step={4} title="Supervisor Head" icon="mdi:account-supervisor">
-            <div className="small">
-              <DetailRow label="Assigned" value={`${d.supervisor.headName} · ${d.supervisor.assignedDate}`} />
-              <DetailRow label="Dealer" value={d.supervisor.dealerAssigned} />
-              <DetailRow label="Technician" value={d.supervisor.technicianAssigned} />
-              <DetailRow label="Service type" value={<span className="badge bg-primary">{d.supervisor.serviceType}</span>} />
-            </div>
-          </CardSection>
+          </ReportCard>
         </div>
-        <div className="col-lg-6">
-          <CardSection step={5} title="Service type" icon="mdi:car-cog">
-            <div className="d-flex flex-wrap gap-2">
-              <button
-                type="button"
-                className={`btn btn-sm rounded-pill ${activePath === "garage" ? "btn-primary-600" : "btn-outline-secondary"}`}
-                onClick={() => setActivePath("garage")}
-              >
-                <Icon icon="mdi:warehouse" className="me-1" /> Service at Garage
-              </button>
-              <button
-                type="button"
-                className={`btn btn-sm rounded-pill ${activePath === "doorstep" ? "btn-primary-600" : "btn-outline-secondary"}`}
-                onClick={() => setActivePath("doorstep")}
-              >
-                <Icon icon="mdi:home" className="me-1" /> Service at Doorstep
-              </button>
+
+        {/* Customer & address */}
+        <div className="col-lg-4">
+          <ReportCard title="Customer & address" icon="mdi:account-map-outline">
+            <div className="small">
+              <DetailRow label="Name" value={data.CustomerName ?? data.CustFullName ?? "—"} />
+              <DetailRow label="Email" value={data.CustEmail ?? "—"} />
+              <DetailRow label="Phone" value={data.PhoneNumber ?? "—"} />
+              <DetailRow label="Address" value={(data.FullAddress ?? "—").replace(/\n/g, ", ")} />
+              {(data.CityName || data.StateName) && (
+                <DetailRow label="Location" value={[data.CityName, data.StateName].filter(Boolean).join(", ")} />
+              )}
             </div>
-          </CardSection>
-          {activePath === "garage" && (
-            <>
-              <CardSection step={6} title="Car pickup" icon="mdi:car-side">
-                <div className="small">
-                  <DetailRow label="Route" value={d.garageFlow.pickupType} />
-                  <DetailRow label="Driver" value={d.garageFlow.pickupDriver} />
-                  <DetailRow label="Pickup" value={`${d.garageFlow.pickupDate} ${d.garageFlow.pickupTime}`} />
-                  <DetailRow label="From → To" value={`${d.garageFlow.fromLocation} → ${d.garageFlow.toLocation}`} />
-                </div>
-              </CardSection>
-              <CardSection step={7} title="Service at dealer" icon="mdi:car-wrench">
-                <div className="small">
-                  <DetailRow label="Technician" value={d.garageFlow.serviceTechnician} />
-                  <DetailRow label="Done" value={d.garageFlow.serviceDoneAtDealer} />
-                </div>
-              </CardSection>
-              <CardSection step={8} title="Invoices" icon="mdi:file-document-multiple">
-                <div className="small">
-                  <DetailRow label="Estimation" value={d.garageFlow.estimationInvoice} />
-                  <DetailRow label="Final" value={d.garageFlow.finalInvoice} />
-                  <DetailRow label="Dealer" value={d.garageFlow.dealerInvoice} />
-                </div>
-              </CardSection>
-              <CardSection step={9} title="Field advisor" icon="mdi:clipboard-check">
-                <div className="small">
-                  <DetailRow label="Advisor" value={`${d.garageFlow.fieldAdvisor} · ${d.garageFlow.fieldAdvisorCheckDate}`} />
-                  <DetailRow label="Status" value={<span className="badge bg-success">{d.garageFlow.serviceStatusVerified}</span>} />
-                </div>
-              </CardSection>
-              <CardSection step={10} title="Delivery to customer" icon="mdi:car-arrow-right" badge="End">
-                <div className="small">
-                  <DetailRow label="Driver" value={d.garageFlow.deliveryDriver} />
-                  <DetailRow label="To" value={d.garageFlow.deliveryTo} />
-                  <DetailRow label="Date & time" value={`${d.garageFlow.deliveryDate} ${d.garageFlow.deliveryTime}`} />
-                </div>
-              </CardSection>
-            </>
-          )}
-          {activePath === "doorstep" && (
-            <CardSection step={6} title="Service at doorstep" icon="mdi:home-account" badge="End">
-              <div className="small">
-                <DetailRow label="Technician" value={d.doorstepFlow.technician} />
-                <DetailRow label="Date" value={d.doorstepFlow.serviceDate} />
-                <DetailRow label="Status" value={<span className="badge bg-success">{d.doorstepFlow.status}</span>} />
+          </ReportCard>
+        </div>
+
+        {/* Assignment & team */}
+        <div className="col-lg-4">
+          <ReportCard title="Assignment & team" icon="mdi:account-group-outline">
+            <div className="small">
+              <DetailRow label="Supervisor head" value={data.SupervisorHeadName ?? "—"} />
+              <DetailRow label="Supervisor phone" value={data.SupervisorHeadPhoneNumber ?? "—"} />
+              <DetailRow label="Assign status" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(data.SupervisorHeadAssignStatus)}`}>{data.SupervisorHeadAssignStatus ?? "—"}</span>} />
+              <DetailRow label="Field advisor" value={data.FieldAdvisorName ?? "—"} />
+              <DetailRow label="Advisor phone" value={data.FieldAdvisorPhoneNumber ?? "—"} />
+            </div>
+          </ReportCard>
+        </div>
+
+        {/* Vehicle */}
+        {vehicles.length > 0 && (
+          <div className="col-12">
+            <ReportCard title="Vehicle details" icon="mdi:car-side">
+              <div className="row g-3">
+                {vehicles.map((v, i) => (
+                  <div key={i} className="col-md-6 col-lg-4">
+                    <div className="p-3 rounded-3 bg-light bg-opacity-50 small">
+                      <DetailRow label="Registration" value={v.RegistrationNumber ?? "—"} />
+                      <DetailRow label="Brand / Model" value={[v.BrandName, v.ModelName].filter(Boolean).join(" · ") || "—"} />
+                      <DetailRow label="Fuel type" value={v.FuelTypeName ?? "—"} />
+                      {v.KmDriven != null && <DetailRow label="Km driven" value={v.KmDriven} />}
+                      {v.YearOfPurchase != null && <DetailRow label="Year" value={v.YearOfPurchase} />}
+                    </div>
+                  </div>
+                ))}
               </div>
-            </CardSection>
-          )}
+            </ReportCard>
+          </div>
+        )}
+
+        {/* Services (BookingAddOns) */}
+        <div className="col-12">
+          <h6 className="d-flex align-items-center gap-2 mb-3">
+            <Icon icon="mdi:car-wrench" className="text-primary" />
+            Services ({addOns.length})
+          </h6>
+          <div className="row g-4">
+            {addOns.map((svc, idx) => (
+              <div key={svc.AddOnID ?? idx} className="col-12">
+                <ReportCard
+                  title={svc.ServiceName ?? `Service #${idx + 1}`}
+                  icon="mdi:package-variant-closed"
+                  borderVariant={svc.Is_Completed ? "success" : undefined}
+                >
+                  <div className="row g-3">
+                    <div className="col-md-6 col-lg-4">
+                      <div className="small text-muted mb-2 fw-semibold">Pricing</div>
+                      <DetailRow label="Service price" value={formatCurrency(svc.ServicePrice)} />
+                      <DetailRow label="Labour" value={formatCurrency(svc.LabourCharges)} />
+                      <DetailRow label="GST (18%)" value={formatCurrency(svc.GSTPrice)} />
+                      <DetailRow label="Total" value={formatCurrency(svc.TotalPrice)} />
+                      <DetailRow label="Dealer price" value={formatCurrency(svc.DealerPrice)} />
+                      <DetailRow label="Dealer GST" value={formatCurrency(svc.DealerGSTAmount)} />
+                    </div>
+                    <div className="col-md-6 col-lg-4">
+                      <div className="small text-muted mb-2 fw-semibold">Status & dealer</div>
+                      <DetailRow label="Status" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(svc.StatusName)}`}>{svc.StatusName ?? "—"}</span>} />
+                      <DetailRow label="Dealer confirm" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(svc.IsDealer_Confirm)}`}>{svc.IsDealer_Confirm ?? "—"}</span>} />
+                      <DetailRow label="Completed" value={svc.Is_Completed ? "Yes" : "No"} />
+                      {svc.CompletedRole && <DetailRow label="Completed by" value={`${svc.EmployeeName ?? "—"} (${svc.CompletedRole})`} />}
+                      <DetailRow label="Dealer" value={svc.DealerName ?? "—"} />
+                    </div>
+                    <div className="col-12 col-lg-4">
+                      <div className="small text-muted mb-2 fw-semibold">Includes</div>
+                      {Array.isArray(svc.Includes) && svc.Includes.length > 0 ? (
+                        <ul className="list-unstyled small mb-0">
+                          {svc.Includes.map((inc, i) => (
+                            <li key={inc.IncludeID ?? i} className="d-flex align-items-center gap-2 py-1">
+                              <Icon icon="mdi:check-circle-outline" className="text-success flex-shrink-0" width={16} />
+                              {inc.IncludeName}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </div>
+                  </div>
+                </ReportCard>
+              </div>
+            ))}
+          </div>
         </div>
+
+        {/* Payments */}
+        {payments.length > 0 && (
+          <div className="col-12">
+            <ReportCard title="Payments" icon="mdi:credit-card-outline">
+              <div className="table-responsive">
+                <table className="table table-sm table-hover mb-0">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Amount</th>
+                      <th>Mode</th>
+                      <th>Transaction ID</th>
+                      <th>Status</th>
+                      <th>Refunded</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payments.map((p) => (
+                      <tr key={p.PaymentID}>
+                        <td>{formatDateTime(p.PaymentDate)}</td>
+                        <td>{formatCurrency(p.AmountPaid)}</td>
+                        <td>{p.PaymentMode ?? "—"}</td>
+                        <td className="text-break">{p.TransactionID ?? "—"}</td>
+                        <td><span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(p.PaymentStatus === "Success" ? "Paid" : p.PaymentStatus)}`}>{p.PaymentStatus === "Success" ? "Paid" : (p.PaymentStatus ?? "—")}</span></td>
+                        <td>{p.IsRefunded ? "Yes" : "No"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </ReportCard>
+          </div>
+        )}
+
+        {/* Car Pickup & Delivery */}
+        {carPickUpDelivery.length > 0 && (
+          <div className="col-12">
+            <ReportCard title="Car Pickup & Delivery" icon="mdi:car-side">
+              <div className="row g-4">
+                {carPickUpDelivery.map((pick, idx) => (
+                  <div key={pick.Id ?? idx} className="col-12">
+                    <div className="card border border-light rounded-3 overflow-hidden">
+                      <div className="card-header bg-light d-flex flex-wrap align-items-center gap-2 py-2 px-3">
+                        <span className={`badge rounded-pill px-3 py-2 ${pick.PickType === "CarDrop" ? "bg-info bg-opacity-25 text-info" : "bg-primary bg-opacity-25 text-primary"}`}>
+                          {pick.PickType === "CarDrop" ? "Car Delivery" : "Car Pickup"}
+                        </span>
+                        <span className="badge rounded-pill px-3 py-2 bg-secondary bg-opacity-25 text-secondary">
+                          {pick.RouteType === "CustomerToDealer" ? "Customer → Dealer" : "Dealer → Customer"}
+                        </span>
+                        <span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(pick.Status)}`}>
+                          {pick.Status ?? "—"}
+                        </span>
+                        {pick.ServiceType && (
+                          <span className="small text-muted">{pick.ServiceType}</span>
+                        )}
+                      </div>
+                      <div className="card-body py-3 px-4 small">
+                        <div className="row g-3">
+                          <div className="col-md-6">
+                            <div className="fw-semibold text-muted mb-2">From</div>
+                            <DetailRow label="Name" value={pick.PickFromName ?? "—"} />
+                            <DetailRow label="Phone" value={pick.PickFromPhone ?? "—"} />
+                            <DetailRow label="Address" value={(pick.PickFromAddress ?? "—").replace(/\n/g, ", ")} />
+                          </div>
+                          <div className="col-md-6">
+                            <div className="fw-semibold text-muted mb-2">To</div>
+                            <DetailRow label="Name" value={pick.PickToName ?? "—"} />
+                            <DetailRow label="Phone" value={pick.PickToPhone ?? "—"} />
+                            <DetailRow label="Address" value={(pick.PickToAddress ?? "—").replace(/\n/g, ", ")} />
+                          </div>
+                          <div className="col-12">
+                            <div className="fw-semibold text-muted mb-2">Technician & timing</div>
+                            <DetailRow label="Technician" value={pick.TechnicinaName ?? "—"} />
+                            <DetailRow label="Phone" value={pick.TechnicianPhoneNumber ?? "—"} />
+                            <DetailRow label="Assign date" value={formatDateTime(pick.AssignDate)} />
+                            {(pick.PickupDate || pick.PickupTime) && (
+                              <DetailRow label="Pickup" value={`${formatDate(pick.PickupDate)} ${pick.PickupTime ?? ""}`.trim()} />
+                            )}
+                            {(pick.DeliveryDate || pick.DeliveryTime) && (
+                              <DetailRow label="Delivery" value={`${formatDate(pick.DeliveryDate)} ${pick.DeliveryTime ?? ""}`.trim()} />
+                            )}
+                            <DetailRow label="Created" value={formatDateTime(pick.CreatedDate)} />
+                            <DetailRow label="Modified" value={formatDateTime(pick.ModifiedDate)} />
+                          </div>
+                          {Array.isArray(pick.DriverTracking) && pick.DriverTracking.length > 0 && (
+                            <div className="col-12">
+                              <div className="fw-semibold text-muted mb-2">Driver tracking</div>
+                              <ul className="list-unstyled mb-0">
+                                {pick.DriverTracking.map((t, i) => (
+                                  <li key={t.Id ?? i} className="d-flex align-items-center gap-2 py-1 border-bottom border-light border-opacity-50">
+                                    <span className={`badge rounded-pill px-2 py-1 ${getStatusBadgeClass(t.Status)}`}>
+                                      {t.Status ?? "—"}
+                                    </span>
+                                    <span className="text-muted">{formatDateTime(t.CreatedDate)}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ReportCard>
+          </div>
+        )}
+
+        {/* Booking status tracking */}
+        {bookingStatusTracking.length > 0 && (
+          <div className="col-12">
+            <ReportCard title="Booking status tracking" icon="mdi:timeline-clock-outline">
+              <div className="table-responsive">
+                <table className="table table-sm table-hover mb-0">
+                  <thead>
+                    <tr>
+                      <th>Date & time</th>
+                      <th>Status</th>
+                      <th>Service type</th>
+                      <th>Updated by (Role)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bookingStatusTracking.map((t) => (
+                      <tr key={t.Id}>
+                        <td>{formatDateTime(t.Created_At)}</td>
+                        <td><span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(t.Status)}`}>{t.Status ?? "—"}</span></td>
+                        <td>{t.Service_Type ?? "—"}</td>
+                        <td>{t.Role ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </ReportCard>
+          </div>
+        )}
+
+        {/* Booking images */}
+        {bookingImages.length > 0 && (
+          <div className="col-12">
+            <ReportCard title="Booking images" icon="mdi:image-multiple-outline">
+              <div className="row g-2">
+                {bookingImages.map((img) => {
+                  const imgSrc = img.ImageURL ? `${API_IMAGE}/${img.ImageURL}` : null;
+                  return (
+                    <div key={img.ImageID} className="col-12 col-md-6 col-lg-3">
+                      <div className="card border rounded-3 overflow-hidden h-100">
+                        <div className="card-body p-1 d-flex align-items-center gap-2">
+                          <div className="flex-grow-1 small">
+                            <div className="fw-semibold text-dark">{img.ImageUploadType ?? "—"} {img.ImagesType && <span className="text-muted">({img.ImagesType})</span>}</div>
+                            <div className="text-muted mt-1">{formatDateTime(img.UploadedAt)}</div>
+                            {/* {imgSrc && (
+                              <button
+                                type="button"
+                                className="btn btn-link btn-sm p-0 mt-1 text-primary text-decoration-none"
+                                onClick={() => setFullscreenImageUrl(imgSrc)}
+                              >
+                                View full screen
+                              </button>
+                            )} */}
+                          </div>
+                          {imgSrc && (
+                            <button
+                              type="button"
+                              className="flex-shrink-0 border-0 bg-light rounded-2 p-1 d-block overflow-hidden"
+                              style={{ width: 60, height: 60 }}
+                              onClick={() => setFullscreenImageUrl(imgSrc)}
+                              aria-label="View image"
+                            >
+                              <img
+                                src={imgSrc}
+                                alt={img.ImageUploadType || "Booking"}
+                                className="w-100 h-100 object-fit-cover rounded-1"
+                                style={{ objectFit: "cover" }}
+                              />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </ReportCard>
+          </div>
+        )}
+
+        {/* Fullscreen image overlay */}
+        {fullscreenImageUrl && (
+          <div
+            className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+            style={{ zIndex: 9999, backgroundColor: "rgba(0,0,0,0.9)" }}
+            onClick={() => setFullscreenImageUrl(null)}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Image fullscreen"
+          >
+            <button
+              type="button"
+              className="position-absolute top-0 end-0 m-3 btn btn-light btn-lg rounded-circle d-inline-flex align-items-center justify-content-center"
+              style={{ width: 48, height: 48 }}
+              onClick={(e) => { e.stopPropagation(); setFullscreenImageUrl(null); }}
+              aria-label="Close"
+            >
+              <Icon icon="mdi:close" width={28} height={28} />
+            </button>
+            <img
+              src={fullscreenImageUrl}
+              alt="Full screen"
+              className="max-w-100 max-h-100 object-contain"
+              style={{ maxHeight: "calc(100vh - 80px)", maxWidth: "calc(100vw - 80px)" }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        )}
+
+        {/* Lead follow-ups */}
+        {followUps.length > 0 && (
+          <div className="col-12">
+            <ReportCard title="Lead follow-ups" icon="mdi:phone-log-outline">
+              <div className="table-responsive">
+                <table className="table table-sm table-hover mb-0">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Status</th>
+                      <th>Type</th>
+                      <th>Notes</th>
+                      <th>Next action</th>
+                      <th>Next follow-up</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {followUps.slice(0, 10).map((f) => (
+                      <tr key={f.Id}>
+                        <td>{formatDateTime(f.Updated_At ?? f.Created_At)}</td>
+                        <td><span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(f.Status)}`}>{f.Status ?? "—"}</span></td>
+                        <td>{f.Type ?? "—"}</td>
+                        <td className="text-break">{f.Notes ?? "—"}</td>
+                        <td>{f.NextAction ?? "—"}</td>
+                        <td>{formatDateTime(f.NextFollowUp_Date)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </ReportCard>
+          </div>
+        )}
+
+        {/* Dealer add-on approval history (compact) */}
+        {dealerApprovals.length > 0 && (
+          <div className="col-12">
+            <ReportCard title="Dealer add-on approval history" icon="mdi:handshake-outline">
+              <div className="table-responsive">
+                <table className="table table-sm table-hover mb-0">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Add-on ID</th>
+                      <th>Service</th>
+                      <th>Dealer</th>
+                      <th>Status</th>
+                      <th>Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dealerApprovals.slice(0, 15).map((a) => (
+                      <tr key={a.Id}>
+                        <td>{formatDateTime(a.CreatedDate)}</td>
+                        <td>{a.AddOnId}</td>
+                        <td>{a.ServiceName ?? "—"}</td>
+                        <td>{a.DealerName ?? "—"}</td>
+                        <td><span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(a.IsDealer_Confirm)}`}>{a.IsDealer_Confirm ?? "—"}</span></td>
+                        <td>{a.Reason ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </ReportCard>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
+const STATUS_OPTIONS = [
+  { value: "all", label: "All" },
+  { value: "pending", label: "Pending" },
+  { value: "confirmed", label: "Confirmed" },
+  { value: "reached", label: "Reached" },
+  { value: "serviceStarted", label: "Service Started" },
+  { value: "completed", label: "Completed" },
+];
+
 const CompleteServiceReportLayer = () => {
-  const [search, setSearch] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [minAmt, setMinAmt] = useState("");
-  const [maxAmt, setMaxAmt] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedRow, setSelectedRow] = useState(null);
-  const [activePath, setActivePath] = useState("garage");
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+  const roleId = localStorage.getItem("roleId");
+  const userId = localStorage.getItem("userId");
 
-  const filteredList = useMemo(() => {
-    return STATIC_LIST.filter((r) => {
-      const q = search.trim().toLowerCase();
-      const matchesSearch =
-        !q ||
-        r.leadId.toLowerCase().includes(q) ||
-        r.bookingId.toLowerCase().includes(q) ||
-        r.customerName.toLowerCase().includes(q) ||
-        (r.phone && r.phone.includes(q));
-      const rowDate = parseDDMMYYYY(r.createdAt);
-      const fromDate = dateFrom ? new Date(dateFrom) : null;
-      const toDate = dateTo ? new Date(dateTo) : null;
-      const matchesDate =
-        (!fromDate || (rowDate && rowDate >= fromDate)) &&
-        (!toDate || (rowDate && rowDate <= toDate));
-      const matchesAmount =
-        (!minAmt || r.amount >= parseFloat(minAmt)) &&
-        (!maxAmt || r.amount <= parseFloat(maxAmt));
-      const matchesStatus =
-        statusFilter === "all" || r.bookingStatus === statusFilter;
-      return matchesSearch && matchesDate && matchesAmount && matchesStatus;
-    });
-  }, [search, dateFrom, dateTo, minAmt, maxAmt, statusFilter]);
+  const [bookings, setBookings] = useState([]);
+  const [searchText, setSearchText] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [status, setStatus] = useState("all");
 
-  // Table columns – same style as BookingLayer
-  const columns = [
-    {
-      name: "Lead ID",
-      selector: (row) => row.leadId,
-      sortable: true,
-      width: "120px",
-    },
+  const [reportData, setReportData] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchBookings = useCallback(async () => {
+    try {
+      let url = "";
+      if (roleId === "8") {
+        url = `${API_BASE}Supervisor/AssingedBookings?SupervisorID=${userId}`;
+      } else if (roleId === "3") {
+        url = `${API_BASE}Bookings?type=${role}&dealerid=${userId}`;
+      } else if (roleId === "9") {
+        url = `${API_BASE}Bookings?employeeId=${userId}`;
+      } else {
+        url = `${API_BASE}Bookings`;
+      }
+      const res = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const sorted = (res.data || []).sort(
+        (a, b) => new Date(b.CreatedDate || 0) - new Date(a.CreatedDate || 0)
+      );
+      setBookings(sorted);
+    } catch (err) {
+      console.error("Error fetching bookings", err);
+      setBookings([]);
+    }
+  }, [token, roleId, role, userId]);
+
+  useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
+
+  const openReport = useCallback((row) => {
+    setError(null);
+    setReportLoading(true);
+    setReportData(null);
+    const id = row?.BookingID ?? row?.id;
+    if (!id) {
+      setError("Invalid booking");
+      setReportLoading(false);
+      return;
+    }
+    axios
+      .get(`${API_BASE}Bookings/BookingId?Id=${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        const json = res.data;
+        const data = Array.isArray(json) ? json[0] : json;
+        if (!data) throw new Error("No booking data returned");
+        setReportData(data);
+      })
+      .catch((err) => {
+        setError(err.response?.status === 404 ? "Booking not found" : err.message || "Failed to load report");
+      })
+      .finally(() => setReportLoading(false));
+  }, [token]);
+
+  const filteredBookings = bookings.filter((b) => {
+    const q = searchText.trim().toLowerCase();
+    const matchesSearch =
+      !q ||
+      (b.CustFullName || b.CustomerName || "").toLowerCase().includes(q) ||
+      (b.CustPhoneNumber || b.PhoneNumber || "").toLowerCase().includes(q) ||
+      (b.BookingTrackID || "").toLowerCase().includes(q) ||
+      (b.LeadId || "").toLowerCase().includes(q);
+    const bookingDate = new Date(b.BookingDate || b.CreatedDate || 0);
+    const matchesDate =
+      (!startDate || bookingDate >= new Date(startDate)) &&
+      (!endDate || bookingDate <= new Date(endDate));
+    const price = (b.TotalPrice || 0) + (b.GSTAmount || 0) + (b.LabourCharges || 0) - (b.CouponAmount || 0);
+    const matchesPrice =
+      (!minPrice || price >= parseFloat(minPrice)) &&
+      (!maxPrice || price <= parseFloat(maxPrice));
+    const matchesStatus =
+      status === "all" ||
+      (b.BookingStatus || "").toLowerCase() === status.toLowerCase();
+    return matchesSearch && matchesDate && matchesPrice && matchesStatus;
+  });
+
+  // Service Date format DD/MM/YYYY like BookingLayer
+  const formatServiceDate = (rawDate) => {
+    if (!rawDate) return "-";
+    const date = new Date(rawDate);
+    if (isNaN(date.getTime())) return "-";
+    return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}/${date.getFullYear()}`;
+  };
+
+  const allColumns = [
     {
       name: "Booking id",
       cell: (row) => (
         <button
           type="button"
-          className="btn btn-link p-0 text-primary text-decoration-none fw-medium"
-          onClick={() => setSelectedRow(row)}
+          className="btn btn-link p-0 text-primary text-decoration-none fw-bold "
+          style={{fontSize:"13px" }}
+          onClick={() => openReport(row)}
+          disabled={reportLoading}
         >
-          {row.bookingId}
+          {row.BookingTrackID || "-"}
         </button>
       ),
+      width: "170px",
       sortable: true,
-      width: "160px",
     },
     {
-      name: "Booking Date",
-      selector: (row) => row.createdAt,
+      name: "Service Date",
+      selector: (row) => formatServiceDate(row.BookingDate || row.CreatedDate),
+      sortField: "CreatedDate",
+      width: "150px",
       sortable: true,
-      width: "120px",
+    },
+    {
+      name: "Time slot",
+      selector: (row) => row.TimeSlot || row.AssignedTimeSlot || "-",
+      width: "220px",
+      sortable: true,
+      wrap: true,
     },
     {
       name: "Amount",
-      selector: (row) => `₹${(row.amount ?? 0).toFixed(2)}`,
+      selector: (row) =>
+        `₹${((row.TotalPrice || 0) + (row.GSTAmount || 0) + (row.LabourCharges || 0) - (row.CouponAmount || 0)).toFixed(2)}`,
+      width: "120px",
       sortable: true,
-      width: "110px",
     },
     {
       name: "Cust. Name",
-      cell: (row) => (
+      selector: (row) => (
         <>
-          <span className="fw-bold">{row.customerName}</span>
+          <span className="fw-bold"> {row.CustFullName || row.CustomerName || "-"}</span>
           <br />
-          {row.phone || ""}
+          {row.CustPhoneNumber || row.PhoneNumber || ""}
         </>
       ),
-      sortable: true,
-      sortField: "customerName",
       width: "150px",
+      sortable: true,
     },
     {
-      name: "Source",
-      selector: (row) => row.source ?? "",
+      name: "Supervisor",
+      selector: (row) => (
+        <>
+          <span className="fw-bold">
+            {row.SupervisorName || row.SupervisorHeadName || "Not Assigned"}
+          </span>
+          <br />
+          {row.SupervisorPhoneNumber || ""}
+        </>
+      ),
+      width: "150px",
       sortable: true,
-      width: "120px",
     },
     {
-      name: "Service type",
-      selector: (row) => row.serviceType ?? "",
+      name: "Field Advisor",
+      selector: (row) => (
+        <>
+          <span className="fw-bold">
+            {row.FieldAdvisorName ? row.FieldAdvisorName : "Not Assigned"}
+          </span>
+          <br />
+          {row.FieldAdvisorPhoneNumber || ""}
+        </>
+      ),
+      width: "150px",
       sortable: true,
-      width: "160px",
+    },
+    // {
+    //   name: "Services",
+    //   cell: (row) => {
+    //     const addOns = row.BookingAddOns || [];
+    //     const count = addOns.length;
+    //     if (count === 0) return <span className="text-muted">—</span>;
+    //     const names = addOns.slice(0, 3).map((a) => a.ServiceName || "Service").filter(Boolean);
+    //     return (
+    //       <span className="small">
+    //         <span className="fw-semibold">{count} service{count !== 1 ? "s" : ""}</span>
+    //         {names.length > 0 && (
+    //           <>
+    //             <br />
+    //             <span className="text-muted">{names.join(", ")}{count > 3 ? "…" : ""}</span>
+    //           </>
+    //         )}
+    //       </span>
+    //     );
+    //   },
+    //   width: "180px",
+    //   wrap: true,
+    // },
+    {
+      name: "Car Brand/Model",
+      selector: (row) => (
+        <>
+          <span className="fw-bold">
+            {row.VehicleDetails?.[0]?.BrandName || "Not Available"} <br />
+            ({row.VehicleDetails?.[0]?.ModelName || ""})
+          </span>
+        </>
+      ),
+      width: "150px",
+      sortable: true,
+    },
+    {
+      name: "Car YOP",
+      selector: (row) => (
+        <>
+          <span className="fw-bold">
+            {row.VehicleDetails?.[0]?.YearOfPurchase || "Not Available"}
+          </span>
+        </>
+      ),
+      width: "150px",
+      sortable: true,
+    },
+    {
+      name: "Fuel Type",
+      selector: (row) => (
+        <>
+          <span className="fw-bold">
+            {row.VehicleDetails?.[0]?.FuelTypeName || "Not Available"}
+          </span>
+        </>
+      ),
+      width: "150px",
+      sortable: true,
     },
     {
       name: "Booking Status",
       cell: (row) => {
-        const status = row.bookingStatus ?? "-";
-        const colorMap = {
-          Pending: "#F57C00",
-          Confirmed: "#28A745",
-          Completed: "#25878F",
-          "In Progress": "#0d6efd",
-        };
-        const color = colorMap[status] || "#6c757d";
+        let statusVal = row?.BookingStatus ?? "-";
+        if (!statusVal || statusVal === "-") statusVal = "Not Assigned";
         return (
-          <span className="fw-semibold d-flex align-items-center">
-            <span
-              className="rounded-circle d-inline-block me-1"
-              style={{ width: "8px", height: "8px", backgroundColor: color }}
-            />
-            <span style={{ color }}>{status}</span>
+          <span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(statusVal)}`}>
+            {statusVal}
           </span>
         );
       },
-      width: "140px",
+      wrap: true,
+      width: "160px",
+      sortable: true,
+    },
+    {
+      name: "Payment Status",
+      cell: (row) => {
+        let paymentStatus = row?.PaymentStatus ?? "Pending";
+        let displayText = paymentStatus;
+        if (paymentStatus.toLowerCase() === "success") displayText = "Paid";
+        return (
+          <span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(displayText)}`}>
+            {displayText}
+          </span>
+        );
+      },
+      wrap: true,
+      width: "160px",
       sortable: true,
     },
     {
@@ -424,18 +822,11 @@ const CompleteServiceReportLayer = () => {
           <button
             type="button"
             className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-            title="View flow"
-            onClick={() => setSelectedRow(row)}
+            title="View complete service report"
+            onClick={() => openReport(row)}
+            disabled={reportLoading}
           >
             <Icon icon="lucide:eye" />
-          </button>
-          <button
-            type="button"
-            className="w-32-px h-32-px bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center"
-            title="Service flow"
-            onClick={() => setSelectedRow(row)}
-          >
-            <Icon icon="mdi:account-cog-outline" />
           </button>
         </div>
       ),
@@ -443,119 +834,136 @@ const CompleteServiceReportLayer = () => {
     },
   ];
 
+  // Filter columns for Dealer: hide Amount, Cust. Name, Booking Status, Payment Status (same as BookingLayer)
+  const columns = allColumns.filter((col) => {
+    if (role === "Dealer") {
+      return !["Amount", "Cust. Name", "Booking Status", "Payment Status"].includes(col.name);
+    }
+    return true;
+  });
+
   return (
     <div className="row gy-4">
       <div className="col-12">
-        {selectedRow ? (
-          <FlowDetailView
-            row={selectedRow}
-            onBack={() => setSelectedRow(null)}
-            activePath={activePath}
-            setActivePath={setActivePath}
+        {reportData ? (
+          <CompleteServiceReportView
+            data={reportData}
+            onBack={() => { setReportData(null); setError(null); }}
           />
         ) : (
-          <div className="card overflow-hidden p-3">
-            <div className="card-header">
-              <div
-                className="d-flex align-items-center flex-wrap gap-2"
-                style={{ overflowX: "auto", whiteSpace: "nowrap" }}
-              >
-                <form className="navbar-search flex-grow-1 flex-shrink-1" style={{ minWidth: "180px" }}>
-                  <div className="position-relative">
-                    <input
-                      type="text"
-                      className="form-control ps-5"
-                      placeholder="Search"
-                      value={search}
-                      onChange={(e) => {
-                        setSearch(e.target.value);
-                      }}
-                      style={{ minWidth: "200px", width: "100%" }}
-                    />
-                    <Icon
-                      icon="ion:search-outline"
-                      className="position-absolute top-50 start-0 translate-middle-y ms-2 text-muted"
-                      width="20"
-                      height="20"
-                    />
-                  </div>
-                </form>
-                <input
-                  type="date"
-                  className="form-control flex-shrink-0"
-                  placeholder="DD-MM-YYYY"
-                  value={dateFrom}
-                  onChange={(e) => {
-                    setDateFrom(e.target.value);
-                  }}
-                  style={{ minWidth: "120px", flex: "1 1 130px" }}
-                />
-                <input
-                  type="date"
-                  className="form-control flex-shrink-0"
-                  placeholder="DD-MM-YYYY"
-                  value={dateTo}
-                  onChange={(e) => {
-                    setDateTo(e.target.value);
-                  }}
-                  style={{ minWidth: "120px", flex: "1 1 130px" }}
-                />
-                <input
-                  type="number"
-                  className="form-control flex-shrink-0"
-                  placeholder="Min Amt"
-                  value={minAmt}
-                  onChange={(e) => {
-                    setMinAmt(e.target.value);
-                  }}
-                  style={{ minWidth: "100px", flex: "1 1 100px" }}
-                />
-                <input
-                  type="number"
-                  className="form-control flex-shrink-0"
-                  placeholder="Max Amt"
-                  value={maxAmt}
-                  onChange={(e) => {
-                    setMaxAmt(e.target.value);
-                  }}
-                  style={{ minWidth: "100px", flex: "1 1 100px" }}
-                />
-                <select
-                  className="form-select flex-shrink-0"
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
-                  }}
-                  style={{ minWidth: "120px", flex: "1 1 120px" }}
-                >
-                  {STATUS_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                  title="View flow report"
-                >
-                  <Icon icon="mdi:microsoft-excel" width="20" height="20" />
-                </button>
-              </div>
+          <>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h5></h5>
             </div>
-            <DataTable
-              columns={columns}
-              data={filteredList}
-              pagination
-              paginationPerPage={10}
-              paginationRowsPerPageOptions={[10, 25, 50, 100, filteredList.length]}
-              highlightOnHover
-              responsive
-              striped
-              persistTableHead
-              noDataComponent="No records available"
-            />
-          </div>
+            <div className="card overflow-hidden p-3">
+              <div className="card-header">
+                <div
+                  className="d-flex align-items-center flex-wrap gap-2"
+                  style={{ overflowX: "auto", whiteSpace: "nowrap" }}
+                >
+                  <form className="navbar-search flex-grow-1 flex-shrink-1" style={{ minWidth: "180px" }}>
+                    <div className="position-relative">
+                      <input
+                        type="text"
+                        className="form-control ps-5"
+                        placeholder="Search"
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        style={{ minWidth: "200px", width: "100%" }}
+                      />
+                      <Icon
+                        icon="ion:search-outline"
+                        className="position-absolute top-50 start-0 translate-middle-y ms-2 text-muted"
+                        width="20"
+                        height="20"
+                      />
+                    </div>
+                  </form>
+                  <input
+                    type="date"
+                    className="form-control flex-shrink-0"
+                    placeholder="DD-MM-YYYY"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    style={{ minWidth: "120px", flex: "1 1 130px" }}
+                  />
+                  <input
+                    type="date"
+                    className="form-control flex-shrink-0"
+                    placeholder="DD-MM-YYYY"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    style={{ minWidth: "120px", flex: "1 1 130px" }}
+                  />
+                  {role !== "Dealer" && (
+                    <>
+                      <input
+                        type="number"
+                        className="form-control flex-shrink-0"
+                        placeholder="Min Amt"
+                        value={minPrice}
+                        onChange={(e) => setMinPrice(e.target.value)}
+                        style={{ minWidth: "100px", flex: "1 1 100px" }}
+                      />
+                      <input
+                        type="number"
+                        className="form-control flex-shrink-0"
+                        placeholder="Max Amt"
+                        value={maxPrice}
+                        onChange={(e) => setMaxPrice(e.target.value)}
+                        style={{ minWidth: "100px", flex: "1 1 100px" }}
+                      />
+                    </>
+                  )}
+                  {role !== "Dealer" && (
+                    <select
+                      className="form-select flex-shrink-0"
+                      value={status}
+                      onChange={(e) => setStatus(e.target.value)}
+                      style={{ minWidth: "120px", flex: "1 1 120px" }}
+                    >
+                      {STATUS_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  )}
+                  <button
+                    type="button"
+                    className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                    title="Complete service report"
+                  >
+                    <Icon icon="mdi:microsoft-excel" width="20" height="20" />
+                  </button>
+                </div>
+              </div>
+              {reportLoading && (
+                <div className="text-center py-4">
+                  <span className="spinner-border spinner-border-sm me-2" />
+                  Loading report…
+                </div>
+              )}
+              {error && (
+                <div className="alert alert-danger mx-3 mt-3 mb-0 d-flex align-items-center gap-2">
+                  <Icon icon="mdi:alert-circle-outline" width={20} />
+                  {error}
+                </div>
+              )}
+              <DataTable
+                columns={columns}
+                data={filteredBookings}
+                pagination
+                paginationPerPage={10}
+                paginationRowsPerPageOptions={[10, 25, 50, 100, filteredBookings.length]}
+                highlightOnHover
+                responsive
+                striped
+                persistTableHead
+                defaultSortField="CreatedDate"
+                defaultSortAsc={false}
+                noDataComponent="No Bookings available"
+              />
+            </div>
+          </>
         )}
       </div>
     </div>
