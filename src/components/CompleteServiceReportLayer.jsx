@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import DataTable from "react-data-table-component";
 import axios from "axios";
@@ -545,6 +546,7 @@ const STATUS_OPTIONS = [
 ];
 
 const CompleteServiceReportLayer = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
   const roleId = localStorage.getItem("roleId");
@@ -590,6 +592,29 @@ const CompleteServiceReportLayer = () => {
   useEffect(() => {
     fetchBookings();
   }, [fetchBookings]);
+
+  // Open report when navigating with ?bookingId= (e.g. from LeadViewLayer)
+  const bookingIdFromUrl = searchParams.get("bookingId");
+  useEffect(() => {
+    if (!bookingIdFromUrl || !token) return;
+    setError(null);
+    setReportLoading(true);
+    setReportData(null);
+    axios
+      .get(`${API_BASE}Bookings/BookingId?Id=${bookingIdFromUrl}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        const json = res.data;
+        const data = Array.isArray(json) ? json[0] : json;
+        if (!data) throw new Error("No booking data returned");
+        setReportData(data);
+      })
+      .catch((err) => {
+        setError(err.response?.status === 404 ? "Booking not found" : err.message || "Failed to load report");
+      })
+      .finally(() => setReportLoading(false));
+  }, [bookingIdFromUrl, token]);
 
   const openReport = useCallback((row) => {
     setError(null);
@@ -848,7 +873,7 @@ const CompleteServiceReportLayer = () => {
         {reportData ? (
           <CompleteServiceReportView
             data={reportData}
-            onBack={() => { setReportData(null); setError(null); }}
+            onBack={() => { setReportData(null); setError(null); setSearchParams({}); }}
           />
         ) : (
           <>

@@ -1802,7 +1802,7 @@ const LeadViewLayer = () => {
                                   <tr key={b.BookingID}>
                                     <td>
                                       <Link
-                                        to={`/booking-view/${b.BookingID}`}
+                                        to={`/complete-service-reports?bookingId=${b.BookingID}`}
                                         className="text-primary"
                                       >
                                         {b.BookingTrackID}
@@ -1817,9 +1817,9 @@ const LeadViewLayer = () => {
                                     </td>
                                     <td className="text-center">
                                       <Link
-                                        to={`/booking-view/${b.BookingID}`}
+                                        to={`/complete-service-reports?bookingId=${b.BookingID}`}
                                         className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                                        title="View"
+                                        title="View service report"
                                       >
                                         <Icon icon="lucide:eye" />
                                       </Link>
@@ -1870,7 +1870,7 @@ const LeadViewLayer = () => {
                                     <td>{b.LeadId}</td>
                                     <td>
                                       <Link
-                                        to={`/booking-view/${b.BookingID}`}
+                                        to={`/complete-service-reports?bookingId=${b.BookingID}`}
                                         className="text-primary"
                                       >
                                         {b.BookingTrackID}
@@ -1886,9 +1886,9 @@ const LeadViewLayer = () => {
 
                                     <td className="text-center">
                                       <Link
-                                        to={`/booking-view/${b.BookingID}`}
+                                        to={`/complete-service-reports?bookingId=${b.BookingID}`}
                                         className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                                        title="View"
+                                        title="View service report"
                                       >
                                         <Icon icon="lucide:eye" />
                                       </Link>
