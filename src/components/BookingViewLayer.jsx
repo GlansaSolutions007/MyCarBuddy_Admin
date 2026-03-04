@@ -4203,17 +4203,41 @@ const BookingViewLayer = () => {
                                 <td className="py-2 px-3">{item.DealerName ?? "—"}</td>
                                 <td className="py-2 px-3 fw-semibold">{item.ServiceName ?? "—"}</td>
                                 <td className="py-2 px-3">
-                                  <span
-                                    className="badge rounded-pill px-2 py-1"
-                                    style={{
-                                      fontSize: "0.7rem",
-                                      backgroundColor: (item.IsDealer_Confirm || "").toLowerCase() === "approved" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)",
-                                      color: (item.IsDealer_Confirm || "").toLowerCase() === "approved" ? "#16a34a" : "#dc2626",
-                                    }}
-                                  >
-                                    {item.IsDealer_Confirm ?? "—"}
-                                  </span>
-                                </td>
+  {(() => {
+    const status = (item.IsDealer_Confirm || "").toLowerCase();
+
+    const backgroundColor =
+      status === "approved"
+        ? "rgba(34,197,94,0.15)"      // light green
+        : status === "rejected"
+        ? "rgba(239,68,68,0.15)"      // light red
+        : status === "assigned"
+        ? "rgba(250,204,21,0.20)"     // light yellow
+        : "rgba(107,114,128,0.15)";   // default grey
+
+    const color =
+      status === "approved"
+        ? "#16a34a"
+        : status === "rejected"
+        ? "#dc2626"
+        : status === "assigned"
+        ? "#ca8a04"                  // yellow text
+        : "#6b7280";
+
+    return (
+      <span
+        className="badge rounded-pill px-2 py-1"
+        style={{
+          fontSize: "0.7rem",
+          backgroundColor,
+          color,
+        }}
+      >
+        {item.IsDealer_Confirm ?? "—"}
+      </span>
+    );
+  })()}
+</td>
                                 <td className="py-2 px-3">{item.Reason ?? "—"}</td>
                                 <td className="py-2 px-3">
                                   {item.CreatedDate
