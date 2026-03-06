@@ -1747,6 +1747,28 @@ const BookingViewLayer = () => {
     }
 
     try {
+      // If file is attached, upload it first
+      if (confirmationFile) {
+        const formData = new FormData();
+        formData.append("BookingID", bookingData.BookingID);
+        formData.append("UploadedBy", duserId);
+        formData.append("CustID", bookingData.CustID);
+        formData.append("ImageUploadType", "CustomerConfirmation");
+        formData.append("ImageFile", confirmationFile);
+
+        await axios.post(
+          `${API_BASE}Supervisor/CustomerConfirmationImages`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          },
+        );
+      }
+
+      // Proceed with existing customer confirmation API
       await axios.post(
         `${API_BASE}Supervisor/MoveSupervisorBookings?bookingId=${bookingData.BookingID}&custId=${bookingData.CustID}`,
         {
@@ -1924,24 +1946,27 @@ const BookingViewLayer = () => {
         }
       }
 
-      // ✅ For offline payment, call the existing payment API
-      const payload = {
-        bookingID: bookingData.BookingID,
-        amountPaid: finalAmount,
-        paymentMode: paymentMode,
-        paymentStatus: "Success",
-        paymentType: "Static",
-        couponAmount: discountAmount || 0,
-        couponCode: selectedCoupon || "",
-        createdBy: userId,
-      };
+      // ✅ For offline payment, use FormData
+      const formData = new FormData();
+      formData.append("bookingID", bookingData.BookingID);
+      formData.append("amountPaid", finalAmount);
+      formData.append("paymentMode", paymentMode);
+      formData.append("paymentStatus", "Success");
+      formData.append("paymentType", "Static");
+      formData.append("couponAmount", discountAmount || 0);
+      formData.append("couponCode", selectedCoupon || "");
+      formData.append("createdBy", userId);
+      formData.append("ProofAttachment", paymentFile); // file
 
       const res = await axios.post(
         `${API_BASE}Payments/InsertBookingAddOnsPayment`,
-        payload,
+        formData,
         {
-          headers: { Authorization: `Bearer ${token}` },
-        },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
       );
 
       if (res?.data?.status) {
@@ -3436,12 +3461,12 @@ const BookingViewLayer = () => {
                                                   {supervisorBooking.IsDealer_Confirm && supervisorBooking.DealerName && (
                                                     <span
                                                       className={`badge px-3 py-2 rounded-pill ${supervisorBooking.IsDealer_Confirm === "Approved"
-                                                          ? "bg-success text-white"
-                                                          : supervisorBooking.IsDealer_Confirm === "Rejected"
-                                                            ? "bg-danger text-white"
-                                                            : supervisorBooking.IsDealer_Confirm === "Pending"
-                                                              ? "bg-warning text-dark"
-                                                              : "bg-secondary text-white"
+                                                        ? "bg-success text-white"
+                                                        : supervisorBooking.IsDealer_Confirm === "Rejected"
+                                                          ? "bg-danger text-white"
+                                                          : supervisorBooking.IsDealer_Confirm === "Pending"
+                                                            ? "bg-warning text-dark"
+                                                            : "bg-secondary text-white"
                                                         }`}
                                                     >
                                                       {supervisorBooking.IsDealer_Confirm}
@@ -3656,7 +3681,7 @@ const BookingViewLayer = () => {
                                     <>
                                       {dlrPendingCount > 0 && (
                                         <div className="alert alert-warning py-2 px-3 mb-2 mb-md-3 small">
-                                          <strong>{dlrPendingCount}</strong> dealer side service(s) remaining.
+                                          <strong>{dlrPendingCount}</strong> services are pending for completion on the dealer side.
                                         </div>
                                       )}
                                       {supervisorPendingCount > 0 && (
@@ -4131,7 +4156,7 @@ const BookingViewLayer = () => {
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Transaction ID</th>
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Payment Date</th>
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Status</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Type</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Proof</th>
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Refunded</th>
                             </tr>
                           </thead>
@@ -4159,7 +4184,18 @@ const BookingViewLayer = () => {
                                     {pay.PaymentStatus ?? "—"}
                                   </span>
                                 </td>
-                                <td className="py-2 px-3">{pay.PaymentType ?? "—"}</td>
+                                <td className="py-2 px-3">
+                                  {pay.ProofAttachment ? (
+                                    <img
+                                      src={`${API_IMAGE}${pay.ProofAttachment}`}
+                                      alt="Payment Proof"
+                                      style={{ width: "50px", height: "50px", objectFit: "cover", cursor: "pointer" }}
+                                      onClick={() => window.open(`${API_IMAGE}${pay.ProofAttachment}`, "_blank")}
+                                    />
+                                  ) : (
+                                    "—"
+                                  )}
+                                </td>
                                 <td className="py-2 px-3">{pay.IsRefunded ? "Yes" : "No"}</td>
                               </tr>
                             ))}
@@ -4203,41 +4239,41 @@ const BookingViewLayer = () => {
                                 <td className="py-2 px-3">{item.DealerName ?? "—"}</td>
                                 <td className="py-2 px-3 fw-semibold">{item.ServiceName ?? "—"}</td>
                                 <td className="py-2 px-3">
-  {(() => {
-    const status = (item.IsDealer_Confirm || "").toLowerCase();
+                                  {(() => {
+                                    const status = (item.IsDealer_Confirm || "").toLowerCase();
 
-    const backgroundColor =
-      status === "approved"
-        ? "rgba(34,197,94,0.15)"      // light green
-        : status === "rejected"
-        ? "rgba(239,68,68,0.15)"      // light red
-        : status === "assigned"
-        ? "rgba(250,204,21,0.20)"     // light yellow
-        : "rgba(107,114,128,0.15)";   // default grey
+                                    const backgroundColor =
+                                      status === "approved"
+                                        ? "rgba(34,197,94,0.15)"      // light green
+                                        : status === "rejected"
+                                          ? "rgba(239,68,68,0.15)"      // light red
+                                          : status === "assigned"
+                                            ? "rgba(250,204,21,0.20)"     // light yellow
+                                            : "rgba(107,114,128,0.15)";   // default grey
 
-    const color =
-      status === "approved"
-        ? "#16a34a"
-        : status === "rejected"
-        ? "#dc2626"
-        : status === "assigned"
-        ? "#ca8a04"                  // yellow text
-        : "#6b7280";
+                                    const color =
+                                      status === "approved"
+                                        ? "#16a34a"
+                                        : status === "rejected"
+                                          ? "#dc2626"
+                                          : status === "assigned"
+                                            ? "#ca8a04"                  // yellow text
+                                            : "#6b7280";
 
-    return (
-      <span
-        className="badge rounded-pill px-2 py-1"
-        style={{
-          fontSize: "0.7rem",
-          backgroundColor,
-          color,
-        }}
-      >
-        {item.IsDealer_Confirm ?? "—"}
-      </span>
-    );
-  })()}
-</td>
+                                    return (
+                                      <span
+                                        className="badge rounded-pill px-2 py-1"
+                                        style={{
+                                          fontSize: "0.7rem",
+                                          backgroundColor,
+                                          color,
+                                        }}
+                                      >
+                                        {item.IsDealer_Confirm ?? "—"}
+                                      </span>
+                                    );
+                                  })()}
+                                </td>
                                 <td className="py-2 px-3">{item.Reason ?? "—"}</td>
                                 <td className="py-2 px-3">
                                   {item.CreatedDate
@@ -5044,7 +5080,7 @@ const BookingViewLayer = () => {
                         onChange={(e) => setGaragePickupDate(e.target.value)}
                       />
                     </div>
-                    <div class="col-6">
+                    {/* <div class="col-6">
                       <label class="form-label small mb-1">Time</label>
                       <input
                         type="time"
@@ -5052,7 +5088,7 @@ const BookingViewLayer = () => {
                         value={garagePickupTime}
                         onChange={(e) => setGaragePickupTime(e.target.value)}
                       />
-                    </div>
+                    </div> */}
                   </div>
                   <div className="col-12">
                     <label className="form-label small fw-semibold">Time Slot</label>
