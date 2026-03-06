@@ -156,7 +156,7 @@ const UnitCountSeven = () => {
                       </h6>
                     </div>
                     <span className='w-44-px h-44-px radius-8 d-inline-flex justify-content-center align-items-center text-2xl mb-12 bg-lilac-200 text-lilac-600'>
-                      <i className='ri-handbag-fill' />
+                      <i className="ri-file-list-3-fill"/>
                     </span>
                   </div>
                   {/* <p className='text-sm mb-0'>
@@ -172,14 +172,14 @@ const UnitCountSeven = () => {
                   <div className='d-flex flex-wrap align-items-center justify-content-between gap-1 mb-8'>
                     <div>
                       <span className='mb-2 fw-medium text-secondary-light text-md'>
-                        {department === "Support Department" && role !== "Admin" ? "Resolved Tickets" : "Upcoming Bookings"}
+                        {department === "Support Department" && role !== "Admin" ? "Resolved Tickets" : "Today's Bookings"}
                       </span>
                       <h6 className='fw-semibold mb-1'>
                         {department === "Support Department" && role !== "Admin" ? resolvedCount : (data.UpcomingBookings || 0)}
                       </h6>
                     </div>
                     <span className='w-44-px h-44-px radius-8 d-inline-flex justify-content-center align-items-center text-2xl mb-12 bg-success-200 text-success-600'>
-                      <i className='ri-shopping-cart-fill' />
+                      <i className="ri-calendar-check-fill"/>
                     </span>
                   </div>
                   {/* <p className='text-sm mb-0'>
@@ -196,7 +196,7 @@ const UnitCountSeven = () => {
                     <div>
                       {/* <Link to="/refunds"> */}
                         <span className='mb-2 fw-medium text-secondary-light text-md'>
-                          {department === "Support Department" && role !== "Admin" ? "Pending Tickets" : "Total Refunds"}
+                          {department === "Support Department" && role !== "Admin" ? "Pending Tickets" : "Completed Bookings"}
                         </span>
                         <h6 className='fw-semibold mb-1'>
                           {department === "Support Department" && role !== "Admin" ? pendingCount : (refunds.length || 0)}
@@ -204,7 +204,7 @@ const UnitCountSeven = () => {
                       {/* </Link> */}
                     </div>
                     <span className='w-44-px h-44-px radius-8 d-inline-flex justify-content-center align-items-center text-2xl mb-12 bg-warning-focus text-warning-600'>
-                      <i className='ri-arrow-go-back-line' />
+                      <i className="ri-checkbox-circle-fill"/>
                     </span>
                   </div>
                   {/* <p className='text-sm mb-0'>

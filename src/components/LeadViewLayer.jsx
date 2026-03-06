@@ -133,6 +133,7 @@ const LeadViewLayer = () => {
   const vehicle = lead?.VehiclesDetails?.[0];
   const isVehicleDataComplete =
     vehicle?.BrandName && vehicle?.ModelName && vehicle?.FuelTypeName;
+  const isAddressPresent = Boolean(lead?.City?.trim?.());
   const hasAtLeastOneFollowUp =
     Array.isArray(lead?.FollowUps) && lead.FollowUps.length > 0;
   const hasCurrentLeadBooking = currentBookings.length > 0;
@@ -872,6 +873,14 @@ const LeadViewLayer = () => {
       confirmButtonText: "OK",
     });
   };
+  const showAddressRequiredAlert = () => {
+    Swal.fire({
+      icon: "warning",
+      title: "Address Required",
+      text: "Address is mandatory to book services.",
+      confirmButtonText: "OK",
+    });
+  };
   const handleConvertCustomer = async () => {
     // Check if at least one follow-up exists
     if (!hasAtLeastOneFollowUp) {
@@ -1092,13 +1101,20 @@ const LeadViewLayer = () => {
                       <Link
                         to={`/book-service/${lead?.Id}`}
                         onClick={(e) => {
+                          if (!isAddressPresent) {
+                            e.preventDefault();
+                            showAddressRequiredAlert();
+                            return;
+                          }
                           if (!isVehicleDataComplete) {
                             e.preventDefault();
                             showVehicleDataRequiredAlert();
+                            return;
                           }
                           if (!hasAtLeastOneFollowUp) {
                             e.preventDefault();
                             showFollowUpRequiredAlert();
+                            return;
                           }
                         }}
                         className="btn btn-primary-600 btn-sm d-flex align-items-center justify-content-center gap-1"
@@ -1313,12 +1329,12 @@ const LeadViewLayer = () => {
                               <option value="Need More Info">
                                 Need More Info
                               </option>
-                              <option value="Converted to Customer">
+                              {/* <option value="Converted to Customer">
                                 Converted to Customer
                               </option>
                               <option value="Not Converted">
                                 Not Converted
-                              </option>
+                              </option> */}
                               <option value="Not Having Car">
                                 Not Having Car
                               </option>
