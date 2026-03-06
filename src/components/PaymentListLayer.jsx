@@ -23,7 +23,6 @@ const PaymentsListLayer = () => {
   const [refundStatus, setRefundStatus] = useState("all");
   const API_BASE = import.meta.env.VITE_APIURL;
   const token = localStorage.getItem("token");
-  const INVOICE_URL = "https://api.mycarsbuddy.com";
 
   // Helper function to get invoice URL from FolderPath
   const getInvoiceUrl = (folderPath) => {
@@ -35,7 +34,7 @@ const PaymentsListLayer = () => {
     } else {
       invoicePath = folderPath.startsWith('/') ? folderPath : '/' + folderPath;
     }
-    return `${INVOICE_URL}${invoicePath}`;
+    return `${API_BASE.replace(/api\/$/, "")}/${invoicePath.replace(/^\/+/, "")}`;
   };
 
   useEffect(() => {

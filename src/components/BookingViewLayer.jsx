@@ -935,10 +935,13 @@ const BookingViewLayer = () => {
         );
         const addOnIds = selectedAddOns.map((addon) => String(addon.AddOnID)).join(",") || "0";
         const assignTimeSlot = pickupDropReassignTimeSlot.join(",");
+        const now = new Date();
+        const localTime = now.toTimeString().slice(0, 5); // HH:MM format
+        const finalTime = garagePickupTime || localTime;
 
         payload = {
           bookingID: bookingData.BookingID,
-          assignDate: garagePickupDate + "T" + garagePickupTime,
+          assignDate: garagePickupDate + "T" + finalTime,
           role: "Technician",
           techID: selectedInitialTechnician?.value,
           addOnId: addOnIds,
@@ -962,7 +965,7 @@ const BookingViewLayer = () => {
 
         payload = {
           bookingID: bookingData.BookingID,
-          assignDate: garagePickupDate + "T" + garagePickupTime,
+          assignDate: garagePickupDate + "T" + finalTime,
           role: "Supervisor",
           techID: selectedInitialSupervisor?.value,
           leadId: bookingData.LeadId,
@@ -3750,9 +3753,9 @@ const BookingViewLayer = () => {
                                     </button>
                                   )}
                                 </div>
-                                <div className="small text-muted mt-2 mb-0 fw-bold">
+                                {/* <div className="small text-muted mt-2 mb-0 fw-bold">
                                   <strong>Note:</strong> Estimation button displays when at least one service exists and supervisor has confirmed all services. Final Invoice button displays after full payment is completed.
-                                </div>
+                                </div> */}
                               </>
                             ) : (
                               <p className="text-muted mb-0">
@@ -4147,16 +4150,16 @@ const BookingViewLayer = () => {
                   <Accordion.Body>
                     {(bookingData?.Payments ?? []).length > 0 ? (
                       <div className="table-responsive">
-                        <table className="table table-bordered table-hover align-middle mb-0" style={{ fontSize: "0.875rem" }}>
+                        <table className="table table-bordered table-hover align-middle mb-0" style={{ fontSize: "0.875rem", textAlign: "center" }}>
                           <thead style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
                             <tr>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>#</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Amount Paid</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Payment Mode</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Transaction ID</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Payment Date</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Status</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Proof</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textAlign: "center" }}>#</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textAlign: "center" }}>Amount Paid</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textAlign: "center" }}>Payment Mode</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textAlign: "center" }}>Transaction ID</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textAlign: "center" }}>Payment Date</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textAlign: "center" }}>Status</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Proof Img.</th>
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Refunded</th>
                             </tr>
                           </thead>
@@ -4189,7 +4192,7 @@ const BookingViewLayer = () => {
                                     <img
                                       src={`${API_IMAGE}${pay.ProofAttachment}`}
                                       alt="Payment Proof"
-                                      style={{ width: "50px", height: "50px", objectFit: "cover", cursor: "pointer" }}
+                                      style={{ width: "40px", height: "40px", objectFit: "cover", cursor: "pointer", borderRadius: "4px" }}
                                       onClick={() => window.open(`${API_IMAGE}${pay.ProofAttachment}`, "_blank")}
                                     />
                                   ) : (
@@ -4354,7 +4357,7 @@ const BookingViewLayer = () => {
                                 <td className="py-2 px-3">
                                   {inv.FolderPath ? (
                                     <a
-                                      href={`${API_BASE.replace(/\/$/, "")}/${inv.FolderPath}`}
+                                      href={`${API_BASE.replace(/api\/?$/, "")}${inv.FolderPath}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="btn btn-sm btn-outline-primary py-1 px-2"
@@ -4919,7 +4922,7 @@ const BookingViewLayer = () => {
                   {/* Assignment Type Checkboxes */}
                   <div className="d-flex justify-content-center align-items-center gap-4 mb-3">
                     {/* Field Advisor Checkbox */}
-                    {roleName !== "Field Advisor" && (
+                    {/* {roleName !== "Field Advisor" && (
                       <div className="form-check d-flex align-items-center gap-2 m-0">
                         <input
                           type="checkbox"
@@ -4941,7 +4944,7 @@ const BookingViewLayer = () => {
                           Field Advisor
                         </label>
                       </div>
-                    )}
+                    )} */}
                     {/* Technician Checkbox: always show */}
                     <div className="form-check d-flex align-items-center gap-2 m-0">
                       <input

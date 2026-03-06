@@ -172,7 +172,7 @@ const IncludesLayer = () => {
       IncludePrice: include.IncludePrice,
       IsActive: include.IsActive,
       CategoryID: include.CategoryID,
-      SubCategoryID: include.SubCategoryID,
+      SubCategoryID: 0,
       SkillID: include.SkillID
     });
   };
