@@ -2975,7 +2975,7 @@ const BookingViewLayer = () => {
                                             style={{ width: "160px" }}
                                             className="text-center"
                                           >
-                                            F.A. Confirm By
+                                            Service Confirm By
                                           </th>
                                           <th
                                             style={{ width: "100px" }}
@@ -5172,7 +5172,9 @@ const BookingViewLayer = () => {
                       (initialAssignType === "technician" && !selectedInitialTechnician) ||
                       //   (initialAssignType === "supervisor" && !selectedInitialSupervisor) ||
                       //   (initialAssignType === "fieldAdvisor" && !selectedInitialFieldAdvisor) ||
-                      (initialAssignType === "technician" && selectedServiceType.length === 0)
+                      (initialAssignType === "technician" && selectedServiceType.length === 0) || 
+                      (garagePickupDate === "") || 
+                      pickupDropReassignTimeSlot.length === 0
                     }
                   >
                     Assign

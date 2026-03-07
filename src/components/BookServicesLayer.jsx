@@ -1335,7 +1335,7 @@ const BookServicesLayer = () => {
         text: "Services have been successfully added to this booking.",
       }).then(() => {
         if (hasNewItems) {
-          navigate(-1);
+          // navigate(-1);
         }
       });
     } catch (err) {
