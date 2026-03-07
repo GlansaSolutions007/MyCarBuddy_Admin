@@ -2545,80 +2545,80 @@ const BookServicesLayer = () => {
       width: "120px",
       sortable: true,
     },
-    {
-      name: "Service Status",
-      width: "160px",
-      cell: (row) => {
-        const isApproved =
-          row.isDealer_Confirm?.toString().trim().toLowerCase() === "approved";
+    // {
+    //   name: "Service Status",
+    //   width: "160px",
+    //   cell: (row) => {
+    //     const isApproved =
+    //       row.isDealer_Confirm?.toString().trim().toLowerCase() === "approved";
 
-        const status = row.addOnStatus?.toString().trim();
+    //     const status = row.addOnStatus?.toString().trim();
 
-        const isCompleted =
-          status?.toLowerCase() === "servicecompleted";
+    //     const isCompleted =
+    //       status?.toLowerCase() === "servicecompleted";
 
-        return !row.isInclude ? (
-          <div className="d-flex gap-2 align-items-center">
+    //     return !row.isInclude ? (
+    //       <div className="d-flex gap-2 align-items-center">
 
-            {/* ✅ If Approved AND status is NULL → Show Complete Button */}
-            {isApproved && !status && (
-              <button
-                onClick={() => handleServiceCompleted(row.addedItemsIndex)}
-                title="Mark as Completed"
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#157347";
-                  e.currentTarget.style.transform = "scale(1.05)";
-                  e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "#20c997";
-                  e.currentTarget.style.transform = "scale(1)";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
-                style={{
-                  height: "32px",
-                  backgroundColor: "#20c997",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "6px",
-                  padding: "0 10px",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "6px",
-                  cursor: "pointer",
-                  transition: "all 0.3s ease",
-                  fontSize: "12px",
-                  fontWeight: "500"
-                }}
-              >
-                <Icon icon="mingcute:check-circle-fill" />
-                Complete
-              </button>
-            )}
+    //         {/* ✅ If Approved AND status is NULL → Show Complete Button */}
+    //         {isApproved && !status && (
+    //           <button
+    //             onClick={() => handleServiceCompleted(row.addedItemsIndex)}
+    //             title="Mark as Completed"
+    //             onMouseEnter={(e) => {
+    //               e.currentTarget.style.backgroundColor = "#157347";
+    //               e.currentTarget.style.transform = "scale(1.05)";
+    //               e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
+    //             }}
+    //             onMouseLeave={(e) => {
+    //               e.currentTarget.style.backgroundColor = "#20c997";
+    //               e.currentTarget.style.transform = "scale(1)";
+    //               e.currentTarget.style.boxShadow = "none";
+    //             }}
+    //             style={{
+    //               height: "32px",
+    //               backgroundColor: "#20c997",
+    //               color: "#fff",
+    //               border: "none",
+    //               borderRadius: "6px",
+    //               padding: "0 10px",
+    //               display: "inline-flex",
+    //               alignItems: "center",
+    //               justifyContent: "center",
+    //               gap: "6px",
+    //               cursor: "pointer",
+    //               transition: "all 0.3s ease",
+    //               fontSize: "12px",
+    //               fontWeight: "500"
+    //             }}
+    //           >
+    //             <Icon icon="mingcute:check-circle-fill" />
+    //             Complete
+    //           </button>
+    //         )}
 
 
-            {/* ✅ If status exists → Show Dropdown */}
-            {isApproved && status && (
-              <select
-                className="form-select form-select-sm"
-                value={status}
-                onChange={(e) =>
-                  handleStatusChange(row.addedItemsIndex, e.target.value)
-                }
-              >
-                <option value="Pending">Pending</option>
-                <option value="ServiceCompleted">Completed</option>
-                <option value="Rework">Rework</option>
-                <option value="InProgress">In-Progress</option>
-              </select>
-            )}
-          </div>
-        ) : null;
-      },
-      ignoreRowClick: true,
-      allowOverflow: true,
-    },
+    //         {/* ✅ If status exists → Show Dropdown */}
+    //         {isApproved && status && (
+    //           <select
+    //             className="form-select form-select-sm"
+    //             value={status}
+    //             onChange={(e) =>
+    //               handleStatusChange(row.addedItemsIndex, e.target.value)
+    //             }
+    //           >
+    //             <option value="Pending">Pending</option>
+    //             <option value="ServiceCompleted">Completed</option>
+    //             <option value="Rework">Rework</option>
+    //             <option value="InProgress">In-Progress</option>
+    //           </select>
+    //         )}
+    //       </div>
+    //     ) : null;
+    //   },
+    //   ignoreRowClick: true,
+    //   allowOverflow: true,
+    // },
     {
       name: "Actions",
       cell: (row) => {

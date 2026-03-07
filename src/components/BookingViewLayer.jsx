@@ -5035,18 +5035,38 @@ const BookingViewLayer = () => {
                       />
                       <div className="mt-3">
                         <Select
+                          // options={
+                          //   bookingData?.BookingAddOns
+                          //     ? Array.from(
+                          //       new Set(
+                          //         bookingData.BookingAddOns
+                          //           .map((addon) => addon.ServiceName)
+                          //           .filter(Boolean),
+                          //       ),
+                          //     ).map((serviceName) => ({
+                          //       value: serviceName,
+                          //       label: serviceName,
+                          //     }))
+                          //     : []
+                          // }
                           options={
                             bookingData?.BookingAddOns
                               ? Array.from(
-                                new Set(
-                                  bookingData.BookingAddOns
-                                    .map((addon) => addon.ServiceName)
-                                    .filter(Boolean),
-                                ),
-                              ).map((serviceName) => ({
-                                value: serviceName,
-                                label: serviceName,
-                              }))
+                                  new Set(
+                                    bookingData.BookingAddOns
+                                      .filter(
+                                        (addon) =>
+                                          (addon.StatusName ?? addon.statusName ?? addon.AddOnStatus ?? addon.addOnStatus)
+                                            ?.toString()
+                                            .trim() !== "ServiceCompleted"
+                                      )
+                                      .map((addon) => addon.ServiceName)
+                                      .filter(Boolean)
+                                  )
+                                ).map((serviceName) => ({
+                                  value: serviceName,
+                                  label: serviceName,
+                                }))
                               : []
                           }
                           isMulti
