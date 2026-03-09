@@ -834,11 +834,11 @@ const BookingViewLayer = () => {
     let pickTo = 0;
     if (garageRoute === "customerToDealer") {
       if (garageTask === "carPickup") {
-        pickFrom = 0;
+        pickFrom = bookingData.CustID ?? 0;
         pickTo = garageDeliverDealer?.value ?? 0;
       } else {
         pickFrom = garagePickupDealer?.value ?? 0;
-        pickTo = 0;
+        pickTo = bookingData.CustID ?? 0;
       }
     } else {
       pickFrom = garagePickupDealer?.value ?? 0;
