@@ -1160,7 +1160,7 @@ const BookServicesLayer = () => {
         Swal.fire("Saved", "All items updated successfully", "success");
       }
       // 👇 Navigate using bookingId
-      navigate(`/booking-view/${addedItems[0]?._bookingId}`);
+      // navigate(`/booking-view/${addedItems[0]?._bookingId}`);
       setInitialItemsSnapshot(buildSnapshot(addedItems));
       return true;
     } catch (err) {
@@ -1335,7 +1335,7 @@ const BookServicesLayer = () => {
         text: "Services have been successfully added to this booking.",
       }).then(() => {
         if (hasNewItems) {
-          // navigate(-1);
+          navigate(-1);
         }
       });
     } catch (err) {

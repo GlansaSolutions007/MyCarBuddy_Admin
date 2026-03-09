@@ -148,6 +148,7 @@ const BookingViewLayer = () => {
   const roleName = employeeData?.RoleName;
   const today = new Date().toISOString().split("T")[0];
   const nowTime = new Date().toTimeString().slice(0, 5); // HH:mm
+  const [isLoading, setIsLoading] = useState(false);
   const finalPayAmount = Math.max(
     Number(payAmount || 0) - Number(discountAmount || 0),
     0,
@@ -1843,6 +1844,7 @@ const BookingViewLayer = () => {
 
   const handleConfirmPayment = async () => {
     try {
+      setIsLoading(true); // start loader
       const isOnline = paymentTypeChoice === "online";
       if (!isOnline && !paymentMode) {
         Swal.fire("Validation", "Please select payment mode", "warning");
@@ -1984,6 +1986,8 @@ const BookingViewLayer = () => {
     } catch (err) {
       console.error("Payment Error:", err);
       Swal.fire("Error", "Something went wrong", "error");
+    } finally {
+    setIsLoading(false);
     }
   };
 
@@ -4678,20 +4682,6 @@ const BookingViewLayer = () => {
                   {/* Step 2b: Pay through other – full form (mode + amount + discount) */}
                   {paymentTypeChoice === "other" && (
                     <>
-                      <div className="mb-3">
-                        <label className="form-label fw-semibold">Payment Mode</label>
-                        <select
-                          className="form-select"
-                          value={paymentMode}
-                          onChange={(e) => setPaymentMode(e.target.value)}
-                        >
-                          <option value="">Select payment mode</option>
-                          <option value="Cash">Cash</option>
-                          <option value="UPI">UPI</option>
-                          <option value="Card">Card</option>
-                          <option value="NetBanking">Net Banking</option>
-                        </select>
-                      </div>
                       <div className="border rounded-3 p-3 bg-light mb-3">
                         <div className="d-flex justify-content-between small">
                           <span>Total Amount</span>
@@ -4705,6 +4695,20 @@ const BookingViewLayer = () => {
                           <span>Remaining</span>
                           <strong>₹{remainingAmount.toFixed(2)}</strong>
                         </div>
+                      </div>
+                       <div className="mb-3">
+                        <label className="form-label fw-semibold">Payment Mode</label>
+                        <select
+                          className="form-select"
+                          value={paymentMode}
+                          onChange={(e) => setPaymentMode(e.target.value)}
+                        >
+                          <option value="">Select payment mode</option>
+                          <option value="Cash">Cash</option>
+                          <option value="UPI">UPI</option>
+                          <option value="Card">Card</option>
+                          <option value="NetBanking">Net Banking</option>
+                        </select>
                       </div>
                       <div className="mb-3">
                         <label className="form-label fw-semibold">Enter Amount</label>
@@ -4792,9 +4796,16 @@ const BookingViewLayer = () => {
                       type="button"
                       className="btn btn-press-effect btn-primary-600 btn-sm"
                       onClick={handleConfirmPayment}
-                      disabled={paymentTypeChoice === "other" && !paymentFile}
+                      disabled={ isLoading || (paymentTypeChoice === "other" && !paymentFile)}
                     >
-                      Confirm Payment
+                       {isLoading ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2"></span>
+                          Processing...
+                        </>
+                      ) : (
+                        "Confirm Payment"
+                      )}
                     </button>
                   </div>
                 )}
