@@ -403,7 +403,7 @@ const [actionStatus, setActionStatus] = useState(null);
               </div>
 
             {/* Services to confirm — pending IsDealer_Confirm */}
-            {/* <div className="col-12 mt-4">
+            <div className="col-12 mt-4">
               <style>{`
                 @keyframes dealer-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
                 @keyframes spin { to { transform: rotate(360deg); } }
@@ -527,7 +527,7 @@ const [actionStatus, setActionStatus] = useState(null);
                   )}
                 </div>
               </div>
-            </div> */}
+            </div>
 
             <div className="row row-cols-xxxl-4 row-cols-lg-3 row-cols-md-2 row-cols-1 gy-4 mt-2">
              

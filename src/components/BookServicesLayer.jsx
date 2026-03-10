@@ -1868,10 +1868,12 @@ const BookServicesLayer = () => {
       name: "Part Price",
       cell: (row) => {
         if (row.isInclude) return null;
+        // const canModify =
+        //   row.status !== "Confirmed" ||
+        //   isSupervisorHead ||
+        //   isAdmin;
         const canModify =
-          row.status !== "Confirmed" ||
-          isSupervisorHead ||
-          isAdmin;
+          row.status !== "Confirmed";
         return (
           <input
             type="number"
@@ -1958,10 +1960,12 @@ const BookServicesLayer = () => {
       name: "Qty",
       cell: (row, index) => {
         if (row.isInclude) return null;
+        // const canModify =
+        //   row.status !== "Confirmed" ||
+        //   isSupervisorHead ||
+        //   isAdmin;
         const canModify =
-          row.status !== "Confirmed" ||
-          isSupervisorHead ||
-          isAdmin;
+          row.status !== "Confirmed";
         return (
           <input
             type="number"
@@ -2066,10 +2070,12 @@ const BookServicesLayer = () => {
       name: "Service Chg.",
       cell: (row, index) => {
         if (row.isInclude) return null;
+        // const canModify =
+        //   row.status !== "Confirmed" ||
+        //   isSupervisorHead ||
+        //   isAdmin;
         const canModify =
-          row.status !== "Confirmed" ||
-          isSupervisorHead ||
-          isAdmin;
+          row.status !== "Confirmed";
         return (
           <input
             type="number"
@@ -2157,10 +2163,12 @@ const BookServicesLayer = () => {
       name: "GST %",
       cell: (row, index) => {
         if (row.isInclude) return null;
+        // const canModify =
+        //   row.status !== "Confirmed" ||
+        //   isSupervisorHead ||
+        //   isAdmin;
         const canModify =
-          row.status !== "Confirmed" ||
-          isSupervisorHead ||
-          isAdmin;
+          row.status !== "Confirmed";
         return (
           <input
             type="number"
@@ -2248,10 +2256,12 @@ const BookServicesLayer = () => {
       name: "GST Amt",
       cell: (row, index) => {
         if (row.isInclude) return null;
+        // const canModify =
+        //   row.status !== "Confirmed" ||
+        //   isSupervisorHead ||
+        //   isAdmin;
         const canModify =
-          row.status !== "Confirmed" ||
-          isSupervisorHead ||
-          isAdmin;
+          row.status !== "Confirmed";
         return (
           <input
             type="number"
@@ -2337,10 +2347,12 @@ const BookServicesLayer = () => {
           name: "Company %",
           cell: (row, index) => {
             if (row.isInclude) return null;
+            // const canModify =
+            //   row.status !== "Confirmed" ||
+            //   isSupervisorHead ||
+            //   isAdmin;
             const canModify =
-              row.status !== "Confirmed" ||
-              isSupervisorHead ||
-              isAdmin;
+          row.status !== "Confirmed";
             return (
               <input
                 type="number"
@@ -2394,10 +2406,12 @@ const BookServicesLayer = () => {
           name: "% Amount",
           cell: (row, index) => {
             if (row.isInclude) return null;
+            // const canModify =
+            //   row.status !== "Confirmed" ||
+            //   isSupervisorHead ||
+            //   isAdmin;
             const canModify =
-              row.status !== "Confirmed" ||
-              isSupervisorHead ||
-              isAdmin;
+          row.status !== "Confirmed";
             return (
               <input
                 type="number"
