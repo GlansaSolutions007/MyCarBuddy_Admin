@@ -1078,6 +1078,10 @@ const LeadViewLayer = () => {
                             showFollowUpRequiredAlert();
                             return;
                           }
+                          if (!isAddressPresent) {
+                            showAddressRequiredAlert();
+                            return;
+                          }
                           setAssignModalOpen(true);
                         }}
                       >
