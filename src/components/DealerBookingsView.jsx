@@ -404,13 +404,13 @@ const DealerBookingsView = () => {
         return Swal.fire({
           icon: "warning",
           title: "Add Service Amount",
-          text: "Please add service amount, then approve this service.",
+          text: "Please Add Service Amount, Then Approve This Service.",
         });
       }
 
       const confirmApprove = await Swal.fire({
         title: "Are You Sure?",
-        text: "Do you want to approve this Service?",
+        text: "Do You Want To Approve This Service?",
         icon: "question",
         showCancelButton: true,
         confirmButtonText: "Yes",
@@ -426,11 +426,11 @@ const DealerBookingsView = () => {
       const { value: reason } = await Swal.fire({
         title: "Are You Sure?",
         input: "textarea",
-        inputLabel: "Reason for rejection",
-        inputPlaceholder: "Enter the reason for rejecting this item...",
+        inputLabel: "Reason For Rejection",
+        inputPlaceholder: "Enter the reason for rejecting this Service...",
         inputValidator: (value) => {
           if (!value || !value.trim()) {
-            return "Please provide a reason for rejection.";
+            return "Please Provide A Reason For Rejection.";
           }
         },
         showCancelButton: true,
@@ -479,7 +479,7 @@ const DealerBookingsView = () => {
       if (response.status === 200 || response.status === 201) {
         Swal.fire(
           "Success",
-          `Item ${action === "approve" ? "approved" : "rejected"} successfully`,
+          `Service ${action === "approve" ? "Approved" : "Rejected"} Successfully`,
           "success",
         );
         // Refresh the data
@@ -1050,7 +1050,7 @@ const DealerBookingsView = () => {
                     handleDealerApproveReject(row.addedItemsIndex, "approve")
                   }
                   disabled={!hasAmountEnteredForRow(row)}
-                  title={hasAmountEnteredForRow(row) ? "Accept" : "Enter amount to enable"}
+                  title={hasAmountEnteredForRow(row) ? "Accept Service" : "Enter amount to enable"}
                 >
                   <Icon icon="mingcute:check-line" />
                 </button>
@@ -1059,7 +1059,7 @@ const DealerBookingsView = () => {
                   onClick={() =>
                     handleDealerApproveReject(row.addedItemsIndex, "reject")
                   }
-                  title="Reject"
+                  title="Reject Service"
                 >
                   <Icon icon="mingcute:close-line" />
                 </button>

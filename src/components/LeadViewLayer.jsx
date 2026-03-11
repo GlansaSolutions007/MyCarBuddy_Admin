@@ -2067,6 +2067,7 @@ const LeadViewLayer = () => {
             <label className="form-label fw-semibold">Select Supervisor</label>
             <Select
               options={supervisorHeads}
+              isDisabled={!selectedArea}
               value={selectedSupervisorHead}
               onChange={setSelectedSupervisorHead}
               placeholder="Select Supervisor"

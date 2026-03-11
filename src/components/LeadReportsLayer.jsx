@@ -186,12 +186,6 @@ const LeadReportsLayer = () => {
       sortable: true,
       width: "130px",
     },
-    {
-      name: "Yet to Call",
-      selector: (row) => row.NoFollowUpYet,
-      sortable: true,
-      width: "130px",
-    },
      {
       name: "Interested",
       selector: (row) => row.Interested,
@@ -245,6 +239,12 @@ const LeadReportsLayer = () => {
       selector: (row) => row.NumberDoesNotExist,
       width: "140px",
       sortable: true,
+    },
+    {
+      name: "Yet to Call",
+      selector: (row) => row.NoFollowUpYet,
+      sortable: true,
+      width: "130px",
     },
     ...(hasPermission("empleadsreport_view")
       ? [
