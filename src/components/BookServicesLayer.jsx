@@ -1257,7 +1257,130 @@ const BookServicesLayer = () => {
       Swal.fire("Error", "Failed to save changes", "error");
     }
   };
+//  const handleDealerApproveReject = async (index, action) => {
+//     const item = addedItems[index];
 
+//     if (!item._apiId) {
+//       return Swal.fire("Error", "Service ID not found", "error");
+//     }
+
+//       const rejectionReason = reason.trim();
+
+
+//     const type =
+//       item.status?.toLowerCase() === "confirmed" ? "AddOn" : "TempAddon";
+
+//     const requestBody = {
+//       ids: item._apiId.toString(),
+//       type: type,
+//       status: 'discard',
+//       dealerId: item.dealerID,
+//       createdBy: userId,
+//     };
+
+//     try {
+//       const response = await axios.post(
+//         `${API_BASE}Dealer/DealerApproveBookingBulk`,
+//         requestBody,
+//         {
+//           headers: {
+//             "Content-Type": "application/json",
+//             Authorization: `Bearer ${token}`,
+//           },
+//         },
+//       );
+
+//       if (response.status === 200 || response.status === 201) {
+//         Swal.fire(
+//           "Success",
+//           `Item ${action === "approve" ? "approved" : "rejected"} successfully`,
+//           "success",
+//         );
+//         // Refresh the data
+//         await fetchBookingData();
+//       }
+//     } catch (err) {
+//       console.error(err);
+//       Swal.fire(
+//         "Error",
+//         err.response?.data?.message || `Failed to ${action} item`,
+//         "error",
+//       );
+//     }
+//   };
+ const handleDiscardItem = (index) => {
+    // NEW CONDITION: Check if only one service exists
+
+
+    const item = addedItems[index];
+    // Swal.fire({
+    //   title: "Are you sure?",
+    //   text: "Do you want to discard this service?",
+    //   icon: "warning",
+    //   showCancelButton: true,
+    //   confirmButtonText: "Yes, Discard",
+    // }).then(async (result) => {
+    //   if (!result.isConfirmed) return;
+
+    Swal.fire({
+  title: "Discard Service",
+  text: "Please enter the reason for discarding this service.",
+  icon: "warning",
+  input: "textarea",
+  inputPlaceholder: "Enter discard reason...",
+  inputAttributes: {
+    "aria-label": "Discard reason",
+  },
+  showCancelButton: true,
+  confirmButtonText: "Yes, Discard",
+  cancelButtonText: "Cancel",
+  inputValidator: (value) => {
+    if (!value) {
+      return "Discard reason is required!";
+    }
+  },
+}).then(async (result) => {
+      if (!result.isConfirmed) return;
+      const type =
+      item.status?.toLowerCase() === "confirmed" ? "AddOn" : "TempAddon";
+        const discardReason = result.value;
+      const requestBody = {
+        ids: item._apiId.toString(),
+        type: type,
+        status: 'Discard',
+        dealerId: item.dealerID,
+        createdBy: userId,
+        reason:discardReason
+      };
+
+      // CASE 1: DELETE FROM API (existing booking item)
+      if (item._apiId) {
+        try {
+          const response = await axios.post(
+            `${API_BASE}Dealer/DealerApproveBookingBulk`,
+            requestBody,
+            {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            }
+          );
+
+          if (response.status === 200) {
+            Swal.fire("Deleted!", "Service removed successfully.", "success");
+            const next = addedItems.filter((_, i) => i !== index);
+            setAddedItems(next);
+            setInitialItemsSnapshot(buildSnapshot(next));
+          }
+        } catch (err) {
+          console.error(err);
+          Swal.fire("Error", "Failed to delete service from server", "error");
+        }
+        return;
+      }
+      // CASE 2: DELETE LOCAL UNSAVED ITEM
+      setAddedItems((prev) => prev.filter((_, i) => i !== index));
+      Swal.fire("Discard", "Service discarded successfully.", "success");
+    });
+  };
   const handleRemoveItem = (index) => {
     // NEW CONDITION: Check if only one service exists
     if (addedItems.length === 1) {
@@ -1270,13 +1393,33 @@ const BookServicesLayer = () => {
     }
 
     const item = addedItems[index];
+    // Swal.fire({
+    //   title: "Are you sure?",
+    //   text: "Do you want to discard this service?",
+    //   icon: "warning",
+    //   showCancelButton: true,
+    //   confirmButtonText: "Yes, Discard",
+    // }).then(async (result) => {
+    //   if (!result.isConfirmed) return;
+
     Swal.fire({
-      title: "Are you sure?",
-      text: "Do you want to remove this service?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Yes, remove",
-    }).then(async (result) => {
+  title: "Discard Service",
+  text: "Please enter the reason for discarding this service.",
+  icon: "warning",
+  input: "textarea",
+  inputPlaceholder: "Enter discard reason...",
+  inputAttributes: {
+    "aria-label": "Discard reason",
+  },
+  showCancelButton: true,
+  confirmButtonText: "Yes, Discard",
+  cancelButtonText: "Cancel",
+  inputValidator: (value) => {
+    if (!value) {
+      return "Discard reason is required!";
+    }
+  },
+}).then(async (result) => {
       if (!result.isConfirmed) return;
 
       // CASE 1: DELETE FROM API (existing booking item)
@@ -1290,7 +1433,7 @@ const BookServicesLayer = () => {
           );
 
           if (response.status === 200) {
-            Swal.fire("Deleted!", "Service removed successfully.", "success");
+            Swal.fire("Deleted!", "Service Discard Successfully.", "success");
             const next = addedItems.filter((_, i) => i !== index);
             setAddedItems(next);
             setInitialItemsSnapshot(buildSnapshot(next));
@@ -2651,13 +2794,14 @@ const BookServicesLayer = () => {
         return !row.isInclude ? (
           <div className="d-flex gap-2">
             {/* Delete */}
-            {canModify && (
+            {row.isDealer_Confirm == 'Approved' && (
               <button
                 className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                onClick={() => handleRemoveItem(row.addedItemsIndex)}
-                title="Delete"
+                onClick={() => handleDiscardItem(row.addedItemsIndex)}
+                title="Discard"
               >
-                <Icon icon="mingcute:delete-2-line" />
+                <Icon icon="mdi:close-circle-outline" />
+                {/* <Icon icon="mingcute:delete-2-line" /> */}
               </button>
             )}
           </div>
@@ -3175,7 +3319,7 @@ const BookServicesLayer = () => {
                       className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
                       onClick={handleAddOrSave}
                     >
-                      Add Item
+                      Add Service
                     </button>
                   </div>
                 </div>

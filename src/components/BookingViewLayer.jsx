@@ -2576,10 +2576,22 @@ const BookingViewLayer = () => {
                   ) && (
                       <Link
                         to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
-                        className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
-                        title="Add"
+                        className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
+                        // title="Add"
+                         title={
+                          roleName === "Field Advisor"
+                            ? "Assign Dealers"
+                            : roleName === "Supervisor Head"
+                            ? "Confirm Services"
+                            : "Confirm Services"
+                        }
                       >
-                        Add / Edit Services
+                       <Icon icon="mdi:pencil-outline" />
+                        {roleName === "Field Advisor"
+                          ? "Assign Dealers"
+                          : roleName === "Supervisor Head"
+                          ? "Confirm Services"
+                          : "Confirm Services"}
                       </Link>
                     )}
 
