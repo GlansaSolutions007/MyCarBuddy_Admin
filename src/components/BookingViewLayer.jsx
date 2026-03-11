@@ -1704,9 +1704,9 @@ const BookingViewLayer = () => {
         .map((item) => item?.ServiceName || item?.Description || "Service")
         .filter(Boolean);
       Swal.fire({
-        icon: "error",
-        title: "Dealer required",
-        html: `Please select a dealer for all services before confirmation.<br/><br/><strong>Missing dealer for:</strong><br/>${names.join("<br/>")}`,
+        icon: "warning",
+        title: "Dealer Selection Required",
+        html: `Please select dealers for all services before confirmation.<br/><br/><strong>Dealer selection missing  for below services:</strong><br/><br/>${names.join("<br/>")}`,
       });
       return;
     }
@@ -2568,6 +2568,20 @@ const BookingViewLayer = () => {
                   >
                     View Lead
                   </Link>
+                  {!(
+                    bookingData?.BookingStatus === "Completed" &&
+                    bookingData?.Payments?.length > 0 &&
+                    bookingData?.Payments?.[bookingData.Payments.length - 1]
+                      ?.PaymentStatus === "Success"
+                  ) && (
+                      <Link
+                        to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
+                        className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
+                        title="Add"
+                      >
+                        Add / Edit Services
+                      </Link>
+                    )}
 
                   {/* Reschedule & Reassign Buttons */}
                   {bookingData &&
@@ -2610,20 +2624,7 @@ const BookingViewLayer = () => {
                         )}
                       </div>
                     )}
-                  {!(
-                    bookingData?.BookingStatus === "Completed" &&
-                    bookingData?.Payments?.length > 0 &&
-                    bookingData?.Payments?.[bookingData.Payments.length - 1]
-                      ?.PaymentStatus === "Success"
-                  ) && (
-                      <Link
-                        to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
-                        className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
-                        title="Add"
-                      >
-                        Add / Edit Services
-                      </Link>
-                    )}
+                  
 
 
                 </li>

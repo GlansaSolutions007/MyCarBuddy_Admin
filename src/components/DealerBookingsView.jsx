@@ -332,7 +332,7 @@ const DealerBookingsView = () => {
     const item = addedItems[index];
     Swal.fire({
       title: "Are you sure?",
-      text: "Do you want to remove this item?",
+      text: "Do you want to remove this Service?",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Yes, remove",
@@ -349,7 +349,7 @@ const DealerBookingsView = () => {
           );
 
           if (response.status === 200) {
-            Swal.fire("Deleted!", "Item removed successfully.", "success");
+            Swal.fire("Deleted!", "Service removed successfully.", "success");
             setAddedItems((prev) => prev.filter((_, i) => i !== index));
           }
         } catch (err) {
@@ -395,7 +395,7 @@ const DealerBookingsView = () => {
     const item = addedItems[index];
 
     if (!item._apiId) {
-      return Swal.fire("Error", "Item ID not found", "error");
+      return Swal.fire("Error", "Service ID not found", "error");
     }
 
     if (action?.toLowerCase() === "approve") {
@@ -409,8 +409,8 @@ const DealerBookingsView = () => {
       }
 
       const confirmApprove = await Swal.fire({
-        title: "Are you sure?",
-        text: "Do you want to approve this item?",
+        title: "Are You Sure?",
+        text: "Do you want to approve this Service?",
         icon: "question",
         showCancelButton: true,
         confirmButtonText: "Yes",
@@ -424,7 +424,7 @@ const DealerBookingsView = () => {
     let rejectionReason = null;
     if (action?.toLowerCase() === "reject") {
       const { value: reason } = await Swal.fire({
-        title: "Are you sure?",
+        title: "Are You Sure?",
         input: "textarea",
         inputLabel: "Reason for rejection",
         inputPlaceholder: "Enter the reason for rejecting this item...",
@@ -611,7 +611,13 @@ const DealerBookingsView = () => {
             min={1}
             placeholder="1"
             value={row.quantity === "" ? "" : row.quantity}
-            disabled={row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted" || row.isDealer_Confirm?.toString().trim().toLowerCase() === "approved"}
+            // disabled={row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted" || row.isDealer_Confirm?.toString().trim().toLowerCase() === "approved"}
+            disabled
+            // style={{
+            //   backgroundColor: "#e9ecef",
+            //   cursor: "not-allowed",
+            //   opacity: 1
+            // }}
             onChange={(e) => {
               const val = e.target.value;
               markRowAmountEntered(row.addedItemsIndex);
@@ -893,7 +899,13 @@ const DealerBookingsView = () => {
             className="form-control form-control-sm"
             min={0}
             placeholder="0"
-            disabled={row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted" || row.isDealer_Confirm?.toString().trim().toLowerCase() === "approved"}
+            // disabled={row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted" || row.isDealer_Confirm?.toString().trim().toLowerCase() === "approved"}
+            disabled
+            // style={{
+            //   backgroundColor: "#e9ecef",
+            //   cursor: "not-allowed",
+            //   fontWeight: "600",
+            // }}
             value={row.gstPrice === "" || row.gstPrice === 0 ? "" : (row.gstPrice !== null && row.gstPrice !== undefined && row.gstPrice !== "" ? Number(row.gstPrice).toFixed(2) : "")}
             onChange={(e) => {
               const val = e.target.value;
@@ -1003,7 +1015,13 @@ const DealerBookingsView = () => {
             type="number"
             className="form-control form-control-sm"
             value={total.toFixed(2)}
-            disabled={row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted" || row.isDealer_Confirm?.toString().trim().toLowerCase() === "approved"}
+            // disabled={row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted" || row.isDealer_Confirm?.toString().trim().toLowerCase() === "approved"}
+            disabled
+            // style={{
+            //   backgroundColor: "#e9ecef",
+            //   cursor: "not-allowed",
+            //   fontWeight: "600",
+            // }}
           />
         );
       },

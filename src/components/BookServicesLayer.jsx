@@ -248,7 +248,8 @@ const BookServicesLayer = () => {
       const now = new Date();
       const currentTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
       return timeSlots.filter((slot) => {
-        const slotEnd = (slot.EndTime || slot.StartTime || "23:59").substring(0, 5);
+        // const slotEnd = (slot.EndTime || slot.StartTime || "23:59").substring(0, 5);
+        const slotEnd = (slot.StartTime || "23:59").substring(0, 5);
         return slotEnd > currentTimeStr;
       });
     }
@@ -643,27 +644,27 @@ const BookServicesLayer = () => {
   };
 
   const handleAddOrSave = async () => {
-    if (!name.trim()) return Swal.fire("Please enter name");
     if (itemType === "Service" && !selectedIncludes)
-      return Swal.fire("Please select service");
+      return Swal.fire("Service Name Required", "Please select a service.",);
     if (itemType === "Spare Part" && !name.trim())
-      return Swal.fire("Please enter spare part name");
+      return Swal.fire("Spare Part Name Required", "Please enter the spare part name.");
     if (!quantity || quantity < 1)
-      return Swal.fire("Quantity must be at least 1");
+      return Swal.fire("Invalid Quantity", "Quantity must be at least 1.");
     if (itemType === "Package" && !selectedPackage)
-      return Swal.fire("Please select package");
+      return Swal.fire("Package Required", "Please select a service package.");
     if (
       itemType === "Package" &&
       selectedPackage &&
       !isExistingPackage &&
       (!selectedIncludes || selectedIncludes.length === 0)
     )
-      return Swal.fire("Please select at least one include for the package");
+      return Swal.fire("Service Selection Required", "Please select at least one include for the package");
     if (
       itemType === "Service Group" &&
       (!selectedServices || selectedServices.length === 0)
     )
-      return Swal.fire("Please select at least one service for service group");
+      return Swal.fire("Service Selection Required","Please select at least one service for service group");
+    if (!name.trim()) return Swal.fire("Service Selection Required", "Please select a service.",);
 
     // ⭐ CASE: Create NEW package before adding item
     let finalPackageId = selectedPackage;
@@ -1157,7 +1158,7 @@ const BookServicesLayer = () => {
         );
       }
       if (!skipSuccessSwal) {
-        Swal.fire("Saved", "All items updated successfully", "success");
+        Swal.fire("Saved", "All Services updated successfully", "success");
       }
       // 👇 Navigate using bookingId
       // navigate(`/booking-view/${addedItems[0]?._bookingId}`);
@@ -1250,7 +1251,7 @@ const BookServicesLayer = () => {
         prev.map((r, i) => (i === index ? { ...r, isEditing: false } : r)),
       );
 
-      Swal.fire("Saved", "Item updated successfully", "success");
+      Swal.fire("Saved", "service updated successfully", "success");
     } catch (err) {
       console.error(err);
       Swal.fire("Error", "Failed to save changes", "error");
@@ -1261,9 +1262,9 @@ const BookServicesLayer = () => {
     // NEW CONDITION: Check if only one service exists
     if (addedItems.length === 1) {
       Swal.fire({
-        icon: "error",
-        title: "Cannot Delete",
-        text: "Single service cannot be deleted. At least one service is required.",
+        icon: "warning",
+        title: "Can't Delete Service",
+        text: "At least one service must remain in the booking. You cannot delete all services.",
       });
       return; // Exit the function early
     }
@@ -1271,7 +1272,7 @@ const BookServicesLayer = () => {
     const item = addedItems[index];
     Swal.fire({
       title: "Are you sure?",
-      text: "Do you want to remove this item?",
+      text: "Do you want to remove this service?",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Yes, remove",
@@ -1289,26 +1290,26 @@ const BookServicesLayer = () => {
           );
 
           if (response.status === 200) {
-            Swal.fire("Deleted!", "Item removed successfully.", "success");
+            Swal.fire("Deleted!", "Service removed successfully.", "success");
             const next = addedItems.filter((_, i) => i !== index);
             setAddedItems(next);
             setInitialItemsSnapshot(buildSnapshot(next));
           }
         } catch (err) {
           console.error(err);
-          Swal.fire("Error", "Failed to delete item from server", "error");
+          Swal.fire("Error", "Failed to delete service from server", "error");
         }
         return;
       }
       // CASE 2: DELETE LOCAL UNSAVED ITEM
       setAddedItems((prev) => prev.filter((_, i) => i !== index));
-      Swal.fire("Removed", "Item removed", "success");
+      Swal.fire("Removed", "Service removed successfully.", "success");
     });
   };
 
   const handleCombinedSubmit = async () => {
     if (addedItems.length === 0) {
-      return Swal.fire("Error", "No items to submit", "error");
+      return Swal.fire("Error", "No services to submit", "error");
     }
 
     const hasApiItems = addedItems.some((item) => item._apiId);
@@ -1333,11 +1334,14 @@ const BookServicesLayer = () => {
         icon: "success",
         title: "Success!",
         text: "Services have been successfully added to this booking.",
-      }).then(() => {
-        if (hasNewItems) {
-          navigate(-1);
-        }
-      });
+        }).then(() => {
+            navigate(-1);
+          });
+      // }).then(() => {
+      //   if (hasNewItems) {
+      //     navigate(-1);
+      //   }
+      // });
     } catch (err) {
       console.error(err);
       Swal.fire("Error", err.response?.data?.message || "Failed to save changes", "error");
@@ -1376,7 +1380,7 @@ const BookServicesLayer = () => {
 
   const handleSubmit = async (skipSuccessSwal = false) => {
     if (addedItems.length === 0) {
-      await Swal.fire("Error", "No items to submit", "error");
+      await Swal.fire("Error", "No service to submit", "error");
       return false;
     }
     if (!leadId) {
@@ -1765,7 +1769,7 @@ const BookServicesLayer = () => {
     if (ids.length === 0) {
       return Swal.fire(
         "No Items",
-        "Please submit booking before confirming.",
+        "Please submit all services before confirming.",
         "warning",
       );
     }
@@ -1781,7 +1785,7 @@ const BookServicesLayer = () => {
       return Swal.fire({
         icon: "info",
         title: "Dealer Selection Required",
-        html: `Please select dealers for all addon services.<br/><br/>Missing dealers for: <strong>${serviceNames.join(", ")}</strong>`,
+        html: `Please select dealers for all services.<br/><br/>Dealer selection missing  for below services: <strong>${serviceNames.join(", ")}</strong>`,
       });
     }
 
@@ -2269,7 +2273,8 @@ const BookServicesLayer = () => {
             min={0}
             placeholder="0"
             value={row.gstPrice === "" || row.gstPrice === 0 ? "" : row.gstPrice}
-            disabled={!canModify}
+            disabled
+            // disabled={!canModify}
             onChange={(e) => {
               const val = e.target.value;
               if (val === "") {
@@ -3092,7 +3097,7 @@ const BookServicesLayer = () => {
                           setSelectedIncludes(selected.map((s) => Number(s.value)));
                         }}
                         components={{ Option: CheckboxOption }}
-                        placeholder="Select items included in package"
+                        placeholder="Select Service included in package"
                       />
                     </div>
                   )}
