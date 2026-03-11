@@ -194,7 +194,9 @@ const BookingLayer = () => {
     setSelectedTechnician(null);
     setSelectedSupervisor(null); // Reset supervisor selection
     setSelectedFieldAdvisor(null); // Reset field advisor selection
-    setAssignType("fieldAdvisor"); // Default to Field Advisor when opening modal
+    if (booking.FieldAdvisorName) {
+      setAssignType("fieldAdvisor");
+    } // Default to Field Advisor when opening modal
 
     const slots = booking.TimeSlot?.split(",").map((s) => s.trim()) || [];
     if (slots.length === 1) {
@@ -634,7 +636,7 @@ const BookingLayer = () => {
                 (row.SupervisorID !== null &&
                   row.SupervisorID !== 0 &&
                   roleId === "8")) && ( */}
-            {(role === "Admin" || roleName === "Supervisor Head" || roleName === "Field Advisor") &&
+            {(role === "Admin" || roleName === "Supervisor Head") &&
               !(
                 row.BookingStatus === "Completed" &&
                 row.PaymentStatus === "Success"
@@ -642,7 +644,7 @@ const BookingLayer = () => {
                 <Link
                   onClick={() => handleAssignClick(row)}
                   className="w-32-px h-32-px bg-warning-focus text-warning-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                  title="Assign"
+                 title={row.FieldAdvisorName ? "Reassign" : "Assign"}
                 >
                   <Icon icon="mdi:account-cog-outline" />
                 </Link>
@@ -657,6 +659,16 @@ const BookingLayer = () => {
 
   // Filter columns based on role - hide Amount, Cust. Name, Booking Status, Payment Status for Dealer
   const columns = allColumns.filter((col) => {
+
+  // Hide Supervisor column for Supervisor Head
+  if (roleName === "Supervisor Head" && col.name === "Supervisor") {
+    return false;
+  }
+
+   // Hide Supervisor column for Supervisor Head
+  if (roleName === "Field Advisor" && col.name === "Field Advisor") {
+    return false;
+  }
   // 👇 Show this column ONLY for Dealer
   if (["Reg. Number", "Car Brand/Model", "Car YOP", "Fuel Type"].includes(col.name)) {
     return role === "Dealer";
@@ -862,7 +874,7 @@ const BookingLayer = () => {
           >
             <div className="modal-content">
               <div className="modal-header">
-                <h6 className="modal-title">Assign</h6>
+                <h6 className="modal-title w-100 text-center">{selectedBooking?.FieldAdvisorName ? "Reassign" : "Assign"}</h6>
                 <button
                   type="button"
                   className="btn-close"
