@@ -4805,7 +4805,7 @@ const BookingViewLayer = () => {
                           Processing...
                         </>
                       ) : (
-                        "Confirm Payment"
+                        "Confirm Payment Link"
                       )}
                     </button>
                   </div>

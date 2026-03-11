@@ -361,6 +361,8 @@ const MasterLayout = ({ children }) => {
           timestamp:
             n.timestamp ||
             n.Timestamp ||
+            n.createdDate ||
+            n.CreatedDate ||
             n.createdAt ||
             n.CreatedAt ||
             new Date().toISOString(),
