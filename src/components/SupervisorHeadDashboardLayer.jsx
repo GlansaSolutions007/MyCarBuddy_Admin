@@ -75,6 +75,21 @@ const SupervisorHeadDashboardLayer = () => {
     navigate(`/bookings/${encodedStatus}`);
   };
 
+  const groupedBookings = Object.values(
+    notConfirmedBookings.reduce((acc, booking) => {
+      if (!acc[booking.BookingId]) {
+        acc[booking.BookingId] = {
+          ...booking,
+          services: [],
+        };
+      }
+
+      acc[booking.BookingId].services.push(booking.ServiceName);
+
+      return acc;
+    }, {})
+  );
+
   return (
     <div className="row gy-3">
       <div className="col-12">
@@ -221,26 +236,27 @@ const SupervisorHeadDashboardLayer = () => {
                 </div>
 
                 <span className="badge bg-danger-focus text-danger-main px-3 py-2 fs-12 fw-semibold">
-                  {notConfirmedBookings.length} Actions Required
+                  {groupedBookings.length} Actions Required
                 </span>
               </div>
 
               {/* Cards */}
               <div className="row gy-4">
                 {notConfirmedBookings.length > 0 ? (
-                  notConfirmedBookings.map((booking) => (
+                  groupedBookings.map((booking) => (
                     <div className="col-xxl-4 col-lg-6 col-md-6" key={booking.Id}>
 
                       <div
                         className="card h-100 border-0 shadow-sm"
                         style={{
                           borderRadius: "14px",
-                          transition: "all .3s ease"
+                          transition: "all .3s ease",
+                          backgroundColor: "#f0e9e9"
                         }}
                       >
 
                         {/* Card Header */}
-                        <div className="card-header bg-light border-0 d-flex justify-content-between align-items-center px-3 py-2">
+                        <div className="card-header border-0 d-flex justify-content-between align-items-center px-3 py-2" style={{backgroundColor: "#cccccc"}} >
                           <span className="text-xs fw-semibold text-muted py-4 ">
                             Booking ID: {booking.BookingTrackID}
                           </span>
@@ -259,13 +275,36 @@ const SupervisorHeadDashboardLayer = () => {
                         <div className="card-body p-3">
 
                           {/* Service Name */}
-                          <h6
-                            className="fw-semibold text-dark mb-2 text-truncate"
-                            title={booking.ServiceName}
-                          >
-                            {booking.ServiceName}
-                          </h6>
+                          <div className="mb-3">
+                            <div className="dropdown">
+                              <button
+                                className="btn btn-light btn-sm w-100 d-flex justify-content-between align-items-center"
+                                type="button"
+                                data-bs-toggle="dropdown"
+                                style={{
+                                  padding: "4px 10px",   // reduces height
+                                  fontSize: "13px",      // smaller text
+                                  minHeight: "28px"      // optional fixed small height
+                                }}
+                              >
+                                <span className="text-start">Services ({booking.services.length})</span>
+                                <Icon icon="mdi:chevron-down" />
+                              </button>
 
+                              <ul className="dropdown-menu w-100 shadow-sm">
+                                {booking.services.map((service, index) => (
+                                  <li key={index}>
+                                    <span
+                                      className="dropdown-item text-sm text-wrap bg-light"
+                                      style={{ whiteSpace: "normal", padding: "8px 16px" }}
+                                    >
+                                      <strong>{index + 1}.</strong> {service}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
                           {/* Lead + Date */}
                           <div className="d-flex align-items-center gap-3 mb-3">
 
@@ -284,7 +323,7 @@ const SupervisorHeadDashboardLayer = () => {
                           </div>
 
                           {/* Stats Box */}
-                          <div
+                          {/* <div
                             className="d-flex justify-content-between bg-light rounded-3 p-1 mb-3"
                           >
                             <div className="text-center border-end flex-fill">
@@ -304,17 +343,18 @@ const SupervisorHeadDashboardLayer = () => {
                                 {booking.AssignStatus}
                               </h6>
                             </div>
-                          </div>
+                          </div> */}
 
                           {/* Action Button */}
                           <button
-                            className="btn btn-secondary w-100 d-flex align-items-center justify-content-center gap-2"
+                            className="btn btn-warning w-100 d-flex align-items-center justify-content-center gap-2"
                             onClick={() => handleViewBooking(booking.BookingId)}
                             style={{
                               borderRadius: "8px",
                               fontWeight: "700",
                               padding: "4px 10px",   // reduce height
-                              fontSize: "13px"       // optional: smaller text
+                              fontSize: "13px",       // optional: smaller text
+                              color: "black"
                             }}
                           >
                             <Icon icon="solar:check-circle-bold" />

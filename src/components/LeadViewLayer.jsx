@@ -603,6 +603,21 @@ const LeadViewLayer = () => {
   // Handle Submit Car Details
   const handleSubmitCarDetails = async () => {
     if (!lead) return;
+
+    // Validation
+    if (!carBrand) {
+      return Swal.fire("Error", "Please select Car Brand", "error");
+    }
+    if (!carModel) {
+      return Swal.fire("Error", "Please select Car Model", "error");
+    }
+    if (!carFuelType) {
+      return Swal.fire("Error", "Please select Fuel Type", "error");
+    }
+    if (!carYearOfPurchase) {
+      return Swal.fire("Error", "Please select Year of Purchase", "error");
+    }
+
     const payload = {
       Id: lead.Id,
       RegistrationNumber: carRegistrationNumber,
@@ -647,6 +662,18 @@ const LeadViewLayer = () => {
   // Handle Submit Personal Information
   const handleSubmitPersonalInfo = async () => {
     if (!lead) return;
+
+    // Email validation regex
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    // Check email format
+    if (personalEmail && !emailPattern.test(personalEmail)) {
+      return Swal.fire({
+        icon: "error",
+        title: "Invalid Email",
+        text: "Please enter a valid email address.",
+      });
+    }
 
     const payload = {
       Id: lead.Id,
@@ -1000,7 +1027,7 @@ const LeadViewLayer = () => {
                   </li>
                   <li className="d-flex align-items-center gap-1 mb-12">
                     <span className="w-30 text-md fw-semibold text-primary-light">
-                      Car Reg. Number
+                      Car Reg. No.
                     </span>
                     <span className="w-70 text-secondary-light fw-medium">
                       :{" "}
@@ -1041,7 +1068,7 @@ const LeadViewLayer = () => {
                   </li>
                   <li className="d-flex align-items-center gap-1 mb-12">
                     <span className="w-30 text-md fw-semibold text-primary-light">
-                      Payment Amount
+                      Service Amount
                     </span>
                     <span className="w-70 text-secondary-light fw-medium">
                       : {lead?.PaymentAmount || "N/A"}
@@ -1495,7 +1522,7 @@ const LeadViewLayer = () => {
                             type="email"
                             className="form-control"
                             value={personalEmail}
-                            onChange={(e) => setPersonalEmail(e.target.value)}
+                            onChange={(e) => setPersonalEmail(e.target.value.trim().toLowerCase())}
                             disabled={isLeadClosed}
                           />
                         </div>

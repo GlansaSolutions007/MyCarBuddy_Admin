@@ -160,11 +160,11 @@ const AddLeadLayer = () => {
         throw new Error("Failed to submit lead");
       }
 
-      Swal.fire("Success", "Lead added successfully", "success").then(() =>
+      Swal.fire("Success", "Lead Generate Successfully", "success").then(() =>
         navigate("/organic-leads")
       );
     } catch (error) {
-      Swal.fire("Error", error.message || "Something went wrong", "error");
+      Swal.fire("Error", error.message || "Something Went Wrong", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -372,7 +372,7 @@ const AddLeadLayer = () => {
               className="btn btn-primary-600 radius-8 px-14 py-6 text-sm"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Submitting..." : "Save Lead"}
+              {isSubmitting ? "Submitting..." : "Create Lead"}
             </button>
           </div>
         </form>

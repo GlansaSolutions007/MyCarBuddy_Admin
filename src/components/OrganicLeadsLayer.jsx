@@ -814,7 +814,7 @@ const OrganicLeadsLayer = () => {
       selector: (row) => row.CreatedDate ? new Date(row.CreatedDate).toLocaleString("en-GB") : "-",
       sortable: true,
       sortField: "CreatedDate",
-      width: "150px",
+      width: "160px",
     },
     // {
     //   name: "Assigned Date",
@@ -839,11 +839,11 @@ const OrganicLeadsLayer = () => {
     //   sortable: true,
     //   width: "150px",
     // },
-    { name: "Updated Date", selector: (row) => row.Updated_At ? new Date(row.Updated_At).toLocaleString("en-GB") : "-", sortable: true, width: "180px" },
+    { name: "Updated Date", selector: (row) => row.Updated_At ? new Date(row.Updated_At).toLocaleString("en-GB") : "-", sortable: true, width: "160px" },
     { name: "City", selector: (row) => row.City || "-", sortable: true, width: "180px" },
     { name: "Platform", selector: (row) => row.Platform || "-", width: "120px" },
     {
-        name: "Head Assigned D/T",
+        name: "Head Assigned On",
         selector: (row) =>
         (
           <div>
@@ -862,7 +862,7 @@ const OrganicLeadsLayer = () => {
 
     ...(employeeData?.RoleName !== "Telecaller"
       ? [{
-      name: "Emp. Assigned D/T", selector: (row) => (
+      name: "Emp. Assigned On", selector: (row) => (
         <div>
           <div style={{ fontWeight: 600 }}>
             {row.EmployeeAssignName || "-"}

@@ -449,7 +449,7 @@ const MasterLayout = ({ children }) => {
 
       children: [
         {
-          title: "Organic Leads",
+          title: "All Leads",
           to: "/organic-leads",
           color: "text-success-main",
           permission: "organicleads_view",

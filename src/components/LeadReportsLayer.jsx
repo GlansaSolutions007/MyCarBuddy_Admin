@@ -162,13 +162,13 @@ const LeadReportsLayer = () => {
 
   const columns = [
     {
-      name: "Emp ID",
+      name: "Emp. ID",
       selector: (row) => row.EmpId,
       sortable: true,
       width: "100px",
     },
     {
-      name: "Emp Name",
+      name: "Emp. Name",
       selector: (row) => (
         <Link
           to={`/emp-leads-report/${row.EmpId}?fromDate=${fromDate}&toDate=${toDate}`}
@@ -178,30 +178,30 @@ const LeadReportsLayer = () => {
         </Link>
       ),
       sortable: true,
-      width: "150px",
+      width: "130px",
     },
     {
       name: "Total Leads",
       selector: (row) => row.TotalAssigned,
       sortable: true,
-      width: "140px",
+      width: "130px",
     },
     {
-      name: "No FollowUp",
+      name: "Yet to Call",
       selector: (row) => row.NoFollowUpYet,
       sortable: true,
-      width: "140px",
+      width: "130px",
+    },
+     {
+      name: "Interested",
+      selector: (row) => row.Interested,
+      width: "120px",
+      sortable: true,
     },
     {
       name: "Converted",
       selector: (row) => row.ConvertedCustomer,
-      width: "120px",
-      sortable: true,
-    },
-    {
-      name: "Interested",
-      selector: (row) => row.Interested,
-      width: "120px",
+      width: "130px",
       sortable: true,
     },
     {
@@ -223,7 +223,7 @@ const LeadReportsLayer = () => {
       sortable: true,
     },
     {
-      name: "Not Connected",
+      name: "Ringing No Answer",
       selector: (row) =>
         row.RingingButNotResponded +
         row.Busy +
@@ -232,7 +232,7 @@ const LeadReportsLayer = () => {
         row.TemporaryOutofService +
         row.DND,
       sortable: true,
-      width: "150px",
+      width: "160px",
     },
     {
       name: "Not Interested",
@@ -243,7 +243,7 @@ const LeadReportsLayer = () => {
     {
       name: "Doesn't Exist",
       selector: (row) => row.NumberDoesNotExist,
-      width: "150px",
+      width: "140px",
       sortable: true,
     },
     ...(hasPermission("empleadsreport_view")
