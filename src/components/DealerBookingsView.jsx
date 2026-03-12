@@ -92,8 +92,8 @@ const DealerBookingsView = () => {
   }
 
   const confirmResult = await Swal.fire({
-    title: "Mark Service as Completed?",
-    text: "Are you sure this service is completed?",
+    title: "Complete Service?",
+    text: "Are you sure you want to mark this service as completed?",
     icon: "question",
     showCancelButton: true,
     confirmButtonColor: "#28a745",

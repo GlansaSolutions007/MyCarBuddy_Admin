@@ -153,6 +153,10 @@ const BookingViewLayer = () => {
     Number(payAmount || 0) - Number(discountAmount || 0),
     0,
   );
+  const hideAllActions =
+  bookingData?.BookingStatus === "Completed" &&
+  bookingData?.Payments?.length > 0 &&
+  bookingData?.Payments?.[bookingData.Payments.length - 1]?.PaymentStatus === "Success";
   // State for dynamically adding services
   const [servicesToAdd, setServicesToAdd] = useState([
     {
@@ -1541,6 +1545,37 @@ const BookingViewLayer = () => {
     //   Swal.fire("Error", "Please check amount.", "error");
     //   return;
     // }
+    const zeroAmountServices = [
+  ...(bookingData?.BookingAddOns || []),
+  ...(bookingData?.SupervisorBookings || [])
+].filter((item) => {
+  const total =
+    Number(item.TotalPrice ??
+      (Number(item.Price || 0) +
+       Number(item.GSTAmount || 0) +
+       Number(item.LabourCharges || 0) -
+      Number(item.CouponAmount || 0)));
+
+  return total === 0;
+});
+
+  if (zeroAmountServices.length > 0) {
+
+  const serviceNames = zeroAmountServices
+    .map((s) => s.ServiceName || s.Name || "Unnamed Service")
+    .join("<br>");
+
+  Swal.fire({
+  icon: "warning",
+  title: "Invoice Cannot Be Generated",
+  html: `
+    Please update the price for the following services before generating the invoice:<br><br>
+    ${serviceNames}
+  `,
+});
+
+  return;
+}
     Swal.fire({
       title: name,
       html: "Do you want to <strong>generate a new invoice</strong> or <strong>view the existing invoice</strong>?",
@@ -1596,6 +1631,7 @@ const BookingViewLayer = () => {
       Swal.fire("Error", "Booking data not available.", "error");
       return;
     }
+
     try {
       const res = await axios.post(
         `${API_BASE}Leads/GenerateEstimationInvoice`,
@@ -1924,8 +1960,8 @@ const BookingViewLayer = () => {
             const paymentLink = onlineRes.data.paymentLinkUrl || onlineRes.data.paymentLinkUrl;
 
             Swal.fire({
-              title: "Payment Successful",
-              text: "Your payment Link has been send to customer email and phone number.",
+              title: "Payment Link Sent",
+              text: "Your payment link has been send to customer email and phone number.",
               icon: "success",
               confirmButtonText: "Ok",
             }).then(() => {
@@ -2568,12 +2604,13 @@ const BookingViewLayer = () => {
                   >
                     View Lead
                   </Link>
-                  {!(
+                  {/* {!(
                     bookingData?.BookingStatus === "Completed" &&
                     bookingData?.Payments?.length > 0 &&
                     bookingData?.Payments?.[bookingData.Payments.length - 1]
                       ?.PaymentStatus === "Success"
-                  ) && (
+                  ) && ( */}
+                  {!hideAllActions && (
                       <Link
                         to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
                         className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
@@ -2596,7 +2633,7 @@ const BookingViewLayer = () => {
                     )}
 
                   {/* Reschedule & Reassign Buttons */}
-                  {bookingData &&
+                  {bookingData && !hideAllActions &&
                     !["Completed", "Cancelled", "Refunded"].includes(
                       bookingData.BookingStatus,
                     ) && (
@@ -3625,7 +3662,7 @@ const BookingViewLayer = () => {
                                 <> */}
                                   <li className="list-group-item d-flex justify-content-between p-0">
                                     <span className="text-secondary">
-                                      Already Paid
+                                      Paid Amount
                                     </span>
                                     <span className="text-primary">
                                       - ₹{alreadyPaidDisplay.toFixed(2)}
@@ -3655,7 +3692,7 @@ const BookingViewLayer = () => {
                                   )}
                                   <li className="list-group-item d-flex justify-content-between border-top p-0">
                                     <span className="fw-bold text-dark">
-                                      Remaining Amount
+                                      Balance Amount
                                     </span>
                                     <span className="fw-bold text-success">
                                       ₹
@@ -3715,7 +3752,7 @@ const BookingViewLayer = () => {
                                 <div className="d-flex justify-content-center gap-2 mt-3 mb-3 flex-wrap">
 
                                   {/* Show Confirm Payment only if not paid */}
-                                  {showEnterPaymentButton && (
+                                  {showEnterPaymentButton && !hideAllActions && (
                                     <button
                                       className="btn btn-primary-600 btn-sm"
                                       onClick={() => {
@@ -3724,7 +3761,7 @@ const BookingViewLayer = () => {
                                         setShowPaymentModal(true);
                                       }}
                                     >
-                                      Enter Payment
+                                      Payment Options
                                     </button>
                                   )}
                                   {/* Assign Button - show only when BookingAddOns has at least one service */}
@@ -3735,21 +3772,24 @@ const BookingViewLayer = () => {
                                     ) &&
                                     bookingData?.BookingAddOns != null &&
                                     Array.isArray(bookingData.BookingAddOns) &&
-                                    bookingData.BookingAddOns.length > 0 && (
+                                    bookingData.BookingAddOns.length > 0 &&  !hideAllActions &&(
                                       <button
                                         className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center"
                                         onClick={handleInitialAssignClick}
+                                        
                                       >
                                         Service Assignment
                                       </button>
                                     )}
                                   {/* {showEstimationButton && ( */}
+                                  {!hideAllActions && (
                                   <button
                                     className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                                     onClick={() => showGenerateInvoiceConfirm("Generate Estimation Invoice", handleGenerateEstimationInvoice, "Estimation")}
                                   >
                                     Generate Estimation Invoice
                                   </button>
+                                  )}
                                   {/* )} */}
 
                                   {/* Final Invoice: show only after full payment is completed */}
@@ -4170,7 +4210,7 @@ const BookingViewLayer = () => {
                         <table className="table table-bordered table-hover align-middle mb-0" style={{ fontSize: "0.875rem", textAlign: "center" }}>
                           <thead style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
                             <tr>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textAlign: "center" }}>#</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textAlign: "center" }}>S.No</th>
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textAlign: "center" }}>Amount Paid</th>
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textAlign: "center" }}>Payment Mode</th>
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textAlign: "center" }}>Transaction ID</th>
@@ -4181,9 +4221,10 @@ const BookingViewLayer = () => {
                             </tr>
                           </thead>
                           <tbody>
-                            {(bookingData?.Payments ?? []).map((pay, idx) => (
+                            {(bookingData?.Payments ?? []).slice().reverse().map((pay, idx) => (
                               <tr key={pay.PaymentID ?? idx}>
-                                <td className="py-2 px-3">{pay.PaymentID ?? "—"}</td>
+                                {/* <td className="py-2 px-3">{pay.PaymentID ?? "—"}</td> */}
+                                <td className="py-2 px-3">{idx + 1}</td>
                                 <td className="py-2 px-3 fw-semibold">₹{(pay.AmountPaid ?? 0).toLocaleString("en-IN")}</td>
                                 <td className="py-2 px-3">{pay.PaymentMode ?? "—"}</td>
                                 <td className="py-2 px-3 text-nowrap" style={{ maxWidth: "180px" }} title={pay.TransactionID}>{pay.TransactionID ?? "—"}</td>
@@ -4244,7 +4285,7 @@ const BookingViewLayer = () => {
                         <table className="table table-bordered table-hover align-middle mb-0" style={{ fontSize: "0.875rem" }}>
                           <thead style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
                             <tr>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>#</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>S.No</th>
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Dealer Name</th>
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Service Name</th>
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Status</th>
@@ -4253,9 +4294,10 @@ const BookingViewLayer = () => {
                             </tr>
                           </thead>
                           <tbody>
-                            {(bookingData?.DealerAddOnApproval ?? []).map((item, idx) => (
+                            {(bookingData?.DealerAddOnApproval ?? []).slice().reverse().map((item, idx) => (
                               <tr key={item.Id ?? idx}>
-                                <td className="py-2 px-3">{item.Id ?? "—"}</td>
+                                {/* <td className="py-2 px-3">{item.Id ?? "—"}</td> */}
+                                <td className="py-2 px-3">{idx + 1}</td>
                                 <td className="py-2 px-3">{item.DealerName ?? "—"}</td>
                                 <td className="py-2 px-3 fw-semibold">{item.ServiceName ?? "—"}</td>
                                 <td className="py-2 px-3">
@@ -4327,7 +4369,7 @@ const BookingViewLayer = () => {
                         <table className="table table-bordered table-hover align-middle mb-0" style={{ fontSize: "0.875rem" }}>
                           <thead style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
                             <tr>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>#</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>S.No</th>
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Invoice No</th>
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Type</th>
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Total</th>
@@ -4339,9 +4381,9 @@ const BookingViewLayer = () => {
                             </tr>
                           </thead>
                           <tbody>
-                            {(bookingData?.Invoices ?? []).map((inv, idx) => (
+                            {(bookingData?.Invoices ?? []).slice().reverse().map((inv, idx) => (
                               <tr key={inv.InvoiceID ?? idx}>
-                                <td className="py-2 px-3">{inv.InvoiceID ?? "—"}</td>
+                                <td className="py-2 px-3">{idx + 1}</td>
                                 <td className="py-2 px-3 fw-semibold">{inv.InvoiceNumber ?? "—"}</td>
                                 <td className="py-2 px-3">
                                   <span
@@ -4575,7 +4617,7 @@ const BookingViewLayer = () => {
                   {/* Step 1: Choose payment type */}
                   {!paymentTypeChoice && (
                     <>
-                      <p className="text-muted small mb-3">Choose how you want to pay.</p>
+                      <p className="text-muted small mb-3">Choose Payment Type.</p>
                       <div className="d-flex flex-column gap-2">
                         <button
                           type="button"
@@ -4589,7 +4631,7 @@ const BookingViewLayer = () => {
                         >
                           <span className="d-flex align-items-center gap-2 fw-semibold text-dark">
                             <Icon icon="mdi:credit-card-outline" width={24} height={24} className="text-primary" />
-                            Pay through online
+                            Pay Online
                           </span>
                           <Icon icon="mdi:chevron-right" width={20} height={20} className="text-secondary opacity-75" />
                         </button>
@@ -4605,7 +4647,7 @@ const BookingViewLayer = () => {
                         >
                           <span className="d-flex align-items-center gap-2 fw-semibold text-dark">
                             <Icon icon="mdi:cash-multiple" width={24} height={24} className="text-primary" />
-                            Pay through other method
+                             Use Other Options
                           </span>
                           <Icon icon="mdi:chevron-right" width={20} height={20} className="text-secondary opacity-75" />
                         </button>
@@ -4719,7 +4761,7 @@ const BookingViewLayer = () => {
                           <option value="">Select payment mode</option>
                           <option value="Cash">Cash</option>
                           <option value="UPI">UPI</option>
-                          <option value="Card">Card</option>
+                          <option value="Card">Credit/Debit Card</option>
                           <option value="NetBanking">Net Banking</option>
                         </select>
                       </div>
@@ -4817,7 +4859,7 @@ const BookingViewLayer = () => {
                           Processing...
                         </>
                       ) : (
-                        "Confirm Payment Link"
+                        "Send Payment Link"
                       )}
                     </button>
                   </div>
