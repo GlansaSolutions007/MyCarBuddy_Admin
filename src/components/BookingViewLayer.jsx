@@ -3023,13 +3023,13 @@ const BookingViewLayer = () => {
                                             style={{ width: "160px" }}
                                             className="text-center"
                                           >
-                                            Dlr. Service Status
+                                            DLR Service Status
                                           </th>
                                           <th
                                             style={{ width: "160px" }}
                                             className="text-center"
                                           >
-                                            Service Confirm By
+                                            Confirm Service
                                           </th>
                                           <th
                                             style={{ width: "100px" }}
@@ -3061,7 +3061,7 @@ const BookingViewLayer = () => {
                                                       addon.Includes,
                                                     ) &&
                                                     addon.Includes.length > 0 && (
-                                                      <ul className="text-muted small ps-3 mb-0 mt-2">
+                                                      <ul className="text-muted small ps-3 mb-0 mt-2"  style={{ textAlign: "left", }}>
                                                         {addon.Includes.map(
                                                           (inc) => (
                                                             <li
@@ -3069,6 +3069,7 @@ const BookingViewLayer = () => {
                                                                 inc.IncludeID ||
                                                                 inc.id
                                                               }
+                                                              style={{ textAlign: "left"}}
                                                             >
                                                               {inc.IncludeName ||
                                                                 inc.name}
@@ -3192,11 +3193,22 @@ const BookingViewLayer = () => {
                                                             handleAddOnStatusChange(addon, e.target.value)
                                                           }
                                                         >
-                                                          <option value="">Select Status</option>
-                                                          <option value="Pending">Pending</option>
-                                                          <option value="ServiceCompleted">Completed</option>
-                                                          <option value="Rework">Rework</option>
-                                                          <option value="InProgress">In-Progress</option>
+                                                          
+                                                          {status === "ServiceCompleted" ? (
+                                                            <>
+                                                            <option value="ServiceCompleted">Completed</option>
+                                                            <option value="Rework">Rework</option>
+                                                            </>
+                                                          ) : (
+                                                            <>
+                                                              {/* <option value="">Select Status</option> */}
+                                                              <option value="Pending">Pending</option>
+                                                              <option value="InProgress">In-Progress</option>
+                                                               <option value="ServiceCompleted">Completed</option>
+                                                              <option value="Rework">Rework</option>
+                                                            </>
+                                                          )}
+
                                                         </select>
                                                       ) : isRejected ? (
                                                         <span className="badge bg-danger text-white px-3 py-4 rounded-pill">
@@ -3406,7 +3418,7 @@ const BookingViewLayer = () => {
                                                     {supervisorBooking.Includes &&
                                                       (Array.isArray(supervisorBooking.Includes)
                                                         ? supervisorBooking.Includes.length > 0 && (
-                                                          <ul className="text-muted small ps-3 mb-0 mt-2">
+                                                          <ul className="text-muted small ps-3 mb-0 mt-2" style={{ textAlign: "left", }}>
                                                             {supervisorBooking.Includes.map(
                                                               (inc) => (
                                                                 <li
@@ -4608,7 +4620,7 @@ const BookingViewLayer = () => {
               <div className="modal-content border-0 shadow-lg rounded-3 overflow-hidden">
                 <div className="modal-header border-0">
                   <h6 className="modal-title fw-bold">
-                    {!paymentTypeChoice ? "Payment" : paymentTypeChoice === "online" ? "Pay through online" : "Enter Payment Details"}
+                    {!paymentTypeChoice ? "Payment Options" : paymentTypeChoice === "online" ? "Pay online" : "Enter Payment Details"}
                   </h6>
                   <button type="button" className="btn-close btn-close-press" onClick={closePaymentModal} />
                 </div>
@@ -4617,7 +4629,7 @@ const BookingViewLayer = () => {
                   {/* Step 1: Choose payment type */}
                   {!paymentTypeChoice && (
                     <>
-                      <p className="text-muted small mb-3">Choose Payment Type.</p>
+                      <p className="text-muted small mb-3">Choose one payment option.</p>
                       <div className="d-flex flex-column gap-2">
                         <button
                           type="button"
@@ -4647,7 +4659,7 @@ const BookingViewLayer = () => {
                         >
                           <span className="d-flex align-items-center gap-2 fw-semibold text-dark">
                             <Icon icon="mdi:cash-multiple" width={24} height={24} className="text-primary" />
-                             Use Other Options
+                            Other Options
                           </span>
                           <Icon icon="mdi:chevron-right" width={20} height={20} className="text-secondary opacity-75" />
                         </button>
@@ -4844,12 +4856,12 @@ const BookingViewLayer = () => {
 
                 {(paymentTypeChoice === "online" || paymentTypeChoice === "other") && (
                   <div className="modal-footer border-0 justify-content-center gap-2">
-                    <button type="button" className="btn btn-press-effect btn-outline-secondary btn-sm" onClick={() => { setPaymentTypeChoice(null); setPaymentMode(""); setPayAmount(remainingAmount); setDiscountAmount(""); setPaymentFile(null); }}>
+                    <button type="button" className="btn btn-press-effect btn-secondary btn-sm" onClick={() => { setPaymentTypeChoice(null); setPaymentMode(""); setPayAmount(remainingAmount); setDiscountAmount(""); setPaymentFile(null); }}>
                       Back
                     </button>
                     <button
                       type="button"
-                      className="btn btn-press-effect btn-primary-600 btn-sm"
+                      className="btn  btn-primary-600 btn-sm"
                       onClick={handleConfirmPayment}
                       disabled={ isLoading || (paymentTypeChoice === "other" && !paymentFile)}
                     >
@@ -4858,9 +4870,11 @@ const BookingViewLayer = () => {
                           <span className="spinner-border spinner-border-sm me-2"></span>
                           Processing...
                         </>
-                      ) : (
-                        "Send Payment Link"
-                      )}
+                      ) : paymentTypeChoice === "online" ? (
+                          "Send Payment Link"
+                        ) : (
+                          "Update Payment"
+                        )}
                     </button>
                   </div>
                 )}
@@ -4881,7 +4895,7 @@ const BookingViewLayer = () => {
             >
               <div className="modal-content border-0 shadow-lg p-3 rounded-3 overflow-hidden">
                 <div className="modal-header border-0 pb-0">
-                  <h6 className="modal-title fw-bold">Assign To</h6>
+                  <h6 className="modal-title fw-bold">Select Service Type</h6>
                   <button
                     type="button"
                     className="btn-close btn-close-press"
@@ -4892,7 +4906,7 @@ const BookingViewLayer = () => {
                   />
                 </div>
                 <div className="modal-body pt-1 pb-4">
-                  <p className="text-muted small mb-3">Tap an option to proceed.</p>
+                  <p className="text-muted small mb-3">Select one option to proceed.</p>
                   <div className="d-flex flex-column gap-3">
                     {bookingData?.ServiceType !== "ServiceAtGarage" && (
                       <button
@@ -4917,7 +4931,7 @@ const BookingViewLayer = () => {
                             <Icon icon="mdi:home-circle-outline" width={24} height={24} className="text-primary" />
                           </span>
                           <div>
-                            <span className="fw-semibold d-block text-dark">Service at doorstep</span>
+                            <span className="fw-semibold d-block text-dark">Service at Doorstep</span>
                             <span className="small text-muted">Technician visits customer location</span>
                           </div>
                         </div>
@@ -4943,8 +4957,8 @@ const BookingViewLayer = () => {
                           <Icon icon="mdi:garage" width={24} height={24} className="text-primary" />
                         </span>
                         <div>
-                          <span className="fw-semibold d-block text-dark">Service at garage</span>
-                          <span className="small text-muted">Pickup/drop & dealer flow</span>
+                          <span className="fw-semibold d-block text-dark">Service at Garage</span>
+                          <span className="small text-muted">Car pickup/drop & service done on dealer location</span>
                         </div>
                       </div>
                       <Icon icon="mdi:chevron-right" width={20} height={20} className="text-secondary opacity-75" />
