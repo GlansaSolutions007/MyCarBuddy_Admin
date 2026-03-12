@@ -2665,12 +2665,14 @@ const handleCustomerConfirmationSubmit = async () => {
                       bookingData.BookingStatus,
                     ) && (
                       <div className="d-flex gap-2 flex-wrap">
+                        {bookingData?.SupervisorBookings?.length > 0 && (
                         <button
                           className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                           onClick={handleCustomerConfirmation}
                         >
                           Customer Confirmation
                         </button>
+                        )}
                         {/* <button
                           className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                           onClick={() => setShowReschedule(!showReschedule)}
