@@ -143,6 +143,7 @@ const BookingViewLayer = () => {
   const [couponOffers, setCouponOffers] = useState([]);
   const [selectedCoupon, setSelectedCoupon] = useState("");
   const [paymentEmail, setPaymentEmail] = useState("");
+  const [selectedServiceIds, setSelectedServiceIds] = useState([]);
   const employeeData = JSON.parse(localStorage.getItem("employeeData"));
   const userId = employeeData?.Id;
   const roleName = employeeData?.RoleName;
@@ -1776,66 +1777,92 @@ const BookingViewLayer = () => {
     setShowCustomerConfirmationModal(true);
   };
 
-  const handleCustomerConfirmationSubmit = async () => {
-    if (!confirmationDescription || confirmationDescription.trim() === "") {
-      Swal.fire({
-        icon: "warning",
-        title: "Description Required",
-        text: "Please provide a description for the confirmation.",
-      });
-      return;
-    }
+  const handleServiceCheckboxChange = (id) => {
+  setSelectedServiceIds((prev) =>
+    prev.includes(id)
+      ? prev.filter((sid) => sid !== id)
+      : [...prev, id]
+  );
+};
 
-    try {
-      // If file is attached, upload it first
-      if (confirmationFile) {
-        const formData = new FormData();
-        formData.append("BookingID", bookingData.BookingID);
-        formData.append("UploadedBy", duserId);
-        formData.append("CustID", bookingData.CustID);
-        formData.append("ImageUploadType", "CustomerConfirmation");
-        formData.append("ImageFile", confirmationFile);
+const handleCustomerConfirmationSubmit = async () => {
+  if (!confirmationDescription || confirmationDescription.trim() === "") {
+    Swal.fire({
+      icon: "warning",
+      title: "Description Required",
+      text: "Please provide a description for the confirmation.",
+    });
+    return;
+  }
 
-        await axios.post(
-          `${API_BASE}Supervisor/CustomerConfirmationImages`,
-          formData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data",
-            },
-          },
-        );
-      }
+  if (selectedServiceIds.length === 0) {
+    Swal.fire({
+      icon: "warning",
+      title: "Select Services",
+      text: "Please select at least one service to confirm.",
+    });
+    return;
+  }
 
-      // Proceed with existing customer confirmation API
+  try {
+
+    // ✅ Convert selected IDs to comma string
+    const addOnIdsString = selectedServiceIds.join(",");
+
+    // Upload file if exists
+    if (confirmationFile) {
+      const formData = new FormData();
+      formData.append("BookingID", bookingData.BookingID);
+      formData.append("UploadedBy", duserId);
+      formData.append("CustID", bookingData.CustID);
+      formData.append("ImageUploadType", "CustomerConfirmation");
+      formData.append("ImageFile", confirmationFile);
+
       await axios.post(
-        `${API_BASE}Supervisor/MoveSupervisorBookings?bookingId=${bookingData.BookingID}&custId=${bookingData.CustID}`,
-        {
-          confirmDescription: confirmationDescription.trim(),
-          confirmedBy: roleIdInt.confirmedBy,
-          confirmRole: roleName,
-        },
+        `${API_BASE}Supervisor/CustomerConfirmationImages`,
+        formData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
           },
-        },
-      );
-      Swal.fire("Success", "Customer confirmation completed successfully.", "success");
-      setShowCustomerConfirmationModal(false);
-      setConfirmationDescription("");
-      setConfirmationFile(null);
-      fetchBookingData();
-    } catch (error) {
-      console.error("Customer Confirmation Error:", error);
-      Swal.fire(
-        "Error",
-        error?.response?.data?.message || "Failed to complete customer confirmation.",
-        "error",
+        }
       );
     }
-  };
+
+    // ✅ Correct API
+    await axios.post(
+      `${API_BASE}Supervisor/MoveSupervisorBookings?addOnIds=${addOnIdsString}&custId=${bookingData.CustID}`,
+      {
+        confirmDescription: confirmationDescription.trim(),
+        confirmedBy: roleIdInt.confirmedBy,
+        confirmRole: roleName,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    Swal.fire("Success", "Customer Confirmation Successful.", "success");
+
+    setShowCustomerConfirmationModal(false);
+    setConfirmationDescription("");
+    setConfirmationFile(null);
+    setSelectedServiceIds([]); // reset selection
+
+    fetchBookingData();
+
+  } catch (error) {
+    console.error("Customer Confirmation Error:", error);
+    Swal.fire(
+      "Error",
+      error?.response?.data?.message || " Customer Confirmation Failed.",
+      "error"
+    );
+  }
+};
 
   const totalAmount =
     (bookingData?.TotalPrice || 0) +
@@ -5869,7 +5896,40 @@ const BookingViewLayer = () => {
                       easily modified.
                     </p>
                   </div>
+                  {/* Services Selection */}
+                   <div className="mb-3">
+  <label className="form-label fw-semibold">
+    Select the services you want to confirm.
+  </label>
 
+  <div
+    className="border rounded p-2"
+    style={{ maxHeight: "200px", overflowY: "auto" }}
+  >
+    {bookingData?.SupervisorBookings?.map((service) => (
+      <div
+        key={service.Id}
+        className="d-flex align-items-center gap-3 mb-1 px-3"
+      >
+        <input
+          className="form-check-input mt-0"
+          type="checkbox"
+          id={`service-${service.Id}`}
+          checked={selectedServiceIds.includes(service.Id)}
+          onChange={() => handleServiceCheckboxChange(service.Id)}
+          style={{ border: "1px solid black" }}
+        />
+
+        <label
+          className="form-check-label mb-0"
+          htmlFor={`service-${service.Id}`}
+        >
+          {service.ServiceName}
+        </label>
+      </div>
+    ))}
+  </div>
+</div>
                   {/* Description Field */}
                   <div className="mb-3">
                     <label className="form-label fw-semibold">
@@ -5919,7 +5979,11 @@ const BookingViewLayer = () => {
                   <button
                     className="btn btn-press-effect btn-primary-600 btn-sm"
                     onClick={handleCustomerConfirmationSubmit}
-                    disabled={!confirmationDescription || confirmationDescription.trim() === ""}
+                    disabled={
+                        !confirmationDescription ||
+                        confirmationDescription.trim() === "" ||
+                        selectedServiceIds.length === 0
+                      }
                   >
                     Confirm
                   </button>
