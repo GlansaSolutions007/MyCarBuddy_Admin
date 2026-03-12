@@ -614,9 +614,6 @@ const LeadViewLayer = () => {
     if (!carFuelType) {
       return Swal.fire("Error", "Please select Fuel Type", "error");
     }
-    if (!carYearOfPurchase) {
-      return Swal.fire("Error", "Please select Year of Purchase", "error");
-    }
 
     const payload = {
       Id: lead.Id,
@@ -1761,7 +1758,7 @@ const LeadViewLayer = () => {
                             Year of Purchase
                           </label>
                           <Select
-                            options={yearOptions}
+                            options={[...yearOptions].reverse()}
                             value={
                               carYearOfPurchase
                                 ? {

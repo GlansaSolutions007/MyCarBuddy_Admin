@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Icon } from "@iconify/react";
 import axios from "axios";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
 const API_BASE = import.meta.env.VITE_APIURL;
@@ -21,6 +21,9 @@ const FieldAdvisorDashboardLayer = () => {
   const [confirmedByCache, setConfirmedByCache] = useState({}); // bookingId -> confirmerName (optimistic after approve)
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
+  const [notConfirmedServices, setNotConfirmedServices] = useState([]);
+  const [servicesLoading, setServicesLoading] = useState(false);
+  const navigate = useNavigate();
 
   const formatCurrency = (amount = 0) =>
     new Intl.NumberFormat("en-IN", {
@@ -32,6 +35,7 @@ const FieldAdvisorDashboardLayer = () => {
   useEffect(() => {
     if (userId) {
       fetchFieldAdvisorData();
+      fetchNotConfirmedServices();
     }
   }, [userId]);
 
@@ -169,6 +173,32 @@ const FieldAdvisorDashboardLayer = () => {
       });
     } finally {
       setApprovingBookingId(null);
+    }
+  };
+
+  const fetchNotConfirmedServices = async () => {
+    try {
+      setServicesLoading(true);
+
+      const employeeId = localStorage.getItem("userId");
+
+      const res = await axios.get(
+        `${API_BASE}Bookings/GetBookingServicesByRole?role=FieldAdvisor&employeeId=${employeeId}&type=notconfirm`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+
+      if (res.data?.success) {
+        setNotConfirmedServices(res.data.data || []);
+      } else {
+        setNotConfirmedServices([]);
+      }
+    } catch (error) {
+      console.error("Not confirmed services error:", error);
+      setNotConfirmedServices([]);
+    } finally {
+      setServicesLoading(false);
     }
   };
 
@@ -408,6 +438,99 @@ const FieldAdvisorDashboardLayer = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+      {/* Customer Not Confirmed Services */}
+      <div className="col-12 mt-4">
+        <div className="card border radius-8">
+          <div className="card-header d-flex align-items-center justify-content-between">
+            <h5 className="mb-0 fw-bold">Customer Not Confirmed Services</h5>
+
+            <button
+              className="btn btn-sm btn-outline-primary"
+              onClick={fetchNotConfirmedServices}
+            >
+              <Icon icon="solar:refresh-bold" className="me-1" />
+              Refresh
+            </button>
+          </div>
+
+          <div className="card-body p-0">
+
+            {servicesLoading ? (
+              <div className="text-center py-4">
+                <Icon icon="solar:loading-bold" className="fs-2"
+                  style={{ animation: "spin 1s linear infinite" }} />
+              </div>
+            ) : notConfirmedServices.length === 0 ? (
+              <div className="text-center py-4 text-muted">
+                No pending services
+              </div>
+            ) : (
+              <div className="table-responsive">
+                <table className="table align-middle mb-0">
+                  <thead className="bg-light">
+                    <tr>
+                      <th>Booking ID</th>
+                      <th>Customer</th>
+                      <th>Phone</th>
+                      <th>Service</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {notConfirmedServices.map((booking) =>
+                      booking.CustomerNotConfirmedServices?.map((svc) => (
+                        <tr key={svc.Id}>
+                          <td>{booking.BookingTrackID}</td>
+
+                          <td>{booking.CustFullName}</td>
+
+                          <td>{booking.CustPhoneNumber}</td>
+
+                          <td>{svc.ServiceName}</td>
+
+                          <td>
+                            <button
+                              className="view-btn btn btn-sm d-inline-flex align-items-center gap-1 px-3 py-1 rounded-pill"
+                              onClick={() => navigate(`/booking-view/${booking.BookingID}`)}
+                            >
+                              <Icon icon="solar:eye-bold" width={14} />
+                              View
+                            </button>
+
+                            <style>
+                              {`
+                              .view-btn {
+                                background: #eef2ff;
+                                color: #4f46e5;
+                                border: 1px solid #c7d2fe;
+                                font-size: 0.75rem;
+                                font-weight: 500;
+                                transition: all 0.25s ease;
+                              }
+
+                              .view-btn:hover {
+                                background: #4f46e5;
+                                color: #ffffff;
+                                border-color: #4f46e5;
+                                transform: translateY(-1px);
+                                box-shadow: 0 3px 8px rgba(79,70,229,0.25);
+                              }
+                            `}
+                            </style>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+
+                </table>
+              </div>
+            )}
+
           </div>
         </div>
       </div>

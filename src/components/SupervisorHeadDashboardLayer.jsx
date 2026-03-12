@@ -9,6 +9,10 @@ const SupervisorHeadDashboardLayer = () => {
   const storedEmployeeData = localStorage.getItem("employeeData");
   const employeeData = storedEmployeeData ? JSON.parse(storedEmployeeData) : null;
   const navigate = useNavigate();
+  const [notConfirmedServices, setNotConfirmedServices] = useState([]);
+  const [servicesLoading, setServicesLoading] = useState(false);
+  const token = localStorage.getItem("token");
+  const employeeId = employeeData?.Id;
 
   const [dashboardData, setDashboardData] = useState({
     totalBookings: 0,
@@ -24,6 +28,7 @@ const SupervisorHeadDashboardLayer = () => {
     if (employeeData && employeeData.Id) {
       fetchDashboardData();
       fetchNotConfirmedBookings();
+      fetchNotConfirmedServices();
     }
   }, []);
 
@@ -89,6 +94,32 @@ const SupervisorHeadDashboardLayer = () => {
       return acc;
     }, {})
   );
+
+  const fetchNotConfirmedServices = async () => {
+    try {
+      setServicesLoading(true);
+
+      const employeeId = localStorage.getItem("userId");
+
+      const res = await axios.get(
+        `${API_BASE}Bookings/GetBookingServicesByRole?role=Supervisor&employeeId=${employeeId}&type=notconfirm`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+
+      if (res.data?.success) {
+        setNotConfirmedServices(res.data.data || []);
+      } else {
+        setNotConfirmedServices([]);
+      }
+    } catch (error) {
+      console.error("Not confirmed services error:", error);
+      setNotConfirmedServices([]);
+    } finally {
+      setServicesLoading(false);
+    }
+  };
 
   return (
     <div className="row gy-3">
@@ -228,7 +259,7 @@ const SupervisorHeadDashboardLayer = () => {
               <div className="d-flex align-items-center justify-content-between mb-4">
                 <div>
                   <h5 className="mb-0 fw-bold text-primary-light">
-                    Pending Confirmations
+                    Supervisor Servicess Confirmations Pending
                   </h5>
                   <small className="text-muted">
                     Bookings waiting for confirmation
@@ -256,7 +287,7 @@ const SupervisorHeadDashboardLayer = () => {
                       >
 
                         {/* Card Header */}
-                        <div className="card-header border-0 d-flex justify-content-between align-items-center px-3 py-2" style={{backgroundColor: "#cccccc"}} >
+                        <div className="card-header border-0 d-flex justify-content-between align-items-center px-3 py-2" style={{ backgroundColor: "#cccccc" }} >
                           <span className="text-xs fw-semibold text-muted py-4 ">
                             Booking ID: {booking.BookingTrackID}
                           </span>
@@ -384,6 +415,99 @@ const SupervisorHeadDashboardLayer = () => {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+      {/* Customer Not Confirmed Services */}
+      <div className="col-12 mt-4">
+        <div className="card border radius-8">
+          <div className="card-header d-flex align-items-center justify-content-between">
+            <h5 className="mb-0 fw-bold">Customer Not Confirmed Services</h5>
+
+            <button
+              className="btn btn-sm btn-outline-primary"
+              onClick={fetchNotConfirmedServices}
+            >
+              <Icon icon="solar:refresh-bold" className="me-1" />
+              Refresh
+            </button>
+          </div>
+
+          <div className="card-body p-0">
+
+            {servicesLoading ? (
+              <div className="text-center py-4">
+                <Icon icon="solar:loading-bold" className="fs-2"
+                  style={{ animation: "spin 1s linear infinite" }} />
+              </div>
+            ) : notConfirmedServices.length === 0 ? (
+              <div className="text-center py-4 text-muted">
+                No pending services
+              </div>
+            ) : (
+              <div className="table-responsive">
+                <table className="table align-middle mb-0">
+                  <thead className="bg-light">
+                    <tr>
+                      <th>Booking ID</th>
+                      <th>Customer</th>
+                      <th>Phone</th>
+                      <th>Service</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {notConfirmedServices.map((booking) =>
+                      booking.CustomerNotConfirmedServices?.map((svc) => (
+                        <tr key={svc.Id}>
+                          <td>{booking.BookingTrackID}</td>
+
+                          <td>{booking.CustFullName}</td>
+
+                          <td>{booking.CustPhoneNumber}</td>
+
+                          <td>{svc.ServiceName}</td>
+
+                          <td>
+                            <button
+                              className="view-btn btn btn-sm d-inline-flex align-items-center gap-1 px-3 py-1 rounded-pill"
+                              onClick={() => navigate(`/booking-view/${booking.BookingID}`)}
+                            >
+                              <Icon icon="solar:eye-bold" width={14} />
+                              View
+                            </button>
+
+                            <style>
+                              {`
+                                    .view-btn {
+                                      background: #eef2ff;
+                                      color: #4f46e5;
+                                      border: 1px solid #c7d2fe;
+                                      font-size: 0.75rem;
+                                      font-weight: 500;
+                                      transition: all 0.25s ease;
+                                    }
+      
+                                    .view-btn:hover {
+                                      background: #4f46e5;
+                                      color: #ffffff;
+                                      border-color: #4f46e5;
+                                      transform: translateY(-1px);
+                                      box-shadow: 0 3px 8px rgba(79,70,229,0.25);
+                                    }
+                                  `}
+                            </style>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+
+                </table>
+              </div>
+            )}
+
           </div>
         </div>
       </div>
