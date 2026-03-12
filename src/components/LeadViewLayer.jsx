@@ -583,7 +583,7 @@ const LeadViewLayer = () => {
       Swal.fire({
         icon: "success",
         title: "Supervisor Assigned",
-        text: "Bookings assigned successfully.",
+        text: "Bookings Assigned Successfully.",
       });
 
       await fetchLead();

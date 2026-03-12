@@ -59,13 +59,13 @@ const formatDateTime = (d) => {
 const ReportCard = ({ title, icon, children, className = "", borderVariant }) => {
   const borderColor = borderVariant === "success" ? "var(--bs-success)" : "var(--bs-primary)";
   return (
-  <div className={`card border-0 shadow-sm rounded-3 overflow-hidden border-start border-3 ${className}`} style={{ borderLeftColor: borderColor }}>
-    <div className="card-header bg-light border-0 py-3 px-4 d-flex align-items-center gap-2">
-      {icon && <Icon icon={icon} width={22} height={22} className="text-primary" />}
-      <span className="fw-semibold text-dark">{title}</span>
+    <div className={`card border-0 shadow-sm rounded-3 overflow-hidden border-start border-3 ${className}`} style={{ borderLeftColor: borderColor }}>
+      <div className="card-header bg-light border-0 py-3 px-4 d-flex align-items-center gap-2">
+        {icon && <Icon icon={icon} width={22} height={22} className="text-primary" />}
+        <span className="fw-semibold text-dark">{title}</span>
+      </div>
+      <div className="card-body py-3 px-4">{children}</div>
     </div>
-    <div className="card-body py-3 px-4">{children}</div>
-  </div>
   );
 };
 
@@ -107,20 +107,20 @@ function CompleteServiceReportView({ data, onBack }) {
           </button>
           <div className="d-flex flex-wrap align-items-center gap-3 small">
             <span className="d-inline-flex align-items-center gap-1">
-              <Icon icon="mdi:identifier" className="text-primary fs-5 " />
-              <strong>Lead</strong> {data.LeadId ?? "—"}
+              <strong>Lead ID:</strong> {data.LeadId ?? "N/A"}
             </span>
             <span className="text-muted">|</span>
             <span className="d-inline-flex align-items-center gap-1">
-              <Icon icon="mdi:calendar-check" className="text-primary" />
-              <strong>Booking</strong> {data.BookingTrackID ?? "—"}
+              <strong>Booking Track ID:</strong> {data.BookingTrackID ?? "N/A"}
             </span>
             <span className="text-muted">|</span>
             <span className="d-inline-flex align-items-center gap-1">
-              <Icon icon="mdi:account" className="text-primary" />
-              {data.CustomerName ?? data.CustFullName ?? "—"}
+              <strong>Customer Name:</strong> {data.CustomerName ?? data.CustFullName ?? "N/A"}
             </span>
-            <span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(data.BookingStatus)}`}>{data.BookingStatus ?? "—"}</span>
+            <span className="text-muted">|</span>
+            <span className="d-inline-flex align-items-center gap-1">
+              <strong>Booking Status:</strong> <span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(data.BookingStatus)}`}>{data.BookingStatus ?? "N/A"}</span>
+            </span>
           </div>
         </div>
       </div>
@@ -134,10 +134,10 @@ function CompleteServiceReportView({ data, onBack }) {
               <DetailRow label="Booking date" value={formatDate(data.BookingDate)} />
               <DetailRow label="Time slot" value={data.TimeSlot ?? "—"} />
               <DetailRow label="Status" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(data.BookingStatus)}`}>{data.BookingStatus ?? "—"}</span>} />
-              <DetailRow label="Total price" value={formatCurrency(data.TotalPrice)} />
+              {/* <DetailRow label="Total price" value={formatCurrency(data.TotalPrice)} />
               <DetailRow label="GST amount" value={formatCurrency(data.GSTAmount)} />
               <DetailRow label="Coupon amount" value={formatCurrency(data.CouponAmount)} />
-              <DetailRow label="Labour charges" value={formatCurrency(data.LabourCharges)} />
+              <DetailRow label="Labour charges" value={formatCurrency(data.LabourCharges)} /> */}
               {data.Notes && <DetailRow label="Notes" value={data.Notes} />}
             </div>
           </ReportCard>
@@ -162,11 +162,12 @@ function CompleteServiceReportView({ data, onBack }) {
         <div className="col-lg-4">
           <ReportCard title="Assignment & team" icon="mdi:account-group-outline">
             <div className="small">
-              <DetailRow label="Supervisor head" value={data.SupervisorHeadName ?? "—"} />
-              <DetailRow label="Supervisor phone" value={data.SupervisorHeadPhoneNumber ?? "—"} />
-              <DetailRow label="Assign status" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(data.SupervisorHeadAssignStatus)}`}>{data.SupervisorHeadAssignStatus ?? "—"}</span>} />
-              <DetailRow label="Field advisor" value={data.FieldAdvisorName ?? "—"} />
-              <DetailRow label="Advisor phone" value={data.FieldAdvisorPhoneNumber ?? "—"} />
+              <DetailRow label="Supervisor Name" value={data.SupervisorHeadName ?? "N/A"} />
+              <DetailRow label="Supervisor Number" value={data.SupervisorHeadPhoneNumber ?? "N/A"} />
+              {/* <DetailRow label="Assign status" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(data.SupervisorHeadAssignStatus)}`}>{data.SupervisorHeadAssignStatus ?? "N/A"}</span>} /> */}
+              <DetailRow label="Field Advisor Name
+              " value={data.FieldAdvisorName ?? "N/A"} />
+              <DetailRow label="Field Advisor Number" value={data.FieldAdvisorPhoneNumber ?? "N/A"} />
             </div>
           </ReportCard>
         </div>
@@ -179,11 +180,11 @@ function CompleteServiceReportView({ data, onBack }) {
                 {vehicles.map((v, i) => (
                   <div key={i} className="col-md-6 col-lg-4">
                     <div className="p-3 rounded-3 bg-light bg-opacity-50 small">
-                      <DetailRow label="Registration" value={v.RegistrationNumber ?? "—"} />
-                      <DetailRow label="Brand / Model" value={[v.BrandName, v.ModelName].filter(Boolean).join(" · ") || "—"} />
-                      <DetailRow label="Fuel type" value={v.FuelTypeName ?? "—"} />
-                      {v.KmDriven != null && <DetailRow label="Km driven" value={v.KmDriven} />}
-                      {v.YearOfPurchase != null && <DetailRow label="Year" value={v.YearOfPurchase} />}
+                      <DetailRow label="Registration No." value={v.RegistrationNumber ?? "N/A"} />
+                      <DetailRow label="Brand / Model" value={[v.BrandName, v.ModelName].filter(Boolean).join(" · ") || "N/A"} />
+                      <DetailRow label="Fuel Type" value={v.FuelTypeName ?? "N/A"} />
+                      {v.KmDriven != null && <DetailRow label="KM Driven" value={v.KmDriven} />}
+                      {v.YearOfPurchase != null && <DetailRow label="Year Of Purchase" value={v.YearOfPurchase} />}
                     </div>
                   </div>
                 ))}
@@ -210,35 +211,42 @@ function CompleteServiceReportView({ data, onBack }) {
                     <div className="col-md-6 col-lg-4">
                       <div className="small text-muted mb-2 fw-semibold">Pricing</div>
                       <DetailRow label="Service price" value={formatCurrency(svc.ServicePrice)} />
-                      <DetailRow label="Labour" value={formatCurrency(svc.LabourCharges)} />
+                      <DetailRow label="Labour Charges" value={formatCurrency(svc.LabourCharges)} />
                       <DetailRow label="GST (18%)" value={formatCurrency(svc.GSTPrice)} />
-                      <DetailRow label="Total" value={formatCurrency(svc.TotalPrice)} />
+                      <DetailRow label="Total Price" value={formatCurrency(svc.TotalPrice)} />
                       <DetailRow label="Dealer price" value={formatCurrency(svc.DealerPrice)} />
-                      <DetailRow label="Dealer GST" value={formatCurrency(svc.DealerGSTAmount)} />
+                      <DetailRow label="Dealer GST Amount" value={formatCurrency(svc.DealerGSTAmount)} />
+                      {/* <DetailRow label="Subtotal" value={formatCurrency(svc.DealerGSTAmount + svc.ServicePrice + svc.LabourCharges + svc.GSTPrice + svc.TotalPrice + svc.DealerPrice)} /> */}
                     </div>
                     <div className="col-md-6 col-lg-4">
                       <div className="small text-muted mb-2 fw-semibold">Status & dealer</div>
-                      <DetailRow label="Status" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(svc.StatusName)}`}>{svc.StatusName ?? "—"}</span>} />
-                      <DetailRow label="Dealer confirm" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(svc.IsDealer_Confirm)}`}>{svc.IsDealer_Confirm ?? "—"}</span>} />
+                      <DetailRow label="Service Status" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(svc.StatusName)}`}>{svc.StatusName ?? "N/A"}</span>} />
+                      <DetailRow label="Dealer confirm" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(svc.IsDealer_Confirm)}`}>{svc.IsDealer_Confirm ?? "N/A"}</span>} />
                       <DetailRow label="Completed" value={svc.Is_Completed ? "Yes" : "No"} />
-                      {svc.CompletedRole && <DetailRow label="Completed by" value={`${svc.EmployeeName ?? "—"} (${svc.CompletedRole})`} />}
-                      <DetailRow label="Dealer" value={svc.DealerName ?? "—"} />
+                      {svc.CompletedRole && <DetailRow label="Completed by" value={`${svc.CompletedRole}`} />}
+                      <DetailRow label="Dealer Name" value={svc.DealerName ?? "N/A"} />
                     </div>
-                    <div className="col-12 col-lg-4">
-                      <div className="small text-muted mb-2 fw-semibold">Includes</div>
-                      {Array.isArray(svc.Includes) && svc.Includes.length > 0 ? (
+                    {Array.isArray(svc.Includes) && svc.Includes.length > 0 && (
+                      <div className="col-12 col-lg-4">
+                        <div className="small text-muted mb-2 fw-semibold">Includes</div>
+
                         <ul className="list-unstyled small mb-0">
                           {svc.Includes.map((inc, i) => (
-                            <li key={inc.IncludeID ?? i} className="d-flex align-items-center gap-2 py-1">
-                              <Icon icon="mdi:check-circle-outline" className="text-success flex-shrink-0" width={16} />
-                              {inc.IncludeName}
+                            <li
+                              key={inc?.IncludeID ?? i}
+                              className="d-flex align-items-center gap-2 py-1"
+                            >
+                              <Icon
+                                icon="mdi:check-circle-outline"
+                                className="text-success flex-shrink-0"
+                                width={16}
+                              />
+                              {inc?.IncludeName ?? "—"}
                             </li>
                           ))}
                         </ul>
-                      ) : (
-                        <span className="text-muted">—</span>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </ReportCard>
               </div>
@@ -474,21 +482,21 @@ function CompleteServiceReportView({ data, onBack }) {
                     <tr>
                       <th>Date</th>
                       <th>Status</th>
-                      <th>Type</th>
-                      <th>Notes</th>
+                      <th>Call Type</th>
+                      <th>Call Discussion</th>
                       <th>Next action</th>
-                      <th>Next follow-up</th>
+                      <th>Next Follow-Up Date</th>
                     </tr>
                   </thead>
                   <tbody>
                     {followUps.slice(0, 10).map((f) => (
                       <tr key={f.Id}>
-                        <td>{formatDateTime(f.Updated_At ?? f.Created_At)}</td>
-                        <td><span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(f.Status)}`}>{f.Status ?? "—"}</span></td>
-                        <td>{f.Type ?? "—"}</td>
-                        <td className="text-break">{f.Notes ?? "—"}</td>
-                        <td>{f.NextAction ?? "—"}</td>
-                        <td>{formatDateTime(f.NextFollowUp_Date)}</td>
+                        <td>{formatDateTime(f.Updated_At ?? f.Created_At ?? "N/A")}</td>
+                        <td><span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(f.Status)}`}>{f.Status ?? "N/A"}</span></td>
+                        <td>{f.Type ?? "N/A"}</td>
+                        <td className="text-break">{f.Notes ?? "N/A"}</td>
+                        <td>{f.NextAction ?? "N/A"}</td>
+                        <td>{formatDateTime(f.NextFollowUp_Date ?? "N/A")}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -501,28 +509,26 @@ function CompleteServiceReportView({ data, onBack }) {
         {/* Dealer add-on approval history (compact) */}
         {dealerApprovals.length > 0 && (
           <div className="col-12">
-            <ReportCard title="Dealer add-on approval history" icon="mdi:handshake-outline">
+            <ReportCard title="Dealer Approval History" icon="mdi:handshake-outline">
               <div className="table-responsive">
                 <table className="table table-sm table-hover mb-0">
                   <thead>
                     <tr>
                       <th>Date</th>
-                      <th>Add-on ID</th>
                       <th>Service</th>
                       <th>Dealer</th>
                       <th>Status</th>
-                      <th>Reason</th>
+                      <th>Reason for Rejection</th>
                     </tr>
                   </thead>
                   <tbody>
                     {dealerApprovals.slice(0, 15).map((a) => (
                       <tr key={a.Id}>
                         <td>{formatDateTime(a.CreatedDate)}</td>
-                        <td>{a.AddOnId}</td>
-                        <td>{a.ServiceName ?? "—"}</td>
-                        <td>{a.DealerName ?? "—"}</td>
-                        <td><span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(a.IsDealer_Confirm)}`}>{a.IsDealer_Confirm ?? "—"}</span></td>
-                        <td>{a.Reason ?? "—"}</td>
+                        <td>{a.ServiceName ?? "N/A"}</td>
+                        <td>{a.DealerName ?? "N/A"}</td>
+                        <td><span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(a.IsDealer_Confirm)}`}>{a.IsDealer_Confirm ?? "N/A"}</span></td>
+                        <td>{a.Reason ?? "N/A"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -679,7 +685,7 @@ const CompleteServiceReportLayer = () => {
         <button
           type="button"
           className="btn btn-link p-0 text-primary text-decoration-none fw-bold "
-          style={{fontSize:"13px" }}
+          style={{ fontSize: "13px" }}
           onClick={() => openReport(row)}
           disabled={reportLoading}
         >
