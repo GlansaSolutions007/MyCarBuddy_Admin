@@ -794,6 +794,52 @@ const BookingViewLayer = () => {
       return { ok: false, message: err.response?.data?.message || err.message };
     }
   };
+  const handleConvertToService = async () => {
+
+  const result = await Swal.fire({
+    title: "Convert Inspection?",
+    text: "This will convert the inspection into a service.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, Convert",
+    cancelButtonText: "Cancel"
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    await axios.post(
+      `${API_BASE}Bookings/convert-inspection-to-service`,
+      {
+        bookingId: bookingData?.BookingID
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    Swal.fire({
+      icon: "success",
+      title: "Converted",
+      text: "Inspection successfully converted to service.",
+    });
+
+    fetchBookingData(); // refresh page data
+
+  } catch (error) {
+    console.error("Convert Error:", error);
+
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text:
+        error?.response?.data?.message ||
+        "Failed to convert inspection to service.",
+    });
+  }
+};
 
   const handleFieldAdvisorConfirm = async (addon) => {
     const addOnId = addon?.AddOnID ?? addon?.addOnId;
@@ -1635,10 +1681,12 @@ const BookingViewLayer = () => {
 
     try {
       const res = await axios.post(
-        `${API_BASE}Leads/GenerateEstimationInvoice`,
+      `${API_BASE}Leads/GenerateEstimationInvoice`,
         {
           bookingID: bookingData.BookingID,
         },
+      // const res = await axios.get(
+      //   `${API_BASE}Leads/ViewEstimationInvoice?bookingId=${bookingData.BookingID}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -2637,27 +2685,48 @@ const handleCustomerConfirmationSubmit = async () => {
                     bookingData?.Payments?.[bookingData.Payments.length - 1]
                       ?.PaymentStatus === "Success"
                   ) && ( */}
-                  {!hideAllActions && (
-                      <Link
-                        to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
-                        className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
+                {!hideAllActions && (
+  <>
+    {/* Confirm Services Button */}
+    {(
+      (bookingData?.Isinspection === 1 && bookingData?.Isservice_converted === 1) ||
+      (bookingData?.Isinspection === 0 && bookingData?.Isservice_converted === 0)
+    ) && (
+      <Link
+        to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
+        className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
                         // title="Add"
-                         title={
-                          roleName === "Field Advisor"
-                            ? "Assign Dealers"
+        title={
+          roleName === "Field Advisor"
+            ? "Assign Dealers"
                             : roleName === "Supervisor Head"
                             ? "Confirm Services"
-                            : "Confirm Services"
-                        }
-                      >
-                       <Icon icon="mdi:pencil-outline" />
-                        {roleName === "Field Advisor"
-                          ? "Assign Dealers"
+            : "Confirm Services"
+        }
+      >
+        <Icon icon="mdi:pencil-outline" />
+        {roleName === "Field Advisor"
+          ? "Assign Dealers"
                           : roleName === "Supervisor Head"
                           ? "Confirm Services"
-                          : "Confirm Services"}
-                      </Link>
-                    )}
+          : "Confirm Services"}
+      </Link>
+    )}
+
+    {/* Convert To Service Button */}
+    {bookingData?.Isinspection === 1 &&
+      bookingData?.Isservice_converted === 0 && (
+        <button
+          className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2"
+          onClick={handleConvertToService}
+          title="Convert To Service"
+        >
+          <Icon icon="mdi:swap-horizontal-bold" />
+          Convert To Service
+        </button>
+      )}
+  </>
+)}
 
                   {/* Reschedule & Reassign Buttons */}
                   {bookingData && !hideAllActions &&
