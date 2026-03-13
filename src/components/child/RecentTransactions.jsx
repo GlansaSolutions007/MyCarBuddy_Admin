@@ -57,7 +57,7 @@ const RecentTransactions = () => {
                   <th scope="col">SL</th>
                   <th scope="col">Date</th>
                   <th scope="col">Paid Amount</th>
-                  <th scope="col">BookingID</th>
+                  <th scope="col">Booking Track ID</th>
                   <th scope="col">Payment Type</th>
                  
                   {/* <th scope="col">Due Amount</th> */}
@@ -88,7 +88,8 @@ const RecentTransactions = () => {
                         </span>
                       </td>
                       <td>
-                        <Link to={`/view-booking/${p.BookingID}`}><span className="text-secondary-light">
+                        {/* <Link to={`/booking-view/${p.BookingTrackID}`}><span className="text-secondary-light"> */}
+                        <Link to={`/bookings`}><span className="text-secondary-light">
                           {p.BookingTrackID}
                         </span>
                         </Link>

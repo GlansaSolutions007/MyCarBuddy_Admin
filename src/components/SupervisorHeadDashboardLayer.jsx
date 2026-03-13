@@ -137,8 +137,8 @@ const SupervisorHeadDashboardLayer = () => {
                 <div className="position-relative text-end">
                   <img
                     alt="user"
-                    width="80"
-                    height="201"
+                    width="50"
+                    // height="180"
                     className="w-full h-full object-cover"
                     src="/assets/images/admin.webp"
                   />

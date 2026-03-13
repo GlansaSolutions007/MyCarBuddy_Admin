@@ -90,7 +90,7 @@ const SupportDashboardLayer = () => {
                   </div>
                 </div>
                 <div className="position-relative text-end">
-                  <img alt="user" width="80" height="201" className="w-full h-full object-cover" src="/assets/images/admin.webp" />
+                  <img alt="user" width="50" className="w-full h-full object-cover" src="/assets/images/admin.webp" />
                 </div>
               </div>
             </div>

@@ -208,7 +208,7 @@ const AddLeadLayer = () => {
           {/* Customer Name */}
           <div className="col-md-6 mt-2">
             <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-              Customer Name
+              Customer Name <span style={{ color: "red" }}>*</span>
             </label>
             <input
               type="text"
@@ -224,7 +224,7 @@ const AddLeadLayer = () => {
           {/* Phone */}
           <div className="col-md-6 mt-2">
             <label className="form-label text-sm fw-semibold text-primary-light mb-8">
-              Phone Number
+              Phone Number <span style={{ color: "red" }}>*</span>
             </label>
             <input
               type="tel"

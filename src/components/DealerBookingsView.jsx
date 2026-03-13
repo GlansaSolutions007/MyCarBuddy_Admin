@@ -85,66 +85,65 @@ const DealerBookingsView = () => {
   }, []);
 
   const handleServiceCompleted = async (index) => {
-  const item = addedItems[index];
+    const item = addedItems[index];
 
-  if (!item?._apiId) {
-    return Swal.fire("Error", "AddOn ID not found", "error");
-  }
+    if (!item?._apiId) {
+      return Swal.fire("Error", "AddOn ID not found", "error");
+    }
 
-  const confirmResult = await Swal.fire({
-    title: "Complete Service?",
-    text: "Are you sure you want to mark this service as completed?",
-    icon: "question",
-    showCancelButton: true,
-    confirmButtonColor: "#28a745",
-    cancelButtonColor: "#d33",
-    confirmButtonText: "Yes, Complete",
-    cancelButtonText: "Cancel",
-  });
+    const confirmResult = await Swal.fire({
+      title: "Complete Service?",
+      text: "Are you sure you want to mark this service as completed?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#28a745",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, Complete",
+      cancelButtonText: "Cancel",
+    });
 
-  if (!confirmResult.isConfirmed) return;
+    if (!confirmResult.isConfirmed) return;
 
-  try {
-    const payload = {
-      addOnID: item._apiId,   // 🔹 your AddOn ID
-      is_Completed: true,
-      completedBy: parseInt(localStorage.getItem("userId")) || 0,
-      completedRole: dealer,
-      statusName: "ServiceCompleted",
-    };
+    try {
+      const payload = {
+        addOnID: item._apiId,   // 🔹 your AddOn ID
+        is_Completed: true,
+        completedBy: parseInt(localStorage.getItem("userId")) || 0,
+        completedRole: dealer,
+        statusName: "ServiceCompleted",
+      };
 
-    const response = await axios.put(
-      `${API_BASE}Supervisor/UpdateAddOnCompletion`,
-      payload,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    if (response.status === 200 || response.status === 201) {
- if(response.data.success)
+      const response = await axios.put(
+        `${API_BASE}Supervisor/UpdateAddOnCompletion`,
+        payload,
         {
-         Swal.fire("Success!", "Status updated successfully.", "success");
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
-        else{
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        if (response.data.success) {
+          Swal.fire("Success!", "Status updated successfully.", "success");
+        }
+        else {
           Swal.fire("Error", response.data.message || "Failed to update service completion", "error");
         }
 
-      // Refresh table data
-      await fetchBookingData();
+        // Refresh table data
+        await fetchBookingData();
+      }
+    } catch (error) {
+      console.error(error);
+      Swal.fire(
+        "Error",
+        error.response?.data?.message || "Failed to update service completion",
+        "error"
+      );
     }
-  } catch (error) {
-    console.error(error);
-    Swal.fire(
-      "Error",
-      error.response?.data?.message || "Failed to update service completion",
-      "error"
-    );
-  }
-};
+  };
 
   const fetchBookingData = async () => {
     try {
@@ -159,13 +158,13 @@ const DealerBookingsView = () => {
       //   ...(data.confirmed || []),
       // ].filter((item) => item.isDealer_Confirm !== "Rejected");
       const apiItems = [
-  ...(data.notConfirmed || []),
-  ...(data.confirmed || []),
-].filter(
-  (item) =>
-    item.isDealer_Confirm !== "Rejected" &&
-    Number(item.dealerID) === Number(userId)
-);
+        ...(data.notConfirmed || []),
+        ...(data.confirmed || []),
+      ].filter(
+        (item) =>
+          item.isDealer_Confirm !== "Rejected" &&
+          Number(item.dealerID) === Number(userId)
+      );
 
 
       if (apiItems.length > 0) {
@@ -179,21 +178,21 @@ const DealerBookingsView = () => {
             quantity: Number(item.quantity || 1),
             dealerBasePrice:
               item.dealerBasePrice !== null &&
-              item.dealerBasePrice !== undefined &&
-              item.dealerBasePrice !== ""
+                item.dealerBasePrice !== undefined &&
+                item.dealerBasePrice !== ""
                 ? (Number(item.dealerBasePrice) === 0 ? "" : Number(item.dealerBasePrice))
                 : "",
             description: item.description || "",
             gstPercent:
               item.dealerGSTPercent !== null &&
-              item.dealerGSTPercent !== undefined &&
-              item.dealerGSTPercent !== ""
+                item.dealerGSTPercent !== undefined &&
+                item.dealerGSTPercent !== ""
                 ? (Number(item.dealerGSTPercent) === 0 ? "" : Number(item.dealerGSTPercent))
                 : 18,
             gstPrice:
               item.dealerGstAmount !== null &&
-              item.dealerGstAmount !== undefined &&
-              item.dealerGstAmount !== ""
+                item.dealerGstAmount !== undefined &&
+                item.dealerGstAmount !== ""
                 ? (Number(item.dealerGstAmount) === 0 ? "" : Number(item.dealerGstAmount))
                 : "",
             dealerID: item.dealerID || "",
@@ -203,14 +202,14 @@ const DealerBookingsView = () => {
             labourCharge: Number(item.labourCharges || 0) === 0 ? "" : Number(item.labourCharges || 0),
             dealerServicePrice:
               item.dealerServicePrice !== null &&
-              item.dealerServicePrice !== undefined &&
-              item.dealerServicePrice !== ""
+                item.dealerServicePrice !== undefined &&
+                item.dealerServicePrice !== ""
                 ? (Number(item.dealerServicePrice) === 0 ? "" : Number(item.dealerServicePrice))
                 : "",
             dealerSparePrice:
               item.dealerSparePrice !== null &&
-              item.dealerSparePrice !== undefined &&
-              item.dealerSparePrice !== ""
+                item.dealerSparePrice !== undefined &&
+                item.dealerSparePrice !== ""
                 ? (Number(item.dealerSparePrice) === 0 ? "" : Number(item.dealerSparePrice))
                 : "",
             isDealer_Confirm: item.isDealer_Confirm || "Pending",
@@ -367,14 +366,14 @@ const DealerBookingsView = () => {
   const getRowTotalAmount = (row) => {
     const partTotal =
       row.dealerSparePrice !== null &&
-      row.dealerSparePrice !== undefined &&
-      row.dealerSparePrice !== ""
+        row.dealerSparePrice !== undefined &&
+        row.dealerSparePrice !== ""
         ? Number(row.dealerSparePrice)
         : 0;
     const serviceCharge =
       row.dealerServicePrice !== null &&
-      row.dealerServicePrice !== undefined &&
-      row.dealerServicePrice !== ""
+        row.dealerServicePrice !== undefined &&
+        row.dealerServicePrice !== ""
         ? Number(row.dealerServicePrice)
         : 0;
     let gstAmount = 0;
@@ -558,8 +557,8 @@ const DealerBookingsView = () => {
 
               const gstPrice =
                 row.gstPercent !== "" &&
-                row.gstPercent !== null &&
-                row.gstPercent !== undefined
+                  row.gstPercent !== null &&
+                  row.gstPercent !== undefined
                   ? (baseAmount * Number(row.gstPercent)) / 100
                   : (baseAmount * 18) / 100;
 
@@ -638,8 +637,8 @@ const DealerBookingsView = () => {
 
               const gstPrice =
                 row.gstPercent !== "" &&
-                row.gstPercent !== null &&
-                row.gstPercent !== undefined
+                  row.gstPercent !== null &&
+                  row.gstPercent !== undefined
                   ? (baseAmount * Number(row.gstPercent)) / 100
                   : (baseAmount * 18) / 100;
 
@@ -707,8 +706,8 @@ const DealerBookingsView = () => {
 
               const gstPrice =
                 row.gstPercent !== "" &&
-                row.gstPercent !== null &&
-                row.gstPercent !== undefined
+                  row.gstPercent !== null &&
+                  row.gstPercent !== undefined
                   ? (baseAmount * Number(row.gstPercent)) / 100
                   : (baseAmount * 18) / 100;
 
@@ -734,7 +733,7 @@ const DealerBookingsView = () => {
                 const gstPrice = row.gstPercent !== "" && row.gstPercent !== null && row.gstPercent !== undefined
                   ? (baseAmount * Number(row.gstPercent)) / 100
                   : (baseAmount * 18) / 100;
-                
+
                 updateTableRow(row.addedItemsIndex, {
                   dealerSparePrice: 0,
                   gstPrice: Number(gstPrice.toFixed(2)),
@@ -775,8 +774,8 @@ const DealerBookingsView = () => {
 
               const gstPrice =
                 row.gstPercent !== "" &&
-                row.gstPercent !== null &&
-                row.gstPercent !== undefined
+                  row.gstPercent !== null &&
+                  row.gstPercent !== undefined
                   ? (baseAmount * Number(row.gstPercent)) / 100
                   : (baseAmount * 18) / 100;
 
@@ -802,7 +801,7 @@ const DealerBookingsView = () => {
                 const gstPrice = row.gstPercent !== "" && row.gstPercent !== null && row.gstPercent !== undefined
                   ? (baseAmount * Number(row.gstPercent)) / 100
                   : (baseAmount * 18) / 100;
-                
+
                 updateTableRow(row.addedItemsIndex, {
                   dealerServicePrice: 0,
                   gstPrice: Number(gstPrice.toFixed(2)),
@@ -840,15 +839,15 @@ const DealerBookingsView = () => {
               // Calculate GST Amount based on Part Total + Service Chg.
               const partTotal =
                 row.dealerSparePrice !== null &&
-                row.dealerSparePrice !== undefined &&
-                row.dealerSparePrice !== ""
+                  row.dealerSparePrice !== undefined &&
+                  row.dealerSparePrice !== ""
                   ? Number(row.dealerSparePrice)
                   : 0;
 
               const serviceCharge =
                 row.dealerServicePrice !== null &&
-                row.dealerServicePrice !== undefined &&
-                row.dealerServicePrice !== ""
+                  row.dealerServicePrice !== undefined &&
+                  row.dealerServicePrice !== ""
                   ? Number(row.dealerServicePrice)
                   : 0;
 
@@ -876,7 +875,7 @@ const DealerBookingsView = () => {
                 const serviceCharge = Number(row.dealerServicePrice) || 0;
                 const baseAmount = partTotal + serviceCharge;
                 const gstPrice = (baseAmount * gstPercent) / 100;
-                
+
                 updateTableRow(row.addedItemsIndex, {
                   gstPercent: 18,
                   gstPrice: Number(gstPrice.toFixed(2)),
@@ -920,15 +919,15 @@ const DealerBookingsView = () => {
               // Calculate Part Total and Service Chg.
               const partTotal =
                 row.dealerSparePrice !== null &&
-                row.dealerSparePrice !== undefined &&
-                row.dealerSparePrice !== ""
+                  row.dealerSparePrice !== undefined &&
+                  row.dealerSparePrice !== ""
                   ? Number(row.dealerSparePrice)
                   : 0;
 
               const serviceCharge =
                 row.dealerServicePrice !== null &&
-                row.dealerServicePrice !== undefined &&
-                row.dealerServicePrice !== ""
+                  row.dealerServicePrice !== undefined &&
+                  row.dealerServicePrice !== ""
                   ? Number(row.dealerServicePrice)
                   : 0;
 
@@ -980,16 +979,16 @@ const DealerBookingsView = () => {
         // Calculate Part Total from dealerSparePrice (default to 0)
         const partTotal =
           row.dealerSparePrice !== null &&
-          row.dealerSparePrice !== undefined &&
-          row.dealerSparePrice !== ""
+            row.dealerSparePrice !== undefined &&
+            row.dealerSparePrice !== ""
             ? Number(row.dealerSparePrice)
             : 0;
 
         // Calculate Service Chg. from dealerServicePrice (default to 0)
         const serviceCharge =
           row.dealerServicePrice !== null &&
-          row.dealerServicePrice !== undefined &&
-          row.dealerServicePrice !== ""
+            row.dealerServicePrice !== undefined &&
+            row.dealerServicePrice !== ""
             ? Number(row.dealerServicePrice)
             : 0;
 
@@ -1017,11 +1016,11 @@ const DealerBookingsView = () => {
             value={total.toFixed(2)}
             // disabled={row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted" || row.isDealer_Confirm?.toString().trim().toLowerCase() === "approved"}
             disabled
-            // style={{
-            //   backgroundColor: "#e9ecef",
-            //   cursor: "not-allowed",
-            //   fontWeight: "600",
-            // }}
+          // style={{
+          //   backgroundColor: "#e9ecef",
+          //   cursor: "not-allowed",
+          //   fontWeight: "600",
+          // }}
           />
         );
       },
@@ -1070,73 +1069,116 @@ const DealerBookingsView = () => {
       ignoreRowClick: true,
       allowOverflow: true,
     },
-   {
-  name: "Service Action/Status",
-  width: "180px",
-  cell: (row) => {
-    const isApproved = row.isDealer_Confirm?.toString().trim().toLowerCase() === "approved";
-    const isCompleted = row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted";
+    {
+      name: "Service Action",
+      width: "180px",
+      cell: (row) => {
+        const isApproved = row.isDealer_Confirm?.toString().trim().toLowerCase() === "approved";
+        const isCompleted = row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted";
 
-    return !row.isInclude ? (
-      <div className="d-flex gap-2 align-items-center">
-        
-        {/* Show Completed Text */}
-        {isApproved && isCompleted && (
-          <span className="badge bg-success">
-            Completed
-          </span>
-        )}
+        return !row.isInclude ? (
+          <div className="d-flex gap-2 align-items-center">
 
-        {/* Show Complete Button */}
-        {isApproved && !isCompleted && (
-         <button
-            onClick={() => handleServiceCompleted(row.addedItemsIndex)}
-            title="Mark as Completed"
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#ffc107";
-              e.currentTarget.style.transform = "scale(1.05)";
-              e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#ffc107";
-              e.currentTarget.style.transform = "scale(1)";
-              e.currentTarget.style.boxShadow = "none";
-            }}
+            {/* Show Completed Text */}
+            {isApproved && isCompleted && (
+              <span className="badge bg-success">
+                Completed
+              </span>
+            )}
+
+            {/* Show Complete Button */}
+            {isApproved && !isCompleted && (
+              <button
+                onClick={() => handleServiceCompleted(row.addedItemsIndex)}
+                title="Mark as Completed"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#ffc107";
+                  e.currentTarget.style.transform = "scale(1.05)";
+                  e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "#ffc107";
+                  e.currentTarget.style.transform = "scale(1)";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+                style={{
+                  height: "32px",
+                  backgroundColor: "#ffc107",
+                  color: "#000000",
+                  border: "none",
+                  borderRadius: "6px",
+                  padding: "0 10px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                  fontSize: "12px",
+                  fontWeight: "500"
+                }}
+              >
+                <Icon icon="mingcute:check-circle-fill" />
+                Mark as Completed
+              </button>
+            )}
+          </div>
+        ) : null;
+      },
+      ignoreRowClick: true,
+      allowOverflow: true,
+    },
+    {
+      name: "Service Status",
+      cell: (row) => {
+        const status = row.addOnStatus;
+
+        let color = "";
+        let text = status;
+
+        if (status === "ServiceCompleted") {
+          color = "#28a745"; // green
+          text = "Service Completed";
+        }
+        else if (status === "InProgress") {
+          color = "#ffc107"; // yellow
+          text = "In Progress";
+        }
+        else if (status === "Rework") {
+          color = "#dc3545"; // red
+          text = "Rework";
+        }
+
+        return (
+          <span
             style={{
-              height: "32px",
-              backgroundColor: "#ffc107",
-              color: "#000000",
-              border: "none",
-              borderRadius: "6px",
-              padding: "0 10px",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "6px",
-              cursor: "pointer",
-              transition: "all 0.3s ease",
+              backgroundColor: color,
+              color: "#fff",
+              padding: "3px 10px",
+              borderRadius: "8px",
               fontSize: "12px",
-              fontWeight: "500"
+              fontWeight: "500",
+              display: "inline-block",
+              minWidth: "90px",
+              textAlign: "center"
             }}
           >
-            <Icon icon="mingcute:check-circle-fill" />
-            Mark as Completed
-          </button>
-        )}
-      </div>
-    ) : null;
-  },
-  ignoreRowClick: true,
-  allowOverflow: true,
-}
+            {text}
+          </span>
+        );
+      },
+      right: true,
+      width: "160px",
+      sortable: true,
+    }
   ];
 
   const itemTotal = addedItems.reduce((sum, item) => {
     // Use dealerSparePrice (default to 0 if empty)
     const partTotal =
       item.dealerSparePrice !== null &&
-      item.dealerSparePrice !== undefined &&
-      item.dealerSparePrice !== ""
+        item.dealerSparePrice !== undefined &&
+        item.dealerSparePrice !== ""
         ? Number(item.dealerSparePrice)
         : 0;
     return sum + partTotal;
@@ -1146,8 +1188,8 @@ const DealerBookingsView = () => {
     // Use dealerServicePrice (default to 0 if empty)
     const serviceCharge =
       item.dealerServicePrice !== null &&
-      item.dealerServicePrice !== undefined &&
-      item.dealerServicePrice !== ""
+        item.dealerServicePrice !== undefined &&
+        item.dealerServicePrice !== ""
         ? Number(item.dealerServicePrice)
         : 0;
     return sum + serviceCharge;
@@ -1167,16 +1209,16 @@ const DealerBookingsView = () => {
       // Calculate Part Total from dealerSparePrice (default to 0)
       const partTotal =
         item.dealerSparePrice !== null &&
-        item.dealerSparePrice !== undefined &&
-        item.dealerSparePrice !== ""
+          item.dealerSparePrice !== undefined &&
+          item.dealerSparePrice !== ""
           ? Number(item.dealerSparePrice)
           : 0;
 
       // Calculate Service Chg. from dealerServicePrice (default to 0)
       const serviceCharge =
         item.dealerServicePrice !== null &&
-        item.dealerServicePrice !== undefined &&
-        item.dealerServicePrice !== ""
+          item.dealerServicePrice !== undefined &&
+          item.dealerServicePrice !== ""
           ? Number(item.dealerServicePrice)
           : 0;
 

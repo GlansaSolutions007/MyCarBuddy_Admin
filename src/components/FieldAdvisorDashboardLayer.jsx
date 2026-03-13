@@ -218,8 +218,8 @@ const FieldAdvisorDashboardLayer = () => {
                   <img
                     alt="user"
                     loading="lazy"
-                    width="80"
-                    height="201"
+                    width="50"
+                    // height="201"
                     decoding="async"
                     className="w-full h-full object-cover"
                     src="/assets/images/admin.webp"
