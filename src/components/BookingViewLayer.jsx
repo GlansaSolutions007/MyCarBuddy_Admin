@@ -144,6 +144,9 @@ const BookingViewLayer = () => {
   const [selectedCoupon, setSelectedCoupon] = useState("");
   const [paymentEmail, setPaymentEmail] = useState("");
   const [selectedServiceIds, setSelectedServiceIds] = useState([]);
+  const [showCustomerRejectionModal, setShowCustomerRejectionModal] = useState(false);
+  const [rejectionDescription, setRejectionDescription] = useState("");
+  const [rejectedServiceIds, setRejectedServiceIds] = useState([]);
   const employeeData = JSON.parse(localStorage.getItem("employeeData"));
   const userId = employeeData?.Id;
   const roleName = employeeData?.RoleName;
@@ -1135,6 +1138,61 @@ const BookingViewLayer = () => {
     }
   };
 
+const handleRevertService = async (service) => {
+  try {
+    const confirmRevert = await Swal.fire({
+      title: "Are You Sure?",
+      text: "Do you want to revert this rejected service?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Revert",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#116D6E", 
+      cancelButtonColor: "#6c757d", 
+    });
+
+    if (!confirmRevert.isConfirmed) return;
+   
+    const payload = {
+      // bookingId: service.BookingId,
+      // serviceId: service.ServiceId,
+      ids: `${service.Id}`, 
+    };
+
+    const response = await axios.post(
+      `${API_BASE}Supervisor/UpdateSupervisorBookingIsActive`,
+      payload
+    );
+
+    if (response?.status === 200) {
+      await Swal.fire({
+        title: "Reverted!",
+        text: "Service reverted successfully.",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      fetchBookingData();
+    } else {
+      Swal.fire({
+        title: "Failed",
+        text: "Unable to revert the service.",
+        icon: "error",
+      });
+    }
+
+  } catch (error) {
+    console.error("Revert error:", error);
+
+    Swal.fire({
+      title: "Error",
+      text: "Something went wrong while reverting the service.",
+      icon: "error",
+    });
+  }
+};
+
   const handleRefund = async (payment) => {
     const amountPaid =
       bookingData.TotalPrice +
@@ -1681,14 +1739,14 @@ const BookingViewLayer = () => {
 
     const supervisorBookings = bookingData?.SupervisorBookings || [];
 
-    if (!supervisorBookings.length) {
-      Swal.fire(
-        "Error",
-        "No supervisor services found for this booking.",
-        "error",
-      );
-      return;
-    }
+    // if (!supervisorBookings.length) {
+    //   Swal.fire(
+    //     "Error",
+    //     "No supervisor services found for this booking.",
+    //     "error",
+    //   );
+    //   return;
+    // }
 
     const servicesWithoutDealer = supervisorBookings.filter(
       (s) => !s.DealerID && !s.DealerName,
@@ -1968,6 +2026,7 @@ const handleCustomerConfirmationSubmit = async () => {
         confirmDescription: confirmationDescription.trim(),
         confirmedBy: roleIdInt.confirmedBy,
         confirmRole: roleName,
+        status: "Confirmed"
       },
       {
         headers: {
@@ -1990,6 +2049,68 @@ const handleCustomerConfirmationSubmit = async () => {
     Swal.fire(
       "Error",
       error?.response?.data?.message || " Customer Confirmation Failed.",
+      "error"
+    );
+  }
+};
+
+const handleRejectServiceCheckboxChange = (id) => {
+  setRejectedServiceIds((prev) =>
+    prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
+  );
+};
+
+const handleCustomerRejectionSubmit = async () => {
+  if (!rejectionDescription || rejectionDescription.trim() === "") {
+    Swal.fire({
+      icon: "warning",
+      title: "Reason Required",
+      text: "Please provide a reason for the rejection.",
+    });
+    return;
+  }
+
+  if (rejectedServiceIds.length === 0) {
+    Swal.fire({
+      icon: "warning",
+      title: "Select Services",
+      text: "Please select at least one service to reject.",
+    });
+    return;
+  }
+
+  try {
+
+    // Convert selected IDs to comma string
+    const addOnIdsString = rejectedServiceIds.join(",");
+     await axios.post(
+      `${API_BASE}Supervisor/MoveSupervisorBookings?addOnIds=${addOnIdsString}&custId=${bookingData.CustID}`,
+      {
+        confirmDescription: rejectionDescription.trim(),
+        confirmedBy: roleIdInt.confirmedBy,
+        confirmRole: roleName,
+        status: "Reject"
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    Swal.fire("Success", "Customer Rejection Successful.", "success");
+
+    setShowCustomerRejectionModal(false);
+    setRejectionDescription("");
+    setRejectedServiceIds([]);
+
+    fetchBookingData();
+
+  } catch (error) {
+    console.error("Customer Rejection Error:", error);
+
+    Swal.fire(
+      "Error",
+      error?.response?.data?.message || "Customer Rejection Failed.",
       "error"
     );
   }
@@ -2169,13 +2290,13 @@ const handleCustomerConfirmationSubmit = async () => {
       );
 
       if (res?.data?.status) {
-        Swal.fire("Success", "Payment confirmed successfully", "success");
+        Swal.fire("Success", "Payment Details Updated successfully", "success");
         setShowPaymentModal(false);
         setPaymentFile(null);
         setIsPaid(true);
         fetchBookingData(); // refresh booking & payments
       } else {
-        Swal.fire("Error", "Payment confirmation failed", "error");
+        Swal.fire("Error", "Payment Details Updation failed", "error");
       }
     } catch (err) {
       console.error("Payment Error:", err);
@@ -2823,6 +2944,14 @@ const handleCustomerConfirmationSubmit = async () => {
                           onClick={handleCustomerConfirmation}
                         >
                           Customer Confirmation
+                        </button>
+                        )}
+                        {bookingData?.SupervisorBookings?.length > 0 && (
+                        <button
+                          className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                          onClick={() => setShowCustomerRejectionModal(true)}
+                        >
+                          Customer Rejection
                         </button>
                         )}
                         {/* <button
@@ -3767,6 +3896,345 @@ const handleCustomerConfirmationSubmit = async () => {
                                 </div>
                               </div>
                             )}
+
+                                 {bookingData?.CustomerRejectedBookings?.length > 0 && (
+                              <div className="card mb-4 mt-4">
+                                <div className="card-header bg-danger text-light">
+                                  <h6 className="mb-0 fw-bold text-white">Customer Rejected Services</h6>
+                                </div>
+                                <div className="card-body p-0">
+                                  <div
+                                    className="table-responsive"
+                                    style={{
+                                      maxHeight: "800px",
+                                      overflowX: "auto",
+                                    }}
+                                  >
+                                    <table
+                                      className="table table-sm table-striped table-hover align-middle mb-0 table-center-all"
+                                      style={{
+                                        tableLayout: "fixed",
+                                        minWidth: "1200px",
+                                      }}
+                                    >
+                                      <thead
+                                        className="table-light sticky-top position-relative"
+                                        style={{ zIndex: 1 }}
+                                      >
+                                        <tr>
+                                          <th
+                                            style={{ width: "60px" }}
+                                            className="text-center"
+                                          >
+                                            S.No
+                                          </th>
+                                          <th style={{ width: "100px" }}>Type</th>
+                                          <th style={{ width: "180px" }}>
+                                            Service Name
+                                          </th>
+                                          <th style={{ width: "100px" }}>Date</th>
+                                          <th
+                                            style={{ width: "100px" }}
+                                            className="text-end"
+                                          >
+                                            Part Price
+                                          </th>
+                                          <th
+                                            style={{ width: "125px" }}
+                                            className="text-end dlr-column"
+                                          >
+                                            DLR Part Price
+                                          </th>
+                                          <th
+                                            style={{ width: "70px" }}
+                                            className="text-end"
+                                          >
+                                            Qty
+                                          </th>
+                                          <th
+                                            style={{ width: "100px" }}
+                                            className="text-end"
+                                          >
+                                            Part Total
+                                          </th>
+                                          <th
+                                            style={{ width: "120px" }}
+                                            className="text-end dlr-column"
+                                          >
+                                            DLR Part Total
+                                          </th>
+                                          <th
+                                            style={{ width: "120px" }}
+                                            className="text-end"
+                                          >
+                                            Service Chg.
+                                          </th>
+                                          <th
+                                            style={{ width: "145px" }}
+                                            className="text-end dlr-column"
+                                          >
+                                            DLR Service Chg.
+                                          </th>
+                                          <th
+                                            style={{ width: "90px" }}
+                                            className="text-end"
+                                          >
+                                            GST %
+                                          </th>
+                                          <th
+                                            style={{ width: "120px" }}
+                                            className="text-end dlr-column"
+                                          >
+                                            DLR GST %
+                                          </th>
+                                          <th
+                                            style={{ width: "100px" }}
+                                            className="text-end"
+                                          >
+                                            GST Amt.
+                                          </th>
+                                          <th
+                                            style={{ width: "120px" }}
+                                            className="text-end dlr-column"
+                                          >
+                                            DLR GST Amt.
+                                          </th>
+                                          <th
+                                            style={{ width: "100px" }}
+                                            className="text-end"
+                                          >
+                                            Our %
+                                          </th>
+                                          <th
+                                            style={{ width: "100px" }}
+                                            className="text-end"
+                                          >
+                                            Our Amt.
+                                          </th>
+                                          <th style={{ width: "170px" }}
+                                            className="text-center">
+                                            Dealer Name
+                                          </th>
+                                          <th
+                                            style={{ width: "160px" }}
+                                            className="text-center"
+                                          >
+                                            Service Status
+                                          </th>
+                                          <th
+                                            style={{ width: "100px" }}
+                                            className="text-end"
+                                          >
+                                            Total Amt
+                                          </th>
+                                          <th
+                                            style={{ width: "100px" }}
+                                            className="text-end"
+                                          >
+                                            Action
+                                          </th>
+                                        </tr>
+                                      </thead>
+
+                                      <tbody>
+                                        {bookingData?.CustomerRejectedBookings?.map(
+                                          (CustomerRejectedBookings, index) => {
+                                            const totalPrice =
+                                              (Number(CustomerRejectedBookings.Price || 0)) +
+                                              (Number(CustomerRejectedBookings.GSTAmount || 0)) +
+                                              (Number(CustomerRejectedBookings.LabourCharges || 0));
+
+                                            return (
+                                              <tr key={CustomerRejectedBookings.Id || index}>
+                                                <td className="text-center">
+                                                  {index + 1}.
+                                                </td>
+                                                <td className="normal">
+                                                  {CustomerRejectedBookings.ServiceType || "—"}
+                                                </td>
+                                                <td className="normal">
+                                                  <div className="normal">
+                                                    {CustomerRejectedBookings.ServiceName || "—"}
+                                                    {CustomerRejectedBookings.Includes &&
+                                                      (Array.isArray(CustomerRejectedBookings.Includes)
+                                                        ? CustomerRejectedBookings.Includes.length > 0 && (
+                                                          <ul className="text-muted small ps-3 mb-0 mt-2" style={{ textAlign: "left", }}>
+                                                            {CustomerRejectedBookings.Includes.map(
+                                                              (inc) => (
+                                                                <li
+                                                                  key={
+                                                                    inc.IncludeID ||
+                                                                    inc.id ||
+                                                                    inc
+                                                                  }
+                                                                >
+                                                                  {inc.IncludeName ||
+                                                                    inc.name ||
+                                                                    inc}
+                                                                </li>
+                                                              ),
+                                                            )}
+                                                          </ul>
+                                                        )
+                                                        : typeof CustomerRejectedBookings.Includes === 'string' && CustomerRejectedBookings.Includes.trim() !== '' && (
+                                                          <div className="text-muted small mt-2">
+                                                            {CustomerRejectedBookings.Includes}
+                                                          </div>
+                                                        )
+                                                      )}
+                                                  </div>
+                                                </td>
+
+                                                <td className="normal">
+                                                  {CustomerRejectedBookings.CreatedDate
+                                                    ? new Date(
+                                                      CustomerRejectedBookings.CreatedDate,
+                                                    ).toLocaleDateString("en-IN")
+                                                    : "—"}
+                                                </td>
+                                                <td className="text-end">
+                                                  {Number(
+                                                    CustomerRejectedBookings.BasePrice || 0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                <td className="text-end dlr-column">
+                                                  {Number(
+                                                    CustomerRejectedBookings.DealerBasePrice || 0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                <td className="text-end">
+                                                  {CustomerRejectedBookings.Quantity ?? "1"}
+                                                </td>
+                                                <td className="text-end">
+                                                  {Number(
+                                                    CustomerRejectedBookings.Price || 0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                <td className="text-end dlr-column">
+                                                  {Number(
+                                                    CustomerRejectedBookings.DealerSparePrice || 0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                <td className="text-end">
+                                                  {Number(
+                                                    CustomerRejectedBookings.LabourCharges || 0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                <td className="text-end dlr-column">
+                                                  {Number(
+                                                    CustomerRejectedBookings.DealerPrice || 0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                <td className="text-end">
+                                                  {CustomerRejectedBookings.GSTPercent ?? 0}%
+                                                </td>
+                                                <td className="text-end dlr-column">
+                                                  {CustomerRejectedBookings.DealerGSTPercent ?? 0}%
+                                                </td>
+                                                <td className="text-end">
+                                                  {Number(
+                                                    CustomerRejectedBookings.GSTAmount || 0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                <td className="text-end dlr-column">
+                                                  {Number(
+                                                    CustomerRejectedBookings.DealerGSTAmount || 0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                <td className="text-end">
+                                                  {CustomerRejectedBookings.Percentage ?? "0"}%
+                                                </td>
+                                                <td className="text-end">
+                                                  {Number(
+                                                    CustomerRejectedBookings.Our_Earnings || 0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                {/* <td
+                                                  className="normal text-center"
+                                                  style={{
+                                                    whiteSpace: "normal",
+                                                    wordBreak: "break-word",
+                                                  }}
+                                                >
+                                                  {CustomerRejectedBookings.DealerName || "Not Assigned"}
+                                                </td> */}
+                                                <td
+                                                  className=" normal text-center"
+                                                  style={{
+                                                    whiteSpace: "normal",
+                                                    wordBreak: "break-word",
+                                                  }}
+                                                >
+                                                  {CustomerRejectedBookings.DealerName || "—"}
+
+                                                  {CustomerRejectedBookings.IsDealer_Confirm && CustomerRejectedBookings.DealerName && (
+                                                    <span
+                                                      className={`badge px-3 py-2 rounded-pill ${CustomerRejectedBookings.IsDealer_Confirm === "Approved"
+                                                        ? "bg-success text-white"
+                                                        : CustomerRejectedBookings.IsDealer_Confirm === "Rejected"
+                                                          ? "bg-danger text-white"
+                                                          : CustomerRejectedBookings.IsDealer_Confirm === "Pending"
+                                                            ? "bg-warning text-dark"
+                                                            : "bg-secondary text-white"
+                                                        }`}
+                                                    >
+                                                      {CustomerRejectedBookings.IsDealer_Confirm}
+                                                    </span>
+                                                  )}
+                                                </td>
+                                                <td className="text-center">
+                                                  {(() => {
+                                                    const isApproved =
+                                                      (CustomerRejectedBookings.IsDealer_Confirm ?? CustomerRejectedBookings.isDealer_Confirm)
+                                                        ?.toString()
+                                                        .trim()
+                                                        .toLowerCase() === "approved";
+                                                    const status = (CustomerRejectedBookings.StatusName ?? CustomerRejectedBookings.statusName ?? CustomerRejectedBookings.AddOnStatus ?? CustomerRejectedBookings.addOnStatus)
+                                                      ?.toString()
+                                                      .trim();
+                                                    return (
+                                                      <div className="d-flex gap-2 align-items-center justify-content-center">
+                                                        {isApproved && (
+                                                          <select
+                                                            className="form-select form-select-sm"
+                                                            value={status}
+                                                            onChange={(e) =>
+                                                              handleAddOnStatusChange(CustomerRejectedBookings, e.target.value)
+                                                            }
+                                                          >
+                                                            <option value="">Select Status</option>
+                                                            <option value="Pending">Pending</option>
+                                                            <option value="ServiceCompleted">Completed</option>
+                                                            <option value="Rework">Rework</option>
+                                                            <option value="InProgress">In-Progress</option>
+                                                          </select>
+                                                        )}
+                                                      </div>
+                                                    );
+                                                  })()}
+                                                </td>
+                                                <td className="text-end fw-bold text-primary">
+                                                  {totalPrice.toFixed(2)}
+                                                </td>
+                                                <td className="text-center">
+                                                  <button
+                                                    className="btn btn-sm btn-primary-600"
+                                                    onClick={() => handleRevertService(CustomerRejectedBookings)}
+                                                  >
+                                                     <i className="bi bi-arrow-counterclockwise me-1"></i>
+                                                    Revert
+                                                  </button>
+                                                </td>
+                                              </tr>
+                                            );
+                                          },
+                                        )}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                             {/* <div className="d-flex justify-content-between align-items-center mb-2 mt-2">
                             <h6 className="fw-bold mb-0">Billing Summary</h6>
                           </div> */}
@@ -3861,7 +4329,7 @@ const handleCustomerConfirmationSubmit = async () => {
                                       - ₹{alreadyPaidDisplay.toFixed(2)}
                                     </span>
                                   </li>
-                                  {bookingData?.SupervisorBookings?.length > 0 && (
+                                  {bookingData?.CustomerRejectedBookingss?.length > 0 && (
                                     <li className="list-group-item d-flex justify-content-between border-top bg-warning p-0">
                                       <span className="fw-bold text-dark">
                                         Customer Not Confirmed Services Amount
@@ -3975,7 +4443,7 @@ const handleCustomerConfirmationSubmit = async () => {
                                       </button>
                                     )}
                                   {/* {showEstimationButton && ( */}
-                                  {!hideAllActions && (
+                                 {!hideAllActions && roleName !== "Field Advisor" && (
                                   <button
                                     className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                                     onClick={() => showGenerateInvoiceConfirm("Generate Estimation Invoice", handleGenerateEstimationInvoice, "Estimation")}
@@ -4715,9 +5183,9 @@ const handleCustomerConfirmationSubmit = async () => {
                         getSelectedTimeSlotOptions().length <= 1
                       }
                     /> */}
-                    <div class="row g-2">
-                      <div class="col-6">
-                        <label class="form-label small mb-1">Date</label>
+                    <div className="row g-2">
+                      <div className="col-6">
+                        <label className="form-label small mb-1">Date</label>
                         <input
                           type="date"
                           className="form-control form-control-sm"
@@ -4726,8 +5194,8 @@ const handleCustomerConfirmationSubmit = async () => {
                           onChange={(e) => setGaragePickupDate(e.target.value)}
                         />
                       </div>
-                      <div class="col-6">
-                        <label class="form-label small mb-1">Time</label>
+                      <div className="col-6">
+                        <label className="form-label small mb-1">Time</label>
                         <input
                           type="time"
                           className="form-control form-control-sm"
@@ -6052,38 +6520,38 @@ const handleCustomerConfirmationSubmit = async () => {
                   </div>
                   {/* Services Selection */}
                    <div className="mb-3">
-  <label className="form-label fw-semibold">
-    Select the services you want to confirm.
-  </label>
+                    <label className="form-label fw-semibold">
+                      Select the services you want to confirm.
+                    </label>
 
-  <div
-    className="border rounded p-2"
-    style={{ maxHeight: "200px", overflowY: "auto" }}
-  >
-    {bookingData?.SupervisorBookings?.map((service) => (
-      <div
-        key={service.Id}
-        className="d-flex align-items-center gap-3 mb-1 px-3"
-      >
-        <input
-          className="form-check-input mt-0"
-          type="checkbox"
-          id={`service-${service.Id}`}
-          checked={selectedServiceIds.includes(service.Id)}
-          onChange={() => handleServiceCheckboxChange(service.Id)}
-          style={{ border: "1px solid black" }}
-        />
+                    <div
+                      className="border rounded p-2"
+                      style={{ maxHeight: "200px", overflowY: "auto" }}
+                    >
+                      {bookingData?.SupervisorBookings?.map((service) => (
+                        <div
+                          key={service.Id}
+                          className="d-flex align-items-center gap-3 mb-1 px-3"
+                        >
+                          <input
+                            className="form-check-input mt-0"
+                            type="checkbox"
+                            id={`service-${service.Id}`}
+                            checked={selectedServiceIds.includes(service.Id)}
+                            onChange={() => handleServiceCheckboxChange(service.Id)}
+                            style={{ border: "1px solid black" }}
+                          />
 
-        <label
-          className="form-check-label mb-0"
-          htmlFor={`service-${service.Id}`}
-        >
-          {service.ServiceName}
-        </label>
-      </div>
-    ))}
-  </div>
-</div>
+                          <label
+                            className="form-check-label mb-0"
+                            htmlFor={`service-${service.Id}`}
+                          >
+                            {service.ServiceName}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                   {/* Description Field */}
                   <div className="mb-3">
                     <label className="form-label fw-semibold">
@@ -6139,13 +6607,139 @@ const handleCustomerConfirmationSubmit = async () => {
                         selectedServiceIds.length === 0
                       }
                   >
-                    Confirm
+                    Confirm Services
                   </button>
                 </div>
               </div>
             </div>
           </div>
         )}
+        {showCustomerRejectionModal && (
+        <div
+          className="modal fade show d-block"
+          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(5px)" }}
+        >
+          <div
+            className="modal-dialog modal-dialog-centered"
+            style={{ maxWidth: "600px", width: "90%" }}
+          >
+            <div className="modal-content">
+
+              {/* Header */}
+              <div className="modal-header">
+                <h6 className="fw-bold mb-2">
+                  Customer Rejection
+                </h6>
+                <button
+                  type="button"
+                  className="btn-close btn-close-press"
+                  onClick={() => {
+                    setShowCustomerRejectionModal(false);
+                    setRejectionDescription("");
+                    setRejectedServiceIds([]);
+                  }}
+                />
+              </div>
+
+              {/* Body */}
+              <div className="modal-body">
+
+                {/* Explanation */}
+                <div className="alert alert-info mb-3">
+                  <h6 className="fw-bold mb-2">Why is rejection required?</h6>
+                  <p className="mb-0 small">
+                    Service rejection is used when the customer declines certain
+                    services after review. These rejected services will be removed
+                    from the current booking and stored in the rejected services
+                    list for record purposes.
+                  </p>
+                </div>
+
+                {/* Service Selection */}
+                <div className="mb-3">
+                  <label className="form-label fw-semibold">
+                    Select services to reject
+                  </label>
+
+                  <div
+                    className="border rounded p-2"
+                    style={{ maxHeight: "200px", overflowY: "auto" }}
+                  >
+                    {bookingData?.SupervisorBookings?.map((service) => (
+                      <div
+                        key={service.Id}
+                        className="d-flex align-items-center gap-3 mb-1 px-3"
+                      >
+                        <input
+                          className="form-check-input mt-0"
+                          type="checkbox"
+                          checked={rejectedServiceIds.includes(service.Id)}
+                          onChange={() =>
+                            handleRejectServiceCheckboxChange(service.Id)
+                          }
+                          style={{ border: "1px solid black" }}
+                        />
+
+                        <label className="form-check-label mb-0">
+                          {service.ServiceName}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="mb-3">
+                  <label className="form-label fw-semibold">
+                    Rejection Reason <span className="text-danger">*</span>
+                  </label>
+
+                  <textarea
+                    className="form-control"
+                    rows="4"
+                    placeholder="Please provide reason for rejecting the selected services..."
+                    value={rejectionDescription}
+                    onChange={(e) => setRejectionDescription(e.target.value)}
+                  />
+
+                  <small className="text-muted">
+                    This reason will be recorded in the booking history.
+                  </small>
+                </div>
+
+              </div>
+
+              {/* Footer */}
+              <div className="modal-footer justify-content-center">
+                <button
+                  className="btn btn-press-effect btn-secondary btn-sm"
+                  onClick={() => {
+                    setShowCustomerRejectionModal(false);
+                    setRejectionDescription("");
+                    setRejectedServiceIds([]);
+                  }}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  className="btn btn-press-effect btn-primary-600 btn-sm"
+                  onClick={handleCustomerRejectionSubmit}
+                  disabled={
+                    !rejectionDescription ||
+                    rejectionDescription.trim() === "" ||
+                    rejectedServiceIds.length === 0
+                  }
+                >
+                  Reject Services
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
 
         {/* Full-screen pickup image viewer with open/close effects */}
         {fullScreenImageUrl && (
