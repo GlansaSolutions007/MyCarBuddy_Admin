@@ -1480,16 +1480,15 @@ const LeadViewLayer = () => {
                           <input
                             type="text"
                             className="form-control"
-                            value={personalFullName}
+                            value={personalFullName || ""}
                             onChange={(e) => {
                               let val = e.target.value;
                               if (val.length <= 30) {
-                                val =
-                                  val.charAt(0).toUpperCase() + val.slice(1);
+                                val = val.charAt(0).toUpperCase() + val.slice(1);
                                 setPersonalFullName(val);
                               }
                             }}
-                            disabled={isLeadClosed}
+                            disabled={isLeadClosed || !!personalFullName}
                           />
                         </div>
                         <div className="col-md-6">
@@ -1499,7 +1498,7 @@ const LeadViewLayer = () => {
                           <input
                             type="tel"
                             className="form-control"
-                            value={personalMobileNo}
+                            value={personalMobileNo || ""}
                             onChange={(e) => {
                               let val = e.target.value;
                               if (!/^\d*$/.test(val)) return;
@@ -1508,7 +1507,7 @@ const LeadViewLayer = () => {
                                 return;
                               setPersonalMobileNo(val);
                             }}
-                            disabled={isLeadClosed}
+                            disabled={isLeadClosed || !!personalMobileNo}
                           />
                         </div>
                         <div className="col-md-12">

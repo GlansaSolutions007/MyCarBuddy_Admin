@@ -83,15 +83,314 @@ const API_IMAGE = import.meta.env.VITE_APIURL_IMAGE || "";
 // Complete Service Report view using API response
 function CompleteServiceReportView({ data, onBack }) {
   const [fullscreenImageUrl, setFullscreenImageUrl] = useState(null);
+
+  // Timeline data extraction
+  const getTimelineData = () => {
+    const addOns = data.BookingAddOns || [];
+    const carPickUpDelivery = data.CarPickUpDelivery || [];
+    const dealerApprovals = data.DealerAddOnApproval || [];
+    const payments = data.Payments || [];
+    const bookingStatusTracking = data.BookingStatusTracking || [];
+
+    // Determine service location from latest CarPickUpDelivery or default home
+    const latestPickup = carPickUpDelivery[carPickUpDelivery.length - 1];
+    const isGarageService = latestPickup?.ServiceType === 'ServiceAtGarage';
+    const isHomeService = latestPickup?.ServiceType === 'ServiceAtHome';
+    
+    // Separate confirmed vs pending services
+    const confirmedAddOns = addOns.filter(a => a.IsSupervisor_Confirm === 1);
+    const pendingAddOns = (data.BookingsTempAddons || []).filter(a => a.IsSupervisor_Confirm !== 1);
+    const confirmedLength = confirmedAddOns.length;
+    const pendingLength = pendingAddOns.length;
+    
+    const baseStages = [
+      {
+        id: 'lead-created',
+        title: 'Lead Created',
+        icon: 'mdi:lead-pencil',
+        date: data.CreatedDate || data.LeadCreatedDate,
+        status: 'completed',
+        details: `Lead ID: ${data.LeadId}`
+      },
+      {
+        id: 'booking-created',
+        title: 'Booking Created',
+        icon: 'mdi:calendar-plus',
+        date: data.BookingDate,
+        status: 'completed',
+        details: `Booking ID: ${data.BookingID}`
+      },
+      {
+        id: 'assign-stage',
+        title: 'Supervisor/Field Advisor Assigned',
+        icon: 'mdi:account-group',
+        date: data.SupervisorHeadAssignDate || data.FieldAdvisorAssignDate,
+        status: (data.SupervisorHeadName || data.FieldAdvisorName) ? 'completed' : 'pending',
+        details: `${data.SupervisorHeadName || '—'} / ${data.FieldAdvisorName || '—'}`
+      },
+      {
+        id: 'dealer-confirmation',
+        title: 'Dealer Confirmation',
+        icon: 'mdi:handshake',
+        date: dealerApprovals[0]?.CreatedDate,
+        status: dealerApprovals.length === 0 ? 'pending' : 
+                dealerApprovals.every(d => d.IsDealer_Confirm === 'Approved') ? 'completed' : 
+                dealerApprovals.some(d => d.IsDealer_Confirm === 'Rejected') ? 'failed' : 'in-progress',
+        details: dealerApprovals.length === 0 ? 'No dealers' : `${dealerApprovals.filter(d => d.IsDealer_Confirm === 'Approved').length}/${dealerApprovals.length} dealers confirmed`
+      },
+      {
+        id: 'customer-confirmation',
+        title: 'Customer Confirmation',
+        icon: 'mdi:account-check',
+        date: addOns.find(a => a.ConfirmRole)?.ConfirmDate,
+        status: (confirmedLength === 0 && pendingLength === 0) ? 'pending' : 
+                confirmedLength > 0 ? (pendingLength === 0 ? 'completed' : 'in-progress') : 'pending',
+        details: `${confirmedLength} confirmed / ${pendingLength} pending`
+      },
+      {
+        id: 'technician-assigned',
+        title: 'Technician Assigned',
+        icon: 'mdi:engineer',
+        date: carPickUpDelivery[0]?.AssignDate,
+        status: carPickUpDelivery.length > 0 ? 'completed' : 'pending',
+        details: carPickUpDelivery.map(p => p.TechnicinaName).filter(Boolean).join(', ') || '—'
+      }
+    ];
+
+    // Conditional garage vs home flow
+    let conditionalStages = [];
+    if (isGarageService && carPickUpDelivery.length > 0) {
+      // Garage flow stages
+      conditionalStages = [
+        {
+          id: 'garage-customer-to-dealer',
+          title: 'Customer to Dealer',
+          icon: 'mdi:car-pickup',
+          date: carPickUpDelivery.find(p => p.RouteType === 'CustomerToDealer')?.PickupDate,
+          status: 'completed',
+          details: 'Car picked from customer → delivered to dealer'
+        },
+        {
+          id: 'garage-dealer-service',
+          title: 'Service at Dealer',
+          icon: 'mdi:car-wrench',
+          date: addOns.find(a => a.StatusName === 'ServiceCompleted')?.UpdatedDate,
+          status: addOns.every(a => a.StatusName === 'ServiceCompleted') ? 'completed' : 'in-progress',
+          details: `${addOns.filter(a => a.StatusName === 'ServiceCompleted').length} services done`
+        },
+        ...(carPickUpDelivery.some(p => p.RouteType === 'DealerToDealer') ? [{
+          id: 'garage-dealer-to-dealer',
+          title: 'Dealer to Dealer (Multi-dealer)',
+          icon: 'mdi:cars',
+          date: carPickUpDelivery.find(p => p.RouteType === 'DealerToDealer')?.PickupDate,
+          status: 'completed',
+          details: 'Car transferred between dealers'
+        }] : []),
+        {
+          id: 'garage-dealer-to-customer',
+          title: 'Dealer to Customer',
+          icon: 'mdi:car-deliver',
+          date: carPickUpDelivery.find(p => p.RouteType === 'DealerToCustomer')?.DeliveryDate,
+          status: carPickUpDelivery.some(p => p.RouteType === 'DealerToCustomer' && p.Status === 'completed') ? 'completed' : 'pending',
+          details: 'Car delivered back to customer'
+        }
+      ];
+    } else {
+      // Home service flow
+      conditionalStages = bookingStatusTracking.map((track, idx) => ({
+        id: `home-service-${idx}`,
+        title: track.Status === 'BuddyStarted' && track.Status !='completed' ? 'Buddy Started' : track.Status === 'BuddyReached' && track.Role === 'Buddy' ? 'Buddy Reached' : track.Status === 'ServiceStarted' && track.Role === 'Technician' ? 'Service Started' :  'Service In progress',
+        icon: 'mdi:home-wrench',
+        date: track.Created_At,
+        status: track.Status === 'ServiceCompleted' ? 'completed' : 'in-progress',
+        details: `${track.Role || '—'} - 'Service At Home'}`
+      }));
+    }
+
+    const finalStages = [
+      {
+        id: 'service-completed',
+        title: 'Service Completed',
+        icon: 'mdi:car-check',
+        date: addOns.filter(a => a.Is_Completed)[0]?.CompletedDate,
+        status: addOns.length === 0 ? 'pending' : addOns.every(a => a.Is_Completed) ? 'completed' : addOns.some(a => a.Is_Completed) ? 'in-progress' : 'pending',
+        details: addOns.length === 0 ? 'No services' : `${addOns.filter(a => a.Is_Completed).length}/${addOns.length} services`
+      },
+      {
+        id: 'payment-done',
+        title: 'Payment Done',
+        icon: 'mdi:credit-card-check',
+        date: payments[0]?.PaymentDate,
+        status: payments.some(p => p.PaymentStatus === 'Success') ? 'completed' : 'pending',
+        details: `₹${formatCurrency(payments.reduce((sum, p) => sum + Number(p.AmountPaid || 0), 0))}`
+      },
+      {
+        id: 'booking-done',
+        title: 'Booking Done',
+        icon: 'mdi:check-circle',
+        date: data.BookingStatusUpdatedDate,
+        status: data.BookingStatus === 'Completed' ? 'completed' : 'pending',
+        details: data.BookingStatus
+      }
+    ];
+
+    return [...baseStages, ...conditionalStages, ...finalStages];
+  };
+
+  const TimelineSection = () => {
+    const stages = getTimelineData();
+    const getStatusColor = (status) => {
+      switch(status) {
+        case 'completed': return '#10b981';
+        case 'in-progress': return '#f59e0b';
+        case 'pending': return '#6b7280';
+        case 'failed': return '#ef4444';
+        default: return '#6b7280';
+      }
+    };
+
+    return (
+      <div className="service-timeline position-relative">
+        <style jsx>{`
+          .service-timeline { 
+            padding: 1.5rem 0; 
+            overflow-x: auto;
+            scrollbar-width: thin;
+          }
+          .timeline-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            min-width: max-content;
+            position: relative;
+          }
+          .timeline-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            min-width: 180px;
+            flex: 0 0 auto;
+          }
+          .timeline-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 2.5rem;
+            right: -1rem;
+            width: 2rem;
+            height: 3px;
+            background: linear-gradient(to right, var(--step-bg, #e5e7eb) 0%, var(--step-bg, #e5e7eb) 100%);
+          }
+          .step-circle {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 2;
+            position: relative;
+            border: 3px solid white;
+          }
+          .step-content {
+            margin-top: 0.75rem;
+            text-align: center;
+            max-width: 160px;
+          }
+          .step-title {
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+            line-height: 1.2;
+          }
+          .step-date, .step-details {
+            font-size: 0.75rem;
+            opacity: 0.8;
+            line-height: 1.3;
+          }
+          .step-badge {
+            position: absolute;
+            top: -0.25rem;
+            right: -0.25rem;
+            padding: 0.125rem 0.375rem;
+            font-size: 0.65rem;
+            border-radius: 0.375rem;
+            font-weight: 600;
+          }
+          @media (max-width: 768px) {
+            .timeline-container { flex-direction: column; }
+            .timeline-step:not(:last-child)::after { display: none; }
+            .timeline-step { flex-direction: row; align-items: center; min-width: auto; }
+            .timeline-step::before {
+              content: '';
+              position: absolute;
+              left: 1.25rem;
+              top: 0;
+              bottom: 0;
+              width: 3px;
+              background: #e5e7eb;
+            }
+          }
+        `}</style>
+        <div className="timeline-container">
+          {stages.map((step, index) => {
+            const color = getStatusColor(step.status);
+            return (
+              <div key={step.id} className="timeline-step">
+                <div 
+                  className="step-circle" 
+                  style={{ 
+                    '--step-bg': color,
+                    backgroundColor: color 
+                  }}
+                >
+                  <Icon icon={step.icon} width="16" height="16" />
+                  {index + 1}
+                </div>
+                <div className="step-content">
+                  <div className="step-title" title={step.title}>{step.title}</div>
+                  {step.date && (
+                    <div className="step-date">
+                      {formatDate(step.date)}
+                    </div>
+                  )}
+                  {step.details && (
+                    <div className="step-details" title={step.details}>
+                      {step.details}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
   if (!data) return null;
   const addOns = data.BookingAddOns || [];
   const vehicles = data.VehicleDetails || [];
   const payments = data.Payments || [];
+  const invoices = data.Invoices || [];
   const carPickUpDelivery = data.CarPickUpDelivery || [];
   const followUps = data.Lead_FollowUps || [];
   const dealerApprovals = data.DealerAddOnApproval || [];
   const bookingStatusTracking = data.BookingStatusTracking || [];
   const bookingImages = data.BookingImages || [];
+
+  const totalBookingAmount =
+    (data.TotalPrice || 0) + (data.GSTAmount || 0) + (data.LabourCharges || 0) - (data.CouponAmount || 0);
+  const totalPaid = payments
+    .filter((p) => p.PaymentStatus && p.PaymentStatus.toLowerCase() !== "failed")
+    .reduce((sum, p) => sum + Number(p.AmountPaid || 0), 0);
+  const pendingAmount = Math.max(totalBookingAmount - totalPaid, 0);
+
+  const confirmedAddOns = addOns.filter((a) => a.IsSupervisor_Confirm === 1);
+  const pendingAddOns = (data.BookingsTempAddons || []).filter((a) => a.IsSupervisor_Confirm !== 1);
 
   return (
     <div className="mb-4">
@@ -125,10 +424,108 @@ function CompleteServiceReportView({ data, onBack }) {
         </div>
       </div>
 
-      <div className="row g-4">
-        {/* Booking overview */}
+      {/* NEW SERVICE TIMELINE - TOP OF PAGE */}
+      <div className="mb-4">
+
+        <ReportCard title="Service Timeline" icon="mdi:timeline-clock-outline">
+          <TimelineSection data={data} />
+        </ReportCard>
+      </div>
+
+      {/* Lead stage cards */}
+      <div className="mb-4">
+        <h6 className="text-uppercase text-muted small mb-3 d-flex align-items-center gap-2 mt-5">
+          <span className="rounded-circle bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center" style={{ width: 24, height: 24, fontSize: 12 }}>1</span>
+          Lead stage
+        </h6>
+        <div className="row g-4">
         <div className="col-lg-4">
-          <ReportCard title="Booking overview" icon="mdi:clipboard-text-outline">
+          <ReportCard title="Lead Created" icon="mdi:lead-pencil">
+            <div className="small">
+              <DetailRow label="Lead ID" value={data.LeadId ?? "—"} />
+              <DetailRow label="Created date" value={formatDate(data.LeadCreatedDate || data.CreatedDate)} />
+              <DetailRow label="Customer" value={data.CustomerName ?? data.CustFullName ?? "—"} />
+              <DetailRow label="Phone" value={data.PhoneNumber ?? "—"} />
+              <DetailRow label="Service type" value={data.ServiceType ?? "—"} />
+            </div>
+          </ReportCard>
+        </div>
+
+        {followUps.length > 0 && (
+          <div className="col-lg-8">
+            <ReportCard title="Lead follow-ups" icon="mdi:phone-log-outline">
+              <div className="accordion" id={`leadFollowupsAccordion-${data.BookingID}`}>
+                <div className="accordion-item border-0">
+                  <h2 className="accordion-header" id={`lead-followup-heading-${data.BookingID}`}>
+                    <button
+                      className="accordion-button px-3 py-2 bg-light"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target={`#lead-followup-collapse-${data.BookingID}`}
+                      aria-expanded="true"
+                      aria-controls={`lead-followup-collapse-${data.BookingID}`}
+                    >
+                      <span className="small fw-semibold">
+                        Lead follow-ups ({followUps.length})
+                      </span>
+                    </button>
+                  </h2>
+                  <div
+                    id={`lead-followup-collapse-${data.BookingID}`}
+                    className="accordion-collapse collapse show"
+                    aria-labelledby={`lead-followup-heading-${data.BookingID}`}
+                    data-bs-parent={`#leadFollowupsAccordion-${data.BookingID}`}
+                  >
+                    <div className="accordion-body small p-0 pt-3">
+                      <div className="table-responsive">
+                        <table className="table table-sm table-hover align-middle mb-0">
+                          <thead className="table-light">
+                            <tr>
+                              <th>Date</th>
+                              <th>Status</th>
+                              <th>Call Type</th>
+                              <th>Call Discussion</th>
+                              <th>Next action</th>
+                              <th>Next Follow-Up Date</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {followUps.slice(0, 10).map((f) => (
+                              <tr key={f.Id}>
+                                <td>{formatDateTime(f.Updated_At ?? f.Created_At ?? "N/A")}</td>
+                                <td>
+                                  <span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(f.Status)}`}>
+                                    {f.Status ?? "N/A"}
+                                  </span>
+                                </td>
+                                <td>{f.Type ?? "N/A"}</td>
+                                <td className="text-break">{f.Notes ?? "N/A"}</td>
+                                <td>{f.NextAction ?? "N/A"}</td>
+                                <td>{formatDateTime(f.NextFollowUp_Date ?? "N/A")}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </ReportCard>
+          </div>
+        )}
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <h6 className="text-uppercase text-muted small mb-3 d-flex align-items-center gap-2 mt-5">
+          <span className="rounded-circle bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center" style={{ width: 24, height: 24, fontSize: 12 }}>2</span>
+          Booking & customer
+        </h6>
+        <div className="row g-4">
+        {/* Booking overview (Booking Created stage) */}
+        <div className="col-lg-4">
+          <ReportCard title="Booking Created / Overview" icon="mdi:clipboard-text-outline">
             <div className="small">
               <DetailRow label="Booking ID" value={data.BookingID} />
               <DetailRow label="Booking date" value={formatDate(data.BookingDate)} />
@@ -158,43 +555,20 @@ function CompleteServiceReportView({ data, onBack }) {
           </ReportCard>
         </div>
 
-        {/* Assignment & team */}
+        {/* Supervisor/Field Advisor Assigned - Assignment & team */}
         <div className="col-lg-4">
-          <ReportCard title="Assignment & team" icon="mdi:account-group-outline">
+          <ReportCard title="Supervisor/Field Advisor Details" icon="mdi:account-group-outline">
             <div className="small">
               <DetailRow label="Supervisor Name" value={data.SupervisorHeadName ?? "N/A"} />
               <DetailRow label="Supervisor Number" value={data.SupervisorHeadPhoneNumber ?? "N/A"} />
-              {/* <DetailRow label="Assign status" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(data.SupervisorHeadAssignStatus)}`}>{data.SupervisorHeadAssignStatus ?? "N/A"}</span>} /> */}
-              <DetailRow label="Field Advisor Name
-              " value={data.FieldAdvisorName ?? "N/A"} />
+              <DetailRow label="Field Advisor Name" value={data.FieldAdvisorName ?? "N/A"} />
               <DetailRow label="Field Advisor Number" value={data.FieldAdvisorPhoneNumber ?? "N/A"} />
             </div>
           </ReportCard>
         </div>
 
-        {/* Vehicle */}
-        {vehicles.length > 0 && (
+          {/* Services (BookingAddOns) - Customer Confirmation Stage detail */}
           <div className="col-12">
-            <ReportCard title="Vehicle details" icon="mdi:car-side">
-              <div className="row g-3">
-                {vehicles.map((v, i) => (
-                  <div key={i} className="col-md-6 col-lg-4">
-                    <div className="p-3 rounded-3 bg-light bg-opacity-50 small">
-                      <DetailRow label="Registration No." value={v.RegistrationNumber ?? "N/A"} />
-                      <DetailRow label="Brand / Model" value={[v.BrandName, v.ModelName].filter(Boolean).join(" · ") || "N/A"} />
-                      <DetailRow label="Fuel Type" value={v.FuelTypeName ?? "N/A"} />
-                      {v.KmDriven != null && <DetailRow label="KM Driven" value={v.KmDriven} />}
-                      {v.YearOfPurchase != null && <DetailRow label="Year Of Purchase" value={v.YearOfPurchase} />}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ReportCard>
-          </div>
-        )}
-
-        {/* Services (BookingAddOns) */}
-        <div className="col-12">
           <h6 className="d-flex align-items-center gap-2 mb-3">
             <Icon icon="mdi:car-wrench" className="text-primary" />
             Services ({addOns.length})
@@ -208,23 +582,28 @@ function CompleteServiceReportView({ data, onBack }) {
                   borderVariant={svc.Is_Completed ? "success" : undefined}
                 >
                   <div className="row g-3">
-                    <div className="col-md-6 col-lg-4">
+                    <div className="col-md-4 col-lg-4">
                       <div className="small text-muted mb-2 fw-semibold">Pricing</div>
                       <DetailRow label="Service price" value={formatCurrency(svc.ServicePrice)} />
                       <DetailRow label="Labour Charges" value={formatCurrency(svc.LabourCharges)} />
                       <DetailRow label="GST (18%)" value={formatCurrency(svc.GSTPrice)} />
                       <DetailRow label="Total Price" value={formatCurrency(svc.TotalPrice)} />
-                      <DetailRow label="Dealer price" value={formatCurrency(svc.DealerPrice)} />
-                      <DetailRow label="Dealer GST Amount" value={formatCurrency(svc.DealerGSTAmount)} />
+                     
                       {/* <DetailRow label="Subtotal" value={formatCurrency(svc.DealerGSTAmount + svc.ServicePrice + svc.LabourCharges + svc.GSTPrice + svc.TotalPrice + svc.DealerPrice)} /> */}
                     </div>
-                    <div className="col-md-6 col-lg-4">
-                      <div className="small text-muted mb-2 fw-semibold">Status & dealer</div>
-                      <DetailRow label="Service Status" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(svc.StatusName)}`}>{svc.StatusName ?? "N/A"}</span>} />
+                    <div className="col-md-4 col-lg-4">
+                      <div className="small text-muted mb-2 fw-semibold">Dealer</div>
+                      <DetailRow label="Dealer Name" value={svc.DealerName ?? "N/A"} />
                       <DetailRow label="Dealer confirm" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(svc.IsDealer_Confirm)}`}>{svc.IsDealer_Confirm ?? "N/A"}</span>} />
+                       <DetailRow label="Dealer price" value={formatCurrency(svc.DealerPrice)} />
+                      <DetailRow label="Dealer GST Amount" value={formatCurrency(svc.DealerGSTAmount)} />
+                    </div>
+                    <div className="col-md-4 col-lg-4">
+                      <div className="small text-muted mb-2 fw-semibold">Status</div>
+                      <DetailRow label="Service Status" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(svc.StatusName)}`}>{svc.StatusName ?? "N/A"}</span>} />
+                      
                       <DetailRow label="Completed" value={svc.Is_Completed ? "Yes" : "No"} />
                       {svc.CompletedRole && <DetailRow label="Completed by" value={`${svc.CompletedRole}`} />}
-                      <DetailRow label="Dealer Name" value={svc.DealerName ?? "N/A"} />
                     </div>
                     {Array.isArray(svc.Includes) && svc.Includes.length > 0 && (
                       <div className="col-12 col-lg-4">
@@ -254,31 +633,62 @@ function CompleteServiceReportView({ data, onBack }) {
           </div>
         </div>
 
-        {/* Payments */}
-        {payments.length > 0 && (
+        {/* Vehicle details */}
+        {vehicles.length > 0 && (
           <div className="col-12">
-            <ReportCard title="Payments" icon="mdi:credit-card-outline">
+            <ReportCard title="Vehicle details" icon="mdi:car-side">
+              <div className="row g-3">
+                {vehicles.map((v, i) => (
+                  <div key={i} className="col-md-6 col-lg-4">
+                    <div className="p-3 rounded-3 bg-light bg-opacity-50 small">
+                      <DetailRow label="Registration No." value={v.RegistrationNumber ?? "N/A"} />
+                      <DetailRow label="Brand / Model" value={[v.BrandName, v.ModelName].filter(Boolean).join(" · ") || "N/A"} />
+                      <DetailRow label="Fuel Type" value={v.FuelTypeName ?? "N/A"} />
+                      {v.KmDriven != null && <DetailRow label="KM Driven" value={v.KmDriven} />}
+                      {v.YearOfPurchase != null && <DetailRow label="Year Of Purchase" value={v.YearOfPurchase} />}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ReportCard>
+          </div>
+        )}
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <h6 className="text-uppercase text-muted small mb-3 d-flex align-items-center gap-2 mt-5">
+          <span className="rounded-circle bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center" style={{ width: 24, height: 24, fontSize: 12 }}>3</span>
+          Dealer & customer confirmation
+        </h6>
+        <div className="row g-4">
+        {/* Dealer Confirmation Stage - Approval History */}
+        {dealerApprovals.length > 0 && (
+          <div className="col-12">
+            <ReportCard title="Dealer Approval History" icon="mdi:handshake-outline">
               <div className="table-responsive">
                 <table className="table table-sm table-hover mb-0">
                   <thead>
                     <tr>
                       <th>Date</th>
-                      <th>Amount</th>
-                      <th>Mode</th>
-                      <th>Transaction ID</th>
+                      <th>Service</th>
+                      <th>Dealer</th>
                       <th>Status</th>
-                      <th>Refunded</th>
+                      <th>Reason for Rejection</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {payments.map((p) => (
-                      <tr key={p.PaymentID}>
-                        <td>{formatDateTime(p.PaymentDate)}</td>
-                        <td>{formatCurrency(p.AmountPaid)}</td>
-                        <td>{p.PaymentMode ?? "—"}</td>
-                        <td className="text-break">{p.TransactionID ?? "—"}</td>
-                        <td><span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(p.PaymentStatus === "Success" ? "Paid" : p.PaymentStatus)}`}>{p.PaymentStatus === "Success" ? "Paid" : (p.PaymentStatus ?? "—")}</span></td>
-                        <td>{p.IsRefunded ? "Yes" : "No"}</td>
+                    {dealerApprovals.slice(0, 15).map((a) => (
+                      <tr key={a.Id}>
+                        <td>{formatDateTime(a.CreatedDate)}</td>
+                        <td>{a.ServiceName ?? "N/A"}</td>
+                        <td>{a.DealerName ?? "N/A"}</td>
+                        <td>
+                          <span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(a.IsDealer_Confirm)}`}>
+                            {a.IsDealer_Confirm ?? "N/A"}
+                          </span>
+                        </td>
+                        <td>{a.Reason ?? "N/A"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -288,31 +698,87 @@ function CompleteServiceReportView({ data, onBack }) {
           </div>
         )}
 
+        {/* Customer Confirmation Stage */}
+        {/* {(confirmedAddOns.length > 0 || pendingAddOns.length > 0) && (
+          <div className="col-12 col-lg-4">
+            <ReportCard title="Customer Confirmation" icon="mdi:account-check">
+              <div className="small">
+                <DetailRow
+                  label="Confirmed / Pending services"
+                  value={`${confirmedAddOns.length} confirmed / ${pendingAddOns.length} pending`}
+                />
+                <DetailRow
+                  label="First confirmed by"
+                  value={
+                    confirmedAddOns[0]?.ConfirmRole
+                      ? `${confirmedAddOns[0].ConfirmRole}`
+                      : "—"
+                  }
+                />
+              </div>
+            </ReportCard>
+          </div>
+        )} */}
+
+      
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <h6 className="text-uppercase text-muted small mb-3 d-flex align-items-center gap-2 mt-5">
+          <span className="rounded-circle bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center" style={{ width: 24, height: 24, fontSize: 12 }}>4</span>
+          Technician Tracking
+        </h6>
+        <div className="row g-4">
+        {/* Technician Assigned (summary) */}
+        {carPickUpDelivery.length > 0 && (
+          <div className="col-12 col-lg-4">
+            <ReportCard title="Technician Assigned" icon="mdi:engineer">
+              <div className="small">
+                <DetailRow
+                  label="Technician(s)"
+                  value={
+                    carPickUpDelivery
+                      .map((p) => p.TechnicinaName)
+                      .filter(Boolean)
+                      .join(", ") || "—"
+                  }
+                />
+                <DetailRow
+                  label="Assigned date"
+                  value={formatDateTime(carPickUpDelivery[0]?.AssignDate)}
+                />
+              </div>
+            </ReportCard>
+          </div>
+        )}
+
         {/* Car Pickup & Delivery */}
         {carPickUpDelivery.length > 0 && (
           <div className="col-12">
-            <ReportCard title="Car Pickup & Delivery" icon="mdi:car-side">
+            <ReportCard title="Technician Tracking" icon="mdi:car-side">
               <div className="row g-4">
                 {carPickUpDelivery.map((pick, idx) => (
                   <div key={pick.Id ?? idx} className="col-12">
                     <div className="card border border-light rounded-3 overflow-hidden">
                       <div className="card-header bg-light d-flex flex-wrap align-items-center gap-2 py-2 px-3">
                         <span className={`badge rounded-pill px-3 py-2 ${pick.PickType === "CarDrop" ? "bg-info bg-opacity-25 text-info" : "bg-primary bg-opacity-25 text-primary"}`}>
-                          {pick.PickType === "CarDrop" ? "Car Delivery" : "Car Pickup"}
-                        </span>
-                        <span className="badge rounded-pill px-3 py-2 bg-secondary bg-opacity-25 text-secondary">
-                          {pick.RouteType === "CustomerToDealer" ? "Customer → Dealer" : "Dealer → Customer"}
+                           {pick.ServiceType && (
+                          <span className="small">{pick.ServiceType == 'ServiceAtHome' ? "Service At Home" : "Service At Garage"}</span>
+                        )}
                         </span>
                         <span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(pick.Status)}`}>
                           {pick.Status ?? "—"}
                         </span>
-                        {pick.ServiceType && (
-                          <span className="small text-muted">{pick.ServiceType}</span>
-                        )}
+                       
+
+                        
                       </div>
                       <div className="card-body py-3 px-4 small">
                         <div className="row g-3">
-                          <div className="col-md-6">
+                          {pick.ServiceType == 'ServiceAtGarage' ? (
+                            <>
+                             <div className="col-md-6">
                             <div className="fw-semibold text-muted mb-2">From</div>
                             <DetailRow label="Name" value={pick.PickFromName ?? "—"} />
                             <DetailRow label="Phone" value={pick.PickFromPhone ?? "—"} />
@@ -323,7 +789,11 @@ function CompleteServiceReportView({ data, onBack }) {
                             <DetailRow label="Name" value={pick.PickToName ?? "—"} />
                             <DetailRow label="Phone" value={pick.PickToPhone ?? "—"} />
                             <DetailRow label="Address" value={(pick.PickToAddress ?? "—").replace(/\n/g, ", ")} />
-                          </div>
+                          </div> 
+                          </>
+                          ) : (<></>)}
+                           
+                          
                           <div className="col-12">
                             <div className="fw-semibold text-muted mb-2">Technician & timing</div>
                             <DetailRow label="Technician" value={pick.TechnicinaName ?? "—"} />
@@ -335,25 +805,109 @@ function CompleteServiceReportView({ data, onBack }) {
                             {(pick.DeliveryDate || pick.DeliveryTime) && (
                               <DetailRow label="Delivery" value={`${formatDate(pick.DeliveryDate)} ${pick.DeliveryTime ?? ""}`.trim()} />
                             )}
-                            <DetailRow label="Created" value={formatDateTime(pick.CreatedDate)} />
+
                             <DetailRow label="Modified" value={formatDateTime(pick.ModifiedDate)} />
                           </div>
                           {Array.isArray(pick.DriverTracking) && pick.DriverTracking.length > 0 && (
-                            <div className="col-12">
-                              <div className="fw-semibold text-muted mb-2">Driver tracking</div>
-                              <ul className="list-unstyled mb-0">
-                                {pick.DriverTracking.map((t, i) => (
-                                  <li key={t.Id ?? i} className="d-flex align-items-center gap-2 py-1 border-bottom border-light border-opacity-50">
-                                    <span className={`badge rounded-pill px-2 py-1 ${getStatusBadgeClass(t.Status)}`}>
-                                      {t.Status ?? "—"}
-                                    </span>
-                                    <span className="text-muted">{formatDateTime(t.CreatedDate)}</span>
-                                  </li>
-                                ))}
-                              </ul>
+                            <div className="col-12 mt-3">
+                              <div className="fw-semibold text-muted mb-3">Technician / Driver Timeline</div>
+                              <div className="position-relative">
+                                <style jsx>{`
+                                  .driver-timeline {
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 1rem;
+                                    overflow-x: auto;
+                                    padding: 1rem 0;
+                                  }
+                                  .driver-step {
+                                    position: relative;
+                                    flex-shrink: 0;
+                                    text-align: center;
+                                    min-width: 100px;
+                                  }
+                                  .driver-step:not(:first-child)::before {
+                                    content: '';
+                                    position: absolute;
+                                    left: -0.75rem;
+                                    top: 50%;
+                                    transform: translateY(-50%);
+                                    width: 1.5rem;
+                                    height: 3px;
+                                    background: #e5e7eb;
+                                    z-index: 1;
+                                  }
+                                  .driver-circle {
+                                    width: 40px;
+                                    height: 40px;
+                                    border-radius: 50%;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    margin: 0 auto 0.5rem;
+                                    font-weight: 600;
+                                    font-size: 12px;
+                                    color: white;
+                                    position: relative;
+                                    z-index: 2;
+                                    border: 3px solid white;
+                                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                                  }
+                                  .driver-status {
+                                    font-size: 11px;
+                                    font-weight: 600;
+                                    margin-bottom: 0.25rem;
+                                    line-height: 1.2;
+                                  }
+                                  .driver-date {
+                                    font-size: 10px;
+                                    opacity: 0.7;
+                                  }
+                                  .car-icon {
+                                    position: absolute;
+                                    top: -25px;
+                                    left: 50%;
+                                    transform: translateX(-50%);
+                                    font-size: 24px;
+                                    z-index: 3;
+                                    transition: left 0.3s ease;
+                                  }
+                                `}</style>
+                                <div className="driver-timeline">
+                                  {pick.DriverTracking.map((t, i) => {
+                                    let displayStatus = t.Status;
+                                    // Enhanced status-based colors from STATUS_BADGE_CLASS
+                                    const status = t.Status?.toLowerCase() || 'pending';
+                                    const isCompleted = status === 'completed';
+                                    const getDriverColor = (s) => {
+                                      if (s === 'completed') return '#10b981'; // green
+                                      if (s === 'pickup_started' || s === 'serviceinprogress') return '#3b82f6'; // blue
+                                      if (s === 'pickup_reached' || s === 'car_picked' || s === 'drop_reached') return '#06b6d4'; // cyan
+                                      if (s === 'in_transit' || s === 'outfordelivery') return '#eab308'; // yellow
+                                      return '#6b7280'; // gray
+                                    };
+                                    const color = getDriverColor(status);
+                                    return (
+                                      <div key={t.Id ?? i} className="driver-step">
+                                        <div 
+                                          className="driver-circle" 
+                                          style={{ 
+                                            backgroundColor: color
+                                          }}
+                                        >
+                                          {i + 1}
+                                        </div>
+                                        <div className="driver-status">{displayStatus}</div>
+                                        <div className="driver-date">{formatDateTime(t.CreatedDate)}</div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
                             </div>
                           )}
                         </div>
+
                       </div>
                     </div>
                   </div>
@@ -363,36 +917,122 @@ function CompleteServiceReportView({ data, onBack }) {
           </div>
         )}
 
-        {/* Booking status tracking */}
-        {bookingStatusTracking.length > 0 && (
+        {/* Timeline replaces old Technician/Driver tracking & status table ✓ */}
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <h6 className="text-uppercase text-muted small mb-3 d-flex align-items-center gap-2 mt-5">
+          <span className="rounded-circle bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center" style={{ width: 24, height: 24, fontSize: 12 }}>5</span>
+          Billing & Payments
+        </h6>
+        <div className="row g-4">
+        {/* Payment Done · payment history · Invoice */}
+        {(payments.length > 0 || invoices.length > 0) && (
           <div className="col-12">
-            <ReportCard title="Booking status tracking" icon="mdi:timeline-clock-outline">
-              <div className="table-responsive">
-                <table className="table table-sm table-hover mb-0">
-                  <thead>
-                    <tr>
-                      <th>Date & time</th>
-                      <th>Status</th>
-                      <th>Service type</th>
-                      <th>Updated by (Role)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {bookingStatusTracking.map((t) => (
-                      <tr key={t.Id}>
-                        <td>{formatDateTime(t.Created_At)}</td>
-                        <td><span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(t.Status)}`}>{t.Status ?? "—"}</span></td>
-                        <td>{t.Service_Type ?? "—"}</td>
-                        <td>{t.Role ?? "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </ReportCard>
+            <div className="row g-4">
+              {payments.length > 0 && (
+                <div className="col-lg-4">
+                  <ReportCard title="Payment Done" icon="mdi:credit-card-check">
+                    <div className="small">
+                      <DetailRow label="Total booking amount" value={formatCurrency(totalBookingAmount)} />
+                      <DetailRow label="Total paid" value={formatCurrency(totalPaid)} />
+                      <DetailRow label="Pending amount" value={formatCurrency(pendingAmount)} />
+                      <DetailRow
+                        label="Last payment date"
+                        value={formatDateTime(payments[0]?.PaymentDate)}
+                      />
+                    </div>
+                  </ReportCard>
+                </div>
+              )}
+
+              {payments.length > 0 && (
+                <div className="col-12">
+                  <ReportCard title="Payment history" icon="mdi:credit-card-outline">
+                    <div className="table-responsive">
+                      <table className="table table-sm table-hover mb-0">
+                        <thead>
+                          <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Mode</th>
+                            <th>Transaction ID</th>
+                            <th>Status</th>
+                            <th>Refunded</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {payments.map((p) => (
+                            <tr key={p.PaymentID}>
+                              <td>{formatDateTime(p.PaymentDate)}</td>
+                              <td>{formatCurrency(p.AmountPaid)}</td>
+                              <td>{p.PaymentMode ?? "—"}</td>
+                              <td className="text-break">{p.TransactionID ?? "—"}</td>
+                              <td>
+                                <span
+                                  className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(
+                                    p.PaymentStatus === "Success" ? "Paid" : p.PaymentStatus
+                                  )}`}
+                                >
+                                  {p.PaymentStatus === "Success" ? "Paid" : p.PaymentStatus ?? "—"}
+                                </span>
+                              </td>
+                              <td>{p.IsRefunded ? "Yes" : "No"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </ReportCard>
+                </div>
+              )}
+
+              {invoices.length > 0 && (
+                <div className="col-12">
+                  <ReportCard title="Invoice" icon="mdi:file-document-outline">
+                    <div className="table-responsive">
+                      <table className="table table-sm table-hover mb-0">
+                        <thead>
+                          <tr>
+                            <th>Invoice #</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Total</th>
+                            <th>Tax</th>
+                            <th>Net</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {invoices.map((inv) => (
+                            <tr key={inv.InvoiceID}>
+                              <td className="text-break">{inv.InvoiceNumber ?? "—"}</td>
+                              <td>{inv.InvoiceType ?? "—"}</td>
+                              <td>
+                                <span
+                                  className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(
+                                    inv.InvoiceStatus
+                                  )}`}
+                                >
+                                  {inv.InvoiceStatus ?? "—"}
+                                </span>
+                              </td>
+                              <td>{formatCurrency(inv.TotalAmount)}</td>
+                              <td>{formatCurrency(inv.TaxAmount)}</td>
+                              <td>{formatCurrency(inv.NetAmount)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </ReportCard>
+                </div>
+              )}
+            </div>
           </div>
         )}
-
+        </div>
+      </div>
         {/* Booking images */}
         {bookingImages.length > 0 && (
           <div className="col-12">
@@ -444,7 +1084,7 @@ function CompleteServiceReportView({ data, onBack }) {
         )}
 
         {/* Fullscreen image overlay */}
-        {fullscreenImageUrl && (
+        {fullscreenImageUrl ? (
           <div
             className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
             style={{ zIndex: 9999, backgroundColor: "rgba(0,0,0,0.9)" }}
@@ -457,7 +1097,10 @@ function CompleteServiceReportView({ data, onBack }) {
               type="button"
               className="position-absolute top-0 end-0 m-3 btn btn-light btn-lg rounded-circle d-inline-flex align-items-center justify-content-center"
               style={{ width: 48, height: 48 }}
-              onClick={(e) => { e.stopPropagation(); setFullscreenImageUrl(null); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setFullscreenImageUrl(null);
+              }}
               aria-label="Close"
             >
               <Icon icon="mdi:close" width={28} height={28} />
@@ -470,75 +1113,11 @@ function CompleteServiceReportView({ data, onBack }) {
               onClick={(e) => e.stopPropagation()}
             />
           </div>
-        )}
+        ) : null}
 
-        {/* Lead follow-ups */}
-        {followUps.length > 0 && (
-          <div className="col-12">
-            <ReportCard title="Lead follow-ups" icon="mdi:phone-log-outline">
-              <div className="table-responsive">
-                <table className="table table-sm table-hover mb-0">
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Status</th>
-                      <th>Call Type</th>
-                      <th>Call Discussion</th>
-                      <th>Next action</th>
-                      <th>Next Follow-Up Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {followUps.slice(0, 10).map((f) => (
-                      <tr key={f.Id}>
-                        <td>{formatDateTime(f.Updated_At ?? f.Created_At ?? "N/A")}</td>
-                        <td><span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(f.Status)}`}>{f.Status ?? "N/A"}</span></td>
-                        <td>{f.Type ?? "N/A"}</td>
-                        <td className="text-break">{f.Notes ?? "N/A"}</td>
-                        <td>{f.NextAction ?? "N/A"}</td>
-                        <td>{formatDateTime(f.NextFollowUp_Date ?? "N/A")}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </ReportCard>
-          </div>
-        )}
-
-        {/* Dealer add-on approval history (compact) */}
-        {dealerApprovals.length > 0 && (
-          <div className="col-12">
-            <ReportCard title="Dealer Approval History" icon="mdi:handshake-outline">
-              <div className="table-responsive">
-                <table className="table table-sm table-hover mb-0">
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Service</th>
-                      <th>Dealer</th>
-                      <th>Status</th>
-                      <th>Reason for Rejection</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dealerApprovals.slice(0, 15).map((a) => (
-                      <tr key={a.Id}>
-                        <td>{formatDateTime(a.CreatedDate)}</td>
-                        <td>{a.ServiceName ?? "N/A"}</td>
-                        <td>{a.DealerName ?? "N/A"}</td>
-                        <td><span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(a.IsDealer_Confirm)}`}>{a.IsDealer_Confirm ?? "N/A"}</span></td>
-                        <td>{a.Reason ?? "N/A"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </ReportCard>
-          </div>
-        )}
+        {/* Lead follow-ups table is now inside Lead stage accordion */}
       </div>
-    </div>
+    // </div>
   );
 }
 
@@ -702,13 +1281,13 @@ const CompleteServiceReportLayer = () => {
       width: "150px",
       sortable: true,
     },
-    {
-      name: "Time slot",
-      selector: (row) => row.TimeSlot || row.AssignedTimeSlot || "-",
-      width: "220px",
-      sortable: true,
-      wrap: true,
-    },
+    // {
+    //   name: "Time slot",
+    //   selector: (row) => row.TimeSlot || row.AssignedTimeSlot || "-",
+    //   width: "220px",
+    //   sortable: true,
+    //   wrap: true,
+    // },
     {
       name: "Amount",
       selector: (row) =>
@@ -778,43 +1357,43 @@ const CompleteServiceReportLayer = () => {
     //   width: "180px",
     //   wrap: true,
     // },
-    {
-      name: "Car Brand/Model",
-      selector: (row) => (
-        <>
-          <span className="fw-bold">
-            {row.VehicleDetails?.[0]?.BrandName || "Not Available"} <br />
-            ({row.VehicleDetails?.[0]?.ModelName || ""})
-          </span>
-        </>
-      ),
-      width: "150px",
-      sortable: true,
-    },
-    {
-      name: "Car YOP",
-      selector: (row) => (
-        <>
-          <span className="fw-bold">
-            {row.VehicleDetails?.[0]?.YearOfPurchase || "Not Available"}
-          </span>
-        </>
-      ),
-      width: "150px",
-      sortable: true,
-    },
-    {
-      name: "Fuel Type",
-      selector: (row) => (
-        <>
-          <span className="fw-bold">
-            {row.VehicleDetails?.[0]?.FuelTypeName || "Not Available"}
-          </span>
-        </>
-      ),
-      width: "150px",
-      sortable: true,
-    },
+    // {
+    //   name: "Car Brand/Model",
+    //   selector: (row) => (
+    //     <>
+    //       <span className="fw-bold">
+    //         {row.VehicleDetails?.[0]?.BrandName || "Not Available"} <br />
+    //         ({row.VehicleDetails?.[0]?.ModelName || ""})
+    //       </span>
+    //     </>
+    //   ),
+    //   width: "150px",
+    //   sortable: true,
+    // },
+    // {
+    //   name: "Car YOP",
+    //   selector: (row) => (
+    //     <>
+    //       <span className="fw-bold">
+    //         {row.VehicleDetails?.[0]?.YearOfPurchase || "Not Available"}
+    //       </span>
+    //     </>
+    //   ),
+    //   width: "150px",
+    //   sortable: true,
+    // },
+    // {
+    //   name: "Fuel Type",
+    //   selector: (row) => (
+    //     <>
+    //       <span className="fw-bold">
+    //         {row.VehicleDetails?.[0]?.FuelTypeName || "Not Available"}
+    //       </span>
+    //     </>
+    //   ),
+    //   width: "150px",
+    //   sortable: true,
+    // },
     {
       name: "Booking Status",
       cell: (row) => {

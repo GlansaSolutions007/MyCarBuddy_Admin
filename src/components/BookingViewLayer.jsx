@@ -1679,9 +1679,92 @@ const BookingViewLayer = () => {
       return;
     }
 
+    const supervisorBookings = bookingData?.SupervisorBookings || [];
+
+    if (!supervisorBookings.length) {
+      Swal.fire(
+        "Error",
+        "No supervisor services found for this booking.",
+        "error",
+      );
+      return;
+    }
+
+    const servicesWithoutDealer = supervisorBookings.filter(
+      (s) => !s.DealerID && !s.DealerName,
+    );
+
+    if (servicesWithoutDealer.length > 0) {
+      const serviceNames = servicesWithoutDealer
+        .map((s) => s.ServiceName || "Unnamed Service")
+        .join("<br>");
+
+      Swal.fire({
+        icon: "warning",
+        title: "Dealer not assigned",
+        html: `
+          Please assign a dealer for the following services before generating the estimation invoice:<br><br>
+          ${serviceNames}
+        `,
+      });
+      return;
+    }
+
+    const notApprovedByDealer = supervisorBookings.filter((s) => {
+      const dealerStatus = (s.IsDealer_Confirm ?? s.isDealer_Confirm)
+        ?.toString()
+        .trim()
+        .toLowerCase();
+      return dealerStatus !== "approved";
+    });
+
+    if (notApprovedByDealer.length > 0) {
+      const serviceNames = notApprovedByDealer
+        .map((s) => s.ServiceName || "Unnamed Service")
+        .join("<br>");
+
+      Swal.fire({
+        icon: "warning",
+        title: "Dealer has not approved services",
+        html: `
+          The following services are not yet approved by the dealer. Please get them approved before generating the estimation invoice:<br><br>
+          ${serviceNames}
+        `,
+      });
+      return;
+    }
+
+    const zeroTotalSupervisorServices = supervisorBookings.filter((s) => {
+      const total =
+        Number(
+          s.TotalPrice ??
+          (Number(s.Price || 0) +
+            Number(s.GSTAmount || 0) +
+            Number(s.LabourCharges || 0) -
+            Number(s.CouponAmount || 0)),
+        );
+      return total === 0;
+    });
+
+    if (zeroTotalSupervisorServices.length > 0) {
+      const serviceNames = zeroTotalSupervisorServices
+        .map((s) => s.ServiceName || "Unnamed Service")
+        .join("<br>");
+
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid service amount",
+        html: `
+          The following supervisor services have a total amount of 0. Please update their prices before generating the estimation invoice:<br><br>
+          ${serviceNames}
+        `,
+      });
+      return;
+    }
+
     try {
       const res = await axios.post(
-      `${API_BASE}Leads/GenerateEstimationInvoice`,
+        `${API_BASE}Leads/GenerateEstimationInvoice`,
         {
           bookingID: bookingData.BookingID,
         },
@@ -2685,32 +2768,32 @@ const handleCustomerConfirmationSubmit = async () => {
                     bookingData?.Payments?.[bookingData.Payments.length - 1]
                       ?.PaymentStatus === "Success"
                   ) && ( */}
-                {!hideAllActions && (
+                  {!hideAllActions && (
   <>
     {/* Confirm Services Button */}
     {(
       (bookingData?.Isinspection === 1 && bookingData?.Isservice_converted === 1) ||
       (bookingData?.Isinspection === 0 && bookingData?.Isservice_converted === 0)
     ) && (
-      <Link
-        to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
-        className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
+                      <Link
+                        to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
+                        className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
                         // title="Add"
-        title={
-          roleName === "Field Advisor"
-            ? "Assign Dealers"
+                         title={
+                          roleName === "Field Advisor"
+                            ? "Assign Dealers"
                             : roleName === "Supervisor Head"
                             ? "Confirm Services"
-            : "Confirm Services"
-        }
-      >
-        <Icon icon="mdi:pencil-outline" />
-        {roleName === "Field Advisor"
-          ? "Assign Dealers"
+                            : "Confirm Services"
+                        }
+                      >
+                       <Icon icon="mdi:pencil-outline" />
+                        {roleName === "Field Advisor"
+                          ? "Assign Dealers"
                           : roleName === "Supervisor Head"
                           ? "Confirm Services"
-          : "Confirm Services"}
-      </Link>
+                          : "Confirm Services"}
+                      </Link>
     )}
 
     {/* Convert To Service Button */}
@@ -2726,7 +2809,7 @@ const handleCustomerConfirmationSubmit = async () => {
         </button>
       )}
   </>
-)}
+                    )}
 
                   {/* Reschedule & Reassign Buttons */}
                   {bookingData && !hideAllActions &&
