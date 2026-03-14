@@ -2980,11 +2980,11 @@ const BookServicesLayer = () => {
             <div className="card overflow-hidden p-3">
               <div className="card-body">
                 {/* SINGLE FORM */}
-                <h6 className="mb-3">Add Service / Spare Part</h6>
+                <h6 className="mb-3">Add Services</h6>
 
                 <div className="row g-3 align-items-end">
                   <div className="col-md-2">
-                    <label className="form-label">Select Type</label>
+                    <label className="form-label">Select Services Type</label>
                     <select
                       className="form-select"
                       value={itemType}
@@ -3325,7 +3325,7 @@ const BookServicesLayer = () => {
                 </div>
                 {/* SINGLE TABLE FOR BOTH */}
                 <div className="editable-table">
-                  <h6>Added Services + Spare Parts</h6>
+                  <h6>Added Services</h6>
                   <DataTable
                     columns={columns}
                     data={flattenedRows}
