@@ -848,6 +848,93 @@ const [previewImages, setPreviewImages] = useState([]);
   }
 };
 
+  const handleConfirmService = async () => {
+    const addOns = bookingData?.BookingAddOns || [];
+    if (addOns.length === 0) {
+      Swal.fire({
+        icon: "info",
+        title: "No services",
+        text: "No services to confirm. Add services first.",
+      });
+      return;
+    }
+    const result = await Swal.fire({
+      title: "Confirm services?",
+      text: `This will confirm ${addOns.length} service(s) for this booking.`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Confirm",
+      cancelButtonText: "Cancel",
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      const uid = parseInt(duserId || localStorage.getItem("userId") || "0", 10);
+      const rolename = roleName || employeeData?.RoleName || "";
+
+      for (const addon of addOns) {
+        const addOnId = addon.AddOnID ?? addon.addOnId;
+        if (!addOnId) continue;
+
+        const includes =
+          Array.isArray(addon.Includes) && addon.Includes.length > 0
+            ? addon.Includes.map((i) => i.IncludeID ?? i.includeId).filter(Boolean).join(",")
+            : "";
+        const payload = {
+          id: addOnId,
+          bookingId: bookingData.BookingID,
+          bookingTrackID: bookingData.BookingTrackID,
+          leadId: bookingData.LeadId,
+          serviceType: addon.ServiceType || "Package",
+          serviceName: addon.ServiceName || "",
+          basePrice: Number(addon.BasePrice ?? addon.ServicePrice ?? 0) || 0,
+          quantity: Number(addon.Quantity ?? 1) || 1,
+          price: Number(addon.ServicePrice ?? addon.TotalPrice ?? 0) || 0,
+          gstPercent: Number(addon.GSTPercent ?? 0) || 0,
+          gstAmount: Number(addon.GSTPrice ?? 0) || 0,
+          description: addon.Description || "",
+          dealerID: addon.DealerID != null && addon.DealerID !== "" ? Number(addon.DealerID) : 0,
+          percentage: Number(addon.Percentage ?? 0) || 0,
+          supervisorRole: rolename,
+          our_Earnings: Number(addon.Our_Earnings ?? 0) || 0,
+          labourCharges: Number(addon.LabourCharges ?? 0) || 0,
+          modifiedBy: uid,
+          isActive: true,
+          type: "Confirm",
+          includes,
+          serviceId: Number(addon.ServiceId ?? 0) || 0,
+        };
+
+        await axios.put(
+          `${API_BASE}Supervisor/UpdateSupervisorBooking`,
+          payload,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      }
+
+      Swal.fire({
+        icon: "success",
+        title: "Confirmed",
+        text: "Services confirmed successfully.",
+      });
+      fetchBookingData();
+    } catch (error) {
+      console.error("Confirm Service Error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text:
+          error?.response?.data?.message ||
+          "Failed to confirm services.",
+      });
+    }
+  };
+
 const handleImageChange = (e) => {
   const files = Array.from(e.target.files);
 
@@ -893,7 +980,7 @@ const handleFieldAdvisorConfirm = async () => {
     formData.append("EmployeeId", employeeId);
 
     selectedImages.forEach((img) => {
-      formData.append("Images", img.file);
+      formData.append("Images", img);
     });
 
     const res = await axios.post(
@@ -2970,7 +3057,7 @@ const handleCustomerRejectionSubmit = async () => {
                     to={`/lead-view/${bookingData?.LeadId}`}
                     className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
                     title="View"
-                  >
+                  > <Icon icon="mdi:eye-outline" width={16} height={16} className="mx-2" />
                     View Lead
                   </Link>
                   {/* {!(
@@ -3017,6 +3104,23 @@ const handleCustomerRejectionSubmit = async () => {
         >
           <Icon icon="mdi:swap-horizontal-bold" />
           Convert To Service
+        </button>
+      )}
+
+    {/* Confirm Service Button - Admin & Supervisor only, when Convert To Service is enabled; hide once all services are confirmed */}
+    {bookingData?.Isinspection === 1 &&
+      bookingData?.Isservice_converted === 0 &&
+      (roleId === "1" || roleId === "8") &&
+      (bookingData?.BookingAddOns || []).some(
+        (a) => (a.IsSupervisor_Confirm ?? a.isSupervisor_Confirm) !== 1
+      ) && (
+        <button
+          className="btn btn-success btn-sm d-inline-flex align-items-center justify-content-center gap-2"
+          onClick={handleConfirmService}
+          title="Confirm Service"
+        >
+          <Icon icon="mdi:check-circle-outline" />
+          Confirm Service
         </button>
       )}
   </>
@@ -4489,6 +4593,7 @@ const handleCustomerRejectionSubmit = async () => {
                                   const supervisorPendingCount = supervisorItems.filter(
                                     (a) => (a.IsSupervisor_Confirm ?? a.isSupervisor_Confirm) !== 1
                                   ).length;
+                                  const isSupervisorAssigned = !!(bookingData?.SupervisorID ?? bookingData?.SupervisorHeadId);
                                   return (
                                     <>
                                       {dlrPendingCount > 0 && (
@@ -4496,11 +4601,15 @@ const handleCustomerRejectionSubmit = async () => {
                                           <strong>{dlrPendingCount}</strong> services are pending for completion on the dealer side.
                                         </div>
                                       )}
-                                      {supervisorPendingCount > 0 && (
+                                      {!isSupervisorAssigned ? (
+                                        <div className="alert alert-secondary py-2 px-3 mb-2 mb-md-3 small">
+                                          Need to assign a Supervisor
+                                        </div>
+                                      ) : supervisorPendingCount > 0 ? (
                                         <div className="alert alert-secondary py-2 px-3 mb-2 mb-md-3 small">
                                           {supervisorPendingCount} service{supervisorPendingCount !== 1 ? "s" : ""} need{supervisorPendingCount === 1 ? "s" : ""} to be confirmed by the supervisor.
                                         </div>
-                                      )}
+                                      ) : null}
                                     </>
                                   );
                                 })()}
@@ -5193,6 +5302,65 @@ const handleCustomerRejectionSubmit = async () => {
                   </Accordion.Body>
                 </Accordion.Item>
               </Accordion>
+              {/* ================= SERVICE COMPLETION IMAGES ACCORDION ================= */}
+<Accordion className="mb-3" defaultActiveKey="">
+  <Accordion.Item eventKey="serviceImages">
+    <Accordion.Header>
+      <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
+        <Icon icon="mdi:image-multiple" width={20} height={20} />
+        Service Completion Images
+      </h6>
+    </Accordion.Header>
+
+    <Accordion.Body>
+      {(bookingData?.ServiceImages ?? []).length > 0 ? (
+
+        <div className="row g-3">
+
+          {(bookingData?.ServiceImages ?? []).map((img, idx) => (
+            <div className="col-lg-2 col-md-3 col-4" key={img.ImageID ?? idx}>
+
+              <img
+                src={`${API_IMAGE}${img.ImageURL}`}
+                alt="Service Completion"
+                className="img-fluid rounded border"
+                style={{
+                  height: "100px",
+                  width: "100%",
+                  objectFit: "cover",
+                  cursor: "pointer"
+                }}
+                onClick={() =>
+                  window.open(`${API_IMAGE}${img.ImageURL}`, "_blank")
+                }
+              />
+
+              <div
+                className="text-muted text-center mt-1"
+                style={{ fontSize: "0.7rem" }}
+              >
+                {img.UploadedAt
+                  ? new Date(img.UploadedAt).toLocaleDateString("en-IN", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric"
+                    })
+                  : ""}
+              </div>
+
+            </div>
+          ))}
+
+        </div>
+
+      ) : (
+        <p className="text-muted mb-0 text-center py-4">
+          No service completion images uploaded.
+        </p>
+      )}
+    </Accordion.Body>
+  </Accordion.Item>
+</Accordion>
             </div>
           </div>
         </div>
@@ -6701,7 +6869,7 @@ const handleCustomerRejectionSubmit = async () => {
                         selectedServiceIds.length === 0
                       }
                   >
-                    Confirm Services
+                    Confirm Service By Supervisor / Admin
                   </button>
                 </div>
               </div>
