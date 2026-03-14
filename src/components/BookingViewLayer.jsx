@@ -147,6 +147,10 @@ const BookingViewLayer = () => {
   const [showCustomerRejectionModal, setShowCustomerRejectionModal] = useState(false);
   const [rejectionDescription, setRejectionDescription] = useState("");
   const [rejectedServiceIds, setRejectedServiceIds] = useState([]);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+const [selectedAddon, setSelectedAddon] = useState(null);
+const [selectedImages, setSelectedImages] = useState([]);
+const [previewImages, setPreviewImages] = useState([]);
   const employeeData = JSON.parse(localStorage.getItem("employeeData"));
   const userId = employeeData?.Id;
   const roleName = employeeData?.RoleName;
@@ -844,34 +848,120 @@ const BookingViewLayer = () => {
   }
 };
 
-  const handleFieldAdvisorConfirm = async (addon) => {
-    const addOnId = addon?.AddOnID ?? addon?.addOnId;
-    const employeeId = userId ? Number(userId) : Number(localStorage.getItem("userId") || 0);
-    if (!addOnId || !employeeId) {
-      Swal.fire({ icon: "warning", title: "Invalid data", text: "AddOn ID or Employee ID missing." });
-      return;
-    }
-    try {
-      const res = await axios.post(
-        `${API_BASE}Supervisor/confirm`,
-        { addOnId, employeeId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (res.data != null && res.status >= 200 && res.status < 300) {
-        Swal.fire({ icon: "success", title: "Confirmed", text: "Service confirmed successfully." });
-        fetchBookingData();
-      } else {
-        Swal.fire({ icon: "error", title: "Error", text: res.data?.message || "Failed to confirm." });
+const handleImageChange = (e) => {
+  const files = Array.from(e.target.files);
+
+  const newFiles = [...selectedImages, ...files];
+  setSelectedImages(newFiles);
+
+  const newPreviews = files.map((file) => ({
+    file,
+    url: URL.createObjectURL(file),
+  }));
+
+  setPreviewImages((prev) => [...prev, ...newPreviews]);
+
+  e.target.value = ""; // allows selecting same file again
+};
+
+const handleRemoveImage = (index) => {
+  setPreviewImages((prev) => prev.filter((_, i) => i !== index));
+  setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+};
+
+const handleFieldAdvisorConfirm = async () => {
+  if (!selectedAddon) return;
+
+  const addOnId = selectedAddon?.AddOnID ?? selectedAddon?.addOnId;
+  const employeeId = userId
+    ? Number(userId)
+    : Number(localStorage.getItem("userId") || 0);
+
+  if (!addOnId || !employeeId) {
+    Swal.fire({
+      icon: "warning",
+      title: "Invalid data",
+      text: "AddOn ID or Employee ID missing.",
+    });
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+
+    formData.append("AddOnId", addOnId);
+    formData.append("EmployeeId", employeeId);
+
+    selectedImages.forEach((img) => {
+      formData.append("Images", img.file);
+    });
+
+    const res = await axios.post(
+      `${API_BASE}Supervisor/confirm`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
       }
-    } catch (err) {
-      console.error("Supervisor/confirm error:", err);
+    );
+
+    if (res.status >= 200 && res.status < 300) {
       Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: err.response?.data?.message || err.message || "Failed to confirm service.",
+        icon: "success",
+        title: "Confirmed",
+        text: "Service confirmed successfully.",
       });
+
+      setShowConfirmModal(false);
+      setSelectedImages([]);
+      setPreviewImages([]);
+
+      fetchBookingData();
     }
-  };
+  } catch (err) {
+    console.error("Supervisor/confirm error:", err);
+
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text:
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to confirm service.",
+    });
+  }
+};
+
+  // const handleFieldAdvisorConfirm = async (addon) => {
+  //   const addOnId = addon?.AddOnID ?? addon?.addOnId;
+  //   const employeeId = userId ? Number(userId) : Number(localStorage.getItem("userId") || 0);
+  //   if (!addOnId || !employeeId) {
+  //     Swal.fire({ icon: "warning", title: "Invalid data", text: "AddOn ID or Employee ID missing." });
+  //     return;
+  //   }
+  //   try {
+  //     const res = await axios.post(
+  //       `${API_BASE}Supervisor/confirm`,
+  //       { addOnId, employeeId },
+  //       { headers: { Authorization: `Bearer ${token}` } }
+  //     );
+  //     if (res.data != null && res.status >= 200 && res.status < 300) {
+  //       Swal.fire({ icon: "success", title: "Confirmed", text: "Service confirmed successfully." });
+  //       fetchBookingData();
+  //     } else {
+  //       Swal.fire({ icon: "error", title: "Error", text: res.data?.message || "Failed to confirm." });
+  //     }
+  //   } catch (err) {
+  //     console.error("Supervisor/confirm error:", err);
+  //     Swal.fire({
+  //       icon: "error",
+  //       title: "Error",
+  //       text: err.response?.data?.message || err.message || "Failed to confirm service.",
+  //     });
+  //   }
+  // };
 
   const buildGaragePayload = () => {
     const bid = Number(bookingId) || bookingData?.BookingID;
@@ -1682,11 +1772,11 @@ const handleRevertService = async (service) => {
   return;
 }
     Swal.fire({
-      title: name,
-      html: "Do you want to <strong>generate a new invoice</strong> or <strong>view the existing invoice</strong>?",
+      title: "Generate Estimation Invoice",
+      html: "Do you want to generate estimation invoice or view existing invoice ?",
       icon: "question",
       showDenyButton: true,
-      confirmButtonText: "Yes, generate new invoice",
+      confirmButtonText: "Yes, generate",
       denyButtonText: "View invoice",
     }).then((result) => {
       if (result.isConfirmed) {
@@ -3550,7 +3640,11 @@ const handleCustomerRejectionSubmit = async () => {
                                                     <button
                                                       type="button"
                                                       className="btn btn-primary-600 btn-sm"
-                                                      onClick={() => handleFieldAdvisorConfirm(addon)}
+                                                      // onClick={() => handleFieldAdvisorConfirm(addon)}
+                                                      onClick={() => {
+                                                          setSelectedAddon(addon);
+                                                          setShowConfirmModal(true);
+                                                        }}
                                                     >
                                                       Confirm
                                                     </button>
@@ -3691,12 +3785,12 @@ const handleCustomerRejectionSubmit = async () => {
                                             className="text-center">
                                             Dealer Name
                                           </th>
-                                          <th
+                                          {/* <th
                                             style={{ width: "160px" }}
                                             className="text-center"
                                           >
                                             Service Status
-                                          </th>
+                                          </th> */}
                                           <th
                                             style={{ width: "100px" }}
                                             className="text-end"
@@ -3852,7 +3946,7 @@ const handleCustomerRejectionSubmit = async () => {
                                                     </span>
                                                   )}
                                                 </td>
-                                                <td className="text-center">
+                                                {/* <td className="text-center">
                                                   {(() => {
                                                     const isApproved =
                                                       (supervisorBooking.IsDealer_Confirm ?? supervisorBooking.isDealer_Confirm)
@@ -3882,7 +3976,7 @@ const handleCustomerRejectionSubmit = async () => {
                                                       </div>
                                                     );
                                                   })()}
-                                                </td>
+                                                </td> */}
                                                 <td className="text-end fw-bold text-primary">
                                                   {totalPrice.toFixed(2)}
                                                 </td>
@@ -4329,7 +4423,7 @@ const handleCustomerRejectionSubmit = async () => {
                                       - ₹{alreadyPaidDisplay.toFixed(2)}
                                     </span>
                                   </li>
-                                  {bookingData?.CustomerRejectedBookingss?.length > 0 && (
+                                  {bookingData?.SupervisorBookings?.length > 0 && (
                                     <li className="list-group-item d-flex justify-content-between border-top bg-warning p-0">
                                       <span className="fw-bold text-dark">
                                         Customer Not Confirmed Services Amount
@@ -4716,9 +4810,9 @@ const handleCustomerRejectionSubmit = async () => {
                                             </td>
                                             <td className="text-center pe-4 py-3">
                                               <div className="d-flex flex-column align-items-center gap-2">
-                                                {pickupImages.length > 0 && (
+                                                {row.BookingImages?.length > 0 && (
                                                   <div className="d-flex gap-3 flex-wrap justify-content-center">
-                                                    {pickupImages.map((img) => (
+                                                    {row.BookingImages.map((img) => (
                                                       <img
                                                         key={img.ImageID}
                                                         src={`${API_IMAGE}/${img.ImageURL}`}
@@ -6099,13 +6193,13 @@ const handleCustomerRejectionSubmit = async () => {
                       {garageRoute === "customerToDealer" && garageTask === "carPickup" && (
                         <div className="rounded-3 border p-3 mb-3 bg-light">
                           <div className="mb-2">
-                            <span className="small text-muted d-block">Pickup at</span>
+                            <span className="small text-muted d-block">Pickup from</span>
                             <span className="fw-semibold">
                               {bookingData?.Address || "Customer location"}
                             </span>
                           </div>
                           <div className="mb-0">
-                            <label className="form-label small mb-1">Deliver at (dealer)</label>
+                            <label className="form-label small mb-1">Deliver from (dealer)</label>
                             <Select
                               options={garageDealerOptions}
                               value={garageDeliverDealer}
@@ -6128,7 +6222,7 @@ const handleCustomerRejectionSubmit = async () => {
                             />
                           </div>
                           <div className="mb-0">
-                            <span className="small text-muted d-block">Deliver at</span>
+                            <span className="small text-muted d-block">Deliver from</span>
                             <span className="fw-semibold">{bookingData?.Address || "Customer location"}</span>
                           </div>
                         </div>
@@ -6136,7 +6230,7 @@ const handleCustomerRejectionSubmit = async () => {
                       {garageRoute === "dealerToDealer" && (
                         <div className="rounded-3 border p-3 mb-3 bg-light">
                           <div className="mb-3">
-                            <label className="form-label small mb-1">Pickup at (dealer)</label>
+                            <label className="form-label small mb-1">Pickup from (dealer)</label>
                             <Select
                               options={garageDealerOptions}
                               value={garagePickupDealer}
@@ -6209,7 +6303,7 @@ const handleCustomerRejectionSubmit = async () => {
                     {garageStep === "details" && garageRoute !== "dealerToDealer" && (
                       <button
                         type="button"
-                        className="btn btn-press-effect btn-primary btn-sm"
+                        className="btn btn-press-effect btn-primary-600 btn-sm"
                         disabled={
                           (garageRoute === "customerToDealer" && garageTask === "carPickup" && !garageDeliverDealer) ||
                           (garageRoute === "customerToDealer" && garageTask === "carDrop" && !garagePickupDealer) ||
@@ -6392,7 +6486,7 @@ const handleCustomerRejectionSubmit = async () => {
                 <div className="modal-body">
                   <div className="row g-3">
                     <div className="col-12">
-                      <label className="form-label small fw-semibold">New Technician</label>
+                      <label className="form-label small fw-semibold">Select Technician / Driver</label>
                       <Select
                         options={(() => {
                           const row = pickupDropReassignRow;
@@ -6739,6 +6833,150 @@ const handleCustomerRejectionSubmit = async () => {
           </div>
         </div>
       )}
+
+      {showConfirmModal && (
+  <div
+    className="modal fade show d-block"
+    style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(5px)" }}
+  >
+    <div className="modal-dialog modal-dialog-centered modal-lg">
+      <div className="modal-content">
+
+        <div className="modal-header">
+          <h6 className="modal-title fw-bold">Upload Service Completion Images</h6>
+          <button
+            className="btn-close"
+            onClick={() => {
+              setShowConfirmModal(false);
+              setSelectedImages([]);
+              setPreviewImages([]);
+            }}
+          />
+        </div>
+
+        <div className="modal-body">
+
+          <label className="form-label fw-semibold">
+            Upload Images
+          </label>
+
+          {/* <input
+            type="file"
+            multiple
+            accept="image/*"
+            className="form-control"
+            onChange={handleImageChange}
+          /> */}
+          <div
+              className="border border-2 border-primary border-dashed rounded text-center p-4"
+              style={{
+                cursor: "pointer",
+                background: "#f8fbff",
+                borderStyle: "dashed",
+              }}
+              onClick={() => document.getElementById("imageUploadInput").click()}
+            >
+
+              {/* Upload Icon */}
+              <div className="mb-2">
+                <span style={{ fontSize: "40px", color: "#0d6efd" }}>⬆</span>
+              </div>
+
+              {/* Browse Button */}
+              <button
+                type="button"
+                className="btn btn-primary rounded-pill px-5 py-2"
+              >
+                Browse
+              </button>
+
+              {/* Text */}
+              <p className="text-muted mt-2 mb-1">drop a file here</p>
+
+              <small className="text-danger">
+                *File supported .png, .jpg & .webp
+              </small>
+
+              {/* Hidden Input */}
+              <input
+                id="imageUploadInput"
+                type="file"
+                multiple
+                accept=".png,.jpg,.jpeg,.webp"
+                hidden
+                onChange={handleImageChange}
+              />
+
+            </div>
+
+          {/* Preview */}
+         {previewImages.length > 0 && (
+              <div className="row mt-3">
+                {previewImages.map((img, index) => (
+                  <div className="col-4 mb-2 position-relative" key={index}>
+                    
+                    {/* Remove Button */}
+                    <button
+                        type="button"
+                        onClick={() => handleRemoveImage(index)}
+                        style={{
+                          position: "absolute",
+                          top: "1px",
+                          right: "6px",
+                          background: "#dc3545",
+                          border: "none",
+                          borderRadius: "50%",
+                          width: "26px",
+                          height: "26px",
+                          color: "#fff",
+                          fontSize: "16px",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          padding: 0
+                        }}
+                      >
+                        ×
+                      </button>
+                    <img
+                      src={img.url}
+                      alt="preview"
+                      className="img-fluid rounded border"
+                      style={{
+                        height: "100px",
+                        width: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+        </div>
+
+        <div className="modal-footer justify-content-center">
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => setShowConfirmModal(false)}
+          >
+            Cancel
+          </button>
+
+          <button
+            className="btn btn-primary-600 btn-sm"
+            disabled={selectedImages.length === 0}
+            onClick={handleFieldAdvisorConfirm}
+          >
+            Confirm
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+)}
 
 
         {/* Full-screen pickup image viewer with open/close effects */}

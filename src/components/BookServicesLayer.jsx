@@ -2794,7 +2794,7 @@ const BookServicesLayer = () => {
         return !row.isInclude ? (
           <div className="d-flex gap-2">
             {/* Delete */}
-            {row.isDealer_Confirm == 'Approved' && (
+            {row.isDealer_Confirm == 'Approved' && row.addOnStatus != 'ServiceCompleted' && (
               <button
                 className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
                 onClick={() => handleDiscardItem(row.addedItemsIndex)}

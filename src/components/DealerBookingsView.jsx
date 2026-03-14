@@ -409,12 +409,12 @@ const DealerBookingsView = () => {
 
       const confirmApprove = await Swal.fire({
         title: "Are You Sure?",
-        text: "Do You Want To Approve This Service?",
+        text: "Do you want to approve this service?",
         icon: "question",
         showCancelButton: true,
-        confirmButtonText: "Yes",
+        confirmButtonText: "Yes, Approve",
         cancelButtonText: "No",
-        confirmButtonColor: "#28a745",
+        confirmButtonColor: "#116D6E",
         cancelButtonColor: "#6c757d",
       });
       if (!confirmApprove.isConfirmed) return;
