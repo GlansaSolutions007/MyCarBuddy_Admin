@@ -317,7 +317,7 @@ const handleWhatsappFinalInvoice = async () => {
       Swal.fire({
         icon: "success",
         title: "Invoice Sent",
-        text: "Final invoice sent successfully.",
+        text: "Final invoice successfully send on email.",
       });
     } catch (error) {
       console.error("Send Invoice Error:", error);
@@ -356,7 +356,7 @@ const handleWhatsappFinalInvoice = async () => {
       Swal.fire({
         icon: "success",
         title: "Estimation Sent",
-        text: "Estimation invoice sent successfully.",
+        text: "Estimation invoice successfully send on email.",
       });
     } catch (error) {
       console.error("Send Estimation Invoice Error:", error);
