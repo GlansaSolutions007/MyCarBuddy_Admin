@@ -445,7 +445,7 @@ const FieldAdvisorDashboardLayer = () => {
       <div className="col-12 mt-4">
         <div className="card border radius-8">
           <div className="card-header d-flex align-items-center justify-content-between">
-            <h5 className="mb-0 fw-bold">Customer Not Confirmed Services</h5>
+            <h6 className="mb-0 fw-bold">Awaiting Customer Confirmation</h6>
 
             <button
               className="btn btn-sm btn-outline-primary"

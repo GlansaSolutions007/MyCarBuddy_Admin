@@ -8,7 +8,7 @@ const OrganicLeadsPage = () => {
       {/* MasterLayout */}
       <MasterLayout>
         {/* Breadcrumb */}
-        <Breadcrumb title='Organic Leads' />
+        <Breadcrumb title='Leads' />
 
         {/* OrganicLeadsLayer */}
         <OrganicLeadsLayer />

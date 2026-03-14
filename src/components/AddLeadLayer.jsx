@@ -243,7 +243,7 @@ const AddLeadLayer = () => {
               (!/^[6-9]/.test(formData.customerPhone[0]) ||
                 formData.customerPhone.length !== 10) && (
                 <small className="text-danger">
-                  Phone must be 10 digits and start with 6-9
+                  Please enter valid phone number
                 </small>
               )}
           </div>

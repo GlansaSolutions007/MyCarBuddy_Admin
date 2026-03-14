@@ -645,7 +645,7 @@ const BookServicesLayer = () => {
 
   const handleAddOrSave = async () => {
     if (itemType === "Service" && !selectedIncludes)
-      return Swal.fire("Service Name Required", "Please select a service.",);
+      return Swal.fire("Name Required", "Please select a service.",);
     if (itemType === "Spare Part" && !name.trim())
       return Swal.fire("Spare Part Name Required", "Please enter the spare part name.");
     if (!quantity || quantity < 1)
@@ -658,13 +658,13 @@ const BookServicesLayer = () => {
       !isExistingPackage &&
       (!selectedIncludes || selectedIncludes.length === 0)
     )
-      return Swal.fire("Service Selection Required", "Please select at least one include for the package");
+      return Swal.fire("Selection Required", "Please select at least one include for the package");
     if (
       itemType === "Service Group" &&
       (!selectedServices || selectedServices.length === 0)
     )
-      return Swal.fire("Service Selection Required","Please select at least one service for service group");
-    if (!name.trim()) return Swal.fire("Service Selection Required", "Please select a service.",);
+      return Swal.fire("Selection Required","Please select at least one service for service group");
+    if (!name.trim()) return Swal.fire("Selection Required", "Please select a service.",);
 
     // ⭐ CASE: Create NEW package before adding item
     let finalPackageId = selectedPackage;

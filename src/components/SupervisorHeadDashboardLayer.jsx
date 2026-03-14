@@ -258,15 +258,15 @@ const SupervisorHeadDashboardLayer = () => {
               {/* Header */}
               <div className="d-flex align-items-center justify-content-between mb-4">
                 <div>
-                  <h5 className="mb-0 fw-bold text-primary-light">
-                    Supervisor Servicess Confirmations Pending
-                  </h5>
-                  <small className="text-muted">
+                  <h6 className="mb-0 fw-bold text-primary-light">
+                    Pending Confirmations
+                  </h6>
+                  {/* <small className="text-muted">
                     Bookings waiting for confirmation
-                  </small>
+                  </small> */}
                 </div>
 
-                <span className="badge bg-danger-focus text-danger-main px-3 py-2 fs-12 fw-semibold">
+                <span className="badge bg-warning text-black px-3 py-2 fs-12 fw-semibold">
                   {groupedBookings.length} Actions Required
                 </span>
               </div>
@@ -422,7 +422,7 @@ const SupervisorHeadDashboardLayer = () => {
       <div className="col-12 mt-4">
         <div className="card border radius-8">
           <div className="card-header d-flex align-items-center justify-content-between">
-            <h5 className="mb-0 fw-bold">Customer Not Confirmed Services</h5>
+            <h6 className="mb-0 fw-bold">Awaiting Customer Confirmation</h6>
 
             <button
               className="btn btn-sm btn-outline-primary"

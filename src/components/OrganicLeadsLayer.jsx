@@ -843,7 +843,7 @@ const OrganicLeadsLayer = () => {
     { name: "City", selector: (row) => row.City || "-", sortable: true, width: "180px" },
     { name: "Platform", selector: (row) => row.Platform || "-", width: "120px" },
     {
-        name: "Head Assigned On",
+        name: "Tel. Head",
         selector: (row) =>
         (
           <div>
@@ -862,7 +862,7 @@ const OrganicLeadsLayer = () => {
 
     ...(employeeData?.RoleName !== "Telecaller"
       ? [{
-      name: "Emp. Assigned On", selector: (row) => (
+      name: "Tel. Emp.", selector: (row) => (
         <div>
           <div style={{ fontWeight: 600 }}>
             {row.EmployeeAssignName || "-"}

@@ -624,7 +624,7 @@ const LeadsAssignLayer = () => {
                       className="text-danger position-absolute"
                       style={{ bottom: "-18px", fontSize: "12px" }}
                     >
-                      Entered count exceeds total leads
+                      Entered count cannot be greater than total leads.
                     </small>
                   )}
                 </div>
@@ -663,8 +663,8 @@ const LeadsAssignLayer = () => {
                   loading
                     ? "Loading leads..."
                     : role === "Employee"
-                    ? "No assigned leads available"
-                    : "No unassigned leads available"
+                    ? "No assigned leads are available"
+                    : "No unassigned leads are available"
                 }
               />
             </div>

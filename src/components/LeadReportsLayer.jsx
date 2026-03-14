@@ -199,24 +199,6 @@ const LeadReportsLayer = () => {
       sortable: true,
     },
     {
-      name: "Not Converted",
-      selector: (row) => row.NotConverted,
-      width: "150px",
-      sortable: true,
-    },
-    {
-      name: "Need Info",
-      selector: (row) => row.NeedMoreInfo,
-      width: "120px",
-      sortable: true,
-    },
-    {
-      name: "No Car",
-      selector: (row) => row.NotHavingCar,
-      width: "120px",
-      sortable: true,
-    },
-    {
       name: "Ringing No Answer",
       selector: (row) =>
         row.RingingButNotResponded +
@@ -229,9 +211,15 @@ const LeadReportsLayer = () => {
       width: "160px",
     },
     {
-      name: "Not Interested",
-      selector: (row) => row.NotInterested,
-      width: "150px",
+      name: "Yet to Call",
+      selector: (row) => row.NoFollowUpYet,
+      sortable: true,
+      width: "130px",
+    },
+    {
+      name: "Need Info",
+      selector: (row) => row.NeedMoreInfo,
+      width: "120px",
       sortable: true,
     },
     {
@@ -241,11 +229,24 @@ const LeadReportsLayer = () => {
       sortable: true,
     },
     {
-      name: "Yet to Call",
-      selector: (row) => row.NoFollowUpYet,
+      name: "Not Converted",
+      selector: (row) => row.NotConverted,
+      width: "150px",
       sortable: true,
-      width: "130px",
     },
+    {
+      name: "Not Interested",
+      selector: (row) => row.NotInterested,
+      width: "150px",
+      sortable: true,
+    },
+    {
+      name: "No Car",
+      selector: (row) => row.NotHavingCar,
+      width: "120px",
+      sortable: true,
+    },
+    
     ...(hasPermission("empleadsreport_view")
       ? [
         {

@@ -127,16 +127,15 @@ const SupportDashboardLayer = () => {
                   </div>
                 </div>
               </div>
-
-              {/* Card 2.1 */}
+               {/* Card 4 */}
               <div className="col">
-                <div className="card shadow-none border bg-gradient-start-3 h-100" style={{ cursor: "pointer" }} onClick={() => handleCardClick("Not Interested")}>
+                <div className="card shadow-none border bg-gradient-start-4 h-100" style={{ cursor: "pointer" }} onClick={() => handleCardClick("Converted to Customer")}>
                   <div className="card-body p-20">
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                      <div><p className="fw-medium text-primary-light mb-1">Not Interested</p>
-                        <h6 className="mb-0">{dashboardData.notInterested}</h6></div>
-                      <div className="w-50-px h-50-px bg-success-main rounded-circle d-flex justify-content-center align-items-center">
-                        <Icon icon="solar:heart-bold" className="text-white text-2xl" />
+                      <div><p className="fw-medium text-primary-light mb-1">Converted to Customer</p>
+                        <h6 className="mb-0">{dashboardData.convertedCustomer}</h6></div>
+                      <div className="w-50-px h-50-px bg-info rounded-circle d-flex justify-content-center align-items-center">
+                        <Icon icon="solar:medal-ribbon-bold" className="text-white text-2xl" />
                       </div>
                     </div>
                   </div>
@@ -158,27 +157,12 @@ const SupportDashboardLayer = () => {
                 </div>
               </div>
 
-              {/* Card 4 */}
-              <div className="col">
-                <div className="card shadow-none border bg-gradient-start-4 h-100" style={{ cursor: "pointer" }} onClick={() => handleCardClick("Converted to Customer")}>
-                  <div className="card-body p-20">
-                    <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                      <div><p className="fw-medium text-primary-light mb-1">Converted to Customer</p>
-                        <h6 className="mb-0">{dashboardData.convertedCustomer}</h6></div>
-                      <div className="w-50-px h-50-px bg-info rounded-circle d-flex justify-content-center align-items-center">
-                        <Icon icon="solar:medal-ribbon-bold" className="text-white text-2xl" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               {/* Card 5 */}
               <div className="col">
                 <div className="card shadow-none border bg-gradient-start-5 h-100" style={{ cursor: "pointer" }} onClick={() => handleCardClick("No Follow Up")}>
                   <div className="card-body p-20">
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                      <div><p className="fw-medium text-primary-light mb-1">No Follow Up</p>
+                      <div><p className="fw-medium text-primary-light mb-1">Yet To Call</p>
                         <h6 className="mb-0">{dashboardData.noFollowUpYet}</h6></div>
                       <div className="w-50-px h-50-px bg-orange rounded-circle d-flex justify-content-center align-items-center">
                         <Icon icon="solar:calendar-minimalistic-bold" className="text-white text-2xl" />
@@ -233,21 +217,6 @@ const SupportDashboardLayer = () => {
                 </div>
               </div>
 
-              {/* Card 9 */}
-              <div className="col">
-                <div className="card shadow-none border bg-gradient-start-4 h-100" style={{ cursor: "pointer" }} onClick={() => handleCardClick("Not Converted")}>
-                  <div className="card-body p-20">
-                    <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                      <div><p className="fw-medium text-primary-light mb-1">Not Converted</p>
-                        <h6 className="mb-0">{dashboardData.notConverted}</h6></div>
-                      <div className="w-50-px h-50-px bg-neutral-600 rounded-circle d-flex justify-content-center align-items-center">
-                        <Icon icon="solar:user-cross-bold" className="text-white text-2xl" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               {/* Card 10 */}
               <div className="col">
                 <div className="card shadow-none border bg-gradient-start-5 h-100" style={{ cursor: "pointer" }} onClick={() => handleCardClick("Temporary Out of Service")}>
@@ -287,6 +256,35 @@ const SupportDashboardLayer = () => {
                         <h6 className="mb-0">{dashboardData.notHavingCar}</h6></div>
                       <div className="w-50-px h-50-px bg-danger rounded-circle d-flex justify-content-center align-items-center">
                         <Icon icon="solar:user-minus-bold" className="text-white text-2xl" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+               {/* Card 2.1 */}
+              <div className="col">
+                <div className="card shadow-none border bg-gradient-start-3 h-100" style={{ cursor: "pointer" }} onClick={() => handleCardClick("Not Interested")}>
+                  <div className="card-body p-20">
+                    <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                      <div><p className="fw-medium text-primary-light mb-1">Not Interested</p>
+                        <h6 className="mb-0">{dashboardData.notInterested}</h6></div>
+                      <div className="w-50-px h-50-px bg-success-main rounded-circle d-flex justify-content-center align-items-center">
+                        <Icon icon="solar:heart-bold" className="text-white text-2xl" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+               {/* Card 9 */}
+              <div className="col">
+                <div className="card shadow-none border bg-gradient-start-4 h-100" style={{ cursor: "pointer" }} onClick={() => handleCardClick("Not Converted")}>
+                  <div className="card-body p-20">
+                    <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                      <div><p className="fw-medium text-primary-light mb-1">Not Converted</p>
+                        <h6 className="mb-0">{dashboardData.notConverted}</h6></div>
+                      <div className="w-50-px h-50-px bg-neutral-600 rounded-circle d-flex justify-content-center align-items-center">
+                        <Icon icon="solar:user-cross-bold" className="text-white text-2xl" />
                       </div>
                     </div>
                   </div>

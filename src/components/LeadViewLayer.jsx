@@ -582,8 +582,8 @@ const LeadViewLayer = () => {
 
       Swal.fire({
         icon: "success",
-        title: "Supervisor Assigned",
-        text: "Bookings have been successfully assigned to the supervisor.",
+        title: "Assigned",
+        text: "Booking has been successfully assigned to the supervisor head.",
       });
 
       await fetchLead();
@@ -668,7 +668,7 @@ const LeadViewLayer = () => {
       return Swal.fire({
         icon: "error",
         title: "Invalid Email",
-        text: "Please enter a valid email address.",
+        text: "Please enter a valid email.",
       });
     }
 
@@ -697,7 +697,7 @@ const LeadViewLayer = () => {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to update personal information");
+        throw new Error("Failed to update information");
       }
       // Update lead state with new personal info
       setLead((prev) => ({
@@ -711,16 +711,16 @@ const LeadViewLayer = () => {
       }));
       Swal.fire({
         icon: "success",
-        title: "Personal Information Saved",
-        text: "Personal information has been successfully saved.",
+        title: "Information Saved",
+        text: "Information has been saved successfully .",
       });
       await fetchLead();
     } catch (err) {
-      console.error("Personal info save failed", err);
+      console.error("Information save failed", err);
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: "Failed to save personal information. Please try again.",
+        text: "Failed to save information. Please try again.",
       });
     }
   };
