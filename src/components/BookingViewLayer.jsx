@@ -2467,13 +2467,13 @@ const handleCustomerRejectionSubmit = async () => {
       );
 
       if (res?.data?.status) {
-        Swal.fire("Success", "Payment Details Updated successfully", "success");
+        Swal.fire("Success", "Payment updated successfully", "success");
         setShowPaymentModal(false);
         setPaymentFile(null);
         setIsPaid(true);
         fetchBookingData(); // refresh booking & payments
       } else {
-        Swal.fire("Error", "Payment Details Updation failed", "error");
+        Swal.fire("Error", "Payment updation failed", "error");
       }
     } catch (err) {
       console.error("Payment Error:", err);
@@ -5302,6 +5302,7 @@ const handleCustomerRejectionSubmit = async () => {
                   </Accordion.Body>
                 </Accordion.Item>
               </Accordion>
+              
               {/* ================= SERVICE COMPLETION IMAGES ACCORDION ================= */}
 <Accordion className="mb-3" defaultActiveKey="">
   <Accordion.Item eventKey="serviceImages">
@@ -5570,7 +5571,7 @@ const handleCustomerRejectionSubmit = async () => {
                         >
                           <span className="d-flex align-items-center gap-2 fw-semibold text-dark">
                             <Icon icon="mdi:cash-multiple" width={24} height={24} className="text-primary" />
-                            Other Options
+                            Other
                           </span>
                           <Icon icon="mdi:chevron-right" width={20} height={20} className="text-secondary opacity-75" />
                         </button>
@@ -6869,7 +6870,7 @@ const handleCustomerRejectionSubmit = async () => {
                         selectedServiceIds.length === 0
                       }
                   >
-                    Confirm Service By Supervisor / Admin
+                    Confirm Services
                   </button>
                 </div>
               </div>
