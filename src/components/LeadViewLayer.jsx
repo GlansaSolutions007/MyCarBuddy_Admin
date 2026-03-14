@@ -67,6 +67,9 @@ const DISCUSSION_RESULT_TO_ACTIONS = {
   ],
   "Not Having Car": [
     "Lead Closed"
+  ],
+  "Service Completed Feedback": [
+    "Lead Closed"
   ]
 };
 
@@ -143,6 +146,33 @@ const LeadViewLayer = () => {
   const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
   const navigate = useNavigate();
+
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+const [selectedBooking, setSelectedBooking] = useState(null);
+const [rating, setRating] = useState(0);
+const [hover, setHover] = useState(0);
+const [feedbackNote, setFeedbackNote] = useState("");
+
+// Function to open modal
+const handleOpenFeedback = (booking) => {
+  setSelectedBooking(booking);
+  setShowFeedbackModal(true);
+};
+
+// Function to handle submit
+const handleSubmitFeedback = async () => {
+  const payload = {
+    bookingId: selectedBooking.BookingID,
+    rating: rating,
+    description: feedbackNote
+  };
+  console.log("Submitting Feedback:", payload);
+  // Call your API here...
+  
+  setShowFeedbackModal(false);
+  setRating(0);
+  setFeedbackNote("");
+};
 
   useEffect(() => {
     fetchLead();
@@ -1365,6 +1395,9 @@ const LeadViewLayer = () => {
                               </option> */}
                               <option value="Not Having Car">
                                 Not Having Car
+                              </option>
+                              <option value="Service Completed Feedback">
+                                Service Completed Feedback
                               </option>
                               {/* <option value="Conversion">Customer Referred</option> */}
                             </select>
