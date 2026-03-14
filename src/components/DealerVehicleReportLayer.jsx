@@ -120,7 +120,7 @@ const DealerVehicleReportLayer = () => {
                     </tr>
                   ))
                 ) : (
-                  <tr><td colSpan="5" className="text-center py-4 text-muted">No records matching your search.</td></tr>
+                  <tr><td colSpan="5" className="text-center py-4 text-muted">No records available.</td></tr>
                 )}
               </tbody>
             </table>
@@ -131,7 +131,7 @@ const DealerVehicleReportLayer = () => {
         <div className="card-footer bg-white border-top-0 py-2 px-3">
           <div className="d-flex justify-content-between align-items-center">
             <span className="text-muted small">Showing {filteredReports.length} entries</span>
-            <span className="text-muted small italic" style={{ fontSize: '0.7rem' }}>Dealer ID: {dealerId}</span>
+            {/* <span className="text-muted small italic" style={{ fontSize: '0.7rem' }}>Dealer ID: {dealerId}</span> */}
           </div>
         </div>
       </div>

@@ -683,6 +683,8 @@ const MasterLayout = ({ children }) => {
           permission: "ticketreports_view",
           page: "Ticket Reports",
         },
+         ...(role === "Dealer"
+          ? [
         {
           title: "Vehicle Reports",
           to: "/vehicle-reports",
@@ -690,6 +692,8 @@ const MasterLayout = ({ children }) => {
           permission: "vehiclereports_view",
           page: "Vehicle Reports",
         },
+            ]
+          : []),
         {
           title: "Complete Ser. Rep",
           to: "/complete-service-reports",
