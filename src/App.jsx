@@ -118,6 +118,7 @@ import DealerPaymentsPage from "./pages/DealerPaymentsPage";
 import DealerReportPage from "./pages/DealerRepportPage";
 import NoInternetModal from "./components/NoInternetModal";
 import CompleteServiceReportPage from "./pages/CompleteServiceReportPage";
+import DealerVehicleReportPage from "./pages/DealerVehicleReportPage";
 
 function App() {
   return (
@@ -265,6 +266,7 @@ function App() {
           <Route exact path='/dealer-expenditure' element={<DealerPaymentsPage/>} />
           <Route exact path='/dealer-report' element={<DealerReportPage/>} />
           <Route exact path='/complete-service-reports' element={<CompleteServiceReportPage />} />
+          <Route exact path='/vehicle-reports' element={<DealerVehicleReportPage />} />
           
         </Route>
 
