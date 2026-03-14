@@ -684,6 +684,13 @@ const MasterLayout = ({ children }) => {
           page: "Ticket Reports",
         },
         {
+          title: "Vehicle Reports",
+          to: "/vehicle-reports",
+          color: "text-warning-main",
+          permission: "vehiclereports_view",
+          page: "Vehicle Reports",
+        },
+        {
           title: "Complete Ser. Rep",
           to: "/complete-service-reports",
           color: "text-warning-main",
