@@ -29,7 +29,9 @@ const ServicePlanAddLayer = ({ setPageTitle }) => {
   const [faqList, setFaqList] = useState([{ question: "", answer: "" }]);
   const [explanationList, setExplanationList] = useState([{ title: "", details: "" }]);
   const [reviewList, setReviewList] = useState([{ title: "", description: "" }]);
-
+  const [gstOptions, setGstOptions] = useState([]);
+  const [gstPercent, setGstPercent] = useState(0);
+  const [gstAmount, setGstAmount] = useState(0);
 
 
   const [formData, setFormData] = useState({
@@ -39,6 +41,8 @@ const ServicePlanAddLayer = ({ setPageTitle }) => {
     SubCategoryID: "",
     IncludeID: [],
     IncludePrices: "",
+    gst_p:"",
+    inc_gstamt:"",
     Total_Offer_Price: 0.00,
     Default_Price: 0.00,
     IsActive: true,
@@ -46,9 +50,39 @@ const ServicePlanAddLayer = ({ setPageTitle }) => {
     BannerImages: [],
     EstimatedDurationMinutes: 0
   });
+  const fetchGstPercent = async () => {
+    try {
+      const gstRes = await axios.get(`${API_BASE}GST/GstMaster`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      console.log("GST Data:", gstRes.data);
+
+      const options = Array.isArray(gstRes.data)
+        ? gstRes.data.map((item) => Number(item.GSTPercent)).filter((v) => !Number.isNaN(v))
+        : [];
+
+      setGstOptions(options);
+
+      if (options.length > 0) {
+        setGstPercent(options[0]);
+      } else {
+        setGstPercent(0);
+      }
+
+      setGstAmount(0);
+
+    } catch (error) {
+      console.error("Failed to load gst percent", error);
+      setGstOptions([]);
+      setGstPercent(0);
+      setGstAmount(0);
+    }
+  };
 
   useEffect(() => {
     setPageTitle(isEditing ? "Edit - Service Plan" : "Add - Service Plan");
+    fetchGstPercent();
     fetchCategories();
     fetchSubCategories();
     fetchIncludes();
@@ -58,6 +92,22 @@ const ServicePlanAddLayer = ({ setPageTitle }) => {
     }
   }, []);
 
+  useEffect(() => {
+    const offerPrice = parseFloat(formData.Total_Offer_Price) || 0;
+    const gstOnlyAmount = (offerPrice * gstPercent) / 100;
+    const inclusiveAmount = offerPrice + (Number.isFinite(gstOnlyAmount) ? gstOnlyAmount : 0);
+    const finalAmount = Number.isFinite(inclusiveAmount) ? inclusiveAmount : 0;
+
+    setGstAmount(finalAmount);
+
+    setFormData((prev) => ({
+      ...prev,
+      gst_p: gstPercent || "",
+      inc_gstamt: finalAmount || "",
+    }));
+  }, [formData.Total_Offer_Price, gstPercent]);
+
+  console.log(gstPercent, gstAmount);
   const fetchCategories = async () => {
     try {
       const res = await axios.get(`${API_BASE}Category`, {
@@ -125,20 +175,33 @@ const ServicePlanAddLayer = ({ setPageTitle }) => {
       }
 
 
-      setFormData({
+      setFormData((prev) => ({
+        ...prev,
         PackageID: res.data[0].PackageID,
         PackageName: res.data[0].PackageName,
         CategoryID: res.data[0].CategoryID,
         SubCategoryID: res.data[0].SubCategoryID,
         IncludeID: includeIdArray,
         IncludePrices: res.data[0].IncludePrices,
+        gst_p: res.data[0].gst_p ?? "",
+        inc_gstamt: res.data[0].inc_gstamt ?? "",
         Total_Offer_Price: res.data[0].Total_Offer_Price,
         Default_Price: res.data[0].Default_Price,
         IsActive: res.data[0].IsActive,
         PackageImage: packageImageFile,
         BannerImages: bannerFiles,
         EstimatedDurationMinutes: res.data[0].EstimatedDurationMinutes
-      });
+      }));
+
+      const dbGstPercent = Number(res.data[0].gst_p);
+      const dbIncGstAmt = Number(res.data[0].inc_gstamt);
+
+      if (!Number.isNaN(dbGstPercent)) {
+        setGstPercent(dbGstPercent);
+      }
+      if (!Number.isNaN(dbIncGstAmt)) {
+        setGstAmount(dbIncGstAmt);
+      }
 
       console.log("Fetched Plan Package:", res.data);
 
@@ -216,9 +279,12 @@ const ServicePlanAddLayer = ({ setPageTitle }) => {
       payload.append("PackageName", formData.PackageName);
       payload.append("CategoryID", formData.CategoryID);
       payload.append("SubCategoryID", formData.SubCategoryID);
+
       // payload.append("IncludePrices", formData.IncludePrices);
       payload.append("Default_Price", formData.Default_Price);
       payload.append("TotalPrice", formData.Total_Offer_Price);
+      payload.append("gst_p", gstPercent || 0);
+      payload.append("inc_gstamt", gstAmount || 0);
       payload.append("IsActive", formData.IsActive);
       payload.append("PackageImage", formData.PackageImage);
       payload.append("IncludeID", formData.IncludeID.join(","));
@@ -516,6 +582,39 @@ const ServicePlanAddLayer = ({ setPageTitle }) => {
                   onChange={handleChange}
                 />
                 <FormError error={errors.Total_Offer_Price} />
+              </div>
+
+              <div className="col-md-6">
+                <label className='form-label text-sm fw-semibold text-primary-light mb-8'>Select the GST  %</label>
+                <select
+                  className="form-select"
+                  value={gstPercent || ""}
+                  onChange={(e) => {
+                    const value = Number(e.target.value) || 0;
+                    setGstPercent(value);
+                    setFormData((prev) => ({
+                      ...prev,
+                      gst_p: value || "",
+                    }));
+                  }}
+                >
+                  <option value="">Select GST %</option>
+                  {gstOptions.map((percent, index) => (
+                    <option key={index} value={percent}>
+                      {percent}%
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="col-md-6 mt-2">
+                <label className='form-label text-sm fw-semibold text-primary-light mb-8'>Inc. GST Amt</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={gstAmount || 0}
+                  disabled
+                />
               </div>
 
 
