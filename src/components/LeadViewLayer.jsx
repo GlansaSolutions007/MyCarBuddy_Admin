@@ -1396,9 +1396,11 @@ const handleSubmitFeedback = async () => {
                               <option value="Not Having Car">
                                 Not Having Car
                               </option>
+                              {lead?.BookingStatus === "Completed" && (
                               <option value="Service Completed Feedback">
                                 Service Completed Feedback
                               </option>
+                              )}
                               {/* <option value="Conversion">Customer Referred</option> */}
                             </select>
                           </div>
@@ -1891,24 +1893,41 @@ const handleSubmitFeedback = async () => {
                                           ).toLocaleDateString("en-IN")
                                         : "N/A"}
                                     </td>
-                                    <td className="text-center">
-                                      <Link
-                                        to={`/complete-service-reports?bookingId=${b.BookingID}`}
-                                        className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                                        title="View service report"
-                                      >
-                                        <Icon icon="lucide:eye" />
-                                      </Link>
-                                      {!isLeadClosed && (
-                                        <Link
-                                          to={`/book-service/${b.LeadId}/${b.BookingID}/${b.BookingTrackID}`}
-                                          className="w-32-px h-32-px me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                                          title="Edit"
-                                        >
-                                          <Icon icon="lucide:edit" />
-                                        </Link>
-                                      )}
-                                    </td>
+                                   <td className="text-center">
+  <div className="d-flex justify-content-center align-items-center gap-2">
+
+    <Link
+      to={`/complete-service-reports?bookingId=${b.BookingID}`}
+      className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+      title="View service report"
+    >
+      <Icon icon="lucide:eye" />
+    </Link>
+
+    {/* Feedback Button */}
+    {lead?.BookingStatus === "Completed" && (
+      <button
+        onClick={() => handleOpenFeedback(b)}
+        className="w-32-px h-32-px bg-warning-focus text-warning-main border-0 rounded-circle d-inline-flex align-items-center justify-content-center"
+        title="Give Feedback"
+      >
+        <Icon icon="lucide:star" />
+      </button>
+    )}
+
+    {/* Edit Button */}
+    {!isLeadClosed && (
+      <Link
+        to={`/book-service/${b.LeadId}/${b.BookingID}/${b.BookingTrackID}`}
+        className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+        title="Edit"
+      >
+        <Icon icon="lucide:edit" />
+      </Link>
+    )}
+
+  </div>
+</td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -2187,6 +2206,67 @@ const handleSubmitFeedback = async () => {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {showFeedbackModal && (
+  <div className="modal fade show d-block" style={{ backdropFilter: 'blur(8px)', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+    <div className="modal-dialog modal-dialog-centered">
+      <div className="modal-content border-0 radius-16 shadow">
+        <div className="modal-header border-bottom-0">
+          <div className="modal-title fw-bold fs-5">Service Feedback</div>
+          <button type="button" className="btn-close" onClick={() => setShowFeedbackModal(false)}></button>
+        </div>
+        <div className="modal-body text-center">
+          <p className="text-muted mb-4">How was your experience with booking <b>{selectedBooking?.BookingTrackID}</b>?</p>
+          
+          {/* Star Rating System */}
+          <div className="mb-4">
+            {[...Array(5)].map((star, index) => {
+              index += 1;
+              return (
+                <button
+                  type="button"
+                  key={index}
+                  className="btn p-0 border-0 bg-transparent"
+                  onClick={() => setRating(index)}
+                  onMouseEnter={() => setHover(index)}
+                  onMouseLeave={() => setHover(rating)}
+                >
+                  <Icon 
+                    icon="lucide:star" 
+                    className="fs-2 mx-1"
+                    style={{ color: index <= (hover || rating) ? "#ffc107" : "#e4e5e9", fill: index <= (hover || rating) ? "#ffc107" : "none" }}
+                  />
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="text-start">
+            <label className="form-label fw-semibold">Description</label>
+            <textarea 
+              className="form-control" 
+              rows="3" 
+              placeholder="Share your experience..."
+              value={feedbackNote}
+              onChange={(e) => setFeedbackNote(e.target.value)}
+            ></textarea>
+          </div>
+        </div>
+        <div className="modal-footer border-top-0">
+          <button type="button" className="btn btn-secondary px-4 radius-8" onClick={() => setShowFeedbackModal(false)}>Cancel</button>
+          <button 
+            type="button" 
+            className="btn btn-primary px-4 radius-8" 
+            onClick={handleSubmitFeedback}
+            disabled={rating === 0}
+          >
+            Submit Feedback
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
     </>
   );
 };
