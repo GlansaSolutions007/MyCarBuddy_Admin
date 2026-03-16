@@ -148,31 +148,56 @@ const LeadViewLayer = () => {
   const navigate = useNavigate();
 
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-const [selectedBooking, setSelectedBooking] = useState(null);
-const [rating, setRating] = useState(0);
-const [hover, setHover] = useState(0);
-const [feedbackNote, setFeedbackNote] = useState("");
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [rating, setRating] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [feedbackNote, setFeedbackNote] = useState("");
 
-// Function to open modal
-const handleOpenFeedback = (booking) => {
-  setSelectedBooking(booking);
-  setShowFeedbackModal(true);
-};
-
-// Function to handle submit
-const handleSubmitFeedback = async () => {
-  const payload = {
-    bookingId: selectedBooking.BookingID,
-    rating: rating,
-    description: feedbackNote
+  // Function to open modal
+  const handleOpenFeedback = (booking) => {
+    setSelectedBooking(booking);
+    setShowFeedbackModal(true);
   };
-  console.log("Submitting Feedback:", payload);
-  // Call your API here...
-  
-  setShowFeedbackModal(false);
-  setRating(0);
-  setFeedbackNote("");
-};
+
+  // Function to handle submit
+  const handleSubmitFeedback = async () => {
+    if (!selectedBooking) return;
+
+    const payload = {
+      bookingID: selectedBooking.BookingID,
+      custID: lead?.CustID ?? null,
+      serviceRating: String(rating),
+      serviceReview: feedbackNote || "",
+      techID: 0,
+      techRating: "",
+      techReview: "",
+    };
+
+    try {
+      await axios.post(`${API_BASE}Feedback`, payload, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      Swal.fire({
+        icon: "success",
+        title: "Feedback Recorded",
+        text: "Customer feedback has been successfully recorded.",
+      });
+
+      setShowFeedbackModal(false);
+      setRating(0);
+      setFeedbackNote("");
+    } catch (error) {
+      console.error("Feedback submission failed", error);
+      Swal.fire({
+        icon: "error",
+        title: "Submission Failed",
+        text:
+          error?.response?.data?.message ||
+          "Unable to submit feedback. Please try again.",
+      });
+    }
+  };
 
   useEffect(() => {
     fetchLead();
@@ -599,7 +624,7 @@ const handleSubmitFeedback = async () => {
             bookingIds: bookingIds,
             supervisorHeadId: selectedSupervisorHead.value,
             areaId: selectedArea.value,
-            assignedDate: new Date().toISOString().split("T")[0] ,
+            assignedDate: new Date().toISOString().split("T")[0],
             assignStatus: "Assign",
             createdBy: parseInt(localStorage.getItem("userId")),
           }),
@@ -1042,13 +1067,13 @@ const handleSubmitFeedback = async () => {
                       :{" "}
                       {lead?.CreatedDate
                         ? new Date(lead.CreatedDate).toLocaleString("en-IN", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            hour12: true,
-                          })
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        })
                         : "N/A"}
                     </span>
                   </li>
@@ -1118,7 +1143,7 @@ const handleSubmitFeedback = async () => {
                     <Icon icon="mdi:arrow-left" className="fs-5" />
                     Back
                   </Link>
-                   {!["Supervisor Head", "Supervisor"].includes(roleName) &&
+                  {!["Supervisor Head", "Supervisor"].includes(roleName) &&
                     !isLeadClosed &&
                     currentBookings?.length > 0 && (
                       <button
@@ -1255,7 +1280,7 @@ const handleSubmitFeedback = async () => {
                               value="Ans"
                               checked={callAnswered === "Ans"}
                               onChange={(e) => setCallAnswered(e.target.value)}
-                              disabled={isLeadClosed}
+                            // disabled={isLeadClosed}
                             />
                             <label
                               className="form-check-label ms-1"
@@ -1273,7 +1298,7 @@ const handleSubmitFeedback = async () => {
                               value="Not Ans"
                               checked={callAnswered === "Not Ans"}
                               onChange={(e) => setCallAnswered(e.target.value)}
-                              disabled={isLeadClosed}
+                            // disabled={isLeadClosed}
                             />
                             <label
                               className="form-check-label ms-1"
@@ -1311,10 +1336,14 @@ const handleSubmitFeedback = async () => {
                               <option value="Temporary Out of Service">
                                 Temporary Out of Service
                               </option>
-                              <option value="Number Does Not Exist">
-                                Number Does Not Exist
-                              </option>
-                              <option value="DND">DND</option>
+                              {lead?.BookingStatus !== "Completed" && (
+                                <>
+                                  <option value="Number Does Not Exist">
+                                    Number Does Not Exist
+                                  </option>
+                                  <option value="DND">DND</option>
+                                </>
+                              )}
                             </select>
                           </div>
                           <div className="col-md-6">
@@ -1367,7 +1396,7 @@ const handleSubmitFeedback = async () => {
                               onChange={(e) => {
                                 const selectedOutcome = e.target.value;
                                 setCallOutcome(selectedOutcome);
-                                
+
                                 // Clear nextAction if it's not in the new list of available actions
                                 if (selectedOutcome && DISCUSSION_RESULT_TO_ACTIONS[selectedOutcome]) {
                                   const availableActions = DISCUSSION_RESULT_TO_ACTIONS[selectedOutcome];
@@ -1380,28 +1409,33 @@ const handleSubmitFeedback = async () => {
                               }}
                             >
                               <option value="">Select outcome</option>
-                              <option value="Interested">Interested</option>
-                              <option value="Not Interested">
-                                Not Interested
-                              </option>
-                              <option value="Need More Info">
-                                Need More Info
-                              </option>
-                              {/* <option value="Converted to Customer">
+                              {lead?.BookingStatus === "Completed" ? (
+                                <>
+                                  <option value="Service Completed Feedback">
+                                    Service Completed Feedback
+                                  </option>
+                                </>
+                              ) : (
+                                <>
+                                  <option value="Interested">Interested</option>
+                                  <option value="Not Interested">
+                                    Not Interested
+                                  </option>
+                                  <option value="Need More Info">
+                                    Need More Info
+                                  </option>
+                                  {/* <option value="Converted to Customer">
                                 Converted to Customer
                               </option>
                               <option value="Not Converted">
                                 Not Converted
                               </option> */}
-                              <option value="Not Having Car">
-                                Not Having Car
-                              </option>
-                              {lead?.BookingStatus === "Completed" && (
-                              <option value="Service Completed Feedback">
-                                Service Completed Feedback
-                              </option>
+                                  <option value="Not Having Car">
+                                    Not Having Car
+                                  </option>
+                                  {/* <option value="Conversion">Customer Referred</option> */}
+                                </>
                               )}
-                              {/* <option value="Conversion">Customer Referred</option> */}
                             </select>
                           </div>
                           <div className="col-12">
@@ -1484,7 +1518,7 @@ const handleSubmitFeedback = async () => {
                           className="btn btn-primary-600 px-20 btn-sm"
                           onClick={handleSubmitStatus}
                           disabled={
-                            isLeadClosed ||
+                            // isLeadClosed ||
                             (callAnswered === "Ans" &&
                               callOutcome &&
                               !nextAction)
@@ -1584,11 +1618,10 @@ const handleSubmitFeedback = async () => {
                           <input
                             type="text"
                             style={{ padding: 8 }}
-                            className={`form-control ${
-                              gstNumber && !GST_REGEX.test(gstNumber)
+                            className={`form-control ${gstNumber && !GST_REGEX.test(gstNumber)
                                 ? "is-invalid"
                                 : ""
-                            }`}
+                              }`}
                             value={gstNumber}
                             onChange={(e) => {
                               let val = e.target.value.toUpperCase();
@@ -1796,9 +1829,9 @@ const handleSubmitFeedback = async () => {
                             value={
                               carYearOfPurchase
                                 ? {
-                                    value: carYearOfPurchase,
-                                    label: carYearOfPurchase.toString(),
-                                  }
+                                  value: carYearOfPurchase,
+                                  label: carYearOfPurchase.toString(),
+                                }
                                 : null
                             }
                             onChange={(selected) => {
@@ -1845,18 +1878,18 @@ const handleSubmitFeedback = async () => {
                     This lead has not yet been converted to a customer. Please
                     confirm the conversion to proceed with booking.
                   </span>
-                    <button
-                      className="btn btn-primary-600 px-20 btn-sm"
-                      onClick={handleConvertCustomer}
-                      disabled={isLeadClosed}
-                    >
-                      Converted
-                    </button>
+                  <button
+                    className="btn btn-primary-600 px-20 btn-sm"
+                    onClick={handleConvertCustomer}
+                    disabled={isLeadClosed}
+                  >
+                    Converted
+                  </button>
                 </div>
               ) : (
                 <>
                   <Accordion className="mt-3">
-                    <Accordion.Item eventKey="current">
+                    <Accordion.Item eventKey="current" className={lead?.BookingStatus === "Completed" ? "current-bookings-accordion" : ""}>
                       <Accordion.Header>
                         Current Bookings ({currentBookings.length})
                       </Accordion.Header>
@@ -1889,45 +1922,45 @@ const handleSubmitFeedback = async () => {
                                     <td>
                                       {b.CreatedDate
                                         ? new Date(
-                                            b.CreatedDate,
-                                          ).toLocaleDateString("en-IN")
+                                          b.CreatedDate,
+                                        ).toLocaleDateString("en-IN")
                                         : "N/A"}
                                     </td>
-                                   <td className="text-center">
-  <div className="d-flex justify-content-center align-items-center gap-2">
+                                    <td className="text-center">
+                                      <div className="d-flex justify-content-center align-items-center gap-2">
 
-    <Link
-      to={`/complete-service-reports?bookingId=${b.BookingID}`}
-      className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-      title="View service report"
-    >
-      <Icon icon="lucide:eye" />
-    </Link>
+                                        <Link
+                                          to={`/complete-service-reports?bookingId=${b.BookingID}`}
+                                          className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                          title="View service report"
+                                        >
+                                          <Icon icon="lucide:eye" />
+                                        </Link>
 
-    {/* Feedback Button */}
-    {lead?.BookingStatus === "Completed" && (
-      <button
-        onClick={() => handleOpenFeedback(b)}
-        className="w-32-px h-32-px bg-warning-focus text-warning-main border-0 rounded-circle d-inline-flex align-items-center justify-content-center"
-        title="Give Feedback"
-      >
-        <Icon icon="lucide:star" />
-      </button>
-    )}
+                                        {/* Feedback Button */}
+                                        {lead?.BookingStatus === "Completed" && (
+                                          <button
+                                            onClick={() => handleOpenFeedback(b)}
+                                            className="w-32-px h-32-px bg-warning-focus text-warning-main border-0 rounded-circle d-inline-flex align-items-center justify-content-center"
+                                            title="Give Feedback"
+                                          >
+                                            <Icon icon="lucide:star" />
+                                          </button>
+                                        )}
 
-    {/* Edit Button */}
-    {!isLeadClosed && (
-      <Link
-        to={`/book-service/${b.LeadId}/${b.BookingID}/${b.BookingTrackID}`}
-        className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-        title="Edit"
-      >
-        <Icon icon="lucide:edit" />
-      </Link>
-    )}
+                                        {/* Edit Button */}
+                                        {!isLeadClosed && (
+                                          <Link
+                                            to={`/book-service/${b.LeadId}/${b.BookingID}/${b.BookingTrackID}`}
+                                            className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                            title="Edit"
+                                          >
+                                            <Icon icon="lucide:edit" />
+                                          </Link>
+                                        )}
 
-  </div>
-</td>
+                                      </div>
+                                    </td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -1974,8 +2007,8 @@ const handleSubmitFeedback = async () => {
                                     <td>
                                       {b.CreatedDate
                                         ? new Date(
-                                            b.CreatedDate,
-                                          ).toLocaleDateString("en-IN")
+                                          b.CreatedDate,
+                                        ).toLocaleDateString("en-IN")
                                         : "N/A"}
                                     </td>
 
@@ -2042,16 +2075,16 @@ const handleSubmitFeedback = async () => {
                                 <strong>Created Date: </strong>
                                 {item.CreatedDate
                                   ? new Date(item.CreatedDate).toLocaleString(
-                                      "en-IN",
-                                      {
-                                        day: "2-digit",
-                                        month: "short",
-                                        year: "numeric",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        hour12: true,
-                                      },
-                                    )
+                                    "en-IN",
+                                    {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      hour12: true,
+                                    },
+                                  )
                                   : "-"}
                               </div>
                               <div
@@ -2136,7 +2169,7 @@ const handleSubmitFeedback = async () => {
             Cancel
           </Button>
           <Button className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
-                  title="View" onClick={handleAssignSupervisor}>
+            title="View" onClick={handleAssignSupervisor}>
             {isSupervisorAssigned ? "Reassign" : "Assign"}
           </Button>
         </Modal.Footer>
@@ -2168,10 +2201,10 @@ const handleSubmitFeedback = async () => {
                   cursor: "pointer",
                   ...(selectedWhatsappTemplate === template.id
                     ? {
-                        borderColor: "#25D366",
-                        backgroundColor: "rgba(37, 211, 102, 0.12)",
-                        boxShadow: "0 0 0 2px rgba(37, 211, 102, 0.3)",
-                      }
+                      borderColor: "#25D366",
+                      backgroundColor: "rgba(37, 211, 102, 0.12)",
+                      boxShadow: "0 0 0 2px rgba(37, 211, 102, 0.3)",
+                    }
                     : {}),
                 }}
                 onClick={() => setSelectedWhatsappTemplate(template.id)}
@@ -2208,65 +2241,65 @@ const handleSubmitFeedback = async () => {
       </Modal>
 
       {showFeedbackModal && (
-  <div className="modal fade show d-block" style={{ backdropFilter: 'blur(8px)', backgroundColor: 'rgba(0,0,0,0.4)' }}>
-    <div className="modal-dialog modal-dialog-centered">
-      <div className="modal-content border-0 radius-16 shadow">
-        <div className="modal-header border-bottom-0">
-          <div className="modal-title fw-bold fs-5">Service Feedback</div>
-          <button type="button" className="btn-close" onClick={() => setShowFeedbackModal(false)}></button>
-        </div>
-        <div className="modal-body text-center">
-          <p className="text-muted mb-4">How was your experience with booking <b>{selectedBooking?.BookingTrackID}</b>?</p>
-          
-          {/* Star Rating System */}
-          <div className="mb-4">
-            {[...Array(5)].map((star, index) => {
-              index += 1;
-              return (
+        <div className="modal fade show d-block" style={{ backdropFilter: 'blur(8px)', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0 radius-16 shadow">
+              <div className="modal-header border-bottom-0">
+                <div className="modal-title fw-bold fs-5">Service Feedback</div>
+                <button type="button" className="btn-close" onClick={() => setShowFeedbackModal(false)}></button>
+              </div>
+              <div className="modal-body text-center">
+                <p className="text-muted mb-4">How was your experience with booking <b>{selectedBooking?.BookingTrackID}</b>?</p>
+
+                {/* Star Rating System */}
+                <div className="mb-4">
+                  {[...Array(5)].map((star, index) => {
+                    index += 1;
+                    return (
+                      <button
+                        type="button"
+                        key={index}
+                        className="btn p-0 border-0 bg-transparent"
+                        onClick={() => setRating(index)}
+                        onMouseEnter={() => setHover(index)}
+                        onMouseLeave={() => setHover(rating)}
+                      >
+                        <Icon
+                          icon="lucide:star"
+                          className="fs-2 mx-1"
+                          style={{ color: index <= (hover || rating) ? "#ffc107" : "#e4e5e9", fill: index <= (hover || rating) ? "#ffc107" : "none" }}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="text-start">
+                  <label className="form-label fw-semibold">Description</label>
+                  <textarea
+                    className="form-control"
+                    rows="3"
+                    placeholder="Share your experience..."
+                    value={feedbackNote}
+                    onChange={(e) => setFeedbackNote(e.target.value)}
+                  ></textarea>
+                </div>
+              </div>
+              <div className="modal-footer border-top-0">
+                <button type="button" className="btn btn-secondary px-4 radius-8" onClick={() => setShowFeedbackModal(false)}>Cancel</button>
                 <button
                   type="button"
-                  key={index}
-                  className="btn p-0 border-0 bg-transparent"
-                  onClick={() => setRating(index)}
-                  onMouseEnter={() => setHover(index)}
-                  onMouseLeave={() => setHover(rating)}
+                  className="btn btn-primary px-4 radius-8"
+                  onClick={handleSubmitFeedback}
+                  disabled={rating === 0}
                 >
-                  <Icon 
-                    icon="lucide:star" 
-                    className="fs-2 mx-1"
-                    style={{ color: index <= (hover || rating) ? "#ffc107" : "#e4e5e9", fill: index <= (hover || rating) ? "#ffc107" : "none" }}
-                  />
+                  Submit Feedback
                 </button>
-              );
-            })}
-          </div>
-
-          <div className="text-start">
-            <label className="form-label fw-semibold">Description</label>
-            <textarea 
-              className="form-control" 
-              rows="3" 
-              placeholder="Share your experience..."
-              value={feedbackNote}
-              onChange={(e) => setFeedbackNote(e.target.value)}
-            ></textarea>
+              </div>
+            </div>
           </div>
         </div>
-        <div className="modal-footer border-top-0">
-          <button type="button" className="btn btn-secondary px-4 radius-8" onClick={() => setShowFeedbackModal(false)}>Cancel</button>
-          <button 
-            type="button" 
-            className="btn btn-primary px-4 radius-8" 
-            onClick={handleSubmitFeedback}
-            disabled={rating === 0}
-          >
-            Submit Feedback
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
     </>
   );
 };
