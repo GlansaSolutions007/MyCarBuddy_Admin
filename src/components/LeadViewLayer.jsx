@@ -153,6 +153,10 @@ const LeadViewLayer = () => {
   const [hover, setHover] = useState(0);
   const [feedbackNote, setFeedbackNote] = useState("");
 
+  // Accordion state
+  const [activeAccordionKey, setActiveAccordionKey] = useState("0");
+  const regNumberRef = useRef(null);
+
   // Function to open modal
   const handleOpenFeedback = (booking) => {
     setSelectedBooking(booking);
@@ -697,7 +701,7 @@ const LeadViewLayer = () => {
       }
       Swal.fire({
         icon: "success",
-        title: "Car Details Saved",
+        title: "Saved",
         text: "Car details have been successfully saved.",
       });
       await fetchLead();
@@ -767,9 +771,14 @@ const LeadViewLayer = () => {
       Swal.fire({
         icon: "success",
         title: "Information Saved",
-        text: "Information has been saved successfully .",
+        text: "Information saved successfully .",
       });
       await fetchLead();
+      // Open car details accordion and focus on registration number only if no car details exist
+      if (!carRegistrationNumber && !carKmDriven && !carBrand && !carModel && !carFuelType && !carYearOfPurchase) {
+        setActiveAccordionKey("1");
+        setTimeout(() => regNumberRef.current?.focus(), 100);
+      }
     } catch (err) {
       console.error("Information save failed", err);
       Swal.fire({
@@ -1535,7 +1544,7 @@ const LeadViewLayer = () => {
               )}
 
               {/* ------------------ Accordions ------------------ */}
-              <Accordion defaultActiveKey="0" className="mt-3">
+              <Accordion activeKey={activeAccordionKey} onSelect={setActiveAccordionKey} className="mt-3">
                 <Accordion.Item eventKey="0">
                   <Accordion.Header>Personal Information</Accordion.Header>
 
@@ -1727,6 +1736,7 @@ const LeadViewLayer = () => {
                             Registration Number
                           </label>
                           <input
+                            ref={regNumberRef}
                             type="text"
                             className="form-control"
                             placeholder="e.g., ABC-1234"
@@ -2279,7 +2289,7 @@ const LeadViewLayer = () => {
                   <textarea
                     className="form-control"
                     rows="3"
-                    placeholder="Share your experience..."
+                    placeholder="Write customer experience..."
                     value={feedbackNote}
                     onChange={(e) => setFeedbackNote(e.target.value)}
                   ></textarea>

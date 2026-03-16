@@ -136,7 +136,7 @@ function CompleteServiceReportView({ data, onBack }) {
         status: dealerApprovals.length === 0 ? 'pending' : 
                 dealerApprovals.every(d => d.IsDealer_Confirm === 'Approved') ? 'completed' : 
                 dealerApprovals.some(d => d.IsDealer_Confirm === 'Rejected') ? 'failed' : 'in-progress',
-        details: dealerApprovals.length === 0 ? 'No dealers' : `${dealerApprovals.filter(d => d.IsDealer_Confirm === 'Approved').length}/${dealerApprovals.length} dealers confirmed`
+        details: dealerApprovals.length === 0 ? 'No dealers' : `${dealerApprovals.filter(d => d.IsDealer_Confirm === 'Approved').length} dealers confirmed services`
       },
       {
         id: 'customer-confirmation',
@@ -880,11 +880,11 @@ function CompleteServiceReportView({ data, onBack }) {
                                     const status = t.Status?.toLowerCase() || 'pending';
                                     const isCompleted = status === 'completed';
                                     const getDriverColor = (s) => {
-                                      if (s === 'completed') return '#10b981'; // green
-                                      if (s === 'pickup_started' || s === 'serviceinprogress') return '#3b82f6'; // blue
-                                      if (s === 'pickup_reached' || s === 'car_picked' || s === 'drop_reached') return '#06b6d4'; // cyan
-                                      if (s === 'in_transit' || s === 'outfordelivery') return '#eab308'; // yellow
-                                      return '#6b7280'; // gray
+                                      if (s === 'completed') return '#116d6e'; // green
+                                      if (s === 'pickup_started' || s === 'serviceinprogress') return '#116d6e'; // blue
+                                      if (s === 'pickup_reached' || s === 'car_picked' || s === 'drop_reached') return '#116d6e'; // cyan
+                                      if (s === 'in_transit' || s === 'outfordelivery') return '#116d6e'; // yellow
+                                      return '#116d6e'; // gray
                                     };
                                     const color = getDriverColor(status);
                                     return (
