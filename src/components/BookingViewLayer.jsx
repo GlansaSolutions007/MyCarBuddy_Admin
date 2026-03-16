@@ -4919,7 +4919,7 @@ const handleCustomerRejectionSubmit = async () => {
                                             </td>
                                             <td className="text-center pe-4 py-3">
                                               <div className="d-flex flex-column align-items-center gap-2">
-                                                {row.BookingImages?.length > 0 && (
+                                                {/* {row.BookingImages?.length > 0 && (
                                                   <div className="d-flex gap-3 flex-wrap justify-content-center">
                                                     {row.BookingImages.map((img) => (
                                                       <img
@@ -4940,7 +4940,7 @@ const handleCustomerRejectionSubmit = async () => {
                                                       />
                                                     ))}
                                                   </div>
-                                                )}
+                                                )} */}
                                                 {row.IsCancelled === 0 && row.Status !== "completed" && (
                                                   <div className="d-flex gap-2 justify-content-center flex-wrap">
                                                     <button
@@ -5302,66 +5302,177 @@ const handleCustomerRejectionSubmit = async () => {
                   </Accordion.Body>
                 </Accordion.Item>
               </Accordion>
-              
-              {/* ================= SERVICE COMPLETION IMAGES ACCORDION ================= */}
-<Accordion className="mb-3" defaultActiveKey="">
-  <Accordion.Item eventKey="serviceImages">
+              {/* ================= PICKUP IMAGES ACCORDION ================= */}
+<Accordion className="mb-3">
+  <Accordion.Item eventKey="pickupImages">
     <Accordion.Header>
       <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
-        <Icon icon="mdi:image-multiple" width={20} height={20} />
-        Service Completion Images
+        <Icon icon="mdi:car-arrow-right" width={20} height={20} />
+        Pickup Images
       </h6>
     </Accordion.Header>
 
     <Accordion.Body>
-      {(bookingData?.ServiceImages ?? []).length > 0 ? (
+      {(bookingData?.ServiceImages?.filter(i => i.ImageUploadType === "Pickup") ?? []).length > 0 ? (
 
         <div className="row g-3">
+          {bookingData?.ServiceImages
+            ?.filter(i => i.ImageUploadType === "Pickup")
+            .map((img, idx) => (
 
-          {(bookingData?.ServiceImages ?? []).map((img, idx) => (
-            <div className="col-lg-2 col-md-3 col-4" key={img.ImageID ?? idx}>
+              <div className="col-lg-2 col-md-3 col-4" key={img.ImageID ?? idx}>
 
-              <img
-                src={`${API_IMAGE}${img.ImageURL}`}
-                alt="Service Completion"
-                className="img-fluid rounded border"
-                style={{
-                  height: "100px",
-                  width: "100%",
-                  objectFit: "cover",
-                  cursor: "pointer"
-                }}
-                onClick={() =>
-                  window.open(`${API_IMAGE}${img.ImageURL}`, "_blank")
-                }
-              />
+                <img
+                  src={`${API_IMAGE}${img.ImageURL}`}
+                  alt="Pickup"
+                  className="img-fluid rounded border"
+                  style={{
+                    height: "100px",
+                    width: "100%",
+                    objectFit: "cover",
+                    cursor: "pointer"
+                  }}
+                  onClick={() => window.open(`${API_IMAGE}${img.ImageURL}`, "_blank")}
+                />
 
-              <div
-                className="text-muted text-center mt-1"
-                style={{ fontSize: "0.7rem" }}
-              >
-                {img.UploadedAt
-                  ? new Date(img.UploadedAt).toLocaleDateString("en-IN", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric"
-                    })
-                  : ""}
+                <div className="text-muted text-center mt-1" style={{ fontSize: "0.7rem" }}>
+                  {img.UploadedAt
+                    ? new Date(img.UploadedAt).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric"
+                      })
+                    : ""}
+                </div>
+
               </div>
-
-            </div>
           ))}
-
         </div>
 
       ) : (
         <p className="text-muted mb-0 text-center py-4">
-          No service completion images uploaded.
+          No pickup images uploaded.
         </p>
       )}
     </Accordion.Body>
   </Accordion.Item>
 </Accordion>
+
+          {/* ================= DELIVERY IMAGES ACCORDION ================= */}
+          <Accordion className="mb-3">
+            <Accordion.Item eventKey="deliveryImages">
+              <Accordion.Header>
+                <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
+                  <Icon icon="mdi:car-arrow-left" width={20} height={20} />
+                  Delivery Images
+                </h6>
+              </Accordion.Header>
+
+              <Accordion.Body>
+                {(bookingData?.ServiceImages?.filter(i => i.ImageUploadType === "Delivery") ?? []).length > 0 ? (
+
+                  <div className="row g-3">
+                    {bookingData?.ServiceImages
+                      ?.filter(i => i.ImageUploadType === "Delivery")
+                      .map((img, idx) => (
+
+                        <div className="col-lg-2 col-md-3 col-4" key={img.ImageID ?? idx}>
+
+                          <img
+                            src={`${API_IMAGE}${img.ImageURL}`}
+                            alt="Delivery"
+                            className="img-fluid rounded border"
+                            style={{
+                              height: "100px",
+                              width: "100%",
+                              objectFit: "cover",
+                              cursor: "pointer"
+                            }}
+                            onClick={() => window.open(`${API_IMAGE}${img.ImageURL}`, "_blank")}
+                          />
+
+                          <div className="text-muted text-center mt-1" style={{ fontSize: "0.7rem" }}>
+                            {img.UploadedAt
+                              ? new Date(img.UploadedAt).toLocaleDateString("en-IN", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric"
+                                })
+                              : ""}
+                          </div>
+
+                        </div>
+                    ))}
+                  </div>
+
+                ) : (
+                  <p className="text-muted mb-0 text-center py-4">
+                    No delivery images uploaded.
+                  </p>
+                )}
+              </Accordion.Body>
+            </Accordion.Item>
+          </Accordion>
+              
+              {/* ================= SERVICE COMPLETION IMAGES ACCORDION ================= */}
+              <Accordion className="mb-3" defaultActiveKey="">
+                <Accordion.Item eventKey="serviceImages">
+                  <Accordion.Header>
+                    <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
+                      <Icon icon="mdi:image-multiple" width={20} height={20} />
+                      Service Completion Images
+                    </h6>
+                  </Accordion.Header>
+
+                  <Accordion.Body>
+                    {(bookingData?.ServiceImages ?? []).length > 0 ? (
+
+                      <div className="row g-3">
+
+                        {(bookingData?.ServiceImages ?? []).map((img, idx) => (
+                          <div className="col-lg-2 col-md-3 col-4" key={img.ImageID ?? idx}>
+
+                            <img
+                              src={`${API_IMAGE}${img.ImageURL}`}
+                              alt="Service Completion"
+                              className="img-fluid rounded border"
+                              style={{
+                                height: "100px",
+                                width: "100%",
+                                objectFit: "cover",
+                                cursor: "pointer"
+                              }}
+                              onClick={() =>
+                                window.open(`${API_IMAGE}${img.ImageURL}`, "_blank")
+                              }
+                            />
+
+                            <div
+                              className="text-muted text-center mt-1"
+                              style={{ fontSize: "0.7rem" }}
+                            >
+                              {img.UploadedAt
+                                ? new Date(img.UploadedAt).toLocaleDateString("en-IN", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric"
+                                  })
+                                : ""}
+                            </div>
+
+                          </div>
+                        ))}
+
+                      </div>
+
+                    ) : (
+                      <p className="text-muted mb-0 text-center py-4">
+                        No service completion images uploaded.
+                      </p>
+                    )}
+                  </Accordion.Body>
+                </Accordion.Item>
+              </Accordion>
             </div>
           </div>
         </div>

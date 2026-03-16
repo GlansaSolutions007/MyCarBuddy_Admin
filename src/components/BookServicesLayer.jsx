@@ -2824,16 +2824,8 @@ const BookServicesLayer = () => {
   }, 0);
 
   const totalGst = addedItems.reduce((sum, item) => {
-    const basePrice = Number(item.basePrice) || 0;
-    const quantity = Number(item.quantity) || 1;
-    const labour = Number(item.labourCharge) || 0;
-    const gstPercent = Number(item.gstPercent) || 0;
-
-    const taxableAmount = basePrice * quantity + labour;
-    const gstAmount = (taxableAmount * gstPercent) / 100;
-
-    return sum + gstAmount;
-  }, 0);
+  return sum + (Number(item.gstPrice) || 0);
+}, 0);
 
   const grandTotal = itemTotal + labourTotal + totalGst;
 

@@ -621,8 +621,8 @@ const LeadsAssignLayer = () => {
                   />
                   {leadCount > filteredLeads.length && (
                     <small
-                      className="text-danger position-absolute"
-                      style={{ bottom: "-18px", fontSize: "12px" }}
+                      className="text-danger position-absolute w-100 px-3"
+                      style={{ top: "100%", left: 0, fontSize: "12px", marginTop: "2px"}}
                     >
                       Entered count cannot be greater than total leads.
                     </small>
