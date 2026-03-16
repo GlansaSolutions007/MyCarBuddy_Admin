@@ -848,19 +848,24 @@ const [previewImages, setPreviewImages] = useState([]);
   }
 };
 
-  const handleConfirmService = async () => {
+const handleConfirmService = async () => {
     const addOns = bookingData?.BookingAddOns || [];
-    if (addOns.length === 0) {
+    const supervisorBookings = bookingData?.SupervisorBookings || [];
+    const allServices = [...addOns, ...supervisorBookings];
+    const itemsToConfirm = allServices.filter(
+      (a) => (a.IsSupervisor_Confirm ?? a.isSupervisor_Confirm) !== 1
+    );
+    if (itemsToConfirm.length === 0) {
       Swal.fire({
         icon: "info",
-        title: "No services",
-        text: "No services to confirm. Add services first.",
+        title: "No pending services",
+        text: "All services are already confirmed by supervisor.",
       });
       return;
     }
     const result = await Swal.fire({
       title: "Confirm services?",
-      text: `This will confirm ${addOns.length} service(s) for this booking.`,
+      text: `This will confirm ${itemsToConfirm.length} service(s) for this booking.`,
       icon: "question",
       showCancelButton: true,
       confirmButtonText: "Yes, Confirm",
@@ -872,8 +877,8 @@ const [previewImages, setPreviewImages] = useState([]);
       const uid = parseInt(duserId || localStorage.getItem("userId") || "0", 10);
       const rolename = roleName || employeeData?.RoleName || "";
 
-      for (const addon of addOns) {
-        const addOnId = addon.AddOnID ?? addon.addOnId;
+      for (const addon of itemsToConfirm) {
+        const addOnId = addon.AddOnID ?? addon.addOnId ?? addon.Id ?? addon.id;
         if (!addOnId) continue;
 
         const includes =
@@ -887,11 +892,11 @@ const [previewImages, setPreviewImages] = useState([]);
           leadId: bookingData.LeadId,
           serviceType: addon.ServiceType || "Package",
           serviceName: addon.ServiceName || "",
-          basePrice: Number(addon.BasePrice ?? addon.ServicePrice ?? 0) || 0,
+          basePrice: Number(addon.BasePrice ?? addon.ServicePrice ?? addon.Price ?? 0) || 0,
           quantity: Number(addon.Quantity ?? 1) || 1,
-          price: Number(addon.ServicePrice ?? addon.TotalPrice ?? 0) || 0,
+          price: Number(addon.ServicePrice ?? addon.TotalPrice ?? addon.Price ?? 0) || 0,
           gstPercent: Number(addon.GSTPercent ?? 0) || 0,
-          gstAmount: Number(addon.GSTPrice ?? 0) || 0,
+          gstAmount: Number(addon.GSTPrice ?? addon.GSTAmount ?? 0) || 0,
           description: addon.Description || "",
           dealerID: addon.DealerID != null && addon.DealerID !== "" ? Number(addon.DealerID) : 0,
           percentage: Number(addon.Percentage ?? 0) || 0,
@@ -3055,8 +3060,8 @@ const handleCustomerRejectionSubmit = async () => {
                     )}
                   <Link
                     to={`/lead-view/${bookingData?.LeadId}`}
-                    className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
-                    title="View"
+                    className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
+                    title="View Lead"
                   > <Icon icon="mdi:eye-outline" width={16} height={16} className="mx-2" />
                     View Lead
                   </Link>
@@ -3068,11 +3073,11 @@ const handleCustomerRejectionSubmit = async () => {
                   ) && ( */}
                   {!hideAllActions && (
   <>
-    {/* Confirm Services Button */}
-    {(
-      (bookingData?.Isinspection === 1 && bookingData?.Isservice_converted === 1) ||
-      (bookingData?.Isinspection === 0 && bookingData?.Isservice_converted === 0)
-    ) && (
+                  {/* Confirm Services Button */}
+                  {(
+                    (bookingData?.Isinspection === 1 && bookingData?.Isservice_converted === 1) ||
+                    (bookingData?.Isinspection === 0 && bookingData?.Isservice_converted === 0)
+                  ) && (
                       <Link
                         to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
                         className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
@@ -3092,38 +3097,36 @@ const handleCustomerRejectionSubmit = async () => {
                           ? "Confirm Services"
                           : "Confirm Services"}
                       </Link>
-    )}
+                      )}
 
-    {/* Convert To Service Button */}
-    {bookingData?.Isinspection === 1 &&
-      bookingData?.Isservice_converted === 0 && (
-        <button
-          className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2"
-          onClick={handleConvertToService}
-          title="Convert To Service"
-        >
-          <Icon icon="mdi:swap-horizontal-bold" />
-          Convert To Service
-        </button>
-      )}
+                      {/* Convert To Service Button */}
+                      {bookingData?.Isinspection === 1 &&
+                        bookingData?.Isservice_converted === 0 && (
+                          <button
+                            className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2"
+                            onClick={handleConvertToService}
+                            title="Convert To Service"
+                          >
+                            <Icon icon="mdi:swap-horizontal-bold" />
+                            Convert To Service
+                          </button>
+                        )}
 
-    {/* Confirm Service Button - Admin & Supervisor only, when Convert To Service is enabled; hide once all services are confirmed */}
-    {bookingData?.Isinspection === 1 &&
-      bookingData?.Isservice_converted === 0 &&
-      (roleId === "1" || roleId === "8") &&
-      (bookingData?.BookingAddOns || []).some(
-        (a) => (a.IsSupervisor_Confirm ?? a.isSupervisor_Confirm) !== 1
-      ) && (
-        <button
-          className="btn btn-success btn-sm d-inline-flex align-items-center justify-content-center gap-2"
-          onClick={handleConfirmService}
-          title="Confirm Service"
-        >
-          <Icon icon="mdi:check-circle-outline" />
-          Confirm Service
-        </button>
-      )}
-  </>
+                        {/* Confirm Service Button - Admin & Supervisor only, when Convert To Service is enabled and there are services */}
+                      {bookingData?.Isinspection === 1 &&
+                        bookingData?.Isservice_converted === 0 &&
+                        (roleId === "1" || roleId === "8") &&
+                        ((bookingData?.BookingAddOns?.length > 0) || (bookingData?.SupervisorBookings?.length > 0)) && (
+                          <button
+                            className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2"
+                            onClick={handleConfirmService}
+                            title="Confirm Service"
+                          >
+                            <Icon icon="mdi:check-circle-outline" />
+                            Confirm Service
+                          </button>
+                        )}
+                    </>
                     )}
 
                   {/* Reschedule & Reassign Buttons */}
