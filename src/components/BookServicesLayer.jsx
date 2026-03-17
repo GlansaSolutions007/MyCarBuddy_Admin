@@ -136,6 +136,9 @@ const BookServicesLayer = () => {
           description: pkg.Description,
           categoryId: pkg.CategoryID,
           categoryName: pkg.CategoryName,
+          gst_p: pkg.gst_p,
+          gst_amt: pkg.gst_amt,
+          inc_gstamt: pkg.inc_gstamt,
         }));
 
       setInspectionPackages(inspectionPkgs);
@@ -1737,7 +1740,7 @@ const BookServicesLayer = () => {
         percentage: 0,
         our_Earnings: 0,
         isSupervisor: true,
-        labourCharges: Number(selectedInspectionPackage.Total_Offer_Price) || 0,
+        labourCharges: Number(selectedInspectionPackage.price) || 0,
         serviceId: Number(selectedInspectionPackage.id),
         isUserClicked: false,
         includes: "",
