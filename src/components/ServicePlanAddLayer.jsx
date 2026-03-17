@@ -32,6 +32,7 @@ const ServicePlanAddLayer = ({ setPageTitle }) => {
   const [gstOptions, setGstOptions] = useState([]);
   const [gstPercent, setGstPercent] = useState(0);
   const [gstAmount, setGstAmount] = useState(0);
+  const [gstOnlyAmount, setGstOnlyAmount] = useState(0);
 
 
   const [formData, setFormData] = useState({
@@ -43,6 +44,7 @@ const ServicePlanAddLayer = ({ setPageTitle }) => {
     IncludePrices: "",
     gst_p:"",
     inc_gstamt:"",
+    package_gstAmt:gstOnlyAmount,
     Total_Offer_Price: 0.00,
     Default_Price: 0.00,
     IsActive: true,
@@ -97,13 +99,15 @@ const ServicePlanAddLayer = ({ setPageTitle }) => {
     const gstOnlyAmount = (offerPrice * gstPercent) / 100;
     const inclusiveAmount = offerPrice + (Number.isFinite(gstOnlyAmount) ? gstOnlyAmount : 0);
     const finalAmount = Number.isFinite(inclusiveAmount) ? inclusiveAmount : 0;
+    setGstOnlyAmount(gstOnlyAmount.toFixed(2));
 
-    setGstAmount(finalAmount);
+    setGstAmount(finalAmount.toFixed(2));
 
     setFormData((prev) => ({
       ...prev,
       gst_p: gstPercent || "",
       inc_gstamt: finalAmount || "",
+      gst_onlyamt: gstOnlyAmount || "",
     }));
   }, [formData.Total_Offer_Price, gstPercent]);
 
@@ -185,6 +189,7 @@ const ServicePlanAddLayer = ({ setPageTitle }) => {
         IncludePrices: res.data[0].IncludePrices,
         gst_p: res.data[0].gst_p ?? "",
         inc_gstamt: res.data[0].inc_gstamt ?? "",
+        gst_onlyamt: res.data[0].gst_onlyamt ?? "",
         Total_Offer_Price: res.data[0].Total_Offer_Price,
         Default_Price: res.data[0].Default_Price,
         IsActive: res.data[0].IsActive,
@@ -285,6 +290,7 @@ const ServicePlanAddLayer = ({ setPageTitle }) => {
       payload.append("TotalPrice", formData.Total_Offer_Price);
       payload.append("gst_p", gstPercent || 0);
       payload.append("inc_gstamt", gstAmount || 0);
+      payload.append("gst_amt", gstOnlyAmount || 0);
       payload.append("IsActive", formData.IsActive);
       payload.append("PackageImage", formData.PackageImage);
       payload.append("IncludeID", formData.IncludeID.join(","));
@@ -613,6 +619,15 @@ const ServicePlanAddLayer = ({ setPageTitle }) => {
                   type="number"
                   className="form-control"
                   value={gstAmount || 0}
+                  disabled
+                />
+              </div>
+              <div className="col-md-6 mt-2">
+                <label className='form-label text-sm fw-semibold text-primary-light mb-8'>GST Amt</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={gstOnlyAmount || 0}
                   disabled
                 />
               </div>
