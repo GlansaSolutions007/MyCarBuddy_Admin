@@ -290,7 +290,7 @@ const ServicePlanAddLayer = ({ setPageTitle }) => {
       payload.append("TotalPrice", formData.Total_Offer_Price);
       payload.append("gst_p", gstPercent || 0);
       payload.append("inc_gstamt", gstAmount || 0);
-      payload.append("gst_onlyamt", gstOnlyAmount || 0);
+      payload.append("gst_amt", gstOnlyAmount || 0);
       payload.append("IsActive", formData.IsActive);
       payload.append("PackageImage", formData.PackageImage);
       payload.append("IncludeID", formData.IncludeID.join(","));
