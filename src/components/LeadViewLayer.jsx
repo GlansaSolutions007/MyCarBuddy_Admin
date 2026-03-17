@@ -1628,8 +1628,8 @@ const LeadViewLayer = () => {
                             type="text"
                             style={{ padding: 8 }}
                             className={`form-control ${gstNumber && !GST_REGEX.test(gstNumber)
-                                ? "is-invalid"
-                                : ""
+                              ? "is-invalid"
+                              : ""
                               }`}
                             value={gstNumber}
                             onChange={(e) => {
@@ -1719,7 +1719,10 @@ const LeadViewLayer = () => {
                           onClick={handleSubmitPersonalInfo}
                           disabled={isLeadClosed}
                         >
-                          Save Information
+                          {/* Check if lead has existing data to determine button text */}
+                          {lead?.FullName || lead?.PhoneNumber || lead?.City
+                            ? "Update Information"
+                            : "Save Information"}
                         </button>
                       </div>
                     </div>
@@ -1873,7 +1876,10 @@ const LeadViewLayer = () => {
                           onClick={handleSubmitCarDetails}
                           disabled={isLeadClosed}
                         >
-                          Save Car Details
+                          {/* Check if vehicle record exists via BrandID or RegistrationNumber */}
+                          {vehicle?.BrandID || vehicle?.RegistrationNumber || vehicle?.ModelID
+                            ? "Update Car Details"
+                            : "Save Car Details"}
                         </button>
                       </div>
                     </div>

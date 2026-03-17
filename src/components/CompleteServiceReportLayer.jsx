@@ -4,7 +4,7 @@ import { Icon } from "@iconify/react";
 import DataTable from "react-data-table-component";
 import axios from "axios";
 
-const API_BASE = import.meta.env.VITE_APIURL || "https://dev-api.mycarsbuddy.com/api";
+const API_BASE = import.meta.env.VITE_APIURL;
 
 const STATUS_BADGE_CLASS = {
   Confirmed: "bg-info bg-opacity-25 text-info",
@@ -242,7 +242,7 @@ function CompleteServiceReportView({ data, onBack }) {
     const getStatusColor = (status) => {
       switch(status) {
         case 'completed': return '#10b981';
-        case 'in-progress': return '#f59e0b';
+        case 'in-progress': return '#10b981';
         case 'pending': return '#6b7280';
         case 'failed': return '#ef4444';
         default: return '#6b7280';
@@ -380,7 +380,7 @@ function CompleteServiceReportView({ data, onBack }) {
   const followUps = data.Lead_FollowUps || [];
   const dealerApprovals = data.DealerAddOnApproval || [];
   const bookingStatusTracking = data.BookingStatusTracking || [];
-  const bookingImages = data.BookingImages || [];
+  const bookingImages = data.ServiceImages  || [];
 
   const totalBookingAmount =
     (data.TotalPrice || 0) + (data.GSTAmount || 0) + (data.LabourCharges || 0) - (data.CouponAmount || 0);
