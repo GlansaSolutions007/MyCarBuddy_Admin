@@ -5084,7 +5084,7 @@ const handleCustomerRejectionSubmit = async () => {
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textAlign: "center" }}>Payment Date</th>
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textAlign: "center" }}>Status</th>
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Proof Img.</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Refunded</th>
+                              {/* <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Refunded</th> */}
                             </tr>
                           </thead>
                           <tbody>
@@ -5124,7 +5124,7 @@ const handleCustomerRejectionSubmit = async () => {
                                     "—"
                                   )}
                                 </td>
-                                <td className="py-2 px-3">{pay.IsRefunded ? "Yes" : "No"}</td>
+                                {/* <td className="py-2 px-3">{pay.IsRefunded ? "Yes" : "No"}</td> */}
                               </tr>
                             ))}
                           </tbody>
