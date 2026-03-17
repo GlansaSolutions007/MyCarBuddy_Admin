@@ -1505,7 +1505,7 @@ const LeadViewLayer = () => {
                           {nextAction && nextAction !== "Lead Closed" && (
                             <div className="col-12">
                               <label className="form-label fw-semibold text-primary-light">
-                                Next Follow-Up Date & Time
+                                Next Follow-Up Date & Time (optional)
                               </label>
                               <input
                                 type="datetime-local"

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import DataTable from "react-data-table-component";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import Select from "react-select";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -70,6 +70,11 @@ const BookingLayer = () => {
   const employeeData = JSON.parse(localStorage.getItem("employeeData"));
   const roleName = employeeData?.RoleName;
   const userId = localStorage.getItem("userId"); // Assuming userId is available in localStorage
+  const location = useLocation();
+
+  // Read optional view preset from query string (e.g. /bookings?view=today-assigned)
+  const searchParams = new URLSearchParams(location.search);
+  const initialView = searchParams.get("view");
 
   useEffect(() => {
     fetchTechnicians();
@@ -78,6 +83,31 @@ const BookingLayer = () => {
     fetchFieldAdvisors(); // Fetch field advisors on component mount
     getTimeSlotOptions(); // Fetch time slots on component mount
   }, []);
+
+  // Apply initial filter presets based on view parameter (if provided)
+  useEffect(() => {
+    if (!initialView) return;
+
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+
+    if (initialView === "today-assigned") {
+      setStartDate(todayStr);
+      setEndDate(todayStr);
+      setStatus("pending");
+    } else if (initialView === "ongoing") {
+      setStatus("serviceStarted");
+    } else if (initialView === "completed") {
+      setStatus("completed");
+    } else if (initialView === "all") {
+      setStatus("all");
+      setStartDate("");
+      setEndDate("");
+    }
+  }, [initialView]);
 
   useEffect(() => {
     const interval = setInterval(fetchBookings, 15000);
