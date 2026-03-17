@@ -1393,33 +1393,13 @@ const BookServicesLayer = () => {
     }
 
     const item = addedItems[index];
-    // Swal.fire({
-    //   title: "Are you sure?",
-    //   text: "Do you want to discard this service?",
-    //   icon: "warning",
-    //   showCancelButton: true,
-    //   confirmButtonText: "Yes, Discard",
-    // }).then(async (result) => {
-    //   if (!result.isConfirmed) return;
-
     Swal.fire({
-  title: "Discard Service",
-  text: "Please enter the reason for discarding this service.",
-  icon: "warning",
-  input: "textarea",
-  inputPlaceholder: "Enter discard reason...",
-  inputAttributes: {
-    "aria-label": "Discard reason",
-  },
-  showCancelButton: true,
-  confirmButtonText: "Yes, Discard",
-  cancelButtonText: "Cancel",
-  inputValidator: (value) => {
-    if (!value) {
-      return "Discard reason is required!";
-    }
-  },
-}).then(async (result) => {
+      title: "Are you sure?",
+      text: "Do you want to discard this service?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Discard",
+    }).then(async (result) => {
       if (!result.isConfirmed) return;
 
       // CASE 1: DELETE FROM API (existing booking item)
@@ -1433,7 +1413,7 @@ const BookServicesLayer = () => {
           );
 
           if (response.status === 200) {
-            Swal.fire("Deleted!", "Service Discard Successfully.", "success");
+            Swal.fire("Deleted!", "Service Deleted Successfully.", "success");
             const next = addedItems.filter((_, i) => i !== index);
             setAddedItems(next);
             setInitialItemsSnapshot(buildSnapshot(next));
@@ -1742,7 +1722,7 @@ const BookServicesLayer = () => {
 
       // Build services array with the selected inspection package
       // Format description to include Package Name, Price, and Description
-      const formattedDescription = `Package Name: ${selectedInspectionPackage.name}\nPrice: ₹${selectedInspectionPackage.price}\n${selectedInspectionPackage.description || ""}`;
+      const formattedDescription = `Package Name: ${selectedInspectionPackage.inc_gstamt}\nPrice: ₹${selectedInspectionPackage.price}\n${selectedInspectionPackage.description || ""}`;
 
       const services = [{
         serviceType: "Package",
@@ -1750,14 +1730,14 @@ const BookServicesLayer = () => {
         basePrice: 0,
         quantity: 1,
         price: 0,
-        gstPercent: 0,
+        gstPercent: Number(selectedInspectionPackage.gst_p) || 0,
         gstAmount: 0,
         description: "",
         dealerID: 0,
         percentage: 0,
         our_Earnings: 0,
         isSupervisor: true,
-        labourCharges: Number(selectedInspectionPackage.price) || 0,
+        labourCharges: Number(selectedInspectionPackage.Total_Offer_Price) || 0,
         serviceId: Number(selectedInspectionPackage.id),
         isUserClicked: false,
         includes: "",
@@ -2789,6 +2769,7 @@ const BookServicesLayer = () => {
         const canModify =
           !isConfirmed ||
           isSupervisorHead ||
+          isFieldAdvisor ||
           isAdmin;
 
         return !row.isInclude ? (
@@ -2801,7 +2782,15 @@ const BookServicesLayer = () => {
                 title="Discard"
               >
                 <Icon icon="mdi:close-circle-outline" />
-                {/* <Icon icon="mingcute:delete-2-line" /> */}
+              </button>
+            )}
+             {row.isDealer_Confirm != 'Approved' && row.addOnStatus != 'ServiceCompleted' && canModify &&(
+              <button
+                className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                onClick={() => handleRemoveItem(row.addedItemsIndex)}
+                title="remove"
+              >
+                <Icon icon="mingcute:delete-2-line" />
               </button>
             )}
           </div>
