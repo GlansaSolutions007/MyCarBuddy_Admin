@@ -1124,7 +1124,7 @@ const LeadViewLayer = () => {
                       Payment Status
                     </span>
                     <span className="w-70 text-secondary-light fw-medium">
-                      : {lead?.PaymentStatus || "N/A"}
+                      : {lead?.PaymentStatus || "Pending"}
                     </span>
                   </li>
                   <li className="d-flex align-items-center gap-1 mb-12">

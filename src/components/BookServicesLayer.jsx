@@ -2896,7 +2896,7 @@ const BookServicesLayer = () => {
                       <option value="">Select Inspection Package</option>
                       {inspectionPackages.map((pkg) => (
                         <option key={pkg.id} value={pkg.id}>
-                          {pkg.name} - ₹{pkg.price}
+                          {pkg.name} - ₹{pkg.inc_gstamt}
                         </option>
                       ))}
                     </select>
