@@ -1731,7 +1731,7 @@ const BookServicesLayer = () => {
         quantity: 1,
         price: 0,
         gstPercent: Number(selectedInspectionPackage.gst_p) || 0,
-        gstAmount: 0,
+        gstAmount: Number(selectedInspectionPackage.gst_amt) || 0,
         description: "",
         dealerID: 0,
         percentage: 0,
