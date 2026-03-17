@@ -1864,8 +1864,8 @@ const handleRevertService = async (service) => {
   return;
 }
     Swal.fire({
-      title: "Generate Estimation Invoice",
-      html: "Do you want to generate estimation invoice or view existing invoice ?",
+      title: name,
+      html: `Do you want to generate ${invoiceType?.toLowerCase()} invoice or view existing invoice?`,
       icon: "question",
       showDenyButton: true,
       confirmButtonText: "Yes, generate",
@@ -4633,21 +4633,18 @@ const handleCustomerRejectionSubmit = async () => {
                                   )}
                                   {/* Assign Button - show only when BookingAddOns has at least one service */}
                                   {(role === "Admin" || roleName === "Supervisor Head" || roleName === "Field Advisor") &&
-                                    !(
-                                      bookingData?.BookingStatus === "Completed" &&
-                                      bookingData?.PaymentStatus === "Success"
-                                    ) &&
-                                    bookingData?.BookingAddOns != null &&
-                                    Array.isArray(bookingData.BookingAddOns) &&
-                                    bookingData.BookingAddOns.length > 0 &&  !hideAllActions &&(
-                                      <button
-                                        className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                        onClick={handleInitialAssignClick}
-                                        
-                                      >
-                                        Service Assignment
-                                      </button>
-                                    )}
+                                  bookingData?.BookingStatus !== "Completed" &&
+                                  bookingData?.BookingAddOns != null &&
+                                  Array.isArray(bookingData.BookingAddOns) &&
+                                  bookingData.BookingAddOns.length > 0 &&
+                                  !hideAllActions && (
+                                    <button
+                                      className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center"
+                                      onClick={handleInitialAssignClick}
+                                    >
+                                      Service Assignment
+                                    </button>
+                                )}
                                   {/* {showEstimationButton && ( */}
                                  {!hideAllActions && roleName !== "Field Advisor" && (
                                   <button

@@ -1728,7 +1728,7 @@ const BookServicesLayer = () => {
       const formattedDescription = `Package Name: ${selectedInspectionPackage.inc_gstamt}\nPrice: ₹${selectedInspectionPackage.price}\n${selectedInspectionPackage.description || ""}`;
 
       const services = [{
-        serviceType: "Package",
+        serviceType: "Inspection",
         serviceName: selectedInspectionPackage.name,
         basePrice: 0,
         quantity: 1,
@@ -2896,7 +2896,7 @@ const BookServicesLayer = () => {
                       <option value="">Select Inspection Package</option>
                       {inspectionPackages.map((pkg) => (
                         <option key={pkg.id} value={pkg.id}>
-                          {pkg.name} - ₹{pkg.price}
+                          {pkg.name} - ₹{pkg.inc_gstamt}
                         </option>
                       ))}
                     </select>
