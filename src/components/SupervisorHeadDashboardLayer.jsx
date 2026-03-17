@@ -75,9 +75,9 @@ const SupervisorHeadDashboardLayer = () => {
     navigate(`/booking-view/${bookingId}`);
   };
 
-  const handleCardClick = (statusName) => {
-    const encodedStatus = encodeURIComponent(statusName);
-    navigate(`/bookings/${encodedStatus}`);
+  const handleCardClick = (viewKey) => {
+    const encodedView = encodeURIComponent(viewKey || "");
+    navigate(`/bookings${encodedView ? `?view=${encodedView}` : ""}`);
   };
 
   const groupedBookings = Object.values(
@@ -148,12 +148,12 @@ const SupervisorHeadDashboardLayer = () => {
 
             {/* Change row-cols-lg-3 to row-cols-lg-4 for 4 cards in one line */}
             <div className="row row-cols-xxxl-4 row-cols-lg-3 row-cols-md-2 row-cols-1 gy-4 mt-2">
-              {/* Card 1 */}
+              {/* Card 1 - Total Bookings */}
               <div className="col">
                 <div
                   className="card shadow-none border bg-gradient-start-1 h-100"
                   style={{ cursor: "pointer" }}
-                  onClick={() => handleCardClick("")}
+                  onClick={() => handleCardClick("all")}
                 >
                   <div className="card-body p-20">
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -174,12 +174,12 @@ const SupervisorHeadDashboardLayer = () => {
                 </div>
               </div>
 
-              {/* Card 2 */}
+              {/* Card 2 - Today's Assigned Bookings */}
               <div className="col">
                 <div
                   className="card shadow-none border bg-gradient-start-2 h-100"
                   style={{ cursor: "pointer" }}
-                  onClick={() => handleCardClick("")}
+                  onClick={() => handleCardClick("today-assigned")}
                 >
                   <div className="card-body p-20">
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -200,12 +200,12 @@ const SupervisorHeadDashboardLayer = () => {
                 </div>
               </div>
 
-              {/* Card 3 */}
+              {/* Card 3 - Ongoing Bookings */}
               <div className="col">
                 <div
                   className="card shadow-none border bg-gradient-start-3 h-100"
                   style={{ cursor: "pointer" }}
-                  onClick={() => handleCardClick("")}
+                  onClick={() => handleCardClick("ongoing")}
                 >
                   <div className="card-body p-20">
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -225,12 +225,12 @@ const SupervisorHeadDashboardLayer = () => {
                   </div>
                 </div>
               </div>
-              {/* Card 4 */}
+              {/* Card 4 - Completed Bookings */}
               <div className="col">
                 <div
                   className="card shadow-none border bg-gradient-start-2 h-100"
                   style={{ cursor: "pointer" }}
-                  onClick={() => handleCardClick("")}
+                  onClick={() => handleCardClick("completed")}
                 >
                   <div className="card-body p-20">
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">

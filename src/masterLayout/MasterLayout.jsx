@@ -15,6 +15,7 @@ const MasterLayout = ({ children }) => {
   let [mobileMenu, setMobileMenu] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [hasNewNotification, setHasNewNotification] = useState(false);
   const [userPermissions, setUserPermissions] = useState([]);
   const [menuLoading, setMenuLoading] = useState(true);
   const location = useLocation(); // Hook to get the current route
@@ -323,6 +324,7 @@ const MasterLayout = ({ children }) => {
 
           setNotifications((prev) => [newNotification, ...prev]);
           setUnreadCount((prev) => prev + 1);
+          setHasNewNotification(true);
 
           // Show toast notification
           notificationService.showToastNotification(
@@ -398,9 +400,14 @@ const MasterLayout = ({ children }) => {
           });
 
           // Merge: API notifications first (they have proper IDs), then unmatched real-time ones
-          return [...normalized, ...rtOnly];
+          const merged = [...normalized, ...rtOnly];
+          return merged;
         });
-        setUnreadCount(normalized.filter((n) => !n.read).length);
+        const nextUnread = normalized.filter((n) => !n.read).length;
+        setUnreadCount(nextUnread);
+        if (nextUnread > 0) {
+          setHasNewNotification(true);
+        }
       } catch (err) {
         console.error("Failed to load notifications:", err);
       }
@@ -419,6 +426,12 @@ const MasterLayout = ({ children }) => {
       clearInterval(pollInterval);
     };
   }, [userId]);
+
+  useEffect(() => {
+    if (unreadCount === 0) {
+      setHasNewNotification(false);
+    }
+  }, [unreadCount]);
 
   let sidebarControl = () => {
     seSidebarActive(!sidebarActive);
@@ -1148,9 +1161,12 @@ const MasterLayout = ({ children }) => {
                 <div className="dropdown d-none ">
                   {/* d-sm-inline-block */}
                   <button
-                    className="has-indicator w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center"
+                    className={`has-indicator w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center ${
+                      hasNewNotification ? "animate__animated animate__heartBeat animate__infinite" : ""
+                    }`}
                     type="button"
                     data-bs-toggle="dropdown"
+                    onClick={() => setHasNewNotification(false)}
                   >
                     <img
                       src="/assets/images/lang-flag.png"
