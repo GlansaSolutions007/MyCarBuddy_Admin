@@ -34,6 +34,7 @@ const BookServicesLayer = () => {
   const isAdmin = role === "Admin" || roleId === "1";
   const isTelecaller = roleId === "6" || employeeData?.RoleName === "Telecaller";
   const isTelecallerHead = roleId === "5" || employeeData?.RoleName === "Telecaller Head";
+  const isTelicaller = String(roleId) === "5";
 
   const [dealersList, setDealersList] = useState([]);
   const [bookingData, setBookingData] = useState(null);
@@ -2003,7 +2004,7 @@ const BookServicesLayer = () => {
         //   isSupervisorHead ||
         //   isAdmin;
         const canModify =
-          row.status !== "Confirmed";
+          row.status !== "Confirmed" && !isTelicaller;
         return (
           <input
             type="number"
@@ -2095,7 +2096,7 @@ const BookServicesLayer = () => {
         //   isSupervisorHead ||
         //   isAdmin;
         const canModify =
-          row.status !== "Confirmed";
+          row.status !== "Confirmed" && !isTelicaller;
         return (
           <input
             type="number"
@@ -2205,7 +2206,7 @@ const BookServicesLayer = () => {
         //   isSupervisorHead ||
         //   isAdmin;
         const canModify =
-          row.status !== "Confirmed";
+          row.status !== "Confirmed" && !isTelicaller;
         return (
           <input
             type="number"
@@ -2298,7 +2299,7 @@ const BookServicesLayer = () => {
         //   isSupervisorHead ||
         //   isAdmin;
         const canModify =
-          row.status !== "Confirmed";
+          row.status !== "Confirmed" && !isTelicaller;
         return (
           <input
             type="number"
@@ -2483,7 +2484,7 @@ const BookServicesLayer = () => {
             //   isSupervisorHead ||
             //   isAdmin;
             const canModify =
-          row.status !== "Confirmed";
+          row.status !== "Confirmed" && !isTelicaller;
             return (
               <input
                 type="number"
@@ -2534,7 +2535,7 @@ const BookServicesLayer = () => {
           sortable: true,
         },
         {
-          name: "% Amount",
+          name: "Company Amt.",
           cell: (row, index) => {
             if (row.isInclude) return null;
             // const canModify =
@@ -2542,7 +2543,7 @@ const BookServicesLayer = () => {
             //   isSupervisorHead ||
             //   isAdmin;
             const canModify =
-          row.status !== "Confirmed";
+          row.status !== "Confirmed" && !isTelicaller;
             return (
               <input
                 type="number"
@@ -3146,6 +3147,7 @@ const BookServicesLayer = () => {
                       className="form-control"
                       value={price}
                       min={0}
+                      disabled={isTelicaller}
                       // onChange={(e) => setPrice(Number(e.target.value) || 0)}
                       onChange={(e) => setPrice(e.target.value)}
                       placeholder="0.00"
