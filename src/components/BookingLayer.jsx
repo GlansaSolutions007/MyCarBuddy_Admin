@@ -859,8 +859,8 @@ const BookingLayer = () => {
                 
                   <a
                     href="/service-timeline-board"
-                    className="btn btn-primary-600 btn-sm d-inline-flex align-items-center flex-shrink-0"
-                    // style={{ minWidth: "140px", flex: "1 1 140px", height: "38px" }}
+                    className="btn btn-primary-600 d-inline-flex align-items-center flex-shrink-0"
+                    style={{ height: "34px" }}
                   >
                     <Icon icon="mdi:view-kanban" width={18} height={18} />
                     <span className="ms-1">Timeline Board</span>

@@ -184,6 +184,9 @@ const [previewImages, setPreviewImages] = useState([]);
   const { bookingId } = useParams();
   const navigate = useNavigate();
 
+  // Auto-refresh booking details to reflect external updates (dealer/customer actions)
+  const AUTO_REFRESH_MS = 15000;
+
   useEffect(() => {
     setIsPaid(!!bookingData?.Payments);
   }, [bookingData]);
@@ -314,7 +317,34 @@ const [previewImages, setPreviewImages] = useState([]);
     fetchFieldAdvisors();
     fetchServiceTypes();
     fetchTempServices();
-  }, [bookingId]);
+  }, [bookingId, token, roleId, duserId]);
+
+  // Poll booking data so confirmations/updates reflect immediately on screen
+  useEffect(() => {
+    if (!bookingId || !token) return;
+
+    const refresh = () => {
+      // avoid refetching when tab is hidden
+      if (document.visibilityState !== "visible") return;
+      fetchBookingData();
+    };
+
+    // initial quick refresh
+    refresh();
+
+    const intervalId = window.setInterval(refresh, AUTO_REFRESH_MS);
+    const onFocus = () => refresh();
+    const onVisibility = () => refresh();
+
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [bookingId, token, roleId, duserId]);
 
   const fetchSupervisors = async () => {
     try {
