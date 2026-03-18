@@ -93,6 +93,7 @@ const LeadViewLayer = () => {
   const [nextAction, setNextAction] = useState("");
   const [nextFollowUpDate, setNextFollowUpDate] = useState("");
   const [isFollowUpNeeded, setIsFollowUpNeeded] = useState(false);
+  const [isDetailsLocked, setIsDetailsLocked] = useState(false);
   const [autocomplete, setAutocomplete] = useState(null);
 
   // Car Details States
@@ -132,6 +133,20 @@ const LeadViewLayer = () => {
   const shouldDisableActions = lead?.NextAction === "Lead Closed";
   const isBookingCompletedAndPaid = lead?.BookingStatus === "Completed" && lead?.PaymentStatus === "Success";
   const isLeadClosed = shouldDisableActions || isBookingCompletedAndPaid;
+
+  const NOT_ANSWERED_OPTIONAL_NEXT_FOLLOWUP_STATUSES = useMemo(
+    () =>
+      new Set([
+        "Not Reachable",
+        "DND",
+        "Temporary Out of Service",
+        "Number Does Not Exist",
+      ]),
+    [],
+  );
+  const isNotAnsweredNextFollowUpOptional =
+    !followUpStatus ||
+    NOT_ANSWERED_OPTIONAL_NEXT_FOLLOWUP_STATUSES.has(followUpStatus);
 
 
   const vehicle = lead?.VehiclesDetails?.[0];
@@ -266,6 +281,15 @@ const LeadViewLayer = () => {
     const latest = withAnswer.reduce((a, b) => (a.Id > b.Id ? a : b));
     if (latest.Is_Answered === true) setCallAnswered("Ans");
     else if (latest.Is_Answered === false) setCallAnswered("Not Ans");
+  }, [lead]);
+
+  // Strategical lock: if latest submitted follow-up is Not Answered, disable detail accordions
+  useEffect(() => {
+    if (!lead?.FollowUps?.length) return;
+    const withAnswer = lead.FollowUps.filter((f) => f.Is_Answered != null);
+    if (withAnswer.length === 0) return;
+    const latest = withAnswer.reduce((a, b) => (a.Id > b.Id ? a : b));
+    setIsDetailsLocked(latest.Is_Answered === false);
   }, [lead]);
 
   // Prefill Personal Information and Car Details fields with data from the lead
@@ -829,6 +853,14 @@ const LeadViewLayer = () => {
         });
         return;
       }
+      if (!isNotAnsweredNextFollowUpOptional && !notAnsweredFollowUpDate) {
+        Swal.fire({
+          icon: "warning",
+          title: "Next follow-up required",
+          text: "Please select Next Follow-up Date & Time for this status.",
+        });
+        return;
+      }
 
       // status should be the reason (e.g. "Not Reachable")
       statusName = followUpStatus;
@@ -1377,13 +1409,14 @@ const LeadViewLayer = () => {
                           </div>
                           <div className="col-md-6">
                             <label className="form-label fw-semibold text-primary-light">
-                              Next Follow-up Date
+                              Next Follow-up Date {!isNotAnsweredNextFollowUpOptional && <span className="text-danger-600">*</span>}
                             </label>
                             <input
                               type="datetime-local"
                               placeholder="DD-MM-YYYY"
                               className="form-control"
                               value={notAnsweredFollowUpDate}
+                              required={!isNotAnsweredNextFollowUpOptional}
                               onChange={(e) =>
                                 setNotAnsweredFollowUpDate(e.target.value)
                               }
@@ -1605,6 +1638,14 @@ const LeadViewLayer = () => {
               )}
 
               {/* ------------------ Accordions ------------------ */}
+              <div
+                style={
+                  isLeadClosed || isDetailsLocked
+                    ? { pointerEvents: "none", opacity: 0.6 }
+                    : undefined
+                }
+                aria-disabled={isLeadClosed || isDetailsLocked}
+              >
               <Accordion activeKey={activeAccordionKey} onSelect={setActiveAccordionKey} className="mt-3">
                 <Accordion.Item eventKey="0">
                   <Accordion.Header>Personal Information</Accordion.Header>
@@ -1947,6 +1988,7 @@ const LeadViewLayer = () => {
                   </Accordion.Body>
                 </Accordion.Item>
               </Accordion>
+              </div>
 
               {/* ================= CUSTOMER NOT CONVERTED ================= */}
               {!isCustomerConverted ? (
