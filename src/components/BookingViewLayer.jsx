@@ -159,6 +159,23 @@ const [previewImages, setPreviewImages] = useState([]);
   const today = new Date().toISOString().split("T")[0];
   const nowTime = new Date().toTimeString().slice(0, 5); // HH:mm
   const [isLoading, setIsLoading] = useState(false);
+
+  // Filter time slots by date: upcoming = all active slots, today = only future slots
+  const getFilteredTimeSlotsForDate = (selectedDate) => {
+    const slots = Array.isArray(timeSlots) ? timeSlots : [];
+    if (!selectedDate) return slots.filter((s) => s?.IsActive);
+
+    const active = slots.filter((s) => s?.IsActive);
+    if (selectedDate > today) return active;
+    if (selectedDate !== today) return [];
+
+    const now = new Date();
+    const currentTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    return active.filter((slot) => {
+      const start = String(slot?.StartTime || "00:00").substring(0, 5);
+      return start > currentTimeStr;
+    });
+  };
   const finalPayAmount = Math.max(
     Number(payAmount || 0) - Number(discountAmount || 0),
     0,
@@ -818,6 +835,17 @@ const [previewImages, setPreviewImages] = useState([]);
     const seconds = pad(now.getSeconds());
     const ms = String(now.getMilliseconds()).padStart(3, "0");
     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}Z`;
+  };
+
+  const isPastTimeForDate = (dateStr, timeStr) => {
+    if (!dateStr || !timeStr) return false;
+    const selectedDate = String(dateStr).split("T")[0];
+    if (selectedDate !== today) return false;
+    const t = String(timeStr).slice(0, 5);
+    if (!/^\d{2}:\d{2}$/.test(t)) return false;
+    const now = new Date();
+    const currentTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    return t <= currentTimeStr;
   };
 
   const savePickupDeliveryTime = async (payload) => {
@@ -2113,43 +2141,47 @@ const handleRevertService = async (service) => {
   };
 
   // Ensure basic details (booking date, address, supervisor) are filled before key actions
-  const ensureBasicDetails = () => {
-    if (
-      bookingData?.BookingDate &&
-      bookingData?.TimeSlot &&
-      bookingData?.FullAddress &&
-      (bookingData?.SupervisorHeadName || bookingData?.SupervisorHeadPhoneNumber)
-    ) {
-      return true;
-    }
+const ensureBasicDetails = () => {
+  const fields = [
+    (!bookingData?.BookingDate || !bookingData?.TimeSlot) && "Booking date & time slot",
+    !bookingData?.FullAddress && "Customer address",
+    !(bookingData?.SupervisorHeadName || bookingData?.SupervisorHeadPhoneNumber) &&
+      "Supervisor assignment",
+  ].filter(Boolean);
+
+  if (fields.length) {
     Swal.fire({
       icon: "warning",
-      title: "Basic details required",
-      html:
-        "<div class='text-start small'>" +
-        "<p class='mb-1'>Please complete the following before continuing:</p>" +
-        "<ul class='mb-2 ps-3'>" +
-        "<li>Booking date &amp; time slot</li>" +
-        "<li>Customer address</li>" +
-        "<li>Supervisor assignment</li>" +
-        "</ul>" +
-        "<p class='mb-0'>Click <strong>Fill Basic Details</strong> to fill them now.</p>" +
-        "</div>",
+      title: "Details required",
+      html: `
+        <div class='text-start small'>
+          <p class='mb-1'>Please Enter the following details before continuing:</p>
+          <ul class='mb-2 ps-3'>
+            ${fields.map(f => `<li>${f}</li>`).join("")}
+          </ul>
+          <p class='mb-0'>Click <strong>Enter Details</strong> to fill them now.</p>
+        </div>
+      `,
       showCancelButton: true,
-      confirmButtonText: "Fill Basic Details",
+      confirmButtonText: "Enter Details",
       cancelButtonText: "Cancel",
-        customClass: {
-    confirmButton:
-      "btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2",
-    cancelButton: "btn btn-secondary btn-sm",
-  },
-    }).then((res) => {
+      customClass: {
+        confirmButton:
+          "btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2",
+        cancelButton: "btn btn-secondary btn-sm",
+      },
+      buttonsStyling: false,
+    }).then(res => {
       if (res.isConfirmed && bookingData?.BookingID) {
         navigate(`/booking-basic/${bookingData.BookingID}`);
       }
     });
+
     return false;
-  };
+  }
+
+  return true;
+};
 
   const closePaymentModal = () => {
     setShowPaymentModal(false);
@@ -6231,7 +6263,23 @@ const handleCustomerRejectionSubmit = async () => {
                           type="time"
                           className="form-control form-control-sm"
                           value={garagePickupTime}
-                          onChange={(e) => setGaragePickupTime(e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (isPastTimeForDate(garagePickupDate, val)) {
+                              // Close native time picker popup
+                              e.currentTarget?.blur?.();
+                              setTimeout(() => e.currentTarget?.blur?.(), 0);
+                              document.activeElement?.blur?.();
+                              Swal.fire({
+                                icon: "warning",
+                                title: "Invalid Time",
+                                text: "You cannot select a past time for today.",
+                              });
+                              setGaragePickupTime("");
+                              return;
+                            }
+                            setGaragePickupTime(val);
+                          }}
                         />
                       </div>
                     </div>
@@ -6880,31 +6928,23 @@ const handleCustomerRejectionSubmit = async () => {
                       menuPortalTarget={document.body}
                       menuPosition="fixed"
                       styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
-                      options={timeSlots
-                        ?.filter((slot) => {
-                          if (!slot?.IsActive) return false;
-                          if (pickupDropReassignDate !== today) return true;
-                          const now = new Date();
-                          const [h, m] = (slot.StartTime || "00:00").split(":").map(Number);
-                          const slotTime = new Date();
-                          slotTime.setHours(h, m, 0, 0);
-                          return slotTime > now;
-                        })
-                        ?.sort((a, b) => {
+                      options={getFilteredTimeSlotsForDate(garagePickupDate)
+                        .sort((a, b) => {
                           const [aH, aM] = (a.StartTime || "00:00").split(":").map(Number);
                           const [bH, bM] = (b.StartTime || "00:00").split(":").map(Number);
                           return aH * 60 + aM - (bH * 60 + bM);
                         })
-                        ?.map((slot) => {
+                        .map((slot) => {
                           const val = `${slot.StartTime} - ${slot.EndTime}`;
                           return { value: val, label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}` };
-                        }) ?? []}
+                        })}
                       value={pickupDropReassignTimeSlot?.map((val) => {
                         const [s, e] = (val || "").split(/\s*-\s*/);
                         return { value: val, label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}` };
                       }) ?? []}
                       onChange={(opts) => setPickupDropReassignTimeSlot(opts ? opts.map((o) => o.value) : [])}
                       placeholder="Select time slot(s)"
+                      isDisabled={!garagePickupDate}
                     />
                   </div>
                 </div>
@@ -7213,7 +7253,23 @@ const handleCustomerRejectionSubmit = async () => {
                             type="time"
                             className="form-control form-control-sm"
                             value={garagePickupTime}
-                            onChange={(e) => setGaragePickupTime(e.target.value)}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (isPastTimeForDate(garagePickupDate, val)) {
+                                // Close native time picker popup
+                                e.currentTarget?.blur?.();
+                                setTimeout(() => e.currentTarget?.blur?.(), 0);
+                                document.activeElement?.blur?.();
+                                Swal.fire({
+                                  icon: "warning",
+                                  title: "Invalid Time",
+                                  text: "You cannot select a past time for today.",
+                                });
+                                setGaragePickupTime("");
+                                return;
+                              }
+                              setGaragePickupTime(val);
+                            }}
                           />
                         </div>
                       </div>
