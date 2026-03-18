@@ -318,8 +318,8 @@ const BasicInformationLayer = () => {
                 onChange={(e) => setAddress(e.target.value)}
               />
             </div>
-            <div className="col-md-4">
-              <label className="form-label">Booking Date</label>
+            <div className="col-md-6">
+              <label className="form-label">Select Booking Date</label>
               <input
                 type="date"
                 className="form-control"
@@ -333,8 +333,8 @@ const BasicInformationLayer = () => {
                 }}
               />
             </div>
-            <div className="col-md-4">
-              <label className="form-label">Time Slot</label>
+            <div className="col-md-6">
+              <label className="form-label">Select Time Slot</label>
               <Select
                 options={timeSlots
                   .filter((slot) => {
@@ -370,7 +370,7 @@ const BasicInformationLayer = () => {
                 placeholder="Select time slot"
               />
             </div>
-            <div className="col-12 d-flex justify-content-end mt-2">
+            <div className="col-12 d-flex justify-content-center mt-5">
               <button
                 type="button"
                 className="btn btn-primary-600 btn-sm"
@@ -434,7 +434,7 @@ const BasicInformationLayer = () => {
                   }
                 }}
               >
-                Save Profile & Booking
+                Save Details
               </button>
             </div>
           </div>
@@ -575,7 +575,7 @@ const BasicInformationLayer = () => {
                 />
               </div>
             </div>
-            <div className="d-flex justify-content-end mt-3 gap-2">
+           <div className="d-flex justify-content-center mt-5 gap-2">
               <button
                 type="button"
                 className="btn btn-primary-600 px-20 btn-sm"
@@ -714,70 +714,72 @@ const BasicInformationLayer = () => {
                   isSearchable
                 />
               </div>
-              <button
-                type="button"
-                className="btn btn-primary-600 btn-sm"
-                onClick={async () => {
-                  if (!selectedArea) {
-                    Swal.fire(
-                      "Select Area",
-                      "Please select an area before assigning a supervisor.",
-                      "warning",
-                    );
-                    return;
-                  }
-                  if (!selectedSupervisorHead) {
-                    Swal.fire(
-                      "Select Supervisor",
-                      "Please select a supervisor to assign.",
-                      "warning",
-                    );
-                    return;
-                  }
-                  try {
-                    const response = await fetch(
-                      `${API_BASE}Supervisor/AssignToSupervisorHead`,
-                      {
-                        method: "POST",
-                        headers: {
-                          "Content-Type": "application/json",
-                          Authorization: `Bearer ${token}`,
-                        },
-                        body: JSON.stringify({
-                          bookingIds: [bookingData.BookingID],
-                          supervisorHeadId: selectedSupervisorHead.value,
-                          areaId: selectedArea.value,
-                          assignedDate: new Date().toISOString().split("T")[0],
-                          assignStatus: "Assign",
-                          createdBy: parseInt(
-                            localStorage.getItem("userId") || "0",
-                            10,
-                          ),
-                        }),
-                      },
-                    );
-                    if (!response.ok) {
-                      throw new Error("Failed to assign supervisor");
+              <div className="d-flex justify-content-center mt-5">
+                <button
+                  type="button"
+                  className="btn btn-primary-600 btn-sm"
+                  onClick={async () => {
+                    if (!selectedArea) {
+                      Swal.fire(
+                        "Select Area",
+                        "Please select an area before assigning a supervisor.",
+                        "warning",
+                      );
+                      return;
                     }
-                    Swal.fire({
-                      icon: "success",
-                      title: bookingData.SupervisorHeadName
-                        ? "Reassigned"
-                        : "Assigned",
-                      text: "Booking has been successfully assigned to the supervisor head.",
-                    });
-                  } catch (err) {
-                    console.error("Assign supervisor failed", err);
-                    Swal.fire({
-                      icon: "error",
-                      title: "Error",
-                      text: "Failed to assign supervisor. Please try again.",
-                    });
-                  }
-                }}
-              >
-                {bookingData.SupervisorHeadName ? "Reassign" : "Assign"}
-              </button>
+                    if (!selectedSupervisorHead) {
+                      Swal.fire(
+                        "Select Supervisor",
+                        "Please select a supervisor to assign.",
+                        "warning",
+                      );
+                      return;
+                    }
+                    try {
+                      const response = await fetch(
+                        `${API_BASE}Supervisor/AssignToSupervisorHead`,
+                        {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
+                          },
+                          body: JSON.stringify({
+                            bookingIds: [bookingData.BookingID],
+                            supervisorHeadId: selectedSupervisorHead.value,
+                            areaId: selectedArea.value,
+                            assignedDate: new Date().toISOString().split("T")[0],
+                            assignStatus: "Assign",
+                            createdBy: parseInt(
+                              localStorage.getItem("userId") || "0",
+                              10,
+                            ),
+                          }),
+                        },
+                      );
+                      if (!response.ok) {
+                        throw new Error("Failed to assign supervisor");
+                      }
+                      Swal.fire({
+                        icon: "success",
+                        title: bookingData.SupervisorHeadName
+                          ? "Reassigned"
+                          : "Assigned",
+                        text: "Booking has been successfully assigned to the supervisor head.",
+                      });
+                    } catch (err) {
+                      console.error("Assign supervisor failed", err);
+                      Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: "Failed to assign supervisor. Please try again.",
+                      });
+                    }
+                  }}
+                >
+                  {bookingData.SupervisorHeadName ? "Reassign" : "Assign"}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -817,12 +819,14 @@ const BasicInformationLayer = () => {
                   isSearchable
                 />
               </div>
-              <button
-                type="button"
-                className="btn btn-primary-600 btn-sm"
-              >
-                {bookingData.FieldAdvisorName ? "Reassign" : "Assign"}
-              </button>
+              <div className="d-flex justify-content-center mt-5">
+                <button
+                  type="button"
+                  className="btn btn-primary-600 btn-sm"
+                >
+                  {bookingData.FieldAdvisorName ? "Reassign" : "Assign"}
+                </button>
+              </div>
             </div>
           </div>
         )}
