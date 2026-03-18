@@ -2249,7 +2249,7 @@ const LeadViewLayer = () => {
 
                               {/* Content */}
                               <div className="flex-grow-1">
-                                <div className="d-flex align-items-start justify-content-between gap-2">
+                                <div className="d-flex align-items-start justify-content-between flex-column gap-2">
                                   <span
                                     className="badge rounded-pill fw-semibold"
                                     style={{
