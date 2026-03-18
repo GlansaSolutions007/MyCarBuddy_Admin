@@ -1311,6 +1311,7 @@ const LeadViewLayer = () => {
                               checked={callAnswered === "Ans"}
                               onChange={(e) => setCallAnswered(e.target.value)}
                             // disabled={isLeadClosed}
+                            disabled={shouldDisableActions}
                             />
                             <label
                               className="form-check-label ms-1"
@@ -1329,6 +1330,7 @@ const LeadViewLayer = () => {
                               checked={callAnswered === "Not Ans"}
                               onChange={(e) => setCallAnswered(e.target.value)}
                             // disabled={isLeadClosed}
+                            disabled={shouldDisableActions}
                             />
                             <label
                               className="form-check-label ms-1"
@@ -1423,6 +1425,7 @@ const LeadViewLayer = () => {
                             <select
                               className="form-select"
                               value={callOutcome}
+                              disabled={shouldDisableActions}
                               onChange={(e) => {
                                 const selectedOutcome = e.target.value;
                                 setCallOutcome(selectedOutcome);
@@ -1514,6 +1517,7 @@ const LeadViewLayer = () => {
                               rows={3}
                               placeholder="Add discussion notes"
                               value={discussionNotes}
+                              disabled={shouldDisableActions}
                               onChange={(e) => {
                                 setDiscussionNotes(e.target.value);
                                 e.target.style.height = "auto";
@@ -1549,6 +1553,7 @@ const LeadViewLayer = () => {
                           onClick={handleSubmitStatus}
                           disabled={
                             // isLeadClosed ||
+                            shouldDisableActions ||
                             (callAnswered === "Ans" &&
                               callOutcome &&
                               !nextAction)
