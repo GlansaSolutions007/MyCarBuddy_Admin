@@ -765,16 +765,6 @@ const BookingLayer = () => {
   return (
     <div className="row gy-4">
       <div className="col-12">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h5 className="mb-0"></h5>
-          <a
-            href="/service-timeline-board"
-            className="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1"
-          >
-            <Icon icon="mdi:view-kanban" width={18} height={18} />
-             Timeline Board
-          </a>
-        </div>
         <div className="card overflow-hidden p-3">
           <div className="card-header">
             <div
@@ -852,6 +842,7 @@ const BookingLayer = () => {
 
               {/* Status - Hide for Dealer */}
               {role !== "Dealer" && (
+                <>
                 <select
                   className="form-select flex-shrink-0"
                   value={status}
@@ -865,6 +856,16 @@ const BookingLayer = () => {
                   <option value="serviceStarted">ServiceStarted</option>
                   <option value="completed">Completed</option>
                 </select>
+                
+                  <a
+                    href="/service-timeline-board"
+                    className="btn btn-primary-600 btn-sm d-inline-flex align-items-center flex-shrink-0"
+                    // style={{ minWidth: "140px", flex: "1 1 140px", height: "38px" }}
+                  >
+                    <Icon icon="mdi:view-kanban" width={18} height={18} />
+                    <span className="ms-1">Timeline Board</span>
+                  </a>
+                </>
               )}
 
               {/* Excel Button */}

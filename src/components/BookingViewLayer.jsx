@@ -2103,11 +2103,16 @@ const handleRevertService = async (service) => {
         "<li>Customer address</li>" +
         "<li>Supervisor assignment</li>" +
         "</ul>" +
-        "<p class='mb-0'>Click <strong>Go to Basic Details</strong> to fill them now.</p>" +
+        "<p class='mb-0'>Click <strong>Fill Basic Details</strong> to fill them now.</p>" +
         "</div>",
       showCancelButton: true,
-      confirmButtonText: "Go to Basic Details",
+      confirmButtonText: "Fill Basic Details",
       cancelButtonText: "Cancel",
+        customClass: {
+    confirmButton:
+      "btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2",
+    cancelButton: "btn btn-secondary btn-sm",
+  },
     }).then((res) => {
       if (res.isConfirmed && bookingData?.BookingID) {
         navigate(`/booking-basic/${bookingData.BookingID}`);
@@ -3159,7 +3164,7 @@ const handleCustomerRejectionSubmit = async () => {
         </div>
       )}
 
-      <div className="row gy-4 mt-3">
+      <div className="row gy-2">
         {/* Right Tabs Content */}
         <div className="col-lg-12">
           <div className="card h-100">
@@ -3275,7 +3280,7 @@ const handleCustomerRejectionSubmit = async () => {
                                       {(!bookingData?.SupervisorHeadName && !bookingData?.SupervisorHeadPhoneNumber) && (
                                         <button
                                           type="button"
-                                          className="btn btn-outline-primary btn-xs ms-2 blink-assign"
+                                          className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2 py-2"
                                           title="Assign Supervisor"
                                           onClick={() => {
                                             if (bookingData?.BookingID) {
@@ -3288,7 +3293,7 @@ const handleCustomerRejectionSubmit = async () => {
                                       )}
                                     </span>
                                   </li>
-                                  <li className="d-flex align-items-center gap-1">
+                                  <li className="d-flex align-items-center gap-1 mt-2">
                                     <span className="w-50 fw-semibold text-primary-light">
                                       Field Advisor Name/Number :
                                     </span>
@@ -3306,7 +3311,7 @@ const handleCustomerRejectionSubmit = async () => {
                                       {(!bookingData?.FieldAdvisorName && !bookingData?.FieldAdvisorPhoneNumber) && (
                                         <button
                                           type="button"
-                                          className="btn btn-outline-primary btn-xs ms-2 blink-assign"
+                                          className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2 py-2"
                                           title="Assign Field Advisor"
                                           onClick={() => {
                                             if (bookingData?.BookingID) {
@@ -3605,7 +3610,7 @@ const handleCustomerRejectionSubmit = async () => {
                   </Link>
                   <button
                     type="button"
-                    className="btn btn-outline-primary btn-sm d-inline-flex align-items-center justify-content-center gap-2"
+                    className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2"
                     title="Fill Basic Details"
                     onClick={() => {
                       if (bookingData?.BookingID) {
