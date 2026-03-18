@@ -92,6 +92,8 @@ const LeadViewLayer = () => {
   const [discussionNotes, setDiscussionNotes] = useState("");
   const [nextAction, setNextAction] = useState("");
   const [nextFollowUpDate, setNextFollowUpDate] = useState("");
+  const [isFollowUpNeeded, setIsFollowUpNeeded] = useState(false);
+  const [isDetailsLocked, setIsDetailsLocked] = useState(false);
   const [autocomplete, setAutocomplete] = useState(null);
 
   // Car Details States
@@ -131,6 +133,20 @@ const LeadViewLayer = () => {
   const shouldDisableActions = lead?.NextAction === "Lead Closed";
   const isBookingCompletedAndPaid = lead?.BookingStatus === "Completed" && lead?.PaymentStatus === "Success";
   const isLeadClosed = shouldDisableActions || isBookingCompletedAndPaid;
+
+  const NOT_ANSWERED_OPTIONAL_NEXT_FOLLOWUP_STATUSES = useMemo(
+    () =>
+      new Set([
+        "Not Reachable",
+        "DND",
+        "Temporary Out of Service",
+        "Number Does Not Exist",
+      ]),
+    [],
+  );
+  const isNotAnsweredNextFollowUpOptional =
+    !followUpStatus ||
+    NOT_ANSWERED_OPTIONAL_NEXT_FOLLOWUP_STATUSES.has(followUpStatus);
 
 
   const vehicle = lead?.VehiclesDetails?.[0];
@@ -265,6 +281,15 @@ const LeadViewLayer = () => {
     const latest = withAnswer.reduce((a, b) => (a.Id > b.Id ? a : b));
     if (latest.Is_Answered === true) setCallAnswered("Ans");
     else if (latest.Is_Answered === false) setCallAnswered("Not Ans");
+  }, [lead]);
+
+  // Strategical lock: if latest submitted follow-up is Not Answered, disable detail accordions
+  useEffect(() => {
+    if (!lead?.FollowUps?.length) return;
+    const withAnswer = lead.FollowUps.filter((f) => f.Is_Answered != null);
+    if (withAnswer.length === 0) return;
+    const latest = withAnswer.reduce((a, b) => (a.Id > b.Id ? a : b));
+    setIsDetailsLocked(latest.Is_Answered === false);
   }, [lead]);
 
   // Prefill Personal Information and Car Details fields with data from the lead
@@ -828,6 +853,14 @@ const LeadViewLayer = () => {
         });
         return;
       }
+      if (!isNotAnsweredNextFollowUpOptional && !notAnsweredFollowUpDate) {
+        Swal.fire({
+          icon: "warning",
+          title: "Next follow-up required",
+          text: "Please select Next Follow-up Date & Time for this status.",
+        });
+        return;
+      }
 
       // status should be the reason (e.g. "Not Reachable")
       statusName = followUpStatus;
@@ -950,8 +983,17 @@ const LeadViewLayer = () => {
       setDiscussionNotes("");
       setNextAction("");
       setNextFollowUpDate("");
+      setIsFollowUpNeeded(false);
     }
   }, [callAnswered]);
+
+  // Ensure follow-up controls are cleared when not applicable
+  useEffect(() => {
+    if (!nextAction || nextAction === "Lead Closed") {
+      setIsFollowUpNeeded(false);
+      setNextFollowUpDate("");
+    }
+  }, [nextAction]);
 
   const showVehicleDataRequiredAlert = () => {
     Swal.fire({
@@ -1050,6 +1092,14 @@ const LeadViewLayer = () => {
                     </span>
                     <span className="w-70 text-secondary-light fw-medium text-break">
                       : {lead?.Email || "N/A"}
+                    </span>
+                  </li>
+                  <li className="d-flex align-items-center gap-1 mb-12">
+                    <span className="w-30 text-md fw-semibold text-primary-light">
+                      Platform
+                    </span>
+                    <span className="w-70 text-secondary-light fw-medium text-break">
+                      : {lead?.Platform || "N/A"}
                     </span>
                   </li>
                   <li className="d-flex align-items-center gap-1 mb-12">
@@ -1290,6 +1340,7 @@ const LeadViewLayer = () => {
                               checked={callAnswered === "Ans"}
                               onChange={(e) => setCallAnswered(e.target.value)}
                             // disabled={isLeadClosed}
+                            disabled={shouldDisableActions}
                             />
                             <label
                               className="form-check-label ms-1"
@@ -1308,6 +1359,7 @@ const LeadViewLayer = () => {
                               checked={callAnswered === "Not Ans"}
                               onChange={(e) => setCallAnswered(e.target.value)}
                             // disabled={isLeadClosed}
+                            disabled={shouldDisableActions}
                             />
                             <label
                               className="form-check-label ms-1"
@@ -1357,13 +1409,14 @@ const LeadViewLayer = () => {
                           </div>
                           <div className="col-md-6">
                             <label className="form-label fw-semibold text-primary-light">
-                              Next Follow-up Date
+                              Next Follow-up Date {!isNotAnsweredNextFollowUpOptional && <span className="text-danger-600">*</span>}
                             </label>
                             <input
                               type="datetime-local"
                               placeholder="DD-MM-YYYY"
                               className="form-control"
                               value={notAnsweredFollowUpDate}
+                              required={!isNotAnsweredNextFollowUpOptional}
                               onChange={(e) =>
                                 setNotAnsweredFollowUpDate(e.target.value)
                               }
@@ -1402,9 +1455,12 @@ const LeadViewLayer = () => {
                             <select
                               className="form-select"
                               value={callOutcome}
+                              disabled={shouldDisableActions}
                               onChange={(e) => {
                                 const selectedOutcome = e.target.value;
                                 setCallOutcome(selectedOutcome);
+                                setIsFollowUpNeeded(false);
+                                setNextFollowUpDate("");
 
                                 // Clear nextAction if it's not in the new list of available actions
                                 if (selectedOutcome && DISCUSSION_RESULT_TO_ACTIONS[selectedOutcome]) {
@@ -1454,7 +1510,14 @@ const LeadViewLayer = () => {
                             <select
                               className="form-select"
                               value={nextAction}
-                              onChange={(e) => setNextAction(e.target.value)}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setNextAction(value);
+                                if (!value || value === "Lead Closed") {
+                                  setIsFollowUpNeeded(false);
+                                  setNextFollowUpDate("");
+                                }
+                              }}
                               disabled={!callOutcome}
                             >
                               <option value="">Select action</option>
@@ -1493,6 +1556,7 @@ const LeadViewLayer = () => {
                               rows={3}
                               placeholder="Add discussion notes"
                               value={discussionNotes}
+                              disabled={shouldDisableActions}
                               onChange={(e) => {
                                 setDiscussionNotes(e.target.value);
                                 e.target.style.height = "auto";
@@ -1505,18 +1569,47 @@ const LeadViewLayer = () => {
                           {nextAction && nextAction !== "Lead Closed" && (
                             <div className="col-12">
                               <label className="form-label fw-semibold text-primary-light">
-                                Next Follow-Up Date & Time (optional)
+                                Follow-up needed?
                               </label>
-                              <input
-                                type="datetime-local"
-                                placeholder="DD-MM-YYYY"
-                                className="form-control"
-                                value={nextFollowUpDate}
-                                min={new Date().toISOString().split("T")[0]}
-                                onChange={(e) =>
-                                  setNextFollowUpDate(e.target.value)
-                                }
-                              />
+                              <div className="d-flex align-items-center gap-2">
+                                <input
+                                  className="form-check-input m-0"
+                                  type="checkbox"
+                                  role="switch"
+                                  id="followUpNeededSwitch"
+                                  checked={isFollowUpNeeded}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    setIsFollowUpNeeded(checked);
+                                    if (!checked) setNextFollowUpDate("");
+                                  }}
+                                />
+                                <span
+                                  className="text-secondary-light fw-medium"
+                                  style={{ minWidth: 24 }}
+                                >
+                                  {isFollowUpNeeded ? "Yes" : "No"}
+                                </span>
+                              </div>
+
+                              {isFollowUpNeeded && (
+                                <>
+                                  <div className="mt-2" />
+                                  <label className="form-label fw-semibold text-primary-light">
+                                    Next Follow-Up Date & Time (optional)
+                                  </label>
+                                  <input
+                                    type="datetime-local"
+                                    placeholder="DD-MM-YYYY"
+                                    className="form-control"
+                                    value={nextFollowUpDate}
+                                    min={new Date().toISOString().split("T")[0]}
+                                    onChange={(e) =>
+                                      setNextFollowUpDate(e.target.value)
+                                    }
+                                  />
+                                </>
+                              )}
                             </div>
                           )}
                         </div>
@@ -1528,6 +1621,7 @@ const LeadViewLayer = () => {
                           onClick={handleSubmitStatus}
                           disabled={
                             // isLeadClosed ||
+                            shouldDisableActions ||
                             (callAnswered === "Ans" &&
                               callOutcome &&
                               !nextAction)
@@ -1544,6 +1638,14 @@ const LeadViewLayer = () => {
               )}
 
               {/* ------------------ Accordions ------------------ */}
+              <div
+                style={
+                  isLeadClosed || isDetailsLocked
+                    ? { pointerEvents: "none", opacity: 0.6 }
+                    : undefined
+                }
+                aria-disabled={isLeadClosed || isDetailsLocked}
+              >
               <Accordion activeKey={activeAccordionKey} onSelect={setActiveAccordionKey} className="mt-3">
                 <Accordion.Item eventKey="0">
                   <Accordion.Header>Personal Information</Accordion.Header>
@@ -1886,6 +1988,7 @@ const LeadViewLayer = () => {
                   </Accordion.Body>
                 </Accordion.Item>
               </Accordion>
+              </div>
 
               {/* ================= CUSTOMER NOT CONVERTED ================= */}
               {!isCustomerConverted ? (
@@ -2059,13 +2162,21 @@ const LeadViewLayer = () => {
             style={{ height: "975px" }}
           >
             <div className="pb-24 ms-16 mb-24 me-16 flex-grow-1 d-flex flex-column">
-              <h6 className="text-xl mb-16 border-bottom pb-2">Timeline</h6>
+              <div
+                className="d-flex align-items-center justify-content-between border-bottom pb-2"
+                style={{ position: "sticky", top: 0, background: "var(--bs-body-bg)", zIndex: 1 }}
+              >
+                <h6 className="text-xl mb-0">Timeline</h6>
+                <span className="text-xs text-secondary-light fw-semibold">
+                  {(lead?.TrackingHistory?.length ?? 0) > 0 ? `${lead.TrackingHistory.length} events` : ""}
+                </span>
+              </div>
               <div
                 className="flex-grow-1 overflow-auto pe-0"
                 style={{ maxHeight: "925px", scrollbarWidth: "thin" }}
               >
                 {lead?.TrackingHistory && lead.TrackingHistory.length > 0 ? (
-                  <ul className="mb-0 list-unstyled ps-0">
+                  <ul className="mb-0 list-unstyled ps-0 mt-3">
                     {[...lead.TrackingHistory]
                       .sort((a, b) => {
                         const dateA = new Date(a.CreatedDate);
@@ -2074,45 +2185,116 @@ const LeadViewLayer = () => {
                       })
                       .map((item, idx) => {
                         if (!item.StatusName) return null;
+                        const createdAtLabel = item.CreatedDate
+                          ? new Date(item.CreatedDate).toLocaleString("en-IN", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                          })
+                          : "-";
+                        const rawDescriptionText = (item.Description || "-").replace(
+                          /<br\s*\/?>/gi,
+                          "\n",
+                        );
+                        const statusLabel = String(item.StatusName || "").trim();
+                        const normalizedDescriptionLines = rawDescriptionText
+                          .split("\n")
+                          .map((l) => l.trim())
+                          .filter(Boolean);
+                        const uniqueDescriptionLines = Array.from(
+                          new Set(normalizedDescriptionLines),
+                        );
+                        const shouldHideDescription =
+                          rawDescriptionText === "-" ||
+                          uniqueDescriptionLines.length === 0 ||
+                          (uniqueDescriptionLines.length === 1 &&
+                            uniqueDescriptionLines[0].toLowerCase() ===
+                              statusLabel.toLowerCase());
+                        const descriptionText = shouldHideDescription
+                          ? ""
+                          : uniqueDescriptionLines.join("\n");
                         return (
                           <li
                             key={idx}
-                            className="mb-3 pb-3 border-bottom border-dashed last:border-0"
+                            className="pb-10"
                           >
-                            <div className="d-flex align-items-start gap-3">
-                              <span
-                                className={`badge rounded-pill px-3 py-2 fw-semibold text-white bg-orange`}
-                              >
-                                {item.StatusName}
-                              </span>
-                            </div>
-                            <div>
-                              <div className="text-sm text-secondary-light fw-medium">
-                                <strong>Created Date: </strong>
-                                {item.CreatedDate
-                                  ? new Date(item.CreatedDate).toLocaleString(
-                                    "en-IN",
-                                    {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                      hour12: true,
-                                    },
-                                  )
-                                  : "-"}
-                              </div>
+                            <div className="d-flex align-items-start gap-10">
+                              {/* Left rail */}
                               <div
-                                className="text-sm text-secondary-light"
-                                style={{ whiteSpace: "pre-line" }}
+                                className="d-flex flex-column align-items-center"
+                                style={{ width: 12 }}
                               >
-                                <strong>Description: </strong>
-                                {(item.Description || "-").replace(/<br\s*\/?>/gi, "\n")}
+                                <span
+                                  style={{
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: 999,
+                                    background: "rgba(255, 159, 67, 0.95)",
+                                    boxShadow: "0 0 0 2px rgba(255, 159, 67, 0.16)",
+                                    marginTop: 4,
+                                  }}
+                                />
+                                <span
+                                  style={{
+                                    flex: 1,
+                                    width: 2,
+                                    background: "rgba(108, 117, 125, 0.18)",
+                                    marginTop: 6,
+                                  }}
+                                />
                               </div>
-                              <div className="text-sm text-secondary-light">
-                                <strong>Updated By: </strong>
-                                {item.EmployeeName || "-"}
+
+                              {/* Content */}
+                              <div className="flex-grow-1">
+                                <div className="d-flex align-items-start justify-content-between flex-column gap-2">
+                                  <span
+                                    className="badge rounded-pill fw-semibold"
+                                    style={{
+                                      background: "rgba(255, 159, 67, 0.16)",
+                                      color: "#b45309",
+                                      border: "1px solid rgba(255, 159, 67, 0.35)",
+                                      padding: "4px 8px",
+                                      maxWidth: "100%",
+                                      whiteSpace: "nowrap",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                    }}
+                                    title={item.StatusName}
+                                  >
+                                    {item.StatusName}
+                                  </span>
+
+                                  <span className="text-xs text-secondary-light d-inline-flex align-items-center gap-1">
+                                    <Icon icon="mdi:clock-outline" />
+                                    {createdAtLabel}
+                                  </span>
+                                </div>
+
+                                {!!descriptionText && (
+                                  <div
+                                    className="text-sm text-secondary-light mt-1"
+                                    style={{
+                                      whiteSpace: "pre-line",
+                                      padding: "6px 8px",
+                                      borderRadius: 8,
+                                      background: "rgba(13, 110, 253, 0.05)",
+                                      border: "1px solid rgba(13, 110, 253, 0.10)",
+                                    }}
+                                  >
+                                    {descriptionText}
+                                  </div>
+                                )}
+
+                                <div className="text-xs text-secondary-light mt-1 d-flex align-items-center gap-1">
+                                  <Icon icon="mdi:account-outline" />
+                                  <span className="fw-semibold">Updated by</span>
+                                  <span className="text-truncate" title={item.EmployeeName || "-"}>
+                                    {item.EmployeeName || "-"}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </li>

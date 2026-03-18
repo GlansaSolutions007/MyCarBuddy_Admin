@@ -160,7 +160,7 @@ const AddLeadLayer = () => {
         throw new Error("Failed to submit lead");
       }
 
-      Swal.fire("Success", "Lead Generate Successfully", "success").then(() =>
+      Swal.fire("Success", "Lead Generated Successfully", "success").then(() =>
         navigate("/organic-leads")
       );
     } catch (error) {

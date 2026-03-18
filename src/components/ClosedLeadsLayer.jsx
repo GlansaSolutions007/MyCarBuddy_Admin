@@ -35,7 +35,9 @@ const ClosedLeadsLayer = () => {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data = await response.json();
+      // const data = await response.json();
+      const res = await response.json();
+      const data = res.data || [];
       const closedLeadsOnly = Array.isArray(data)
         ? data.filter(
             (lead) =>
