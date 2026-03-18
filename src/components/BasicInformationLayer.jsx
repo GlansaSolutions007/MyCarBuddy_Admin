@@ -3,10 +3,12 @@ import { useParams, useLocation } from "react-router-dom";
 import axios from "axios";
 import Select from "react-select";
 import Swal from "sweetalert2";
+import { usePermissions } from "../context/PermissionContext";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
 const BasicInformationLayer = () => {
+  const { hasPermission } = usePermissions();
   const { bookingId } = useParams();
   const location = useLocation();
   const params = new URLSearchParams(location.search);

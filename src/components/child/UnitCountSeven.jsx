@@ -90,16 +90,16 @@ const UnitCountSeven = () => {
           <div className="card-body dashboard-first-section radius-8">
             <div className="position-absolute">
               <div className=" text-2xl font-semibold text-primary-foreground">
-                Welcome {localStorage.getItem("name")}!
+                Welcome <br/>{localStorage.getItem("name")}!
               </div>
-              <div className="card col-md-6">
+              {/* <div className="card col-md-6">
                 <div className=" py-2 px-3 ">
                   <div className="flex-1">
                     <div className="text-xs font-semibold text-primary-foreground/80">Today's Task</div>
                     <div className="text-lg font-semibold text-primary-foreground">{data.TodayBookings || 0}</div>
                   </div>
                 </div>
-              </div>
+              </div> */}
             </div>
 
             {/* Character Image */}
@@ -175,7 +175,7 @@ const UnitCountSeven = () => {
                         {department === "Support Department" && role !== "Admin" ? "Resolved Tickets" : "Today's Bookings"}
                       </span>
                       <h6 className='fw-semibold mb-1'>
-                        {department === "Support Department" && role !== "Admin" ? resolvedCount : (data.UpcomingBookings || 0)}
+                        {department === "Support Department" && role !== "Admin" ? resolvedCount : (data.TodayBookings || 0)}
                       </h6>
                     </div>
                     <span className='w-44-px h-44-px radius-8 d-inline-flex justify-content-center align-items-center text-2xl mb-12 bg-success-200 text-success-600'>
@@ -199,7 +199,7 @@ const UnitCountSeven = () => {
                           {department === "Support Department" && role !== "Admin" ? "Pending Tickets" : "Completed Bookings"}
                         </span>
                         <h6 className='fw-semibold mb-1'>
-                          {department === "Support Department" && role !== "Admin" ? pendingCount : (refunds.length || 0)}
+                          {department === "Support Department" && role !== "Admin" ? pendingCount : (data.CompletedBookings || 0)}
                         </h6>
                       {/* </Link> */}
                     </div>
