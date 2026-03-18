@@ -1056,114 +1056,145 @@ const LeadViewLayer = () => {
   return (
     <>
       <div className="row gy-4 mt-3">
-        {/* ------------------ Top: Customer Info + Bookings ------------------ */}
-        <div className="col-12 col-lg-6">
-          <div className="user-grid-card pt-3 border radius-16 overflow-hidden bg-base">
-            <div className="p-16">
-              <h6 className="text-xl mb-16 border-bottom pb-2">Customer Info</h6>
+        {/* ------------------ Left: Customer Info ------------------ */}
+        <div className="col-lg-4">
+          <div className="user-grid-card pt-3 border radius-16 overflow-hidden bg-base h-100">
+            <div className="pb-24 ms-16 mb-24 me-16">
+              <h6 className="text-xl mb-16 border-bottom pb-2">
+                Customer Info
+              </h6>
 
-              <div className="row g-3 align-items-start">
-                <div className="col-12 col-md-3">
-                  <div className="d-flex flex-column align-items-center align-items-md-start text-center text-md-start">
-                    <img
-                      src="/assets/images/user-grid/user-grid-img13.png"
-                      alt="customer"
-                      className="border br-white border-width-2-px rounded-circle object-fit-cover"
-                      style={{ width: 120, height: 120 }}
-                    />
-                    <h6 className="mb-0 mt-12 text-truncate" style={{ maxWidth: "100%" }}>
-                      {lead?.FullName || "N/A"}
-                    </h6>
-                    <div className="text-secondary-light fw-medium">
-                      {lead?.PhoneNumber || "-"}
-                    </div>
-                  </div>
-                </div>
+              <div className="text-center border-bottom pb-16">
+                <img
+                  src="/assets/images/user-grid/user-grid-img13.png"
+                  alt="customer"
+                  className="border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover"
+                />
+                <h6 className="mb-0 mt-16">{lead?.FullName || "N/A"}</h6>
+                <span className="text-secondary-light">
+                  {lead?.PhoneNumber || "-"}
+                </span>
+              </div>
 
-                <div className="col-12 col-md-9">
-                  {[
-                    {
-                      title: "Personal Info",
-                      items: [
-                        { label: "Email", value: lead?.Email || "N/A" },
-                        { label: "Address", value: lead?.City || "N/A" },
-                      ],
-                    },
-                    {
-                      title: "Car Details",
-                      items: [
-                        { label: "Car Reg. No.", value: lead?.VehiclesDetails?.[0]?.RegistrationNumber || "N/A" },
-                        { label: "Brand", value: lead?.VehiclesDetails?.[0]?.BrandName || "N/A" },
-                        { label: "Model", value: lead?.VehiclesDetails?.[0]?.ModelName || "N/A" },
-                        { label: "Fuel", value: lead?.VehiclesDetails?.[0]?.FuelTypeName || "N/A" },
-                      ],
-                    },
-                    {
-                      title: "Lead Details",
-                      items: [
-                        { label: "Lead ID", value: lead?.Id || "N/A" },
-                        { label: "Platform", value: lead?.Platform || "N/A" },
-                        {
-                          label: "Created Date",
-                          value: lead?.CreatedDate
-                            ? new Date(lead.CreatedDate).toLocaleString("en-IN", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: true,
-                            })
-                            : "N/A",
-                        },
-                        { label: "Payment Status", value: lead?.PaymentStatus || "Pending" },
-                        { label: "Service Amount", value: lead?.PaymentAmount || "N/A" },
-                        { label: "Description", value: lead?.Description || "N/A" },
-                      ],
-                    },
-                  ].map((section) => (
-                    <div
-                      key={section.title}
-                      className="p-2 radius-12"
-                      style={{
-                        border: "1px solid rgba(108, 117, 125, 0.16)",
-                        background: "rgba(248, 249, 250, 0.55)",
-                        marginBottom: 8,
-                      }}
-                    >
-                      <div className="d-flex align-items-center justify-content-between mb-2">
-                        <div className="text-sm fw-bold text-primary-light">
-                          {section.title}
-                        </div>
-                      </div>
-                      <div className="row g-2">
-                        {section.items.map((item) => (
-                          <div key={item.label} className="col-12 col-lg-4">
-                            <div className="text-xs text-secondary-light fw-semibold">
-                              {item.label}
-                            </div>
-                            <div
-                              className="text-sm fw-medium text-secondary-light text-break"
-                              style={{
-                                lineHeight: 1.25,
-                                display: "-webkit-box",
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: "vertical",
-                                overflow: "hidden",
-                              }}
-                              title={String(item.value ?? "")}
-                            >
-                              {item.value}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="col-12">
-                  <div className="d-flex gap-2 mt-1 align-items-center flex-wrap">
+              <div className="mt-24">
+                <ul>
+                  <li className="d-flex align-items-center gap-1 mb-12">
+                    <span className="w-30 text-md fw-semibold text-primary-light">
+                      Lead ID
+                    </span>
+                    <span className="w-70 text-secondary-light fw-medium text-break">
+                      : {lead?.Id || "N/A"}
+                    </span>
+                  </li>
+                  <li className="d-flex align-items-center gap-1 mb-12">
+                    <span className="w-30 text-md fw-semibold text-primary-light">
+                      Email
+                    </span>
+                    <span className="w-70 text-secondary-light fw-medium text-break">
+                      : {lead?.Email || "N/A"}
+                    </span>
+                  </li>
+                  <li className="d-flex align-items-center gap-1 mb-12">
+                    <span className="w-30 text-md fw-semibold text-primary-light">
+                      Platform
+                    </span>
+                    <span className="w-70 text-secondary-light fw-medium text-break">
+                      : {lead?.Platform || "N/A"}
+                    </span>
+                  </li>
+                  <li className="d-flex align-items-center gap-1 mb-12">
+                    <span className="w-30 text-md fw-semibold text-primary-light">
+                      Address
+                    </span>
+                    <span className="w-70 text-secondary-light fw-medium">
+                      : {lead?.City || "N/A"}
+                    </span>
+                  </li>
+                  <li className="d-flex align-items-center gap-1 mb-12">
+                    <span className="w-30 text-md fw-semibold text-primary-light">
+                      Description
+                    </span>
+                    <span className="w-70 text-secondary-light fw-medium">
+                      : {lead?.Description || "N/A"}
+                    </span>
+                  </li>
+                  <li className="d-flex align-items-center gap-1 mb-12">
+                    <span className="w-30 text-md fw-semibold text-primary-light">
+                      Created Date
+                    </span>
+                    <span className="w-70 text-secondary-light fw-medium">
+                      :{" "}
+                      {lead?.CreatedDate
+                        ? new Date(lead.CreatedDate).toLocaleString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        })
+                        : "N/A"}
+                    </span>
+                  </li>
+                  <li className="d-flex align-items-center gap-1 mb-12">
+                    <span className="w-30 text-md fw-semibold text-primary-light">
+                      Car Reg. No.
+                    </span>
+                    <span className="w-70 text-secondary-light fw-medium">
+                      :{" "}
+                      {lead?.VehiclesDetails?.[0]?.RegistrationNumber || "N/A"}
+                    </span>
+                  </li>
+                  <li className="d-flex align-items-center gap-1 mb-12">
+                    <span className="w-30 text-md fw-semibold text-primary-light">
+                      Brand Name
+                    </span>
+                    <span className="w-70 text-secondary-light fw-medium">
+                      : {lead?.VehiclesDetails?.[0]?.BrandName || "N/A"}
+                    </span>
+                  </li>
+                  <li className="d-flex align-items-center gap-1 mb-12">
+                    <span className="w-30 text-md fw-semibold text-primary-light">
+                      Model
+                    </span>
+                    <span className="w-70 text-secondary-light fw-medium">
+                      : {lead?.VehiclesDetails?.[0]?.ModelName || "N/A"}
+                    </span>
+                  </li>
+                  <li className="d-flex align-items-center gap-1 mb-12">
+                    <span className="w-30 text-md fw-semibold text-primary-light">
+                      Fuel Type
+                    </span>
+                    <span className="w-70 text-secondary-light fw-medium">
+                      : {lead?.VehiclesDetails?.[0]?.FuelTypeName || "N/A"}
+                    </span>
+                  </li>
+                  <li className="d-flex align-items-center gap-1 mb-12">
+                    <span className="w-30 text-md fw-semibold text-primary-light">
+                      Payment Status
+                    </span>
+                    <span className="w-70 text-secondary-light fw-medium">
+                      : {lead?.PaymentStatus || "Pending"}
+                    </span>
+                  </li>
+                  <li className="d-flex align-items-center gap-1 mb-12">
+                    <span className="w-30 text-md fw-semibold text-primary-light">
+                      Service Amount
+                    </span>
+                    <span className="w-70 text-secondary-light fw-medium">
+                      : {lead?.PaymentAmount || "N/A"}
+                    </span>
+                  </li>
+                  {/* <li className="d-flex align-items-center gap-1 mb-12">
+                    <span className="w-30 text-md fw-semibold text-primary-light">
+                      Supervisor Name
+                    </span>
+                    <span className="w-70 text-secondary-light fw-medium">
+                      : {lead?.Assignments?.[0]?.SupervisorName || "N/A"}
+                    </span>
+                  </li> */}
+                </ul>
+                <div className="d-flex gap-2 mt-3 align-items-center flex-wrap">
                   <Link
                     onClick={() => navigate(-1)}
                     className="btn btn-secondary btn-sm d-flex align-items-center justify-content-center gap-1"
@@ -1237,314 +1268,108 @@ const LeadViewLayer = () => {
                         Book Services
                       </Link>
                     )}
-                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="col-12 col-lg-6">
-          <div className="user-grid-card pt-3 border radius-16 overflow-hidden bg-base h-100">
-            <div className="p-16 d-flex flex-column h-100">
-              <h6 className="text-xl mb-16 border-bottom pb-2">Bookings</h6>
-
-              {!isCustomerConverted ? (
-                <div
-                  className="p-3 radius-12"
-                  style={{
-                    border: "1px solid rgba(255, 193, 7, 0.35)",
-                    background: "rgba(255, 193, 7, 0.12)",
-                  }}
-                >
-                  <div className="fw-semibold mb-2">
-                    Customer not converted yet
-                  </div>
-                  <div className="text-sm text-secondary-light mb-3">
-                    Convert this lead to a customer to view and manage bookings.
-                  </div>
-                  <button
-                    className="btn btn-primary-600 btn-sm"
-                    onClick={handleConvertCustomer}
-                    disabled={isLeadClosed}
-                  >
-                    Converted
-                  </button>
-                </div>
-              ) : (
-                <div className="d-flex flex-column gap-3 flex-grow-1">
-                  {/* Current bookings */}
-                  <div
-                    className="p-12 radius-12"
-                    style={{
-                      border: "1px solid rgba(25, 135, 84, 0.25)",
-                      background: "rgba(25, 135, 84, 0.06)",
-                    }}
-                  >
-                    <div className="d-flex align-items-center justify-content-between mb-2">
-                      <div className="fw-bold text-primary-light">
-                        Current Bookings
-                      </div>
-                      <span
-                        className="badge rounded-pill"
+        {/* ------------------ Middle: Update Status ------------------ */}
+        <div className="col-lg-5">
+          <div className="user-grid-card border pt-3 radius-16 overflow-hidden bg-base h-100">
+            <div className="pb-24 ms-16 mb-24 me-16">
+              {loading ? (
+                <p>Loading lead...</p>
+              ) : error ? (
+                <div className="alert alert-danger">{error}</div>
+              ) : lead ? (
+                <>
+                  {!["Supervisor Head", "Supervisor"].includes(roleName) && (
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <h6 className="card-title mb-0">Update Status</h6>
+                      <button
+                        type="button"
+                        onClick={handleWhatsapp}
+                        className="btn btn-sm d-flex align-items-center justify-content-center gap-2"
                         style={{
-                          background: "rgba(25, 135, 84, 0.14)",
-                          color: "#0f5132",
-                          border: "1px solid rgba(25, 135, 84, 0.28)",
+                          backgroundColor: "#25D366",
+                          color: "#ffffff",
+                          border: "none",
+                          borderRadius: "8px",
+                          padding: "6px 12px",
+                          transition: "all 0.2s ease",
+                          fontSize: "14px",
+                          fontWeight: "500",
+                        }}
+                        title="Send WhatsApp Message"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = "#20ba5a";
+                          e.currentTarget.style.transform = "translateY(-1px)";
+                          e.currentTarget.style.boxShadow = "0 2px 4px rgba(37, 211, 102, 0.3)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "#25D366";
+                          e.currentTarget.style.transform = "translateY(0)";
+                          e.currentTarget.style.boxShadow = "none";
                         }}
                       >
-                        {currentBookings.length}
-                      </span>
+                        <Icon
+                          icon="ic:baseline-whatsapp"
+                          fontSize={20}
+                          style={{ color: "#ffffff" }}
+                        />
+                        <span>WhatsApp</span>
+                      </button>
                     </div>
-
-                    {currentBookings.length === 0 ? (
-                      <div className="text-sm text-secondary-light">
-                        No current bookings found.
-                      </div>
-                    ) : (
-                      <div className="table-responsive" style={{ maxHeight: 240, overflowY: "auto" }}>
-                        <table className="table table-sm table-bordered table-striped mb-0">
-                          <thead className="text-xs fw-semibold text-primary-light">
-                            <tr>
-                              <th>TrackID</th>
-                              <th>Date</th>
-                              <th className="text-center" style={{ width: 110 }}>Action</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {currentBookings.map((b) => (
-                              <tr key={b.BookingID}>
-                                <td>
-                                  <Link
-                                    to={`/complete-service-reports?bookingId=${b.BookingID}`}
-                                    className="text-primary"
-                                    title={b.BookingTrackID}
-                                  >
-                                    {b.BookingTrackID}
-                                  </Link>
-                                </td>
-                                <td>
-                                  {b.CreatedDate
-                                    ? new Date(b.CreatedDate).toLocaleDateString("en-IN")
-                                    : "N/A"}
-                                </td>
-                                <td className="text-center">
-                                  <div className="d-flex justify-content-center align-items-center gap-2">
-                                    <Link
-                                      to={`/complete-service-reports?bookingId=${b.BookingID}`}
-                                      className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                                      title="View service report"
-                                    >
-                                      <Icon icon="lucide:eye" />
-                                    </Link>
-
-                                    {lead?.BookingStatus === "Completed" && (
-                                      <button
-                                        onClick={() => handleOpenFeedback(b)}
-                                        className="w-32-px h-32-px bg-warning-focus text-warning-main border-0 rounded-circle d-inline-flex align-items-center justify-content-center"
-                                        title="Give Feedback"
-                                      >
-                                        <Icon icon="lucide:star" />
-                                      </button>
-                                    )}
-
-                                    {!isLeadClosed && (
-                                      <Link
-                                        to={`/book-service/${b.LeadId}/${b.BookingID}/${b.BookingTrackID}`}
-                                        className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                                        title="Edit"
-                                      >
-                                        <Icon icon="lucide:edit" />
-                                      </Link>
-                                    )}
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Previous bookings */}
-                  <div
-                    className="p-12 radius-12"
-                    style={{
-                      border: "1px solid rgba(13, 110, 253, 0.20)",
-                      background: "rgba(13, 110, 253, 0.05)",
-                    }}
-                  >
-                    <div className="d-flex align-items-center justify-content-between mb-2">
-                      <div className="fw-bold text-primary-light">
-                        Previous Bookings
-                      </div>
-                      <span
-                        className="badge rounded-pill"
-                        style={{
-                          background: "rgba(13, 110, 253, 0.12)",
-                          color: "#084298",
-                          border: "1px solid rgba(13, 110, 253, 0.24)",
-                        }}
-                      >
-                        {previousBookings.length}
-                      </span>
-                    </div>
-
-                    {previousBookings.length === 0 ? (
-                      <div className="text-sm text-secondary-light">
-                        No previous bookings found.
-                      </div>
-                    ) : (
-                      <div className="table-responsive" style={{ maxHeight: 240, overflowY: "auto" }}>
-                        <table className="table table-sm table-bordered table-striped mb-0">
-                          <thead className="text-xs fw-semibold text-primary-light">
-                            <tr>
-                              <th>Lead</th>
-                              <th>TrackID</th>
-                              <th>Date</th>
-                              <th className="text-center" style={{ width: 70 }}>View</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {previousBookings.map((b) => (
-                              <tr key={b.BookingID}>
-                                <td>{b.LeadId}</td>
-                                <td>
-                                  <Link
-                                    to={`/complete-service-reports?bookingId=${b.BookingID}`}
-                                    className="text-primary"
-                                    title={b.BookingTrackID}
-                                  >
-                                    {b.BookingTrackID}
-                                  </Link>
-                                </td>
-                                <td>
-                                  {b.CreatedDate
-                                    ? new Date(b.CreatedDate).toLocaleDateString("en-IN")
-                                    : "N/A"}
-                                </td>
-                                <td className="text-center">
-                                  <Link
-                                    to={`/complete-service-reports?bookingId=${b.BookingID}`}
-                                    className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                                    title="View service report"
-                                  >
-                                    <Icon icon="lucide:eye" />
-                                  </Link>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ------------------ Bottom: Update Status + Timeline ------------------ */}
-        <div className="col-12">
-          <div className="row gy-4 align-items-stretch">
-            {/* ------------------ Left: Update Status ------------------ */}
-            <div className="col-lg-8">
-              <div
-                className="user-grid-card border pt-3 radius-16 overflow-hidden bg-base h-100"
-              >
-                <div className="p-16">
-                  {loading ? (
-                    <p>Loading lead...</p>
-                  ) : error ? (
-                    <div className="alert alert-danger">{error}</div>
-                  ) : lead ? (
-                    <>
-                      {!["Supervisor Head", "Supervisor"].includes(roleName) && (
-                        <div className="d-flex justify-content-between align-items-center mb-3">
-                          <h6 className="card-title mb-0">Update Status</h6>
-                          <button
-                            type="button"
-                            onClick={handleWhatsapp}
-                            className="btn btn-sm d-flex align-items-center justify-content-center gap-2"
-                            style={{
-                              backgroundColor: "#25D366",
-                              color: "#ffffff",
-                              border: "none",
-                              borderRadius: "8px",
-                              padding: "6px 12px",
-                              transition: "all 0.2s ease",
-                              fontSize: "14px",
-                              fontWeight: "500",
-                            }}
-                            title="Send WhatsApp Message"
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = "#20ba5a";
-                              e.currentTarget.style.transform = "translateY(-1px)";
-                              e.currentTarget.style.boxShadow = "0 2px 4px rgba(37, 211, 102, 0.3)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = "#25D366";
-                              e.currentTarget.style.transform = "translateY(0)";
-                              e.currentTarget.style.boxShadow = "none";
-                            }}
-                          >
-                            <Icon
-                              icon="ic:baseline-whatsapp"
-                              fontSize={20}
-                              style={{ color: "#ffffff" }}
+                  )}
+                  {!["Supervisor Head", "Supervisor"].includes(roleName) && (
+                    <div className="p-3 border radius-16 bg-light">
+                      {/* Call Answered Radio Buttons */}
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold text-primary-light">
+                          Call Status
+                        </label>
+                        <div className="d-flex justify-content-around px-3 py-2">
+                          <div className="form-check d-flex align-items-center">
+                            <input
+                              className="form-check-input"
+                              type="radio"
+                              name="callAnswered"
+                              id="callAnswered"
+                              value="Ans"
+                              checked={callAnswered === "Ans"}
+                              onChange={(e) => setCallAnswered(e.target.value)}
+                            // disabled={isLeadClosed}
+                            disabled={shouldDisableActions}
                             />
-                            <span>WhatsApp</span>
-                          </button>
-                        </div>
-                      )}
-                      {!["Supervisor Head", "Supervisor"].includes(roleName) && (
-                        <div className="p-3 border radius-16 bg-light">
-                          {/* Call Answered Radio Buttons */}
-                          <div className="mb-3">
-                            <label className="form-label fw-semibold text-primary-light">
-                              Call Status
+                            <label
+                              className="form-check-label ms-1"
+                              htmlFor="callAnswered"
+                            >
+                              Call Answered
                             </label>
-                            <div className="d-flex justify-content-around px-3 py-2">
-                              <div className="form-check d-flex align-items-center">
-                                <input
-                                  className="form-check-input"
-                                  type="radio"
-                                  name="callAnswered"
-                                  id="callAnswered"
-                                  value="Ans"
-                                  checked={callAnswered === "Ans"}
-                                  onChange={(e) => setCallAnswered(e.target.value)}
-                                  disabled={shouldDisableActions}
-                                />
-                                <label
-                                  className="form-check-label ms-1"
-                                  htmlFor="callAnswered"
-                                >
-                                  Call Answered
-                                </label>
-                              </div>
-                              <div className="form-check d-flex align-items-center">
-                                <input
-                                  className="form-check-input"
-                                  type="radio"
-                                  name="callAnswered"
-                                  id="callNotAnswered"
-                                  value="Not Ans"
-                                  checked={callAnswered === "Not Ans"}
-                                  onChange={(e) => setCallAnswered(e.target.value)}
-                                  disabled={shouldDisableActions}
-                                />
-                                <label
-                                  className="form-check-label ms-1"
-                                  htmlFor="callNotAnswered"
-                                >
-                                  Call Not Answered
-                                </label>
-                              </div>
-                            </div>
                           </div>
+                          <div className="form-check d-flex align-items-center">
+                            <input
+                              className="form-check-input"
+                              type="radio"
+                              name="callAnswered"
+                              id="callNotAnswered"
+                              value="Not Ans"
+                              checked={callAnswered === "Not Ans"}
+                              onChange={(e) => setCallAnswered(e.target.value)}
+                            // disabled={isLeadClosed}
+                            disabled={shouldDisableActions}
+                            />
+                            <label
+                              className="form-check-label ms-1"
+                              htmlFor="callNotAnswered"
+                            >
+                              Call Not Answered
+                            </label>
+                          </div>
+                        </div>
+                      </div>
 
                       {/* Conditional Fields based on Call Status */}
                       {callAnswered === "Not Ans" && (
@@ -1812,16 +1637,16 @@ const LeadViewLayer = () => {
                 <p>No data</p>
               )}
 
-                  {/* ------------------ Accordions ------------------ */}
-                  <div
-                    style={
-                      isLeadClosed || isDetailsLocked
-                        ? { pointerEvents: "none", opacity: 0.6 }
-                        : undefined
-                    }
-                    aria-disabled={isLeadClosed || isDetailsLocked}
-                  >
-                    <Accordion activeKey={activeAccordionKey} onSelect={setActiveAccordionKey} className="mt-3">
+              {/* ------------------ Accordions ------------------ */}
+              <div
+                style={
+                  isLeadClosed || isDetailsLocked
+                    ? { pointerEvents: "none", opacity: 0.6 }
+                    : undefined
+                }
+                aria-disabled={isLeadClosed || isDetailsLocked}
+              >
+              <Accordion activeKey={activeAccordionKey} onSelect={setActiveAccordionKey} className="mt-3">
                 <Accordion.Item eventKey="0">
                   <Accordion.Header>Personal Information</Accordion.Header>
 
@@ -2163,19 +1988,180 @@ const LeadViewLayer = () => {
                   </Accordion.Body>
                 </Accordion.Item>
               </Accordion>
-                  </div>
-
-              {/* Bookings moved beside Customer Info for compact flow */}
-                </div>
               </div>
-            </div>
 
-            {/* ------------------ Right: Timeline ------------------ */}
-            <div className="col-lg-4">
-              <div
-                className="user-grid-card border pt-3 radius-16 bg-base d-flex flex-column w-100 h-100"
-              >
-                <div className="p-16 flex-grow-1 d-flex flex-column">
+              {/* ================= CUSTOMER NOT CONVERTED ================= */}
+              {!isCustomerConverted ? (
+                <div className="alert alert-warning d-flex justify-content-between align-items-center mt-3 ">
+                  <span className="fw-semibold">
+                    This lead has not yet been converted to a customer. Please
+                    confirm the conversion to proceed with booking.
+                  </span>
+                  <button
+                    className="btn btn-primary-600 px-20 btn-sm"
+                    onClick={handleConvertCustomer}
+                    disabled={isLeadClosed}
+                  >
+                    Converted
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <Accordion className="mt-3">
+                    <Accordion.Item eventKey="current" className={lead?.BookingStatus === "Completed" ? "current-bookings-accordion" : ""}>
+                      <Accordion.Header>
+                        Current Bookings ({currentBookings.length})
+                      </Accordion.Header>
+                      <Accordion.Body>
+                        {currentBookings.length === 0 ? (
+                          <p className="text-muted">
+                            No current bookings found.
+                          </p>
+                        ) : (
+                          <div className="table-responsive">
+                            <table className="table table-bordered table-striped p-2 radius-16">
+                              <thead className="form-label fw-semibold text-primary-light">
+                                <tr>
+                                  <th>Booking TrackID</th>
+                                  <th>Booking Date</th>
+                                  <th className="text-center">Action</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {currentBookings.map((b) => (
+                                  <tr key={b.BookingID}>
+                                    <td>
+                                      <Link
+                                        to={`/complete-service-reports?bookingId=${b.BookingID}`}
+                                        className="text-primary"
+                                      >
+                                        {b.BookingTrackID}
+                                      </Link>
+                                    </td>
+                                    <td>
+                                      {b.CreatedDate
+                                        ? new Date(
+                                          b.CreatedDate,
+                                        ).toLocaleDateString("en-IN")
+                                        : "N/A"}
+                                    </td>
+                                    <td className="text-center">
+                                      <div className="d-flex justify-content-center align-items-center gap-2">
+
+                                        <Link
+                                          to={`/complete-service-reports?bookingId=${b.BookingID}`}
+                                          className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                          title="View service report"
+                                        >
+                                          <Icon icon="lucide:eye" />
+                                        </Link>
+
+                                        {/* Feedback Button */}
+                                        {lead?.BookingStatus === "Completed" && (
+                                          <button
+                                            onClick={() => handleOpenFeedback(b)}
+                                            className="w-32-px h-32-px bg-warning-focus text-warning-main border-0 rounded-circle d-inline-flex align-items-center justify-content-center"
+                                            title="Give Feedback"
+                                          >
+                                            <Icon icon="lucide:star" />
+                                          </button>
+                                        )}
+
+                                        {/* Edit Button */}
+                                        {!isLeadClosed && (
+                                          <Link
+                                            to={`/book-service/${b.LeadId}/${b.BookingID}/${b.BookingTrackID}`}
+                                            className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                            title="Edit"
+                                          >
+                                            <Icon icon="lucide:edit" />
+                                          </Link>
+                                        )}
+
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </Accordion.Body>
+                    </Accordion.Item>
+
+                    <Accordion.Item eventKey="previous">
+                      <Accordion.Header>
+                        Previous Bookings ({previousBookings.length})
+                      </Accordion.Header>
+                      <Accordion.Body>
+                        {previousBookings.length === 0 ? (
+                          <p className="text-muted">
+                            No previous bookings found.
+                          </p>
+                        ) : (
+                          <div className="table-responsive">
+                            <table className="table table-bordered table-striped p-2 radius-16">
+                              <thead className="form-label fw-semibold text-primary-light">
+                                <tr>
+                                  {/* <th>ID</th> */}
+                                  <th>Lead ID</th>
+                                  <th>Booking TrackID</th>
+                                  <th>Booking Date</th>
+                                  <th className="text-center">View</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {previousBookings.map((b) => (
+                                  <tr key={b.BookingID}>
+                                    {/* <td>{b.BookingID}</td> */}
+                                    <td>{b.LeadId}</td>
+                                    <td>
+                                      <Link
+                                        to={`/complete-service-reports?bookingId=${b.BookingID}`}
+                                        className="text-primary"
+                                      >
+                                        {b.BookingTrackID}
+                                      </Link>
+                                    </td>
+                                    <td>
+                                      {b.CreatedDate
+                                        ? new Date(
+                                          b.CreatedDate,
+                                        ).toLocaleDateString("en-IN")
+                                        : "N/A"}
+                                    </td>
+
+                                    <td className="text-center">
+                                      <Link
+                                        to={`/complete-service-reports?bookingId=${b.BookingID}`}
+                                        className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                        title="View service report"
+                                      >
+                                        <Icon icon="lucide:eye" />
+                                      </Link>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </Accordion.Body>
+                    </Accordion.Item>
+                  </Accordion>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ------------------ Right: Timeline ------------------ */}
+        <div className="col-lg-3">
+          <div
+            className="user-grid-card border pt-3 radius-16 bg-base d-flex flex-column w-100"
+            style={{ height: "975px" }}
+          >
+            <div className="pb-24 ms-16 mb-24 me-16 flex-grow-1 d-flex flex-column">
               <div
                 className="d-flex align-items-center justify-content-between border-bottom pb-2"
                 style={{ position: "sticky", top: 0, background: "var(--bs-body-bg)", zIndex: 1 }}
@@ -2187,10 +2173,7 @@ const LeadViewLayer = () => {
               </div>
               <div
                 className="flex-grow-1 overflow-auto pe-0"
-                style={{
-                  scrollbarWidth: "thin",
-                  paddingRight: 4,
-                }}
+                style={{ maxHeight: "925px", scrollbarWidth: "thin" }}
               >
                 {lead?.TrackingHistory && lead.TrackingHistory.length > 0 ? (
                   <ul className="mb-0 list-unstyled ps-0 mt-3">
@@ -2217,10 +2200,6 @@ const LeadViewLayer = () => {
                           "\n",
                         );
                         const statusLabel = String(item.StatusName || "").trim();
-                        const statusLabelWithoutPrefix = statusLabel
-                          .replace(/^follow[-\s]?up\s*:\s*/i, "")
-                          .replace(/^follow[-\s]?up\s+/i, "")
-                          .trim();
                         const normalizedDescriptionLines = rawDescriptionText
                           .split("\n")
                           .map((l) => l.trim())
@@ -2233,7 +2212,7 @@ const LeadViewLayer = () => {
                           uniqueDescriptionLines.length === 0 ||
                           (uniqueDescriptionLines.length === 1 &&
                             uniqueDescriptionLines[0].toLowerCase() ===
-                              statusLabelWithoutPrefix.toLowerCase());
+                              statusLabel.toLowerCase());
                         const descriptionText = shouldHideDescription
                           ? ""
                           : uniqueDescriptionLines.join("\n");
@@ -2270,7 +2249,7 @@ const LeadViewLayer = () => {
 
                               {/* Content */}
                               <div className="flex-grow-1">
-                                <div className="d-flex align-items-start justify-content-between flex-column gap-2">
+                                <div className="d-flex align-items-start justify-content-between gap-2">
                                   <span
                                     className="badge rounded-pill fw-semibold"
                                     style={{
@@ -2283,16 +2262,15 @@ const LeadViewLayer = () => {
                                       overflow: "hidden",
                                       textOverflow: "ellipsis",
                                     }}
-                                    title={statusLabelWithoutPrefix || item.StatusName}
+                                    title={item.StatusName}
                                   >
-                                    {statusLabelWithoutPrefix || item.StatusName}
+                                    {item.StatusName}
                                   </span>
+
                                   <span className="text-xs text-secondary-light d-inline-flex align-items-center gap-1">
                                     <Icon icon="mdi:clock-outline" />
                                     {createdAtLabel}
                                   </span>
-
-                                  
                                 </div>
 
                                 {!!descriptionText && (
@@ -2319,16 +2297,6 @@ const LeadViewLayer = () => {
                                 </div>
                               </div>
                             </div>
-                            {/* light divider */}
-                            {idx !== lead.TrackingHistory.length - 1 && (
-                              <hr
-                                className="my-2"
-                                style={{
-                                  borderColor: "rgba(108, 117, 125, 0.18)",
-                                  opacity: 1,
-                                }}
-                              />
-                            )}
                           </li>
                         );
                       })}
@@ -2340,8 +2308,6 @@ const LeadViewLayer = () => {
                 )}
               </div>
             </div>
-          </div>
-        </div>
           </div>
         </div>
       </div>
