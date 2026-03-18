@@ -2162,13 +2162,21 @@ const LeadViewLayer = () => {
             style={{ height: "975px" }}
           >
             <div className="pb-24 ms-16 mb-24 me-16 flex-grow-1 d-flex flex-column">
-              <h6 className="text-xl mb-16 border-bottom pb-2">Timeline</h6>
+              <div
+                className="d-flex align-items-center justify-content-between border-bottom pb-2"
+                style={{ position: "sticky", top: 0, background: "var(--bs-body-bg)", zIndex: 1 }}
+              >
+                <h6 className="text-xl mb-0">Timeline</h6>
+                <span className="text-xs text-secondary-light fw-semibold">
+                  {(lead?.TrackingHistory?.length ?? 0) > 0 ? `${lead.TrackingHistory.length} events` : ""}
+                </span>
+              </div>
               <div
                 className="flex-grow-1 overflow-auto pe-0"
                 style={{ maxHeight: "925px", scrollbarWidth: "thin" }}
               >
                 {lead?.TrackingHistory && lead.TrackingHistory.length > 0 ? (
-                  <ul className="mb-0 list-unstyled ps-0">
+                  <ul className="mb-0 list-unstyled ps-0 mt-3">
                     {[...lead.TrackingHistory]
                       .sort((a, b) => {
                         const dateA = new Date(a.CreatedDate);
@@ -2177,45 +2185,116 @@ const LeadViewLayer = () => {
                       })
                       .map((item, idx) => {
                         if (!item.StatusName) return null;
+                        const createdAtLabel = item.CreatedDate
+                          ? new Date(item.CreatedDate).toLocaleString("en-IN", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                          })
+                          : "-";
+                        const rawDescriptionText = (item.Description || "-").replace(
+                          /<br\s*\/?>/gi,
+                          "\n",
+                        );
+                        const statusLabel = String(item.StatusName || "").trim();
+                        const normalizedDescriptionLines = rawDescriptionText
+                          .split("\n")
+                          .map((l) => l.trim())
+                          .filter(Boolean);
+                        const uniqueDescriptionLines = Array.from(
+                          new Set(normalizedDescriptionLines),
+                        );
+                        const shouldHideDescription =
+                          rawDescriptionText === "-" ||
+                          uniqueDescriptionLines.length === 0 ||
+                          (uniqueDescriptionLines.length === 1 &&
+                            uniqueDescriptionLines[0].toLowerCase() ===
+                              statusLabel.toLowerCase());
+                        const descriptionText = shouldHideDescription
+                          ? ""
+                          : uniqueDescriptionLines.join("\n");
                         return (
                           <li
                             key={idx}
-                            className="mb-3 pb-3 border-bottom border-dashed last:border-0"
+                            className="pb-10"
                           >
-                            <div className="d-flex align-items-start gap-3">
-                              <span
-                                className={`badge rounded-pill px-3 py-2 fw-semibold text-white bg-orange`}
-                              >
-                                {item.StatusName}
-                              </span>
-                            </div>
-                            <div>
-                              <div className="text-sm text-secondary-light fw-medium">
-                                <strong>Created Date: </strong>
-                                {item.CreatedDate
-                                  ? new Date(item.CreatedDate).toLocaleString(
-                                    "en-IN",
-                                    {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                      hour12: true,
-                                    },
-                                  )
-                                  : "-"}
-                              </div>
+                            <div className="d-flex align-items-start gap-10">
+                              {/* Left rail */}
                               <div
-                                className="text-sm text-secondary-light"
-                                style={{ whiteSpace: "pre-line" }}
+                                className="d-flex flex-column align-items-center"
+                                style={{ width: 12 }}
                               >
-                                <strong>Description: </strong>
-                                {(item.Description || "-").replace(/<br\s*\/?>/gi, "\n")}
+                                <span
+                                  style={{
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: 999,
+                                    background: "rgba(255, 159, 67, 0.95)",
+                                    boxShadow: "0 0 0 2px rgba(255, 159, 67, 0.16)",
+                                    marginTop: 4,
+                                  }}
+                                />
+                                <span
+                                  style={{
+                                    flex: 1,
+                                    width: 2,
+                                    background: "rgba(108, 117, 125, 0.18)",
+                                    marginTop: 6,
+                                  }}
+                                />
                               </div>
-                              <div className="text-sm text-secondary-light">
-                                <strong>Updated By: </strong>
-                                {item.EmployeeName || "-"}
+
+                              {/* Content */}
+                              <div className="flex-grow-1">
+                                <div className="d-flex align-items-start justify-content-between flex-column gap-2">
+                                  <span
+                                    className="badge rounded-pill fw-semibold"
+                                    style={{
+                                      background: "rgba(255, 159, 67, 0.16)",
+                                      color: "#b45309",
+                                      border: "1px solid rgba(255, 159, 67, 0.35)",
+                                      padding: "4px 8px",
+                                      maxWidth: "100%",
+                                      whiteSpace: "nowrap",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                    }}
+                                    title={item.StatusName}
+                                  >
+                                    {item.StatusName}
+                                  </span>
+
+                                  <span className="text-xs text-secondary-light d-inline-flex align-items-center gap-1">
+                                    <Icon icon="mdi:clock-outline" />
+                                    {createdAtLabel}
+                                  </span>
+                                </div>
+
+                                {!!descriptionText && (
+                                  <div
+                                    className="text-sm text-secondary-light mt-1"
+                                    style={{
+                                      whiteSpace: "pre-line",
+                                      padding: "6px 8px",
+                                      borderRadius: 8,
+                                      background: "rgba(13, 110, 253, 0.05)",
+                                      border: "1px solid rgba(13, 110, 253, 0.10)",
+                                    }}
+                                  >
+                                    {descriptionText}
+                                  </div>
+                                )}
+
+                                <div className="text-xs text-secondary-light mt-1 d-flex align-items-center gap-1">
+                                  <Icon icon="mdi:account-outline" />
+                                  <span className="fw-semibold">Updated by</span>
+                                  <span className="text-truncate" title={item.EmployeeName || "-"}>
+                                    {item.EmployeeName || "-"}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </li>
