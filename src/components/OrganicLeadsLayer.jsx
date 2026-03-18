@@ -185,7 +185,7 @@ const OrganicLeadsLayer = () => {
             className="text-primary arrow-icon"
             style={{
               transition: "transform 0.3s ease",
-            }}
+            }} 
           />
         </div>
       ),
