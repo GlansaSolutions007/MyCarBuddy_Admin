@@ -253,9 +253,9 @@ const BasicInformationLayer = () => {
 
   return (
     <div className="container-fluid py-3">
-      <h5 className="mb-3">
-        Basic Information – Booking #{bookingData.BookingID}
-      </h5>
+      {/* <h5 className="mb-3"> */}
+        {/* Basic Information – Booking #{bookingData.BookingID} */}
+      {/* </h5> */}
 
       <div className="d-flex flex-wrap gap-2 mb-4">
         {visibleStages.map((s, idx) => (
