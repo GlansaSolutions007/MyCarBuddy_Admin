@@ -92,6 +92,7 @@ const LeadViewLayer = () => {
   const [discussionNotes, setDiscussionNotes] = useState("");
   const [nextAction, setNextAction] = useState("");
   const [nextFollowUpDate, setNextFollowUpDate] = useState("");
+  const [isFollowUpNeeded, setIsFollowUpNeeded] = useState(false);
   const [autocomplete, setAutocomplete] = useState(null);
 
   // Car Details States
@@ -950,8 +951,17 @@ const LeadViewLayer = () => {
       setDiscussionNotes("");
       setNextAction("");
       setNextFollowUpDate("");
+      setIsFollowUpNeeded(false);
     }
   }, [callAnswered]);
+
+  // Ensure follow-up controls are cleared when not applicable
+  useEffect(() => {
+    if (!nextAction || nextAction === "Lead Closed") {
+      setIsFollowUpNeeded(false);
+      setNextFollowUpDate("");
+    }
+  }, [nextAction]);
 
   const showVehicleDataRequiredAlert = () => {
     Swal.fire({
@@ -1413,6 +1423,8 @@ const LeadViewLayer = () => {
                               onChange={(e) => {
                                 const selectedOutcome = e.target.value;
                                 setCallOutcome(selectedOutcome);
+                                setIsFollowUpNeeded(false);
+                                setNextFollowUpDate("");
 
                                 // Clear nextAction if it's not in the new list of available actions
                                 if (selectedOutcome && DISCUSSION_RESULT_TO_ACTIONS[selectedOutcome]) {
@@ -1462,7 +1474,14 @@ const LeadViewLayer = () => {
                             <select
                               className="form-select"
                               value={nextAction}
-                              onChange={(e) => setNextAction(e.target.value)}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setNextAction(value);
+                                if (!value || value === "Lead Closed") {
+                                  setIsFollowUpNeeded(false);
+                                  setNextFollowUpDate("");
+                                }
+                              }}
                               disabled={!callOutcome}
                             >
                               <option value="">Select action</option>
@@ -1513,18 +1532,47 @@ const LeadViewLayer = () => {
                           {nextAction && nextAction !== "Lead Closed" && (
                             <div className="col-12">
                               <label className="form-label fw-semibold text-primary-light">
-                                Next Follow-Up Date & Time (optional)
+                                Follow-up needed?
                               </label>
-                              <input
-                                type="datetime-local"
-                                placeholder="DD-MM-YYYY"
-                                className="form-control"
-                                value={nextFollowUpDate}
-                                min={new Date().toISOString().split("T")[0]}
-                                onChange={(e) =>
-                                  setNextFollowUpDate(e.target.value)
-                                }
-                              />
+                              <div className="d-flex align-items-center gap-2">
+                                <input
+                                  className="form-check-input m-0"
+                                  type="checkbox"
+                                  role="switch"
+                                  id="followUpNeededSwitch"
+                                  checked={isFollowUpNeeded}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    setIsFollowUpNeeded(checked);
+                                    if (!checked) setNextFollowUpDate("");
+                                  }}
+                                />
+                                <span
+                                  className="text-secondary-light fw-medium"
+                                  style={{ minWidth: 24 }}
+                                >
+                                  {isFollowUpNeeded ? "Yes" : "No"}
+                                </span>
+                              </div>
+
+                              {isFollowUpNeeded && (
+                                <>
+                                  <div className="mt-2" />
+                                  <label className="form-label fw-semibold text-primary-light">
+                                    Next Follow-Up Date & Time (optional)
+                                  </label>
+                                  <input
+                                    type="datetime-local"
+                                    placeholder="DD-MM-YYYY"
+                                    className="form-control"
+                                    value={nextFollowUpDate}
+                                    min={new Date().toISOString().split("T")[0]}
+                                    onChange={(e) =>
+                                      setNextFollowUpDate(e.target.value)
+                                    }
+                                  />
+                                </>
+                              )}
                             </div>
                           )}
                         </div>
