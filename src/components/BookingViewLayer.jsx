@@ -1,6 +1,7 @@
 import { Icon } from "@iconify/react";
 import { useState, useEffect } from "react";
 import Accordion from "react-bootstrap/Accordion";
+import { Modal, Button } from "react-bootstrap";
 import axios from "axios";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -151,6 +152,7 @@ const BookingViewLayer = () => {
 const [selectedAddon, setSelectedAddon] = useState(null);
 const [selectedImages, setSelectedImages] = useState([]);
 const [previewImages, setPreviewImages] = useState([]);
+  const [showAssignSupervisorModal, setShowAssignSupervisorModal] = useState(false);
   const employeeData = JSON.parse(localStorage.getItem("employeeData"));
   const userId = employeeData?.Id;
   const roleName = employeeData?.RoleName;
@@ -802,51 +804,54 @@ const [previewImages, setPreviewImages] = useState([]);
     }
   };
   const handleConvertToService = async () => {
+    const result = await Swal.fire({
+      title: "Convert Inspection?",
+      text: "This will convert the inspection into a service.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Convert",
+      cancelButtonText: "Cancel",
+    });
 
-  const result = await Swal.fire({
-    title: "Convert Inspection?",
-    text: "This will convert the inspection into a service.",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "Yes, Convert",
-    cancelButtonText: "Cancel"
-  });
+    if (!result.isConfirmed) return;
 
-  if (!result.isConfirmed) return;
-
-  try {
-    await axios.post(
-      `${API_BASE}Bookings/convert-inspection-to-service`,
-      {
-        bookingId: bookingData?.BookingID
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
+    try {
+      await axios.post(
+        `${API_BASE}Bookings/convert-inspection-to-service`,
+        {
+          bookingId: bookingData?.BookingID,
         },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      await Swal.fire({
+        icon: "success",
+        title: "Converted",
+        text: "Inspection successfully converted to service. Please add extra services.",
+      });
+
+      // After successful convert, redirect to booking service page to add extra services
+      if (bookingData?.LeadId && bookingData?.BookingID && bookingData?.BookingTrackID) {
+        navigate(`/book-service/${bookingData.LeadId}/${bookingData.BookingID}/${bookingData.BookingTrackID}`);
+        return;
       }
-    );
 
-    Swal.fire({
-      icon: "success",
-      title: "Converted",
-      text: "Inspection successfully converted to service.",
-    });
+      // Fallback: just refresh booking details
+      fetchBookingData();
+    } catch (error) {
+      console.error("Convert Error:", error);
 
-    fetchBookingData(); // refresh page data
-
-  } catch (error) {
-    console.error("Convert Error:", error);
-
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text:
-        error?.response?.data?.message ||
-        "Failed to convert inspection to service.",
-    });
-  }
-};
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error?.response?.data?.message || "Failed to convert inspection to service.",
+      });
+    }
+  };
 
 const handleConfirmService = async () => {
     const addOns = bookingData?.BookingAddOns || [];
@@ -2077,6 +2082,40 @@ const handleRevertService = async (service) => {
     }
   };
 
+  // Ensure basic details (booking date, address, supervisor) are filled before key actions
+  const ensureBasicDetails = () => {
+    if (
+      bookingData?.BookingDate &&
+      bookingData?.TimeSlot &&
+      bookingData?.FullAddress &&
+      (bookingData?.SupervisorHeadName || bookingData?.SupervisorHeadPhoneNumber)
+    ) {
+      return true;
+    }
+    Swal.fire({
+      icon: "warning",
+      title: "Basic details required",
+      html:
+        "<div class='text-start small'>" +
+        "<p class='mb-1'>Please complete the following before continuing:</p>" +
+        "<ul class='mb-2 ps-3'>" +
+        "<li>Booking date &amp; time slot</li>" +
+        "<li>Customer address</li>" +
+        "<li>Supervisor assignment</li>" +
+        "</ul>" +
+        "<p class='mb-0'>Click <strong>Go to Basic Details</strong> to fill them now.</p>" +
+        "</div>",
+      showCancelButton: true,
+      confirmButtonText: "Go to Basic Details",
+      cancelButtonText: "Cancel",
+    }).then((res) => {
+      if (res.isConfirmed && bookingData?.BookingID) {
+        navigate(`/booking-basic/${bookingData.BookingID}`);
+      }
+    });
+    return false;
+  };
+
   const closePaymentModal = () => {
     setShowPaymentModal(false);
     setPaymentTypeChoice(null);
@@ -2625,6 +2664,265 @@ const handleCustomerRejectionSubmit = async () => {
     });
   };
 
+  const serviceStages = (() => {
+    if (!bookingData) return [];
+
+    const addOns = bookingData.BookingAddOns || [];
+    const carPickUpDelivery = bookingData.CarPickUpDelivery || [];
+    const payments = bookingData.Payments || [];
+
+    const confirmedAddOns = addOns.filter((a) => a.IsSupervisor_Confirm === 1);
+    const pendingAddOns = (bookingData.BookingsTempAddons || []).filter(
+      (a) => a.IsSupervisor_Confirm !== 1,
+    );
+    const confirmedLength = confirmedAddOns.length;
+    const pendingLength = pendingAddOns.length;
+
+    const totalServices = addOns.length;
+    const completedServices = addOns.filter((a) => a.Is_Completed).length;
+
+    const leadStage = {
+      id: "lead-created",
+      title: "Lead Created",
+      icon: "mdi:lead-pencil",
+      date: bookingData.CreatedDate || bookingData.LeadCreatedDate,
+      status: "completed",
+      details: `Lead ID: ${bookingData.LeadId ?? "—"}`,
+    };
+
+    const bookingStage = {
+      id: "booking-created",
+      title: "Booking Created",
+      icon: "mdi:calendar-plus",
+      date: bookingData.BookingDate,
+      status: "completed",
+      details: `Booking ID: ${bookingData.BookingID ?? "—"}`,
+    };
+
+    const assignStage = {
+      id: "assign-stage",
+      title: "Supervisor/Field Advisor Assigned",
+      icon: "mdi:account-group",
+      date: bookingData.SupervisorHeadAssignDate || bookingData.FieldAdvisorAssignDate,
+      status:
+        bookingData.SupervisorHeadName || bookingData.FieldAdvisorName
+          ? "completed"
+          : "pending",
+      details: `${bookingData.SupervisorHeadName || "—"} / ${
+        bookingData.FieldAdvisorName || "—"
+      }`,
+    };
+
+    const dealerApprovalCount = addOns.filter(
+      (a) => a.IsDealer_Confirm === "Approved",
+    ).length;
+    const dealerStage = {
+      id: "dealer-confirmation",
+      title: "Dealer Confirmation",
+      icon: "mdi:handshake",
+      date: addOns.find((a) => a.IsDealer_Confirm)?.UpdatedDate,
+      status:
+        addOns.length === 0
+          ? "pending"
+          : addOns.every((a) => a.IsDealer_Confirm === "Approved")
+          ? "completed"
+          : addOns.some((a) => a.IsDealer_Confirm === "Rejected")
+          ? "failed"
+          : "in-progress",
+      details:
+        addOns.length === 0
+          ? "No dealers"
+          : `${dealerApprovalCount} dealers confirmed services`,
+    };
+
+    const customerStage = {
+      id: "customer-confirmation",
+      title: "Customer Confirmation",
+      icon: "mdi:account-check",
+      date: addOns.find((a) => a.ConfirmRole)?.ConfirmDate,
+      status:
+        confirmedLength === 0 && pendingLength === 0
+          ? "pending"
+          : confirmedLength > 0
+          ? pendingLength === 0
+            ? "completed"
+            : "in-progress"
+          : "pending",
+      details: `${confirmedLength} confirmed / ${pendingLength} pending`,
+    };
+
+    const technicianStage = {
+      id: "technician-assigned",
+      title: "Technician Assigned",
+      icon: "mdi:engineer",
+      date: carPickUpDelivery[0]?.AssignDate,
+      status: carPickUpDelivery.length > 0 ? "completed" : "pending",
+      details:
+        carPickUpDelivery
+          .map((p) => p.TechnicinaName)
+          .filter(Boolean)
+          .join(", ") || "—",
+    };
+
+    const serviceCompletedStage = {
+      id: "service-completed",
+      title: "Service Completed",
+      icon: "mdi:car-check",
+      date: addOns.find((a) => a.Is_Completed)?.CompletedDate,
+      status:
+        totalServices === 0
+          ? "pending"
+          : completedServices === totalServices
+          ? "completed"
+          : completedServices > 0
+          ? "in-progress"
+          : "pending",
+      details:
+        totalServices === 0
+          ? "No services"
+          : `${completedServices}/${totalServices} services`,
+    };
+
+    const totalPaid = payments.reduce(
+      (sum, p) => sum + Number(p.AmountPaid || 0),
+      0,
+    );
+    const paymentStage = {
+      id: "payment-done",
+      title: "Payment Done",
+      icon: "mdi:credit-card-check",
+      date: payments[0]?.PaymentDate,
+      status: payments.some((p) => p.PaymentStatus === "Success")
+        ? "completed"
+        : "pending",
+      details: `₹ ${totalPaid.toFixed(2)}`,
+    };
+
+    const bookingDoneStage = {
+      id: "booking-done",
+      title: "Booking Done",
+      icon: "mdi:check-circle",
+      date: bookingData.BookingStatusUpdatedDate,
+      status: bookingData.BookingStatus === "Completed" ? "completed" : "pending",
+      details: bookingData.BookingStatus || "—",
+    };
+
+    let stages = [
+      leadStage,
+      bookingStage,
+      assignStage,
+      dealerStage,
+      customerStage,
+      technicianStage,
+      serviceCompletedStage,
+      paymentStage,
+      bookingDoneStage,
+    ];
+
+    // If a later stage is completed while a middle stage is still pending,
+    // mark that middle stage as failed (red) to indicate it was skipped.
+    stages = stages.map((stage, idx) => {
+      if (stage.status !== "pending") return stage;
+      const hasLaterCompleted = stages
+        .slice(idx + 1)
+        .some((s) => s.status === "completed");
+      if (hasLaterCompleted) {
+        return { ...stage, status: "failed" };
+      }
+      return stage;
+    });
+
+    // Promote NEXT pending stage after last completed to "in-progress"
+    let lastCompletedIndex = -1;
+    stages.forEach((s, idx) => {
+      if (s.status === "completed") {
+        lastCompletedIndex = idx;
+      }
+    });
+    let promoted = false;
+    stages = stages.map((s, idx) => {
+      if (!promoted && idx > lastCompletedIndex && s.status === "pending") {
+        promoted = true;
+        return { ...s, status: "in-progress" };
+      }
+      return s;
+    });
+
+    return stages;
+  })();
+
+  const getStatusBadgeClass = (status) => {
+    if (!status) return "bg-secondary-subtle text-secondary";
+    const normalized = status.toString().toLowerCase();
+    if (["completed", "paid", "closed", "success"].includes(normalized)) {
+      return "bg-success-subtle text-success";
+    }
+    if (["pending", "in-progress", "processing"].includes(normalized)) {
+      return "bg-warning-subtle text-warning";
+    }
+    if (["cancelled", "canceled", "rejected", "failed"].includes(normalized)) {
+      return "bg-danger-subtle text-danger";
+    }
+    if (["confirmed", "active"].includes(normalized)) {
+      return "bg-primary-subtle text-primary";
+    }
+    return "bg-secondary-subtle text-secondary";
+  };
+
+  // Auto-scroll & briefly blink the next (in-progress) stage in the timeline
+  useEffect(() => {
+    if (!bookingData || !serviceStages || serviceStages.length === 0) return;
+    const nextStage = serviceStages.find((s) => s.status === "in-progress");
+    if (!nextStage) return;
+
+    const el = document.querySelector(
+      `[data-stage-id="${nextStage.id}"]`,
+    );
+    if (!el) return;
+
+    try {
+      el.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest",
+      });
+    } catch {
+      // ignore scroll errors
+    }
+
+    el.classList.add("stage-blink");
+    const timeoutId = window.setTimeout(() => {
+      el.classList.remove("stage-blink");
+    }, 4000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      el.classList.remove("stage-blink");
+    };
+  }, [bookingData, serviceStages]);
+
+  // When both Supervisor and Field Advisor are missing, auto-scroll to Personal Information
+  useEffect(() => {
+    if (
+      !bookingData ||
+      bookingData?.SupervisorHeadName ||
+      bookingData?.SupervisorHeadPhoneNumber ||
+      bookingData?.FieldAdvisorName ||
+      bookingData?.FieldAdvisorPhoneNumber
+    ) {
+      return;
+    }
+    const el = document.querySelector(
+      "#booking-personal-info-section",
+    );
+    if (!el) return;
+    try {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch {
+      // ignore scroll errors
+    }
+  }, [bookingData]);
+
   return (
     <>
       <style>{`
@@ -2655,7 +2953,212 @@ const handleCustomerRejectionSubmit = async () => {
         .table-center-all td {
           text-align: center !important;
         }
+        .blink-assign {
+          position: relative;
+          animation: blinkAssign 1s ease-in-out infinite;
+        }
+        @keyframes blinkAssign {
+          0% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.4; transform: scale(1.03); }
+          100% { opacity: 1; transform: scale(1); }
+        }
       `}</style>
+      {/* Service Time line - top of page */}
+      {bookingData && (
+        <div className="mb-3">
+          <div className="card border-0 shadow-sm">
+            <div className="card-body py-3 px-3">
+              <div className="d-flex flex-wrap align-items-center gap-3">
+                <div className="d-flex align-items-center gap-2">
+                  <span className="badge rounded-pill bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center" style={{ width: 28, height: 28 }}>
+                    <Icon icon="mdi:timeline-clock-outline" width={18} height={18} />
+                  </span>
+                  <div>
+                    <div className="fw-semibold small text-uppercase text-muted">Service Timeline</div>
+                    <div className="small text-body-secondary">
+                      <span className="me-2">
+                        <strong>Booking Date:</strong>{" "}
+                        {bookingData.BookingDate ? displayDate(bookingData.BookingDate) : "N/A"}
+                      </span>
+                      {bookingData.TimeSlot && (
+                        <span className="me-2">
+                          <strong>Time Slot:</strong>{" "}
+                          {bookingData.TimeSlot}
+                        </span>
+                      )}
+                      {bookingData.BookingStatus && (
+                        <span className="me-2">
+                          <strong>Status:</strong>{" "}
+                          <span className={`badge rounded-pill px-3 py-1 ${getStatusBadgeClass(bookingData.BookingStatus)}`}>
+                            {bookingData.BookingStatus}
+                          </span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="ms-auto small text-muted d-flex flex-wrap gap-3">
+                  {bookingData.LeadCreatedDate && (
+                    <span>
+                      <strong>Lead Created:</strong> {displayDate(bookingData.LeadCreatedDate)}
+                    </span>
+                  )}
+                  {bookingData.ServiceScheduledDate && (
+                    <span>
+                      <strong>Service Scheduled:</strong> {displayDate(bookingData.ServiceScheduledDate)}
+                    </span>
+                  )}
+                  {bookingData.ServiceCompletedDate && (
+                    <span>
+                      <strong>Service Completed:</strong> {displayDate(bookingData.ServiceCompletedDate)}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Stages timeline container - same style as CompleteServiceReportLayer */}
+              {serviceStages.length > 0 && (
+                <div className="mt-3 service-timeline position-relative">
+                  <style>{`
+                    .service-timeline { 
+                      padding: 0.75rem 0; 
+                      overflow-x: auto;
+                      scrollbar-width: thin;
+                    }
+                    .timeline-container {
+                      display: flex;
+                      align-items: flex-start;
+                      gap: 1rem;
+                      min-width: max-content;
+                      position: relative;
+                    }
+                    .timeline-step {
+                      display: flex;
+                      flex-direction: column;
+                      align-items: center;
+                      position: relative;
+                      min-width: 180px;
+                      flex: 0 0 auto;
+                    }
+                    .timeline-step:not(:last-child)::after {
+                      content: '';
+                      position: absolute;
+                      top: 2.5rem;
+                      right: -1rem;
+                      width: 2rem;
+                      height: 3px;
+                      background: linear-gradient(to right, var(--step-bg, #e5e7eb) 0%, var(--step-bg, #e5e7eb) 100%);
+                    }
+                    .step-circle {
+                      width: 3rem;
+                      height: 3rem;
+                      border-radius: 50%;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      font-weight: 600;
+                      font-size: 0.875rem;
+                      color: white;
+                      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                      z-index: 1;
+                      position: relative;
+                      border: 3px solid white;
+                    }
+                    .timeline-step.stage-blink .step-circle {
+                      animation: stageBlink 1.1s ease-in-out infinite;
+                    }
+                    @keyframes stageBlink {
+                      0% {
+                        transform: scale(1);
+                        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6);
+                      }
+                      50% {
+                        transform: scale(1.08);
+                        box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+                      }
+                      100% {
+                        transform: scale(1);
+                        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+                      }
+                    }
+                    .step-content {
+                      margin-top: 0.75rem;
+                      text-align: center;
+                      max-width: 160px;
+                    }
+                    .step-title {
+                      font-weight: 600;
+                      font-size: 0.85rem;
+                      margin-bottom: 0.25rem;
+                      line-height: 1.2;
+                    }
+                    .step-date {
+                      font-size: 0.75rem;
+                      opacity: 0.8;
+                      line-height: 1.3;
+                    }
+                    @media (max-width: 768px) {
+                      .timeline-container { flex-direction: column; }
+                      .timeline-step:not(:last-child)::after { display: none; }
+                      .timeline-step { flex-direction: row; align-items: center; min-width: auto; }
+                      .timeline-step::before {
+                        content: '';
+                        position: absolute;
+                        left: 1.25rem;
+                        top: 0;
+                        bottom: 0;
+                        width: 3px;
+                        background: #e5e7eb;
+                      }
+                    }
+                  `}</style>
+                  <div className="timeline-container">
+                    {serviceStages.map((stage, index) => {
+                      let color = "#dc2626"; // default red for failed/pending
+                      if (stage.status === "completed") {
+                        color = "#16a34a"; // green
+                      } else if (stage.status === "in-progress") {
+                        color = "#eab308"; // yellow
+                      } else if (stage.status === "pending") {
+                        color = "#9ca3af"; // gray
+                      }
+                      return (
+                        <div
+                          key={stage.id}
+                          className="timeline-step"
+                          data-stage-id={stage.id}
+                        >
+                          <div
+                            className="step-circle"
+                            style={{
+                              "--step-bg": color,
+                              backgroundColor: color,
+                            }}
+                          >
+                            {index + 1}
+                          </div>
+                          <div className="step-content">
+                            <div className="step-title">{stage.title}</div>
+                            <div className="step-date">
+                              {stage.date ? displayDate(stage.date) : "—"}
+                            </div>
+                            {stage.details && (
+                              <div className="step-date">
+                                {stage.details}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="row gy-4 mt-3">
         {/* Right Tabs Content */}
         <div className="col-lg-12">
@@ -2668,7 +3171,10 @@ const handleCustomerRejectionSubmit = async () => {
                     <Accordion className="mb-3">
                       <Accordion.Item eventKey="0">
                         <Accordion.Header>
-                          <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
+                          <h6
+                            id="booking-personal-info-section"
+                            className="mb-0 fw-bold text-primary d-flex align-items-center gap-2"
+                          >
                             <Icon icon="mdi:account-circle-outline" width={20} height={20} />
                             Personal Information
                           </h6>
@@ -2755,14 +3261,30 @@ const handleCustomerRejectionSubmit = async () => {
                                     <span className="w-50 fw-semibold text-primary-light">
                                       Supervisor Name/Number :
                                     </span>
-                                    <span className="w-50 text-secondary-light fw-bold">
-                                      {bookingData?.SupervisorHeadName || bookingData?.SupervisorHeadPhoneNumber ? (
-                                        <>
-                                          {bookingData?.SupervisorHeadName || ""}
-                                          {bookingData?.SupervisorHeadPhoneNumber ? ` (${bookingData.SupervisorHeadPhoneNumber})` : ""}
-                                        </>
-                                      ) : (
-                                        "N/A"
+                                    <span className="w-50 text-secondary-light fw-bold d-flex align-items-center justify-content-between">
+                                      <span>
+                                        {bookingData?.SupervisorHeadName || bookingData?.SupervisorHeadPhoneNumber ? (
+                                          <>
+                                            {bookingData?.SupervisorHeadName || ""}
+                                            {bookingData?.SupervisorHeadPhoneNumber ? ` (${bookingData.SupervisorHeadPhoneNumber})` : ""}
+                                          </>
+                                        ) : (
+                                          "N/A"
+                                        )}
+                                      </span>
+                                      {(!bookingData?.SupervisorHeadName && !bookingData?.SupervisorHeadPhoneNumber) && (
+                                        <button
+                                          type="button"
+                                          className="btn btn-outline-primary btn-xs ms-2 blink-assign"
+                                          title="Assign Supervisor"
+                                          onClick={() => {
+                                            if (bookingData?.BookingID) {
+                                              navigate(`/booking-basic/${bookingData.BookingID}?stage=assign-supervisor`);
+                                            }
+                                          }}
+                                        >
+                                          Assign
+                                        </button>
                                       )}
                                     </span>
                                   </li>
@@ -2770,14 +3292,30 @@ const handleCustomerRejectionSubmit = async () => {
                                     <span className="w-50 fw-semibold text-primary-light">
                                       Field Advisor Name/Number :
                                     </span>
-                                    <span className="w-50 text-secondary-light fw-bold">
-                                      {bookingData?.FieldAdvisorName || bookingData?.FieldAdvisorPhoneNumber ? (
-                                        <>
-                                          {bookingData?.FieldAdvisorName || ""}
-                                          {bookingData?.FieldAdvisorPhoneNumber ? ` (${bookingData.FieldAdvisorPhoneNumber})` : ""}
-                                        </>
-                                      ) : (
-                                        "N/A"
+                                    <span className="w-50 text-secondary-light fw-bold d-flex align-items-center justify-content-between">
+                                      <span>
+                                        {bookingData?.FieldAdvisorName || bookingData?.FieldAdvisorPhoneNumber ? (
+                                          <>
+                                            {bookingData?.FieldAdvisorName || ""}
+                                            {bookingData?.FieldAdvisorPhoneNumber ? ` (${bookingData.FieldAdvisorPhoneNumber})` : ""}
+                                          </>
+                                        ) : (
+                                          "N/A"
+                                        )}
+                                      </span>
+                                      {(!bookingData?.FieldAdvisorName && !bookingData?.FieldAdvisorPhoneNumber) && (
+                                        <button
+                                          type="button"
+                                          className="btn btn-outline-primary btn-xs ms-2 blink-assign"
+                                          title="Assign Field Advisor"
+                                          onClick={() => {
+                                            if (bookingData?.BookingID) {
+                                              navigate(`/booking-basic/${bookingData.BookingID}?stage=assign-fa`);
+                                            }
+                                          }}
+                                        >
+                                          Assign
+                                        </button>
                                       )}
                                     </span>
                                   </li>
@@ -3065,6 +3603,52 @@ const handleCustomerRejectionSubmit = async () => {
                   > <Icon icon="mdi:eye-outline" width={16} height={16} className="mx-2" />
                     View Lead
                   </Link>
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary btn-sm d-inline-flex align-items-center justify-content-center gap-2"
+                    title="Fill Basic Details"
+                    onClick={() => {
+                      if (bookingData?.BookingID) {
+                        navigate(`/booking-basic/${bookingData.BookingID}`);
+                      }
+                    }}
+                  >
+                    <Icon icon="mdi:format-list-checkbox" width={16} height={16} />
+                    Fill Basic Details
+                  </button>
+                  {/* Convert To Service / Service Converted - Add Services Button */}
+                  {bookingData?.Isinspection === 1 && bookingData?.Isservice_converted === 0 && (
+                    <button
+                      className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2"
+                      onClick={handleConvertToService}
+                      title="Convert To Service"
+                    >
+                      <Icon icon="mdi:swap-horizontal-bold" />
+                      Convert To Service
+                    </button>
+                  )}
+                  {bookingData?.Isinspection === 1 &&
+                    bookingData?.Isservice_converted === 1 &&
+                    ((bookingData?.BookingAddOns?.length ?? 0) === 1 &&
+                      (bookingData?.SupervisorBookings?.length ?? 0) === 0) && (
+                      <Link
+                        to={
+                          ensureBasicDetails()
+                            ? `/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`
+                            : "#"
+                        }
+                        onClick={(e) => {
+                          if (!ensureBasicDetails()) {
+                            e.preventDefault();
+                          }
+                        }}
+                        className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
+                        title="Service converted, add extra services"
+                      >
+                        <Icon icon="mdi:plus-circle-outline" />
+                        Service Converted – Add Services
+                      </Link>
+                    )}
                   {/* {!(
                     bookingData?.BookingStatus === "Completed" &&
                     bookingData?.Payments?.length > 0 &&
@@ -3079,9 +3663,17 @@ const handleCustomerRejectionSubmit = async () => {
                     (bookingData?.Isinspection === 0 && bookingData?.Isservice_converted === 0)
                   ) && (
                       <Link
-                        to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
+                        to={
+                          ensureBasicDetails()
+                            ? `/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`
+                            : "#"
+                        }
+                        onClick={(e) => {
+                          if (!ensureBasicDetails()) {
+                            e.preventDefault();
+                          }
+                        }}
                         className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
-                        // title="Add"
                          title={
                           roleName === "Field Advisor"
                             ? "Assign Dealers"
@@ -3099,33 +3691,40 @@ const handleCustomerRejectionSubmit = async () => {
                       </Link>
                       )}
 
-                      {/* Convert To Service Button */}
-                      {bookingData?.Isinspection === 1 &&
-                        bookingData?.Isservice_converted === 0 && (
-                          <button
-                            className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2"
-                            onClick={handleConvertToService}
-                            title="Convert To Service"
-                          >
-                            <Icon icon="mdi:swap-horizontal-bold" />
-                            Convert To Service
-                          </button>
-                        )}
+                      
 
-                        {/* Confirm Service Button - Admin & Supervisor only, when Convert To Service is enabled and there are services */}
-                      {bookingData?.Isinspection === 1 &&
-                        bookingData?.Isservice_converted === 0 &&
-                        (roleId === "1" || roleId === "8") &&
-                        ((bookingData?.BookingAddOns?.length > 0) || (bookingData?.SupervisorBookings?.length > 0)) && (
+                        {/* Confirm Service Button - Admin & Supervisor only, when Convert To Service is enabled and there are unconfirmed services */}
+                      {(() => {
+                        if (
+                          bookingData?.Isinspection !== 1 ||
+                          bookingData?.Isservice_converted !== 0 ||
+                          !(roleId === "1" || roleId === "8")
+                        ) {
+                          return null;
+                        }
+                        const addOns = bookingData?.BookingAddOns || [];
+                        const supervisorBookings = bookingData?.SupervisorBookings || [];
+                        const allServices = [...addOns, ...supervisorBookings];
+                        const itemsToConfirm = allServices.filter(
+                          (a) => (a.IsSupervisor_Confirm ?? a.isSupervisor_Confirm) !== 1,
+                        );
+                        if (itemsToConfirm.length === 0) {
+                          return null;
+                        }
+                        return (
                           <button
                             className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2"
-                            onClick={handleConfirmService}
+                            onClick={() => {
+                              if (!ensureBasicDetails()) return;
+                              handleConfirmService();
+                            }}
                             title="Confirm Service"
                           >
                             <Icon icon="mdi:check-circle-outline" />
                             Confirm Service
                           </button>
-                        )}
+                        );
+                      })()}
                     </>
                     )}
 
@@ -4640,7 +5239,11 @@ const handleCustomerRejectionSubmit = async () => {
                                   !hideAllActions && (
                                     <button
                                       className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                      onClick={handleInitialAssignClick}
+                                      // onClick={handleInitialAssignClick}
+                                      onClick={() => {
+                                        if (!ensureBasicDetails()) return;
+                                        handleInitialAssignClick();
+                                      }}
                                     >
                                       Service Assignment
                                     </button>
@@ -4649,7 +5252,10 @@ const handleCustomerRejectionSubmit = async () => {
                                  {!hideAllActions && roleName !== "Field Advisor" && (
                                   <button
                                     className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                    onClick={() => showGenerateInvoiceConfirm("Generate Estimation Invoice", handleGenerateEstimationInvoice, "Estimation")}
+                                    onClick={() => {
+                                      if (!ensureBasicDetails()) return;
+                                      showGenerateInvoiceConfirm("Generate Estimation Invoice", handleGenerateEstimationInvoice, "Estimation");
+                                    }}
                                   >
                                     Generate Estimation Invoice
                                   </button>
@@ -4660,7 +5266,10 @@ const handleCustomerRejectionSubmit = async () => {
                                   {showFinalButton && (
                                     <button
                                       className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                      onClick={() => showGenerateInvoiceConfirm("Generate Final Invoice", handleGenerateFinalInvoice, "Final")}
+                                      onClick={() => {
+                                        if (!ensureBasicDetails()) return;
+                                        showGenerateInvoiceConfirm("Generate Final Invoice", handleGenerateFinalInvoice, "Final");
+                                      }}
                                     >
                                       Generate Final Invoice
                                     </button>
@@ -4668,7 +5277,10 @@ const handleCustomerRejectionSubmit = async () => {
                                   {showDealerInvoiceButton && (
                                     <button
                                       className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                      onClick={() => showGenerateInvoiceConfirm("Generate Dealer Invoice", handleGenerateDealerInvoice, "Dealer")}
+                                      onClick={() => {
+                                        if (!ensureBasicDetails()) return;
+                                        showGenerateInvoiceConfirm("Generate Dealer Invoice", handleGenerateDealerInvoice, "Dealer");
+                                      }}
                                     >
                                       Generate Dealer Invoice
                                     </button>
@@ -7342,6 +7954,73 @@ const handleCustomerRejectionSubmit = async () => {
             />
           </div>
         )}
+
+        {/* Assign Supervisor Modal (reused structure from LeadViewLayer) */}
+        <Modal
+          show={showAssignSupervisorModal}
+          onHide={() => setShowAssignSupervisorModal(false)}
+          centered
+        >
+          <Modal.Header closeButton>
+            <Modal.Title className="h6 fw-bold">
+              Assign Supervisor
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <div className="mb-3 pb-3 border-bottom">
+              <label className="form-label fw-semibold text-primary-light mb-2">
+                Customer Address
+              </label>
+              <div className="p-2 bg-light rounded">
+                <p className="mb-0 text-secondary-light fw-medium">
+                  {bookingData?.FullAddress || "No address available"}
+                </p>
+              </div>
+            </div>
+            <div className="mb-3">
+              <label className="form-label fw-semibold">Select Area</label>
+              <Select
+                options={[]}
+                value={null}
+                isDisabled
+                placeholder="Use lead screen to assign area"
+                className="react-select-container"
+                isSearchable
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label fw-semibold">Select Supervisor</label>
+              <Select
+                options={[]}
+                value={null}
+                isDisabled
+                placeholder="Use lead screen to assign supervisor"
+                className="react-select-container"
+                isSearchable
+              />
+            </div>
+          </Modal.Body>
+          <Modal.Footer className="justify-content-center">
+            <Button
+              variant="secondary btn-sm"
+              onClick={() => setShowAssignSupervisorModal(false)}
+            >
+              Close
+            </Button>
+            <Button
+              className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
+              title="Go to Lead"
+              onClick={() => {
+                setShowAssignSupervisorModal(false);
+                if (bookingData?.LeadId) {
+                  navigate(`/lead-view/${bookingData.LeadId}`);
+                }
+              }}
+            >
+              Open Lead to Assign
+            </Button>
+          </Modal.Footer>
+        </Modal>
       </div>
     </>
   );

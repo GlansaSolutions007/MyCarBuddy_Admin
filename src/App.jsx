@@ -106,6 +106,7 @@ import ServicesEarningReportPage from "./pages/ServicesEarningReportPage";
 import ClosedLeadsPage from "./pages/ClosedLeadsPage";
 import RevenueReporstPage from "./pages/RevenueReportsPage";
 import BookingReportsSortingPage from "./pages/BookingReportsSortingPage";
+import ServiceTimelineBoardPage from "./pages/ServiceTimelineBoardPage";
 import CaseStudiesPage from "./pages/CaseStudiesPage";
 import CaseStudiesAddPage from "./pages/CaseStudiesAddPage";
 import CompanyInformationPage from "./pages/CompanyInformationPage";
@@ -114,6 +115,7 @@ import ExpenditureCategoryPage from "./pages/ExpenditureCategoryPage";
 import AreaPage from "./pages/AreaPage";
 import DealerBookingsViewPage from "./pages/DealerBookingsViewPage";
 import AssignSupervisorAreaPage from "./pages/AssignSupervisorAreaPage";
+import BasicInformationPage from "./pages/BasicInformationPage";
 import DealerPaymentsPage from "./pages/DealerPaymentsPage";
 import DealerReportPage from "./pages/DealerRepportPage";
 import NoInternetModal from "./components/NoInternetModal";
@@ -262,6 +264,7 @@ function App() {
           <Route exact path='/expenditure-cat' element={<ExpenditureCategoryPage/>} />
           <Route exact path='/areas' element={<AreaPage/>} />
            <Route exact path='/assign-area' element={<AssignSupervisorAreaPage/>} />
+          <Route exact path='/booking-basic/:bookingId' element={<BasicInformationPage />} />
           <Route exact path='/dealer-booking-view/:Id' element={<DealerBookingsViewPage/>} />
           <Route exact path='/dealer-expenditure' element={<DealerPaymentsPage/>} />
           <Route exact path='/dealer-report' element={<DealerReportPage/>} />
@@ -278,6 +281,7 @@ function App() {
         <Route exact path='/maintenance' element={<MaintenancePage />} />
         <Route exact path='/blank-page' element={<BlankPagePage />} />
         <Route path="/booking-sorting-page" element={<BookingReportsSortingPage />} />
+        <Route path="/service-timeline-board" element={<ServiceTimelineBoardPage />} />
         
         <Route
           exact

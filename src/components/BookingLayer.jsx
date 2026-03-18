@@ -766,7 +766,14 @@ const BookingLayer = () => {
     <div className="row gy-4">
       <div className="col-12">
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <h5></h5>
+          <h5 className="mb-0"></h5>
+          <a
+            href="/service-timeline-board"
+            className="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1"
+          >
+            <Icon icon="mdi:view-kanban" width={18} height={18} />
+             Timeline Board
+          </a>
         </div>
         <div className="card overflow-hidden p-3">
           <div className="card-header">
