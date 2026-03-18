@@ -865,6 +865,27 @@ const LeadViewLayer = () => {
           : callOutcome;
       nextFollowUp_Date = selectedDateTimeToPayload(nextFollowUpDate);
     }
+
+    const now = new Date();
+    // choose correct date based on flow
+    const selectedDateValue =
+      callAnswered === "Not Ans"
+        ? notAnsweredFollowUpDate
+        : nextFollowUpDate;
+
+    if (selectedDateValue) {
+      const selectedDate = new Date(selectedDateValue);
+
+      if (selectedDate < now) {
+        Swal.fire({
+          icon: "warning",
+          title: "Invalid Time",
+          text: "You cannot select past date/time. Please choose an upcoming time.",
+        });
+        return;
+      }
+    }
+
     // build payload exactly as you requested:
     const payload = {
       leadId: leadId,

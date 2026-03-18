@@ -254,7 +254,7 @@ const BasicInformationLayer = () => {
   }
 
   return (
-    <div className="container-fluid py-3">
+    <div className="container-fluid py-3 card">
       {/* <h5 className="mb-3"> */}
         {/* Basic Information – Booking #{bookingData.BookingID} */}
       {/* </h5> */}
