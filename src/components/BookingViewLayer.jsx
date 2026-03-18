@@ -3608,6 +3608,7 @@ const handleCustomerRejectionSubmit = async () => {
                   > <Icon icon="mdi:eye-outline" width={16} height={16} className="mx-2" />
                     View Lead
                   </Link>
+                  {!hideAllActions && (
                   <button
                     type="button"
                     className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2"
@@ -3621,6 +3622,7 @@ const handleCustomerRejectionSubmit = async () => {
                     <Icon icon="mdi:format-list-checkbox" width={16} height={16} />
                     Fill Basic Details
                   </button>
+                  )}
                   {/* Convert To Service / Service Converted - Add Services Button */}
                   {bookingData?.Isinspection === 1 && bookingData?.Isservice_converted === 0 && (
                     <button
@@ -4110,18 +4112,22 @@ const handleCustomerRejectionSubmit = async () => {
                                           >
                                             DLR GST Amt.
                                           </th>
+                                          {roleName !== "Field Advisor" && (
+                                          <>
                                           <th
                                             style={{ width: "100px" }}
                                             className="text-end"
                                           >
-                                            Our %
+                                            Company %
                                           </th>
                                           <th
-                                            style={{ width: "100px" }}
+                                            style={{ width: "140px" }}
                                             className="text-end"
                                           >
-                                            Our Amt.
+                                            Company Amt.
                                           </th>
+                                          </>
+                                          )}
                                           <th style={{ width: "170px" }}
                                             className="text-center">
                                             Dealer Name
@@ -4248,6 +4254,8 @@ const handleCustomerRejectionSubmit = async () => {
                                                   addon.DealerGSTAmount || 0,
                                                 ).toFixed(2)}
                                               </td>
+                                            {roleName !== "Field Advisor" && (
+                                              <>
                                               <td className="text-end">
                                                 {addon.Percentage ?? "0"}%
                                               </td>
@@ -4256,6 +4264,8 @@ const handleCustomerRejectionSubmit = async () => {
                                                   addon.Our_Earnings || 0,
                                                 ).toFixed(2)}
                                               </td>
+                                                </>
+                                                )}
                                               <td
                                                 className=" normal text-center"
                                                 style={{
