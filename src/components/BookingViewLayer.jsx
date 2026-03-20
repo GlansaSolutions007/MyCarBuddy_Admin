@@ -62,7 +62,7 @@ const BookingViewLayer = () => {
     useState(null);
   const token = localStorage.getItem("token");
   const roleId = localStorage.getItem("roleId");
-  const roleIdInt = { confirmedBy: roleId ? Number(roleId) : null, };
+  const roleIdInt = { confirmedBy: roleId ? Number(roleId) : null };
   const role = localStorage.getItem("role");
   const duserId = localStorage.getItem("userId");
   const [previewServices, setPreviewServices] = useState([]);
@@ -76,13 +76,17 @@ const BookingViewLayer = () => {
   // States for initial assignment modal (separate from reassign modal)
   const [initialAssignModalOpen, setInitialAssignModalOpen] = useState(false);
   const [initialAssignType, setInitialAssignType] = useState("technician");
-  const [selectedInitialTechnician, setSelectedInitialTechnician] = useState(null);
-  const [selectedInitialSupervisor, setSelectedInitialSupervisor] = useState(null);
-  const [selectedInitialFieldAdvisor, setSelectedInitialFieldAdvisor] = useState(null);
+  const [selectedInitialTechnician, setSelectedInitialTechnician] =
+    useState(null);
+  const [selectedInitialSupervisor, setSelectedInitialSupervisor] =
+    useState(null);
+  const [selectedInitialFieldAdvisor, setSelectedInitialFieldAdvisor] =
+    useState(null);
   const [selectedInitialTimeSlot, setSelectedInitialTimeSlot] = useState(null);
   const [selectedServiceType, setSelectedServiceType] = useState([]);
   const [fieldAdvisors, setFieldAdvisors] = useState([]);
-  const [showCustomerConfirmationModal, setShowCustomerConfirmationModal] = useState(false);
+  const [showCustomerConfirmationModal, setShowCustomerConfirmationModal] =
+    useState(false);
   const [confirmationDescription, setConfirmationDescription] = useState("");
   const [confirmationFile, setConfirmationFile] = useState(null);
   // Assign flow: step 1 = service location choice (doorstep vs garage)
@@ -102,34 +106,49 @@ const BookingViewLayer = () => {
   const [garagePickupTime, setGaragePickupTime] = useState("");
   const [garageDeliveryDate, setGarageDeliveryDate] = useState("");
   const [garageDeliveryTime, setGarageDeliveryTime] = useState("");
-  const [hasExistingCustomerToDealerRoute, setHasExistingCustomerToDealerRoute] = useState(false);
+  const [
+    hasExistingCustomerToDealerRoute,
+    setHasExistingCustomerToDealerRoute,
+  ] = useState(false);
   // Dealers from this booking's add-ons (unique by DealerID) for garage flow dropdowns
   const garageDealerOptions = (() => {
     const addOns = bookingData?.BookingAddOns || [];
     const seen = new Set();
     return addOns
-      .filter((a) => a.DealerID != null && a.DealerName && !seen.has(Number(a.DealerID)) && (seen.add(Number(a.DealerID)), true))
+      .filter(
+        (a) =>
+          a.DealerID != null &&
+          a.DealerName &&
+          !seen.has(Number(a.DealerID)) &&
+          (seen.add(Number(a.DealerID)), true),
+      )
       .map((a) => ({ value: Number(a.DealerID), label: a.DealerName }));
   })();
   // Filter out selected pickup dealer from delivery dealer options
   const garageDeliverDealerOptions = garageDealerOptions.filter(
-    (dealer) => !garagePickupDealer || dealer.value !== garagePickupDealer.value
+    (dealer) =>
+      !garagePickupDealer || dealer.value !== garagePickupDealer.value,
   );
   const [pickupDate, setPickupDate] = useState("");
   const [pickupTime, setPickupTime] = useState("");
   const [dropDate, setDropDate] = useState("");
   const [dropTime, setDropTime] = useState("");
   // Pickup/Drop Reschedule modal (from Technician Pickup / Drop Records table)
-  const [showPickupDropRescheduleModal, setShowPickupDropRescheduleModal] = useState(false);
+  const [showPickupDropRescheduleModal, setShowPickupDropRescheduleModal] =
+    useState(false);
   const [pickupDropRescheduleRow, setPickupDropRescheduleRow] = useState(null);
   const [pickupDropRescheduleDate, setPickupDropRescheduleDate] = useState("");
-  const [pickupDropRescheduleTimeSlot, setPickupDropRescheduleTimeSlot] = useState([]);
+  const [pickupDropRescheduleTimeSlot, setPickupDropRescheduleTimeSlot] =
+    useState([]);
   // Pickup/Drop Reassign modal
-  const [showPickupDropReassignModal, setShowPickupDropReassignModal] = useState(false);
+  const [showPickupDropReassignModal, setShowPickupDropReassignModal] =
+    useState(false);
   const [pickupDropReassignRow, setPickupDropReassignRow] = useState(null);
   const [pickupDropReassignTech, setPickupDropReassignTech] = useState(null);
   const [pickupDropReassignDate, setPickupDropReassignDate] = useState("");
-  const [pickupDropReassignTimeSlot, setPickupDropReassignTimeSlot] = useState([]);
+  const [pickupDropReassignTimeSlot, setPickupDropReassignTimeSlot] = useState(
+    [],
+  );
   const [pickupDropActionLoading, setPickupDropActionLoading] = useState(false);
   const [fullScreenImageUrl, setFullScreenImageUrl] = useState(null); // for pickup image fullscreen view
   const [fullScreenImageClosing, setFullScreenImageClosing] = useState(false);
@@ -145,14 +164,16 @@ const BookingViewLayer = () => {
   const [selectedCoupon, setSelectedCoupon] = useState("");
   const [paymentEmail, setPaymentEmail] = useState("");
   const [selectedServiceIds, setSelectedServiceIds] = useState([]);
-  const [showCustomerRejectionModal, setShowCustomerRejectionModal] = useState(false);
+  const [showCustomerRejectionModal, setShowCustomerRejectionModal] =
+    useState(false);
   const [rejectionDescription, setRejectionDescription] = useState("");
   const [rejectedServiceIds, setRejectedServiceIds] = useState([]);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-const [selectedAddon, setSelectedAddon] = useState(null);
-const [selectedImages, setSelectedImages] = useState([]);
-const [previewImages, setPreviewImages] = useState([]);
-  const [showAssignSupervisorModal, setShowAssignSupervisorModal] = useState(false);
+  const [selectedAddon, setSelectedAddon] = useState(null);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [previewImages, setPreviewImages] = useState([]);
+  const [showAssignSupervisorModal, setShowAssignSupervisorModal] =
+    useState(false);
   const employeeData = JSON.parse(localStorage.getItem("employeeData"));
   const userId = employeeData?.Id;
   const roleName = employeeData?.RoleName;
@@ -181,9 +202,10 @@ const [previewImages, setPreviewImages] = useState([]);
     0,
   );
   const hideAllActions =
-  bookingData?.BookingStatus === "Completed" &&
-  bookingData?.Payments?.length > 0 &&
-  bookingData?.Payments?.[bookingData.Payments.length - 1]?.PaymentStatus === "Success";
+    bookingData?.BookingStatus === "Completed" &&
+    bookingData?.Payments?.length > 0 &&
+    bookingData?.Payments?.[bookingData.Payments.length - 1]?.PaymentStatus ===
+      "Success";
   // State for dynamically adding services
   const [servicesToAdd, setServicesToAdd] = useState([
     {
@@ -228,8 +250,6 @@ const [previewImages, setPreviewImages] = useState([]);
     if (pay >= 0 && discount > pay) setDiscountAmount(String(pay));
   }, [payAmount, discountAmount]);
 
-
-
   const fetchBookingData = async () => {
     try {
       let url = `${API_BASE}Bookings/BookingId?Id=${bookingId}`;
@@ -247,7 +267,9 @@ const [previewImages, setPreviewImages] = useState([]);
 
       // Check if any CarPickUpDelivery has RouteType = "CustomerToDealer"
       const carPickUpDelivery = res.data?.[0]?.CarPickUpDelivery || [];
-      const hasRoute = carPickUpDelivery.some((item) => item.RouteType === "CustomerToDealer");
+      const hasRoute = carPickUpDelivery.some(
+        (item) => item.RouteType === "CustomerToDealer",
+      );
       setHasExistingCustomerToDealerRoute(hasRoute);
 
       const formatDate = (date) => {
@@ -294,7 +316,8 @@ const [previewImages, setPreviewImages] = useState([]);
     }
   };
 
-  const toTimeDisplay = (t) => (t && String(t).length >= 5 ? String(t).substring(0, 5) : t || "");
+  const toTimeDisplay = (t) =>
+    t && String(t).length >= 5 ? String(t).substring(0, 5) : t || "";
 
   const fetchTimeSlots = async () => {
     try {
@@ -496,7 +519,11 @@ const [previewImages, setPreviewImages] = useState([]);
   const handlePickupDropCancel = async (row) => {
     const id = row?.Id ?? row?.id;
     if (!id) {
-      Swal.fire({ icon: "warning", title: "Error", text: "Record ID missing." });
+      Swal.fire({
+        icon: "warning",
+        title: "Error",
+        text: "Record ID missing.",
+      });
       return;
     }
     const result = await Swal.fire({
@@ -514,12 +541,20 @@ const [previewImages, setPreviewImages] = useState([]);
       await axios.post(
         `${API_BASE}ServiceImages/CancelCarPickupDelivery?id=${id}`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
-      Swal.fire({ icon: "success", title: "Success", text: "Pickup/drop cancelled successfully." });
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: "Pickup/drop cancelled successfully.",
+      });
       fetchBookingData();
     } catch (err) {
-      Swal.fire({ icon: "error", title: "Error", text: err.response?.data?.message || err.message || "Failed to cancel." });
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.response?.data?.message || err.message || "Failed to cancel.",
+      });
     } finally {
       setPickupDropActionLoading(false);
     }
@@ -527,16 +562,31 @@ const [previewImages, setPreviewImages] = useState([]);
 
   const handlePickupDropRescheduleSubmit = async () => {
     if (!pickupDropRescheduleDate) {
-      Swal.fire({ icon: "warning", title: "Error", text: "Please select reschedule date." });
+      Swal.fire({
+        icon: "warning",
+        title: "Error",
+        text: "Please select reschedule date.",
+      });
       return;
     }
-    if (!pickupDropRescheduleTimeSlot || pickupDropRescheduleTimeSlot.length === 0) {
-      Swal.fire({ icon: "warning", title: "Error", text: "Please select at least one time slot." });
+    if (
+      !pickupDropRescheduleTimeSlot ||
+      pickupDropRescheduleTimeSlot.length === 0
+    ) {
+      Swal.fire({
+        icon: "warning",
+        title: "Error",
+        text: "Please select at least one time slot.",
+      });
       return;
     }
     const id = pickupDropRescheduleRow?.Id ?? pickupDropRescheduleRow?.id;
     if (!id) {
-      Swal.fire({ icon: "warning", title: "Error", text: "Record ID missing." });
+      Swal.fire({
+        icon: "warning",
+        title: "Error",
+        text: "Record ID missing.",
+      });
       return;
     }
     const slotStr = pickupDropRescheduleTimeSlot[0] || "";
@@ -549,13 +599,27 @@ const [previewImages, setPreviewImages] = useState([]);
       await axios.post(
         `${API_BASE}ServiceImages/RescheduleCarPickupDelivery`,
         { id, newAssignDate, assignTimeSlot },
-        { headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } }
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
       );
-      Swal.fire({ icon: "success", title: "Success", text: "Rescheduled successfully." });
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: "Rescheduled successfully.",
+      });
       closePickupDropRescheduleModal();
       fetchBookingData();
     } catch (err) {
-      Swal.fire({ icon: "error", title: "Error", text: err.response?.data?.message || err.message || "Failed to reschedule." });
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text:
+          err.response?.data?.message || err.message || "Failed to reschedule.",
+      });
     } finally {
       setPickupDropActionLoading(false);
     }
@@ -579,20 +643,39 @@ const [previewImages, setPreviewImages] = useState([]);
 
   const handlePickupDropReassignSubmit = async () => {
     if (!pickupDropReassignTech) {
-      Swal.fire({ icon: "warning", title: "Error", text: "Please select a technician." });
+      Swal.fire({
+        icon: "warning",
+        title: "Error",
+        text: "Please select a technician.",
+      });
       return;
     }
     if (!pickupDropReassignDate) {
-      Swal.fire({ icon: "warning", title: "Error", text: "Please select assign date." });
+      Swal.fire({
+        icon: "warning",
+        title: "Error",
+        text: "Please select assign date.",
+      });
       return;
     }
-    if (!pickupDropReassignTimeSlot || pickupDropReassignTimeSlot.length === 0) {
-      Swal.fire({ icon: "warning", title: "Error", text: "Please select at least one time slot." });
+    if (
+      !pickupDropReassignTimeSlot ||
+      pickupDropReassignTimeSlot.length === 0
+    ) {
+      Swal.fire({
+        icon: "warning",
+        title: "Error",
+        text: "Please select at least one time slot.",
+      });
       return;
     }
     const id = pickupDropReassignRow?.Id ?? pickupDropReassignRow?.id;
     if (!id) {
-      Swal.fire({ icon: "warning", title: "Error", text: "Record ID missing." });
+      Swal.fire({
+        icon: "warning",
+        title: "Error",
+        text: "Record ID missing.",
+      });
       return;
     }
     const newTechID = pickupDropReassignTech?.value ?? pickupDropReassignTech;
@@ -606,13 +689,27 @@ const [previewImages, setPreviewImages] = useState([]);
       await axios.post(
         `${API_BASE}ServiceImages/ReassignCarPickupDelivery`,
         { id, newTechID, newAssignDate, assignTimeSlot },
-        { headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } }
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
       );
-      Swal.fire({ icon: "success", title: "Success", text: "Reassigned successfully." });
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: "Reassigned successfully.",
+      });
       closePickupDropReassignModal();
       fetchBookingData();
     } catch (err) {
-      Swal.fire({ icon: "error", title: "Error", text: err.response?.data?.message || err.message || "Failed to reassign." });
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text:
+          err.response?.data?.message || err.message || "Failed to reassign.",
+      });
     } finally {
       setPickupDropActionLoading(false);
     }
@@ -691,7 +788,8 @@ const [previewImages, setPreviewImages] = useState([]);
           title: "Success",
           text:
             res.data.message ||
-            `${assignType === "technician" ? "Technician" : "Supervisor"
+            `${
+              assignType === "technician" ? "Technician" : "Supervisor"
             } assigned successfully`,
         });
 
@@ -707,7 +805,8 @@ const [previewImages, setPreviewImages] = useState([]);
           title: "Error",
           text:
             res.data.message ||
-            `${assignType === "technician" ? "Technician" : "Supervisor"
+            `${
+              assignType === "technician" ? "Technician" : "Supervisor"
             } assignment failed.`,
         });
       }
@@ -853,7 +952,7 @@ const [previewImages, setPreviewImages] = useState([]);
       const res = await axios.post(
         `${API_BASE}Supervisor/SavePickupDeliveryTime`,
         payload,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       return { ok: true, data: res.data };
     } catch (err) {
@@ -893,8 +992,14 @@ const [previewImages, setPreviewImages] = useState([]);
       });
 
       // After successful convert, redirect to booking service page to add extra services
-      if (bookingData?.LeadId && bookingData?.BookingID && bookingData?.BookingTrackID) {
-        navigate(`/book-service/${bookingData.LeadId}/${bookingData.BookingID}/${bookingData.BookingTrackID}`);
+      if (
+        bookingData?.LeadId &&
+        bookingData?.BookingID &&
+        bookingData?.BookingTrackID
+      ) {
+        navigate(
+          `/book-service/${bookingData.LeadId}/${bookingData.BookingID}/${bookingData.BookingTrackID}`,
+        );
         return;
       }
 
@@ -906,17 +1011,19 @@ const [previewImages, setPreviewImages] = useState([]);
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: error?.response?.data?.message || "Failed to convert inspection to service.",
+        text:
+          error?.response?.data?.message ||
+          "Failed to convert inspection to service.",
       });
     }
   };
 
-const handleConfirmService = async () => {
+  const handleConfirmService = async () => {
     const addOns = bookingData?.BookingAddOns || [];
     const supervisorBookings = bookingData?.SupervisorBookings || [];
     const allServices = [...addOns, ...supervisorBookings];
     const itemsToConfirm = allServices.filter(
-      (a) => (a.IsSupervisor_Confirm ?? a.isSupervisor_Confirm) !== 1
+      (a) => (a.IsSupervisor_Confirm ?? a.isSupervisor_Confirm) !== 1,
     );
     if (itemsToConfirm.length === 0) {
       Swal.fire({
@@ -937,7 +1044,10 @@ const handleConfirmService = async () => {
     if (!result.isConfirmed) return;
 
     try {
-      const uid = parseInt(duserId || localStorage.getItem("userId") || "0", 10);
+      const uid = parseInt(
+        duserId || localStorage.getItem("userId") || "0",
+        10,
+      );
       const rolename = roleName || employeeData?.RoleName || "";
 
       for (const addon of itemsToConfirm) {
@@ -946,7 +1056,9 @@ const handleConfirmService = async () => {
 
         const includes =
           Array.isArray(addon.Includes) && addon.Includes.length > 0
-            ? addon.Includes.map((i) => i.IncludeID ?? i.includeId).filter(Boolean).join(",")
+            ? addon.Includes.map((i) => i.IncludeID ?? i.includeId)
+                .filter(Boolean)
+                .join(",")
             : "";
         const payload = {
           id: addOnId,
@@ -955,13 +1067,21 @@ const handleConfirmService = async () => {
           leadId: bookingData.LeadId,
           serviceType: addon.ServiceType || "Package",
           serviceName: addon.ServiceName || "",
-          basePrice: Number(addon.BasePrice ?? addon.ServicePrice ?? addon.Price ?? 0) || 0,
+          basePrice:
+            Number(addon.BasePrice ?? addon.ServicePrice ?? addon.Price ?? 0) ||
+            0,
           quantity: Number(addon.Quantity ?? 1) || 1,
-          price: Number(addon.ServicePrice ?? addon.TotalPrice ?? addon.Price ?? 0) || 0,
+          price:
+            Number(
+              addon.ServicePrice ?? addon.TotalPrice ?? addon.Price ?? 0,
+            ) || 0,
           gstPercent: Number(addon.GSTPercent ?? 0) || 0,
           gstAmount: Number(addon.GSTPrice ?? addon.GSTAmount ?? 0) || 0,
           description: addon.Description || "",
-          dealerID: addon.DealerID != null && addon.DealerID !== "" ? Number(addon.DealerID) : 0,
+          dealerID:
+            addon.DealerID != null && addon.DealerID !== ""
+              ? Number(addon.DealerID)
+              : 0,
           percentage: Number(addon.Percentage ?? 0) || 0,
           supervisorRole: rolename,
           our_Earnings: Number(addon.Our_Earnings ?? 0) || 0,
@@ -981,7 +1101,7 @@ const handleConfirmService = async () => {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-          }
+          },
         );
       }
 
@@ -996,98 +1116,92 @@ const handleConfirmService = async () => {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text:
-          error?.response?.data?.message ||
-          "Failed to confirm services.",
+        text: error?.response?.data?.message || "Failed to confirm services.",
       });
     }
   };
 
-const handleImageChange = (e) => {
-  const files = Array.from(e.target.files);
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
 
-  const newFiles = [...selectedImages, ...files];
-  setSelectedImages(newFiles);
+    const newFiles = [...selectedImages, ...files];
+    setSelectedImages(newFiles);
 
-  const newPreviews = files.map((file) => ({
-    file,
-    url: URL.createObjectURL(file),
-  }));
+    const newPreviews = files.map((file) => ({
+      file,
+      url: URL.createObjectURL(file),
+    }));
 
-  setPreviewImages((prev) => [...prev, ...newPreviews]);
+    setPreviewImages((prev) => [...prev, ...newPreviews]);
 
-  e.target.value = ""; // allows selecting same file again
-};
+    e.target.value = ""; // allows selecting same file again
+  };
 
-const handleRemoveImage = (index) => {
-  setPreviewImages((prev) => prev.filter((_, i) => i !== index));
-  setSelectedImages((prev) => prev.filter((_, i) => i !== index));
-};
+  const handleRemoveImage = (index) => {
+    setPreviewImages((prev) => prev.filter((_, i) => i !== index));
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+  };
 
-const handleFieldAdvisorConfirm = async () => {
-  if (!selectedAddon) return;
+  const handleFieldAdvisorConfirm = async () => {
+    if (!selectedAddon) return;
 
-  const addOnId = selectedAddon?.AddOnID ?? selectedAddon?.addOnId;
-  const employeeId = userId
-    ? Number(userId)
-    : Number(localStorage.getItem("userId") || 0);
+    const addOnId = selectedAddon?.AddOnID ?? selectedAddon?.addOnId;
+    const employeeId = userId
+      ? Number(userId)
+      : Number(localStorage.getItem("userId") || 0);
 
-  if (!addOnId || !employeeId) {
-    Swal.fire({
-      icon: "warning",
-      title: "Invalid data",
-      text: "AddOn ID or Employee ID missing.",
-    });
-    return;
-  }
+    if (!addOnId || !employeeId) {
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid data",
+        text: "AddOn ID or Employee ID missing.",
+      });
+      return;
+    }
 
-  try {
-    const formData = new FormData();
+    try {
+      const formData = new FormData();
 
-    formData.append("AddOnId", addOnId);
-    formData.append("EmployeeId", employeeId);
+      formData.append("AddOnId", addOnId);
+      formData.append("EmployeeId", employeeId);
 
-    selectedImages.forEach((img) => {
-      formData.append("Images", img);
-    });
+      selectedImages.forEach((img) => {
+        formData.append("Images", img);
+      });
 
-    const res = await axios.post(
-      `${API_BASE}Supervisor/confirm`,
-      formData,
-      {
+      const res = await axios.post(`${API_BASE}Supervisor/confirm`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
-      }
-    );
-
-    if (res.status >= 200 && res.status < 300) {
-      Swal.fire({
-        icon: "success",
-        title: "Confirmed",
-        text: "Service confirmed successfully.",
       });
 
-      setShowConfirmModal(false);
-      setSelectedImages([]);
-      setPreviewImages([]);
+      if (res.status >= 200 && res.status < 300) {
+        Swal.fire({
+          icon: "success",
+          title: "Confirmed",
+          text: "Service confirmed successfully.",
+        });
 
-      fetchBookingData();
+        setShowConfirmModal(false);
+        setSelectedImages([]);
+        setPreviewImages([]);
+
+        fetchBookingData();
+      }
+    } catch (err) {
+      console.error("Supervisor/confirm error:", err);
+
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text:
+          err.response?.data?.message ||
+          err.message ||
+          "Failed to confirm service.",
+      });
     }
-  } catch (err) {
-    console.error("Supervisor/confirm error:", err);
-
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text:
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to confirm service.",
-    });
-  }
-};
+  };
 
   // const handleFieldAdvisorConfirm = async (addon) => {
   //   const addOnId = addon?.AddOnID ?? addon?.addOnId;
@@ -1157,13 +1271,19 @@ const handleFieldAdvisorConfirm = async () => {
       deliveryDate: "",
       deliveryTime: "",
       techID: garageDriver?.value ?? 0,
-      assignDate: garagePickupDate && garagePickupTime ? `${garagePickupDate}T${garagePickupTime}:00` : getLocalISODateTime(),
+      assignDate:
+        garagePickupDate && garagePickupTime
+          ? `${garagePickupDate}T${garagePickupTime}:00`
+          : getLocalISODateTime(),
     };
   };
 
   const handleInitialAssignConfirm = async () => {
     // Time slot validation for all assignment types
-    if (!pickupDropReassignTimeSlot || pickupDropReassignTimeSlot.length === 0) {
+    if (
+      !pickupDropReassignTimeSlot ||
+      pickupDropReassignTimeSlot.length === 0
+    ) {
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -1231,9 +1351,12 @@ const handleFieldAdvisorConfirm = async () => {
         // Get addOnIds based on selected service names (comma-separated)
         const selectedServiceNames = selectedServiceType.map((st) => st.value);
         const selectedAddOns = (bookingData?.BookingAddOns || []).filter(
-          (addon) => addon.ServiceName && selectedServiceNames.includes(addon.ServiceName)
+          (addon) =>
+            addon.ServiceName &&
+            selectedServiceNames.includes(addon.ServiceName),
         );
-        const addOnIds = selectedAddOns.map((addon) => String(addon.AddOnID)).join(",") || "0";
+        const addOnIds =
+          selectedAddOns.map((addon) => String(addon.AddOnID)).join(",") || "0";
         const assignTimeSlot = pickupDropReassignTimeSlot.join(",");
         const now = new Date();
         const localTime = now.toTimeString().slice(0, 5); // HH:MM format
@@ -1383,60 +1506,59 @@ const handleFieldAdvisorConfirm = async () => {
     }
   };
 
-const handleRevertService = async (service) => {
-  try {
-    const confirmRevert = await Swal.fire({
-      title: "Are You Sure?",
-      text: "Do you want to revert this rejected service?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Yes, Revert",
-      cancelButtonText: "Cancel",
-      confirmButtonColor: "#116D6E", 
-      cancelButtonColor: "#6c757d", 
-    });
-
-    if (!confirmRevert.isConfirmed) return;
-   
-    const payload = {
-      // bookingId: service.BookingId,
-      // serviceId: service.ServiceId,
-      ids: `${service.Id}`, 
-    };
-
-    const response = await axios.post(
-      `${API_BASE}Supervisor/UpdateSupervisorBookingIsActive`,
-      payload
-    );
-
-    if (response?.status === 200) {
-      await Swal.fire({
-        title: "Reverted!",
-        text: "Service reverted successfully.",
-        icon: "success",
-        timer: 2000,
-        showConfirmButton: false,
+  const handleRevertService = async (service) => {
+    try {
+      const confirmRevert = await Swal.fire({
+        title: "Are You Sure?",
+        text: "Do you want to revert this rejected service?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, Revert",
+        cancelButtonText: "Cancel",
+        confirmButtonColor: "#116D6E",
+        cancelButtonColor: "#6c757d",
       });
 
-      fetchBookingData();
-    } else {
+      if (!confirmRevert.isConfirmed) return;
+
+      const payload = {
+        // bookingId: service.BookingId,
+        // serviceId: service.ServiceId,
+        ids: `${service.Id}`,
+      };
+
+      const response = await axios.post(
+        `${API_BASE}Supervisor/UpdateSupervisorBookingIsActive`,
+        payload,
+      );
+
+      if (response?.status === 200) {
+        await Swal.fire({
+          title: "Reverted!",
+          text: "Service reverted successfully.",
+          icon: "success",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+
+        fetchBookingData();
+      } else {
+        Swal.fire({
+          title: "Failed",
+          text: "Unable to revert the service.",
+          icon: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Revert error:", error);
+
       Swal.fire({
-        title: "Failed",
-        text: "Unable to revert the service.",
+        title: "Error",
+        text: "Something went wrong while reverting the service.",
         icon: "error",
       });
     }
-
-  } catch (error) {
-    console.error("Revert error:", error);
-
-    Swal.fire({
-      title: "Error",
-      text: "Something went wrong while reverting the service.",
-      icon: "error",
-    });
-  }
-};
+  };
 
   const handleRefund = async (payment) => {
     const amountPaid =
@@ -1619,9 +1741,9 @@ const handleRevertService = async (service) => {
   // Calculate Add Service total dynamically
   const addServiceTotal = bookingData?.BookingAddOns
     ? bookingData.BookingAddOns.reduce(
-      (sum, item) => sum + (item.TotalPrice || 0),
-      0,
-    )
+        (sum, item) => sum + (item.TotalPrice || 0),
+        0,
+      )
     : 0;
 
   const handleAddLocalService = async () => {
@@ -1830,12 +1952,14 @@ const handleRevertService = async (service) => {
         },
       );
       if (response.status === 200 || response.status === 201) {
-
         if (response.data.success) {
           Swal.fire("Success!", "Status updated successfully.", "success");
-        }
-        else {
-          Swal.fire("Error", response.data.message || "Failed to update service completion", "error");
+        } else {
+          Swal.fire(
+            "Error",
+            response.data.message || "Failed to update service completion",
+            "error",
+          );
         }
 
         await fetchBookingData();
@@ -1896,36 +2020,36 @@ const handleRevertService = async (service) => {
     //   return;
     // }
     const zeroAmountServices = [
-  ...(bookingData?.BookingAddOns || []),
-  ...(bookingData?.SupervisorBookings || [])
-].filter((item) => {
-  const total =
-    Number(item.TotalPrice ??
-      (Number(item.Price || 0) +
-       Number(item.GSTAmount || 0) +
-       Number(item.LabourCharges || 0) -
-      Number(item.CouponAmount || 0)));
+      ...(bookingData?.BookingAddOns || []),
+      ...(bookingData?.SupervisorBookings || []),
+    ].filter((item) => {
+      const total = Number(
+        item.TotalPrice ??
+          Number(item.Price || 0) +
+            Number(item.GSTAmount || 0) +
+            Number(item.LabourCharges || 0) -
+            Number(item.CouponAmount || 0),
+      );
 
-  return total === 0;
-});
+      return total === 0;
+    });
 
-  if (zeroAmountServices.length > 0) {
+    if (zeroAmountServices.length > 0) {
+      const serviceNames = zeroAmountServices
+        .map((s) => s.ServiceName || s.Name || "Unnamed Service")
+        .join("<br>");
 
-  const serviceNames = zeroAmountServices
-    .map((s) => s.ServiceName || s.Name || "Unnamed Service")
-    .join("<br>");
-
-  Swal.fire({
-  icon: "warning",
-  title: "Invoice Cannot Be Generated",
-  html: `
+      Swal.fire({
+        icon: "warning",
+        title: "Invoice Cannot Be Generated",
+        html: `
     Please update the price for the following services before generating the invoice:<br><br>
     ${serviceNames}
   `,
-});
+      });
 
-  return;
-}
+      return;
+    }
     Swal.fire({
       title: name,
       html: `Do you want to generate ${invoiceType?.toLowerCase()} invoice or view existing invoice?`,
@@ -1937,7 +2061,9 @@ const handleRevertService = async (service) => {
       if (result.isConfirmed) {
         generateHandler();
       } else if (result.isDenied) {
-        const typeParam = invoiceType ? `?type=${encodeURIComponent(invoiceType)}` : "";
+        const typeParam = invoiceType
+          ? `?type=${encodeURIComponent(invoiceType)}`
+          : "";
         navigate(`/invoice-view/${bookingData.BookingID}${typeParam}`);
       }
     });
@@ -2038,14 +2164,13 @@ const handleRevertService = async (service) => {
     }
 
     const zeroTotalSupervisorServices = supervisorBookings.filter((s) => {
-      const total =
-        Number(
-          s.TotalPrice ??
-          (Number(s.Price || 0) +
+      const total = Number(
+        s.TotalPrice ??
+          Number(s.Price || 0) +
             Number(s.GSTAmount || 0) +
             Number(s.LabourCharges || 0) -
-            Number(s.CouponAmount || 0)),
-        );
+            Number(s.CouponAmount || 0),
+      );
       return total === 0;
     });
 
@@ -2071,8 +2196,8 @@ const handleRevertService = async (service) => {
         {
           bookingID: bookingData.BookingID,
         },
-      // const res = await axios.get(
-      //   `${API_BASE}Leads/ViewEstimationInvoice?bookingId=${bookingData.BookingID}`,
+        // const res = await axios.get(
+        //   `${API_BASE}Leads/ViewEstimationInvoice?bookingId=${bookingData.BookingID}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -2090,7 +2215,7 @@ const handleRevertService = async (service) => {
       Swal.fire(
         "Error",
         error?.response?.data?.message ||
-        "Failed to generate Estimation invoice.",
+          "Failed to generate Estimation invoice.",
         "error",
       );
     }
@@ -2141,47 +2266,50 @@ const handleRevertService = async (service) => {
   };
 
   // Ensure basic details (booking date, address, supervisor) are filled before key actions
-const ensureBasicDetails = () => {
-  const fields = [
-    (!bookingData?.BookingDate || !bookingData?.TimeSlot) && "Booking date & time slot",
-    !bookingData?.FullAddress && "Customer address",
-    !(bookingData?.SupervisorHeadName || bookingData?.SupervisorHeadPhoneNumber) &&
-      "Supervisor assignment",
-  ].filter(Boolean);
+  const ensureBasicDetails = () => {
+    const fields = [
+      (!bookingData?.BookingDate || !bookingData?.TimeSlot) &&
+        "Booking date & time slot",
+      !bookingData?.FullAddress && "Customer address",
+      !(
+        bookingData?.SupervisorHeadName ||
+        bookingData?.SupervisorHeadPhoneNumber
+      ) && "Supervisor assignment",
+    ].filter(Boolean);
 
-  if (fields.length) {
-    Swal.fire({
-      icon: "warning",
-      title: "Details required",
-      html: `
+    if (fields.length) {
+      Swal.fire({
+        icon: "warning",
+        title: "Details required",
+        html: `
         <div class='text-start small'>
           <p class='mb-1'>Please Enter the following details before continuing:</p>
           <ul class='mb-2 ps-3'>
-            ${fields.map(f => `<li>${f}</li>`).join("")}
+            ${fields.map((f) => `<li>${f}</li>`).join("")}
           </ul>
           <p class='mb-0'>Click <strong>Enter Details</strong> to fill them now.</p>
         </div>
       `,
-      showCancelButton: true,
-      confirmButtonText: "Enter Details",
-      cancelButtonText: "Cancel",
-      customClass: {
-        confirmButton:
-          "btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2",
-        cancelButton: "btn btn-secondary btn-sm",
-      },
-      buttonsStyling: false,
-    }).then(res => {
-      if (res.isConfirmed && bookingData?.BookingID) {
-        navigate(`/booking-basic/${bookingData.BookingID}`);
-      }
-    });
+        showCancelButton: true,
+        confirmButtonText: "Enter Details",
+        cancelButtonText: "Cancel",
+        customClass: {
+          confirmButton:
+            "btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2",
+          cancelButton: "btn btn-secondary btn-sm",
+        },
+        buttonsStyling: false,
+      }).then((res) => {
+        if (res.isConfirmed && bookingData?.BookingID) {
+          navigate(`/booking-basic/${bookingData.BookingID}`);
+        }
+      });
 
-    return false;
-  }
+      return false;
+    }
 
-  return true;
-};
+    return true;
+  };
 
   const closePaymentModal = () => {
     setShowPaymentModal(false);
@@ -2212,7 +2340,10 @@ const ensureBasicDetails = () => {
       bookingData?.SupervisorBookings || []
     ).filter((item) => !hasDealerId(item));
 
-    const missingDealer = [...addOnsWithoutDealer, ...supervisorBookingsWithoutDealer];
+    const missingDealer = [
+      ...addOnsWithoutDealer,
+      ...supervisorBookingsWithoutDealer,
+    ];
     if (missingDealer.length > 0) {
       const names = missingDealer
         .map((item) => item?.ServiceName || item?.Description || "Service")
@@ -2226,8 +2357,7 @@ const ensureBasicDetails = () => {
     }
 
     const isSupervisorConfirmed = (item) =>
-      item?.IsSupervisor_Confirm === 1 ||
-      item?.IsSupervisor_Confirm === true;
+      item?.IsSupervisor_Confirm === 1 || item?.IsSupervisor_Confirm === true;
 
     const addOnsNotConfirmed = (bookingData?.BookingAddOns || []).filter(
       (item) => !isSupervisorConfirmed(item),
@@ -2236,7 +2366,10 @@ const ensureBasicDetails = () => {
       bookingData?.SupervisorBookings || []
     ).filter((item) => !isSupervisorConfirmed(item));
 
-    const missingConfirm = [...addOnsNotConfirmed, ...supervisorBookingsNotConfirmed];
+    const missingConfirm = [
+      ...addOnsNotConfirmed,
+      ...supervisorBookingsNotConfirmed,
+    ];
     if (missingConfirm.length > 0) {
       const names = missingConfirm
         .map((item) => item?.ServiceName || item?.Description || "Service")
@@ -2255,154 +2388,148 @@ const ensureBasicDetails = () => {
   };
 
   const handleServiceCheckboxChange = (id) => {
-  setSelectedServiceIds((prev) =>
-    prev.includes(id)
-      ? prev.filter((sid) => sid !== id)
-      : [...prev, id]
-  );
-};
+    setSelectedServiceIds((prev) =>
+      prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id],
+    );
+  };
 
-const handleCustomerConfirmationSubmit = async () => {
-  if (!confirmationDescription || confirmationDescription.trim() === "") {
-    Swal.fire({
-      icon: "warning",
-      title: "Description Required",
-      text: "Please provide a description for the confirmation.",
-    });
-    return;
-  }
+  const handleCustomerConfirmationSubmit = async () => {
+    if (!confirmationDescription || confirmationDescription.trim() === "") {
+      Swal.fire({
+        icon: "warning",
+        title: "Description Required",
+        text: "Please provide a description for the confirmation.",
+      });
+      return;
+    }
 
-  if (selectedServiceIds.length === 0) {
-    Swal.fire({
-      icon: "warning",
-      title: "Select Services",
-      text: "Please select at least one service to confirm.",
-    });
-    return;
-  }
+    if (selectedServiceIds.length === 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "Select Services",
+        text: "Please select at least one service to confirm.",
+      });
+      return;
+    }
 
-  try {
+    try {
+      // ✅ Convert selected IDs to comma string
+      const addOnIdsString = selectedServiceIds.join(",");
 
-    // ✅ Convert selected IDs to comma string
-    const addOnIdsString = selectedServiceIds.join(",");
+      // Upload file if exists
+      if (confirmationFile) {
+        const formData = new FormData();
+        formData.append("BookingID", bookingData.BookingID);
+        formData.append("UploadedBy", duserId);
+        formData.append("CustID", bookingData.CustID);
+        formData.append("ImageUploadType", "CustomerConfirmation");
+        formData.append("ImageFile", confirmationFile);
 
-    // Upload file if exists
-    if (confirmationFile) {
-      const formData = new FormData();
-      formData.append("BookingID", bookingData.BookingID);
-      formData.append("UploadedBy", duserId);
-      formData.append("CustID", bookingData.CustID);
-      formData.append("ImageUploadType", "CustomerConfirmation");
-      formData.append("ImageFile", confirmationFile);
+        await axios.post(
+          `${API_BASE}Supervisor/CustomerConfirmationImages`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          },
+        );
+      }
 
+      // ✅ Correct API
       await axios.post(
-        `${API_BASE}Supervisor/CustomerConfirmationImages`,
-        formData,
+        `${API_BASE}Supervisor/MoveSupervisorBookings?addOnIds=${addOnIdsString}&custId=${bookingData.CustID}`,
+        {
+          confirmDescription: confirmationDescription.trim(),
+          confirmedBy: roleIdInt.confirmedBy,
+          confirmRole: roleName,
+          status: "Confirmed",
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
           },
-        }
+        },
+      );
+
+      Swal.fire("Success", "Customer Confirmation Successful.", "success");
+
+      setShowCustomerConfirmationModal(false);
+      setConfirmationDescription("");
+      setConfirmationFile(null);
+      setSelectedServiceIds([]); // reset selection
+
+      fetchBookingData();
+    } catch (error) {
+      console.error("Customer Confirmation Error:", error);
+      Swal.fire(
+        "Error",
+        error?.response?.data?.message || " Customer Confirmation Failed.",
+        "error",
       );
     }
+  };
 
-    // ✅ Correct API
-    await axios.post(
-      `${API_BASE}Supervisor/MoveSupervisorBookings?addOnIds=${addOnIdsString}&custId=${bookingData.CustID}`,
-      {
-        confirmDescription: confirmationDescription.trim(),
-        confirmedBy: roleIdInt.confirmedBy,
-        confirmRole: roleName,
-        status: "Confirmed"
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
+  const handleRejectServiceCheckboxChange = (id) => {
+    setRejectedServiceIds((prev) =>
+      prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id],
+    );
+  };
+
+  const handleCustomerRejectionSubmit = async () => {
+    if (!rejectionDescription || rejectionDescription.trim() === "") {
+      Swal.fire({
+        icon: "warning",
+        title: "Reason Required",
+        text: "Please provide a reason for the rejection.",
+      });
+      return;
+    }
+
+    if (rejectedServiceIds.length === 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "Select Services",
+        text: "Please select at least one service to reject.",
+      });
+      return;
+    }
+
+    try {
+      // Convert selected IDs to comma string
+      const addOnIdsString = rejectedServiceIds.join(",");
+      await axios.post(
+        `${API_BASE}Supervisor/MoveSupervisorBookings?addOnIds=${addOnIdsString}&custId=${bookingData.CustID}`,
+        {
+          confirmDescription: rejectionDescription.trim(),
+          confirmedBy: roleIdInt.confirmedBy,
+          confirmRole: roleName,
+          status: "Reject",
         },
-      }
-    );
-
-    Swal.fire("Success", "Customer Confirmation Successful.", "success");
-
-    setShowCustomerConfirmationModal(false);
-    setConfirmationDescription("");
-    setConfirmationFile(null);
-    setSelectedServiceIds([]); // reset selection
-
-    fetchBookingData();
-
-  } catch (error) {
-    console.error("Customer Confirmation Error:", error);
-    Swal.fire(
-      "Error",
-      error?.response?.data?.message || " Customer Confirmation Failed.",
-      "error"
-    );
-  }
-};
-
-const handleRejectServiceCheckboxChange = (id) => {
-  setRejectedServiceIds((prev) =>
-    prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
-  );
-};
-
-const handleCustomerRejectionSubmit = async () => {
-  if (!rejectionDescription || rejectionDescription.trim() === "") {
-    Swal.fire({
-      icon: "warning",
-      title: "Reason Required",
-      text: "Please provide a reason for the rejection.",
-    });
-    return;
-  }
-
-  if (rejectedServiceIds.length === 0) {
-    Swal.fire({
-      icon: "warning",
-      title: "Select Services",
-      text: "Please select at least one service to reject.",
-    });
-    return;
-  }
-
-  try {
-
-    // Convert selected IDs to comma string
-    const addOnIdsString = rejectedServiceIds.join(",");
-     await axios.post(
-      `${API_BASE}Supervisor/MoveSupervisorBookings?addOnIds=${addOnIdsString}&custId=${bookingData.CustID}`,
-      {
-        confirmDescription: rejectionDescription.trim(),
-        confirmedBy: roleIdInt.confirmedBy,
-        confirmRole: roleName,
-        status: "Reject"
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
-      }
-    );
-    Swal.fire("Success", "Customer Rejection Successful.", "success");
+      );
+      Swal.fire("Success", "Customer Rejection Successful.", "success");
 
-    setShowCustomerRejectionModal(false);
-    setRejectionDescription("");
-    setRejectedServiceIds([]);
+      setShowCustomerRejectionModal(false);
+      setRejectionDescription("");
+      setRejectedServiceIds([]);
 
-    fetchBookingData();
+      fetchBookingData();
+    } catch (error) {
+      console.error("Customer Rejection Error:", error);
 
-  } catch (error) {
-    console.error("Customer Rejection Error:", error);
-
-    Swal.fire(
-      "Error",
-      error?.response?.data?.message || "Customer Rejection Failed.",
-      "error"
-    );
-  }
-};
+      Swal.fire(
+        "Error",
+        error?.response?.data?.message || "Customer Rejection Failed.",
+        "error",
+      );
+    }
+  };
 
   const totalAmount =
     (bookingData?.TotalPrice || 0) +
@@ -2429,8 +2556,8 @@ const handleCustomerRejectionSubmit = async () => {
   const remainingAmount = Math.max(totalAmount - alreadyPaid, 0);
 
   const hasAtLeastOneService =
-    (bookingData?.BookingAddOns?.length > 0) ||
-    (bookingData?.SupervisorBookings?.length > 0);
+    bookingData?.BookingAddOns?.length > 0 ||
+    bookingData?.SupervisorBookings?.length > 0;
   const isSupervisorConfirmed = (item) =>
     item?.IsSupervisor_Confirm === 1 || item?.IsSupervisor_Confirm === true;
   const allSupervisorConfirmed =
@@ -2438,11 +2565,21 @@ const handleCustomerRejectionSubmit = async () => {
     (bookingData?.BookingAddOns || []).every(isSupervisorConfirmed) &&
     (bookingData?.SupervisorBookings || []).every(isSupervisorConfirmed);
   const showEstimationButton = allSupervisorConfirmed;
-  const showFinalButton = remainingAmount === 0 && hasAtLeastOneService && allSupervisorConfirmed && totalAmount > 0;
-  const showEnterPaymentButton = remainingAmount > 0 && hasAtLeastOneService && allSupervisorConfirmed && totalAmount > 0;
-  const showDealerInvoiceButton = hasAtLeastOneService && allSupervisorConfirmed && totalAmount > 0;
+  const showFinalButton =
+    remainingAmount === 0 &&
+    hasAtLeastOneService &&
+    allSupervisorConfirmed &&
+    totalAmount > 0;
+  const showEnterPaymentButton =
+    remainingAmount > 0 &&
+    hasAtLeastOneService &&
+    allSupervisorConfirmed &&
+    totalAmount > 0;
+  const showDealerInvoiceButton =
+    hasAtLeastOneService && allSupervisorConfirmed && totalAmount > 0;
   const confirmationData = bookingData?.BookingAddOns?.find(
-    (item) => item?.ConfirmedBy && item?.ConfirmRole && item?.ConfirmDescription
+    (item) =>
+      item?.ConfirmedBy && item?.ConfirmRole && item?.ConfirmDescription,
   );
 
   const handleConfirmPayment = async () => {
@@ -2465,7 +2602,11 @@ const handleCustomerRejectionSubmit = async () => {
       }
 
       if (Number(discountAmount || 0) > Number(payAmount || 0)) {
-        Swal.fire("Validation", "Discount cannot exceed entered amount", "warning");
+        Swal.fire(
+          "Validation",
+          "Discount cannot exceed entered amount",
+          "warning",
+        );
         return;
       }
 
@@ -2524,7 +2665,8 @@ const handleCustomerRejectionSubmit = async () => {
 
           if (onlineRes?.data?.success || onlineRes?.data?.paymentLinkUrl) {
             // Payment link created successfully
-            const paymentLink = onlineRes.data.paymentLinkUrl || onlineRes.data.paymentLinkUrl;
+            const paymentLink =
+              onlineRes.data.paymentLinkUrl || onlineRes.data.paymentLinkUrl;
 
             Swal.fire({
               title: "Payment Link Sent",
@@ -2547,7 +2689,8 @@ const handleCustomerRejectionSubmit = async () => {
           console.error("Online Payment Error:", onlineErr);
           Swal.fire(
             "Error",
-            onlineErr?.response?.data?.message || "Failed to initiate online payment",
+            onlineErr?.response?.data?.message ||
+              "Failed to initiate online payment",
             "error",
           );
           return;
@@ -2574,7 +2717,7 @@ const handleCustomerRejectionSubmit = async () => {
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
 
       if (res?.data?.status) {
@@ -2590,7 +2733,7 @@ const handleCustomerRejectionSubmit = async () => {
       console.error("Payment Error:", err);
       Swal.fire("Error", "Something went wrong", "error");
     } finally {
-    setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -2598,11 +2741,20 @@ const handleCustomerRejectionSubmit = async () => {
   useEffect(() => {
     const fetchCoupons = async () => {
       try {
-        const res = await axios.get("https://dev-api.mycarsbuddy.com/api/Coupons");
-        const raw = Array.isArray(res.data) ? res.data : res.data?.jsonResult || [];
+        const res = await axios.get(
+          "https://dev-api.mycarsbuddy.com/api/Coupons",
+        );
+        const raw = Array.isArray(res.data)
+          ? res.data
+          : res.data?.jsonResult || [];
         const total = Number(totalAmount || 0);
         const list = raw
-          .filter((c) => c.IsActive && c.Status && Number(c.MinBookingAmount || 0) <= total)
+          .filter(
+            (c) =>
+              c.IsActive &&
+              c.Status &&
+              Number(c.MinBookingAmount || 0) <= total,
+          )
           .map((c) => ({
             code: c.Code,
             label:
@@ -2613,10 +2765,25 @@ const handleCustomerRejectionSubmit = async () => {
             discountValue: Number(c.DiscountValue || 0),
           }));
         // Always include a no-coupon option
-        setCouponOffers([{ code: "", label: "No coupon", discountType: null, discountValue: 0 }, ...list]);
+        setCouponOffers([
+          {
+            code: "",
+            label: "No coupon",
+            discountType: null,
+            discountValue: 0,
+          },
+          ...list,
+        ]);
       } catch (err) {
         console.error("Failed to fetch coupons:", err);
-        setCouponOffers([{ code: "", label: "No coupon", discountType: null, discountValue: 0 }]);
+        setCouponOffers([
+          {
+            code: "",
+            label: "No coupon",
+            discountType: null,
+            discountValue: 0,
+          },
+        ]);
       }
     };
     fetchCoupons();
@@ -2642,14 +2809,20 @@ const handleCustomerRejectionSubmit = async () => {
 
   // Auto-set pickup dealer from last CarPickUpDelivery entry, or fallback to dealer from BookingAddOns
   useEffect(() => {
-    if (garageStep === "details" && (garageTask === "carDrop" || garageRoute === "dealerToDealer") && !garagePickupDealer) {
+    if (
+      garageStep === "details" &&
+      (garageTask === "carDrop" || garageRoute === "dealerToDealer") &&
+      !garagePickupDealer
+    ) {
       const carPickUpDelivery = bookingData?.CarPickUpDelivery || [];
       if (carPickUpDelivery.length > 0) {
         const lastEntry = carPickUpDelivery[carPickUpDelivery.length - 1];
         const pickedDealerId = lastEntry.PickTo || lastEntry.PickFrom;
 
         if (pickedDealerId) {
-          const dealerOption = garageDealerOptions.find((opt) => opt.value === Number(pickedDealerId));
+          const dealerOption = garageDealerOptions.find(
+            (opt) => opt.value === Number(pickedDealerId),
+          );
           if (dealerOption) {
             setGaragePickupDealer(dealerOption);
             return;
@@ -2770,7 +2943,9 @@ const handleCustomerRejectionSubmit = async () => {
       id: "assign-stage",
       title: "Supervisor/Field Advisor Assigned",
       icon: "mdi:account-group",
-      date: bookingData.SupervisorHeadAssignDate || bookingData.FieldAdvisorAssignDate,
+      date:
+        bookingData.SupervisorHeadAssignDate ||
+        bookingData.FieldAdvisorAssignDate,
       status:
         bookingData.SupervisorHeadName || bookingData.FieldAdvisorName
           ? "completed"
@@ -2792,10 +2967,10 @@ const handleCustomerRejectionSubmit = async () => {
         addOns.length === 0
           ? "pending"
           : addOns.every((a) => a.IsDealer_Confirm === "Approved")
-          ? "completed"
-          : addOns.some((a) => a.IsDealer_Confirm === "Rejected")
-          ? "failed"
-          : "in-progress",
+            ? "completed"
+            : addOns.some((a) => a.IsDealer_Confirm === "Rejected")
+              ? "failed"
+              : "in-progress",
       details:
         addOns.length === 0
           ? "No dealers"
@@ -2811,10 +2986,10 @@ const handleCustomerRejectionSubmit = async () => {
         confirmedLength === 0 && pendingLength === 0
           ? "pending"
           : confirmedLength > 0
-          ? pendingLength === 0
-            ? "completed"
-            : "in-progress"
-          : "pending",
+            ? pendingLength === 0
+              ? "completed"
+              : "in-progress"
+            : "pending",
       details: `${confirmedLength} confirmed / ${pendingLength} pending`,
     };
 
@@ -2840,10 +3015,10 @@ const handleCustomerRejectionSubmit = async () => {
         totalServices === 0
           ? "pending"
           : completedServices === totalServices
-          ? "completed"
-          : completedServices > 0
-          ? "in-progress"
-          : "pending",
+            ? "completed"
+            : completedServices > 0
+              ? "in-progress"
+              : "pending",
       details:
         totalServices === 0
           ? "No services"
@@ -2870,7 +3045,8 @@ const handleCustomerRejectionSubmit = async () => {
       title: "Booking Done",
       icon: "mdi:check-circle",
       date: bookingData.BookingStatusUpdatedDate,
-      status: bookingData.BookingStatus === "Completed" ? "completed" : "pending",
+      status:
+        bookingData.BookingStatus === "Completed" ? "completed" : "pending",
       details: bookingData.BookingStatus || "—",
     };
 
@@ -2942,9 +3118,7 @@ const handleCustomerRejectionSubmit = async () => {
     const nextStage = serviceStages.find((s) => s.status === "in-progress");
     if (!nextStage) return;
 
-    const el = document.querySelector(
-      `[data-stage-id="${nextStage.id}"]`,
-    );
+    const el = document.querySelector(`[data-stage-id="${nextStage.id}"]`);
     if (!el) return;
 
     try {
@@ -2979,9 +3153,7 @@ const handleCustomerRejectionSubmit = async () => {
     ) {
       return;
     }
-    const el = document.querySelector(
-      "#booking-personal-info-section",
-    );
+    const el = document.querySelector("#booking-personal-info-section");
     if (!el) return;
     try {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -3037,26 +3209,38 @@ const handleCustomerRejectionSubmit = async () => {
             <div className="card-body py-3 px-3">
               <div className="d-flex flex-wrap align-items-center gap-3">
                 <div className="d-flex align-items-center gap-2">
-                  <span className="badge rounded-pill bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center" style={{ width: 28, height: 28 }}>
-                    <Icon icon="mdi:timeline-clock-outline" width={18} height={18} />
+                  <span
+                    className="badge rounded-pill bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center"
+                    style={{ width: 28, height: 28 }}
+                  >
+                    <Icon
+                      icon="mdi:timeline-clock-outline"
+                      width={18}
+                      height={18}
+                    />
                   </span>
                   <div>
-                    <div className="fw-semibold small text-uppercase text-muted">Service Timeline</div>
+                    <div className="fw-semibold small text-uppercase text-muted">
+                      Service Timeline
+                    </div>
                     <div className="small text-body-secondary">
                       <span className="me-2">
                         <strong>Booking Date:</strong>{" "}
-                        {bookingData.BookingDate ? displayDate(bookingData.BookingDate) : "N/A"}
+                        {bookingData.BookingDate
+                          ? displayDate(bookingData.BookingDate)
+                          : "N/A"}
                       </span>
                       {bookingData.TimeSlot && (
                         <span className="me-2">
-                          <strong>Time Slot:</strong>{" "}
-                          {bookingData.TimeSlot}
+                          <strong>Time Slot:</strong> {bookingData.TimeSlot}
                         </span>
                       )}
                       {bookingData.BookingStatus && (
                         <span className="me-2">
                           <strong>Status:</strong>{" "}
-                          <span className={`badge rounded-pill px-3 py-1 ${getStatusBadgeClass(bookingData.BookingStatus)}`}>
+                          <span
+                            className={`badge rounded-pill px-3 py-1 ${getStatusBadgeClass(bookingData.BookingStatus)}`}
+                          >
                             {bookingData.BookingStatus}
                           </span>
                         </span>
@@ -3067,17 +3251,20 @@ const handleCustomerRejectionSubmit = async () => {
                 <div className="ms-auto small text-muted d-flex flex-wrap gap-3">
                   {bookingData.LeadCreatedDate && (
                     <span>
-                      <strong>Lead Created:</strong> {displayDate(bookingData.LeadCreatedDate)}
+                      <strong>Lead Created:</strong>{" "}
+                      {displayDate(bookingData.LeadCreatedDate)}
                     </span>
                   )}
                   {bookingData.ServiceScheduledDate && (
                     <span>
-                      <strong>Service Scheduled:</strong> {displayDate(bookingData.ServiceScheduledDate)}
+                      <strong>Service Scheduled:</strong>{" "}
+                      {displayDate(bookingData.ServiceScheduledDate)}
                     </span>
                   )}
                   {bookingData.ServiceCompletedDate && (
                     <span>
-                      <strong>Service Completed:</strong> {displayDate(bookingData.ServiceCompletedDate)}
+                      <strong>Service Completed:</strong>{" "}
+                      {displayDate(bookingData.ServiceCompletedDate)}
                     </span>
                   )}
                 </div>
@@ -3210,9 +3397,7 @@ const handleCustomerRejectionSubmit = async () => {
                               {stage.date ? displayDate(stage.date) : "—"}
                             </div>
                             {stage.details && (
-                              <div className="step-date">
-                                {stage.details}
-                              </div>
+                              <div className="step-date">{stage.details}</div>
                             )}
                           </div>
                         </div>
@@ -3242,7 +3427,11 @@ const handleCustomerRejectionSubmit = async () => {
                             id="booking-personal-info-section"
                             className="mb-0 fw-bold text-primary d-flex align-items-center gap-2"
                           >
-                            <Icon icon="mdi:account-circle-outline" width={20} height={20} />
+                            <Icon
+                              icon="mdi:account-circle-outline"
+                              width={20}
+                              height={20}
+                            />
                             Personal Information
                           </h6>
                         </Accordion.Header>
@@ -3330,29 +3519,36 @@ const handleCustomerRejectionSubmit = async () => {
                                     </span>
                                     <span className="w-50 text-secondary-light fw-bold d-flex align-items-center justify-content-between">
                                       <span>
-                                        {bookingData?.SupervisorHeadName || bookingData?.SupervisorHeadPhoneNumber ? (
+                                        {bookingData?.SupervisorHeadName ||
+                                        bookingData?.SupervisorHeadPhoneNumber ? (
                                           <>
-                                            {bookingData?.SupervisorHeadName || ""}
-                                            {bookingData?.SupervisorHeadPhoneNumber ? ` (${bookingData.SupervisorHeadPhoneNumber})` : ""}
+                                            {bookingData?.SupervisorHeadName ||
+                                              ""}
+                                            {bookingData?.SupervisorHeadPhoneNumber
+                                              ? ` (${bookingData.SupervisorHeadPhoneNumber})`
+                                              : ""}
                                           </>
                                         ) : (
                                           "N/A"
                                         )}
                                       </span>
-                                      {(!bookingData?.SupervisorHeadName && !bookingData?.SupervisorHeadPhoneNumber) && (
-                                        <button
-                                          type="button"
-                                          className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2 py-2"
-                                          title="Assign Supervisor"
-                                          onClick={() => {
-                                            if (bookingData?.BookingID) {
-                                              navigate(`/booking-basic/${bookingData.BookingID}?stage=assign-supervisor`);
-                                            }
-                                          }}
-                                        >
-                                          Assign
-                                        </button>
-                                      )}
+                                      {!bookingData?.SupervisorHeadName &&
+                                        !bookingData?.SupervisorHeadPhoneNumber && (
+                                          <button
+                                            type="button"
+                                            className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2 py-2"
+                                            title="Assign Supervisor"
+                                            onClick={() => {
+                                              if (bookingData?.BookingID) {
+                                                navigate(
+                                                  `/booking-basic/${bookingData.BookingID}?stage=assign-supervisor`,
+                                                );
+                                              }
+                                            }}
+                                          >
+                                            Assign
+                                          </button>
+                                        )}
                                     </span>
                                   </li>
                                   <li className="d-flex align-items-center gap-1 mt-2">
@@ -3361,29 +3557,36 @@ const handleCustomerRejectionSubmit = async () => {
                                     </span>
                                     <span className="w-50 text-secondary-light fw-bold d-flex align-items-center justify-content-between">
                                       <span>
-                                        {bookingData?.FieldAdvisorName || bookingData?.FieldAdvisorPhoneNumber ? (
+                                        {bookingData?.FieldAdvisorName ||
+                                        bookingData?.FieldAdvisorPhoneNumber ? (
                                           <>
-                                            {bookingData?.FieldAdvisorName || ""}
-                                            {bookingData?.FieldAdvisorPhoneNumber ? ` (${bookingData.FieldAdvisorPhoneNumber})` : ""}
+                                            {bookingData?.FieldAdvisorName ||
+                                              ""}
+                                            {bookingData?.FieldAdvisorPhoneNumber
+                                              ? ` (${bookingData.FieldAdvisorPhoneNumber})`
+                                              : ""}
                                           </>
                                         ) : (
                                           "N/A"
                                         )}
                                       </span>
-                                      {(!bookingData?.FieldAdvisorName && !bookingData?.FieldAdvisorPhoneNumber) && (
-                                        <button
-                                          type="button"
-                                          className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2 py-2"
-                                          title="Assign Field Advisor"
-                                          onClick={() => {
-                                            if (bookingData?.BookingID) {
-                                              navigate(`/booking-basic/${bookingData.BookingID}?stage=assign-fa`);
-                                            }
-                                          }}
-                                        >
-                                          Assign
-                                        </button>
-                                      )}
+                                      {!bookingData?.FieldAdvisorName &&
+                                        !bookingData?.FieldAdvisorPhoneNumber && (
+                                          <button
+                                            type="button"
+                                            className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2 py-2"
+                                            title="Assign Field Advisor"
+                                            onClick={() => {
+                                              if (bookingData?.BookingID) {
+                                                navigate(
+                                                  `/booking-basic/${bookingData.BookingID}?stage=assign-fa`,
+                                                );
+                                              }
+                                            }}
+                                          >
+                                            Assign
+                                          </button>
+                                        )}
                                     </span>
                                   </li>
                                   {/* <li className="d-flex align-items-center gap-1">
@@ -3427,12 +3630,18 @@ const handleCustomerRejectionSubmit = async () => {
 
                         <Accordion.Body>
                           {bookingData.VehicleDetails &&
-                            Array.isArray(bookingData.VehicleDetails) &&
-                            bookingData.VehicleDetails.length > 0 ? (
+                          Array.isArray(bookingData.VehicleDetails) &&
+                          bookingData.VehicleDetails.length > 0 ? (
                             <div>
-                              {bookingData.VehicleDetails.map((vehicle, index) => (
-                                <div key={index} className={index > 0 ? "mt-4 pt-4 border-top" : ""}>
-                                  {/* <div className="d-flex align-items-center gap-2 mb-3">
+                              {bookingData.VehicleDetails.map(
+                                (vehicle, index) => (
+                                  <div
+                                    key={index}
+                                    className={
+                                      index > 0 ? "mt-4 pt-4 border-top" : ""
+                                    }
+                                  >
+                                    {/* <div className="d-flex align-items-center gap-2 mb-3">
                                   <Icon 
                                     icon="mdi:car" 
                                     className="text-primary fs-5" 
@@ -3441,65 +3650,73 @@ const handleCustomerRejectionSubmit = async () => {
                                     Vehicle {bookingData.VehicleDetails.length > 1 ? `${index + 1}` : ""} Details
                                   </span>
                                 </div> */}
-                                  <ul className="mb-0">
-                                    {/* {vehicle.RegistrationNumber && ( */}
-                                    <li className="d-flex align-items-center gap-1">
-                                      <span className="w-70 fw-semibold text-primary-light">
-                                        Reg. Number :
-                                      </span>
-                                      <span className="w-70 text-secondary-light fw-bold ms-2">
-                                        {vehicle.RegistrationNumber || "N/A"}
-                                      </span>
-                                    </li>
-                                    {/* )} */}
-                                    {/* {vehicle.BrandName && vehicle.ModelName && ( */}
-                                    <li className="d-flex align-items-center gap-1">
-                                      <span className="fw-semibold text-primary-light">
-                                        Brand :
-                                      </span>
-                                      <span className="w-70 text-secondary-light fw-bold ms-2">
-                                        {vehicle.BrandName} ({vehicle.ModelName || "N/A"})
-                                      </span>
-                                    </li>
-                                    {/* )} */}
-                                    {/* {vehicle.YearOfPurchase && ( */}
-                                    <li className="d-flex align-items-center gap-1">
-                                      <span className="w-70 fw-semibold text-primary-light">
-                                        Year of Purchase :
-                                      </span>
-                                      <span className="w-70 text-secondary-light fw-bold ms-2">
-                                        {vehicle.YearOfPurchase || "N/A"}
-                                      </span>
-                                    </li>
-                                    {/* )} */}
-                                    {/* {vehicle.FuelTypeName && ( */}
-                                    <li className="d-flex align-items-center gap-1">
-                                      <span className="w-70 fw-semibold text-primary-light">
-                                        Fuel Type :
-                                      </span>
-                                      <span className="w-70 text-secondary-light fw-bold ms-2">
-                                        {vehicle.FuelTypeName || "N/A"}
-                                      </span>
-                                    </li>
-                                    {/* )} */}
-                                    {/* {vehicle.KmDriven !== null && vehicle.KmDriven !== undefined && ( */}
-                                    <li className="d-flex align-items-center gap-1">
-                                      <span className="w-70 fw-semibold text-primary-light">
-                                        KM Driven :
-                                      </span>
-                                      <span className="w-70 text-secondary-light fw-bold ms-2">
-                                        {vehicle.KmDriven !== null && vehicle.KmDriven !== undefined ? vehicle.KmDriven.toLocaleString() : "N/A"} km
-                                      </span>
-                                    </li>
-                                    {/* )} */}
-                                  </ul>
-                                </div>
-                              ))}
+                                    <ul className="mb-0">
+                                      {/* {vehicle.RegistrationNumber && ( */}
+                                      <li className="d-flex align-items-center gap-1">
+                                        <span className="w-70 fw-semibold text-primary-light">
+                                          Reg. Number :
+                                        </span>
+                                        <span className="w-70 text-secondary-light fw-bold ms-2">
+                                          {vehicle.RegistrationNumber || "N/A"}
+                                        </span>
+                                      </li>
+                                      {/* )} */}
+                                      {/* {vehicle.BrandName && vehicle.ModelName && ( */}
+                                      <li className="d-flex align-items-center gap-1">
+                                        <span className="fw-semibold text-primary-light">
+                                          Brand :
+                                        </span>
+                                        <span className="w-70 text-secondary-light fw-bold ms-2">
+                                          {vehicle.BrandName} (
+                                          {vehicle.ModelName || "N/A"})
+                                        </span>
+                                      </li>
+                                      {/* )} */}
+                                      {/* {vehicle.YearOfPurchase && ( */}
+                                      <li className="d-flex align-items-center gap-1">
+                                        <span className="w-70 fw-semibold text-primary-light">
+                                          Year of Purchase :
+                                        </span>
+                                        <span className="w-70 text-secondary-light fw-bold ms-2">
+                                          {vehicle.YearOfPurchase || "N/A"}
+                                        </span>
+                                      </li>
+                                      {/* )} */}
+                                      {/* {vehicle.FuelTypeName && ( */}
+                                      <li className="d-flex align-items-center gap-1">
+                                        <span className="w-70 fw-semibold text-primary-light">
+                                          Fuel Type :
+                                        </span>
+                                        <span className="w-70 text-secondary-light fw-bold ms-2">
+                                          {vehicle.FuelTypeName || "N/A"}
+                                        </span>
+                                      </li>
+                                      {/* )} */}
+                                      {/* {vehicle.KmDriven !== null && vehicle.KmDriven !== undefined && ( */}
+                                      <li className="d-flex align-items-center gap-1">
+                                        <span className="w-70 fw-semibold text-primary-light">
+                                          KM Driven :
+                                        </span>
+                                        <span className="w-70 text-secondary-light fw-bold ms-2">
+                                          {vehicle.KmDriven !== null &&
+                                          vehicle.KmDriven !== undefined
+                                            ? vehicle.KmDriven.toLocaleString()
+                                            : "N/A"}{" "}
+                                          km
+                                        </span>
+                                      </li>
+                                      {/* )} */}
+                                    </ul>
+                                  </div>
+                                ),
+                              )}
                             </div>
                           ) : (
                             <div className="text-center text-muted py-4">
                               <Icon icon="mdi:car-off" className="fs-1 mb-2" />
-                              <p className="mb-0">No vehicle details available</p>
+                              <p className="mb-0">
+                                No vehicle details available
+                              </p>
                             </div>
                           )}
                         </Accordion.Body>
@@ -3560,17 +3777,25 @@ const handleCustomerRejectionSubmit = async () => {
                               return slotTime > now;
                             })
                             .sort((a, b) => {
-                              const [aH, aM] = a.StartTime.split(":").map(Number);
-                              const [bH, bM] = b.StartTime.split(":").map(Number);
+                              const [aH, aM] =
+                                a.StartTime.split(":").map(Number);
+                              const [bH, bM] =
+                                b.StartTime.split(":").map(Number);
                               return aH * 60 + aM - (bH * 60 + bM);
                             })
                             .map((slot) => {
                               const val = `${slot.StartTime} - ${slot.EndTime}`;
-                              return { value: val, label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}` };
+                              return {
+                                value: val,
+                                label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}`,
+                              };
                             })}
                           value={selectedTimeSlot.map((val) => {
                             const [s, e] = (val || "").split(/\s*-\s*/);
-                            return { value: val, label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}` };
+                            return {
+                              value: val,
+                              label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}`,
+                            };
                           })}
                           onChange={(selectedOptions) =>
                             setSelectedTimeSlot(
@@ -3655,7 +3880,9 @@ const handleCustomerRejectionSubmit = async () => {
 
                         {bookingData.Payments[0].IsRefunded && (
                           <button
-                            onClick={() => handleRefund(bookingData.Payments[0])}
+                            onClick={() =>
+                              handleRefund(bookingData.Payments[0])
+                            }
                             className="btn btn-danger btn-sm"
                           >
                             Refund
@@ -3667,39 +3894,51 @@ const handleCustomerRejectionSubmit = async () => {
                     to={`/lead-view/${bookingData?.LeadId}`}
                     className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
                     title="View Lead"
-                  > <Icon icon="mdi:eye-outline" width={16} height={16} className="mx-2" />
+                  >
+                    {" "}
+                    <Icon
+                      icon="mdi:eye-outline"
+                      width={16}
+                      height={16}
+                      className="mx-2"
+                    />
                     View Lead
                   </Link>
                   {!hideAllActions && (
-                  <button
-                    type="button"
-                    className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2"
-                    title="Fill Basic Details"
-                    onClick={() => {
-                      if (bookingData?.BookingID) {
-                        navigate(`/booking-basic/${bookingData.BookingID}`);
-                      }
-                    }}
-                  >
-                    <Icon icon="mdi:format-list-checkbox" width={16} height={16} />
-                    Fill Basic Details
-                  </button>
-                  )}
-                  {/* Convert To Service / Service Converted - Add Services Button */}
-                  {bookingData?.Isinspection === 1 && bookingData?.Isservice_converted === 0 && (
                     <button
+                      type="button"
                       className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2"
-                      onClick={handleConvertToService}
-                      title="Convert To Service"
+                      title="Fill Basic Details"
+                      onClick={() => {
+                        if (bookingData?.BookingID) {
+                          navigate(`/booking-basic/${bookingData.BookingID}`);
+                        }
+                      }}
                     >
-                      <Icon icon="mdi:swap-horizontal-bold" />
-                      Convert To Service
+                      <Icon
+                        icon="mdi:format-list-checkbox"
+                        width={16}
+                        height={16}
+                      />
+                      Fill Basic Details
                     </button>
                   )}
+                  {/* Convert To Service / Service Converted - Add Services Button */}
+                  {bookingData?.Isinspection === 1 &&
+                    bookingData?.Isservice_converted === 0 && (
+                      <button
+                        className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2"
+                        onClick={handleConvertToService}
+                        title="Convert To Service"
+                      >
+                        <Icon icon="mdi:swap-horizontal-bold" />
+                        Convert To Service
+                      </button>
+                    )}
                   {bookingData?.Isinspection === 1 &&
                     bookingData?.Isservice_converted === 1 &&
-                    ((bookingData?.BookingAddOns?.length ?? 0) === 1 &&
-                      (bookingData?.SupervisorBookings?.length ?? 0) === 0) && (
+                    (bookingData?.BookingAddOns?.length ?? 0) === 1 &&
+                    (bookingData?.SupervisorBookings?.length ?? 0) === 0 && (
                       <Link
                         to={
                           ensureBasicDetails()
@@ -3725,44 +3964,42 @@ const handleCustomerRejectionSubmit = async () => {
                       ?.PaymentStatus === "Success"
                   ) && ( */}
                   {!hideAllActions && (
-  <>
-                  {/* Confirm Services Button */}
-                  {(
-                    (bookingData?.Isinspection === 1 && bookingData?.Isservice_converted === 1) ||
-                    (bookingData?.Isinspection === 0 && bookingData?.Isservice_converted === 0)
-                  ) && (
-                      <Link
-                        to={
-                          ensureBasicDetails()
-                            ? `/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`
-                            : "#"
-                        }
-                        onClick={(e) => {
-                          if (!ensureBasicDetails()) {
-                            e.preventDefault();
+                    <>
+                      {/* Confirm Services Button */}
+                      {((bookingData?.Isinspection === 1 &&
+                        bookingData?.Isservice_converted === 1) ||
+                        (bookingData?.Isinspection === 0 &&
+                          bookingData?.Isservice_converted === 0)) && (
+                        <Link
+                          to={
+                            ensureBasicDetails()
+                              ? `/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`
+                              : "#"
                           }
-                        }}
-                        className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
-                         title={
-                          roleName === "Field Advisor"
+                          onClick={(e) => {
+                            if (!ensureBasicDetails()) {
+                              e.preventDefault();
+                            }
+                          }}
+                          className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
+                          title={
+                            roleName === "Field Advisor"
+                              ? "Assign Dealers"
+                              : roleName === "Supervisor Head"
+                                ? "Confirm Services"
+                                : "Confirm Services"
+                          }
+                        >
+                          <Icon icon="mdi:pencil-outline" />
+                          {roleName === "Field Advisor"
                             ? "Assign Dealers"
                             : roleName === "Supervisor Head"
-                            ? "Confirm Services"
-                            : "Confirm Services"
-                        }
-                      >
-                       <Icon icon="mdi:pencil-outline" />
-                        {roleName === "Field Advisor"
-                          ? "Assign Dealers"
-                          : roleName === "Supervisor Head"
-                          ? "Confirm Services"
-                          : "Confirm Services"}
-                      </Link>
+                              ? "Confirm Services"
+                              : "Confirm Services"}
+                        </Link>
                       )}
 
-                      
-
-                        {/* Confirm Service Button - Admin & Supervisor only, when Convert To Service is enabled and there are unconfirmed services */}
+                      {/* Confirm Service Button - Admin & Supervisor only, when Convert To Service is enabled and there are unconfirmed services */}
                       {(() => {
                         if (
                           bookingData?.Isinspection !== 1 ||
@@ -3772,10 +4009,13 @@ const handleCustomerRejectionSubmit = async () => {
                           return null;
                         }
                         const addOns = bookingData?.BookingAddOns || [];
-                        const supervisorBookings = bookingData?.SupervisorBookings || [];
+                        const supervisorBookings =
+                          bookingData?.SupervisorBookings || [];
                         const allServices = [...addOns, ...supervisorBookings];
                         const itemsToConfirm = allServices.filter(
-                          (a) => (a.IsSupervisor_Confirm ?? a.isSupervisor_Confirm) !== 1,
+                          (a) =>
+                            (a.IsSupervisor_Confirm ??
+                              a.isSupervisor_Confirm) !== 1,
                         );
                         if (itemsToConfirm.length === 0) {
                           return null;
@@ -3795,29 +4035,30 @@ const handleCustomerRejectionSubmit = async () => {
                         );
                       })()}
                     </>
-                    )}
+                  )}
 
                   {/* Reschedule & Reassign Buttons */}
-                  {bookingData && !hideAllActions &&
+                  {bookingData &&
+                    !hideAllActions &&
                     !["Completed", "Cancelled", "Refunded"].includes(
                       bookingData.BookingStatus,
                     ) && (
                       <div className="d-flex gap-2 flex-wrap">
                         {bookingData?.SupervisorBookings?.length > 0 && (
-                        <button
-                          className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                          onClick={handleCustomerConfirmation}
-                        >
-                          Customer Confirmation
-                        </button>
+                          <button
+                            className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                            onClick={handleCustomerConfirmation}
+                          >
+                            Customer Confirmation
+                          </button>
                         )}
                         {bookingData?.SupervisorBookings?.length > 0 && (
-                        <button
-                          className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                          onClick={() => setShowCustomerRejectionModal(true)}
-                        >
-                          Customer Rejection
-                        </button>
+                          <button
+                            className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                            onClick={() => setShowCustomerRejectionModal(true)}
+                          >
+                            Customer Rejection
+                          </button>
                         )}
                         {/* <button
                           className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
@@ -3848,9 +4089,6 @@ const handleCustomerRejectionSubmit = async () => {
                         )}
                       </div>
                     )}
-                  
-
-
                 </li>
 
                 {/* {bookingData &&
@@ -3888,7 +4126,12 @@ const handleCustomerRejectionSubmit = async () => {
                           <div className="d-flex flex-column w-100">
                             <div className="d-flex justify-content-between align-items-center w-100">
                               <div className="d-flex align-items-center gap-3">
-                                <Icon icon="mdi:calendar-check" width={20} height={20} className="text-primary" />
+                                <Icon
+                                  icon="mdi:calendar-check"
+                                  width={20}
+                                  height={20}
+                                  className="text-primary"
+                                />
                                 <div>
                                   <h6 className="mb-0 text-dark fw-bold">
                                     Booking #{bookingData.BookingTrackID}
@@ -3900,7 +4143,9 @@ const handleCustomerRejectionSubmit = async () => {
                                 </div>
                               </div>
                               <div className="d-flex align-items-center gap-2 flex-wrap">
-                                <span className="ms-2 small">Payment Status:</span>
+                                <span className="ms-2 small">
+                                  Payment Status:
+                                </span>
                                 {(() => {
                                   const payments = bookingData?.Payments;
 
@@ -3908,8 +4153,7 @@ const handleCustomerRejectionSubmit = async () => {
                                   let badgeClass = "bg-warning text-dark";
 
                                   if (payments?.length > 0) {
-                                    const lastPayment =
-                                      payments[0];
+                                    const lastPayment = payments[0];
                                     const status = lastPayment?.PaymentStatus;
 
                                     if (status === "Success") {
@@ -3931,14 +4175,18 @@ const handleCustomerRejectionSubmit = async () => {
                                   );
                                 })()}
 
-                                <span className="ms-2 small">Booking Status:</span>
+                                <span className="ms-2 small">
+                                  Booking Status:
+                                </span>
                                 <span
-                                  className={`badge px-3 py-1 rounded-pill ${bookingData.BookingStatus === "Completed"
-                                    ? "bg-success"
-                                    : bookingData.BookingStatus === "Confirmed"
-                                      ? "bg-primary"
-                                      : "bg-warning text-dark"
-                                    }`}
+                                  className={`badge px-3 py-1 rounded-pill ${
+                                    bookingData.BookingStatus === "Completed"
+                                      ? "bg-success"
+                                      : bookingData.BookingStatus ===
+                                          "Confirmed"
+                                        ? "bg-primary"
+                                        : "bg-warning text-dark"
+                                  }`}
                                 >
                                   {bookingData.BookingStatus}
                                 </span>
@@ -3951,11 +4199,19 @@ const handleCustomerRejectionSubmit = async () => {
                           <div className="container-fluid">
                             {/* ============= Packages Section ============= */}
                             {bookingData?.Packages?.length > 0 && (
-                              <Accordion defaultActiveKey="pkg1" className="mb-4">
+                              <Accordion
+                                defaultActiveKey="pkg1"
+                                className="mb-4"
+                              >
                                 <Accordion.Item eventKey="pkg1">
                                   <Accordion.Header>
                                     <h6 className="text-success fw-bold mb-0 d-flex align-items-center gap-2">
-                                      <Icon icon="mdi:package-variant" width={20} height={20} className="text-success" />
+                                      <Icon
+                                        icon="mdi:package-variant"
+                                        width={20}
+                                        height={20}
+                                        className="text-success"
+                                      />
                                       Packages
                                     </h6>
                                   </Accordion.Header>
@@ -3981,36 +4237,39 @@ const handleCustomerRejectionSubmit = async () => {
                                                     {pkg.PackageName}
                                                   </strong>
                                                   {pkg.Category
-                                                    ?.SubCategories?.[0]?.Includes
-                                                    ?.length > 0 && (
-                                                      <ul className="text-muted small ps-3 mb-0">
-                                                        {pkg.Category.SubCategories[0].Includes.map(
-                                                          (inc) => (
-                                                            <li key={inc.IncludeID}>
-                                                              {inc.IncludeName}
-                                                            </li>
-                                                          ),
-                                                        )}
-                                                      </ul>
-                                                    )}
+                                                    ?.SubCategories?.[0]
+                                                    ?.Includes?.length > 0 && (
+                                                    <ul className="text-muted small ps-3 mb-0">
+                                                      {pkg.Category.SubCategories[0].Includes.map(
+                                                        (inc) => (
+                                                          <li
+                                                            key={inc.IncludeID}
+                                                          >
+                                                            {inc.IncludeName}
+                                                          </li>
+                                                        ),
+                                                      )}
+                                                    </ul>
+                                                  )}
                                                 </div>
 
                                                 <span className="badge bg-success-subtle text-success border border-success">
                                                   ⏱ Duration:{" "}
                                                   {pkg.EstimatedDurationMinutes >=
-                                                    60
+                                                  60
                                                     ? (() => {
-                                                      const hours = Math.floor(
-                                                        pkg.EstimatedDurationMinutes /
-                                                        60,
-                                                      );
-                                                      const minutes =
-                                                        pkg.EstimatedDurationMinutes %
-                                                        60;
-                                                      return minutes === 0
-                                                        ? `${hours} hr`
-                                                        : `${hours} hr ${minutes} mins`;
-                                                    })()
+                                                        const hours =
+                                                          Math.floor(
+                                                            pkg.EstimatedDurationMinutes /
+                                                              60,
+                                                          );
+                                                        const minutes =
+                                                          pkg.EstimatedDurationMinutes %
+                                                          60;
+                                                        return minutes === 0
+                                                          ? `${hours} hr`
+                                                          : `${hours} hr ${minutes} mins`;
+                                                      })()
                                                     : `${pkg.EstimatedDurationMinutes} mins`}
                                                 </span>
                                               </div>
@@ -4030,7 +4289,11 @@ const handleCustomerRejectionSubmit = async () => {
                                 <Accordion.Item eventKey="1">
                                   <Accordion.Header>
                                     <h6 className="text-primary fw-bold mb-0 d-flex align-items-center gap-2">
-                                      <Icon icon="mdi:wrench" width={20} height={20} />
+                                      <Icon
+                                        icon="mdi:wrench"
+                                        width={20}
+                                        height={20}
+                                      />
                                       Additional Services
                                     </h6>
                                   </Accordion.Header>
@@ -4075,7 +4338,9 @@ const handleCustomerRejectionSubmit = async () => {
                             {bookingData?.BookingAddOns?.length > 0 && (
                               <div className="card mb-4 mt-4">
                                 <div className="card-header bg-success">
-                                  <h6 className="mb-0 fw-bold text-white">Customer Confirmed Services</h6>
+                                  <h6 className="mb-0 fw-bold text-white">
+                                    Customer Confirmed Services
+                                  </h6>
                                 </div>
                                 <div className="card-body p-0">
                                   <div
@@ -4103,11 +4368,15 @@ const handleCustomerRejectionSubmit = async () => {
                                           >
                                             S.No
                                           </th>
-                                          <th style={{ width: "100px" }}>Type</th>
+                                          <th style={{ width: "100px" }}>
+                                            Type
+                                          </th>
                                           <th style={{ width: "180px" }}>
                                             Service Name
                                           </th>
-                                          <th style={{ width: "100px" }}>Date</th>
+                                          <th style={{ width: "100px" }}>
+                                            Date
+                                          </th>
                                           <th
                                             style={{ width: "100px" }}
                                             className="text-end"
@@ -4175,23 +4444,25 @@ const handleCustomerRejectionSubmit = async () => {
                                             DLR GST Amt.
                                           </th>
                                           {roleName !== "Field Advisor" && (
-                                          <>
-                                          <th
-                                            style={{ width: "100px" }}
-                                            className="text-end"
-                                          >
-                                            Company %
-                                          </th>
-                                          <th
-                                            style={{ width: "140px" }}
-                                            className="text-end"
-                                          >
-                                            Company Amt.
-                                          </th>
-                                          </>
+                                            <>
+                                              <th
+                                                style={{ width: "100px" }}
+                                                className="text-end"
+                                              >
+                                                Company %
+                                              </th>
+                                              <th
+                                                style={{ width: "140px" }}
+                                                className="text-end"
+                                              >
+                                                Company Amt.
+                                              </th>
+                                            </>
                                           )}
-                                          <th style={{ width: "170px" }}
-                                            className="text-center">
+                                          <th
+                                            style={{ width: "170px" }}
+                                            className="text-center"
+                                          >
                                             Dealer Name
                                           </th>
                                           {/* <th style={{ width: "180px" }}
@@ -4216,7 +4487,6 @@ const handleCustomerRejectionSubmit = async () => {
                                           >
                                             Total Amt
                                           </th>
-
                                         </tr>
                                       </thead>
 
@@ -4239,8 +4509,14 @@ const handleCustomerRejectionSubmit = async () => {
                                                     Array.isArray(
                                                       addon.Includes,
                                                     ) &&
-                                                    addon.Includes.length > 0 && (
-                                                      <ul className="text-muted small ps-3 mb-0 mt-2"  style={{ textAlign: "left", }}>
+                                                    addon.Includes.length >
+                                                      0 && (
+                                                      <ul
+                                                        className="text-muted small ps-3 mb-0 mt-2"
+                                                        style={{
+                                                          textAlign: "left",
+                                                        }}
+                                                      >
                                                         {addon.Includes.map(
                                                           (inc) => (
                                                             <li
@@ -4248,7 +4524,10 @@ const handleCustomerRejectionSubmit = async () => {
                                                                 inc.IncludeID ||
                                                                 inc.id
                                                               }
-                                                              style={{ textAlign: "left"}}
+                                                              style={{
+                                                                textAlign:
+                                                                  "left",
+                                                              }}
                                                             >
                                                               {inc.IncludeName ||
                                                                 inc.name}
@@ -4263,8 +4542,10 @@ const handleCustomerRejectionSubmit = async () => {
                                               <td className="normal">
                                                 {addon.CreatedDate
                                                   ? new Date(
-                                                    addon.CreatedDate,
-                                                  ).toLocaleDateString("en-IN")
+                                                      addon.CreatedDate,
+                                                    ).toLocaleDateString(
+                                                      "en-IN",
+                                                    )
                                                   : "—"}
                                               </td>
                                               <td className="text-end">
@@ -4316,18 +4597,18 @@ const handleCustomerRejectionSubmit = async () => {
                                                   addon.DealerGSTAmount || 0,
                                                 ).toFixed(2)}
                                               </td>
-                                            {roleName !== "Field Advisor" && (
-                                              <>
-                                              <td className="text-end">
-                                                {addon.Percentage ?? "0"}%
-                                              </td>
-                                              <td className="text-end">
-                                                {Number(
-                                                  addon.Our_Earnings || 0,
-                                                ).toFixed(2)}
-                                              </td>
+                                              {roleName !== "Field Advisor" && (
+                                                <>
+                                                  <td className="text-end">
+                                                    {addon.Percentage ?? "0"}%
+                                                  </td>
+                                                  <td className="text-end">
+                                                    {Number(
+                                                      addon.Our_Earnings || 0,
+                                                    ).toFixed(2)}
+                                                  </td>
                                                 </>
-                                                )}
+                                              )}
                                               <td
                                                 className=" normal text-center"
                                                 style={{
@@ -4335,14 +4616,22 @@ const handleCustomerRejectionSubmit = async () => {
                                                   wordBreak: "break-word",
                                                 }}
                                               >
-                                                {addon.DealerName || "—"} {addon.IsDealer_Confirm && addon.DealerName ? <span
-                                                  className={`badge px-3 py-2 rounded-pill ${addon.IsDealer_Confirm === "Approved"
-                                                    ? "bg-success text-white"
-                                                    : "bg-danger text-white"
+                                                {addon.DealerName || "—"}{" "}
+                                                {addon.IsDealer_Confirm &&
+                                                addon.DealerName ? (
+                                                  <span
+                                                    className={`badge px-3 py-2 rounded-pill ${
+                                                      addon.IsDealer_Confirm ===
+                                                      "Approved"
+                                                        ? "bg-success text-white"
+                                                        : "bg-danger text-white"
                                                     }`}
-                                                >
-                                                  {addon.IsDealer_Confirm}
-                                                </span> : ""}
+                                                  >
+                                                    {addon.IsDealer_Confirm}
+                                                  </span>
+                                                ) : (
+                                                  ""
+                                                )}
                                               </td>
                                               {/* <td
                                                 className=" normal text-center"
@@ -4356,14 +4645,25 @@ const handleCustomerRejectionSubmit = async () => {
                                               </td> */}
                                               <td className="text-center ">
                                                 {(() => {
-                                                  const dealerConfirm =
-                                                    (addon.IsDealer_Confirm ?? addon.isDealer_Confirm)
-                                                      ?.toString()
-                                                      .trim()
-                                                      .toLowerCase();
-                                                  const isApproved = dealerConfirm === "approved";
-                                                  const isRejected = dealerConfirm === "rejected";
-                                                  const status = (addon.StatusName ?? addon.statusName ?? addon.AddOnStatus ?? addon.addOnStatus)
+                                                  const dealerConfirm = (
+                                                    addon.IsDealer_Confirm ??
+                                                    addon.isDealer_Confirm
+                                                  )
+                                                    ?.toString()
+                                                    .trim()
+                                                    .toLowerCase();
+                                                  const isApproved =
+                                                    dealerConfirm ===
+                                                    "approved";
+                                                  const isRejected =
+                                                    dealerConfirm ===
+                                                    "rejected";
+                                                  const status = (
+                                                    addon.StatusName ??
+                                                    addon.statusName ??
+                                                    addon.AddOnStatus ??
+                                                    addon.addOnStatus
+                                                  )
                                                     ?.toString()
                                                     .trim();
                                                   return (
@@ -4373,33 +4673,51 @@ const handleCustomerRejectionSubmit = async () => {
                                                           className="form-select form-select-sm"
                                                           value={status}
                                                           onChange={(e) =>
-                                                            handleAddOnStatusChange(addon, e.target.value)
+                                                            handleAddOnStatusChange(
+                                                              addon,
+                                                              e.target.value,
+                                                            )
                                                           }
                                                         >
-                                                          
-                                                          {status === "ServiceCompleted" ? (
+                                                          {status ===
+                                                          "ServiceCompleted" ? (
                                                             <>
-                                                            <option value="ServiceCompleted">Completed</option>
-                                                            <option value="Rework">Rework</option>
+                                                              <option value="ServiceCompleted">
+                                                                Completed
+                                                              </option>
+                                                              <option value="Rework">
+                                                                Rework
+                                                              </option>
                                                             </>
                                                           ) : (
                                                             <>
                                                               {/* <option value="">Select Status</option> */}
-                                                              <option value="Pending">Pending</option>
-                                                              <option value="InProgress">In-Progress</option>
-                                                               <option value="ServiceCompleted">Completed</option>
-                                                              <option value="Rework">Rework</option>
+                                                              <option value="Pending">
+                                                                Pending
+                                                              </option>
+                                                              <option value="InProgress">
+                                                                In-Progress
+                                                              </option>
+                                                              <option value="ServiceCompleted">
+                                                                Completed
+                                                              </option>
+                                                              <option value="Rework">
+                                                                Rework
+                                                              </option>
                                                             </>
                                                           )}
-
                                                         </select>
                                                       ) : isRejected ? (
                                                         <span className="badge bg-danger text-white px-3 py-4 rounded-pill">
                                                           Rejected
                                                         </span>
                                                       ) : (
-                                                        <span className={` ${addon.DealerName ? " badge bg-warning text-dark  px-3 py-4 rounded-pill" : ""}`}>
-                                                          {addon.DealerName ? `Pending` : "—"}
+                                                        <span
+                                                          className={` ${addon.DealerName ? " badge bg-warning text-dark  px-3 py-4 rounded-pill" : ""}`}
+                                                        >
+                                                          {addon.DealerName
+                                                            ? `Pending`
+                                                            : "—"}
                                                         </span>
                                                       )}
                                                     </div>
@@ -4407,39 +4725,55 @@ const handleCustomerRejectionSubmit = async () => {
                                                 })()}
                                               </td>
                                               <td className="text-center">
-                                                {addon.IsCompleted_Confirmation === 1 ||
-                                                  addon.isCompleted_Confirmation === 1 ? (
+                                                {addon.IsCompleted_Confirmation ===
+                                                  1 ||
+                                                addon.isCompleted_Confirmation ===
+                                                  1 ? (
                                                   <div className="d-flex gap-2 align-items-center justify-content-center">
                                                     <span className="badge bg-success px-3 py-3 py-4 rounded-pill">
-                                                      {addon.EmployeeName ?? addon.employeeName ?? "—"}
+                                                      {addon.EmployeeName ??
+                                                        addon.employeeName ??
+                                                        "—"}
                                                     </span>
                                                   </div>
-                                                ) : (() => {
-                                                  const status = (addon.StatusName ?? addon.statusName ?? addon.AddOnStatus ?? addon.addOnStatus)
-                                                    ?.toString()
-                                                    .trim();
-                                                  const isServiceCompleted = status === "ServiceCompleted";
-                                                  return isServiceCompleted ? (
-                                                    <button
-                                                      type="button"
-                                                      className="btn btn-primary-600 btn-sm"
-                                                      // onClick={() => handleFieldAdvisorConfirm(addon)}
-                                                      onClick={() => {
-                                                          setSelectedAddon(addon);
-                                                          setShowConfirmModal(true);
+                                                ) : (
+                                                  (() => {
+                                                    const status = (
+                                                      addon.StatusName ??
+                                                      addon.statusName ??
+                                                      addon.AddOnStatus ??
+                                                      addon.addOnStatus
+                                                    )
+                                                      ?.toString()
+                                                      .trim();
+                                                    const isServiceCompleted =
+                                                      status ===
+                                                      "ServiceCompleted";
+                                                    return isServiceCompleted ? (
+                                                      <button
+                                                        type="button"
+                                                        className="btn btn-primary-600 btn-sm"
+                                                        // onClick={() => handleFieldAdvisorConfirm(addon)}
+                                                        onClick={() => {
+                                                          setSelectedAddon(
+                                                            addon,
+                                                          );
+                                                          setShowConfirmModal(
+                                                            true,
+                                                          );
                                                         }}
-                                                    >
-                                                      Confirm
-                                                    </button>
-                                                  ) : null;
-                                                })()}
+                                                      >
+                                                        Confirm
+                                                      </button>
+                                                    ) : null;
+                                                  })()
+                                                )}
                                               </td>
                                               <td className="text-end fw-bold text-primary">
                                                 {Number(
                                                   addon.TotalPrice || 0,
                                                 ).toFixed(2)}
                                               </td>
-
                                             </tr>
                                           ),
                                         )}
@@ -4453,7 +4787,9 @@ const handleCustomerRejectionSubmit = async () => {
                             {bookingData?.SupervisorBookings?.length > 0 && (
                               <div className="card mb-4 mt-4">
                                 <div className="card-header bg-warning text-dark">
-                                  <h6 className="mb-0 fw-bold">Customer Not Confirmed Services</h6>
+                                  <h6 className="mb-0 fw-bold">
+                                    Customer Not Confirmed Services
+                                  </h6>
                                 </div>
                                 <div className="card-body p-0">
                                   <div
@@ -4481,11 +4817,15 @@ const handleCustomerRejectionSubmit = async () => {
                                           >
                                             S.No
                                           </th>
-                                          <th style={{ width: "100px" }}>Type</th>
+                                          <th style={{ width: "100px" }}>
+                                            Type
+                                          </th>
                                           <th style={{ width: "180px" }}>
                                             Service Name
                                           </th>
-                                          <th style={{ width: "100px" }}>Date</th>
+                                          <th style={{ width: "100px" }}>
+                                            Date
+                                          </th>
                                           <th
                                             style={{ width: "100px" }}
                                             className="text-end"
@@ -4564,8 +4904,10 @@ const handleCustomerRejectionSubmit = async () => {
                                           >
                                             Our Amt.
                                           </th>
-                                          <th style={{ width: "170px" }}
-                                            className="text-center">
+                                          <th
+                                            style={{ width: "170px" }}
+                                            className="text-center"
+                                          >
                                             Dealer Name
                                           </th>
                                           {/* <th
@@ -4587,113 +4929,159 @@ const handleCustomerRejectionSubmit = async () => {
                                         {bookingData.SupervisorBookings.map(
                                           (supervisorBooking, index) => {
                                             const totalPrice =
-                                              (Number(supervisorBooking.Price || 0)) +
-                                              (Number(supervisorBooking.GSTAmount || 0)) +
-                                              (Number(supervisorBooking.LabourCharges || 0));
+                                              Number(
+                                                supervisorBooking.Price || 0,
+                                              ) +
+                                              Number(
+                                                supervisorBooking.GSTAmount ||
+                                                  0,
+                                              ) +
+                                              Number(
+                                                supervisorBooking.LabourCharges ||
+                                                  0,
+                                              );
 
                                             return (
-                                              <tr key={supervisorBooking.Id || index}>
+                                              <tr
+                                                key={
+                                                  supervisorBooking.Id || index
+                                                }
+                                              >
                                                 <td className="text-center">
                                                   {index + 1}.
                                                 </td>
                                                 <td className="normal">
-                                                  {supervisorBooking.ServiceType || "—"}
+                                                  {supervisorBooking.ServiceType ||
+                                                    "—"}
                                                 </td>
                                                 <td className="normal">
                                                   <div className="normal">
-                                                    {supervisorBooking.ServiceName || "—"}
+                                                    {supervisorBooking.ServiceName ||
+                                                      "—"}
                                                     {supervisorBooking.Includes &&
-                                                      (Array.isArray(supervisorBooking.Includes)
-                                                        ? supervisorBooking.Includes.length > 0 && (
-                                                          <ul className="text-muted small ps-3 mb-0 mt-2" style={{ textAlign: "left", }}>
-                                                            {supervisorBooking.Includes.map(
-                                                              (inc) => (
-                                                                <li
-                                                                  key={
-                                                                    inc.IncludeID ||
-                                                                    inc.id ||
-                                                                    inc
-                                                                  }
-                                                                >
-                                                                  {inc.IncludeName ||
-                                                                    inc.name ||
-                                                                    inc}
-                                                                </li>
-                                                              ),
-                                                            )}
-                                                          </ul>
-                                                        )
-                                                        : typeof supervisorBooking.Includes === 'string' && supervisorBooking.Includes.trim() !== '' && (
-                                                          <div className="text-muted small mt-2">
-                                                            {supervisorBooking.Includes}
-                                                          </div>
-                                                        )
-                                                      )}
+                                                      (Array.isArray(
+                                                        supervisorBooking.Includes,
+                                                      )
+                                                        ? supervisorBooking
+                                                            .Includes.length >
+                                                            0 && (
+                                                            <ul
+                                                              className="text-muted small ps-3 mb-0 mt-2"
+                                                              style={{
+                                                                textAlign:
+                                                                  "left",
+                                                              }}
+                                                            >
+                                                              {supervisorBooking.Includes.map(
+                                                                (inc) => (
+                                                                  <li
+                                                                    key={
+                                                                      inc.IncludeID ||
+                                                                      inc.id ||
+                                                                      inc
+                                                                    }
+                                                                  >
+                                                                    {inc.IncludeName ||
+                                                                      inc.name ||
+                                                                      inc}
+                                                                  </li>
+                                                                ),
+                                                              )}
+                                                            </ul>
+                                                          )
+                                                        : typeof supervisorBooking.Includes ===
+                                                            "string" &&
+                                                          supervisorBooking.Includes.trim() !==
+                                                            "" && (
+                                                            <div className="text-muted small mt-2">
+                                                              {
+                                                                supervisorBooking.Includes
+                                                              }
+                                                            </div>
+                                                          ))}
                                                   </div>
                                                 </td>
 
                                                 <td className="normal">
                                                   {supervisorBooking.CreatedDate
                                                     ? new Date(
-                                                      supervisorBooking.CreatedDate,
-                                                    ).toLocaleDateString("en-IN")
+                                                        supervisorBooking.CreatedDate,
+                                                      ).toLocaleDateString(
+                                                        "en-IN",
+                                                      )
                                                     : "—"}
                                                 </td>
                                                 <td className="text-end">
                                                   {Number(
-                                                    supervisorBooking.BasePrice || 0,
+                                                    supervisorBooking.BasePrice ||
+                                                      0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 <td className="text-end dlr-column">
                                                   {Number(
-                                                    supervisorBooking.DealerBasePrice || 0,
+                                                    supervisorBooking.DealerBasePrice ||
+                                                      0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 <td className="text-end">
-                                                  {supervisorBooking.Quantity ?? "1"}
+                                                  {supervisorBooking.Quantity ??
+                                                    "1"}
                                                 </td>
                                                 <td className="text-end">
                                                   {Number(
-                                                    supervisorBooking.Price || 0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                <td className="text-end dlr-column">
-                                                  {Number(
-                                                    supervisorBooking.DealerSparePrice || 0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                <td className="text-end">
-                                                  {Number(
-                                                    supervisorBooking.LabourCharges || 0,
+                                                    supervisorBooking.Price ||
+                                                      0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 <td className="text-end dlr-column">
                                                   {Number(
-                                                    supervisorBooking.DealerPrice || 0,
+                                                    supervisorBooking.DealerSparePrice ||
+                                                      0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 <td className="text-end">
-                                                  {supervisorBooking.GSTPercent ?? 0}%
-                                                </td>
-                                                <td className="text-end dlr-column">
-                                                  {supervisorBooking.DealerGSTPercent ?? 0}%
-                                                </td>
-                                                <td className="text-end">
                                                   {Number(
-                                                    supervisorBooking.GSTAmount || 0,
+                                                    supervisorBooking.LabourCharges ||
+                                                      0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 <td className="text-end dlr-column">
                                                   {Number(
-                                                    supervisorBooking.DealerGSTAmount || 0,
+                                                    supervisorBooking.DealerPrice ||
+                                                      0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 <td className="text-end">
-                                                  {supervisorBooking.Percentage ?? "0"}%
+                                                  {supervisorBooking.GSTPercent ??
+                                                    0}
+                                                  %
+                                                </td>
+                                                <td className="text-end dlr-column">
+                                                  {supervisorBooking.DealerGSTPercent ??
+                                                    0}
+                                                  %
                                                 </td>
                                                 <td className="text-end">
                                                   {Number(
-                                                    supervisorBooking.Our_Earnings || 0,
+                                                    supervisorBooking.GSTAmount ||
+                                                      0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                <td className="text-end dlr-column">
+                                                  {Number(
+                                                    supervisorBooking.DealerGSTAmount ||
+                                                      0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                <td className="text-end">
+                                                  {supervisorBooking.Percentage ??
+                                                    "0"}
+                                                  %
+                                                </td>
+                                                <td className="text-end">
+                                                  {Number(
+                                                    supervisorBooking.Our_Earnings ||
+                                                      0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 {/* <td
@@ -4712,22 +5100,30 @@ const handleCustomerRejectionSubmit = async () => {
                                                     wordBreak: "break-word",
                                                   }}
                                                 >
-                                                  {supervisorBooking.DealerName || "—"}
+                                                  {supervisorBooking.DealerName ||
+                                                    "—"}
 
-                                                  {supervisorBooking.IsDealer_Confirm && supervisorBooking.DealerName && (
-                                                    <span
-                                                      className={`badge px-3 py-2 rounded-pill ${supervisorBooking.IsDealer_Confirm === "Approved"
-                                                        ? "bg-success text-white"
-                                                        : supervisorBooking.IsDealer_Confirm === "Rejected"
-                                                          ? "bg-danger text-white"
-                                                          : supervisorBooking.IsDealer_Confirm === "Pending"
-                                                            ? "bg-warning text-dark"
-                                                            : "bg-secondary text-white"
+                                                  {supervisorBooking.IsDealer_Confirm &&
+                                                    supervisorBooking.DealerName && (
+                                                      <span
+                                                        className={`badge px-3 py-2 rounded-pill ${
+                                                          supervisorBooking.IsDealer_Confirm ===
+                                                          "Approved"
+                                                            ? "bg-success text-white"
+                                                            : supervisorBooking.IsDealer_Confirm ===
+                                                                "Rejected"
+                                                              ? "bg-danger text-white"
+                                                              : supervisorBooking.IsDealer_Confirm ===
+                                                                  "Pending"
+                                                                ? "bg-warning text-dark"
+                                                                : "bg-secondary text-white"
                                                         }`}
-                                                    >
-                                                      {supervisorBooking.IsDealer_Confirm}
-                                                    </span>
-                                                  )}
+                                                      >
+                                                        {
+                                                          supervisorBooking.IsDealer_Confirm
+                                                        }
+                                                      </span>
+                                                    )}
                                                 </td>
                                                 {/* <td className="text-center">
                                                   {(() => {
@@ -4774,10 +5170,13 @@ const handleCustomerRejectionSubmit = async () => {
                               </div>
                             )}
 
-                                 {bookingData?.CustomerRejectedBookings?.length > 0 && (
+                            {bookingData?.CustomerRejectedBookings?.length >
+                              0 && (
                               <div className="card mb-4 mt-4">
                                 <div className="card-header bg-danger text-light">
-                                  <h6 className="mb-0 fw-bold text-white">Customer Rejected Services</h6>
+                                  <h6 className="mb-0 fw-bold text-white">
+                                    Customer Rejected Services
+                                  </h6>
                                 </div>
                                 <div className="card-body p-0">
                                   <div
@@ -4805,11 +5204,15 @@ const handleCustomerRejectionSubmit = async () => {
                                           >
                                             S.No
                                           </th>
-                                          <th style={{ width: "100px" }}>Type</th>
+                                          <th style={{ width: "100px" }}>
+                                            Type
+                                          </th>
                                           <th style={{ width: "180px" }}>
                                             Service Name
                                           </th>
-                                          <th style={{ width: "100px" }}>Date</th>
+                                          <th style={{ width: "100px" }}>
+                                            Date
+                                          </th>
                                           <th
                                             style={{ width: "100px" }}
                                             className="text-end"
@@ -4888,8 +5291,10 @@ const handleCustomerRejectionSubmit = async () => {
                                           >
                                             Our Amt.
                                           </th>
-                                          <th style={{ width: "170px" }}
-                                            className="text-center">
+                                          <th
+                                            style={{ width: "170px" }}
+                                            className="text-center"
+                                          >
                                             Dealer Name
                                           </th>
                                           <th
@@ -4917,113 +5322,161 @@ const handleCustomerRejectionSubmit = async () => {
                                         {bookingData?.CustomerRejectedBookings?.map(
                                           (CustomerRejectedBookings, index) => {
                                             const totalPrice =
-                                              (Number(CustomerRejectedBookings.Price || 0)) +
-                                              (Number(CustomerRejectedBookings.GSTAmount || 0)) +
-                                              (Number(CustomerRejectedBookings.LabourCharges || 0));
+                                              Number(
+                                                CustomerRejectedBookings.Price ||
+                                                  0,
+                                              ) +
+                                              Number(
+                                                CustomerRejectedBookings.GSTAmount ||
+                                                  0,
+                                              ) +
+                                              Number(
+                                                CustomerRejectedBookings.LabourCharges ||
+                                                  0,
+                                              );
 
                                             return (
-                                              <tr key={CustomerRejectedBookings.Id || index}>
+                                              <tr
+                                                key={
+                                                  CustomerRejectedBookings.Id ||
+                                                  index
+                                                }
+                                              >
                                                 <td className="text-center">
                                                   {index + 1}.
                                                 </td>
                                                 <td className="normal">
-                                                  {CustomerRejectedBookings.ServiceType || "—"}
+                                                  {CustomerRejectedBookings.ServiceType ||
+                                                    "—"}
                                                 </td>
                                                 <td className="normal">
                                                   <div className="normal">
-                                                    {CustomerRejectedBookings.ServiceName || "—"}
+                                                    {CustomerRejectedBookings.ServiceName ||
+                                                      "—"}
                                                     {CustomerRejectedBookings.Includes &&
-                                                      (Array.isArray(CustomerRejectedBookings.Includes)
-                                                        ? CustomerRejectedBookings.Includes.length > 0 && (
-                                                          <ul className="text-muted small ps-3 mb-0 mt-2" style={{ textAlign: "left", }}>
-                                                            {CustomerRejectedBookings.Includes.map(
-                                                              (inc) => (
-                                                                <li
-                                                                  key={
-                                                                    inc.IncludeID ||
-                                                                    inc.id ||
-                                                                    inc
-                                                                  }
-                                                                >
-                                                                  {inc.IncludeName ||
-                                                                    inc.name ||
-                                                                    inc}
-                                                                </li>
-                                                              ),
-                                                            )}
-                                                          </ul>
-                                                        )
-                                                        : typeof CustomerRejectedBookings.Includes === 'string' && CustomerRejectedBookings.Includes.trim() !== '' && (
-                                                          <div className="text-muted small mt-2">
-                                                            {CustomerRejectedBookings.Includes}
-                                                          </div>
-                                                        )
-                                                      )}
+                                                      (Array.isArray(
+                                                        CustomerRejectedBookings.Includes,
+                                                      )
+                                                        ? CustomerRejectedBookings
+                                                            .Includes.length >
+                                                            0 && (
+                                                            <ul
+                                                              className="text-muted small ps-3 mb-0 mt-2"
+                                                              style={{
+                                                                textAlign:
+                                                                  "left",
+                                                              }}
+                                                            >
+                                                              {CustomerRejectedBookings.Includes.map(
+                                                                (inc) => (
+                                                                  <li
+                                                                    key={
+                                                                      inc.IncludeID ||
+                                                                      inc.id ||
+                                                                      inc
+                                                                    }
+                                                                  >
+                                                                    {inc.IncludeName ||
+                                                                      inc.name ||
+                                                                      inc}
+                                                                  </li>
+                                                                ),
+                                                              )}
+                                                            </ul>
+                                                          )
+                                                        : typeof CustomerRejectedBookings.Includes ===
+                                                            "string" &&
+                                                          CustomerRejectedBookings.Includes.trim() !==
+                                                            "" && (
+                                                            <div className="text-muted small mt-2">
+                                                              {
+                                                                CustomerRejectedBookings.Includes
+                                                              }
+                                                            </div>
+                                                          ))}
                                                   </div>
                                                 </td>
 
                                                 <td className="normal">
                                                   {CustomerRejectedBookings.CreatedDate
                                                     ? new Date(
-                                                      CustomerRejectedBookings.CreatedDate,
-                                                    ).toLocaleDateString("en-IN")
+                                                        CustomerRejectedBookings.CreatedDate,
+                                                      ).toLocaleDateString(
+                                                        "en-IN",
+                                                      )
                                                     : "—"}
                                                 </td>
                                                 <td className="text-end">
                                                   {Number(
-                                                    CustomerRejectedBookings.BasePrice || 0,
+                                                    CustomerRejectedBookings.BasePrice ||
+                                                      0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 <td className="text-end dlr-column">
                                                   {Number(
-                                                    CustomerRejectedBookings.DealerBasePrice || 0,
+                                                    CustomerRejectedBookings.DealerBasePrice ||
+                                                      0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 <td className="text-end">
-                                                  {CustomerRejectedBookings.Quantity ?? "1"}
+                                                  {CustomerRejectedBookings.Quantity ??
+                                                    "1"}
                                                 </td>
                                                 <td className="text-end">
                                                   {Number(
-                                                    CustomerRejectedBookings.Price || 0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                <td className="text-end dlr-column">
-                                                  {Number(
-                                                    CustomerRejectedBookings.DealerSparePrice || 0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                <td className="text-end">
-                                                  {Number(
-                                                    CustomerRejectedBookings.LabourCharges || 0,
+                                                    CustomerRejectedBookings.Price ||
+                                                      0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 <td className="text-end dlr-column">
                                                   {Number(
-                                                    CustomerRejectedBookings.DealerPrice || 0,
+                                                    CustomerRejectedBookings.DealerSparePrice ||
+                                                      0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 <td className="text-end">
-                                                  {CustomerRejectedBookings.GSTPercent ?? 0}%
-                                                </td>
-                                                <td className="text-end dlr-column">
-                                                  {CustomerRejectedBookings.DealerGSTPercent ?? 0}%
-                                                </td>
-                                                <td className="text-end">
                                                   {Number(
-                                                    CustomerRejectedBookings.GSTAmount || 0,
+                                                    CustomerRejectedBookings.LabourCharges ||
+                                                      0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 <td className="text-end dlr-column">
                                                   {Number(
-                                                    CustomerRejectedBookings.DealerGSTAmount || 0,
+                                                    CustomerRejectedBookings.DealerPrice ||
+                                                      0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 <td className="text-end">
-                                                  {CustomerRejectedBookings.Percentage ?? "0"}%
+                                                  {CustomerRejectedBookings.GSTPercent ??
+                                                    0}
+                                                  %
+                                                </td>
+                                                <td className="text-end dlr-column">
+                                                  {CustomerRejectedBookings.DealerGSTPercent ??
+                                                    0}
+                                                  %
                                                 </td>
                                                 <td className="text-end">
                                                   {Number(
-                                                    CustomerRejectedBookings.Our_Earnings || 0,
+                                                    CustomerRejectedBookings.GSTAmount ||
+                                                      0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                <td className="text-end dlr-column">
+                                                  {Number(
+                                                    CustomerRejectedBookings.DealerGSTAmount ||
+                                                      0,
+                                                  ).toFixed(2)}
+                                                </td>
+                                                <td className="text-end">
+                                                  {CustomerRejectedBookings.Percentage ??
+                                                    "0"}
+                                                  %
+                                                </td>
+                                                <td className="text-end">
+                                                  {Number(
+                                                    CustomerRejectedBookings.Our_Earnings ||
+                                                      0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 {/* <td
@@ -5042,31 +5495,48 @@ const handleCustomerRejectionSubmit = async () => {
                                                     wordBreak: "break-word",
                                                   }}
                                                 >
-                                                  {CustomerRejectedBookings.DealerName || "—"}
+                                                  {CustomerRejectedBookings.DealerName ||
+                                                    "—"}
 
-                                                  {CustomerRejectedBookings.IsDealer_Confirm && CustomerRejectedBookings.DealerName && (
-                                                    <span
-                                                      className={`badge px-3 py-2 rounded-pill ${CustomerRejectedBookings.IsDealer_Confirm === "Approved"
-                                                        ? "bg-success text-white"
-                                                        : CustomerRejectedBookings.IsDealer_Confirm === "Rejected"
-                                                          ? "bg-danger text-white"
-                                                          : CustomerRejectedBookings.IsDealer_Confirm === "Pending"
-                                                            ? "bg-warning text-dark"
-                                                            : "bg-secondary text-white"
+                                                  {CustomerRejectedBookings.IsDealer_Confirm &&
+                                                    CustomerRejectedBookings.DealerName && (
+                                                      <span
+                                                        className={`badge px-3 py-2 rounded-pill ${
+                                                          CustomerRejectedBookings.IsDealer_Confirm ===
+                                                          "Approved"
+                                                            ? "bg-success text-white"
+                                                            : CustomerRejectedBookings.IsDealer_Confirm ===
+                                                                "Rejected"
+                                                              ? "bg-danger text-white"
+                                                              : CustomerRejectedBookings.IsDealer_Confirm ===
+                                                                  "Pending"
+                                                                ? "bg-warning text-dark"
+                                                                : "bg-secondary text-white"
                                                         }`}
-                                                    >
-                                                      {CustomerRejectedBookings.IsDealer_Confirm}
-                                                    </span>
-                                                  )}
+                                                      >
+                                                        {
+                                                          CustomerRejectedBookings.IsDealer_Confirm
+                                                        }
+                                                      </span>
+                                                    )}
                                                 </td>
                                                 <td className="text-center">
                                                   {(() => {
                                                     const isApproved =
-                                                      (CustomerRejectedBookings.IsDealer_Confirm ?? CustomerRejectedBookings.isDealer_Confirm)
+                                                      (
+                                                        CustomerRejectedBookings.IsDealer_Confirm ??
+                                                        CustomerRejectedBookings.isDealer_Confirm
+                                                      )
                                                         ?.toString()
                                                         .trim()
-                                                        .toLowerCase() === "approved";
-                                                    const status = (CustomerRejectedBookings.StatusName ?? CustomerRejectedBookings.statusName ?? CustomerRejectedBookings.AddOnStatus ?? CustomerRejectedBookings.addOnStatus)
+                                                        .toLowerCase() ===
+                                                      "approved";
+                                                    const status = (
+                                                      CustomerRejectedBookings.StatusName ??
+                                                      CustomerRejectedBookings.statusName ??
+                                                      CustomerRejectedBookings.AddOnStatus ??
+                                                      CustomerRejectedBookings.addOnStatus
+                                                    )
                                                       ?.toString()
                                                       .trim();
                                                     return (
@@ -5076,14 +5546,27 @@ const handleCustomerRejectionSubmit = async () => {
                                                             className="form-select form-select-sm"
                                                             value={status}
                                                             onChange={(e) =>
-                                                              handleAddOnStatusChange(CustomerRejectedBookings, e.target.value)
+                                                              handleAddOnStatusChange(
+                                                                CustomerRejectedBookings,
+                                                                e.target.value,
+                                                              )
                                                             }
                                                           >
-                                                            <option value="">Select Status</option>
-                                                            <option value="Pending">Pending</option>
-                                                            <option value="ServiceCompleted">Completed</option>
-                                                            <option value="Rework">Rework</option>
-                                                            <option value="InProgress">In-Progress</option>
+                                                            <option value="">
+                                                              Select Status
+                                                            </option>
+                                                            <option value="Pending">
+                                                              Pending
+                                                            </option>
+                                                            <option value="ServiceCompleted">
+                                                              Completed
+                                                            </option>
+                                                            <option value="Rework">
+                                                              Rework
+                                                            </option>
+                                                            <option value="InProgress">
+                                                              In-Progress
+                                                            </option>
                                                           </select>
                                                         )}
                                                       </div>
@@ -5096,9 +5579,13 @@ const handleCustomerRejectionSubmit = async () => {
                                                 <td className="text-center">
                                                   <button
                                                     className="btn btn-sm btn-primary-600"
-                                                    onClick={() => handleRevertService(CustomerRejectedBookings)}
+                                                    onClick={() =>
+                                                      handleRevertService(
+                                                        CustomerRejectedBookings,
+                                                      )
+                                                    }
                                                   >
-                                                     <i className="bi bi-arrow-counterclockwise me-1"></i>
+                                                    <i className="bi bi-arrow-counterclockwise me-1"></i>
                                                     Revert
                                                   </button>
                                                 </td>
@@ -5150,7 +5637,9 @@ const handleCustomerRejectionSubmit = async () => {
                                   </span>
                                 </li> */}
                                   <li className="list-group-item d-flex justify-content-between p-0">
-                                    <span className="text-secondary">SGST(9%)</span>
+                                    <span className="text-secondary">
+                                      SGST(9%)
+                                    </span>
                                     <span>
                                       ₹
                                       {(
@@ -5159,7 +5648,9 @@ const handleCustomerRejectionSubmit = async () => {
                                     </span>
                                   </li>
                                   <li className="list-group-item d-flex justify-content-between p-0">
-                                    <span className="text-secondary">CGST(9%)</span>
+                                    <span className="text-secondary">
+                                      CGST(9%)
+                                    </span>
                                     <span>
                                       ₹
                                       {(
@@ -5190,9 +5681,9 @@ const handleCustomerRejectionSubmit = async () => {
                                       ₹
                                       {Number(
                                         (bookingData.TotalPrice || 0) +
-                                        (bookingData.GSTAmount || 0) +
-                                        (bookingData.LabourCharges || 0) -
-                                        (bookingData.CouponAmount || 0),
+                                          (bookingData.GSTAmount || 0) +
+                                          (bookingData.LabourCharges || 0) -
+                                          (bookingData.CouponAmount || 0),
                                       ).toFixed(2)}
                                     </span>
                                   </li>
@@ -5206,7 +5697,8 @@ const handleCustomerRejectionSubmit = async () => {
                                       - ₹{alreadyPaidDisplay.toFixed(2)}
                                     </span>
                                   </li>
-                                  {bookingData?.SupervisorBookings?.length > 0 && (
+                                  {bookingData?.SupervisorBookings?.length >
+                                    0 && (
                                     <li className="list-group-item d-flex justify-content-between border-top bg-warning p-0">
                                       <span className="fw-bold text-dark">
                                         Customer Not Confirmed Services Amount
@@ -5215,15 +5707,18 @@ const handleCustomerRejectionSubmit = async () => {
                                         ₹
                                         {Math.max(
                                           (
-                                            (bookingData?.SupervisorBookings || []).reduce((total, booking) => {
-                                              return (
-                                                total +
-                                                Number(booking?.Price || 0) +
-                                                Number(booking?.GSTAmount || 0) +
-                                                Number(booking?.LabourCharges || 0)
-                                              );
-                                            }, 0)
-                                          )
+                                            bookingData?.SupervisorBookings ||
+                                            []
+                                          ).reduce((total, booking) => {
+                                            return (
+                                              total +
+                                              Number(booking?.Price || 0) +
+                                              Number(booking?.GSTAmount || 0) +
+                                              Number(
+                                                booking?.LabourCharges || 0,
+                                              )
+                                            );
+                                          }, 0),
                                         ).toFixed(2)}
                                       </span>
                                     </li>
@@ -5237,9 +5732,9 @@ const handleCustomerRejectionSubmit = async () => {
                                       {Math.max(
                                         Number(
                                           (bookingData.TotalPrice || 0) +
-                                          (bookingData.GSTAmount || 0) +
-                                          (bookingData.LabourCharges || 0) -
-                                          (bookingData.CouponAmount || 0),
+                                            (bookingData.GSTAmount || 0) +
+                                            (bookingData.LabourCharges || 0) -
+                                            (bookingData.CouponAmount || 0),
                                         ) - alreadyPaid,
                                         0,
                                       ).toFixed(2)}
@@ -5252,8 +5747,11 @@ const handleCustomerRejectionSubmit = async () => {
                                   bookingData.SupervisorBookings.length > 0 && (
                                     <div className="alert alert-info py-2 px-3 mb-2 mb-md-3 small">
                                       There are{" "}
-                                      <strong>{bookingData.SupervisorBookings.length}</strong>{" "}
-                                      booking(s) that need to be confirmed by the customer.
+                                      <strong>
+                                        {bookingData.SupervisorBookings.length}
+                                      </strong>{" "}
+                                      booking(s) that need to be confirmed by
+                                      the customer.
                                     </div>
                                   )}
                                 {(() => {
@@ -5261,23 +5759,43 @@ const handleCustomerRejectionSubmit = async () => {
                                     ...(bookingData?.BookingAddOns || []),
                                     ...(bookingData?.BookingsTempAddons || []),
                                   ];
-                                  const supervisorItems = [...addons, ...(bookingData?.SupervisorBookings || [])];
+                                  const supervisorItems = [
+                                    ...addons,
+                                    ...(bookingData?.SupervisorBookings || []),
+                                  ];
                                   const dlrPendingCount = addons.filter((a) => {
-                                    const s = (a.StatusName ?? a.statusName ?? a.AddOnStatus ?? a.addOnStatus ?? a.Status)
+                                    const s = (
+                                      a.StatusName ??
+                                      a.statusName ??
+                                      a.AddOnStatus ??
+                                      a.addOnStatus ??
+                                      a.Status
+                                    )
                                       ?.toString()
                                       .trim()
                                       .toLowerCase();
-                                    return s !== "servicecompleted" && s !== "completed";
+                                    return (
+                                      s !== "servicecompleted" &&
+                                      s !== "completed"
+                                    );
                                   }).length;
-                                  const supervisorPendingCount = supervisorItems.filter(
-                                    (a) => (a.IsSupervisor_Confirm ?? a.isSupervisor_Confirm) !== 1
-                                  ).length;
-                                  const isSupervisorAssigned = !!(bookingData?.SupervisorID ?? bookingData?.SupervisorHeadId);
+                                  const supervisorPendingCount =
+                                    supervisorItems.filter(
+                                      (a) =>
+                                        (a.IsSupervisor_Confirm ??
+                                          a.isSupervisor_Confirm) !== 1,
+                                    ).length;
+                                  const isSupervisorAssigned = !!(
+                                    bookingData?.SupervisorID ??
+                                    bookingData?.SupervisorHeadId
+                                  );
                                   return (
                                     <>
                                       {dlrPendingCount > 0 && (
                                         <div className="alert alert-warning py-2 px-3 mb-2 mb-md-3 small">
-                                          <strong>{dlrPendingCount}</strong> services are pending for completion on the dealer side.
+                                          <strong>{dlrPendingCount}</strong>{" "}
+                                          services are pending for completion on
+                                          the dealer side.
                                         </div>
                                       )}
                                       {!isSupervisorAssigned ? (
@@ -5286,47 +5804,75 @@ const handleCustomerRejectionSubmit = async () => {
                                         </div>
                                       ) : supervisorPendingCount > 0 ? (
                                         <div className="alert alert-secondary py-2 px-3 mb-2 mb-md-3 small">
-                                          {supervisorPendingCount} service{supervisorPendingCount !== 1 ? "s" : ""} need{supervisorPendingCount === 1 ? "s" : ""} to be confirmed by the supervisor.
+                                          {supervisorPendingCount} service
+                                          {supervisorPendingCount !== 1
+                                            ? "s"
+                                            : ""}{" "}
+                                          need
+                                          {supervisorPendingCount === 1
+                                            ? "s"
+                                            : ""}{" "}
+                                          to be confirmed by the supervisor.
                                         </div>
                                       ) : null}
                                     </>
                                   );
                                 })()}
                                 <div className="d-flex justify-content-center gap-2 mt-3 mb-3 flex-wrap">
-
                                   {/* Show Confirm Payment only if not paid */}
-                                  {showEnterPaymentButton && !hideAllActions && (
-                                    <button
-                                      className="btn btn-primary-600 btn-sm"
-                                      onClick={() => {
-                                        setPaymentMode("");
-                                        setPayAmount(remainingAmount);
-                                        setShowPaymentModal(true);
-                                      }}
-                                    >
-                                      Payment Options
-                                    </button>
-                                  )}
+                                  {showEnterPaymentButton &&
+                                    !hideAllActions && (
+                                      <button
+                                        className="btn btn-primary-600 btn-sm"
+                                        onClick={() => {
+                                          setPaymentMode("");
+                                          setPayAmount(remainingAmount);
+                                          setShowPaymentModal(true);
+                                        }}
+                                      >
+                                        Payment Options
+                                      </button>
+                                    )}
                                   {/* Assign Button - show only when BookingAddOns has at least one service */}
-                                  {(role === "Admin" || roleName === "Supervisor Head" || roleName === "Field Advisor") &&
-                                  bookingData?.BookingStatus !== "Completed" &&
-                                  bookingData?.BookingAddOns != null &&
-                                  Array.isArray(bookingData.BookingAddOns) &&
-                                  bookingData.BookingAddOns.length > 0 &&
-                                  !hideAllActions && (
-                                    <button
-                                      className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                      // onClick={handleInitialAssignClick}
-                                      onClick={() => {
-                                        if (!ensureBasicDetails()) return;
-                                        handleInitialAssignClick();
-                                      }}
-                                    >
-                                      Service Assignment
-                                    </button>
-                                )}
+                                  {(role === "Admin" ||
+                                    roleName === "Supervisor Head" ||
+                                    roleName === "Field Advisor") &&
+                                    bookingData?.BookingStatus !==
+                                      "Completed" &&
+                                    bookingData?.BookingAddOns != null &&
+                                    Array.isArray(bookingData.BookingAddOns) &&
+                                    bookingData.BookingAddOns.length > 0 &&
+                                    !hideAllActions && (
+                                      <button
+                                        className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center"
+                                        // onClick={handleInitialAssignClick}
+                                        onClick={() => {
+                                          if (!ensureBasicDetails()) return;
+                                          handleInitialAssignClick();
+                                        }}
+                                      >
+                                        Service Assignment
+                                      </button>
+                                    )}
+
+                                  {!hideAllActions &&
+                                    roleName !== "Field Advisor" && (
+                                      <Link
+                                        to={`/invoice-view/${bookingData?.BookingID}?type=Estimation`}
+                                        className="btn btn-outline-primary btn-sm d-inline-flex align-items-center"
+                                        title="View Estimation Invoice"
+                                        onClick={(e) => {
+                                          if (!ensureBasicDetails()) {
+                                            e.preventDefault();
+                                          }
+                                        }}
+                                      >
+                                        View Estimation Invoice
+                                      </Link>
+                                    )}
+
                                   {/* {showEstimationButton && ( */}
-                                 {!hideAllActions && roleName !== "Field Advisor" && (
+                                  {/* {!hideAllActions && roleName !== "Field Advisor" && (
                                   <button
                                     className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                                     onClick={() => {
@@ -5336,7 +5882,7 @@ const handleCustomerRejectionSubmit = async () => {
                                   >
                                     Generate Estimation Invoice
                                   </button>
-                                  )}
+                                  )} */}
                                   {/* )} */}
 
                                   {/* Final Invoice: show only after full payment is completed */}
@@ -5345,7 +5891,11 @@ const handleCustomerRejectionSubmit = async () => {
                                       className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                                       onClick={() => {
                                         if (!ensureBasicDetails()) return;
-                                        showGenerateInvoiceConfirm("Generate Final Invoice", handleGenerateFinalInvoice, "Final");
+                                        showGenerateInvoiceConfirm(
+                                          "Generate Final Invoice",
+                                          handleGenerateFinalInvoice,
+                                          "Final",
+                                        );
                                       }}
                                     >
                                       Generate Final Invoice
@@ -5356,7 +5906,11 @@ const handleCustomerRejectionSubmit = async () => {
                                       className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                                       onClick={() => {
                                         if (!ensureBasicDetails()) return;
-                                        showGenerateInvoiceConfirm("Generate Dealer Invoice", handleGenerateDealerInvoice, "Dealer");
+                                        showGenerateInvoiceConfirm(
+                                          "Generate Dealer Invoice",
+                                          handleGenerateDealerInvoice,
+                                          "Dealer",
+                                        );
                                       }}
                                     >
                                       Generate Dealer Invoice
@@ -5426,7 +5980,12 @@ const handleCustomerRejectionSubmit = async () => {
                       aria-expanded="false"
                       aria-controls="collapsePickupDrop"
                     >
-                      <Icon icon="mdi:car-side" width={20} height={20} className="text-primary" />
+                      <Icon
+                        icon="mdi:car-side"
+                        width={20}
+                        height={20}
+                        className="text-primary"
+                      />
                       <span className="fw-semibold text-primary">
                         Service Tracking
                       </span>
@@ -5442,63 +6001,120 @@ const handleCustomerRejectionSubmit = async () => {
                     <div className="mt-3">
                       <div
                         className="rounded-3 overflow-hidden border-0 shadow-sm position-relative"
-                        style={{ backgroundColor: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.08)", zIndex: 1, isolation: "isolate" }}
+                        style={{
+                          backgroundColor: "#fff",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                          zIndex: 1,
+                          isolation: "isolate",
+                        }}
                       >
                         {/* Header – dark teal with BID, OTP, Payment, action */}
                         <div
                           className="px-3 py-2 d-flex align-items-center justify-content-between flex-wrap gap-2"
-                          style={{ backgroundColor: "#0d9488", color: "#fff", minHeight: "48px" }}
+                          style={{
+                            backgroundColor: "#0d9488",
+                            color: "#fff",
+                            minHeight: "48px",
+                          }}
                         >
                           <span className="d-flex align-items-center gap-2 small fw-semibold text-white">
-                            <Icon icon="mdi:clipboard-check-outline" width={20} height={20} />
+                            <Icon
+                              icon="mdi:clipboard-check-outline"
+                              width={20}
+                              height={20}
+                            />
                             BID : #{bookingData?.BookingTrackID || "—"}
                           </span>
-                          <span className="opacity-90 fw-normal text-white ms-auto">Date : {displayDate(bookingData?.BookingDate)}</span>
+                          <span className="opacity-90 fw-normal text-white ms-auto">
+                            Date : {displayDate(bookingData?.BookingDate)}
+                          </span>
                         </div>
                         {/* Timeline – dynamic from CarPickUpDelivery API */}
-                        <div className="p-4 position-relative" style={{ backgroundColor: "#fff" }}>
+                        <div
+                          className="p-4 position-relative"
+                          style={{ backgroundColor: "#fff" }}
+                        >
                           {(() => {
                             const list = bookingData?.CarPickUpDelivery ?? [];
 
-
                             const formatTimeOnly = (t) => {
                               if (!t) return "";
-                              const m = String(t).trim().match(/^(\d{1,2}):(\d{2})/);
-                              return m ? `${m[1].padStart(2, "0")}:${m[2]}` : "";
+                              const m = String(t)
+                                .trim()
+                                .match(/^(\d{1,2}):(\d{2})/);
+                              return m
+                                ? `${m[1].padStart(2, "0")}:${m[2]}`
+                                : "";
                             };
                             const steps = list.map((record, idx) => {
                               const pickType = record.PickType || "";
                               // const routeType = record.RouteType || "";
-                              const routeType = record.RouteType == 'CustomerToDealer' ? "Customer To Dealer" : record.RouteType == 'DealerToCustomer' ? "Dealer To Customer" : record.RouteType == 'DealerToDealer' ? "Dealer To Dealer" : "—";
+                              const routeType =
+                                record.RouteType == "CustomerToDealer"
+                                  ? "Customer To Dealer"
+                                  : record.RouteType == "DealerToCustomer"
+                                    ? "Dealer To Customer"
+                                    : record.RouteType == "DealerToDealer"
+                                      ? "Dealer To Dealer"
+                                      : "—";
 
-                              const isPick = pickType.toLowerCase().includes("pick");
-                              const label = [pickType, routeType].filter(Boolean).join(" – ") || "Service at Doorstep";
+                              const isPick = pickType
+                                .toLowerCase()
+                                .includes("pick");
+                              const label =
+                                [pickType, routeType]
+                                  .filter(Boolean)
+                                  .join(" – ") || "Service at Doorstep";
                               const assignStr = record.AssignDate
-                                ? new Date(record.AssignDate).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+                                ? new Date(record.AssignDate).toLocaleString(
+                                    "en-IN",
+                                    {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    },
+                                  )
                                 : "—";
-                              const sub = record.PickupDate && record.PickupTime
-                                ? `${displayDate(record.PickupDate)} ${formatTimeOnly(record.PickupTime)}`
-                                : record.DeliveryDate && record.DeliveryTime
-                                  ? `${displayDate(record.DeliveryDate)} ${formatTimeOnly(record.DeliveryTime)}`
-                                  : assignStr;
-                              const done = !!(record.PickupDate || record.DeliveryDate);
+                              const sub =
+                                record.PickupDate && record.PickupTime
+                                  ? `${displayDate(record.PickupDate)} ${formatTimeOnly(record.PickupTime)}`
+                                  : record.DeliveryDate && record.DeliveryTime
+                                    ? `${displayDate(record.DeliveryDate)} ${formatTimeOnly(record.DeliveryTime)}`
+                                    : assignStr;
+                              const done = !!(
+                                record.PickupDate || record.DeliveryDate
+                              );
                               return {
                                 key: record.Id ?? idx,
                                 label,
                                 sub,
-                                icon: isPick ? "mdi:car-pickup" : "mdi:car-side",
+                                icon: isPick
+                                  ? "mdi:car-pickup"
+                                  : "mdi:car-side",
                                 done,
                               };
                             });
                             if (steps.length === 0) {
                               return (
-                                <p className="text-muted small mb-0 text-center py-3">No pickup/drop records for this booking.</p>
+                                <p className="text-muted small mb-0 text-center py-3">
+                                  No pickup/drop records for this booking.
+                                </p>
                               );
                             }
                             return (
                               <div className="d-flex align-items-flex-start py-20 justify-content-between position-relative">
                                 {steps.map((step, idx) => (
-                                  <div key={step.key} className="d-flex flex-column align-items-center position-relative" style={{ flex: "1 1 0", minWidth: 0, zIndex: 1 }}>
+                                  <div
+                                    key={step.key}
+                                    className="d-flex flex-column align-items-center position-relative"
+                                    style={{
+                                      flex: "1 1 0",
+                                      minWidth: 0,
+                                      zIndex: 1,
+                                    }}
+                                  >
                                     {idx < steps.length - 1 && (
                                       <div
                                         className="position-absolute d-none d-md-block"
@@ -5508,7 +6124,9 @@ const handleCustomerRejectionSubmit = async () => {
                                           width: "calc(100% - 28px)",
                                           height: 3,
                                           borderRadius: 2,
-                                          backgroundColor: step.done ? "#0d9488" : "#0d9488",
+                                          backgroundColor: step.done
+                                            ? "#0d9488"
+                                            : "#0d9488",
                                           zIndex: 0,
                                         }}
                                       />
@@ -5518,15 +6136,36 @@ const handleCustomerRejectionSubmit = async () => {
                                       style={{
                                         width: 44,
                                         height: 44,
-                                        backgroundColor: step.done ? "#0d9488" : "#0d9488",
+                                        backgroundColor: step.done
+                                          ? "#0d9488"
+                                          : "#0d9488",
                                         color: step.done ? "#fff" : "#fff",
-                                        boxShadow: step.done ? "0 2px 6px rgba(13,148,136,0.35)" : "0 1px 3px rgba(0,0,0,0.08)",
+                                        boxShadow: step.done
+                                          ? "0 2px 6px rgba(13,148,136,0.35)"
+                                          : "0 1px 3px rgba(0,0,0,0.08)",
                                       }}
                                     >
-                                      <Icon icon={step.icon} width={20} height={20} />
+                                      <Icon
+                                        icon={step.icon}
+                                        width={20}
+                                        height={20}
+                                      />
                                     </div>
-                                    <span className="small fw-bold text-center text-dark" style={{ fontSize: "12px", lineHeight: 1.25 }}>{step.label}</span>
-                                    <span className="small text-muted text-center mt-1" style={{ fontSize: "11px" }}>{step.sub}</span>
+                                    <span
+                                      className="small fw-bold text-center text-dark"
+                                      style={{
+                                        fontSize: "12px",
+                                        lineHeight: 1.25,
+                                      }}
+                                    >
+                                      {step.label}
+                                    </span>
+                                    <span
+                                      className="small text-muted text-center mt-1"
+                                      style={{ fontSize: "11px" }}
+                                    >
+                                      {step.sub}
+                                    </span>
                                   </div>
                                 ))}
                               </div>
@@ -5535,21 +6174,34 @@ const handleCustomerRejectionSubmit = async () => {
                         </div>
 
                         {/* Technician Pickup / Drop Records – modern table */}
-                        {((bookingData?.CarPickUpDelivery ?? []).length > 0) && (
-
+                        {(bookingData?.CarPickUpDelivery ?? []).length > 0 && (
                           <div className="border-top mt-4 pt-4">
                             <div className="d-flex align-items-center gap-2 mb-3">
                               <span
                                 className="rounded-3 d-flex align-items-center justify-content-center"
-                                style={{ width: 36, height: 36, backgroundColor: "rgba(13,148,136,0.12)" }}
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  backgroundColor: "rgba(13,148,136,0.12)",
+                                }}
                               >
-                                <Icon icon="mdi:format-list-bulleted" width={20} height={20} className="text-primary" />
+                                <Icon
+                                  icon="mdi:format-list-bulleted"
+                                  width={20}
+                                  height={20}
+                                  className="text-primary"
+                                />
                               </span>
-                              <h6 className="mb-0 fw-bold text-dark">Technician Details</h6>
+                              <h6 className="mb-0 fw-bold text-dark">
+                                Technician Details
+                              </h6>
                             </div>
                             <div
                               className="rounded-3 overflow-hidden border"
-                              style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)", backgroundColor: "#fff" }}
+                              style={{
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                                backgroundColor: "#fff",
+                              }}
                             >
                               <div className="table-responsive">
                                 <table
@@ -5559,56 +6211,181 @@ const handleCustomerRejectionSubmit = async () => {
                                   }}
                                 >
                                   <thead>
-                                    <tr style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
-                                      <th className="text-nowrap text-center ps-4 py-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>Tech ID</th>
-                                      <th className="text-nowrap text-center py-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>Assign Date</th>
-                                      <th className="text-nowrap text-center py-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>Route Type</th>
-                                      <th className="text-nowrap text-center py-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>Service Type</th>
-                                      <th className="text-nowrap text-center py-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>Status</th>
-                                      <th className="text-nowrap text-center pe-4 py-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>Action</th>
+                                    <tr
+                                      style={{
+                                        backgroundColor: "#f8fafc",
+                                        borderBottom: "1px solid #e2e8f0",
+                                      }}
+                                    >
+                                      <th
+                                        className="text-nowrap text-center ps-4 py-3 fw-bold"
+                                        style={{
+                                          fontSize: "0.75rem",
+                                          color: "#64748b",
+                                          textTransform: "uppercase",
+                                          letterSpacing: "0.04em",
+                                        }}
+                                      >
+                                        Tech ID
+                                      </th>
+                                      <th
+                                        className="text-nowrap text-center py-3 fw-bold"
+                                        style={{
+                                          fontSize: "0.75rem",
+                                          color: "#64748b",
+                                          textTransform: "uppercase",
+                                          letterSpacing: "0.04em",
+                                        }}
+                                      >
+                                        Assign Date
+                                      </th>
+                                      <th
+                                        className="text-nowrap text-center py-3 fw-bold"
+                                        style={{
+                                          fontSize: "0.75rem",
+                                          color: "#64748b",
+                                          textTransform: "uppercase",
+                                          letterSpacing: "0.04em",
+                                        }}
+                                      >
+                                        Route Type
+                                      </th>
+                                      <th
+                                        className="text-nowrap text-center py-3 fw-bold"
+                                        style={{
+                                          fontSize: "0.75rem",
+                                          color: "#64748b",
+                                          textTransform: "uppercase",
+                                          letterSpacing: "0.04em",
+                                        }}
+                                      >
+                                        Service Type
+                                      </th>
+                                      <th
+                                        className="text-nowrap text-center py-3 fw-bold"
+                                        style={{
+                                          fontSize: "0.75rem",
+                                          color: "#64748b",
+                                          textTransform: "uppercase",
+                                          letterSpacing: "0.04em",
+                                        }}
+                                      >
+                                        Status
+                                      </th>
+                                      <th
+                                        className="text-nowrap text-center pe-4 py-3 fw-bold"
+                                        style={{
+                                          fontSize: "0.75rem",
+                                          color: "#64748b",
+                                          textTransform: "uppercase",
+                                          letterSpacing: "0.04em",
+                                        }}
+                                      >
+                                        Action
+                                      </th>
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {(bookingData?.CarPickUpDelivery ?? []).map((row, idx) => {
+                                    {(bookingData?.CarPickUpDelivery ?? []).map(
+                                      (row, idx) => {
+                                        const pickupImages = (
+                                          bookingData?.BookingImages ?? []
+                                        ).filter(
+                                          (img) => img.PickId === row.Id,
+                                        );
 
-                                      const pickupImages = (bookingData?.BookingImages ?? [])
-                                        .filter(img => img.PickId === row.Id);
-
-                                      return (
-                                        <>
-                                          <tr
-                                            key={row.Id ?? row.BookingID ?? idx}
-                                            style={{
-                                              backgroundColor: idx % 2 === 0 ? "#fff" : "#fafafa",
-                                              transition: "background 0.15s ease",
-                                              borderBottom: "1px solid #f1f5f9",
-                                            }}
-                                            className="pickup-drop-row"
-                                          >
-                                            <td className="text-center ps-4 py-3 fw-semibold" style={{ color: "#334155" }}>{row.TechnicinaName ?? "—"}</td>
-                                            <td className="text-center py-3" style={{ color: "#475569" }}>
-                                              {row.AssignDate
-                                                ? new Date(row.AssignDate).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
-                                                : "—"}
-                                            </td>
-                                            <td className="text-center py-3" style={{ color: "#475569" }}>{row.RouteType == 'CustomerToDealer' ? "Customer To Dealer" : row.RouteType == 'DealerToCustomer' ? "Dealer To Customer" : row.RouteType == 'DealerToDealer' ? "Dealer To Dealer" : "—"}</td>
-                                            <td className="text-center py-3" style={{ color: "#475569" }}>{row.ServiceType == "ServiceAtGarage" ? "Service At Garage" : "Service At Home"}</td>
-                                            <td className="text-center py-3">
-                                              <span
-                                                className="badge rounded-pill px-2 py-1"
-                                                style={{
-                                                  fontSize: "0.7rem",
-                                                  fontWeight: 600,
-                                                  backgroundColor: (row.Status || "").toLowerCase() === "assigned" ? "rgba(13,148,136,0.15)" : "rgba(100,116,139,0.15)",
-                                                  color: (row.Status || "").toLowerCase() === "assigned" ? "#0d9488" : "#64748b",
-                                                }}
+                                        return (
+                                          <>
+                                            <tr
+                                              key={
+                                                row.Id ?? row.BookingID ?? idx
+                                              }
+                                              style={{
+                                                backgroundColor:
+                                                  idx % 2 === 0
+                                                    ? "#fff"
+                                                    : "#fafafa",
+                                                transition:
+                                                  "background 0.15s ease",
+                                                borderBottom:
+                                                  "1px solid #f1f5f9",
+                                              }}
+                                              className="pickup-drop-row"
+                                            >
+                                              <td
+                                                className="text-center ps-4 py-3 fw-semibold"
+                                                style={{ color: "#334155" }}
                                               >
-                                                {row.Status ?? "—"}
-                                              </span>
-                                            </td>
-                                            <td className="text-center pe-4 py-3">
-                                              <div className="d-flex flex-column align-items-center gap-2">
-                                                {/* {row.BookingImages?.length > 0 && (
+                                                {row.TechnicinaName ?? "—"}
+                                              </td>
+                                              <td
+                                                className="text-center py-3"
+                                                style={{ color: "#475569" }}
+                                              >
+                                                {row.AssignDate
+                                                  ? new Date(
+                                                      row.AssignDate,
+                                                    ).toLocaleString("en-IN", {
+                                                      day: "2-digit",
+                                                      month: "short",
+                                                      year: "numeric",
+                                                      hour: "2-digit",
+                                                      minute: "2-digit",
+                                                    })
+                                                  : "—"}
+                                              </td>
+                                              <td
+                                                className="text-center py-3"
+                                                style={{ color: "#475569" }}
+                                              >
+                                                {row.RouteType ==
+                                                "CustomerToDealer"
+                                                  ? "Customer To Dealer"
+                                                  : row.RouteType ==
+                                                      "DealerToCustomer"
+                                                    ? "Dealer To Customer"
+                                                    : row.RouteType ==
+                                                        "DealerToDealer"
+                                                      ? "Dealer To Dealer"
+                                                      : "—"}
+                                              </td>
+                                              <td
+                                                className="text-center py-3"
+                                                style={{ color: "#475569" }}
+                                              >
+                                                {row.ServiceType ==
+                                                "ServiceAtGarage"
+                                                  ? "Service At Garage"
+                                                  : "Service At Home"}
+                                              </td>
+                                              <td className="text-center py-3">
+                                                <span
+                                                  className="badge rounded-pill px-2 py-1"
+                                                  style={{
+                                                    fontSize: "0.7rem",
+                                                    fontWeight: 600,
+                                                    backgroundColor:
+                                                      (
+                                                        row.Status || ""
+                                                      ).toLowerCase() ===
+                                                      "assigned"
+                                                        ? "rgba(13,148,136,0.15)"
+                                                        : "rgba(100,116,139,0.15)",
+                                                    color:
+                                                      (
+                                                        row.Status || ""
+                                                      ).toLowerCase() ===
+                                                      "assigned"
+                                                        ? "#0d9488"
+                                                        : "#64748b",
+                                                  }}
+                                                >
+                                                  {row.Status ?? "—"}
+                                                </span>
+                                              </td>
+                                              <td className="text-center pe-4 py-3">
+                                                <div className="d-flex flex-column align-items-center gap-2">
+                                                  {/* {row.BookingImages?.length > 0 && (
                                                   <div className="d-flex gap-3 flex-wrap justify-content-center">
                                                     {row.BookingImages.map((img) => (
                                                       <img
@@ -5630,45 +6407,76 @@ const handleCustomerRejectionSubmit = async () => {
                                                     ))}
                                                   </div>
                                                 )} */}
-                                                {row.IsCancelled === 0 && row.Status !== "completed" && (
-                                                  <div className="d-flex gap-2 justify-content-center flex-wrap">
-                                                    <button
-                                                      type="button"
-                                                      className="btn btn-press-effect btn-danger btn-sm d-inline-flex align-items-center gap-1"
-                                                      onClick={() => handlePickupDropCancel(row)}
-                                                      disabled={pickupDropActionLoading}
-                                                    >
-                                                      <Icon icon="mdi:close-circle-outline" width={18} height={18} />
-                                                      Cancel
-                                                    </button>
-                                                    <button
-                                                      type="button"
-                                                      className="btn btn-press-effect btn-warning btn-sm d-inline-flex align-items-center gap-1 text-dark"
-                                                      onClick={() => openPickupDropReassignModal(row)}
-                                                      disabled={pickupDropActionLoading}
-                                                    >
-                                                      <Icon icon="mdi:account-switch-outline" width={18} height={18} />
-                                                      Reassign
-                                                    </button>
-                                                    <button
-                                                      type="button"
-                                                      className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center gap-1"
-                                                      onClick={() => openPickupDropRescheduleModal(row)}
-                                                      disabled={pickupDropActionLoading}
-                                                    >
-                                                      <Icon icon="mdi:calendar-edit-outline" width={18} height={18} />
-                                                      Reschedule
-                                                    </button>
-                                                  </div>
-                                                )}
-                                              </div>
-                                            </td>
-                                          </tr>
-
-
-                                        </>
-                                      );
-                                    })}
+                                                  {row.IsCancelled === 0 &&
+                                                    row.Status !==
+                                                      "completed" && (
+                                                      <div className="d-flex gap-2 justify-content-center flex-wrap">
+                                                        <button
+                                                          type="button"
+                                                          className="btn btn-press-effect btn-danger btn-sm d-inline-flex align-items-center gap-1"
+                                                          onClick={() =>
+                                                            handlePickupDropCancel(
+                                                              row,
+                                                            )
+                                                          }
+                                                          disabled={
+                                                            pickupDropActionLoading
+                                                          }
+                                                        >
+                                                          <Icon
+                                                            icon="mdi:close-circle-outline"
+                                                            width={18}
+                                                            height={18}
+                                                          />
+                                                          Cancel
+                                                        </button>
+                                                        <button
+                                                          type="button"
+                                                          className="btn btn-press-effect btn-warning btn-sm d-inline-flex align-items-center gap-1 text-dark"
+                                                          onClick={() =>
+                                                            openPickupDropReassignModal(
+                                                              row,
+                                                            )
+                                                          }
+                                                          disabled={
+                                                            pickupDropActionLoading
+                                                          }
+                                                        >
+                                                          <Icon
+                                                            icon="mdi:account-switch-outline"
+                                                            width={18}
+                                                            height={18}
+                                                          />
+                                                          Reassign
+                                                        </button>
+                                                        <button
+                                                          type="button"
+                                                          className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center gap-1"
+                                                          onClick={() =>
+                                                            openPickupDropRescheduleModal(
+                                                              row,
+                                                            )
+                                                          }
+                                                          disabled={
+                                                            pickupDropActionLoading
+                                                          }
+                                                        >
+                                                          <Icon
+                                                            icon="mdi:calendar-edit-outline"
+                                                            width={18}
+                                                            height={18}
+                                                          />
+                                                          Reschedule
+                                                        </button>
+                                                      </div>
+                                                    )}
+                                                </div>
+                                              </td>
+                                            </tr>
+                                          </>
+                                        );
+                                      },
+                                    )}
                                     {/* {(bookingData?.CarPickUpDelivery ?? []).map((row, idx) => (
                                       
                                       <tr
@@ -5753,71 +6561,192 @@ const handleCustomerRejectionSubmit = async () => {
                 <Accordion.Item eventKey="payments">
                   <Accordion.Header>
                     <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
-                      <Icon icon="mdi:credit-card-multiple" width={20} height={20} />
+                      <Icon
+                        icon="mdi:credit-card-multiple"
+                        width={20}
+                        height={20}
+                      />
                       Payments
                     </h6>
                   </Accordion.Header>
                   <Accordion.Body>
                     {(bookingData?.Payments ?? []).length > 0 ? (
                       <div className="table-responsive">
-                        <table className="table table-bordered table-hover align-middle mb-0" style={{ fontSize: "0.875rem", textAlign: "center" }}>
-                          <thead style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+                        <table
+                          className="table table-bordered table-hover align-middle mb-0"
+                          style={{ fontSize: "0.875rem", textAlign: "center" }}
+                        >
+                          <thead
+                            style={{
+                              backgroundColor: "#f8fafc",
+                              borderBottom: "1px solid #e2e8f0",
+                            }}
+                          >
                             <tr>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textAlign: "center" }}>S.No</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textAlign: "center" }}>Amount Paid</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textAlign: "center" }}>Payment Mode</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textAlign: "center" }}>Transaction ID</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textAlign: "center" }}>Payment Date</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b", textAlign: "center" }}>Status</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Proof Img.</th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                  textAlign: "center",
+                                }}
+                              >
+                                S.No
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                  textAlign: "center",
+                                }}
+                              >
+                                Amount Paid
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                  textAlign: "center",
+                                }}
+                              >
+                                Payment Mode
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                  textAlign: "center",
+                                }}
+                              >
+                                Transaction ID
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                  textAlign: "center",
+                                }}
+                              >
+                                Payment Date
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                  textAlign: "center",
+                                }}
+                              >
+                                Status
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                }}
+                              >
+                                Proof Img.
+                              </th>
                               {/* <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Refunded</th> */}
                             </tr>
                           </thead>
                           <tbody>
-                            {(bookingData?.Payments ?? []).slice().reverse().map((pay, idx) => (
-                              <tr key={pay.PaymentID ?? idx}>
-                                {/* <td className="py-2 px-3">{pay.PaymentID ?? "—"}</td> */}
-                                <td className="py-2 px-3">{idx + 1}</td>
-                                <td className="py-2 px-3 fw-semibold">₹{(pay.AmountPaid ?? 0).toLocaleString("en-IN")}</td>
-                                <td className="py-2 px-3">{pay.PaymentMode ?? "—"}</td>
-                                <td className="py-2 px-3 text-nowrap" style={{ maxWidth: "180px" }} title={pay.TransactionID}>{pay.TransactionID ?? "—"}</td>
-                                <td className="py-2 px-3">
-                                  {pay.PaymentDate
-                                    ? new Date(pay.PaymentDate).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
-                                    : "—"}
-                                </td>
-                                <td className="py-2 px-3">
-                                  <span
-                                    className="badge rounded-pill px-2 py-1"
-                                    style={{
-                                      fontSize: "0.7rem",
-                                      backgroundColor: (pay.PaymentStatus || "").toLowerCase() === "success" ? "rgba(34,197,94,0.15)" : "rgba(234,179,8,0.15)",
-                                      color: (pay.PaymentStatus || "").toLowerCase() === "success" ? "#16a34a" : "#ca8a04",
-                                    }}
+                            {(bookingData?.Payments ?? [])
+                              .slice()
+                              .reverse()
+                              .map((pay, idx) => (
+                                <tr key={pay.PaymentID ?? idx}>
+                                  {/* <td className="py-2 px-3">{pay.PaymentID ?? "—"}</td> */}
+                                  <td className="py-2 px-3">{idx + 1}</td>
+                                  <td className="py-2 px-3 fw-semibold">
+                                    ₹
+                                    {(pay.AmountPaid ?? 0).toLocaleString(
+                                      "en-IN",
+                                    )}
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    {pay.PaymentMode ?? "—"}
+                                  </td>
+                                  <td
+                                    className="py-2 px-3 text-nowrap"
+                                    style={{ maxWidth: "180px" }}
+                                    title={pay.TransactionID}
                                   >
-                                    {pay.PaymentStatus ?? "—"}
-                                  </span>
-                                </td>
-                                <td className="py-2 px-3">
-                                  {pay.ProofAttachment ? (
-                                    <img
-                                      src={`${API_IMAGE}${pay.ProofAttachment}`}
-                                      alt="Payment Proof"
-                                      style={{ width: "40px", height: "40px", objectFit: "cover", cursor: "pointer", borderRadius: "4px" }}
-                                      onClick={() => window.open(`${API_IMAGE}${pay.ProofAttachment}`, "_blank")}
-                                    />
-                                  ) : (
-                                    "—"
-                                  )}
-                                </td>
-                                {/* <td className="py-2 px-3">{pay.IsRefunded ? "Yes" : "No"}</td> */}
-                              </tr>
-                            ))}
+                                    {pay.TransactionID ?? "—"}
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    {pay.PaymentDate
+                                      ? new Date(
+                                          pay.PaymentDate,
+                                        ).toLocaleString("en-IN", {
+                                          day: "2-digit",
+                                          month: "short",
+                                          year: "numeric",
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })
+                                      : "—"}
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    <span
+                                      className="badge rounded-pill px-2 py-1"
+                                      style={{
+                                        fontSize: "0.7rem",
+                                        backgroundColor:
+                                          (
+                                            pay.PaymentStatus || ""
+                                          ).toLowerCase() === "success"
+                                            ? "rgba(34,197,94,0.15)"
+                                            : "rgba(234,179,8,0.15)",
+                                        color:
+                                          (
+                                            pay.PaymentStatus || ""
+                                          ).toLowerCase() === "success"
+                                            ? "#16a34a"
+                                            : "#ca8a04",
+                                      }}
+                                    >
+                                      {pay.PaymentStatus ?? "—"}
+                                    </span>
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    {pay.ProofAttachment ? (
+                                      <img
+                                        src={`${API_IMAGE}${pay.ProofAttachment}`}
+                                        alt="Payment Proof"
+                                        style={{
+                                          width: "40px",
+                                          height: "40px",
+                                          objectFit: "cover",
+                                          cursor: "pointer",
+                                          borderRadius: "4px",
+                                        }}
+                                        onClick={() =>
+                                          window.open(
+                                            `${API_IMAGE}${pay.ProofAttachment}`,
+                                            "_blank",
+                                          )
+                                        }
+                                      />
+                                    ) : (
+                                      "—"
+                                    )}
+                                  </td>
+                                  {/* <td className="py-2 px-3">{pay.IsRefunded ? "Yes" : "No"}</td> */}
+                                </tr>
+                              ))}
                           </tbody>
                         </table>
                       </div>
                     ) : (
-                      <p className="text-muted mb-0 text-center py-4">No payments recorded for this booking.</p>
+                      <p className="text-muted mb-0 text-center py-4">
+                        No payments recorded for this booking.
+                      </p>
                     )}
                   </Accordion.Body>
                 </Accordion.Item>
@@ -5835,73 +6764,150 @@ const handleCustomerRejectionSubmit = async () => {
                   <Accordion.Body>
                     {(bookingData?.DealerAddOnApproval ?? []).length > 0 ? (
                       <div className="table-responsive">
-                        <table className="table table-bordered table-hover align-middle mb-0" style={{ fontSize: "0.875rem" }}>
-                          <thead style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+                        <table
+                          className="table table-bordered table-hover align-middle mb-0"
+                          style={{ fontSize: "0.875rem" }}
+                        >
+                          <thead
+                            style={{
+                              backgroundColor: "#f8fafc",
+                              borderBottom: "1px solid #e2e8f0",
+                            }}
+                          >
                             <tr>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>S.No</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Dealer Name</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Service Name</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Status</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Reason</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Status Date</th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                }}
+                              >
+                                S.No
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                }}
+                              >
+                                Dealer Name
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                }}
+                              >
+                                Service Name
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                }}
+                              >
+                                Status
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                }}
+                              >
+                                Reason
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                }}
+                              >
+                                Status Date
+                              </th>
                             </tr>
                           </thead>
                           <tbody>
-                            {(bookingData?.DealerAddOnApproval ?? []).slice().reverse().map((item, idx) => (
-                              <tr key={item.Id ?? idx}>
-                                {/* <td className="py-2 px-3">{item.Id ?? "—"}</td> */}
-                                <td className="py-2 px-3">{idx + 1}</td>
-                                <td className="py-2 px-3">{item.DealerName ?? "—"}</td>
-                                <td className="py-2 px-3 fw-semibold">{item.ServiceName ?? "—"}</td>
-                                <td className="py-2 px-3">
-                                  {(() => {
-                                    const status = (item.IsDealer_Confirm || "").toLowerCase();
+                            {(bookingData?.DealerAddOnApproval ?? [])
+                              .slice()
+                              .reverse()
+                              .map((item, idx) => (
+                                <tr key={item.Id ?? idx}>
+                                  {/* <td className="py-2 px-3">{item.Id ?? "—"}</td> */}
+                                  <td className="py-2 px-3">{idx + 1}</td>
+                                  <td className="py-2 px-3">
+                                    {item.DealerName ?? "—"}
+                                  </td>
+                                  <td className="py-2 px-3 fw-semibold">
+                                    {item.ServiceName ?? "—"}
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    {(() => {
+                                      const status = (
+                                        item.IsDealer_Confirm || ""
+                                      ).toLowerCase();
 
-                                    const backgroundColor =
-                                      status === "approved"
-                                        ? "rgba(34,197,94,0.15)"      // light green
-                                        : status === "rejected"
-                                          ? "rgba(239,68,68,0.15)"      // light red
-                                          : status === "assigned"
-                                            ? "rgba(250,204,21,0.20)"     // light yellow
-                                            : "rgba(107,114,128,0.15)";   // default grey
+                                      const backgroundColor =
+                                        status === "approved"
+                                          ? "rgba(34,197,94,0.15)" // light green
+                                          : status === "rejected"
+                                            ? "rgba(239,68,68,0.15)" // light red
+                                            : status === "assigned"
+                                              ? "rgba(250,204,21,0.20)" // light yellow
+                                              : "rgba(107,114,128,0.15)"; // default grey
 
-                                    const color =
-                                      status === "approved"
-                                        ? "#16a34a"
-                                        : status === "rejected"
-                                          ? "#dc2626"
-                                          : status === "assigned"
-                                            ? "#ca8a04"                  // yellow text
-                                            : "#6b7280";
+                                      const color =
+                                        status === "approved"
+                                          ? "#16a34a"
+                                          : status === "rejected"
+                                            ? "#dc2626"
+                                            : status === "assigned"
+                                              ? "#ca8a04" // yellow text
+                                              : "#6b7280";
 
-                                    return (
-                                      <span
-                                        className="badge rounded-pill px-2 py-1"
-                                        style={{
-                                          fontSize: "0.7rem",
-                                          backgroundColor,
-                                          color,
-                                        }}
-                                      >
-                                        {item.IsDealer_Confirm ?? "—"}
-                                      </span>
-                                    );
-                                  })()}
-                                </td>
-                                <td className="py-2 px-3">{item.Reason ?? "—"}</td>
-                                <td className="py-2 px-3">
-                                  {item.CreatedDate
-                                    ? new Date(item.CreatedDate).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
-                                    : "—"}
-                                </td>
-                              </tr>
-                            ))}
+                                      return (
+                                        <span
+                                          className="badge rounded-pill px-2 py-1"
+                                          style={{
+                                            fontSize: "0.7rem",
+                                            backgroundColor,
+                                            color,
+                                          }}
+                                        >
+                                          {item.IsDealer_Confirm ?? "—"}
+                                        </span>
+                                      );
+                                    })()}
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    {item.Reason ?? "—"}
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    {item.CreatedDate
+                                      ? new Date(
+                                          item.CreatedDate,
+                                        ).toLocaleString("en-IN", {
+                                          day: "2-digit",
+                                          month: "short",
+                                          year: "numeric",
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })
+                                      : "—"}
+                                  </td>
+                                </tr>
+                              ))}
                           </tbody>
                         </table>
                       </div>
                     ) : (
-                      <p className="text-muted mb-0 text-center py-4">No dealer add-on approvals for this booking.</p>
+                      <p className="text-muted mb-0 text-center py-4">
+                        No dealer add-on approvals for this booking.
+                      </p>
                     )}
                   </Accordion.Body>
                 </Accordion.Item>
@@ -5912,197 +6918,358 @@ const handleCustomerRejectionSubmit = async () => {
                 <Accordion.Item eventKey="invoices">
                   <Accordion.Header>
                     <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
-                      <Icon icon="mdi:file-document-multiple" width={20} height={20} />
+                      <Icon
+                        icon="mdi:file-document-multiple"
+                        width={20}
+                        height={20}
+                      />
                       Invoices (Estimation & Final)
                     </h6>
                   </Accordion.Header>
                   <Accordion.Body>
                     {(bookingData?.Invoices ?? []).length > 0 ? (
                       <div className="table-responsive">
-                        <table className="table table-bordered table-hover align-middle mb-0" style={{ fontSize: "0.875rem" }}>
-                          <thead style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+                        <table
+                          className="table table-bordered table-hover align-middle mb-0"
+                          style={{ fontSize: "0.875rem" }}
+                        >
+                          <thead
+                            style={{
+                              backgroundColor: "#f8fafc",
+                              borderBottom: "1px solid #e2e8f0",
+                            }}
+                          >
                             <tr>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>S.No</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Invoice No</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Type</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Total</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Tax</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Discount</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Net Amount</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Status</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>View</th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                }}
+                              >
+                                S.No
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                }}
+                              >
+                                Invoice No
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                }}
+                              >
+                                Type
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                }}
+                              >
+                                Total
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                }}
+                              >
+                                Tax
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                }}
+                              >
+                                Discount
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                }}
+                              >
+                                Net Amount
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                }}
+                              >
+                                Status
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                }}
+                              >
+                                View
+                              </th>
                             </tr>
                           </thead>
                           <tbody>
-                            {(bookingData?.Invoices ?? []).slice().reverse().map((inv, idx) => (
-                              <tr key={inv.InvoiceID ?? idx}>
-                                <td className="py-2 px-3">{idx + 1}</td>
-                                <td className="py-2 px-3 fw-semibold">{inv.InvoiceNumber ?? "—"}</td>
-                                <td className="py-2 px-3">
-                                  <span
-                                    className="badge rounded-pill px-2 py-1"
-                                    style={{
-                                      fontSize: "0.7rem",
-                                      backgroundColor: (inv.InvoiceType || "").toLowerCase() === "final" ? "rgba(13,148,136,0.15)" : "rgba(59,130,246,0.15)",
-                                      color: (inv.InvoiceType || "").toLowerCase() === "final" ? "#0d9488" : "#2563eb",
-                                    }}
-                                  >
-                                    {inv.InvoiceType ?? "—"}
-                                  </span>
-                                </td>
-                                <td className="py-2 px-3">₹{(inv.TotalAmount ?? 0).toLocaleString("en-IN")}</td>
-                                <td className="py-2 px-3">₹{(inv.TaxAmount ?? 0).toLocaleString("en-IN")}</td>
-                                <td className="py-2 px-3">₹{(inv.DiscountAmount ?? 0).toLocaleString("en-IN")}</td>
-                                <td className="py-2 px-3 fw-bold">₹{(inv.NetAmount ?? 0).toLocaleString("en-IN")}</td>
-                                <td className="py-2 px-3">
-                                  <span
-                                    className="badge rounded-pill px-2 py-1"
-                                    style={{
-                                      fontSize: "0.7rem",
-                                      backgroundColor: (inv.InvoiceStatus || "").toLowerCase() === "generated" ? "rgba(34,197,94,0.15)" : "rgba(148,163,184,0.2)",
-                                      color: (inv.InvoiceStatus || "").toLowerCase() === "generated" ? "#16a34a" : "#64748b",
-                                    }}
-                                  >
-                                    {inv.InvoiceStatus ?? "—"}
-                                  </span>
-                                </td>
-                                <td className="py-2 px-3">
-                                  {inv.FolderPath ? (
-                                    <a
-                                      href={`${API_BASE.replace(/api\/?$/, "")}${inv.FolderPath}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="btn btn-sm btn-outline-primary py-1 px-2"
+                            {(bookingData?.Invoices ?? [])
+                              .slice()
+                              .reverse()
+                              .map((inv, idx) => (
+                                <tr key={inv.InvoiceID ?? idx}>
+                                  <td className="py-2 px-3">{idx + 1}</td>
+                                  <td className="py-2 px-3 fw-semibold">
+                                    {inv.InvoiceNumber ?? "—"}
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    <span
+                                      className="badge rounded-pill px-2 py-1"
+                                      style={{
+                                        fontSize: "0.7rem",
+                                        backgroundColor:
+                                          (
+                                            inv.InvoiceType || ""
+                                          ).toLowerCase() === "final"
+                                            ? "rgba(13,148,136,0.15)"
+                                            : "rgba(59,130,246,0.15)",
+                                        color:
+                                          (
+                                            inv.InvoiceType || ""
+                                          ).toLowerCase() === "final"
+                                            ? "#0d9488"
+                                            : "#2563eb",
+                                      }}
                                     >
-                                      <Icon icon="mdi:file-pdf-box" width={20} height={20} />
-                                    </a>
-                                  ) : (
-                                    "—"
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
+                                      {inv.InvoiceType ?? "—"}
+                                    </span>
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    ₹
+                                    {(inv.TotalAmount ?? 0).toLocaleString(
+                                      "en-IN",
+                                    )}
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    ₹
+                                    {(inv.TaxAmount ?? 0).toLocaleString(
+                                      "en-IN",
+                                    )}
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    ₹
+                                    {(inv.DiscountAmount ?? 0).toLocaleString(
+                                      "en-IN",
+                                    )}
+                                  </td>
+                                  <td className="py-2 px-3 fw-bold">
+                                    ₹
+                                    {(inv.NetAmount ?? 0).toLocaleString(
+                                      "en-IN",
+                                    )}
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    <span
+                                      className="badge rounded-pill px-2 py-1"
+                                      style={{
+                                        fontSize: "0.7rem",
+                                        backgroundColor:
+                                          (
+                                            inv.InvoiceStatus || ""
+                                          ).toLowerCase() === "generated"
+                                            ? "rgba(34,197,94,0.15)"
+                                            : "rgba(148,163,184,0.2)",
+                                        color:
+                                          (
+                                            inv.InvoiceStatus || ""
+                                          ).toLowerCase() === "generated"
+                                            ? "#16a34a"
+                                            : "#64748b",
+                                      }}
+                                    >
+                                      {inv.InvoiceStatus ?? "—"}
+                                    </span>
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    {inv.FolderPath ? (
+                                      <a
+                                        href={`${API_BASE.replace(/api\/?$/, "")}${inv.FolderPath}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="btn btn-sm btn-outline-primary py-1 px-2"
+                                      >
+                                        <Icon
+                                          icon="mdi:file-pdf-box"
+                                          width={20}
+                                          height={20}
+                                        />
+                                      </a>
+                                    ) : (
+                                      "—"
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
                           </tbody>
                         </table>
                       </div>
                     ) : (
-                      <p className="text-muted mb-0 text-center py-4">No invoices recorded for this booking.</p>
+                      <p className="text-muted mb-0 text-center py-4">
+                        No invoices recorded for this booking.
+                      </p>
                     )}
                   </Accordion.Body>
                 </Accordion.Item>
               </Accordion>
               {/* ================= PICKUP IMAGES ACCORDION ================= */}
-<Accordion className="mb-3">
-  <Accordion.Item eventKey="pickupImages">
-    <Accordion.Header>
-      <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
-        <Icon icon="mdi:car-arrow-right" width={20} height={20} />
-        Pickup Images
-      </h6>
-    </Accordion.Header>
+              <Accordion className="mb-3">
+                <Accordion.Item eventKey="pickupImages">
+                  <Accordion.Header>
+                    <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
+                      <Icon icon="mdi:car-arrow-right" width={20} height={20} />
+                      Pickup Images
+                    </h6>
+                  </Accordion.Header>
 
-    <Accordion.Body>
-      {(bookingData?.ServiceImages?.filter(i => i.ImageUploadType === "Pickup") ?? []).length > 0 ? (
+                  <Accordion.Body>
+                    {(
+                      bookingData?.ServiceImages?.filter(
+                        (i) => i.ImageUploadType === "Pickup",
+                      ) ?? []
+                    ).length > 0 ? (
+                      <div className="row g-3">
+                        {bookingData?.ServiceImages?.filter(
+                          (i) => i.ImageUploadType === "Pickup",
+                        ).map((img, idx) => (
+                          <div
+                            className="col-lg-2 col-md-3 col-4"
+                            key={img.ImageID ?? idx}
+                          >
+                            <img
+                              src={`${API_IMAGE}${img.ImageURL}`}
+                              alt="Pickup"
+                              className="img-fluid rounded border"
+                              style={{
+                                height: "100px",
+                                width: "100%",
+                                objectFit: "cover",
+                                cursor: "pointer",
+                              }}
+                              onClick={() =>
+                                window.open(
+                                  `${API_IMAGE}${img.ImageURL}`,
+                                  "_blank",
+                                )
+                              }
+                            />
 
-        <div className="row g-3">
-          {bookingData?.ServiceImages
-            ?.filter(i => i.ImageUploadType === "Pickup")
-            .map((img, idx) => (
-
-              <div className="col-lg-2 col-md-3 col-4" key={img.ImageID ?? idx}>
-
-                <img
-                  src={`${API_IMAGE}${img.ImageURL}`}
-                  alt="Pickup"
-                  className="img-fluid rounded border"
-                  style={{
-                    height: "100px",
-                    width: "100%",
-                    objectFit: "cover",
-                    cursor: "pointer"
-                  }}
-                  onClick={() => window.open(`${API_IMAGE}${img.ImageURL}`, "_blank")}
-                />
-
-                <div className="text-muted text-center mt-1" style={{ fontSize: "0.7rem" }}>
-                  {img.UploadedAt
-                    ? new Date(img.UploadedAt).toLocaleDateString("en-IN", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric"
-                      })
-                    : ""}
-                </div>
-
-              </div>
-          ))}
-        </div>
-
-      ) : (
-        <p className="text-muted mb-0 text-center py-4">
-          No pickup images uploaded.
-        </p>
-      )}
-    </Accordion.Body>
-  </Accordion.Item>
-</Accordion>
-
-          {/* ================= DELIVERY IMAGES ACCORDION ================= */}
-          <Accordion className="mb-3">
-            <Accordion.Item eventKey="deliveryImages">
-              <Accordion.Header>
-                <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
-                  <Icon icon="mdi:car-arrow-left" width={20} height={20} />
-                  Delivery Images
-                </h6>
-              </Accordion.Header>
-
-              <Accordion.Body>
-                {(bookingData?.ServiceImages?.filter(i => i.ImageUploadType === "Delivery") ?? []).length > 0 ? (
-
-                  <div className="row g-3">
-                    {bookingData?.ServiceImages
-                      ?.filter(i => i.ImageUploadType === "Delivery")
-                      .map((img, idx) => (
-
-                        <div className="col-lg-2 col-md-3 col-4" key={img.ImageID ?? idx}>
-
-                          <img
-                            src={`${API_IMAGE}${img.ImageURL}`}
-                            alt="Delivery"
-                            className="img-fluid rounded border"
-                            style={{
-                              height: "100px",
-                              width: "100%",
-                              objectFit: "cover",
-                              cursor: "pointer"
-                            }}
-                            onClick={() => window.open(`${API_IMAGE}${img.ImageURL}`, "_blank")}
-                          />
-
-                          <div className="text-muted text-center mt-1" style={{ fontSize: "0.7rem" }}>
-                            {img.UploadedAt
-                              ? new Date(img.UploadedAt).toLocaleDateString("en-IN", {
-                                  day: "2-digit",
-                                  month: "short",
-                                  year: "numeric"
-                                })
-                              : ""}
+                            <div
+                              className="text-muted text-center mt-1"
+                              style={{ fontSize: "0.7rem" }}
+                            >
+                              {img.UploadedAt
+                                ? new Date(img.UploadedAt).toLocaleDateString(
+                                    "en-IN",
+                                    {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                    },
+                                  )
+                                : ""}
+                            </div>
                           </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted mb-0 text-center py-4">
+                        No pickup images uploaded.
+                      </p>
+                    )}
+                  </Accordion.Body>
+                </Accordion.Item>
+              </Accordion>
 
-                        </div>
-                    ))}
-                  </div>
+              {/* ================= DELIVERY IMAGES ACCORDION ================= */}
+              <Accordion className="mb-3">
+                <Accordion.Item eventKey="deliveryImages">
+                  <Accordion.Header>
+                    <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
+                      <Icon icon="mdi:car-arrow-left" width={20} height={20} />
+                      Delivery Images
+                    </h6>
+                  </Accordion.Header>
 
-                ) : (
-                  <p className="text-muted mb-0 text-center py-4">
-                    No delivery images uploaded.
-                  </p>
-                )}
-              </Accordion.Body>
-            </Accordion.Item>
-          </Accordion>
-              
+                  <Accordion.Body>
+                    {(
+                      bookingData?.ServiceImages?.filter(
+                        (i) => i.ImageUploadType === "Delivery",
+                      ) ?? []
+                    ).length > 0 ? (
+                      <div className="row g-3">
+                        {bookingData?.ServiceImages?.filter(
+                          (i) => i.ImageUploadType === "Delivery",
+                        ).map((img, idx) => (
+                          <div
+                            className="col-lg-2 col-md-3 col-4"
+                            key={img.ImageID ?? idx}
+                          >
+                            <img
+                              src={`${API_IMAGE}${img.ImageURL}`}
+                              alt="Delivery"
+                              className="img-fluid rounded border"
+                              style={{
+                                height: "100px",
+                                width: "100%",
+                                objectFit: "cover",
+                                cursor: "pointer",
+                              }}
+                              onClick={() =>
+                                window.open(
+                                  `${API_IMAGE}${img.ImageURL}`,
+                                  "_blank",
+                                )
+                              }
+                            />
+
+                            <div
+                              className="text-muted text-center mt-1"
+                              style={{ fontSize: "0.7rem" }}
+                            >
+                              {img.UploadedAt
+                                ? new Date(img.UploadedAt).toLocaleDateString(
+                                    "en-IN",
+                                    {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                    },
+                                  )
+                                : ""}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted mb-0 text-center py-4">
+                        No delivery images uploaded.
+                      </p>
+                    )}
+                  </Accordion.Body>
+                </Accordion.Item>
+              </Accordion>
+
               {/* ================= SERVICE COMPLETION IMAGES ACCORDION ================= */}
               <Accordion className="mb-3" defaultActiveKey="">
                 <Accordion.Item eventKey="serviceImages">
@@ -6115,12 +7282,12 @@ const handleCustomerRejectionSubmit = async () => {
 
                   <Accordion.Body>
                     {(bookingData?.ServiceImages ?? []).length > 0 ? (
-
                       <div className="row g-3">
-
                         {(bookingData?.ServiceImages ?? []).map((img, idx) => (
-                          <div className="col-lg-2 col-md-3 col-4" key={img.ImageID ?? idx}>
-
+                          <div
+                            className="col-lg-2 col-md-3 col-4"
+                            key={img.ImageID ?? idx}
+                          >
                             <img
                               src={`${API_IMAGE}${img.ImageURL}`}
                               alt="Service Completion"
@@ -6129,10 +7296,13 @@ const handleCustomerRejectionSubmit = async () => {
                                 height: "100px",
                                 width: "100%",
                                 objectFit: "cover",
-                                cursor: "pointer"
+                                cursor: "pointer",
                               }}
                               onClick={() =>
-                                window.open(`${API_IMAGE}${img.ImageURL}`, "_blank")
+                                window.open(
+                                  `${API_IMAGE}${img.ImageURL}`,
+                                  "_blank",
+                                )
                               }
                             />
 
@@ -6141,19 +7311,19 @@ const handleCustomerRejectionSubmit = async () => {
                               style={{ fontSize: "0.7rem" }}
                             >
                               {img.UploadedAt
-                                ? new Date(img.UploadedAt).toLocaleDateString("en-IN", {
-                                    day: "2-digit",
-                                    month: "short",
-                                    year: "numeric"
-                                  })
+                                ? new Date(img.UploadedAt).toLocaleDateString(
+                                    "en-IN",
+                                    {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                    },
+                                  )
                                 : ""}
                             </div>
-
                           </div>
                         ))}
-
                       </div>
-
                     ) : (
                       <p className="text-muted mb-0 text-center py-4">
                         No service completion images uploaded.
@@ -6342,27 +7512,49 @@ const handleCustomerRejectionSubmit = async () => {
           <div
             className="modal fade show d-block"
             tabIndex="-1"
-            style={{ backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+            style={{
+              backgroundColor: "rgba(0,0,0,0.5)",
+              backdropFilter: "blur(4px)",
+            }}
           >
-            <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: paymentTypeChoice ? "420px" : "440px", width: "90%" }}>
+            <div
+              className="modal-dialog modal-dialog-centered"
+              style={{
+                maxWidth: paymentTypeChoice ? "420px" : "440px",
+                width: "90%",
+              }}
+            >
               <div className="modal-content border-0 shadow-lg rounded-3 overflow-hidden">
                 <div className="modal-header border-0">
                   <h6 className="modal-title fw-bold">
-                    {!paymentTypeChoice ? "Payment Options" : paymentTypeChoice === "online" ? "Pay online" : "Enter Payment Details"}
+                    {!paymentTypeChoice
+                      ? "Payment Options"
+                      : paymentTypeChoice === "online"
+                        ? "Pay online"
+                        : "Enter Payment Details"}
                   </h6>
-                  <button type="button" className="btn-close btn-close-press" onClick={closePaymentModal} />
+                  <button
+                    type="button"
+                    className="btn-close btn-close-press"
+                    onClick={closePaymentModal}
+                  />
                 </div>
 
                 <div className="modal-body">
                   {/* Step 1: Choose payment type */}
                   {!paymentTypeChoice && (
                     <>
-                      <p className="text-muted small mb-3">Choose one payment option.</p>
+                      <p className="text-muted small mb-3">
+                        Choose one payment option.
+                      </p>
                       <div className="d-flex flex-column gap-2">
                         <button
                           type="button"
                           className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
-                          style={{ minHeight: "56px", border: "1px solid #dee2e6" }}
+                          style={{
+                            minHeight: "56px",
+                            border: "1px solid #dee2e6",
+                          }}
                           onClick={() => {
                             setPaymentTypeChoice("online");
                             setPaymentMode("Online");
@@ -6370,15 +7562,28 @@ const handleCustomerRejectionSubmit = async () => {
                           }}
                         >
                           <span className="d-flex align-items-center gap-2 fw-semibold text-dark">
-                            <Icon icon="mdi:credit-card-outline" width={24} height={24} className="text-primary" />
+                            <Icon
+                              icon="mdi:credit-card-outline"
+                              width={24}
+                              height={24}
+                              className="text-primary"
+                            />
                             Pay Online
                           </span>
-                          <Icon icon="mdi:chevron-right" width={20} height={20} className="text-secondary opacity-75" />
+                          <Icon
+                            icon="mdi:chevron-right"
+                            width={20}
+                            height={20}
+                            className="text-secondary opacity-75"
+                          />
                         </button>
                         <button
                           type="button"
                           className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
-                          style={{ minHeight: "56px", border: "1px solid #dee2e6" }}
+                          style={{
+                            minHeight: "56px",
+                            border: "1px solid #dee2e6",
+                          }}
                           onClick={() => {
                             setPaymentTypeChoice("other");
                             setPaymentMode("");
@@ -6386,10 +7591,20 @@ const handleCustomerRejectionSubmit = async () => {
                           }}
                         >
                           <span className="d-flex align-items-center gap-2 fw-semibold text-dark">
-                            <Icon icon="mdi:cash-multiple" width={24} height={24} className="text-primary" />
+                            <Icon
+                              icon="mdi:cash-multiple"
+                              width={24}
+                              height={24}
+                              className="text-primary"
+                            />
                             Other
                           </span>
-                          <Icon icon="mdi:chevron-right" width={20} height={20} className="text-secondary opacity-75" />
+                          <Icon
+                            icon="mdi:chevron-right"
+                            width={20}
+                            height={20}
+                            className="text-secondary opacity-75"
+                          />
                         </button>
                       </div>
                     </>
@@ -6413,35 +7628,52 @@ const handleCustomerRejectionSubmit = async () => {
                         </div>
                       </div>
                       <div className="mb-3">
-                        <label className="form-label fw-semibold">Enter Amount</label>
+                        <label className="form-label fw-semibold">
+                          Enter Amount
+                        </label>
                         <input
                           type="number"
                           className="form-control"
                           min={0}
                           max={remainingAmount}
                           value={payAmount}
-                          onChange={(e) => setPayAmount(Math.max(0, Number(e.target.value)))}
+                          onChange={(e) =>
+                            setPayAmount(Math.max(0, Number(e.target.value)))
+                          }
                           placeholder="Amount"
                         />
                       </div>
                       {alreadyPaid === 0 && (
                         <>
                           <div className="mb-0">
-                            <label className="form-label fw-semibold">Apply Coupon</label>
+                            <label className="form-label fw-semibold">
+                              Apply Coupon
+                            </label>
                             <select
                               className="form-select mb-2"
                               value={selectedCoupon}
-                              onChange={(e) => setSelectedCoupon(e.target.value)}
+                              onChange={(e) =>
+                                setSelectedCoupon(e.target.value)
+                              }
                             >
                               {couponOffers.map((o) => (
-                                <option key={o.code} value={o.code}>{o.label}</option>
+                                <option key={o.code} value={o.code}>
+                                  {o.label}
+                                </option>
                               ))}
                             </select>
                             {(() => {
-                              const sel = couponOffers.find((c) => c.code === selectedCoupon);
+                              const sel = couponOffers.find(
+                                (c) => c.code === selectedCoupon,
+                              );
                               if (!sel || sel.discountValue === 0) return null;
                               return (
-                                <small className="text-muted d-block mb-2">Offer: {sel.discountType === "percentage" ? `${sel.discountValue}%` : `₹${Number(sel.discountValue).toFixed(2)}`}</small>
+                                <small className="text-muted d-block mb-2">
+                                  Offer:{" "}
+                                  {sel.discountType === "percentage"
+                                    ? `${sel.discountValue}%`
+                                    : `₹${Number(sel.discountValue).toFixed(2)}`}
+                                </small>
                               );
                             })()}
                             {/* <label className="form-label fw-semibold">Discount Amount</label>
@@ -6460,17 +7692,23 @@ const handleCustomerRejectionSubmit = async () => {
                               placeholder="0"
                             /> */}
                             {Number(payAmount || 0) > 0 && (
-                              <small className="text-muted">Max: ₹{Number(payAmount || 0).toFixed(2)}</small>
+                              <small className="text-muted">
+                                Max: ₹{Number(payAmount || 0).toFixed(2)}
+                              </small>
                             )}
                           </div>
                           {Number(discountAmount || 0) > 0 && (
                             <div className="mt-2 small text-muted">
-                              Final payable: ₹{Math.max(Number(payAmount || 0) - Number(discountAmount || 0), 0).toFixed(2)}
+                              Final payable: ₹
+                              {Math.max(
+                                Number(payAmount || 0) -
+                                  Number(discountAmount || 0),
+                                0,
+                              ).toFixed(2)}
                             </div>
                           )}
                         </>
                       )}
-
                     </>
                   )}
 
@@ -6491,8 +7729,10 @@ const handleCustomerRejectionSubmit = async () => {
                           <strong>₹{remainingAmount.toFixed(2)}</strong>
                         </div>
                       </div>
-                       <div className="mb-3">
-                        <label className="form-label fw-semibold">Payment Mode</label>
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">
+                          Payment Mode
+                        </label>
                         <select
                           className="form-select"
                           value={paymentMode}
@@ -6506,35 +7746,52 @@ const handleCustomerRejectionSubmit = async () => {
                         </select>
                       </div>
                       <div className="mb-3">
-                        <label className="form-label fw-semibold">Enter Amount</label>
+                        <label className="form-label fw-semibold">
+                          Enter Amount
+                        </label>
                         <input
                           type="number"
                           className="form-control"
                           min={0}
                           max={remainingAmount}
                           value={payAmount}
-                          onChange={(e) => setPayAmount(Math.max(0, Number(e.target.value)))}
+                          onChange={(e) =>
+                            setPayAmount(Math.max(0, Number(e.target.value)))
+                          }
                           placeholder="Amount"
                         />
                       </div>
                       {alreadyPaid === 0 && (
                         <>
                           <div className="mb-0">
-                            <label className="form-label fw-semibold">Apply Coupon</label>
+                            <label className="form-label fw-semibold">
+                              Apply Coupon
+                            </label>
                             <select
                               className="form-select mb-2"
                               value={selectedCoupon}
-                              onChange={(e) => setSelectedCoupon(e.target.value)}
+                              onChange={(e) =>
+                                setSelectedCoupon(e.target.value)
+                              }
                             >
                               {couponOffers.map((o) => (
-                                <option key={o.code} value={o.code}>{o.label}</option>
+                                <option key={o.code} value={o.code}>
+                                  {o.label}
+                                </option>
                               ))}
                             </select>
                             {(() => {
-                              const sel = couponOffers.find((c) => c.code === selectedCoupon);
+                              const sel = couponOffers.find(
+                                (c) => c.code === selectedCoupon,
+                              );
                               if (!sel || sel.discountValue === 0) return null;
                               return (
-                                <small className="text-muted d-block mb-2">Offer: {sel.discountType === "percentage" ? `${sel.discountValue}%` : `₹${Number(sel.discountValue).toFixed(2)}`}</small>
+                                <small className="text-muted d-block mb-2">
+                                  Offer:{" "}
+                                  {sel.discountType === "percentage"
+                                    ? `${sel.discountValue}%`
+                                    : `₹${Number(sel.discountValue).toFixed(2)}`}
+                                </small>
                               );
                             })()}
                             {/* <label className="form-label fw-semibold">Discount Amount</label>
@@ -6553,56 +7810,82 @@ const handleCustomerRejectionSubmit = async () => {
                               placeholder="0"
                             /> */}
                             {Number(payAmount || 0) > 0 && (
-                              <small className="text-muted">Max: ₹{Number(payAmount || 0).toFixed(2)}</small>
+                              <small className="text-muted">
+                                Max: ₹{Number(payAmount || 0).toFixed(2)}
+                              </small>
                             )}
                           </div>
                           {Number(discountAmount || 0) > 0 && (
                             <div className="mt-2 small text-muted">
-                              Final payable: ₹{Math.max(Number(payAmount || 0) - Number(discountAmount || 0), 0).toFixed(2)}
+                              Final payable: ₹
+                              {Math.max(
+                                Number(payAmount || 0) -
+                                  Number(discountAmount || 0),
+                                0,
+                              ).toFixed(2)}
                             </div>
                           )}
                         </>
                       )}
                       <div className="mb-3">
                         <label className="form-label fw-semibold">
-                          Attach Payment Proof <span className="text-danger">*</span>
+                          Attach Payment Proof{" "}
+                          <span className="text-danger">*</span>
                         </label>
                         <input
                           type="file"
                           className="form-control"
                           required
-                          onChange={(e) => setPaymentFile(e.target.files?.[0] ?? null)}
+                          onChange={(e) =>
+                            setPaymentFile(e.target.files?.[0] ?? null)
+                          }
                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
                         />
                         {paymentFile && (
-                          <small className="text-muted d-block mt-1">Selected: {paymentFile.name}</small>
+                          <small className="text-muted d-block mt-1">
+                            Selected: {paymentFile.name}
+                          </small>
                         )}
                       </div>
                     </>
                   )}
                 </div>
 
-                {(paymentTypeChoice === "online" || paymentTypeChoice === "other") && (
+                {(paymentTypeChoice === "online" ||
+                  paymentTypeChoice === "other") && (
                   <div className="modal-footer border-0 justify-content-center gap-2">
-                    <button type="button" className="btn btn-press-effect btn-secondary btn-sm" onClick={() => { setPaymentTypeChoice(null); setPaymentMode(""); setPayAmount(remainingAmount); setDiscountAmount(""); setPaymentFile(null); }}>
+                    <button
+                      type="button"
+                      className="btn btn-press-effect btn-secondary btn-sm"
+                      onClick={() => {
+                        setPaymentTypeChoice(null);
+                        setPaymentMode("");
+                        setPayAmount(remainingAmount);
+                        setDiscountAmount("");
+                        setPaymentFile(null);
+                      }}
+                    >
                       Back
                     </button>
                     <button
                       type="button"
                       className="btn  btn-primary-600 btn-sm"
                       onClick={handleConfirmPayment}
-                      disabled={ isLoading || (paymentTypeChoice === "other" && !paymentFile)}
+                      disabled={
+                        isLoading ||
+                        (paymentTypeChoice === "other" && !paymentFile)
+                      }
                     >
-                       {isLoading ? (
+                      {isLoading ? (
                         <>
                           <span className="spinner-border spinner-border-sm me-2"></span>
                           Processing...
                         </>
                       ) : paymentTypeChoice === "online" ? (
-                          "Send Payment Link"
-                        ) : (
-                          "Update Payment"
-                        )}
+                        "Send Payment Link"
+                      ) : (
+                        "Update Payment"
+                      )}
                     </button>
                   </div>
                 )}
@@ -6615,7 +7898,10 @@ const handleCustomerRejectionSubmit = async () => {
         {showAssignStep1Modal && (
           <div
             className="modal fade show d-block"
-            style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+            style={{
+              background: "rgba(0,0,0,0.5)",
+              backdropFilter: "blur(4px)",
+            }}
           >
             <div
               className="modal-dialog modal-dialog-centered"
@@ -6634,7 +7920,9 @@ const handleCustomerRejectionSubmit = async () => {
                   />
                 </div>
                 <div className="modal-body pt-1 pb-4">
-                  <p className="text-muted small mb-3">Select one option to proceed.</p>
+                  <p className="text-muted small mb-3">
+                    Select one option to proceed.
+                  </p>
                   <div className="d-flex flex-column gap-3">
                     {bookingData?.ServiceType !== "ServiceAtGarage" && (
                       <button
@@ -6646,7 +7934,8 @@ const handleCustomerRejectionSubmit = async () => {
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.transform = "translateY(-2px)";
-                          e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+                          e.currentTarget.style.boxShadow =
+                            "0 6px 20px rgba(0,0,0,0.08)";
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.transform = "";
@@ -6655,15 +7944,32 @@ const handleCustomerRejectionSubmit = async () => {
                         onClick={openDoorstepAssignModal}
                       >
                         <div className="d-flex align-items-center gap-3">
-                          <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
-                            <Icon icon="mdi:home-circle-outline" width={24} height={24} className="text-primary" />
+                          <span
+                            className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
+                            style={{ width: 48, height: 48 }}
+                          >
+                            <Icon
+                              icon="mdi:home-circle-outline"
+                              width={24}
+                              height={24}
+                              className="text-primary"
+                            />
                           </span>
                           <div>
-                            <span className="fw-semibold d-block text-dark">Service at Doorstep</span>
-                            <span className="small text-muted">Technician visits customer location</span>
+                            <span className="fw-semibold d-block text-dark">
+                              Service at Doorstep
+                            </span>
+                            <span className="small text-muted">
+                              Technician visits customer location
+                            </span>
                           </div>
                         </div>
-                        <Icon icon="mdi:chevron-right" width={20} height={20} className="text-secondary opacity-75" />
+                        <Icon
+                          icon="mdi:chevron-right"
+                          width={20}
+                          height={20}
+                          className="text-secondary opacity-75"
+                        />
                       </button>
                     )}
                     <button
@@ -6672,7 +7978,8 @@ const handleCustomerRejectionSubmit = async () => {
                       style={{ minHeight: "72px", transition: "all 0.2s ease" }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = "translateY(-2px)";
-                        e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+                        e.currentTarget.style.boxShadow =
+                          "0 6px 20px rgba(0,0,0,0.08)";
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.transform = "";
@@ -6681,15 +7988,32 @@ const handleCustomerRejectionSubmit = async () => {
                       onClick={openGarageFlowModal}
                     >
                       <div className="d-flex align-items-center gap-3">
-                        <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
-                          <Icon icon="mdi:garage" width={24} height={24} className="text-primary" />
+                        <span
+                          className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
+                          style={{ width: 48, height: 48 }}
+                        >
+                          <Icon
+                            icon="mdi:garage"
+                            width={24}
+                            height={24}
+                            className="text-primary"
+                          />
                         </span>
                         <div>
-                          <span className="fw-semibold d-block text-dark">Service at Garage</span>
-                          <span className="small text-muted">Car pickup/drop & service done on dealer location</span>
+                          <span className="fw-semibold d-block text-dark">
+                            Service at Garage
+                          </span>
+                          <span className="small text-muted">
+                            Car pickup/drop & service done on dealer location
+                          </span>
                         </div>
                       </div>
-                      <Icon icon="mdi:chevron-right" width={20} height={20} className="text-secondary opacity-75" />
+                      <Icon
+                        icon="mdi:chevron-right"
+                        width={20}
+                        height={20}
+                        className="text-secondary opacity-75"
+                      />
                     </button>
                   </div>
                 </div>
@@ -6830,8 +8154,6 @@ const handleCustomerRejectionSubmit = async () => {
                     </div>
                   )} */}
 
-
-
                   {/* Employee Selection based on assignType */}
                   {initialAssignType === "technician" ? (
                     <>
@@ -6861,16 +8183,20 @@ const handleCustomerRejectionSubmit = async () => {
                             bookingData?.BookingAddOns
                               ? Array.from(
                                   new Set(
-                                    bookingData.BookingAddOns
-                                      .filter(
-                                        (addon) =>
-                                          (addon.StatusName ?? addon.statusName ?? addon.AddOnStatus ?? addon.addOnStatus)
-                                            ?.toString()
-                                            .trim() !== "ServiceCompleted"
-                                      )
+                                    bookingData.BookingAddOns.filter(
+                                      (addon) =>
+                                        (
+                                          addon.StatusName ??
+                                          addon.statusName ??
+                                          addon.AddOnStatus ??
+                                          addon.addOnStatus
+                                        )
+                                          ?.toString()
+                                          .trim() !== "ServiceCompleted",
+                                    )
                                       .map((addon) => addon.ServiceName)
-                                      .filter(Boolean)
-                                  )
+                                      .filter(Boolean),
+                                  ),
                                 ).map((serviceName) => ({
                                   value: serviceName,
                                   label: serviceName,
@@ -6922,27 +8248,47 @@ const handleCustomerRejectionSubmit = async () => {
                     </div> */}
                   </div>
                   <div className="col-12">
-                    <label className="form-label small fw-semibold">Time Slot</label>
+                    <label className="form-label small fw-semibold">
+                      Time Slot
+                    </label>
                     <Select
                       isMulti
                       menuPortalTarget={document.body}
                       menuPosition="fixed"
-                      styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+                      styles={{
+                        menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                      }}
                       options={getFilteredTimeSlotsForDate(garagePickupDate)
                         .sort((a, b) => {
-                          const [aH, aM] = (a.StartTime || "00:00").split(":").map(Number);
-                          const [bH, bM] = (b.StartTime || "00:00").split(":").map(Number);
+                          const [aH, aM] = (a.StartTime || "00:00")
+                            .split(":")
+                            .map(Number);
+                          const [bH, bM] = (b.StartTime || "00:00")
+                            .split(":")
+                            .map(Number);
                           return aH * 60 + aM - (bH * 60 + bM);
                         })
                         .map((slot) => {
                           const val = `${slot.StartTime} - ${slot.EndTime}`;
-                          return { value: val, label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}` };
+                          return {
+                            value: val,
+                            label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}`,
+                          };
                         })}
-                      value={pickupDropReassignTimeSlot?.map((val) => {
-                        const [s, e] = (val || "").split(/\s*-\s*/);
-                        return { value: val, label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}` };
-                      }) ?? []}
-                      onChange={(opts) => setPickupDropReassignTimeSlot(opts ? opts.map((o) => o.value) : [])}
+                      value={
+                        pickupDropReassignTimeSlot?.map((val) => {
+                          const [s, e] = (val || "").split(/\s*-\s*/);
+                          return {
+                            value: val,
+                            label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}`,
+                          };
+                        }) ?? []
+                      }
+                      onChange={(opts) =>
+                        setPickupDropReassignTimeSlot(
+                          opts ? opts.map((o) => o.value) : [],
+                        )
+                      }
                       placeholder="Select time slot(s)"
                       isDisabled={!garagePickupDate}
                     />
@@ -6969,11 +8315,13 @@ const handleCustomerRejectionSubmit = async () => {
                     onClick={handleInitialAssignConfirm}
                     disabled={
                       //   (initialAssignType !== "fieldAdvisor" && !seleInitialTimeSlot) ||
-                      (initialAssignType === "technician" && !selectedInitialTechnician) ||
+                      (initialAssignType === "technician" &&
+                        !selectedInitialTechnician) ||
                       //   (initialAssignType === "supervisor" && !selectedInitialSupervisor) ||
                       //   (initialAssignType === "fieldAdvisor" && !selectedInitialFieldAdvisor) ||
-                      (initialAssignType === "technician" && selectedServiceType.length === 0) || 
-                      (garagePickupDate === "") || 
+                      (initialAssignType === "technician" &&
+                        selectedServiceType.length === 0) ||
+                      garagePickupDate === "" ||
                       pickupDropReassignTimeSlot.length === 0
                     }
                   >
@@ -6989,7 +8337,10 @@ const handleCustomerRejectionSubmit = async () => {
         {showGarageFlowModal && (
           <div
             className="modal fade show d-block"
-            style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+            style={{
+              background: "rgba(0,0,0,0.5)",
+              backdropFilter: "blur(4px)",
+            }}
           >
             <div
               className="modal-dialog modal-dialog-centered modal-dialog-scrollable"
@@ -7000,13 +8351,23 @@ const handleCustomerRejectionSubmit = async () => {
                   <div className="d-flex align-items-center justify-content-between w-100">
                     <h6 className="modal-title fw-bold mb-0">
                       {garageStep === "task" && "Service at garage"}
-                      {garageStep === "route" && (garageTask === "carPickup" ? "Car pickup" : "Car drop")}
+                      {garageStep === "route" &&
+                        (garageTask === "carPickup"
+                          ? "Car pickup"
+                          : "Car drop")}
                       {garageStep === "details" && "Assign pickup & delivery"}
                     </h6>
-                    <button type="button" className="btn-close btn-close-press" onClick={closeGarageFlowModal} />
+                    <button
+                      type="button"
+                      className="btn-close btn-close-press"
+                      onClick={closeGarageFlowModal}
+                    />
                   </div>
                   {/* Stepper */}
-                  <div className="d-flex align-items-center gap-1 mt-2" style={{ gap: "4px" }}>
+                  <div
+                    className="d-flex align-items-center gap-1 mt-2"
+                    style={{ gap: "4px" }}
+                  >
                     {["task", "route", "details"].map((step) => {
                       const steps = ["task", "route", "details"];
                       const idx = steps.indexOf(garageStep);
@@ -7018,7 +8379,9 @@ const handleCustomerRejectionSubmit = async () => {
                           className="rounded-pill flex-grow-1"
                           style={{
                             height: "4px",
-                            backgroundColor: active ? "var(--bs-primary)" : "var(--bs-border-color)",
+                            backgroundColor: active
+                              ? "var(--bs-primary)"
+                              : "var(--bs-border-color)",
                             opacity: active ? 1 : 0.4,
                             transition: "all 0.25s ease",
                           }}
@@ -7031,59 +8394,111 @@ const handleCustomerRejectionSubmit = async () => {
                   {/* Step: Car pickup vs Car drop — tap to advance */}
                   {garageStep === "task" && (
                     <>
-                      <p className="text-muted small mb-3">Tap an option to continue.</p>
+                      <p className="text-muted small mb-3">
+                        Tap an option to continue.
+                      </p>
                       <div className="d-flex flex-column gap-3">
                         <button
                           type="button"
                           className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
-                          style={{ minHeight: "72px", transition: "all 0.2s ease" }}
+                          style={{
+                            minHeight: "72px",
+                            transition: "all 0.2s ease",
+                          }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = "translateY(-2px)";
-                            e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+                            e.currentTarget.style.transform =
+                              "translateY(-2px)";
+                            e.currentTarget.style.boxShadow =
+                              "0 6px 20px rgba(0,0,0,0.08)";
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.transform = "";
                             e.currentTarget.style.boxShadow = "";
                           }}
-                          onClick={() => { setGarageTask("carPickup"); setGarageStep("route"); }}
+                          onClick={() => {
+                            setGarageTask("carPickup");
+                            setGarageStep("route");
+                          }}
                         >
                           <div className="d-flex align-items-center gap-3">
-                            <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
-                              <Icon icon="mdi:car-pickup" width={24} height={24} className="text-primary" />
+                            <span
+                              className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
+                              style={{ width: 48, height: 48 }}
+                            >
+                              <Icon
+                                icon="mdi:car-pickup"
+                                width={24}
+                                height={24}
+                                className="text-primary"
+                              />
                             </span>
                             <div>
-                              <span className="fw-semibold d-block text-dark">Car pickup</span>
-                              <span className="small text-muted">Pick up vehicle and take to dealer</span>
+                              <span className="fw-semibold d-block text-dark">
+                                Car pickup
+                              </span>
+                              <span className="small text-muted">
+                                Pick up vehicle and take to dealer
+                              </span>
                             </div>
                           </div>
-                          <Icon icon="mdi:chevron-right" width={20} height={20} className="text-secondary opacity-75" />
+                          <Icon
+                            icon="mdi:chevron-right"
+                            width={20}
+                            height={20}
+                            className="text-secondary opacity-75"
+                          />
                         </button>
                         {/* Hide Car drop when CustomerToDealer route does NOT exist */}
                         {hasExistingCustomerToDealerRoute && (
                           <button
                             type="button"
                             className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
-                            style={{ minHeight: "72px", transition: "all 0.2s ease" }}
+                            style={{
+                              minHeight: "72px",
+                              transition: "all 0.2s ease",
+                            }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = "translateY(-2px)";
-                              e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+                              e.currentTarget.style.transform =
+                                "translateY(-2px)";
+                              e.currentTarget.style.boxShadow =
+                                "0 6px 20px rgba(0,0,0,0.08)";
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.transform = "";
                               e.currentTarget.style.boxShadow = "";
                             }}
-                            onClick={() => { setGarageTask("carDrop"); setGarageStep("route"); }}
+                            onClick={() => {
+                              setGarageTask("carDrop");
+                              setGarageStep("route");
+                            }}
                           >
                             <div className="d-flex align-items-center gap-3">
-                              <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
-                                <Icon icon="mdi:car-side" width={24} height={24} className="text-primary" />
+                              <span
+                                className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
+                                style={{ width: 48, height: 48 }}
+                              >
+                                <Icon
+                                  icon="mdi:car-side"
+                                  width={24}
+                                  height={24}
+                                  className="text-primary"
+                                />
                               </span>
                               <div>
-                                <span className="fw-semibold d-block text-dark">Car drop</span>
-                                <span className="small text-muted">Deliver vehicle back to customer</span>
+                                <span className="fw-semibold d-block text-dark">
+                                  Car drop
+                                </span>
+                                <span className="small text-muted">
+                                  Deliver vehicle back to customer
+                                </span>
                               </div>
                             </div>
-                            <Icon icon="mdi:chevron-right" width={20} height={20} className="text-secondary opacity-75" />
+                            <Icon
+                              icon="mdi:chevron-right"
+                              width={20}
+                              height={20}
+                              className="text-secondary opacity-75"
+                            />
                           </button>
                         )}
                       </div>
@@ -7093,70 +8508,125 @@ const handleCustomerRejectionSubmit = async () => {
                   {/* Step: Customer to dealer vs Dealer to dealer — tap to advance */}
                   {garageStep === "route" && (
                     <>
-                      <p className="text-muted small mb-3">Tap an option to continue.</p>
+                      <p className="text-muted small mb-3">
+                        Tap an option to continue.
+                      </p>
                       <div className="d-flex flex-column gap-3">
                         {/* Hide Customer to Dealer button if already exists (only when carPickup) */}
-                        {(!hasExistingCustomerToDealerRoute || garageTask === "carDrop") && (
+                        {(!hasExistingCustomerToDealerRoute ||
+                          garageTask === "carDrop") && (
                           <button
                             type="button"
                             className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
-                            style={{ minHeight: "72px", transition: "all 0.2s ease" }}
+                            style={{
+                              minHeight: "72px",
+                              transition: "all 0.2s ease",
+                            }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = "translateY(-2px)";
-                              e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+                              e.currentTarget.style.transform =
+                                "translateY(-2px)";
+                              e.currentTarget.style.boxShadow =
+                                "0 6px 20px rgba(0,0,0,0.08)";
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.transform = "";
                               e.currentTarget.style.boxShadow = "";
                             }}
-                            onClick={() => { setGarageRoute("customerToDealer"); setGarageStep("details"); }}
+                            onClick={() => {
+                              setGarageRoute("customerToDealer");
+                              setGarageStep("details");
+                            }}
                           >
                             <div className="d-flex align-items-center gap-3">
-                              <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
-                                <Icon icon="mdi:account-arrow-right" width={24} height={24} className="text-primary" />
+                              <span
+                                className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
+                                style={{ width: 48, height: 48 }}
+                              >
+                                <Icon
+                                  icon="mdi:account-arrow-right"
+                                  width={24}
+                                  height={24}
+                                  className="text-primary"
+                                />
                               </span>
                               <div>
                                 <span className="fw-semibold d-block text-dark">
-                                  {garageTask === "carDrop" ? "Dealer to Customer" : "Customer to Dealer"}
+                                  {garageTask === "carDrop"
+                                    ? "Dealer to Customer"
+                                    : "Customer to Dealer"}
                                 </span>
                                 <span className="small text-muted">
-                                  {garageTask === "carPickup" ? "Pickup at customer → Deliver at dealer" : "Pickup at dealer → Deliver at customer"}
+                                  {garageTask === "carPickup"
+                                    ? "Pickup at customer → Deliver at dealer"
+                                    : "Pickup at dealer → Deliver at customer"}
                                 </span>
                               </div>
                             </div>
-                            <Icon icon="mdi:chevron-right" width={20} height={20} className="text-secondary opacity-75" />
+                            <Icon
+                              icon="mdi:chevron-right"
+                              width={20}
+                              height={20}
+                              className="text-secondary opacity-75"
+                            />
                           </button>
                         )}
                         {garageTask === "carPickup" &&
                           hasExistingCustomerToDealerRoute &&
                           bookingData?.BookingAddOns &&
                           new Set(
-                            bookingData.BookingAddOns.map(item => item.DealerName)
+                            bookingData.BookingAddOns.map(
+                              (item) => item.DealerName,
+                            ),
                           ).size > 1 && (
                             <button
                               type="button"
                               className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
-                              style={{ minHeight: "72px", transition: "all 0.2s ease" }}
+                              style={{
+                                minHeight: "72px",
+                                transition: "all 0.2s ease",
+                              }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = "translateY(-2px)";
-                                e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+                                e.currentTarget.style.transform =
+                                  "translateY(-2px)";
+                                e.currentTarget.style.boxShadow =
+                                  "0 6px 20px rgba(0,0,0,0.08)";
                               }}
                               onMouseLeave={(e) => {
                                 e.currentTarget.style.transform = "";
                                 e.currentTarget.style.boxShadow = "";
                               }}
-                              onClick={() => { setGarageRoute("dealerToDealer"); setGarageStep("details"); }}
+                              onClick={() => {
+                                setGarageRoute("dealerToDealer");
+                                setGarageStep("details");
+                              }}
                             >
                               <div className="d-flex align-items-center gap-3">
-                                <span className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10" style={{ width: 48, height: 48 }}>
-                                  <Icon icon="mdi:swap-horizontal" width={24} height={24} className="text-primary" />
+                                <span
+                                  className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
+                                  style={{ width: 48, height: 48 }}
+                                >
+                                  <Icon
+                                    icon="mdi:swap-horizontal"
+                                    width={24}
+                                    height={24}
+                                    className="text-primary"
+                                  />
                                 </span>
                                 <div>
-                                  <span className="fw-semibold d-block text-dark">Dealer to dealer</span>
-                                  <span className="small text-muted">Pickup at one dealer → Deliver at another</span>
+                                  <span className="fw-semibold d-block text-dark">
+                                    Dealer to dealer
+                                  </span>
+                                  <span className="small text-muted">
+                                    Pickup at one dealer → Deliver at another
+                                  </span>
                                 </div>
                               </div>
-                              <Icon icon="mdi:chevron-right" width={20} height={20} className="text-secondary opacity-75" />
+                              <Icon
+                                icon="mdi:chevron-right"
+                                width={20}
+                                height={20}
+                                className="text-secondary opacity-75"
+                              />
                             </button>
                           )}
                       </div>
@@ -7166,48 +8636,64 @@ const handleCustomerRejectionSubmit = async () => {
                   {/* Step: Details – pickup/deliver locations + driver */}
                   {garageStep === "details" && (
                     <>
-                      <div className="small text-muted mb-2 fw-semibold">Pickup & deliver</div>
-                      {garageRoute === "customerToDealer" && garageTask === "carPickup" && (
-                        <div className="rounded-3 border p-3 mb-3 bg-light">
-                          <div className="mb-2">
-                            <span className="small text-muted d-block">Pickup from</span>
-                            <span className="fw-semibold">
-                              {bookingData?.Address || "Customer location"}
-                            </span>
+                      <div className="small text-muted mb-2 fw-semibold">
+                        Pickup & deliver
+                      </div>
+                      {garageRoute === "customerToDealer" &&
+                        garageTask === "carPickup" && (
+                          <div className="rounded-3 border p-3 mb-3 bg-light">
+                            <div className="mb-2">
+                              <span className="small text-muted d-block">
+                                Pickup from
+                              </span>
+                              <span className="fw-semibold">
+                                {bookingData?.Address || "Customer location"}
+                              </span>
+                            </div>
+                            <div className="mb-0">
+                              <label className="form-label small mb-1">
+                                Deliver from (dealer)
+                              </label>
+                              <Select
+                                options={garageDealerOptions}
+                                value={garageDeliverDealer}
+                                onChange={setGarageDeliverDealer}
+                                placeholder="Select dealer"
+                              />
+                            </div>
                           </div>
-                          <div className="mb-0">
-                            <label className="form-label small mb-1">Deliver from (dealer)</label>
-                            <Select
-                              options={garageDealerOptions}
-                              value={garageDeliverDealer}
-                              onChange={setGarageDeliverDealer}
-                              placeholder="Select dealer"
-                            />
+                        )}
+                      {garageRoute === "customerToDealer" &&
+                        garageTask === "carDrop" && (
+                          <div className="rounded-3 border p-3 mb-3 bg-light">
+                            <div className="mb-2">
+                              <label className="form-label small mb-1">
+                                Pickup at (dealer)
+                              </label>
+                              <Select
+                                options={garageDealerOptions}
+                                value={garagePickupDealer}
+                                isDisabled={true}
+                                onChange={setGaragePickupDealer}
+                                placeholder="Select dealer"
+                              />
+                            </div>
+                            <div className="mb-0">
+                              <span className="small text-muted d-block">
+                                Deliver from
+                              </span>
+                              <span className="fw-semibold">
+                                {bookingData?.Address || "Customer location"}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      {garageRoute === "customerToDealer" && garageTask === "carDrop" && (
-                        <div className="rounded-3 border p-3 mb-3 bg-light">
-                          <div className="mb-2">
-                            <label className="form-label small mb-1">Pickup at (dealer)</label>
-                            <Select
-                              options={garageDealerOptions}
-                              value={garagePickupDealer}
-                              isDisabled={true}
-                              onChange={setGaragePickupDealer}
-                              placeholder="Select dealer"
-                            />
-                          </div>
-                          <div className="mb-0">
-                            <span className="small text-muted d-block">Deliver from</span>
-                            <span className="fw-semibold">{bookingData?.Address || "Customer location"}</span>
-                          </div>
-                        </div>
-                      )}
+                        )}
                       {garageRoute === "dealerToDealer" && (
                         <div className="rounded-3 border p-3 mb-3 bg-light">
                           <div className="mb-3">
-                            <label className="form-label small mb-1">Pickup from (dealer)</label>
+                            <label className="form-label small mb-1">
+                              Pickup from (dealer)
+                            </label>
                             <Select
                               options={garageDealerOptions}
                               value={garagePickupDealer}
@@ -7217,7 +8703,9 @@ const handleCustomerRejectionSubmit = async () => {
                             />
                           </div>
                           <div>
-                            <label className="form-label small mb-1">Deliver at (dealer)</label>
+                            <label className="form-label small mb-1">
+                              Deliver at (dealer)
+                            </label>
                             <Select
                               options={garageDeliverDealerOptions}
                               value={garageDeliverDealer}
@@ -7228,7 +8716,9 @@ const handleCustomerRejectionSubmit = async () => {
                         </div>
                       )}
                       <div className="mb-3">
-                        <label className="form-label small mb-1">Assign driver</label>
+                        <label className="form-label small mb-1">
+                          Assign driver
+                        </label>
                         <Select
                           options={technicians}
                           value={garageDriver}
@@ -7244,7 +8734,9 @@ const handleCustomerRejectionSubmit = async () => {
                             className="form-control form-control-sm"
                             min={today}
                             value={garagePickupDate}
-                            onChange={(e) => setGaragePickupDate(e.target.value)}
+                            onChange={(e) =>
+                              setGaragePickupDate(e.target.value)
+                            }
                           />
                         </div>
                         <div className="col-6">
@@ -7275,7 +8767,6 @@ const handleCustomerRejectionSubmit = async () => {
                       </div>
                     </>
                   )}
-
                 </div>
                 <div className="modal-footer border-0 d-flex justify-content-between gap-2 flex-wrap">
                   <div>
@@ -7293,84 +8784,126 @@ const handleCustomerRejectionSubmit = async () => {
                     )}
                   </div>
                   <div className="d-flex gap-2">
-                    {garageStep === "details" && garageRoute !== "dealerToDealer" && (
-                      <button
-                        type="button"
-                        className="btn btn-press-effect btn-primary-600 btn-sm"
-                        disabled={
-                          (garageRoute === "customerToDealer" && garageTask === "carPickup" && !garageDeliverDealer) ||
-                          (garageRoute === "customerToDealer" && garageTask === "carDrop" && !garagePickupDealer) ||
-                          !garageDriver ||
-                          !garagePickupDate ||
-                          !garagePickupTime
-                        }
-                        onClick={async () => {
-                          // Check if all BookingAddOns have IsCompleted_Confirmation = 1 for carDrop
-                          if (garageTask === "carDrop") {
-                            const bookingAddOns = bookingData?.BookingAddOns || [];
-                            const allConfirmed = bookingAddOns.every(addon => addon.IsCompleted_Confirmation === 1);
-                            if (!allConfirmed) {
-                              const unconfirmedServices = bookingAddOns
-                                .filter(addon => addon.IsCompleted_Confirmation !== 1)
-                                .map(addon => addon.ServiceName)
-                                .join(", ");
+                    {garageStep === "details" &&
+                      garageRoute !== "dealerToDealer" && (
+                        <button
+                          type="button"
+                          className="btn btn-press-effect btn-primary-600 btn-sm"
+                          disabled={
+                            (garageRoute === "customerToDealer" &&
+                              garageTask === "carPickup" &&
+                              !garageDeliverDealer) ||
+                            (garageRoute === "customerToDealer" &&
+                              garageTask === "carDrop" &&
+                              !garagePickupDealer) ||
+                            !garageDriver ||
+                            !garagePickupDate ||
+                            !garagePickupTime
+                          }
+                          onClick={async () => {
+                            // Check if all BookingAddOns have IsCompleted_Confirmation = 1 for carDrop
+                            if (garageTask === "carDrop") {
+                              const bookingAddOns =
+                                bookingData?.BookingAddOns || [];
+                              const allConfirmed = bookingAddOns.every(
+                                (addon) => addon.IsCompleted_Confirmation === 1,
+                              );
+                              if (!allConfirmed) {
+                                const unconfirmedServices = bookingAddOns
+                                  .filter(
+                                    (addon) =>
+                                      addon.IsCompleted_Confirmation !== 1,
+                                  )
+                                  .map((addon) => addon.ServiceName)
+                                  .join(", ");
+                                Swal.fire({
+                                  icon: "warning",
+                                  title: "Service Completion Not Confirmed",
+                                  html: `All services must be completed by Field Advisor before car drop.<br/><br/><strong>Pending services:</strong><br/>${unconfirmedServices || "Some services"}`,
+                                });
+                                return;
+                              }
+                            }
+
+                            const payload = buildGaragePayload();
+                            if (!payload) {
                               Swal.fire({
-                                icon: "warning",
-                                title: "Service Completion Not Confirmed",
-                                html: `All services must be completed by Field Advisor before car drop.<br/><br/><strong>Pending services:</strong><br/>${unconfirmedServices || "Some services"}`
+                                icon: "error",
+                                title: "Error",
+                                text: "Booking/Lead info missing.",
                               });
                               return;
                             }
+                            const result =
+                              await savePickupDeliveryTime(payload);
+                            if (result.ok) {
+                              Swal.fire({
+                                icon: "success",
+                                title: "Assigned",
+                                text:
+                                  result.data?.message ||
+                                  "Pickup/delivery saved successfully.",
+                              });
+                              closeGarageFlowModal();
+                              fetchBookingData();
+                            } else {
+                              Swal.fire({
+                                icon: "error",
+                                title: "Error",
+                                text: result.message || "Failed to save.",
+                              });
+                            }
+                          }}
+                        >
+                          Assign
+                        </button>
+                      )}
+                    {garageStep === "details" &&
+                      garageRoute === "dealerToDealer" && (
+                        <button
+                          type="button"
+                          className="btn btn-press-effect btn-primary btn-sm"
+                          disabled={
+                            !garagePickupDealer ||
+                            !garageDeliverDealer ||
+                            !garageDriver ||
+                            !garagePickupDate ||
+                            !garagePickupTime
                           }
-
-                          const payload = buildGaragePayload();
-                          if (!payload) {
-                            Swal.fire({ icon: "error", title: "Error", text: "Booking/Lead info missing." });
-                            return;
-                          }
-                          const result = await savePickupDeliveryTime(payload);
-                          if (result.ok) {
-                            Swal.fire({ icon: "success", title: "Assigned", text: result.data?.message || "Pickup/delivery saved successfully." });
-                            closeGarageFlowModal();
-                            fetchBookingData();
-                          } else {
-                            Swal.fire({ icon: "error", title: "Error", text: result.message || "Failed to save." });
-                          }
-                        }}
-                      >
-                        Assign
-                      </button>
-                    )}
-                    {garageStep === "details" && garageRoute === "dealerToDealer" && (
-                      <button
-                        type="button"
-                        className="btn btn-press-effect btn-primary btn-sm"
-                        disabled={
-                          !garagePickupDealer ||
-                          !garageDeliverDealer ||
-                          !garageDriver ||
-                          !garagePickupDate ||
-                          !garagePickupTime
-                        }
-                        onClick={async () => {
-                          const payload = buildGaragePayload();
-                          if (!payload) {
-                            Swal.fire({ icon: "error", title: "Error", text: "Booking/Lead info missing." });
-                            return;
-                          }
-                          const result = await savePickupDeliveryTime(payload);
-                          if (result.ok) {
-                            Swal.fire({ icon: "success", title: "Saved", text: result.data?.message || "Pickup/delivery saved successfully." });
-                            closeGarageFlowModal();
-                            fetchBookingData();
-                          } else {
-                            Swal.fire({ icon: "error", title: "Error", text: result.message || "Failed to save." });
-                          }
-                        }}
-                      >
-                        Submit
-                      </button>
-                    )}
+                          onClick={async () => {
+                            const payload = buildGaragePayload();
+                            if (!payload) {
+                              Swal.fire({
+                                icon: "error",
+                                title: "Error",
+                                text: "Booking/Lead info missing.",
+                              });
+                              return;
+                            }
+                            const result =
+                              await savePickupDeliveryTime(payload);
+                            if (result.ok) {
+                              Swal.fire({
+                                icon: "success",
+                                title: "Saved",
+                                text:
+                                  result.data?.message ||
+                                  "Pickup/delivery saved successfully.",
+                              });
+                              closeGarageFlowModal();
+                              fetchBookingData();
+                            } else {
+                              Swal.fire({
+                                icon: "error",
+                                title: "Error",
+                                text: result.message || "Failed to save.",
+                              });
+                            }
+                          }}
+                        >
+                          Submit
+                        </button>
+                      )}
                   </div>
                 </div>
               </div>
@@ -7382,58 +8915,97 @@ const handleCustomerRejectionSubmit = async () => {
         {showPickupDropRescheduleModal && (
           <div
             className="modal fade show d-block"
-            style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+            style={{
+              background: "rgba(0,0,0,0.5)",
+              backdropFilter: "blur(4px)",
+            }}
           >
-            <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: "480px", width: "90%" }}>
+            <div
+              className="modal-dialog modal-dialog-centered"
+              style={{ maxWidth: "480px", width: "90%" }}
+            >
               <div className="modal-content border-0 shadow-lg rounded-3 overflow-hidden">
                 <div className="modal-header border-0">
-                  <h6 className="modal-title fw-bold">Reschedule Pickup / Drop</h6>
-                  <button type="button" className="btn-close btn-close-press" onClick={closePickupDropRescheduleModal} />
+                  <h6 className="modal-title fw-bold">
+                    Reschedule Pickup / Drop
+                  </h6>
+                  <button
+                    type="button"
+                    className="btn-close btn-close-press"
+                    onClick={closePickupDropRescheduleModal}
+                  />
                 </div>
                 <div className="modal-body">
                   <div className="row g-3">
                     <div className="col-12">
-                      <label className="form-label small fw-semibold">Reschedule Date</label>
+                      <label className="form-label small fw-semibold">
+                        Reschedule Date
+                      </label>
                       <input
                         type="date"
                         className="form-control form-control-sm py-2"
                         min={today}
                         value={pickupDropRescheduleDate}
-                        onChange={(e) => setPickupDropRescheduleDate(e.target.value)}
+                        onChange={(e) =>
+                          setPickupDropRescheduleDate(e.target.value)
+                        }
                       />
                     </div>
                     <div className="col-12">
-                      <label className="form-label small fw-semibold">Time Slot</label>
+                      <label className="form-label small fw-semibold">
+                        Time Slot
+                      </label>
                       <Select
                         isMulti
                         menuPortalTarget={document.body}
                         menuPosition="fixed"
-                        styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
-                        options={timeSlots
-                          ?.filter((slot) => {
-                            if (!slot?.IsActive) return false;
-                            if (pickupDropRescheduleDate !== today) return true;
-                            const now = new Date();
-                            const [h, m] = (slot.StartTime || "00:00").split(":").map(Number);
-                            const slotTime = new Date();
-                            slotTime.setHours(h, m, 0, 0);
-                            return slotTime > now;
-                          })
-                          ?.sort((a, b) => {
-                            const [aH, aM] = (a.StartTime || "00:00").split(":").map(Number);
-                            const [bH, bM] = (b.StartTime || "00:00").split(":").map(Number);
-                            return aH * 60 + aM - (bH * 60 + bM);
-                          })
-                          ?.map((slot) => {
-                            const val = `${slot.StartTime} - ${slot.EndTime}`;
-                            return { value: val, label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}` };
-                          }) ?? []}
-                        value={pickupDropRescheduleTimeSlot?.map((val) => {
-                          const [s, e] = (val || "").split(/\s*-\s*/);
-                          return { value: val, label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}` };
-                        }) ?? []}
+                        styles={{
+                          menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                        }}
+                        options={
+                          timeSlots
+                            ?.filter((slot) => {
+                              if (!slot?.IsActive) return false;
+                              if (pickupDropRescheduleDate !== today)
+                                return true;
+                              const now = new Date();
+                              const [h, m] = (slot.StartTime || "00:00")
+                                .split(":")
+                                .map(Number);
+                              const slotTime = new Date();
+                              slotTime.setHours(h, m, 0, 0);
+                              return slotTime > now;
+                            })
+                            ?.sort((a, b) => {
+                              const [aH, aM] = (a.StartTime || "00:00")
+                                .split(":")
+                                .map(Number);
+                              const [bH, bM] = (b.StartTime || "00:00")
+                                .split(":")
+                                .map(Number);
+                              return aH * 60 + aM - (bH * 60 + bM);
+                            })
+                            ?.map((slot) => {
+                              const val = `${slot.StartTime} - ${slot.EndTime}`;
+                              return {
+                                value: val,
+                                label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}`,
+                              };
+                            }) ?? []
+                        }
+                        value={
+                          pickupDropRescheduleTimeSlot?.map((val) => {
+                            const [s, e] = (val || "").split(/\s*-\s*/);
+                            return {
+                              value: val,
+                              label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}`,
+                            };
+                          }) ?? []
+                        }
                         onChange={(opts) =>
-                          setPickupDropRescheduleTimeSlot(opts ? opts.map((o) => o.value) : [])
+                          setPickupDropRescheduleTimeSlot(
+                            opts ? opts.map((o) => o.value) : [],
+                          )
                         }
                         placeholder="Select time slot(s)"
                         isDisabled={!pickupDropRescheduleDate}
@@ -7468,26 +9040,58 @@ const handleCustomerRejectionSubmit = async () => {
         {showPickupDropReassignModal && (
           <div
             className="modal fade show d-block"
-            style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+            style={{
+              background: "rgba(0,0,0,0.5)",
+              backdropFilter: "blur(4px)",
+            }}
           >
-            <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: "480px", width: "90%" }}>
+            <div
+              className="modal-dialog modal-dialog-centered"
+              style={{ maxWidth: "480px", width: "90%" }}
+            >
               <div className="modal-content border-0 shadow-lg rounded-3 overflow-hidden">
                 <div className="modal-header border-0">
-                  <h6 className="modal-title fw-bold">Reassign Pickup / Drop</h6>
-                  <button type="button" className="btn-close btn-close-press" onClick={closePickupDropReassignModal} />
+                  <h6 className="modal-title fw-bold">
+                    Reassign Pickup / Drop
+                  </h6>
+                  <button
+                    type="button"
+                    className="btn-close btn-close-press"
+                    onClick={closePickupDropReassignModal}
+                  />
                 </div>
                 <div className="modal-body">
                   <div className="row g-3">
                     <div className="col-12">
-                      <label className="form-label small fw-semibold">Select Technician / Driver</label>
+                      <label className="form-label small fw-semibold">
+                        Select Technician / Driver
+                      </label>
                       <Select
                         options={(() => {
                           const row = pickupDropReassignRow;
-                          const rowTechId = row?.TechnicianID ?? row?.TechID ?? row?.EmployeeID ?? row?.EmployeeId;
-                          const rowTechName = (row?.TechnicinaName ?? row?.TechnicianName ?? "").toString().trim();
+                          const rowTechId =
+                            row?.TechnicianID ??
+                            row?.TechID ??
+                            row?.EmployeeID ??
+                            row?.EmployeeId;
+                          const rowTechName = (
+                            row?.TechnicinaName ??
+                            row?.TechnicianName ??
+                            ""
+                          )
+                            .toString()
+                            .trim();
                           return technicians.filter((t) => {
-                            if (rowTechId != null && t.value == rowTechId) return false;
-                            if (rowTechName && t.label && String(t.label).toLowerCase().includes(rowTechName.toLowerCase())) return false;
+                            if (rowTechId != null && t.value == rowTechId)
+                              return false;
+                            if (
+                              rowTechName &&
+                              t.label &&
+                              String(t.label)
+                                .toLowerCase()
+                                .includes(rowTechName.toLowerCase())
+                            )
+                              return false;
                             return true;
                           });
                         })()}
@@ -7496,50 +9100,80 @@ const handleCustomerRejectionSubmit = async () => {
                         placeholder="Select technician"
                         menuPortalTarget={document.body}
                         menuPosition="fixed"
-                        styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+                        styles={{
+                          menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                        }}
                       />
                     </div>
                     <div className="col-12">
-                      <label className="form-label small fw-semibold">Assign Date</label>
+                      <label className="form-label small fw-semibold">
+                        Assign Date
+                      </label>
                       <input
                         type="date"
                         className="form-control form-control-sm py-2"
                         min={today}
                         value={pickupDropReassignDate}
-                        onChange={(e) => setPickupDropReassignDate(e.target.value)}
+                        onChange={(e) =>
+                          setPickupDropReassignDate(e.target.value)
+                        }
                       />
                     </div>
                     <div className="col-12">
-                      <label className="form-label small fw-semibold">Time Slot</label>
+                      <label className="form-label small fw-semibold">
+                        Time Slot
+                      </label>
                       <Select
                         isMulti
                         menuPortalTarget={document.body}
                         menuPosition="fixed"
-                        styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
-                        options={timeSlots
-                          ?.filter((slot) => {
-                            if (!slot?.IsActive) return false;
-                            if (pickupDropReassignDate !== today) return true;
-                            const now = new Date();
-                            const [h, m] = (slot.StartTime || "00:00").split(":").map(Number);
-                            const slotTime = new Date();
-                            slotTime.setHours(h, m, 0, 0);
-                            return slotTime > now;
-                          })
-                          ?.sort((a, b) => {
-                            const [aH, aM] = (a.StartTime || "00:00").split(":").map(Number);
-                            const [bH, bM] = (b.StartTime || "00:00").split(":").map(Number);
-                            return aH * 60 + aM - (bH * 60 + bM);
-                          })
-                          ?.map((slot) => {
-                            const val = `${slot.StartTime} - ${slot.EndTime}`;
-                            return { value: val, label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}` };
-                          }) ?? []}
-                        value={pickupDropReassignTimeSlot?.map((val) => {
-                          const [s, e] = (val || "").split(/\s*-\s*/);
-                          return { value: val, label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}` };
-                        }) ?? []}
-                        onChange={(opts) => setPickupDropReassignTimeSlot(opts ? opts.map((o) => o.value) : [])}
+                        styles={{
+                          menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                        }}
+                        options={
+                          timeSlots
+                            ?.filter((slot) => {
+                              if (!slot?.IsActive) return false;
+                              if (pickupDropReassignDate !== today) return true;
+                              const now = new Date();
+                              const [h, m] = (slot.StartTime || "00:00")
+                                .split(":")
+                                .map(Number);
+                              const slotTime = new Date();
+                              slotTime.setHours(h, m, 0, 0);
+                              return slotTime > now;
+                            })
+                            ?.sort((a, b) => {
+                              const [aH, aM] = (a.StartTime || "00:00")
+                                .split(":")
+                                .map(Number);
+                              const [bH, bM] = (b.StartTime || "00:00")
+                                .split(":")
+                                .map(Number);
+                              return aH * 60 + aM - (bH * 60 + bM);
+                            })
+                            ?.map((slot) => {
+                              const val = `${slot.StartTime} - ${slot.EndTime}`;
+                              return {
+                                value: val,
+                                label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}`,
+                              };
+                            }) ?? []
+                        }
+                        value={
+                          pickupDropReassignTimeSlot?.map((val) => {
+                            const [s, e] = (val || "").split(/\s*-\s*/);
+                            return {
+                              value: val,
+                              label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}`,
+                            };
+                          }) ?? []
+                        }
+                        onChange={(opts) =>
+                          setPickupDropReassignTimeSlot(
+                            opts ? opts.map((o) => o.value) : [],
+                          )
+                        }
                         placeholder="Select time slot(s)"
                         isDisabled={!pickupDropReassignDate}
                       />
@@ -7573,7 +9207,10 @@ const handleCustomerRejectionSubmit = async () => {
         {showCustomerConfirmationModal && (
           <div
             className="modal fade show d-block"
-            style={{ background: "rgba(0, 0, 0, 0.5)", backdropFilter: "blur(5px)" }}
+            style={{
+              background: "rgba(0, 0, 0, 0.5)",
+              backdropFilter: "blur(5px)",
+            }}
           >
             <div
               className="modal-dialog modal-dialog-centered"
@@ -7596,17 +9233,20 @@ const handleCustomerRejectionSubmit = async () => {
                 <div className="modal-body">
                   {/* Explanation Section */}
                   <div className="alert alert-info mb-3">
-                    <h6 className="fw-bold mb-2">Why is confirmation required?</h6>
+                    <h6 className="fw-bold mb-2">
+                      Why is confirmation required?
+                    </h6>
                     <p className="mb-0 small">
-                      Customer confirmation is required to finalize the booking and move all services
-                      from temporary status to confirmed status. This ensures that the customer has
-                      reviewed and approved all services before proceeding with the booking process.
-                      Once confirmed, the services will be moved to the main booking and cannot be
-                      easily modified.
+                      Customer confirmation is required to finalize the booking
+                      and move all services from temporary status to confirmed
+                      status. This ensures that the customer has reviewed and
+                      approved all services before proceeding with the booking
+                      process. Once confirmed, the services will be moved to the
+                      main booking and cannot be easily modified.
                     </p>
                   </div>
                   {/* Services Selection */}
-                   <div className="mb-3">
+                  <div className="mb-3">
                     <label className="form-label fw-semibold">
                       Select the services you want to confirm.
                     </label>
@@ -7625,7 +9265,9 @@ const handleCustomerRejectionSubmit = async () => {
                             type="checkbox"
                             id={`service-${service.Id}`}
                             checked={selectedServiceIds.includes(service.Id)}
-                            onChange={() => handleServiceCheckboxChange(service.Id)}
+                            onChange={() =>
+                              handleServiceCheckboxChange(service.Id)
+                            }
                             style={{ border: "1px solid black" }}
                           />
 
@@ -7649,21 +9291,28 @@ const handleCustomerRejectionSubmit = async () => {
                       rows="4"
                       placeholder="Please provide a description for this confirmation..."
                       value={confirmationDescription}
-                      onChange={(e) => setConfirmationDescription(e.target.value)}
+                      onChange={(e) =>
+                        setConfirmationDescription(e.target.value)
+                      }
                       required
                     />
                     <small className="text-muted">
-                      This description will be recorded along with your confirmation.
+                      This description will be recorded along with your
+                      confirmation.
                     </small>
                   </div>
 
                   {/* File Upload Field */}
                   <div className="mb-3">
-                    <label className="form-label fw-semibold">Attach File</label>
+                    <label className="form-label fw-semibold">
+                      Attach File
+                    </label>
                     <input
                       type="file"
                       className="form-control"
-                      onChange={(e) => setConfirmationFile(e.target.files?.[0] ?? null)}
+                      onChange={(e) =>
+                        setConfirmationFile(e.target.files?.[0] ?? null)
+                      }
                       accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
                     />
                     {confirmationFile && (
@@ -7689,10 +9338,10 @@ const handleCustomerRejectionSubmit = async () => {
                     className="btn btn-press-effect btn-primary-600 btn-sm"
                     onClick={handleCustomerConfirmationSubmit}
                     disabled={
-                        !confirmationDescription ||
-                        confirmationDescription.trim() === "" ||
-                        selectedServiceIds.length === 0
-                      }
+                      !confirmationDescription ||
+                      confirmationDescription.trim() === "" ||
+                      selectedServiceIds.length === 0
+                    }
                   >
                     Confirm Services
                   </button>
@@ -7702,275 +9351,276 @@ const handleCustomerRejectionSubmit = async () => {
           </div>
         )}
         {showCustomerRejectionModal && (
-        <div
-          className="modal fade show d-block"
-          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(5px)" }}
-        >
           <div
-            className="modal-dialog modal-dialog-centered"
-            style={{ maxWidth: "600px", width: "90%" }}
+            className="modal fade show d-block"
+            style={{
+              background: "rgba(0,0,0,0.5)",
+              backdropFilter: "blur(5px)",
+            }}
           >
-            <div className="modal-content">
-
-              {/* Header */}
-              <div className="modal-header">
-                <h6 className="fw-bold mb-2">
-                  Customer Rejection
-                </h6>
-                <button
-                  type="button"
-                  className="btn-close btn-close-press"
-                  onClick={() => {
-                    setShowCustomerRejectionModal(false);
-                    setRejectionDescription("");
-                    setRejectedServiceIds([]);
-                  }}
-                />
-              </div>
-
-              {/* Body */}
-              <div className="modal-body">
-
-                {/* Explanation */}
-                <div className="alert alert-info mb-3">
-                  <h6 className="fw-bold mb-2">Why is rejection required?</h6>
-                  <p className="mb-0 small">
-                    Service rejection is used when the customer declines certain
-                    services after review. These rejected services will be removed
-                    from the current booking and stored in the rejected services
-                    list for record purposes.
-                  </p>
+            <div
+              className="modal-dialog modal-dialog-centered"
+              style={{ maxWidth: "600px", width: "90%" }}
+            >
+              <div className="modal-content">
+                {/* Header */}
+                <div className="modal-header">
+                  <h6 className="fw-bold mb-2">Customer Rejection</h6>
+                  <button
+                    type="button"
+                    className="btn-close btn-close-press"
+                    onClick={() => {
+                      setShowCustomerRejectionModal(false);
+                      setRejectionDescription("");
+                      setRejectedServiceIds([]);
+                    }}
+                  />
                 </div>
 
-                {/* Service Selection */}
-                <div className="mb-3">
-                  <label className="form-label fw-semibold">
-                    Select services to reject
-                  </label>
+                {/* Body */}
+                <div className="modal-body">
+                  {/* Explanation */}
+                  <div className="alert alert-info mb-3">
+                    <h6 className="fw-bold mb-2">Why is rejection required?</h6>
+                    <p className="mb-0 small">
+                      Service rejection is used when the customer declines
+                      certain services after review. These rejected services
+                      will be removed from the current booking and stored in the
+                      rejected services list for record purposes.
+                    </p>
+                  </div>
 
-                  <div
-                    className="border rounded p-2"
-                    style={{ maxHeight: "200px", overflowY: "auto" }}
-                  >
-                    {bookingData?.SupervisorBookings?.map((service) => (
-                      <div
-                        key={service.Id}
-                        className="d-flex align-items-center gap-3 mb-1 px-3"
-                      >
-                        <input
-                          className="form-check-input mt-0"
-                          type="checkbox"
-                          checked={rejectedServiceIds.includes(service.Id)}
-                          onChange={() =>
-                            handleRejectServiceCheckboxChange(service.Id)
-                          }
-                          style={{ border: "1px solid black" }}
-                        />
+                  {/* Service Selection */}
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">
+                      Select services to reject
+                    </label>
 
-                        <label className="form-check-label mb-0">
-                          {service.ServiceName}
-                        </label>
-                      </div>
-                    ))}
+                    <div
+                      className="border rounded p-2"
+                      style={{ maxHeight: "200px", overflowY: "auto" }}
+                    >
+                      {bookingData?.SupervisorBookings?.map((service) => (
+                        <div
+                          key={service.Id}
+                          className="d-flex align-items-center gap-3 mb-1 px-3"
+                        >
+                          <input
+                            className="form-check-input mt-0"
+                            type="checkbox"
+                            checked={rejectedServiceIds.includes(service.Id)}
+                            onChange={() =>
+                              handleRejectServiceCheckboxChange(service.Id)
+                            }
+                            style={{ border: "1px solid black" }}
+                          />
+
+                          <label className="form-check-label mb-0">
+                            {service.ServiceName}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">
+                      Rejection Reason <span className="text-danger">*</span>
+                    </label>
+
+                    <textarea
+                      className="form-control"
+                      rows="4"
+                      placeholder="Please provide reason for rejecting the selected services..."
+                      value={rejectionDescription}
+                      onChange={(e) => setRejectionDescription(e.target.value)}
+                    />
+
+                    <small className="text-muted">
+                      This reason will be recorded in the booking history.
+                    </small>
                   </div>
                 </div>
 
-                {/* Description */}
-                <div className="mb-3">
-                  <label className="form-label fw-semibold">
-                    Rejection Reason <span className="text-danger">*</span>
-                  </label>
+                {/* Footer */}
+                <div className="modal-footer justify-content-center">
+                  <button
+                    className="btn btn-press-effect btn-secondary btn-sm"
+                    onClick={() => {
+                      setShowCustomerRejectionModal(false);
+                      setRejectionDescription("");
+                      setRejectedServiceIds([]);
+                    }}
+                  >
+                    Cancel
+                  </button>
 
-                  <textarea
-                    className="form-control"
-                    rows="4"
-                    placeholder="Please provide reason for rejecting the selected services..."
-                    value={rejectionDescription}
-                    onChange={(e) => setRejectionDescription(e.target.value)}
-                  />
-
-                  <small className="text-muted">
-                    This reason will be recorded in the booking history.
-                  </small>
+                  <button
+                    className="btn btn-press-effect btn-primary-600 btn-sm"
+                    onClick={handleCustomerRejectionSubmit}
+                    disabled={
+                      !rejectionDescription ||
+                      rejectionDescription.trim() === "" ||
+                      rejectedServiceIds.length === 0
+                    }
+                  >
+                    Reject Services
+                  </button>
                 </div>
-
               </div>
-
-              {/* Footer */}
-              <div className="modal-footer justify-content-center">
-                <button
-                  className="btn btn-press-effect btn-secondary btn-sm"
-                  onClick={() => {
-                    setShowCustomerRejectionModal(false);
-                    setRejectionDescription("");
-                    setRejectedServiceIds([]);
-                  }}
-                >
-                  Cancel
-                </button>
-
-                <button
-                  className="btn btn-press-effect btn-primary-600 btn-sm"
-                  onClick={handleCustomerRejectionSubmit}
-                  disabled={
-                    !rejectionDescription ||
-                    rejectionDescription.trim() === "" ||
-                    rejectedServiceIds.length === 0
-                  }
-                >
-                  Reject Services
-                </button>
-              </div>
-
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {showConfirmModal && (
-  <div
-    className="modal fade show d-block"
-    style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(5px)" }}
-  >
-    <div className="modal-dialog modal-dialog-centered modal-lg">
-      <div className="modal-content">
-
-        <div className="modal-header">
-          <h6 className="modal-title fw-bold">Upload Service Completion Images</h6>
-          <button
-            className="btn-close"
-            onClick={() => {
-              setShowConfirmModal(false);
-              setSelectedImages([]);
-              setPreviewImages([]);
+        {showConfirmModal && (
+          <div
+            className="modal fade show d-block"
+            style={{
+              background: "rgba(0,0,0,0.5)",
+              backdropFilter: "blur(5px)",
             }}
-          />
-        </div>
+          >
+            <div className="modal-dialog modal-dialog-centered modal-lg">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h6 className="modal-title fw-bold">
+                    Upload Service Completion Images
+                  </h6>
+                  <button
+                    className="btn-close"
+                    onClick={() => {
+                      setShowConfirmModal(false);
+                      setSelectedImages([]);
+                      setPreviewImages([]);
+                    }}
+                  />
+                </div>
 
-        <div className="modal-body">
+                <div className="modal-body">
+                  <label className="form-label fw-semibold">
+                    Upload Images
+                  </label>
 
-          <label className="form-label fw-semibold">
-            Upload Images
-          </label>
-
-          {/* <input
+                  {/* <input
             type="file"
             multiple
             accept="image/*"
             className="form-control"
             onChange={handleImageChange}
           /> */}
-          <div
-              className="border border-2 border-primary border-dashed rounded text-center p-4"
-              style={{
-                cursor: "pointer",
-                background: "#f8fbff",
-                borderStyle: "dashed",
-              }}
-              onClick={() => document.getElementById("imageUploadInput").click()}
-            >
+                  <div
+                    className="border border-2 border-primary border-dashed rounded text-center p-4"
+                    style={{
+                      cursor: "pointer",
+                      background: "#f8fbff",
+                      borderStyle: "dashed",
+                    }}
+                    onClick={() =>
+                      document.getElementById("imageUploadInput").click()
+                    }
+                  >
+                    {/* Upload Icon */}
+                    <div className="mb-2">
+                      <span style={{ fontSize: "40px", color: "#0d6efd" }}>
+                        ⬆
+                      </span>
+                    </div>
 
-              {/* Upload Icon */}
-              <div className="mb-2">
-                <span style={{ fontSize: "40px", color: "#0d6efd" }}>⬆</span>
-              </div>
-
-              {/* Browse Button */}
-              <button
-                type="button"
-                className="btn btn-primary rounded-pill px-5 py-2"
-              >
-                Browse
-              </button>
-
-              {/* Text */}
-              <p className="text-muted mt-2 mb-1">drop a file here</p>
-
-              <small className="text-danger">
-                *File supported .png, .jpg & .webp
-              </small>
-
-              {/* Hidden Input */}
-              <input
-                id="imageUploadInput"
-                type="file"
-                multiple
-                accept=".png,.jpg,.jpeg,.webp"
-                hidden
-                onChange={handleImageChange}
-              />
-
-            </div>
-
-          {/* Preview */}
-         {previewImages.length > 0 && (
-              <div className="row mt-3">
-                {previewImages.map((img, index) => (
-                  <div className="col-4 mb-2 position-relative" key={index}>
-                    
-                    {/* Remove Button */}
+                    {/* Browse Button */}
                     <button
-                        type="button"
-                        onClick={() => handleRemoveImage(index)}
-                        style={{
-                          position: "absolute",
-                          top: "1px",
-                          right: "6px",
-                          background: "#dc3545",
-                          border: "none",
-                          borderRadius: "50%",
-                          width: "26px",
-                          height: "26px",
-                          color: "#fff",
-                          fontSize: "16px",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          padding: 0
-                        }}
-                      >
-                        ×
-                      </button>
-                    <img
-                      src={img.url}
-                      alt="preview"
-                      className="img-fluid rounded border"
-                      style={{
-                        height: "100px",
-                        width: "100%",
-                        objectFit: "cover",
-                      }}
+                      type="button"
+                      className="btn btn-primary rounded-pill px-5 py-2"
+                    >
+                      Browse
+                    </button>
+
+                    {/* Text */}
+                    <p className="text-muted mt-2 mb-1">drop a file here</p>
+
+                    <small className="text-danger">
+                      *File supported .png, .jpg & .webp
+                    </small>
+
+                    {/* Hidden Input */}
+                    <input
+                      id="imageUploadInput"
+                      type="file"
+                      multiple
+                      accept=".png,.jpg,.jpeg,.webp"
+                      hidden
+                      onChange={handleImageChange}
                     />
                   </div>
-                ))}
+
+                  {/* Preview */}
+                  {previewImages.length > 0 && (
+                    <div className="row mt-3">
+                      {previewImages.map((img, index) => (
+                        <div
+                          className="col-4 mb-2 position-relative"
+                          key={index}
+                        >
+                          {/* Remove Button */}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(index)}
+                            style={{
+                              position: "absolute",
+                              top: "1px",
+                              right: "6px",
+                              background: "#dc3545",
+                              border: "none",
+                              borderRadius: "50%",
+                              width: "26px",
+                              height: "26px",
+                              color: "#fff",
+                              fontSize: "16px",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: 0,
+                            }}
+                          >
+                            ×
+                          </button>
+                          <img
+                            src={img.url}
+                            alt="preview"
+                            className="img-fluid rounded border"
+                            style={{
+                              height: "100px",
+                              width: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="modal-footer justify-content-center">
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => setShowConfirmModal(false)}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    className="btn btn-primary-600 btn-sm"
+                    disabled={selectedImages.length === 0}
+                    onClick={handleFieldAdvisorConfirm}
+                  >
+                    Confirm
+                  </button>
+                </div>
               </div>
-            )}
-
-        </div>
-
-        <div className="modal-footer justify-content-center">
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => setShowConfirmModal(false)}
-          >
-            Cancel
-          </button>
-
-          <button
-            className="btn btn-primary-600 btn-sm"
-            disabled={selectedImages.length === 0}
-            onClick={handleFieldAdvisorConfirm}
-          >
-            Confirm
-          </button>
-        </div>
-
-      </div>
-    </div>
-  </div>
-)}
-
+            </div>
+          </div>
+        )}
 
         {/* Full-screen pickup image viewer with open/close effects */}
         {fullScreenImageUrl && (
@@ -7989,7 +9639,11 @@ const handleCustomerRejectionSubmit = async () => {
               backdropFilter: "blur(6px)",
               WebkitBackdropFilter: "blur(6px)",
               cursor: "pointer",
-              opacity: fullScreenImageClosing ? 0 : (fullScreenImageVisible ? 1 : 0),
+              opacity: fullScreenImageClosing
+                ? 0
+                : fullScreenImageVisible
+                  ? 1
+                  : 0,
               transition: "opacity 0.25s ease-out",
             }}
             onClick={() => {
@@ -8047,8 +9701,16 @@ const handleCustomerRejectionSubmit = async () => {
                 maxHeight: "90vh",
                 objectFit: "contain",
                 borderRadius: "8px",
-                transform: fullScreenImageClosing ? "scale(0.96)" : (fullScreenImageVisible ? "scale(1)" : "scale(0.96)"),
-                opacity: fullScreenImageClosing ? 0.9 : (fullScreenImageVisible ? 1 : 0.9),
+                transform: fullScreenImageClosing
+                  ? "scale(0.96)"
+                  : fullScreenImageVisible
+                    ? "scale(1)"
+                    : "scale(0.96)",
+                opacity: fullScreenImageClosing
+                  ? 0.9
+                  : fullScreenImageVisible
+                    ? 1
+                    : 0.9,
                 transition: "transform 0.25s ease-out, opacity 0.25s ease-out",
               }}
               onClick={(e) => e.stopPropagation()}
@@ -8063,9 +9725,7 @@ const handleCustomerRejectionSubmit = async () => {
           centered
         >
           <Modal.Header closeButton>
-            <Modal.Title className="h6 fw-bold">
-              Assign Supervisor
-            </Modal.Title>
+            <Modal.Title className="h6 fw-bold">Assign Supervisor</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <div className="mb-3 pb-3 border-bottom">
@@ -8090,7 +9750,9 @@ const handleCustomerRejectionSubmit = async () => {
               />
             </div>
             <div className="mb-3">
-              <label className="form-label fw-semibold">Select Supervisor</label>
+              <label className="form-label fw-semibold">
+                Select Supervisor
+              </label>
               <Select
                 options={[]}
                 value={null}

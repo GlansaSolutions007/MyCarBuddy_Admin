@@ -17,12 +17,14 @@ const InvoiceViewLayer = () => {
   const [dealerList, setDealerList] = useState([]);
   const [selectedDealer, setSelectedDealer] = useState("");
   const [sendingInvoice, setSendingInvoice] = useState(null); // "whatsapp-estimation" | "email-estimation" | "whatsapp-final" | "email-final" | "dealer"
-
+  const [isInvoiceGenerated, setIsInvoiceGenerated] = useState(false);
   const token = localStorage.getItem("token");
 
   const typeFromUrl = searchParams.get("type");
   const urlInvoiceType =
-    typeFromUrl && VALID_INVOICE_TYPES.includes(typeFromUrl) ? typeFromUrl : null;
+    typeFromUrl && VALID_INVOICE_TYPES.includes(typeFromUrl)
+      ? typeFromUrl
+      : null;
 
   useEffect(() => {
     fetchBookingData();
@@ -156,12 +158,20 @@ const InvoiceViewLayer = () => {
 
   // Resolve active invoice: use ?type=Estimation|Dealer|Final from URL when present, else first active
   const invoices = bookingData?.Invoices || [];
+  const sortedInvoices = [...invoices].sort((a, b) => {
+    const ad = new Date(a.CreatedDate || a.InvoiceDate || 0).getTime() || 0;
+    const bd = new Date(b.CreatedDate || b.InvoiceDate || 0).getTime() || 0;
+    if (bd !== ad) return bd - ad;
+    const aid = Number(a.InvoiceID || 0);
+    const bid = Number(b.InvoiceID || 0);
+    return bid - aid;
+  });
+
   const activeInvoice = urlInvoiceType
-    ? invoices.find(
+    ? sortedInvoices.find(
         (inv) => inv.InvoiceType === urlInvoiceType && inv.IsActive === true,
-      ) ||
-      invoices.find((inv) => inv.InvoiceType === urlInvoiceType)
-    : invoices.find((inv) => inv.IsActive === true);
+      ) || sortedInvoices.find((inv) => inv.InvoiceType === urlInvoiceType)
+    : sortedInvoices.find((inv) => inv.IsActive === true) || sortedInvoices[0];
   const activeInvoiceType = activeInvoice?.InvoiceType;
 
   // When in Dealer view and dealer list is loaded, default to first dealer so "Send Dealer Invoice" works
@@ -184,10 +194,81 @@ const InvoiceViewLayer = () => {
     : null;
 
   const invoiceNumber = activeInvoice?.FolderPath
-    ? (activeInvoice.FolderPath || "").replace(/\\/g, "/").split("/").pop().replace(".pdf", "")
+    ? (activeInvoice.FolderPath || "")
+        .replace(/\\/g, "/")
+        .split("/")
+        .pop()
+        .replace(".pdf", "")
     : null;
 
   const invoiceNum = activeInvoice?.InvoiceNumber;
+
+  const allServicesForConfirm = [
+    ...(bookingData?.BookingAddOns || []),
+    ...(bookingData?.BookingsTempAddons || []),
+    ...(bookingData?.SupervisorBookings || []),
+  ];
+  const unconfirmedServices = allServicesForConfirm.filter(
+    (s) => (s.IsSupervisor_Confirm ?? s.isSupervisor_Confirm) !== 1,
+  );
+
+  const handleGenerateInvoiceForView = async () => {
+    if (!bookingData?.BookingID) {
+      Swal.fire("Error", "Booking data not available.", "error");
+      return;
+    }
+    try {
+      setSendingInvoice("generate");
+
+      if (urlInvoiceType === "Estimation") {
+        await axios.post(
+          `${API_BASE}Leads/GenerateEstimationInvoice`,
+          { bookingID: bookingData.BookingID },
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+
+        setIsInvoiceGenerated(true); // ✅ IMPORTANT
+
+        Swal.fire({
+          icon: "success",
+          title: "Generated",
+          text: "Estimation invoice generated successfully.",
+        });
+      } else if (urlInvoiceType === "Final") {
+        await axios.post(
+          `${API_BASE}Leads/GenerateFinalInvoice`,
+          { bookingID: bookingData.BookingID },
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+
+        setIsInvoiceGenerated(true); // ✅ (optional if needed for final too)
+
+        Swal.fire({
+          icon: "success",
+          title: "Generated",
+          text: "Final invoice generated successfully.",
+        });
+      } else {
+        Swal.fire({
+          icon: "info",
+          title: "Not available",
+          text: "Generate is available for Estimation/Final views.",
+        });
+      }
+
+      await fetchBookingData();
+    } catch (error) {
+      setIsInvoiceGenerated(false); // ❗ reset on failure
+
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error?.response?.data?.message || "Failed to generate invoice.",
+      });
+    } finally {
+      setSendingInvoice(null);
+    }
+  };
 
   const handlePrint = () => {
     if (invoicePdfUrl) {
@@ -202,93 +283,137 @@ const InvoiceViewLayer = () => {
   };
 
   const handleWhatsappEstimatedInvoice = async () => {
-  if (!bookingData?.BookingID || !invoiceNumber) {
-    Swal.fire({
-      icon: "error",
-      title: "Missing Invoice Data",
-      text: "Invoice information is not available.",
-    });
-    return;
-  }
+    if (!bookingData?.BookingID || !invoiceNumber) {
+      Swal.fire({
+        icon: "error",
+        title: "Missing Invoice Data",
+        text: "Invoice information is not available.",
+      });
+      return;
+    }
 
-  try {
-    setSendingInvoice("whatsapp-estimation");
-    await axios.post(
-      `${API_BASE}Leads/SendEstimationInvoiceWhatsApp`,
-      {
-        bookingID: bookingData.BookingID,
-        invoiceNumber: invoiceNum,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
+    try {
+      const supervisorId = Number(localStorage.getItem("userId") || 0);
+
+      // ✅ STEP 1: Confirm Service Prices
+      const priceConfirm = await Swal.fire({
+        icon: "question",
+        title: "Confirmation of Service Prices",
+        text: "Are you ok with the given service prices?",
+        showCancelButton: true,
+        confirmButtonText: "OK",
+        cancelButtonText: "Cancel",
+      });
+
+      if (!priceConfirm.isConfirmed) return;
+
+      // ✅ STEP 2: Confirm Sending Estimation
+      const sendConfirm = await Swal.fire({
+        icon: "warning",
+        title: "Send Estimation Invoice",
+        text: "Do you want to send confirmed estimation invoice to the customer?",
+        showCancelButton: true,
+        confirmButtonText: "Yes, Send",
+        cancelButtonText: "Cancel",
+      });
+
+      if (!sendConfirm.isConfirmed) return;
+
+      // ✅ API CALL 1: Confirm Booking
+      await axios.post(
+        `${API_BASE}Supervisor/confirm-by-bookingid?bookingId=${encodeURIComponent(
+          bookingData.BookingID,
+        )}&supervisorId=${encodeURIComponent(supervisorId)}`,
+        null,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
-      }
-    );
+      );
 
-    Swal.fire({
-      icon: "success",
-      title: "Sent",
-      text: "Estimation invoice sent on WhatsApp successfully.",
-    });
-  } catch (error) {
-    console.error("WhatsApp Estimation Invoice Error:", error);
-    Swal.fire({
-      icon: "error",
-      title: "Failed",
-      text:
-        error?.response?.data?.message ||
-        "Failed to send estimation invoice on WhatsApp.",
-    });
-  } finally {
-    setSendingInvoice(null);
-  }
-};
-const handleWhatsappFinalInvoice = async () => {
-  if (!bookingData?.BookingID || !invoiceNumber) {
-    Swal.fire({
-      icon: "error",
-      title: "Missing Invoice Data",
-      text: "Invoice information is not available.",
-    });
-    return;
-  }
+      // ✅ API CALL 2: Send WhatsApp Estimation
+      setSendingInvoice("whatsapp-estimation");
 
-  try {
-    setSendingInvoice("whatsapp-final");
-    await axios.post(
-      `${API_BASE}Leads/SendFinalInvoiceWhatsApp`,
-      // `${API_BASE}Leads/SendEstimationInvoiceWhatsApp`,
-      {
-        bookingID: bookingData.BookingID,
-        invoiceNumber: invoiceNum,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      await axios.post(
+        `${API_BASE}Leads/SendEstimationInvoiceWhatsApp`,
+        {
+          bookingID: bookingData.BookingID,
+          invoiceNumber: invoiceNum,
         },
-      }
-    );
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
 
-    Swal.fire({
-      icon: "success",
-      title: "Sent",
-      text: "Final invoice sent on WhatsApp successfully.",
-    });
-  } catch (error) {
-    console.error("WhatsApp Final Invoice Error:", error);
-    Swal.fire({
-      icon: "error",
-      title: "Failed",
-      text:
-        error?.response?.data?.message ||
-        "Failed to send final invoice on WhatsApp.",
-    });
-  } finally {
-    setSendingInvoice(null);
-  }
-};
+      // ✅ Success Message
+      Swal.fire({
+        icon: "success",
+        title: "Sent",
+        text: "Estimation invoice sent on WhatsApp successfully.",
+      });
+    } catch (error) {
+      console.error("WhatsApp Estimation Invoice Error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Failed",
+        text:
+          error?.response?.data?.message ||
+          "Failed to send estimation invoice on WhatsApp.",
+      });
+    } finally {
+      setSendingInvoice(null);
+    }
+  };
+  const handleWhatsappFinalInvoice = async () => {
+    if (!bookingData?.BookingID || !invoiceNumber) {
+      Swal.fire({
+        icon: "error",
+        title: "Missing Invoice Data",
+        text: "Invoice information is not available.",
+      });
+      return;
+    }
 
+    try {
+      setSendingInvoice("whatsapp-final");
+      await axios.post(
+        `${API_BASE}Leads/SendFinalInvoiceWhatsApp`,
+        // `${API_BASE}Leads/SendEstimationInvoiceWhatsApp`,
+        {
+          bookingID: bookingData.BookingID,
+          invoiceNumber: invoiceNum,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      Swal.fire({
+        icon: "success",
+        title: "Sent",
+        text: "Final invoice sent on WhatsApp successfully.",
+      }).then(() => {
+        setIsInvoiceGenerated(false);
+        navigate(`/booking-view/${bookingData.BookingID}`);
+      });
+    } catch (error) {
+      console.error("WhatsApp Final Invoice Error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Failed",
+        text:
+          error?.response?.data?.message ||
+          "Failed to send final invoice on WhatsApp.",
+      });
+    } finally {
+      setSendingInvoice(null);
+    }
+  };
 
   const handleSendFinalInvoice = async () => {
     if (!bookingData?.BookingID || !invoiceNumber) {
@@ -340,6 +465,43 @@ const handleWhatsappFinalInvoice = async () => {
       return;
     }
     try {
+      if (unconfirmedServices.length > 0) {
+        const names = unconfirmedServices
+          .map(
+            (s) =>
+              s.ServiceName || s.Name || `Service #${s.Id ?? s.AddOnID ?? "—"}`,
+          )
+          .join("<br/>");
+        Swal.fire({
+          icon: "warning",
+          title: "Services not confirmed",
+          html: `These services are not confirmed by supervisor:<br/><br/>${names}`,
+        });
+        return;
+      }
+      const supervisorId = Number(localStorage.getItem("userId") || 0);
+      const confirmRes = await Swal.fire({
+        icon: "warning",
+        title: "Confirm & send estimation?",
+        text: "Are you sure you are confirming? This Estimation will send customer.",
+        showCancelButton: true,
+        confirmButtonText: "Yes, confirm & send",
+        cancelButtonText: "Cancel",
+      });
+      if (!confirmRes.isConfirmed) return;
+
+      await axios.post(
+        `${API_BASE}Supervisor/confirm-by-bookingid?bookingId=${encodeURIComponent(
+          bookingData.BookingID,
+        )}&supervisorId=${encodeURIComponent(supervisorId)}`,
+        null,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
       setSendingInvoice("email-estimation");
       await axios.post(
         `${API_BASE}Leads/SendEstimationInvoiceEmail`,
@@ -398,95 +560,264 @@ const handleWhatsappFinalInvoice = async () => {
           <Icon icon="mdi:arrow-left" />
           <span>Back</span>
         </button>
-        {activeInvoiceType === "Dealer" && (
-        <div className="d-flex gap-2 align-items-center mb-3">
-          <select
-            className="form-select w-auto"
-            value={selectedDealer}
-            onChange={(e) => {
-              const dealerId = e.target.value;
-              setSelectedDealer(dealerId);
-
-              if (dealerId) {
-                handleGenerateDealerInvoice(dealerId);
-              }
-            }}
+        {(urlInvoiceType === "Estimation" || urlInvoiceType === "Final") && (
+          <button
+            className="btn btn-primary-600 d-inline-flex align-items-center gap-2"
+            onClick={handleGenerateInvoiceForView}
+            disabled={sendingInvoice === "generate"}
+            title="Generate latest invoice"
           >
-            {/* <option value="">Select Dealer</option> */}
-            {dealerList.map((dealer) => (
-              <option key={dealer.dealerId} value={dealer.dealerId}>
-                {dealer.dealerName}
-              </option>
-            ))}
-          </select>
-        </div>
+            <Icon icon="mdi:file-plus-outline" />
+            <span>
+              {sendingInvoice === "generate"
+                ? "Generating..."
+                : "Generate Invoice"}
+            </span>
+          </button>
         )}
+        {urlInvoiceType === "Dealer" && (
+          <div className="d-flex gap-2 align-items-center mb-3">
+            <select
+              className="form-select w-auto"
+              value={selectedDealer}
+              onChange={(e) => {
+                const dealerId = e.target.value;
+                setSelectedDealer(dealerId);
 
-        <div className="d-flex gap-2">
-          {activeInvoiceType === "Estimation" && (
-            <>
-            <button
-              className="btn btn-primary-600 d-inline-flex align-items-center gap-2"
-              onClick={handleWhatsappEstimatedInvoice}
-              disabled={sendingInvoice === "whatsapp-estimation"}
+                if (dealerId) {
+                  handleGenerateDealerInvoice(dealerId);
+                }
+              }}
             >
-              <Icon icon="mdi:email-send-outline" />
-              <span>{sendingInvoice === "whatsapp-estimation" ? "Sending..." : "Whatsapp Estimation Invoice"}</span>
-            </button>
-            <button
-              className="btn btn-primary-600 d-inline-flex align-items-center gap-2"
-              onClick={handleEmailEstimatedInvoice}
-              disabled={sendingInvoice === "email-estimation"}
-            >
-              <Icon icon="mdi:email-send-outline" />
-              <span>{sendingInvoice === "email-estimation" ? "Sending..." : "Email Estimation Invoice"}</span>
-            </button>
-            </>
-          )}
-          {activeInvoiceType === "Final" && (
-            <>
-              <button
-              className="btn btn-primary-600 d-inline-flex align-items-center gap-2"
-              onClick={handleWhatsappFinalInvoice}
-              disabled={sendingInvoice === "whatsapp-final"}
-            >
-              <Icon icon="mdi:email-send-outline" />
-              <span>{sendingInvoice === "whatsapp-final" ? "Sending..." : "Whatsapp Final Invoice"}</span>
-            </button>
-            <button
-              className="btn btn-primary-600 d-inline-flex align-items-center gap-2"
-              onClick={handleSendFinalInvoice}
-              disabled={sendingInvoice === "email-final"}
-            >
-              <Icon icon="mdi:email-send-outline" />
-              <span>{sendingInvoice === "email-final" ? "Sending..." : "Email Final Invoice"}</span>
-            </button>
-            </>
-          )}
-          {activeInvoiceType === "Dealer" && (
-            <div className="d-flex gap-2">
-              <button
-                className="btn btn-primary-600 d-inline-flex align-items-center gap-2"
-                onClick={handleSendDealerInvoice}
-                disabled={!activeInvoice || sendingInvoice === "dealer"}
-              >
-                <Icon icon="mdi:email-send" />
-                <span>{sendingInvoice === "dealer" ? "Sending..." : "Send Dealer Invoice"}</span>
-              </button>
-            </div>
-          )}
-          {/* <button
-            className="btn btn-primary d-inline-flex align-items-center gap-2"
-            onClick={handlePrint}
-          >
-            <Icon icon="mdi:printer" />
-            <span>Print Invoice</span>
-          </button> */}
-        </div>
+              {/* <option value="">Select Dealer</option> */}
+              {dealerList.map((dealer) => (
+                <option key={dealer.dealerId} value={dealer.dealerId}>
+                  {dealer.dealerName}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Invoice Container */}
-      {invoicePdfUrl ? (
+      {/* Invoices list (latest first) */}
+      <div className="mb-3">
+        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+          <div className="fw-semibold">Invoices (latest first)</div>
+          <div className="small text-muted">
+            {sortedInvoices.length > 0
+              ? `Showing ${sortedInvoices.length}`
+              : ""}
+          </div>
+        </div>
+
+        {sortedInvoices.length > 0 ? (
+          <div className="table-responsive">
+            <table className="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Invoice No</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th className="text-end">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedInvoices.slice(0, 5).map((inv, idx) =>
+                  (() => {
+                    const isActiveRow = inv === activeInvoice;
+                    return (
+                      <tr
+                        key={inv.InvoiceID ?? idx}
+                        style={{
+                          backgroundColor:
+                            inv === activeInvoice
+                              ? "rgba(37,99,235,0.06)"
+                              : "transparent",
+                        }}
+                      >
+                        <td className="fw-semibold">
+                          {inv.InvoiceNumber ?? "—"}
+                        </td>
+                        <td>{inv.InvoiceType ?? "—"}</td>
+                        <td>{inv.InvoiceStatus ?? "—"}</td>
+                        <td className="text-end">
+                          {isActiveRow &&
+                            urlInvoiceType === "Estimation" &&
+                            isInvoiceGenerated && (
+                              <div className="d-inline-flex gap-2">
+                                <button
+                                  className="btn btn-primary-600 btn-sm d-inline-flex align-items-center gap-2"
+                                  onClick={handleWhatsappEstimatedInvoice}
+                                  disabled={
+                                    sendingInvoice === "whatsapp-estimation"
+                                  }
+                                >
+                                  <Icon icon="mdi:whatsapp" />
+                                  <span>
+                                    {sendingInvoice === "whatsapp-estimation"
+                                      ? "Sending..."
+                                      : "WhatsApp"}
+                                  </span>
+                                </button>
+
+                                <button
+                                  className="btn btn-primary-600 btn-sm d-inline-flex align-items-center gap-2"
+                                  onClick={handleEmailEstimatedInvoice}
+                                  disabled={
+                                    sendingInvoice === "email-estimation"
+                                  }
+                                >
+                                  <Icon icon="mdi:email-send-outline" />
+                                  <span>
+                                    {sendingInvoice === "email-estimation"
+                                      ? "Sending..."
+                                      : "Email"}
+                                  </span>
+                                </button>
+                              </div>
+                            )}
+
+                          {isActiveRow && urlInvoiceType === "Final" && (
+                            <div className="d-inline-flex gap-2">
+                              <button
+                                className="btn btn-primary-600 btn-sm d-inline-flex align-items-center gap-2"
+                                onClick={handleWhatsappFinalInvoice}
+                                disabled={sendingInvoice === "whatsapp-final"}
+                              >
+                                <Icon icon="mdi:whatsapp" />
+                                <span>
+                                  {sendingInvoice === "whatsapp-final"
+                                    ? "Sending..."
+                                    : "WhatsApp"}
+                                </span>
+                              </button>
+                              <button
+                                className="btn btn-primary-600 btn-sm d-inline-flex align-items-center gap-2"
+                                onClick={handleSendFinalInvoice}
+                                disabled={sendingInvoice === "email-final"}
+                              >
+                                <Icon icon="mdi:email-send-outline" />
+                                <span>
+                                  {sendingInvoice === "email-final"
+                                    ? "Sending..."
+                                    : "Email"}
+                                </span>
+                              </button>
+                            </div>
+                          )}
+
+                          {isActiveRow && urlInvoiceType === "Dealer" && (
+                            <button
+                              className="btn btn-primary-600 btn-sm d-inline-flex align-items-center gap-2"
+                              onClick={handleSendDealerInvoice}
+                              disabled={
+                                !activeInvoice || sendingInvoice === "dealer"
+                              }
+                            >
+                              <Icon icon="mdi:email-send" />
+                              <span>
+                                {sendingInvoice === "dealer"
+                                  ? "Sending..."
+                                  : "Send"}
+                              </span>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })(),
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="alert alert-light border small mb-0">
+            No invoices found.
+          </div>
+        )}
+      </div>
+
+      {/* Supervisor confirmation status for services */}
+      {urlInvoiceType === "Estimation" && (
+        <div className="mb-3">
+          {unconfirmedServices.length > 0 ? (
+            <div className="alert alert-warning small mb-0">
+              <div className="fw-semibold mb-1">Pending Confirmations</div>
+              <div className="text-muted mb-2">
+                Newly Added Services to be confirmed by customer. Confirm and
+                send estimation to the customer.
+              </div>
+              <ul className="mb-0 ps-3">
+                {unconfirmedServices.slice(0, 8).map((s, idx) => (
+                  <li key={s.Id ?? s.AddOnID ?? idx}>
+                    <b>Service Name:</b>{" "}
+                    {s.ServiceName || s.Name || "Unnamed service"}
+                  </li>
+                ))}
+                {unconfirmedServices.length > 8 && (
+                  <li>+ {unconfirmedServices.length - 8} more…</li>
+                )}
+              </ul>
+            </div>
+          ) : (
+            <div className="alert alert-success small mb-0">
+              All services are confirmed by supervisor.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Estimation HTML preview (API) */}
+      {urlInvoiceType === "Estimation" && (
+        <div className="mb-3">
+          <div
+            className="bg-white shadow-sm"
+            style={{
+              width: "100%",
+              height: "85vh",
+              border: "1px solid #dee2e6",
+              borderRadius: "8px",
+              overflow: "hidden",
+            }}
+          >
+            <iframe
+              src={`${API_BASE}Leads/ViewEstimationInvoice?bookingId=${bookingId}`}
+              title="Estimation Preview"
+              width="100%"
+              height="100%"
+              style={{ border: "none" }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Final HTML preview (API) */}
+      {urlInvoiceType === "Final" && (
+        <div className="mb-3">
+          <div
+            className="bg-white shadow-sm"
+            style={{
+              width: "100%",
+              height: "85vh",
+              border: "1px solid #dee2e6",
+              borderRadius: "8px",
+              overflow: "hidden",
+            }}
+          >
+            <iframe
+              src={`${API_BASE}Leads/ViewFinalInvoice?bookingId=${bookingId}`}
+              title="Final Invoice Preview"
+              width="100%"
+              height="100%"
+              style={{ border: "none" }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* {invoicePdfUrl ? (
         <div
           className="bg-white shadow-sm"
           style={{
@@ -507,7 +838,7 @@ const handleWhatsappFinalInvoice = async () => {
         </div>
       ) : (
         <div className="alert alert-warning">Active invoice PDF not found.</div>
-      )}
+      )} */}
     </div>
   );
 };
