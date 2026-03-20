@@ -81,6 +81,7 @@ const LeadViewLayer = () => {
   const employeeData = JSON.parse(localStorage.getItem("employeeData"));
   const userId = employeeData?.Id;
   const roleName = employeeData?.RoleName;
+  const departmentName = employeeData?.DepartmentName;
   const [lead, setLead] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -134,7 +135,7 @@ const LeadViewLayer = () => {
   const isBookingCompletedAndPaid = lead?.BookingStatus === "Completed" && lead?.PaymentStatus === "Success";
   const isLeadClosed = shouldDisableActions || isBookingCompletedAndPaid;
   const [existingFeedback, setExistingFeedback] = useState(null);
-const [loadingFeedback, setLoadingFeedback] = useState(false);
+  const [loadingFeedback, setLoadingFeedback] = useState(false);
 
   const NOT_ANSWERED_OPTIONAL_NEXT_FOLLOWUP_STATUSES = useMemo(
     () =>
@@ -172,10 +173,10 @@ const [loadingFeedback, setLoadingFeedback] = useState(false);
   const [feedbackNote, setFeedbackNote] = useState("");
 
   useEffect(() => {
-  if (showFeedbackModal && selectedBooking?.BookingID) {
-    fetchFeedback(selectedBooking.BookingID);
-  }
-}, [showFeedbackModal, selectedBooking]);
+    if (showFeedbackModal && selectedBooking?.BookingID) {
+      fetchFeedback(selectedBooking.BookingID);
+    }
+  }, [showFeedbackModal, selectedBooking]);
 
   // Accordion state
   const [activeAccordionKey, setActiveAccordionKey] = useState("0");
@@ -208,8 +209,8 @@ const [loadingFeedback, setLoadingFeedback] = useState(false);
 
       Swal.fire({
         icon: "success",
-        title: "Feedback Recorded",
-        text: "Customer feedback has been successfully recorded.",
+        title: "Feedback Submitted",
+        text: "Customer feedback has been successfully submitted.",
       });
 
       setShowFeedbackModal(false);
@@ -228,31 +229,31 @@ const [loadingFeedback, setLoadingFeedback] = useState(false);
   };
 
   const fetchFeedback = async (bookingId) => {
-  try {
-    setLoadingFeedback(true);
+    try {
+      setLoadingFeedback(true);
 
-    const res = await axios.get(
-      `${API_BASE}Feedback/feedback?bookingId=${bookingId}`
-    );
+      const res = await axios.get(
+        `${API_BASE}Feedback/feedback?bookingId=${bookingId}`
+      );
 
-    const data = res.data;
+      const data = res.data;
 
-    if (data && data.length > 0) {
-      // ✅ Get latest feedback
-      const latest = data.sort(
-        (a, b) => new Date(b.CreatedAt) - new Date(a.CreatedAt)
-      )[0];
+      if (data && data.length > 0) {
+        // ✅ Get latest feedback
+        const latest = data.sort(
+          (a, b) => new Date(b.CreatedAt) - new Date(a.CreatedAt)
+        )[0];
 
-      setExistingFeedback(latest);
-    } else {
-      setExistingFeedback(null);
+        setExistingFeedback(latest);
+      } else {
+        setExistingFeedback(null);
+      }
+    } catch (error) {
+      console.error("Error fetching feedback", error);
+    } finally {
+      setLoadingFeedback(false);
     }
-  } catch (error) {
-    console.error("Error fetching feedback", error);
-  } finally {
-    setLoadingFeedback(false);
-  }
-};
+  };
 
   useEffect(() => {
     fetchLead();
@@ -1375,8 +1376,8 @@ const [loadingFeedback, setLoadingFeedback] = useState(false);
                               value="Ans"
                               checked={callAnswered === "Ans"}
                               onChange={(e) => setCallAnswered(e.target.value)}
-                            // disabled={isLeadClosed}
-                            disabled={shouldDisableActions}
+                              // disabled={isLeadClosed}
+                              disabled={shouldDisableActions}
                             />
                             <label
                               className="form-check-label ms-1"
@@ -1394,8 +1395,8 @@ const [loadingFeedback, setLoadingFeedback] = useState(false);
                               value="Not Ans"
                               checked={callAnswered === "Not Ans"}
                               onChange={(e) => setCallAnswered(e.target.value)}
-                            // disabled={isLeadClosed}
-                            disabled={shouldDisableActions}
+                              // disabled={isLeadClosed}
+                              disabled={shouldDisableActions}
                             />
                             <label
                               className="form-check-label ms-1"
@@ -1624,7 +1625,7 @@ const [loadingFeedback, setLoadingFeedback] = useState(false);
                                   className="text-secondary-light fw-medium"
                                   style={{ minWidth: 24 }}
                                 >
-                                  {isFollowUpNeeded ? "Yes" : "No"}
+                                  {isFollowUpNeeded ? "No" : "Yes"}
                                 </span>
                               </div>
 
@@ -1682,348 +1683,348 @@ const [loadingFeedback, setLoadingFeedback] = useState(false);
                 }
                 aria-disabled={isLeadClosed || isDetailsLocked}
               >
-              <Accordion activeKey={activeAccordionKey} onSelect={setActiveAccordionKey} className="mt-3">
-                <Accordion.Item eventKey="0">
-                  <Accordion.Header>Personal Information</Accordion.Header>
+                <Accordion activeKey={activeAccordionKey} onSelect={setActiveAccordionKey} className="mt-3">
+                  <Accordion.Item eventKey="0">
+                    <Accordion.Header>Personal Information</Accordion.Header>
 
-                  <Accordion.Body>
-                    <div className="p-3 border radius-16 bg-light">
-                      <div className="row g-3">
-                        <div className="col-md-6">
-                          <label className="form-label fw-semibold text-primary-light">
-                            Full Name
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            value={personalFullName || ""}
-                            onChange={(e) => {
-                              let val = e.target.value;
-                              if (val.length <= 30) {
-                                val = val.charAt(0).toUpperCase() + val.slice(1);
-                                setPersonalFullName(val);
-                              }
-                            }}
-                            disabled={isLeadClosed || !!personalFullName}
-                          />
-                        </div>
-                        <div className="col-md-6">
-                          <label className="form-label fw-semibold text-primary-light">
-                            Mobile No
-                          </label>
-                          <input
-                            type="tel"
-                            className="form-control"
-                            value={personalMobileNo || ""}
-                            onChange={(e) => {
-                              let val = e.target.value;
-                              if (!/^\d*$/.test(val)) return;
-                              if (val.length > 10) return;
-                              if (val.length === 1 && !/[6-9]/.test(val))
-                                return;
-                              setPersonalMobileNo(val);
-                            }}
-                            disabled={isLeadClosed || !!personalMobileNo}
-                          />
-                        </div>
-                        <div className="col-md-12">
-                          <label className="form-label fw-semibold text-primary-light">
-                            Email Address
-                          </label>
-                          <input
-                            type="email"
-                            className="form-control"
-                            value={personalEmail}
-                            onChange={(e) => setPersonalEmail(e.target.value.trim().toLowerCase())}
-                            disabled={isLeadClosed}
-                          />
-                        </div>
-                        <div className="col-md-6">
-                          <label className="form-label fw-semibold text-primary-light">
-                            Organisation Name
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            value={gstName}
-                            onChange={(e) => {
-                              let val = e.target.value;
-                              if (val.length > 0) {
-                                val =
-                                  val.charAt(0).toUpperCase() + val.slice(1);
-                              }
-                              setGstName(val);
-                            }}
-                            placeholder="Enter Org. Name"
-                            disabled={isLeadClosed}
-                          />
-                        </div>
-                        <div className="col-md-6">
-                          <label className="form-label fw-semibold text-primary-light">
-                            GST Number
-                          </label>
-                          <input
-                            type="text"
-                            style={{ padding: 8 }}
-                            className={`form-control ${gstNumber && !GST_REGEX.test(gstNumber)
-                              ? "is-invalid"
-                              : ""
-                              }`}
-                            value={gstNumber}
-                            onChange={(e) => {
-                              let val = e.target.value.toUpperCase();
-                              val = val.replace(/[^A-Z0-9]/g, ""); // allow only alphanumeric
-                              if (val.length <= 15) {
-                                setGstNumber(val);
-                              }
-                            }}
-                            placeholder="Enter GST Number"
-                            maxLength={15}
-                            disabled={isLeadClosed}
-                          />
-
-                          {gstNumber && !GST_REGEX.test(gstNumber) && (
-                            <div className="invalid-feedback">
-                              Enter a valid 15-character GST Number
-                            </div>
-                          )}
-                        </div>
-                        {/* ✅ FULL ADDRESS */}
-                        <div className="col-12">
-                          <label className="form-label fw-semibold text-primary-light">
-                            Full Address
-                          </label>
-                          {isApiLoaded && (
-                            <Autocomplete
-                              onLoad={onLoadAutocomplete}
-                              onPlaceChanged={onPlaceChanged}
-                            >
-                              <input
-                                type="text"
-                                className="form-control mb-2"
-                                placeholder="Search address from Google"
-                                autoComplete="off"
-                                disabled={isLeadClosed}
-                                onChange={(e) => {
-                                  let val = e.target.value;
-                                  if (val.length > 0) {
-                                    val = val.replace(
-                                      /^(\s*)(\S)/,
-                                      (_, space, char) =>
-                                        space + char.toUpperCase(),
-                                    );
-                                  }
-                                  e.target.value = val;
-                                }}
-                              />
-                            </Autocomplete>
-                          )}
-
-                          <textarea
-                            ref={addressRef}
-                            className="form-control"
-                            value={personalFullAddress}
-                            onChange={(e) => {
-                              let val = e.target.value;
-                              if (val.length > 0) {
-                                val = val.replace(
-                                  /^(\s*)(\S)/,
-                                  (_, space, char) =>
-                                    space + char.toUpperCase(),
-                                );
-                              }
-                              setPersonalFullAddress(val);
-                              e.target.style.height = "auto";
-                              e.target.style.height =
-                                e.target.scrollHeight + "px";
-                            }}
-                            style={{
-                              overflow: "hidden",
-                              resize: "none",
-                            }}
-                            disabled={isLeadClosed}
-                          />
-                          {latitude && longitude && (
-                            <p className="text-sm text-muted mt-1">
-                              Lat: {latitude} | Lng: {longitude}
-                            </p>
-                          )}
-                        </div>{" "}
-                      </div>
-
-                      <div className="d-flex justify-content-end mt-3 gap-10">
-                        <button
-                          className="btn btn-primary-600 px-20 btn-sm"
-                          onClick={handleSubmitPersonalInfo}
-                          disabled={isLeadClosed}
-                        >
-                          {/* Check if lead has existing data to determine button text */}
-                          {lead?.FullName || lead?.PhoneNumber || lead?.City
-                            ? "Update Information"
-                            : "Save Information"}
-                        </button>
-                      </div>
-                    </div>
-                  </Accordion.Body>
-                </Accordion.Item>
-
-                <Accordion.Item eventKey="1">
-                  <Accordion.Header>Enter Car Details</Accordion.Header>
-                  <Accordion.Body>
-                    <div className="p-3 border radius-16 bg-light">
-                      <div className="row g-3">
-                        <div className="col-md-6">
-                          <label className="form-label fw-semibold text-primary-light">
-                            Registration Number
-                          </label>
-                          <input
-                            ref={regNumberRef}
-                            type="text"
-                            className="form-control"
-                            placeholder="e.g., ABC-1234"
-                            value={carRegistrationNumber}
-                            onChange={(e) =>
-                              setCarRegistrationNumber(
-                                e.target.value.toUpperCase(),
-                              )
-                            }
-                            disabled={isLeadClosed}
-                          />
-                        </div>
-                        <div className="col-md-6">
-                          <label className="form-label fw-semibold text-primary-light">
-                            Km Driven
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="e.g., 5000"
-                            value={carKmDriven}
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/\D/g, "");
-                              setCarKmDriven(value);
-                            }}
-                            disabled={isLeadClosed}
-                          />
-                        </div>
-
-                        <div className="col-md-6">
-                          <label className="form-label fw-semibold text-primary-light">
-                            Brand <span className="text-danger-600">*</span>
-                          </label>
-                          <Select
-                            options={brands.map((brand) => ({
-                              value: brand.BrandID,
-                              label: brand.BrandName,
-                            }))}
-                            value={carBrand}
-                            onChange={setCarBrand}
-                            placeholder="Select Brand"
-                            className="react-select-container text-sm"
-                            isSearchable
-                            isDisabled={isLeadClosed}
-                          />
-                        </div>
-                        <div className="col-md-6">
-                          <label className="form-label fw-semibold text-primary-light">
-                            Model <span className="text-danger-600">*</span>
-                          </label>
-                          <Select
-                            options={filteredModels.map((model) => ({
-                              value: model.ModelID,
-                              label: model.ModelName,
-                            }))}
-                            value={carModel}
-                            onChange={setCarModel}
-                            placeholder="Select Model"
-                            className="react-select-container text-sm"
-                            isSearchable
-                            isDisabled={isLeadClosed}
-                          />
-                        </div>
-                        <div className="col-md-6">
-                          <label className="form-label fw-semibold text-primary-light">
-                            Fuel Type <span className="text-danger-600">*</span>
-                          </label>
-                          <Select
-                            options={fuelTypes.map((fuelType) => ({
-                              value: fuelType.FuelTypeID,
-                              label: fuelType.FuelTypeName,
-                            }))}
-                            value={carFuelType}
-                            onChange={setCarFuelType}
-                            placeholder="Select Fuel Type"
-                            className="react-select-container text-sm"
-                            isSearchable
-                            menuPortalTarget={document.body}
-                            styles={{
-                              menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                              option: (base) => ({
-                                ...base,
-                                fontSize: "0.675rem",
-                              }),
-                              singleValue: (base) => ({
-                                ...base,
-                                fontSize: "0.675rem",
-                              }),
-                            }}
-                            isDisabled={isLeadClosed}
-                          />
-                        </div>
-
-                        <div className="col-md-6">
-                          <label className="form-label fw-semibold text-primary-light">
-                            Year of Purchase
-                          </label>
-                          <Select
-                            options={[...yearOptions].reverse()}
-                            value={
-                              carYearOfPurchase
-                                ? {
-                                  value: carYearOfPurchase,
-                                  label: carYearOfPurchase.toString(),
+                    <Accordion.Body>
+                      <div className="p-3 border radius-16 bg-light">
+                        <div className="row g-3">
+                          <div className="col-md-6">
+                            <label className="form-label fw-semibold text-primary-light">
+                              Full Name
+                            </label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              value={personalFullName || ""}
+                              onChange={(e) => {
+                                let val = e.target.value;
+                                if (val.length <= 30) {
+                                  val = val.charAt(0).toUpperCase() + val.slice(1);
+                                  setPersonalFullName(val);
                                 }
-                                : null
-                            }
-                            onChange={(selected) => {
-                              setCarYearOfPurchase(selected.value);
-                            }}
-                            placeholder="Select Year"
-                            className="react-select-container text-sm"
-                            isSearchable
-                            menuPortalTarget={document.body}
-                            styles={{
-                              menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                              option: (base) => ({
-                                ...base,
-                                fontSize: "0.675rem",
-                              }),
-                              singleValue: (base) => ({
-                                ...base,
-                                fontSize: "0.675rem",
-                              }),
-                              menuList: (base) => ({ ...base, maxHeight: 140 }),
-                            }}
-                            isDisabled={isLeadClosed}
-                          />
+                              }}
+                              disabled={isLeadClosed || !!personalFullName}
+                            />
+                          </div>
+                          <div className="col-md-6">
+                            <label className="form-label fw-semibold text-primary-light">
+                              Mobile No
+                            </label>
+                            <input
+                              type="tel"
+                              className="form-control"
+                              value={personalMobileNo || ""}
+                              onChange={(e) => {
+                                let val = e.target.value;
+                                if (!/^\d*$/.test(val)) return;
+                                if (val.length > 10) return;
+                                if (val.length === 1 && !/[6-9]/.test(val))
+                                  return;
+                                setPersonalMobileNo(val);
+                              }}
+                              disabled={isLeadClosed || !!personalMobileNo}
+                            />
+                          </div>
+                          <div className="col-md-12">
+                            <label className="form-label fw-semibold text-primary-light">
+                              Email Address
+                            </label>
+                            <input
+                              type="email"
+                              className="form-control"
+                              value={personalEmail}
+                              onChange={(e) => setPersonalEmail(e.target.value.trim().toLowerCase())}
+                              disabled={isLeadClosed}
+                            />
+                          </div>
+                          <div className="col-md-6">
+                            <label className="form-label fw-semibold text-primary-light">
+                              Organisation Name
+                            </label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              value={gstName}
+                              onChange={(e) => {
+                                let val = e.target.value;
+                                if (val.length > 0) {
+                                  val =
+                                    val.charAt(0).toUpperCase() + val.slice(1);
+                                }
+                                setGstName(val);
+                              }}
+                              placeholder="Enter Org. Name"
+                              disabled={isLeadClosed}
+                            />
+                          </div>
+                          <div className="col-md-6">
+                            <label className="form-label fw-semibold text-primary-light">
+                              GST Number
+                            </label>
+                            <input
+                              type="text"
+                              style={{ padding: 8 }}
+                              className={`form-control ${gstNumber && !GST_REGEX.test(gstNumber)
+                                ? "is-invalid"
+                                : ""
+                                }`}
+                              value={gstNumber}
+                              onChange={(e) => {
+                                let val = e.target.value.toUpperCase();
+                                val = val.replace(/[^A-Z0-9]/g, ""); // allow only alphanumeric
+                                if (val.length <= 15) {
+                                  setGstNumber(val);
+                                }
+                              }}
+                              placeholder="Enter GST Number"
+                              maxLength={15}
+                              disabled={isLeadClosed}
+                            />
+
+                            {gstNumber && !GST_REGEX.test(gstNumber) && (
+                              <div className="invalid-feedback">
+                                Enter a valid 15-character GST Number
+                              </div>
+                            )}
+                          </div>
+                          {/* ✅ FULL ADDRESS */}
+                          <div className="col-12">
+                            <label className="form-label fw-semibold text-primary-light">
+                              Full Address
+                            </label>
+                            {isApiLoaded && (
+                              <Autocomplete
+                                onLoad={onLoadAutocomplete}
+                                onPlaceChanged={onPlaceChanged}
+                              >
+                                <input
+                                  type="text"
+                                  className="form-control mb-2"
+                                  placeholder="Search address from Google"
+                                  autoComplete="off"
+                                  disabled={isLeadClosed}
+                                  onChange={(e) => {
+                                    let val = e.target.value;
+                                    if (val.length > 0) {
+                                      val = val.replace(
+                                        /^(\s*)(\S)/,
+                                        (_, space, char) =>
+                                          space + char.toUpperCase(),
+                                      );
+                                    }
+                                    e.target.value = val;
+                                  }}
+                                />
+                              </Autocomplete>
+                            )}
+
+                            <textarea
+                              ref={addressRef}
+                              className="form-control"
+                              value={personalFullAddress}
+                              onChange={(e) => {
+                                let val = e.target.value;
+                                if (val.length > 0) {
+                                  val = val.replace(
+                                    /^(\s*)(\S)/,
+                                    (_, space, char) =>
+                                      space + char.toUpperCase(),
+                                  );
+                                }
+                                setPersonalFullAddress(val);
+                                e.target.style.height = "auto";
+                                e.target.style.height =
+                                  e.target.scrollHeight + "px";
+                              }}
+                              style={{
+                                overflow: "hidden",
+                                resize: "none",
+                              }}
+                              disabled={isLeadClosed}
+                            />
+                            {latitude && longitude && (
+                              <p className="text-sm text-muted mt-1">
+                                Lat: {latitude} | Lng: {longitude}
+                              </p>
+                            )}
+                          </div>{" "}
+                        </div>
+
+                        <div className="d-flex justify-content-end mt-3 gap-10">
+                          <button
+                            className="btn btn-primary-600 px-20 btn-sm"
+                            onClick={handleSubmitPersonalInfo}
+                            disabled={isLeadClosed}
+                          >
+                            {/* Check if lead has existing data to determine button text */}
+                            {lead?.FullName || lead?.PhoneNumber || lead?.City
+                              ? "Update Information"
+                              : "Save Information"}
+                          </button>
                         </div>
                       </div>
-                      <div className="d-flex justify-content-end mt-3 gap-10">
-                        <button
-                          className="btn btn-primary-600 px-20 btn-sm"
-                          onClick={handleSubmitCarDetails}
-                          disabled={isLeadClosed}
-                        >
-                          {/* Check if vehicle record exists via BrandID or RegistrationNumber */}
-                          {vehicle?.BrandID || vehicle?.RegistrationNumber || vehicle?.ModelID
-                            ? "Update Car Details"
-                            : "Save Car Details"}
-                        </button>
+                    </Accordion.Body>
+                  </Accordion.Item>
+
+                  <Accordion.Item eventKey="1">
+                    <Accordion.Header>Enter Car Details</Accordion.Header>
+                    <Accordion.Body>
+                      <div className="p-3 border radius-16 bg-light">
+                        <div className="row g-3">
+                          <div className="col-md-6">
+                            <label className="form-label fw-semibold text-primary-light">
+                              Registration Number
+                            </label>
+                            <input
+                              ref={regNumberRef}
+                              type="text"
+                              className="form-control"
+                              placeholder="e.g., ABC-1234"
+                              value={carRegistrationNumber}
+                              onChange={(e) =>
+                                setCarRegistrationNumber(
+                                  e.target.value.toUpperCase(),
+                                )
+                              }
+                              disabled={isLeadClosed}
+                            />
+                          </div>
+                          <div className="col-md-6">
+                            <label className="form-label fw-semibold text-primary-light">
+                              Km Driven
+                            </label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              placeholder="e.g., 5000"
+                              value={carKmDriven}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, "");
+                                setCarKmDriven(value);
+                              }}
+                              disabled={isLeadClosed}
+                            />
+                          </div>
+
+                          <div className="col-md-6">
+                            <label className="form-label fw-semibold text-primary-light">
+                              Brand <span className="text-danger-600">*</span>
+                            </label>
+                            <Select
+                              options={brands.map((brand) => ({
+                                value: brand.BrandID,
+                                label: brand.BrandName,
+                              }))}
+                              value={carBrand}
+                              onChange={setCarBrand}
+                              placeholder="Select Brand"
+                              className="react-select-container text-sm"
+                              isSearchable
+                              isDisabled={isLeadClosed}
+                            />
+                          </div>
+                          <div className="col-md-6">
+                            <label className="form-label fw-semibold text-primary-light">
+                              Model <span className="text-danger-600">*</span>
+                            </label>
+                            <Select
+                              options={filteredModels.map((model) => ({
+                                value: model.ModelID,
+                                label: model.ModelName,
+                              }))}
+                              value={carModel}
+                              onChange={setCarModel}
+                              placeholder="Select Model"
+                              className="react-select-container text-sm"
+                              isSearchable
+                              isDisabled={isLeadClosed}
+                            />
+                          </div>
+                          <div className="col-md-6">
+                            <label className="form-label fw-semibold text-primary-light">
+                              Fuel Type <span className="text-danger-600">*</span>
+                            </label>
+                            <Select
+                              options={fuelTypes.map((fuelType) => ({
+                                value: fuelType.FuelTypeID,
+                                label: fuelType.FuelTypeName,
+                              }))}
+                              value={carFuelType}
+                              onChange={setCarFuelType}
+                              placeholder="Select Fuel Type"
+                              className="react-select-container text-sm"
+                              isSearchable
+                              menuPortalTarget={document.body}
+                              styles={{
+                                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                                option: (base) => ({
+                                  ...base,
+                                  fontSize: "0.675rem",
+                                }),
+                                singleValue: (base) => ({
+                                  ...base,
+                                  fontSize: "0.675rem",
+                                }),
+                              }}
+                              isDisabled={isLeadClosed}
+                            />
+                          </div>
+
+                          <div className="col-md-6">
+                            <label className="form-label fw-semibold text-primary-light">
+                              Year of Purchase
+                            </label>
+                            <Select
+                              options={[...yearOptions].reverse()}
+                              value={
+                                carYearOfPurchase
+                                  ? {
+                                    value: carYearOfPurchase,
+                                    label: carYearOfPurchase.toString(),
+                                  }
+                                  : null
+                              }
+                              onChange={(selected) => {
+                                setCarYearOfPurchase(selected.value);
+                              }}
+                              placeholder="Select Year"
+                              className="react-select-container text-sm"
+                              isSearchable
+                              menuPortalTarget={document.body}
+                              styles={{
+                                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                                option: (base) => ({
+                                  ...base,
+                                  fontSize: "0.675rem",
+                                }),
+                                singleValue: (base) => ({
+                                  ...base,
+                                  fontSize: "0.675rem",
+                                }),
+                                menuList: (base) => ({ ...base, maxHeight: 140 }),
+                              }}
+                              isDisabled={isLeadClosed}
+                            />
+                          </div>
+                        </div>
+                        <div className="d-flex justify-content-end mt-3 gap-10">
+                          <button
+                            className="btn btn-primary-600 px-20 btn-sm"
+                            onClick={handleSubmitCarDetails}
+                            disabled={isLeadClosed}
+                          >
+                            {/* Check if vehicle record exists via BrandID or RegistrationNumber */}
+                            {vehicle?.BrandID || vehicle?.RegistrationNumber || vehicle?.ModelID
+                              ? "Update Car Details"
+                              : "Save Car Details"}
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  </Accordion.Body>
-                </Accordion.Item>
-              </Accordion>
+                    </Accordion.Body>
+                  </Accordion.Item>
+                </Accordion>
               </div>
 
               {/* ================= CUSTOMER NOT CONVERTED ================= */}
@@ -2104,7 +2105,7 @@ const [loadingFeedback, setLoadingFeedback] = useState(false);
                                         )}
 
                                         {/* Edit Button */}
-                                        {!isLeadClosed && (
+                                        {!isLeadClosed && departmentName?.trim() !== "Support" && (
                                           <Link
                                             to={`/book-service/${b.LeadId}/${b.BookingID}/${b.BookingTrackID}`}
                                             className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
@@ -2194,8 +2195,8 @@ const [loadingFeedback, setLoadingFeedback] = useState(false);
         {/* ------------------ Right: Timeline ------------------ */}
         <div className="col-lg-3">
           <div
-            className="user-grid-card border pt-3 radius-16 bg-base d-flex flex-column w-100"
-            style={{ height: "975px" }}
+            className="user-grid-card border pt-3 radius-16 bg-base d-flex flex-column w-100 h-100 "
+            style={{ height: "1250px" }}
           >
             <div className="pb-24 ms-16 mb-24 me-16 flex-grow-1 d-flex flex-column">
               <div
@@ -2209,7 +2210,7 @@ const [loadingFeedback, setLoadingFeedback] = useState(false);
               </div>
               <div
                 className="flex-grow-1 overflow-auto pe-0"
-                style={{ maxHeight: "925px", scrollbarWidth: "thin" }}
+                style={{ maxHeight: "1200px", scrollbarWidth: "thin" }}
               >
                 {lead?.TrackingHistory && lead.TrackingHistory.length > 0 ? (
                   <ul className="mb-0 list-unstyled ps-0 mt-3">
@@ -2248,7 +2249,7 @@ const [loadingFeedback, setLoadingFeedback] = useState(false);
                           uniqueDescriptionLines.length === 0 ||
                           (uniqueDescriptionLines.length === 1 &&
                             uniqueDescriptionLines[0].toLowerCase() ===
-                              statusLabel.toLowerCase());
+                            statusLabel.toLowerCase());
                         const descriptionText = shouldHideDescription
                           ? ""
                           : uniqueDescriptionLines.join("\n");
@@ -2483,120 +2484,120 @@ const [loadingFeedback, setLoadingFeedback] = useState(false);
                 <button type="button" className="btn-close" onClick={() => setShowFeedbackModal(false)}></button>
               </div>
               <div className="modal-body text-center">
-  <p className="text-muted mb-4">
-    How was customer experience with booking <b>{selectedBooking?.BookingTrackID}</b>?
-  </p>
+                <p className="text-muted mb-4">
+                  How was customer experience with booking <b>{selectedBooking?.BookingTrackID}</b>?
+                </p>
 
-  {loadingFeedback ? (
-    <p>Loading...</p>
-  ) : existingFeedback ? (
-    <>
-      {/* ⭐ READ-ONLY STARS */}
-      <div className="mb-4">
-        {[...Array(5)].map((_, index) => (
-          <Icon
-            key={index}
-            icon="lucide:star"
-            className="fs-2 mx-1"
-            style={{
-              color:
-                index < Number(existingFeedback.ServiceRating)
-                  ? "#ffc107"
-                  : "#e4e5e9",
-              fill:
-                index < Number(existingFeedback.ServiceRating)
-                  ? "#ffc107"
-                  : "none",
-            }}
-          />
-        ))}
-      </div>
+                {loadingFeedback ? (
+                  <p>Loading...</p>
+                ) : existingFeedback ? (
+                  <>
+                    {/* ⭐ READ-ONLY STARS */}
+                    <div className="mb-4">
+                      {[...Array(5)].map((_, index) => (
+                        <Icon
+                          key={index}
+                          icon="lucide:star"
+                          className="fs-2 mx-1"
+                          style={{
+                            color:
+                              index < Number(existingFeedback.ServiceRating)
+                                ? "#ffc107"
+                                : "#e4e5e9",
+                            fill:
+                              index < Number(existingFeedback.ServiceRating)
+                                ? "#ffc107"
+                                : "none",
+                          }}
+                        />
+                      ))}
+                    </div>
 
-      {/* 📝 REVIEW */}
-      <div className="text-start">
-        <label className="form-label fw-semibold">Customer Review</label>
-        <textarea
-          className="form-control"
-          rows="3"
-          value={existingFeedback.ServiceReview || "No review provided"}
-          readOnly
-        />
-      </div>
+                    {/* 📝 REVIEW */}
+                    <div className="text-start">
+                      <label className="form-label fw-semibold">Customer Review</label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        value={existingFeedback.ServiceReview || "No review provided"}
+                        readOnly
+                      />
+                    </div>
 
-      {/* 📅 DATE */}
-      <div className="mt-2 text-muted small">
-        Submitted on:{" "}
-        {new Date(existingFeedback.CreatedAt).toLocaleString()}
-      </div>
-    </>
-  ) : (
-    <>
-      {/* ⭐ INPUT STARS */}
-      <div className="mb-4">
-        {[...Array(5)].map((star, index) => {
-          index += 1;
-          return (
-            <button
-              type="button"
-              key={index}
-              className="btn p-0 border-0 bg-transparent"
-              onClick={() => setRating(index)}
-              onMouseEnter={() => setHover(index)}
-              onMouseLeave={() => setHover(rating)}
-            >
-              <Icon
-                icon="lucide:star"
-                className="fs-2 mx-1"
-                style={{
-                  color:
-                    index <= (hover || rating)
-                      ? "#ffc107"
-                      : "#e4e5e9",
-                  fill:
-                    index <= (hover || rating)
-                      ? "#ffc107"
-                      : "none",
-                }}
-              />
-            </button>
-          );
-        })}
-      </div>
+                    {/* 📅 DATE */}
+                    <div className="mt-2 text-muted small">
+                      Submitted on:{" "}
+                      {new Date(existingFeedback.CreatedAt).toLocaleString()}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* ⭐ INPUT STARS */}
+                    <div className="mb-4">
+                      {[...Array(5)].map((star, index) => {
+                        index += 1;
+                        return (
+                          <button
+                            type="button"
+                            key={index}
+                            className="btn p-0 border-0 bg-transparent"
+                            onClick={() => setRating(index)}
+                            onMouseEnter={() => setHover(index)}
+                            onMouseLeave={() => setHover(rating)}
+                          >
+                            <Icon
+                              icon="lucide:star"
+                              className="fs-2 mx-1"
+                              style={{
+                                color:
+                                  index <= (hover || rating)
+                                    ? "#ffc107"
+                                    : "#e4e5e9",
+                                fill:
+                                  index <= (hover || rating)
+                                    ? "#ffc107"
+                                    : "none",
+                              }}
+                            />
+                          </button>
+                        );
+                      })}
+                    </div>
 
-      {/* 📝 INPUT */}
-      <div className="text-start">
-        <label className="form-label fw-semibold">Description</label>
-        <textarea
-          className="form-control"
-          rows="3"
-          placeholder="Write customer experience..."
-          value={feedbackNote}
-          onChange={(e) => setFeedbackNote(e.target.value)}
-        />
-      </div>
-    </>
-  )}
-</div>
+                    {/* 📝 INPUT */}
+                    <div className="text-start">
+                      <label className="form-label fw-semibold">Description</label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        placeholder="Write customer experience..."
+                        value={feedbackNote}
+                        onChange={(e) => setFeedbackNote(e.target.value)}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
               <div className="modal-footer border-top-0">
-  <button
-    type="button"
-    className="btn btn-secondary px-4 radius-8"
-    onClick={() => setShowFeedbackModal(false)}
-  >
-    Close
-  </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary px-4 radius-8"
+                  onClick={() => setShowFeedbackModal(false)}
+                >
+                  Close
+                </button>
 
-  {!existingFeedback && (
-    <button
-      type="button"
-      className="btn btn-primary px-4 radius-8"
-      onClick={handleSubmitFeedback}
-      disabled={rating === 0}
-    >
-      Submit Feedback
-    </button>
-  )}
-</div>
+                {!existingFeedback && (
+                  <button
+                    type="button"
+                    className="btn btn-primary px-4 radius-8"
+                    onClick={handleSubmitFeedback}
+                    disabled={rating === 0}
+                  >
+                    Submit Feedback
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

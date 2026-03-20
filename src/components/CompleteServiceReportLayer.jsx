@@ -423,6 +423,13 @@ function CompleteServiceReportView({ data, onBack }) {
     }
   };
 
+  const formatStatus = (status) => {
+  return status
+    ?.replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+};
+
   return (
     <div className="mb-4">
       {/* Header */}
@@ -488,7 +495,7 @@ function CompleteServiceReportView({ data, onBack }) {
                       className="position-absolute bg-white shadow rounded-3 p-3"
                       style={{
                         top: "100%", // 🔥 FIXED
-                        left: "50%",
+                        left: "18%",
                         transform: "translateX(-50%)",
                         marginTop: "6px", // 🔥 FIXED
                         minWidth: "250px",
@@ -1014,7 +1021,7 @@ function CompleteServiceReportView({ data, onBack }) {
                                           >
                                             {i + 1}
                                           </div>
-                                          <div className="driver-status">{displayStatus}</div>
+                                          <div className="driver-status">{formatStatus(displayStatus)}</div>
                                           <div className="driver-date">{formatDateTime(t.CreatedDate)}</div>
                                         </div>
                                       );
