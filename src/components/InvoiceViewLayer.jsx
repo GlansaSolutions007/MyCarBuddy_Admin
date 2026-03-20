@@ -298,10 +298,10 @@ const InvoiceViewLayer = () => {
       // ✅ STEP 1: Confirm Service Prices
       const priceConfirm = await Swal.fire({
         icon: "question",
-        title: "Confirmation of Service Prices",
-        text: "Are you ok with the given service prices?",
+        title: "Confirm Service Pricing",
+        text: "Please confirm that you have reviewed all service prices.",
         showCancelButton: true,
-        confirmButtonText: "OK",
+        confirmButtonText: "Yes, I confirm",
         cancelButtonText: "Cancel",
       });
 
@@ -311,7 +311,7 @@ const InvoiceViewLayer = () => {
       const sendConfirm = await Swal.fire({
         icon: "warning",
         title: "Send Estimation Invoice",
-        text: "Do you want to send confirmed estimation invoice to the customer?",
+        text: "Do you want to send estimation invoice to the customer?",
         showCancelButton: true,
         confirmButtonText: "Yes, Send",
         cancelButtonText: "Cancel",
@@ -351,8 +351,8 @@ const InvoiceViewLayer = () => {
       // ✅ Success Message
       Swal.fire({
         icon: "success",
-        title: "Sent",
-        text: "Estimation invoice sent on WhatsApp successfully.",
+        title: "Invoice Sent",
+        text: "Estimation invoice successfully sent on WhatsApp.",
       });
     } catch (error) {
       console.error("WhatsApp Estimation Invoice Error:", error);
@@ -395,8 +395,8 @@ const InvoiceViewLayer = () => {
 
       Swal.fire({
         icon: "success",
-        title: "Sent",
-        text: "Final invoice sent on WhatsApp successfully.",
+        title: "Invoice Sent",
+        text: "Final invoice successfully sent on WhatsApp.",
       }).then(() => {
         setIsInvoiceGenerated(false);
         navigate(`/booking-view/${bookingData.BookingID}`);
@@ -482,8 +482,8 @@ const InvoiceViewLayer = () => {
       const supervisorId = Number(localStorage.getItem("userId") || 0);
       const confirmRes = await Swal.fire({
         icon: "warning",
-        title: "Confirm & send estimation?",
-        text: "Are you sure you are confirming? This Estimation will send customer.",
+        title: "Confirm & send Estimation?",
+        text: "Please confirm that you have reviewed all service details and want to send the estimation invoice to the customer.",
         showCancelButton: true,
         confirmButtonText: "Yes, confirm & send",
         cancelButtonText: "Cancel",
@@ -645,7 +645,7 @@ const InvoiceViewLayer = () => {
                         <td className="text-end">
                           {isActiveRow &&
                             urlInvoiceType === "Estimation" &&
-                            isInvoiceGenerated && (
+                            activeInvoice && (
                               <div className="d-inline-flex gap-2">
                                 <button
                                   className="btn btn-primary-600 btn-sm d-inline-flex align-items-center gap-2"
@@ -679,7 +679,7 @@ const InvoiceViewLayer = () => {
                               </div>
                             )}
 
-                          {isActiveRow && urlInvoiceType === "Final" && (
+                          {isActiveRow && urlInvoiceType === "Final" && activeInvoice && (
                             <div className="d-inline-flex gap-2">
                               <button
                                 className="btn btn-primary-600 btn-sm d-inline-flex align-items-center gap-2"
@@ -708,7 +708,7 @@ const InvoiceViewLayer = () => {
                             </div>
                           )}
 
-                          {isActiveRow && urlInvoiceType === "Dealer" && (
+                          {isActiveRow && urlInvoiceType === "Dealer" && activeInvoice && (
                             <button
                               className="btn btn-primary-600 btn-sm d-inline-flex align-items-center gap-2"
                               onClick={handleSendDealerInvoice}
