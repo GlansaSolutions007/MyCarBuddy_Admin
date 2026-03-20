@@ -133,6 +133,8 @@ const LeadViewLayer = () => {
   const shouldDisableActions = lead?.NextAction === "Lead Closed";
   const isBookingCompletedAndPaid = lead?.BookingStatus === "Completed" && lead?.PaymentStatus === "Success";
   const isLeadClosed = shouldDisableActions || isBookingCompletedAndPaid;
+  const [existingFeedback, setExistingFeedback] = useState(null);
+const [loadingFeedback, setLoadingFeedback] = useState(false);
 
   const NOT_ANSWERED_OPTIONAL_NEXT_FOLLOWUP_STATUSES = useMemo(
     () =>
@@ -168,6 +170,12 @@ const LeadViewLayer = () => {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [feedbackNote, setFeedbackNote] = useState("");
+
+  useEffect(() => {
+  if (showFeedbackModal && selectedBooking?.BookingID) {
+    fetchFeedback(selectedBooking.BookingID);
+  }
+}, [showFeedbackModal, selectedBooking]);
 
   // Accordion state
   const [activeAccordionKey, setActiveAccordionKey] = useState("0");
@@ -218,6 +226,33 @@ const LeadViewLayer = () => {
       });
     }
   };
+
+  const fetchFeedback = async (bookingId) => {
+  try {
+    setLoadingFeedback(true);
+
+    const res = await axios.get(
+      `${API_BASE}Feedback/feedback?bookingId=${bookingId}`
+    );
+
+    const data = res.data;
+
+    if (data && data.length > 0) {
+      // ✅ Get latest feedback
+      const latest = data.sort(
+        (a, b) => new Date(b.CreatedAt) - new Date(a.CreatedAt)
+      )[0];
+
+      setExistingFeedback(latest);
+    } else {
+      setExistingFeedback(null);
+    }
+  } catch (error) {
+    console.error("Error fetching feedback", error);
+  } finally {
+    setLoadingFeedback(false);
+  }
+};
 
   useEffect(() => {
     fetchLead();
@@ -766,6 +801,7 @@ const LeadViewLayer = () => {
       City: personalFullAddress,
       Latitude: latitude,
       Longitude: longitude,
+      bookingID: currentBookings?.[0]?.BookingID || 0,
     };
 
     try {
@@ -2447,53 +2483,120 @@ const LeadViewLayer = () => {
                 <button type="button" className="btn-close" onClick={() => setShowFeedbackModal(false)}></button>
               </div>
               <div className="modal-body text-center">
-                <p className="text-muted mb-4">How was your experience with booking <b>{selectedBooking?.BookingTrackID}</b>?</p>
+  <p className="text-muted mb-4">
+    How was customer experience with booking <b>{selectedBooking?.BookingTrackID}</b>?
+  </p>
 
-                {/* Star Rating System */}
-                <div className="mb-4">
-                  {[...Array(5)].map((star, index) => {
-                    index += 1;
-                    return (
-                      <button
-                        type="button"
-                        key={index}
-                        className="btn p-0 border-0 bg-transparent"
-                        onClick={() => setRating(index)}
-                        onMouseEnter={() => setHover(index)}
-                        onMouseLeave={() => setHover(rating)}
-                      >
-                        <Icon
-                          icon="lucide:star"
-                          className="fs-2 mx-1"
-                          style={{ color: index <= (hover || rating) ? "#ffc107" : "#e4e5e9", fill: index <= (hover || rating) ? "#ffc107" : "none" }}
-                        />
-                      </button>
-                    );
-                  })}
-                </div>
+  {loadingFeedback ? (
+    <p>Loading...</p>
+  ) : existingFeedback ? (
+    <>
+      {/* ⭐ READ-ONLY STARS */}
+      <div className="mb-4">
+        {[...Array(5)].map((_, index) => (
+          <Icon
+            key={index}
+            icon="lucide:star"
+            className="fs-2 mx-1"
+            style={{
+              color:
+                index < Number(existingFeedback.ServiceRating)
+                  ? "#ffc107"
+                  : "#e4e5e9",
+              fill:
+                index < Number(existingFeedback.ServiceRating)
+                  ? "#ffc107"
+                  : "none",
+            }}
+          />
+        ))}
+      </div>
 
-                <div className="text-start">
-                  <label className="form-label fw-semibold">Description</label>
-                  <textarea
-                    className="form-control"
-                    rows="3"
-                    placeholder="Write customer experience..."
-                    value={feedbackNote}
-                    onChange={(e) => setFeedbackNote(e.target.value)}
-                  ></textarea>
-                </div>
-              </div>
+      {/* 📝 REVIEW */}
+      <div className="text-start">
+        <label className="form-label fw-semibold">Customer Review</label>
+        <textarea
+          className="form-control"
+          rows="3"
+          value={existingFeedback.ServiceReview || "No review provided"}
+          readOnly
+        />
+      </div>
+
+      {/* 📅 DATE */}
+      <div className="mt-2 text-muted small">
+        Submitted on:{" "}
+        {new Date(existingFeedback.CreatedAt).toLocaleString()}
+      </div>
+    </>
+  ) : (
+    <>
+      {/* ⭐ INPUT STARS */}
+      <div className="mb-4">
+        {[...Array(5)].map((star, index) => {
+          index += 1;
+          return (
+            <button
+              type="button"
+              key={index}
+              className="btn p-0 border-0 bg-transparent"
+              onClick={() => setRating(index)}
+              onMouseEnter={() => setHover(index)}
+              onMouseLeave={() => setHover(rating)}
+            >
+              <Icon
+                icon="lucide:star"
+                className="fs-2 mx-1"
+                style={{
+                  color:
+                    index <= (hover || rating)
+                      ? "#ffc107"
+                      : "#e4e5e9",
+                  fill:
+                    index <= (hover || rating)
+                      ? "#ffc107"
+                      : "none",
+                }}
+              />
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 📝 INPUT */}
+      <div className="text-start">
+        <label className="form-label fw-semibold">Description</label>
+        <textarea
+          className="form-control"
+          rows="3"
+          placeholder="Write customer experience..."
+          value={feedbackNote}
+          onChange={(e) => setFeedbackNote(e.target.value)}
+        />
+      </div>
+    </>
+  )}
+</div>
               <div className="modal-footer border-top-0">
-                <button type="button" className="btn btn-secondary px-4 radius-8" onClick={() => setShowFeedbackModal(false)}>Cancel</button>
-                <button
-                  type="button"
-                  className="btn btn-primary px-4 radius-8"
-                  onClick={handleSubmitFeedback}
-                  disabled={rating === 0}
-                >
-                  Submit Feedback
-                </button>
-              </div>
+  <button
+    type="button"
+    className="btn btn-secondary px-4 radius-8"
+    onClick={() => setShowFeedbackModal(false)}
+  >
+    Close
+  </button>
+
+  {!existingFeedback && (
+    <button
+      type="button"
+      className="btn btn-primary px-4 radius-8"
+      onClick={handleSubmitFeedback}
+      disabled={rating === 0}
+    >
+      Submit Feedback
+    </button>
+  )}
+</div>
             </div>
           </div>
         </div>

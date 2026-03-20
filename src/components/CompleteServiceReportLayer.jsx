@@ -96,13 +96,13 @@ function CompleteServiceReportView({ data, onBack }) {
     const latestPickup = carPickUpDelivery[carPickUpDelivery.length - 1];
     const isGarageService = latestPickup?.ServiceType === 'ServiceAtGarage';
     const isHomeService = latestPickup?.ServiceType === 'ServiceAtHome';
-    
+
     // Separate confirmed vs pending services
     const confirmedAddOns = addOns.filter(a => a.IsSupervisor_Confirm === 1);
     const pendingAddOns = (data.BookingsTempAddons || []).filter(a => a.IsSupervisor_Confirm !== 1);
     const confirmedLength = confirmedAddOns.length;
     const pendingLength = pendingAddOns.length;
-    
+
     const baseStages = [
       {
         id: 'lead-created',
@@ -133,9 +133,9 @@ function CompleteServiceReportView({ data, onBack }) {
         title: 'Dealer Confirmation',
         icon: 'mdi:handshake',
         date: dealerApprovals[0]?.CreatedDate,
-        status: dealerApprovals.length === 0 ? 'pending' : 
-                dealerApprovals.every(d => d.IsDealer_Confirm === 'Approved') ? 'completed' : 
-                dealerApprovals.some(d => d.IsDealer_Confirm === 'Rejected') ? 'failed' : 'in-progress',
+        status: dealerApprovals.length === 0 ? 'pending' :
+          dealerApprovals.every(d => d.IsDealer_Confirm === 'Approved') ? 'completed' :
+            dealerApprovals.some(d => d.IsDealer_Confirm === 'Rejected') ? 'failed' : 'in-progress',
         details: dealerApprovals.length === 0 ? 'No dealers' : `${dealerApprovals.filter(d => d.IsDealer_Confirm === 'Approved').length} dealers confirmed services`
       },
       {
@@ -143,8 +143,8 @@ function CompleteServiceReportView({ data, onBack }) {
         title: 'Customer Confirmation',
         icon: 'mdi:account-check',
         date: addOns.find(a => a.ConfirmRole)?.ConfirmDate,
-        status: (confirmedLength === 0 && pendingLength === 0) ? 'pending' : 
-                confirmedLength > 0 ? (pendingLength === 0 ? 'completed' : 'in-progress') : 'pending',
+        status: (confirmedLength === 0 && pendingLength === 0) ? 'pending' :
+          confirmedLength > 0 ? (pendingLength === 0 ? 'completed' : 'in-progress') : 'pending',
         details: `${confirmedLength} confirmed / ${pendingLength} pending`
       },
       {
@@ -199,7 +199,7 @@ function CompleteServiceReportView({ data, onBack }) {
       // Home service flow
       conditionalStages = bookingStatusTracking.map((track, idx) => ({
         id: `home-service-${idx}`,
-        title: track.Status === 'BuddyStarted' && track.Status !='completed' ? 'Buddy Started' : track.Status === 'BuddyReached' && track.Role === 'Buddy' ? 'Buddy Reached' : track.Status === 'ServiceStarted' && track.Role === 'Technician' ? 'Service Started' :  'Service In progress',
+        title: track.Status === 'BuddyStarted' && track.Status != 'completed' ? 'Buddy Started' : track.Status === 'BuddyReached' && track.Role === 'Buddy' ? 'Buddy Reached' : track.Status === 'ServiceStarted' && track.Role === 'Technician' ? 'Service Started' : 'Service In progress',
         icon: 'mdi:home-wrench',
         date: track.Created_At,
         status: track.Status === 'ServiceCompleted' ? 'completed' : 'in-progress',
@@ -240,7 +240,7 @@ function CompleteServiceReportView({ data, onBack }) {
   const TimelineSection = () => {
     const stages = getTimelineData();
     const getStatusColor = (status) => {
-      switch(status) {
+      switch (status) {
         case 'completed': return '#10b981';
         case 'in-progress': return '#10b981';
         case 'pending': return '#6b7280';
@@ -341,11 +341,11 @@ function CompleteServiceReportView({ data, onBack }) {
             const color = getStatusColor(step.status);
             return (
               <div key={step.id} className="timeline-step">
-                <div 
-                  className="step-circle" 
-                  style={{ 
+                <div
+                  className="step-circle"
+                  style={{
                     '--step-bg': color,
-                    backgroundColor: color 
+                    backgroundColor: color
                   }}
                 >
                   <Icon icon={step.icon} width="16" height="16" />
@@ -380,7 +380,7 @@ function CompleteServiceReportView({ data, onBack }) {
   const followUps = data.Lead_FollowUps || [];
   const dealerApprovals = data.DealerAddOnApproval || [];
   const bookingStatusTracking = data.BookingStatusTracking || [];
-  const bookingImages = data.ServiceImages  || [];
+  const bookingImages = data.ServiceImages || [];
 
   const totalBookingAmount =
     (data.TotalPrice || 0) + (data.GSTAmount || 0) + (data.LabourCharges || 0) - (data.CouponAmount || 0);
@@ -391,11 +391,42 @@ function CompleteServiceReportView({ data, onBack }) {
 
   const confirmedAddOns = addOns.filter((a) => a.IsSupervisor_Confirm === 1);
   const pendingAddOns = (data.BookingsTempAddons || []).filter((a) => a.IsSupervisor_Confirm !== 1);
+  const [latestFeedback, setLatestFeedback] = useState(null);
+  const [showFeedbackPopup, setShowFeedbackPopup] = useState(false);
+
+  useEffect(() => {
+    if (data?.BookingID) {
+      fetchLatestFeedback(data.BookingID);
+    }
+  }, [data?.BookingID]);
+
+  const fetchLatestFeedback = async (bookingId) => {
+    try {
+      const res = await axios.get(
+        `https://dev-api.mycarsbuddy.com/api/Feedback/feedback?bookingId=${bookingId}`
+      );
+
+      const feedbackList = res.data;
+
+      if (feedbackList && feedbackList.length > 0) {
+        // ✅ Get latest by date
+        const latest = feedbackList.sort(
+          (a, b) => new Date(b.CreatedAt) - new Date(a.CreatedAt)
+        )[0];
+
+        setLatestFeedback(latest);
+      } else {
+        setLatestFeedback(null);
+      }
+    } catch (error) {
+      console.error("Error fetching feedback:", error);
+    }
+  };
 
   return (
     <div className="mb-4">
       {/* Header */}
-      <div className="card border-0 shadow-sm rounded-3 mb-4 overflow-hidden">
+      <div className="card border-0 shadow-sm rounded-3 mb-4 ">
         <div className="card-body py-4 px-4 d-flex flex-wrap align-items-center justify-content-between gap-3 bg-light bg-opacity-50">
           <button
             type="button"
@@ -420,6 +451,92 @@ function CompleteServiceReportView({ data, onBack }) {
             <span className="d-inline-flex align-items-center gap-1">
               <strong>Booking Status:</strong> <span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(data.BookingStatus)}`}>{data.BookingStatus ?? "N/A"}</span>
             </span>
+            {latestFeedback && (
+              <>
+                <span className="text-muted">|</span>
+
+                <div
+                  className="position-relative d-inline-block"
+                  onMouseEnter={() => setShowFeedbackPopup(true)}
+                  onMouseLeave={() => setShowFeedbackPopup(false)}
+                >
+                  {/* ⭐ STARS */}
+                  <span className="d-inline-flex align-items-center gap-1 cursor-pointer">
+                    <strong>Rating:</strong>
+                    {[...Array(5)].map((_, i) => (
+                      <Icon
+                        key={i}
+                        icon="lucide:star"
+                        width={16}
+                        style={{
+                          color:
+                            i < Number(latestFeedback.ServiceRating)
+                              ? "#ffc107"
+                              : "#e4e5e9",
+                          fill:
+                            i < Number(latestFeedback.ServiceRating)
+                              ? "#ffc107"
+                              : "none",
+                        }}
+                      />
+                    ))}
+                  </span>
+
+                  {/* ✅ POPUP */}
+                  {showFeedbackPopup && (
+                    <div
+                      className="position-absolute bg-white shadow rounded-3 p-3"
+                      style={{
+                        top: "100%", // 🔥 FIXED
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        marginTop: "6px", // 🔥 FIXED
+                        minWidth: "250px",
+                        zIndex: 9999,
+                      }}
+                    >
+                      <div className="mb-2 d-flex align-items-center gap-2">
+                        <strong className="mb-0 d-flex align-items-center">
+                          Rating:
+                        </strong>
+
+                        <div className="d-flex align-items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <Icon
+                              key={i}
+                              icon="lucide:star"
+                              width={18}
+                              style={{
+                                display: "block", // 🔥 important fix
+                                color:
+                                  i < Number(latestFeedback.ServiceRating)
+                                    ? "#ffc107"
+                                    : "#e4e5e9",
+                                fill:
+                                  i < Number(latestFeedback.ServiceRating)
+                                    ? "#ffc107"
+                                    : "none",
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mb-2 d-flex align-items-center gap-2">
+                        <strong>Review:</strong>
+                        <div className="text-muted small">
+                          {latestFeedback.ServiceReview || "No review provided"}
+                        </div>
+                      </div>
+
+                      <div className="text-muted small">
+                        {new Date(latestFeedback.CreatedAt).toLocaleString()}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -439,81 +556,81 @@ function CompleteServiceReportView({ data, onBack }) {
           Lead stage
         </h6>
         <div className="row g-4">
-        <div className="col-lg-4">
-          <ReportCard title="Lead Created" icon="mdi:lead-pencil">
-            <div className="small">
-              <DetailRow label="Lead ID" value={data.LeadId ?? "—"} />
-              <DetailRow label="Created date" value={formatDate(data.LeadCreatedDate || data.CreatedDate)} />
-              <DetailRow label="Customer" value={data.CustomerName ?? data.CustFullName ?? "—"} />
-              <DetailRow label="Phone" value={data.PhoneNumber ?? "—"} />
-              <DetailRow label="Service type" value={data.ServiceType ?? "—"} />
-            </div>
-          </ReportCard>
-        </div>
+          <div className="col-lg-4">
+            <ReportCard title="Lead Created" icon="mdi:lead-pencil">
+              <div className="small">
+                <DetailRow label="Lead ID" value={data.LeadId ?? "—"} />
+                <DetailRow label="Created date" value={formatDate(data.LeadCreatedDate || data.CreatedDate)} />
+                <DetailRow label="Customer" value={data.CustomerName ?? data.CustFullName ?? "—"} />
+                <DetailRow label="Phone" value={data.PhoneNumber ?? "—"} />
+                <DetailRow label="Service type" value={data.ServiceType ?? "—"} />
+              </div>
+            </ReportCard>
+          </div>
 
-        {followUps.length > 0 && (
-          <div className="col-lg-8">
-            <ReportCard title="Lead follow-ups" icon="mdi:phone-log-outline">
-              <div className="accordion" id={`leadFollowupsAccordion-${data.BookingID}`}>
-                <div className="accordion-item border-0">
-                  <h2 className="accordion-header" id={`lead-followup-heading-${data.BookingID}`}>
-                    <button
-                      className="accordion-button px-3 py-2 bg-light"
-                      type="button"
-                      data-bs-toggle="collapse"
-                      data-bs-target={`#lead-followup-collapse-${data.BookingID}`}
-                      aria-expanded="true"
-                      aria-controls={`lead-followup-collapse-${data.BookingID}`}
+          {followUps.length > 0 && (
+            <div className="col-lg-8">
+              <ReportCard title="Lead follow-ups" icon="mdi:phone-log-outline">
+                <div className="accordion" id={`leadFollowupsAccordion-${data.BookingID}`}>
+                  <div className="accordion-item border-0">
+                    <h2 className="accordion-header" id={`lead-followup-heading-${data.BookingID}`}>
+                      <button
+                        className="accordion-button px-3 py-2 bg-light"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target={`#lead-followup-collapse-${data.BookingID}`}
+                        aria-expanded="true"
+                        aria-controls={`lead-followup-collapse-${data.BookingID}`}
+                      >
+                        <span className="small fw-semibold">
+                          Lead follow-ups ({followUps.length})
+                        </span>
+                      </button>
+                    </h2>
+                    <div
+                      id={`lead-followup-collapse-${data.BookingID}`}
+                      className="accordion-collapse collapse show"
+                      aria-labelledby={`lead-followup-heading-${data.BookingID}`}
+                      data-bs-parent={`#leadFollowupsAccordion-${data.BookingID}`}
                     >
-                      <span className="small fw-semibold">
-                        Lead follow-ups ({followUps.length})
-                      </span>
-                    </button>
-                  </h2>
-                  <div
-                    id={`lead-followup-collapse-${data.BookingID}`}
-                    className="accordion-collapse collapse show"
-                    aria-labelledby={`lead-followup-heading-${data.BookingID}`}
-                    data-bs-parent={`#leadFollowupsAccordion-${data.BookingID}`}
-                  >
-                    <div className="accordion-body small p-0 pt-3">
-                      <div className="table-responsive">
-                        <table className="table table-sm table-hover align-middle mb-0">
-                          <thead className="table-light">
-                            <tr>
-                              <th>Date</th>
-                              <th>Status</th>
-                              <th>Call Type</th>
-                              <th>Call Discussion</th>
-                              <th>Next action</th>
-                              <th>Next Follow-Up Date</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {followUps.slice(0, 10).map((f) => (
-                              <tr key={f.Id}>
-                                <td>{formatDateTime(f.Updated_At ?? f.Created_At ?? "N/A")}</td>
-                                <td>
-                                  <span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(f.Status)}`}>
-                                    {f.Status ?? "N/A"}
-                                  </span>
-                                </td>
-                                <td>{f.Type ?? "N/A"}</td>
-                                <td className="text-break">{f.Notes ?? "N/A"}</td>
-                                <td>{f.NextAction ?? "N/A"}</td>
-                                <td>{formatDateTime(f.NextFollowUp_Date ?? "N/A")}</td>
+                      <div className="accordion-body small p-0 pt-3">
+                        <div className="table-responsive">
+                          <table className="table table-sm table-hover align-middle mb-0">
+                            <thead className="table-light">
+                              <tr>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Call Type</th>
+                                <th>Call Discussion</th>
+                                <th>Next action</th>
+                                <th>Next Follow-Up Date</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody>
+                              {followUps.slice(0, 10).map((f) => (
+                                <tr key={f.Id}>
+                                  <td>{formatDateTime(f.Updated_At ?? f.Created_At ?? "N/A")}</td>
+                                  <td>
+                                    <span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(f.Status)}`}>
+                                      {f.Status ?? "N/A"}
+                                    </span>
+                                  </td>
+                                  <td>{f.Type ?? "N/A"}</td>
+                                  <td className="text-break">{f.Notes ?? "N/A"}</td>
+                                  <td>{f.NextAction ?? "N/A"}</td>
+                                  <td>{formatDateTime(f.NextFollowUp_Date ?? "N/A")}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </ReportCard>
-          </div>
-        )}
+              </ReportCard>
+            </div>
+          )}
         </div>
       </div>
 
@@ -523,136 +640,136 @@ function CompleteServiceReportView({ data, onBack }) {
           Booking & customer
         </h6>
         <div className="row g-4">
-        {/* Booking overview (Booking Created stage) */}
-        <div className="col-lg-4">
-          <ReportCard title="Booking Created / Overview" icon="mdi:clipboard-text-outline">
-            <div className="small">
-              <DetailRow label="Booking ID" value={data.BookingID} />
-              <DetailRow label="Booking date" value={formatDate(data.BookingDate)} />
-              <DetailRow label="Time slot" value={data.TimeSlot ?? "—"} />
-              <DetailRow label="Status" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(data.BookingStatus)}`}>{data.BookingStatus ?? "—"}</span>} />
-              {/* <DetailRow label="Total price" value={formatCurrency(data.TotalPrice)} />
+          {/* Booking overview (Booking Created stage) */}
+          <div className="col-lg-4">
+            <ReportCard title="Booking Created / Overview" icon="mdi:clipboard-text-outline">
+              <div className="small">
+                <DetailRow label="Booking ID" value={data.BookingID} />
+                <DetailRow label="Booking date" value={formatDate(data.BookingDate)} />
+                <DetailRow label="Time slot" value={data.TimeSlot ?? "—"} />
+                <DetailRow label="Status" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(data.BookingStatus)}`}>{data.BookingStatus ?? "—"}</span>} />
+                {/* <DetailRow label="Total price" value={formatCurrency(data.TotalPrice)} />
               <DetailRow label="GST amount" value={formatCurrency(data.GSTAmount)} />
               <DetailRow label="Coupon amount" value={formatCurrency(data.CouponAmount)} />
               <DetailRow label="Labour charges" value={formatCurrency(data.LabourCharges)} /> */}
-              {data.Notes && <DetailRow label="Notes" value={data.Notes} />}
-            </div>
-          </ReportCard>
-        </div>
-
-        {/* Customer & address */}
-        <div className="col-lg-4">
-          <ReportCard title="Customer & address" icon="mdi:account-map-outline">
-            <div className="small">
-              <DetailRow label="Name" value={data.CustomerName ?? data.CustFullName ?? "—"} />
-              <DetailRow label="Email" value={data.CustEmail ?? "—"} />
-              <DetailRow label="Phone" value={data.PhoneNumber ?? "—"} />
-              <DetailRow label="Address" value={(data.FullAddress ?? "—").replace(/\n/g, ", ")} />
-              {(data.CityName || data.StateName) && (
-                <DetailRow label="Location" value={[data.CityName, data.StateName].filter(Boolean).join(", ")} />
-              )}
-            </div>
-          </ReportCard>
-        </div>
-
-        {/* Supervisor/Field Advisor Assigned - Assignment & team */}
-        <div className="col-lg-4">
-          <ReportCard title="Supervisor/Field Advisor Details" icon="mdi:account-group-outline">
-            <div className="small">
-              <DetailRow label="Supervisor Name" value={data.SupervisorHeadName ?? "N/A"} />
-              <DetailRow label="Supervisor Number" value={data.SupervisorHeadPhoneNumber ?? "N/A"} />
-              <DetailRow label="Field Advisor Name" value={data.FieldAdvisorName ?? "N/A"} />
-              <DetailRow label="Field Advisor Number" value={data.FieldAdvisorPhoneNumber ?? "N/A"} />
-            </div>
-          </ReportCard>
-        </div>
-
-          {/* Services (BookingAddOns) - Customer Confirmation Stage detail */}
-          <div className="col-12">
-          <h6 className="d-flex align-items-center gap-2 mb-3">
-            <Icon icon="mdi:car-wrench" className="text-primary" />
-            Services ({addOns.length})
-          </h6>
-          <div className="row g-4">
-            {addOns.map((svc, idx) => (
-              <div key={svc.AddOnID ?? idx} className="col-12">
-                <ReportCard
-                  title={svc.ServiceName ?? `Service #${idx + 1}`}
-                  icon="mdi:package-variant-closed"
-                  borderVariant={svc.Is_Completed ? "success" : undefined}
-                >
-                  <div className="row g-3">
-                    <div className="col-md-4 col-lg-4">
-                      <div className="small text-muted mb-2 fw-semibold">Pricing</div>
-                      <DetailRow label="Service price" value={formatCurrency(svc.ServicePrice)} />
-                      <DetailRow label="Labour Charges" value={formatCurrency(svc.LabourCharges)} />
-                      <DetailRow label="GST (18%)" value={formatCurrency(svc.GSTPrice)} />
-                      <DetailRow label="Total Price" value={formatCurrency(svc.TotalPrice)} />
-                     
-                      {/* <DetailRow label="Subtotal" value={formatCurrency(svc.DealerGSTAmount + svc.ServicePrice + svc.LabourCharges + svc.GSTPrice + svc.TotalPrice + svc.DealerPrice)} /> */}
-                    </div>
-                    <div className="col-md-4 col-lg-4">
-                      <div className="small text-muted mb-2 fw-semibold">Dealer</div>
-                      <DetailRow label="Dealer Name" value={svc.DealerName ?? "N/A"} />
-                      <DetailRow label="Dealer confirm" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(svc.IsDealer_Confirm)}`}>{svc.IsDealer_Confirm ?? "N/A"}</span>} />
-                       <DetailRow label="Dealer price" value={formatCurrency(svc.DealerPrice)} />
-                      <DetailRow label="Dealer GST Amount" value={formatCurrency(svc.DealerGSTAmount)} />
-                    </div>
-                    <div className="col-md-4 col-lg-4">
-                      <div className="small text-muted mb-2 fw-semibold">Status</div>
-                      <DetailRow label="Service Status" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(svc.StatusName)}`}>{svc.StatusName ?? "N/A"}</span>} />
-                      
-                      <DetailRow label="Completed" value={svc.Is_Completed ? "Yes" : "No"} />
-                      {svc.CompletedRole && <DetailRow label="Completed by" value={`${svc.CompletedRole}`} />}
-                    </div>
-                    {Array.isArray(svc.Includes) && svc.Includes.length > 0 && (
-                      <div className="col-12 col-lg-4">
-                        <div className="small text-muted mb-2 fw-semibold">Includes</div>
-
-                        <ul className="list-unstyled small mb-0">
-                          {svc.Includes.map((inc, i) => (
-                            <li
-                              key={inc?.IncludeID ?? i}
-                              className="d-flex align-items-center gap-2 py-1"
-                            >
-                              <Icon
-                                icon="mdi:check-circle-outline"
-                                className="text-success flex-shrink-0"
-                                width={16}
-                              />
-                              {inc?.IncludeName ?? "—"}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                </ReportCard>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Vehicle details */}
-        {vehicles.length > 0 && (
-          <div className="col-12">
-            <ReportCard title="Vehicle details" icon="mdi:car-side">
-              <div className="row g-3">
-                {vehicles.map((v, i) => (
-                  <div key={i} className="col-md-6 col-lg-4">
-                    <div className="p-3 rounded-3 bg-light bg-opacity-50 small">
-                      <DetailRow label="Registration No." value={v.RegistrationNumber ?? "N/A"} />
-                      <DetailRow label="Brand / Model" value={[v.BrandName, v.ModelName].filter(Boolean).join(" · ") || "N/A"} />
-                      <DetailRow label="Fuel Type" value={v.FuelTypeName ?? "N/A"} />
-                      {v.KmDriven != null && <DetailRow label="KM Driven" value={v.KmDriven} />}
-                      {v.YearOfPurchase != null && <DetailRow label="Year Of Purchase" value={v.YearOfPurchase} />}
-                    </div>
-                  </div>
-                ))}
+                {data.Notes && <DetailRow label="Notes" value={data.Notes} />}
               </div>
             </ReportCard>
           </div>
-        )}
+
+          {/* Customer & address */}
+          <div className="col-lg-4">
+            <ReportCard title="Customer & address" icon="mdi:account-map-outline">
+              <div className="small">
+                <DetailRow label="Name" value={data.CustomerName ?? data.CustFullName ?? "—"} />
+                <DetailRow label="Email" value={data.CustEmail ?? "—"} />
+                <DetailRow label="Phone" value={data.PhoneNumber ?? "—"} />
+                <DetailRow label="Address" value={(data.FullAddress ?? "—").replace(/\n/g, ", ")} />
+                {(data.CityName || data.StateName) && (
+                  <DetailRow label="Location" value={[data.CityName, data.StateName].filter(Boolean).join(", ")} />
+                )}
+              </div>
+            </ReportCard>
+          </div>
+
+          {/* Supervisor/Field Advisor Assigned - Assignment & team */}
+          <div className="col-lg-4">
+            <ReportCard title="Supervisor/Field Advisor Details" icon="mdi:account-group-outline">
+              <div className="small">
+                <DetailRow label="Supervisor Name" value={data.SupervisorHeadName ?? "N/A"} />
+                <DetailRow label="Supervisor Number" value={data.SupervisorHeadPhoneNumber ?? "N/A"} />
+                <DetailRow label="Field Advisor Name" value={data.FieldAdvisorName ?? "N/A"} />
+                <DetailRow label="Field Advisor Number" value={data.FieldAdvisorPhoneNumber ?? "N/A"} />
+              </div>
+            </ReportCard>
+          </div>
+
+          {/* Services (BookingAddOns) - Customer Confirmation Stage detail */}
+          <div className="col-12">
+            <h6 className="d-flex align-items-center gap-2 mb-3">
+              <Icon icon="mdi:car-wrench" className="text-primary" />
+              Services ({addOns.length})
+            </h6>
+            <div className="row g-4">
+              {addOns.map((svc, idx) => (
+                <div key={svc.AddOnID ?? idx} className="col-12">
+                  <ReportCard
+                    title={svc.ServiceName ?? `Service #${idx + 1}`}
+                    icon="mdi:package-variant-closed"
+                    borderVariant={svc.Is_Completed ? "success" : undefined}
+                  >
+                    <div className="row g-3">
+                      <div className="col-md-4 col-lg-4">
+                        <div className="small text-muted mb-2 fw-semibold">Pricing</div>
+                        <DetailRow label="Service price" value={formatCurrency(svc.ServicePrice)} />
+                        <DetailRow label="Labour Charges" value={formatCurrency(svc.LabourCharges)} />
+                        <DetailRow label="GST (18%)" value={formatCurrency(svc.GSTPrice)} />
+                        <DetailRow label="Total Price" value={formatCurrency(svc.TotalPrice)} />
+
+                        {/* <DetailRow label="Subtotal" value={formatCurrency(svc.DealerGSTAmount + svc.ServicePrice + svc.LabourCharges + svc.GSTPrice + svc.TotalPrice + svc.DealerPrice)} /> */}
+                      </div>
+                      <div className="col-md-4 col-lg-4">
+                        <div className="small text-muted mb-2 fw-semibold">Dealer</div>
+                        <DetailRow label="Dealer Name" value={svc.DealerName ?? "N/A"} />
+                        <DetailRow label="Dealer confirm" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(svc.IsDealer_Confirm)}`}>{svc.IsDealer_Confirm ?? "N/A"}</span>} />
+                        <DetailRow label="Dealer price" value={formatCurrency(svc.DealerPrice)} />
+                        <DetailRow label="Dealer GST Amount" value={formatCurrency(svc.DealerGSTAmount)} />
+                      </div>
+                      <div className="col-md-4 col-lg-4">
+                        <div className="small text-muted mb-2 fw-semibold">Status</div>
+                        <DetailRow label="Service Status" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(svc.StatusName)}`}>{svc.StatusName ?? "N/A"}</span>} />
+
+                        <DetailRow label="Completed" value={svc.Is_Completed ? "Yes" : "No"} />
+                        {svc.CompletedRole && <DetailRow label="Completed by" value={`${svc.CompletedRole}`} />}
+                      </div>
+                      {Array.isArray(svc.Includes) && svc.Includes.length > 0 && (
+                        <div className="col-12 col-lg-4">
+                          <div className="small text-muted mb-2 fw-semibold">Includes</div>
+
+                          <ul className="list-unstyled small mb-0">
+                            {svc.Includes.map((inc, i) => (
+                              <li
+                                key={inc?.IncludeID ?? i}
+                                className="d-flex align-items-center gap-2 py-1"
+                              >
+                                <Icon
+                                  icon="mdi:check-circle-outline"
+                                  className="text-success flex-shrink-0"
+                                  width={16}
+                                />
+                                {inc?.IncludeName ?? "—"}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </ReportCard>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Vehicle details */}
+          {vehicles.length > 0 && (
+            <div className="col-12">
+              <ReportCard title="Vehicle details" icon="mdi:car-side">
+                <div className="row g-3">
+                  {vehicles.map((v, i) => (
+                    <div key={i} className="col-md-6 col-lg-4">
+                      <div className="p-3 rounded-3 bg-light bg-opacity-50 small">
+                        <DetailRow label="Registration No." value={v.RegistrationNumber ?? "N/A"} />
+                        <DetailRow label="Brand / Model" value={[v.BrandName, v.ModelName].filter(Boolean).join(" · ") || "N/A"} />
+                        <DetailRow label="Fuel Type" value={v.FuelTypeName ?? "N/A"} />
+                        {v.KmDriven != null && <DetailRow label="KM Driven" value={v.KmDriven} />}
+                        {v.YearOfPurchase != null && <DetailRow label="Year Of Purchase" value={v.YearOfPurchase} />}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ReportCard>
+            </div>
+          )}
         </div>
       </div>
 
@@ -662,44 +779,44 @@ function CompleteServiceReportView({ data, onBack }) {
           Dealer & customer confirmation
         </h6>
         <div className="row g-4">
-        {/* Dealer Confirmation Stage - Approval History */}
-        {dealerApprovals.length > 0 && (
-          <div className="col-12">
-            <ReportCard title="Dealer Approval History" icon="mdi:handshake-outline">
-              <div className="table-responsive">
-                <table className="table table-sm table-hover mb-0">
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Service</th>
-                      <th>Dealer</th>
-                      <th>Status</th>
-                      <th>Reason for Rejection</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dealerApprovals.slice(0, 15).map((a) => (
-                      <tr key={a.Id}>
-                        <td>{formatDateTime(a.CreatedDate)}</td>
-                        <td>{a.ServiceName ?? "N/A"}</td>
-                        <td>{a.DealerName ?? "N/A"}</td>
-                        <td>
-                          <span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(a.IsDealer_Confirm)}`}>
-                            {a.IsDealer_Confirm ?? "N/A"}
-                          </span>
-                        </td>
-                        <td>{a.Reason ?? "N/A"}</td>
+          {/* Dealer Confirmation Stage - Approval History */}
+          {dealerApprovals.length > 0 && (
+            <div className="col-12">
+              <ReportCard title="Dealer Approval History" icon="mdi:handshake-outline">
+                <div className="table-responsive">
+                  <table className="table table-sm table-hover mb-0">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Service</th>
+                        <th>Dealer</th>
+                        <th>Status</th>
+                        <th>Reason for Rejection</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </ReportCard>
-          </div>
-        )}
+                    </thead>
+                    <tbody>
+                      {dealerApprovals.slice(0, 15).map((a) => (
+                        <tr key={a.Id}>
+                          <td>{formatDateTime(a.CreatedDate)}</td>
+                          <td>{a.ServiceName ?? "N/A"}</td>
+                          <td>{a.DealerName ?? "N/A"}</td>
+                          <td>
+                            <span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(a.IsDealer_Confirm)}`}>
+                              {a.IsDealer_Confirm ?? "N/A"}
+                            </span>
+                          </td>
+                          <td>{a.Reason ?? "N/A"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </ReportCard>
+            </div>
+          )}
 
-        {/* Customer Confirmation Stage */}
-        {/* {(confirmedAddOns.length > 0 || pendingAddOns.length > 0) && (
+          {/* Customer Confirmation Stage */}
+          {/* {(confirmedAddOns.length > 0 || pendingAddOns.length > 0) && (
           <div className="col-12 col-lg-4">
             <ReportCard title="Customer Confirmation" icon="mdi:account-check">
               <div className="small">
@@ -720,7 +837,7 @@ function CompleteServiceReportView({ data, onBack }) {
           </div>
         )} */}
 
-      
+
         </div>
       </div>
 
@@ -730,89 +847,89 @@ function CompleteServiceReportView({ data, onBack }) {
           Technician Tracking
         </h6>
         <div className="row g-4">
-        {/* Technician Assigned (summary) */}
-        {carPickUpDelivery.length > 0 && (
-          <div className="col-12 col-lg-4">
-            <ReportCard title="Technician Assigned" icon="mdi:engineer">
-              <div className="small">
-                <DetailRow
-                  label="Technician(s)"
-                  value={
-                    carPickUpDelivery
-                      .map((p) => p.TechnicinaName)
-                      .filter(Boolean)
-                      .join(", ") || "—"
-                  }
-                />
-                <DetailRow
-                  label="Assigned date"
-                  value={formatDateTime(carPickUpDelivery[0]?.AssignDate)}
-                />
-              </div>
-            </ReportCard>
-          </div>
-        )}
+          {/* Technician Assigned (summary) */}
+          {carPickUpDelivery.length > 0 && (
+            <div className="col-12 col-lg-4">
+              <ReportCard title="Technician Assigned" icon="mdi:engineer">
+                <div className="small">
+                  <DetailRow
+                    label="Technician(s)"
+                    value={
+                      carPickUpDelivery
+                        .map((p) => p.TechnicinaName)
+                        .filter(Boolean)
+                        .join(", ") || "—"
+                    }
+                  />
+                  <DetailRow
+                    label="Assigned date"
+                    value={formatDateTime(carPickUpDelivery[0]?.AssignDate)}
+                  />
+                </div>
+              </ReportCard>
+            </div>
+          )}
 
-        {/* Car Pickup & Delivery */}
-        {carPickUpDelivery.length > 0 && (
-          <div className="col-12">
-            <ReportCard title="Technician Tracking" icon="mdi:car-side">
-              <div className="row g-4">
-                {carPickUpDelivery.map((pick, idx) => (
-                  <div key={pick.Id ?? idx} className="col-12">
-                    <div className="card border border-light rounded-3 overflow-hidden">
-                      <div className="card-header bg-light d-flex flex-wrap align-items-center gap-2 py-2 px-3">
-                        <span className={`badge rounded-pill px-3 py-2 ${pick.PickType === "CarDrop" ? "bg-info bg-opacity-25 text-info" : "bg-primary bg-opacity-25 text-primary"}`}>
-                           {pick.ServiceType && (
-                          <span className="small">{pick.ServiceType == 'ServiceAtHome' ? "Service At Home" : "Service At Garage"}</span>
-                        )}
-                        </span>
-                        <span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(pick.Status)}`}>
-                          {pick.Status ?? "—"}
-                        </span>
-                       
-
-                        
-                      </div>
-                      <div className="card-body py-3 px-4 small">
-                        <div className="row g-3">
-                          {pick.ServiceType == 'ServiceAtGarage' ? (
-                            <>
-                             <div className="col-md-6">
-                            <div className="fw-semibold text-muted mb-2">From</div>
-                            <DetailRow label="Name" value={pick.PickFromName ?? "—"} />
-                            <DetailRow label="Phone" value={pick.PickFromPhone ?? "—"} />
-                            <DetailRow label="Address" value={(pick.PickFromAddress ?? "—").replace(/\n/g, ", ")} />
-                          </div>
-                          <div className="col-md-6">
-                            <div className="fw-semibold text-muted mb-2">To</div>
-                            <DetailRow label="Name" value={pick.PickToName ?? "—"} />
-                            <DetailRow label="Phone" value={pick.PickToPhone ?? "—"} />
-                            <DetailRow label="Address" value={(pick.PickToAddress ?? "—").replace(/\n/g, ", ")} />
-                          </div> 
-                          </>
-                          ) : (<></>)}
-                           
-                          
-                          <div className="col-12">
-                            <div className="fw-semibold text-muted mb-2">Technician & timing</div>
-                            <DetailRow label="Technician" value={pick.TechnicinaName ?? "—"} />
-                            <DetailRow label="Phone" value={pick.TechnicianPhoneNumber ?? "—"} />
-                            <DetailRow label="Assign date" value={formatDateTime(pick.AssignDate)} />
-                            {(pick.PickupDate || pick.PickupTime) && (
-                              <DetailRow label="Pickup" value={`${formatDate(pick.PickupDate)} ${pick.PickupTime ?? ""}`.trim()} />
+          {/* Car Pickup & Delivery */}
+          {carPickUpDelivery.length > 0 && (
+            <div className="col-12">
+              <ReportCard title="Technician Tracking" icon="mdi:car-side">
+                <div className="row g-4">
+                  {carPickUpDelivery.map((pick, idx) => (
+                    <div key={pick.Id ?? idx} className="col-12">
+                      <div className="card border border-light rounded-3 overflow-hidden">
+                        <div className="card-header bg-light d-flex flex-wrap align-items-center gap-2 py-2 px-3">
+                          <span className={`badge rounded-pill px-3 py-2 ${pick.PickType === "CarDrop" ? "bg-info bg-opacity-25 text-info" : "bg-primary bg-opacity-25 text-primary"}`}>
+                            {pick.ServiceType && (
+                              <span className="small">{pick.ServiceType == 'ServiceAtHome' ? "Service At Home" : "Service At Garage"}</span>
                             )}
-                            {(pick.DeliveryDate || pick.DeliveryTime) && (
-                              <DetailRow label="Delivery" value={`${formatDate(pick.DeliveryDate)} ${pick.DeliveryTime ?? ""}`.trim()} />
-                            )}
+                          </span>
+                          <span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(pick.Status)}`}>
+                            {pick.Status ?? "—"}
+                          </span>
 
-                            <DetailRow label="Modified" value={formatDateTime(pick.ModifiedDate)} />
-                          </div>
-                          {Array.isArray(pick.DriverTracking) && pick.DriverTracking.length > 0 && (
-                            <div className="col-12 mt-3">
-                              <div className="fw-semibold text-muted mb-3">Technician / Driver Timeline</div>
-                              <div className="position-relative">
-                                <style jsx>{`
+
+
+                        </div>
+                        <div className="card-body py-3 px-4 small">
+                          <div className="row g-3">
+                            {pick.ServiceType == 'ServiceAtGarage' ? (
+                              <>
+                                <div className="col-md-6">
+                                  <div className="fw-semibold text-muted mb-2">From</div>
+                                  <DetailRow label="Name" value={pick.PickFromName ?? "—"} />
+                                  <DetailRow label="Phone" value={pick.PickFromPhone ?? "—"} />
+                                  <DetailRow label="Address" value={(pick.PickFromAddress ?? "—").replace(/\n/g, ", ")} />
+                                </div>
+                                <div className="col-md-6">
+                                  <div className="fw-semibold text-muted mb-2">To</div>
+                                  <DetailRow label="Name" value={pick.PickToName ?? "—"} />
+                                  <DetailRow label="Phone" value={pick.PickToPhone ?? "—"} />
+                                  <DetailRow label="Address" value={(pick.PickToAddress ?? "—").replace(/\n/g, ", ")} />
+                                </div>
+                              </>
+                            ) : (<></>)}
+
+
+                            <div className="col-12">
+                              <div className="fw-semibold text-muted mb-2">Technician & timing</div>
+                              <DetailRow label="Technician" value={pick.TechnicinaName ?? "—"} />
+                              <DetailRow label="Phone" value={pick.TechnicianPhoneNumber ?? "—"} />
+                              <DetailRow label="Assign date" value={formatDateTime(pick.AssignDate)} />
+                              {(pick.PickupDate || pick.PickupTime) && (
+                                <DetailRow label="Pickup" value={`${formatDate(pick.PickupDate)} ${pick.PickupTime ?? ""}`.trim()} />
+                              )}
+                              {(pick.DeliveryDate || pick.DeliveryTime) && (
+                                <DetailRow label="Delivery" value={`${formatDate(pick.DeliveryDate)} ${pick.DeliveryTime ?? ""}`.trim()} />
+                              )}
+
+                              <DetailRow label="Modified" value={formatDateTime(pick.ModifiedDate)} />
+                            </div>
+                            {Array.isArray(pick.DriverTracking) && pick.DriverTracking.length > 0 && (
+                              <div className="col-12 mt-3">
+                                <div className="fw-semibold text-muted mb-3">Technician / Driver Timeline</div>
+                                <div className="position-relative">
+                                  <style jsx>{`
                                   .driver-timeline {
                                     display: flex;
                                     align-items: center;
@@ -873,51 +990,51 @@ function CompleteServiceReportView({ data, onBack }) {
                                     transition: left 0.3s ease;
                                   }
                                 `}</style>
-                                <div className="driver-timeline">
-                                  {pick.DriverTracking.map((t, i) => {
-                                    let displayStatus = t.Status;
-                                    // Enhanced status-based colors from STATUS_BADGE_CLASS
-                                    const status = t.Status?.toLowerCase() || 'pending';
-                                    const isCompleted = status === 'completed';
-                                    const getDriverColor = (s) => {
-                                      if (s === 'completed') return '#116d6e'; // green
-                                      if (s === 'pickup_started' || s === 'serviceinprogress') return '#116d6e'; // blue
-                                      if (s === 'pickup_reached' || s === 'car_picked' || s === 'drop_reached') return '#116d6e'; // cyan
-                                      if (s === 'in_transit' || s === 'outfordelivery') return '#116d6e'; // yellow
-                                      return '#116d6e'; // gray
-                                    };
-                                    const color = getDriverColor(status);
-                                    return (
-                                      <div key={t.Id ?? i} className="driver-step">
-                                        <div 
-                                          className="driver-circle" 
-                                          style={{ 
-                                            backgroundColor: color
-                                          }}
-                                        >
-                                          {i + 1}
+                                  <div className="driver-timeline">
+                                    {pick.DriverTracking.map((t, i) => {
+                                      let displayStatus = t.Status;
+                                      // Enhanced status-based colors from STATUS_BADGE_CLASS
+                                      const status = t.Status?.toLowerCase() || 'pending';
+                                      const isCompleted = status === 'completed';
+                                      const getDriverColor = (s) => {
+                                        if (s === 'completed') return '#116d6e'; // green
+                                        if (s === 'pickup_started' || s === 'serviceinprogress') return '#116d6e'; // blue
+                                        if (s === 'pickup_reached' || s === 'car_picked' || s === 'drop_reached') return '#116d6e'; // cyan
+                                        if (s === 'in_transit' || s === 'outfordelivery') return '#116d6e'; // yellow
+                                        return '#116d6e'; // gray
+                                      };
+                                      const color = getDriverColor(status);
+                                      return (
+                                        <div key={t.Id ?? i} className="driver-step">
+                                          <div
+                                            className="driver-circle"
+                                            style={{
+                                              backgroundColor: color
+                                            }}
+                                          >
+                                            {i + 1}
+                                          </div>
+                                          <div className="driver-status">{displayStatus}</div>
+                                          <div className="driver-date">{formatDateTime(t.CreatedDate)}</div>
                                         </div>
-                                        <div className="driver-status">{displayStatus}</div>
-                                        <div className="driver-date">{formatDateTime(t.CreatedDate)}</div>
-                                      </div>
-                                    );
-                                  })}
+                                      );
+                                    })}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          )}
-                        </div>
+                            )}
+                          </div>
 
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </ReportCard>
-          </div>
-        )}
+                  ))}
+                </div>
+              </ReportCard>
+            </div>
+          )}
 
-        {/* Timeline replaces old Technician/Driver tracking & status table ✓ */}
+          {/* Timeline replaces old Technician/Driver tracking & status table ✓ */}
         </div>
       </div>
 
@@ -927,127 +1044,127 @@ function CompleteServiceReportView({ data, onBack }) {
           Billing & Payments
         </h6>
         <div className="row g-4">
-        {/* Payment Done · payment history · Invoice */}
-        {(payments.length > 0 || invoices.length > 0) && (
-          <div className="col-12">
-            <div className="row g-4">
-              {payments.length > 0 && (
-                <div className="col-lg-4">
-                  <ReportCard title="Payment Done" icon="mdi:credit-card-check">
-                    <div className="small">
-                      <DetailRow label="Total booking amount" value={formatCurrency(totalBookingAmount)} />
-                      <DetailRow label="Total paid" value={formatCurrency(totalPaid)} />
-                      <DetailRow label="Pending amount" value={formatCurrency(pendingAmount)} />
-                      <DetailRow
-                        label="Last payment date"
-                        value={formatDateTime(payments[0]?.PaymentDate)}
-                      />
-                    </div>
-                  </ReportCard>
-                </div>
-              )}
+          {/* Payment Done · payment history · Invoice */}
+          {(payments.length > 0 || invoices.length > 0) && (
+            <div className="col-12">
+              <div className="row g-4">
+                {payments.length > 0 && (
+                  <div className="col-lg-4">
+                    <ReportCard title="Payment Done" icon="mdi:credit-card-check">
+                      <div className="small">
+                        <DetailRow label="Total booking amount" value={formatCurrency(totalBookingAmount)} />
+                        <DetailRow label="Total paid" value={formatCurrency(totalPaid)} />
+                        <DetailRow label="Pending amount" value={formatCurrency(pendingAmount)} />
+                        <DetailRow
+                          label="Last payment date"
+                          value={formatDateTime(payments[0]?.PaymentDate)}
+                        />
+                      </div>
+                    </ReportCard>
+                  </div>
+                )}
 
-              {payments.length > 0 && (
-                <div className="col-12">
-                  <ReportCard title="Payment history" icon="mdi:credit-card-outline">
-                    <div className="table-responsive">
-                      <table className="table table-sm table-hover mb-0">
-                        <thead>
-                          <tr>
-                            <th>Date</th>
-                            <th>Amount</th>
-                            <th>Mode</th>
-                            <th>Transaction ID</th>
-                            <th>Status</th>
-                            <th>Refunded</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {payments.map((p) => (
-                            <tr key={p.PaymentID}>
-                              <td>{formatDateTime(p.PaymentDate)}</td>
-                              <td>{formatCurrency(p.AmountPaid)}</td>
-                              <td>{p.PaymentMode ?? "—"}</td>
-                              <td className="text-break">{p.TransactionID ?? "—"}</td>
-                              <td>
-                                <span
-                                  className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(
-                                    p.PaymentStatus === "Success" ? "Paid" : p.PaymentStatus
-                                  )}`}
-                                >
-                                  {p.PaymentStatus === "Success" ? "Paid" : p.PaymentStatus ?? "—"}
-                                </span>
-                              </td>
-                              <td>{p.IsRefunded ? "Yes" : "No"}</td>
+                {payments.length > 0 && (
+                  <div className="col-12">
+                    <ReportCard title="Payment history" icon="mdi:credit-card-outline">
+                      <div className="table-responsive">
+                        <table className="table table-sm table-hover mb-0">
+                          <thead>
+                            <tr>
+                              <th>Date</th>
+                              <th>Amount</th>
+                              <th>Mode</th>
+                              <th>Transaction ID</th>
+                              <th>Status</th>
+                              <th>Refunded</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </ReportCard>
-                </div>
-              )}
+                          </thead>
+                          <tbody>
+                            {payments.map((p) => (
+                              <tr key={p.PaymentID}>
+                                <td>{formatDateTime(p.PaymentDate)}</td>
+                                <td>{formatCurrency(p.AmountPaid)}</td>
+                                <td>{p.PaymentMode ?? "—"}</td>
+                                <td className="text-break">{p.TransactionID ?? "—"}</td>
+                                <td>
+                                  <span
+                                    className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(
+                                      p.PaymentStatus === "Success" ? "Paid" : p.PaymentStatus
+                                    )}`}
+                                  >
+                                    {p.PaymentStatus === "Success" ? "Paid" : p.PaymentStatus ?? "—"}
+                                  </span>
+                                </td>
+                                <td>{p.IsRefunded ? "Yes" : "No"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </ReportCard>
+                  </div>
+                )}
 
-              {invoices.length > 0 && (
-                <div className="col-12">
-                  <ReportCard title="Invoice" icon="mdi:file-document-outline">
-                    <div className="table-responsive">
-                      <table className="table table-sm table-hover mb-0">
-                        <thead>
-                          <tr>
-                            <th>Invoice #</th>
-                            <th>Type</th>
-                            <th>Status</th>
-                            <th>Total</th>
-                            <th>Tax</th>
-                            <th>Net</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {invoices.map((inv) => (
-                            <tr key={inv.InvoiceID}>
-                              <td className="text-break">{inv.InvoiceNumber ?? "—"}</td>
-                              <td>{inv.InvoiceType ?? "—"}</td>
-                              <td>
-                                <span
-                                  className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(
-                                    inv.InvoiceStatus
-                                  )}`}
-                                >
-                                  {inv.InvoiceStatus ?? "—"}
-                                </span>
-                              </td>
-                              <td>{formatCurrency(inv.TotalAmount)}</td>
-                              <td>{formatCurrency(inv.TaxAmount)}</td>
-                              <td>{formatCurrency(inv.NetAmount)}</td>
+                {invoices.length > 0 && (
+                  <div className="col-12">
+                    <ReportCard title="Invoice" icon="mdi:file-document-outline">
+                      <div className="table-responsive">
+                        <table className="table table-sm table-hover mb-0">
+                          <thead>
+                            <tr>
+                              <th>Invoice #</th>
+                              <th>Type</th>
+                              <th>Status</th>
+                              <th>Total</th>
+                              <th>Tax</th>
+                              <th>Net</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </ReportCard>
-                </div>
-              )}
+                          </thead>
+                          <tbody>
+                            {invoices.map((inv) => (
+                              <tr key={inv.InvoiceID}>
+                                <td className="text-break">{inv.InvoiceNumber ?? "—"}</td>
+                                <td>{inv.InvoiceType ?? "—"}</td>
+                                <td>
+                                  <span
+                                    className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(
+                                      inv.InvoiceStatus
+                                    )}`}
+                                  >
+                                    {inv.InvoiceStatus ?? "—"}
+                                  </span>
+                                </td>
+                                <td>{formatCurrency(inv.TotalAmount)}</td>
+                                <td>{formatCurrency(inv.TaxAmount)}</td>
+                                <td>{formatCurrency(inv.NetAmount)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </ReportCard>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
         </div>
       </div>
-        {/* Booking images */}
-        {bookingImages.length > 0 && (
-          <div className="col-12">
-            <ReportCard title="Booking images" icon="mdi:image-multiple-outline">
-              <div className="row g-2">
-                {bookingImages.map((img) => {
-                  const imgSrc = img.ImageURL ? `${API_IMAGE}/${img.ImageURL}` : null;
-                  return (
-                    <div key={img.ImageID} className="col-12 col-md-6 col-lg-3">
-                      <div className="card border rounded-3 overflow-hidden h-100">
-                        <div className="card-body p-1 d-flex align-items-center gap-2">
-                          <div className="flex-grow-1 small">
-                            <div className="fw-semibold text-dark">{img.ImageUploadType ?? "—"} {img.ImagesType && <span className="text-muted">({img.ImagesType})</span>}</div>
-                            <div className="text-muted mt-1">{formatDateTime(img.UploadedAt)}</div>
-                            {/* {imgSrc && (
+      {/* Booking images */}
+      {bookingImages.length > 0 && (
+        <div className="col-12">
+          <ReportCard title="Booking images" icon="mdi:image-multiple-outline">
+            <div className="row g-2">
+              {bookingImages.map((img) => {
+                const imgSrc = img.ImageURL ? `${API_IMAGE}/${img.ImageURL}` : null;
+                return (
+                  <div key={img.ImageID} className="col-12 col-md-6 col-lg-3">
+                    <div className="card border rounded-3 overflow-hidden h-100">
+                      <div className="card-body p-1 d-flex align-items-center gap-2">
+                        <div className="flex-grow-1 small">
+                          <div className="fw-semibold text-dark">{img.ImageUploadType ?? "—"} {img.ImagesType && <span className="text-muted">({img.ImagesType})</span>}</div>
+                          <div className="text-muted mt-1">{formatDateTime(img.UploadedAt)}</div>
+                          {/* {imgSrc && (
                               <button
                                 type="button"
                                 className="btn btn-link btn-sm p-0 mt-1 text-primary text-decoration-none"
@@ -1056,67 +1173,67 @@ function CompleteServiceReportView({ data, onBack }) {
                                 View full screen
                               </button>
                             )} */}
-                          </div>
-                          {imgSrc && (
-                            <button
-                              type="button"
-                              className="flex-shrink-0 border-0 bg-light rounded-2 p-1 d-block overflow-hidden"
-                              style={{ width: 60, height: 60 }}
-                              onClick={() => setFullscreenImageUrl(imgSrc)}
-                              aria-label="View image"
-                            >
-                              <img
-                                src={imgSrc}
-                                alt={img.ImageUploadType || "Booking"}
-                                className="w-100 h-100 object-fit-cover rounded-1"
-                                style={{ objectFit: "cover" }}
-                              />
-                            </button>
-                          )}
                         </div>
+                        {imgSrc && (
+                          <button
+                            type="button"
+                            className="flex-shrink-0 border-0 bg-light rounded-2 p-1 d-block overflow-hidden"
+                            style={{ width: 60, height: 60 }}
+                            onClick={() => setFullscreenImageUrl(imgSrc)}
+                            aria-label="View image"
+                          >
+                            <img
+                              src={imgSrc}
+                              alt={img.ImageUploadType || "Booking"}
+                              className="w-100 h-100 object-fit-cover rounded-1"
+                              style={{ objectFit: "cover" }}
+                            />
+                          </button>
+                        )}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </ReportCard>
-          </div>
-        )}
+                  </div>
+                );
+              })}
+            </div>
+          </ReportCard>
+        </div>
+      )}
 
-        {/* Fullscreen image overlay */}
-        {fullscreenImageUrl ? (
-          <div
-            className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
-            style={{ zIndex: 9999, backgroundColor: "rgba(0,0,0,0.9)" }}
-            onClick={() => setFullscreenImageUrl(null)}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Image fullscreen"
+      {/* Fullscreen image overlay */}
+      {fullscreenImageUrl ? (
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+          style={{ zIndex: 9999, backgroundColor: "rgba(0,0,0,0.9)" }}
+          onClick={() => setFullscreenImageUrl(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image fullscreen"
+        >
+          <button
+            type="button"
+            className="position-absolute top-0 end-0 m-3 btn btn-light btn-lg rounded-circle d-inline-flex align-items-center justify-content-center"
+            style={{ width: 48, height: 48 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setFullscreenImageUrl(null);
+            }}
+            aria-label="Close"
           >
-            <button
-              type="button"
-              className="position-absolute top-0 end-0 m-3 btn btn-light btn-lg rounded-circle d-inline-flex align-items-center justify-content-center"
-              style={{ width: 48, height: 48 }}
-              onClick={(e) => {
-                e.stopPropagation();
-                setFullscreenImageUrl(null);
-              }}
-              aria-label="Close"
-            >
-              <Icon icon="mdi:close" width={28} height={28} />
-            </button>
-            <img
-              src={fullscreenImageUrl}
-              alt="Full screen"
-              className="max-w-100 max-h-100 object-contain"
-              style={{ maxHeight: "calc(100vh - 80px)", maxWidth: "calc(100vw - 80px)" }}
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        ) : null}
+            <Icon icon="mdi:close" width={28} height={28} />
+          </button>
+          <img
+            src={fullscreenImageUrl}
+            alt="Full screen"
+            className="max-w-100 max-h-100 object-contain"
+            style={{ maxHeight: "calc(100vh - 80px)", maxWidth: "calc(100vw - 80px)" }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      ) : null}
 
-        {/* Lead follow-ups table is now inside Lead stage accordion */}
-      </div>
+      {/* Lead follow-ups table is now inside Lead stage accordion */}
+    </div>
     // </div>
   );
 }
