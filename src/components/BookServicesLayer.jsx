@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useParams } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { Icon } from "@iconify/react";
 import Swal from "sweetalert2";
@@ -21,6 +21,7 @@ const BookServicesLayer = () => {
   const { bookingId } = useParams();
   const { bookingTrackID } = useParams();
   const leadId = Id;
+  const location = useLocation();
   const API_BASE = import.meta.env.VITE_APIURL;
   const token = localStorage.getItem("token");
 
@@ -68,6 +69,19 @@ const BookServicesLayer = () => {
   const [showBookingChoiceModal, setShowBookingChoiceModal] = useState(false);
   const [bookingMode, setBookingMode] = useState(null);
   // null | "service" | "inspection"
+
+  const inspectionOnly = useMemo(() => {
+    const params = new URLSearchParams(location.search || "");
+    const mode = (params.get("bookingMode") || "").toLowerCase();
+    const only = (params.get("only") || "").toLowerCase();
+    return mode === "inspection" || only === "inspection";
+  }, [location.search]);
+
+  useEffect(() => {
+    if (!inspectionOnly) return;
+    setShowBookingChoiceModal(false);
+    setBookingMode("inspection");
+  }, [inspectionOnly]);
 
   const [inspectionType, setInspectionType] = useState("");
   const [inspectionDate, setInspectionDate] = useState("");
@@ -3696,84 +3710,86 @@ const BookServicesLayer = () => {
             {!bookingMode && (
               <div style={{ display: "flex", gap: "20px", flexDirection: "column" }}>
                 {/* Service Card */}
-                <div
-                  onClick={() => {
-                    setBookingMode("service");
-                    setShowBookingChoiceModal(false);
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-4px) scale(1.02)";
-                    e.currentTarget.style.boxShadow = "0 12px 32px rgba(34, 197, 94, 0.25)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "translateY(0) scale(1)";
-                    e.currentTarget.style.boxShadow = "0 4px 16px rgba(34, 197, 94, 0.15)";
-                  }}
-                  style={{
-                    padding: "28px 24px",
-                    borderRadius: "20px",
-                    background: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)",
-                    border: "2px solid #22c55e",
-                    cursor: "pointer",
-                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                    position: "relative",
-                    overflow: "hidden",
-                  }}
-                >
-                  <div style={{
-                    position: "absolute",
-                    top: "-20px",
-                    right: "-20px",
-                    width: "100px",
-                    height: "100px",
-                    borderRadius: "50%",
-                    background: "rgba(34, 197, 94, 0.1)",
-                    opacity: 0.5,
-                  }} />
-                  <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "16px",
-                    position: "relative",
-                    zIndex: 1,
-                  }}>
+                {!inspectionOnly && (
+                  <div
+                    onClick={() => {
+                      setBookingMode("service");
+                      setShowBookingChoiceModal(false);
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-4px) scale(1.02)";
+                      e.currentTarget.style.boxShadow = "0 12px 32px rgba(34, 197, 94, 0.25)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateY(0) scale(1)";
+                      e.currentTarget.style.boxShadow = "0 4px 16px rgba(34, 197, 94, 0.15)";
+                    }}
+                    style={{
+                      padding: "28px 24px",
+                      borderRadius: "20px",
+                      background: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)",
+                      border: "2px solid #22c55e",
+                      cursor: "pointer",
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      position: "relative",
+                      overflow: "hidden",
+                    }}
+                  >
                     <div style={{
-                      width: "64px",
-                      height: "64px",
-                      borderRadius: "16px",
-                      background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+                      position: "absolute",
+                      top: "-20px",
+                      right: "-20px",
+                      width: "100px",
+                      height: "100px",
+                      borderRadius: "50%",
+                      background: "rgba(34, 197, 94, 0.1)",
+                      opacity: 0.5,
+                    }} />
+                    <div style={{
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "center",
-                      boxShadow: "0 4px 12px rgba(34, 197, 94, 0.3)",
-                      flexShrink: 0,
+                      gap: "16px",
+                      position: "relative",
+                      zIndex: 1,
                     }}>
-                      <Icon icon="lucide:calendar-check" width={32} style={{ color: "#fff" }} />
-                    </div>
-                    <div style={{ flex: 1 }}>
                       <div style={{
-                        fontWeight: "700",
-                        fontSize: "1.15rem",
-                        color: "#15803d",
-                        marginBottom: "4px",
+                        width: "64px",
+                        height: "64px",
+                        borderRadius: "16px",
+                        background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        boxShadow: "0 4px 12px rgba(34, 197, 94, 0.3)",
+                        flexShrink: 0,
                       }}>
-                        Book Service
+                        <Icon icon="lucide:calendar-check" width={32} style={{ color: "#fff" }} />
                       </div>
-                      <div style={{
-                        fontSize: "0.875rem",
-                        color: "#16a34a",
-                        opacity: 0.8,
-                      }}>
-                        Schedule vehicle maintenance
+                      <div style={{ flex: 1 }}>
+                        <div style={{
+                          fontWeight: "700",
+                          fontSize: "1.15rem",
+                          color: "#15803d",
+                          marginBottom: "4px",
+                        }}>
+                          Book Service
+                        </div>
+                        <div style={{
+                          fontSize: "0.875rem",
+                          color: "#16a34a",
+                          opacity: 0.8,
+                        }}>
+                          Schedule vehicle maintenance
+                        </div>
                       </div>
+                      <Icon
+                        icon="mingcute:arrow-right-line"
+                        width={24}
+                        style={{ color: "#22c55e" }}
+                      />
                     </div>
-                    <Icon
-                      icon="mingcute:arrow-right-line"
-                      width={24}
-                      style={{ color: "#22c55e" }}
-                    />
                   </div>
-                </div>
+                )}
 
                 {/* Inspection Card */}
                 <div

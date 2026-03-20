@@ -1277,7 +1277,13 @@ const [loadingFeedback, setLoadingFeedback] = useState(false);
                     !isLeadClosed &&
                     !hasCurrentLeadBooking && (
                       <Link
-                        to={`/book-service/${lead?.Id}`}
+                        to={
+                          lead?.NextAction === "Ok for Inspection"
+                            ? `/book-service/${lead?.Id}?bookingMode=inspection&only=inspection`
+                            : lead?.NextAction === "Ok for Service"
+                            ? `/book-service/${lead?.Id}?bookingMode=service`
+                            : `/book-service/${lead?.Id}`
+                        }
                         onClick={(e) => {
                           if (!isAddressPresent) {
                             e.preventDefault();
