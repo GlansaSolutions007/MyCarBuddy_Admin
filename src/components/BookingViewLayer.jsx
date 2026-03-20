@@ -5859,7 +5859,7 @@ const BookingViewLayer = () => {
                                     roleName !== "Field Advisor" && (
                                       <Link
                                         to={`/invoice-view/${bookingData?.BookingID}?type=Estimation`}
-                                        className="btn btn-outline-primary btn-sm d-inline-flex align-items-center"
+                                        className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center"
                                         title="View Estimation Invoice"
                                         onClick={(e) => {
                                           if (!ensureBasicDetails()) {
@@ -5887,6 +5887,20 @@ const BookingViewLayer = () => {
 
                                   {/* Final Invoice: show only after full payment is completed */}
                                   {showFinalButton && (
+                                     <Link
+                                     to={`/invoice-view/${bookingData?.BookingID}?type=Final`}
+                                     className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                                     title="View Estimation Invoice"
+                                     onClick={(e) => {
+                                       if (!ensureBasicDetails()) {
+                                         e.preventDefault();
+                                       }
+                                     }}
+                                   >
+                                     View Final Invoice
+                                   </Link>
+                                  )}
+                                  {/* {showFinalButton && (
                                     <button
                                       className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                                       onClick={() => {
@@ -5900,7 +5914,7 @@ const BookingViewLayer = () => {
                                     >
                                       Generate Final Invoice
                                     </button>
-                                  )}
+                                  )} */}
                                   {showDealerInvoiceButton && (
                                     <button
                                       className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"

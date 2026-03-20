@@ -382,6 +382,7 @@ const BasicInformationLayer = () => {
                         `${API_BASE}Leads/InsertOrUpdateFacebookLead`,
                         {
                           Id: bookingData.LeadId,
+                          bookingID: bookingData?.BookingID || 0,
                           FullName: fullName,
                           PhoneNumber: phone,
                           Email: email,
@@ -835,5 +836,3 @@ const BasicInformationLayer = () => {
 };
 
 export default BasicInformationLayer;
-
-// (previous duplicate implementation removed)
