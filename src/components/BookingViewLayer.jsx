@@ -678,11 +678,12 @@ const BookingViewLayer = () => {
       });
       return;
     }
+    const isGarage = pickupDropReassignRow?.ServiceType === "ServiceAtGarage";
     const newTechID = pickupDropReassignTech?.value ?? pickupDropReassignTech;
     const slotStr = pickupDropReassignTimeSlot[0] || "";
-    const startTime = slotStr.split(" - ")[0]?.trim() || "00:00";
+    const startTime = isGarage ? slotStr : slotStr.split(" - ")[0]?.trim() || "00:00";
     const newAssignDate = `${pickupDropReassignDate}T${startTime}`;
-    const assignTimeSlot = pickupDropReassignTimeSlot.join(",");
+    const assignTimeSlot = isGarage ? slotStr : pickupDropReassignTimeSlot.join(",");
 
     setPickupDropActionLoading(true);
     try {
@@ -1018,108 +1019,167 @@ const BookingViewLayer = () => {
     }
   };
 
-  const handleConfirmService = async () => {
-    const addOns = bookingData?.BookingAddOns || [];
-    const supervisorBookings = bookingData?.SupervisorBookings || [];
-    const allServices = [...addOns, ...supervisorBookings];
-    const itemsToConfirm = allServices.filter(
-      (a) => (a.IsSupervisor_Confirm ?? a.isSupervisor_Confirm) !== 1,
-    );
-    if (itemsToConfirm.length === 0) {
-      Swal.fire({
-        icon: "info",
-        title: "No pending services",
-        text: "All services are already confirmed by supervisor.",
-      });
-      return;
-    }
-    const result = await Swal.fire({
-      title: "Confirm services?",
-      text: `This will confirm ${itemsToConfirm.length} service(s) for this booking.`,
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Yes, Confirm",
-      cancelButtonText: "Cancel",
+  // const handleConfirmService = async () => {
+  //   const addOns = bookingData?.BookingAddOns || [];
+  //   const supervisorBookings = bookingData?.SupervisorBookings || [];
+  //   const allServices = [...addOns, ...supervisorBookings];
+  //   const itemsToConfirm = allServices.filter(
+  //     (a) => (a.IsSupervisor_Confirm ?? a.isSupervisor_Confirm) !== 1,
+  //   );
+  //   if (itemsToConfirm.length === 0) {
+  //     Swal.fire({
+  //       icon: "info",
+  //       title: "No pending services",
+  //       text: "All services are already confirmed by supervisor.",
+  //     });
+  //     return;
+  //   }
+  //   const result = await Swal.fire({
+  //     title: "Confirm services?",
+  //     text: `This will confirm ${itemsToConfirm.length} service(s) for this booking.`,
+  //     icon: "question",
+  //     showCancelButton: true,
+  //     confirmButtonText: "Yes, Confirm",
+  //     cancelButtonText: "Cancel",
+  //   });
+  //   if (!result.isConfirmed) return;
+
+  //   try {
+  //     const uid = parseInt(
+  //       duserId || localStorage.getItem("userId") || "0",
+  //       10,
+  //     );
+  //     const rolename = roleName || employeeData?.RoleName || "";
+
+  //     for (const addon of itemsToConfirm) {
+  //       const addOnId = addon.AddOnID ?? addon.addOnId ?? addon.Id ?? addon.id;
+  //       if (!addOnId) continue;
+
+  //       const includes =
+  //         Array.isArray(addon.Includes) && addon.Includes.length > 0
+  //           ? addon.Includes.map((i) => i.IncludeID ?? i.includeId)
+  //               .filter(Boolean)
+  //               .join(",")
+  //           : "";
+  //       const payload = {
+  //         id: addOnId,
+  //         bookingId: bookingData.BookingID,
+  //         bookingTrackID: bookingData.BookingTrackID,
+  //         leadId: bookingData.LeadId,
+  //         serviceType: addon.ServiceType || "Package",
+  //         serviceName: addon.ServiceName || "",
+  //         basePrice:
+  //           Number(addon.BasePrice ?? addon.ServicePrice ?? addon.Price ?? 0) ||
+  //           0,
+  //         quantity: Number(addon.Quantity ?? 1) || 1,
+  //         price:
+  //           Number(
+  //             addon.ServicePrice ?? addon.TotalPrice ?? addon.Price ?? 0,
+  //           ) || 0,
+  //         gstPercent: Number(addon.GSTPercent ?? 0) || 0,
+  //         gstAmount: Number(addon.GSTPrice ?? addon.GSTAmount ?? 0) || 0,
+  //         description: addon.Description || "",
+  //         dealerID:
+  //           addon.DealerID != null && addon.DealerID !== ""
+  //             ? Number(addon.DealerID)
+  //             : 0,
+  //         percentage: Number(addon.Percentage ?? 0) || 0,
+  //         supervisorRole: rolename,
+  //         our_Earnings: Number(addon.Our_Earnings ?? 0) || 0,
+  //         labourCharges: Number(addon.LabourCharges ?? 0) || 0,
+  //         modifiedBy: uid,
+  //         isActive: true,
+  //         type: "Confirm",
+  //         includes,
+  //         serviceId: Number(addon.ServiceId ?? 0) || 0,
+  //       };
+
+  //       await axios.put(
+  //         `${API_BASE}Supervisor/UpdateSupervisorBooking`,
+  //         payload,
+  //         {
+  //           headers: {
+  //             "Content-Type": "application/json",
+  //             Authorization: `Bearer ${token}`,
+  //           },
+  //         },
+  //       );
+  //     }
+
+  //     Swal.fire({
+  //       icon: "success",
+  //       title: "Confirmed",
+  //       text: "Services confirmed successfully.",
+  //     });
+  //     fetchBookingData();
+  //   } catch (error) {
+  //     console.error("Confirm Service Error:", error);
+  //     Swal.fire({
+  //       icon: "error",
+  //       title: "Error",
+  //       text: error?.response?.data?.message || "Failed to confirm services.",
+  //     });
+  //   }
+  // };
+
+const handleConfirmService = async () => {
+  const addOns = bookingData?.BookingAddOns || [];
+  const supervisorBookings = bookingData?.SupervisorBookings || [];
+  const allServices = [...addOns, ...supervisorBookings];
+  const itemsToConfirm = allServices.filter(
+    (a) => (a.IsSupervisor_Confirm ?? a.isSupervisor_Confirm) !== 1,
+  );
+
+  if (itemsToConfirm.length === 0) {
+    Swal.fire({
+      icon: "info",
+      title: "No pending services",
+      text: "All services are already confirmed by supervisor.",
     });
-    if (!result.isConfirmed) return;
+    return;
+  }
 
-    try {
-      const uid = parseInt(
-        duserId || localStorage.getItem("userId") || "0",
-        10,
-      );
-      const rolename = roleName || employeeData?.RoleName || "";
+  const result = await Swal.fire({
+    title: "Confirm services?",
+    text: `This will confirm ${itemsToConfirm.length} service(s) for this booking.`,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "Yes, Confirm",
+    cancelButtonText: "Cancel",
+  });
+  if (!result.isConfirmed) return;
 
-      for (const addon of itemsToConfirm) {
-        const addOnId = addon.AddOnID ?? addon.addOnId ?? addon.Id ?? addon.id;
-        if (!addOnId) continue;
+  try {
+    const supervisorId = Number(duserId || localStorage.getItem("userId") || 0);
+    const bookingId = bookingData?.BookingID;
 
-        const includes =
-          Array.isArray(addon.Includes) && addon.Includes.length > 0
-            ? addon.Includes.map((i) => i.IncludeID ?? i.includeId)
-                .filter(Boolean)
-                .join(",")
-            : "";
-        const payload = {
-          id: addOnId,
-          bookingId: bookingData.BookingID,
-          bookingTrackID: bookingData.BookingTrackID,
-          leadId: bookingData.LeadId,
-          serviceType: addon.ServiceType || "Package",
-          serviceName: addon.ServiceName || "",
-          basePrice:
-            Number(addon.BasePrice ?? addon.ServicePrice ?? addon.Price ?? 0) ||
-            0,
-          quantity: Number(addon.Quantity ?? 1) || 1,
-          price:
-            Number(
-              addon.ServicePrice ?? addon.TotalPrice ?? addon.Price ?? 0,
-            ) || 0,
-          gstPercent: Number(addon.GSTPercent ?? 0) || 0,
-          gstAmount: Number(addon.GSTPrice ?? addon.GSTAmount ?? 0) || 0,
-          description: addon.Description || "",
-          dealerID:
-            addon.DealerID != null && addon.DealerID !== ""
-              ? Number(addon.DealerID)
-              : 0,
-          percentage: Number(addon.Percentage ?? 0) || 0,
-          supervisorRole: rolename,
-          our_Earnings: Number(addon.Our_Earnings ?? 0) || 0,
-          labourCharges: Number(addon.LabourCharges ?? 0) || 0,
-          modifiedBy: uid,
-          isActive: true,
-          type: "Confirm",
-          includes,
-          serviceId: Number(addon.ServiceId ?? 0) || 0,
-        };
+    await axios.post(
+      `${API_BASE}Supervisor/confirm-by-bookingid?bookingId=${encodeURIComponent(
+        bookingId,
+      )}&supervisorId=${encodeURIComponent(supervisorId)}`,
+      null,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
 
-        await axios.put(
-          `${API_BASE}Supervisor/UpdateSupervisorBooking`,
-          payload,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-      }
-
-      Swal.fire({
-        icon: "success",
-        title: "Confirmed",
-        text: "Services confirmed successfully.",
-      });
-      fetchBookingData();
-    } catch (error) {
-      console.error("Confirm Service Error:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: error?.response?.data?.message || "Failed to confirm services.",
-      });
-    }
-  };
+    Swal.fire({
+      icon: "success",
+      title: "Confirmed",
+      text: "Services confirmed successfully.",
+    });
+    fetchBookingData();
+  } catch (error) {
+    console.error("Confirm Service Error:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: error?.response?.data?.message || "Failed to confirm services.",
+    });
+  }
+};
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
@@ -1953,7 +2013,7 @@ const BookingViewLayer = () => {
       );
       if (response.status === 200 || response.status === 201) {
         if (response.data.success) {
-          Swal.fire("Success!", "Status updated successfully.", "success");
+          Swal.fire("Success!", "Service status updated successfully.", "success");
         } else {
           Swal.fire(
             "Error",
@@ -2283,7 +2343,7 @@ const BookingViewLayer = () => {
         title: "Details required",
         html: `
         <div class='text-start small'>
-          <p class='mb-1'>Please Enter the following details before continuing:</p>
+          <p class='mb-1'>Please enter following details before continuing:</p>
           <ul class='mb-2 ps-3'>
             ${fields.map((f) => `<li>${f}</li>`).join("")}
           </ul>
@@ -3161,6 +3221,13 @@ const BookingViewLayer = () => {
       // ignore scroll errors
     }
   }, [bookingData]);
+
+  const formatPickType = (type = "") => {
+     if (!type) return "—";
+  if (type.toLowerCase().includes("pick")) return "Car Pick";
+  if (type.toLowerCase().includes("drop")) return "Car Drop";
+  return type;
+};
 
   return (
     <>
@@ -6060,56 +6127,52 @@ const BookingViewLayer = () => {
                                 ? `${m[1].padStart(2, "0")}:${m[2]}`
                                 : "";
                             };
-                            const steps = list.map((record, idx) => {
-                              const pickType = record.PickType || "";
-                              // const routeType = record.RouteType || "";
-                              const routeType =
-                                record.RouteType == "CustomerToDealer"
-                                  ? "Customer To Dealer"
-                                  : record.RouteType == "DealerToCustomer"
-                                    ? "Dealer To Customer"
-                                    : record.RouteType == "DealerToDealer"
-                                      ? "Dealer To Dealer"
-                                      : "—";
+                        const steps = list.map((record, idx) => {
+                        const formattedPickType = formatPickType(record.PickType);
 
-                              const isPick = pickType
-                                .toLowerCase()
-                                .includes("pick");
-                              const label =
-                                [pickType, routeType]
-                                  .filter(Boolean)
-                                  .join(" – ") || "Service at Doorstep";
-                              const assignStr = record.AssignDate
-                                ? new Date(record.AssignDate).toLocaleString(
-                                    "en-IN",
-                                    {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    },
-                                  )
-                                : "—";
-                              const sub =
-                                record.PickupDate && record.PickupTime
-                                  ? `${displayDate(record.PickupDate)} ${formatTimeOnly(record.PickupTime)}`
-                                  : record.DeliveryDate && record.DeliveryTime
-                                    ? `${displayDate(record.DeliveryDate)} ${formatTimeOnly(record.DeliveryTime)}`
-                                    : assignStr;
-                              const done = !!(
-                                record.PickupDate || record.DeliveryDate
-                              );
-                              return {
-                                key: record.Id ?? idx,
-                                label,
-                                sub,
-                                icon: isPick
-                                  ? "mdi:car-pickup"
-                                  : "mdi:car-side",
-                                done,
-                              };
-                            });
+                        const routeType =
+                          record.RouteType === "CustomerToDealer"
+                            ? "Customer To Dealer"
+                            : record.RouteType === "DealerToCustomer"
+                            ? "Dealer To Customer"
+                            : record.RouteType === "DealerToDealer"
+                            ? "Dealer To Dealer"
+                            : "—";
+
+                        const isPick = (record.PickType || "").toLowerCase().includes("pick");
+
+                        const assignStr = record.AssignDate
+                          ? new Date(record.AssignDate).toLocaleString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "—";
+
+                        const sub =
+                          record.PickupDate && record.PickupTime
+                            ? `${displayDate(record.PickupDate)} ${formatTimeOnly(record.PickupTime)}`
+                            : record.DeliveryDate && record.DeliveryTime
+                            ? `${displayDate(record.DeliveryDate)} ${formatTimeOnly(record.DeliveryTime)}`
+                            : assignStr;
+
+                        const label =
+                          [formattedPickType, routeType]
+                            .filter(Boolean)
+                            .join(" – ") || "Service at Doorstep";
+
+                        const done = !!(record.PickupDate || record.DeliveryDate);
+
+                        return {
+                          key: record.Id ?? idx,
+                          label,
+                          sub,
+                          icon: isPick ? "mdi:car-pickup" : "mdi:car-side",
+                          done,
+                        };
+                      });
                             if (steps.length === 0) {
                               return (
                                 <p className="text-muted small mb-0 text-center py-3">
@@ -8965,66 +9028,80 @@ const BookingViewLayer = () => {
                         }
                       />
                     </div>
-                    <div className="col-12">
-                      <label className="form-label small fw-semibold">
-                        Time Slot
-                      </label>
-                      <Select
-                        isMulti
-                        menuPortalTarget={document.body}
-                        menuPosition="fixed"
-                        styles={{
-                          menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                        }}
-                        options={
-                          timeSlots
-                            ?.filter((slot) => {
-                              if (!slot?.IsActive) return false;
-                              if (pickupDropRescheduleDate !== today)
-                                return true;
-                              const now = new Date();
-                              const [h, m] = (slot.StartTime || "00:00")
-                                .split(":")
-                                .map(Number);
-                              const slotTime = new Date();
-                              slotTime.setHours(h, m, 0, 0);
-                              return slotTime > now;
-                            })
-                            ?.sort((a, b) => {
-                              const [aH, aM] = (a.StartTime || "00:00")
-                                .split(":")
-                                .map(Number);
-                              const [bH, bM] = (b.StartTime || "00:00")
-                                .split(":")
-                                .map(Number);
-                              return aH * 60 + aM - (bH * 60 + bM);
-                            })
-                            ?.map((slot) => {
-                              const val = `${slot.StartTime} - ${slot.EndTime}`;
-                              return {
-                                value: val,
-                                label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}`,
-                              };
-                            }) ?? []
-                        }
-                        value={
-                          pickupDropRescheduleTimeSlot?.map((val) => {
-                            const [s, e] = (val || "").split(/\s*-\s*/);
-                            return {
-                              value: val,
-                              label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}`,
-                            };
-                          }) ?? []
-                        }
-                        onChange={(opts) =>
-                          setPickupDropRescheduleTimeSlot(
-                            opts ? opts.map((o) => o.value) : [],
-                          )
-                        }
-                        placeholder="Select time slot(s)"
-                        isDisabled={!pickupDropRescheduleDate}
-                      />
-                    </div>
+                   <div className="col-12">
+ {pickupDropRescheduleRow?.ServiceType === "ServiceAtGarage" ? (
+    <>
+      <label className="form-label small fw-semibold">Time</label>
+      <input
+        type="time"
+        className="form-control form-control-sm py-2"
+        value={pickupDropReassignTimeSlot?.[0] || ""}
+        onChange={(e) => {
+          const val = e.target.value;
+          if (isPastTimeForDate(pickupDropReassignDate, val)) {
+            e.currentTarget?.blur?.();
+            setTimeout(() => e.currentTarget?.blur?.(), 0);
+            document.activeElement?.blur?.();
+            Swal.fire({
+              icon: "warning",
+              title: "Invalid Time",
+              text: "You cannot select a past time for today.",
+            });
+            setPickupDropReassignTimeSlot([]);
+            return;
+          }
+          setPickupDropReassignTimeSlot(val ? [val] : []);
+        }}
+        disabled={!pickupDropReassignDate}
+      />
+    </>
+  ) : (
+    <>
+      <label className="form-label small fw-semibold">Time Slot</label>
+      <Select
+        isMulti
+        menuPortalTarget={document.body}
+        menuPosition="fixed"
+        styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+        options={
+          timeSlots
+            ?.filter((slot) => {
+              if (!slot?.IsActive) return false;
+              if (pickupDropReassignDate !== today) return true;
+              const now = new Date();
+              const [h, m] = (slot.StartTime || "00:00").split(":").map(Number);
+              const slotTime = new Date();
+              slotTime.setHours(h, m, 0, 0);
+              return slotTime > now;
+            })
+            ?.sort((a, b) => {
+              const [aH, aM] = (a.StartTime || "00:00").split(":").map(Number);
+              const [bH, bM] = (b.StartTime || "00:00").split(":").map(Number);
+              return aH * 60 + aM - (bH * 60 + bM);
+            })
+            ?.map((slot) => {
+              const val = `${slot.StartTime} - ${slot.EndTime}`;
+              return {
+                value: val,
+                label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}`,
+              };
+            }) ?? []
+        }
+        value={
+          pickupDropReassignTimeSlot?.map((val) => {
+            const [s, e] = (val || "").split(/\s*-\s*/);
+            return { value: val, label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}` };
+          }) ?? []
+        }
+        onChange={(opts) =>
+          setPickupDropReassignTimeSlot(opts ? opts.map((o) => o.value) : [])
+        }
+        placeholder="Select time slot(s)"
+        isDisabled={!pickupDropReassignDate}
+      />
+    </>
+  )}
+  </div>
                   </div>
                 </div>
                 <div className="modal-footer border-0 d-flex justify-content-end gap-2">
