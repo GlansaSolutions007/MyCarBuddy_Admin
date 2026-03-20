@@ -73,9 +73,7 @@ const ServiceTimelineBoard = () => {
         allServices.every(
           (s) => (s.IsSupervisor_Confirm ?? s.isSupervisor_Confirm) === 1,
         );
-      const hasTechAssigned = supervisorBookings.some(
-        (s) => s.TechID || s.TechnicinaName,
-      );
+      const hasTechAssigned = b.ServiceType === "ServiceAtHome" || b.ServiceType === "ServiceAtGarage";
 
       const isPaymentPending =
         paymentStatus !== "Success" && paymentStatus !== "Partialpaid";
@@ -84,11 +82,11 @@ const ServiceTimelineBoard = () => {
       if (bookingStatus === "Completed" && allCompleted && isPaymentPending) {
         // Booking completed, all services confirmed, but payment not fully done
         buckets.paymentBookingPending.push(b);
-      } else if (hasTechAssigned) {
+      } else if (hasTechAssigned && bookingStatus !== "Completed" && bookingStatus !== "Cancelled" && bookingStatus !== "Refunded") {
         buckets.serviceInProgress.push(b);
-      } else if (hasAnyConfirmed) {
+      } else if (hasAnyConfirmed && bookingStatus !== "Completed" && bookingStatus !== "Cancelled" && bookingStatus !== "Refunded") {
         buckets.customerConfirmation.push(b);
-      } else {
+      } else if(!hasTechAssigned && !hasAnyConfirmed && bookingStatus !== "Completed" && bookingStatus !== "Cancelled" && bookingStatus !== "Refunded"){
         buckets.bookingsNotConfirmed.push(b);
       }
     });
@@ -188,7 +186,7 @@ const ServiceTimelineBoard = () => {
               {b.BookingID && (
                 <Link
                   to={`/booking-view/${b.BookingID}`}
-                  className="btn btn-xs btn-light border-0 text-primary d-inline-flex align-items-center gap-1"
+                  className="btn btn-xs btn-primary-600 btn-light border-0 text-white d-inline-flex align-items-center gap-1 pt-0 pb-0"
                 >
                   <Icon icon="mdi:eye-outline" width={14} height={14} />
                   View
@@ -197,7 +195,7 @@ const ServiceTimelineBoard = () => {
               {b.LeadId && b.BookingID && b.BookingTrackID && (
                 <Link
                   to={`/book-service/${b.LeadId}/${b.BookingID}/${b.BookingTrackID}`}
-                  className="btn btn-xs btn-outline-primary d-inline-flex align-items-center gap-1"
+                  className="btn btn-xs btn-warning-600 btn-outline-primary d-inline-flex align-items-center gap-1 pt-0 pb-0"
                 >
                   <Icon icon="mdi:pencil-outline" width={14} height={14} />
                   Services
@@ -295,7 +293,7 @@ const ServiceTimelineBoard = () => {
             <div className="d-flex align-items-center justify-content-between">
               <span className="fw-semibold small text-slate-900 d-flex align-items-center gap-1">
                 <Icon icon="mdi:account-check-outline" width={16} height={16} />
-                Customer Confirmation
+                Customer Confirmation 
               </span>
               <span className="badge bg-white text-amber-600 small shadow-sm text-primary">
                 {columns.customerConfirmation.length}
