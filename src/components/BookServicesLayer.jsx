@@ -35,7 +35,7 @@ const BookServicesLayer = () => {
   const isAdmin = role === "Admin" || roleId === "1";
   const isTelecaller = roleId === "6" || employeeData?.RoleName === "Telecaller";
   const isTelecallerHead = roleId === "5" || employeeData?.RoleName === "Telecaller Head";
-  const isSupportDept = employeeData?.DeptId === "2" || employeeData?.DepartmentName === "Support";
+  const isSupportDept = employeeData?.DeptId === 2;
 
   const [dealersList, setDealersList] = useState([]);
   const [bookingData, setBookingData] = useState(null);
@@ -77,11 +77,23 @@ const BookServicesLayer = () => {
     return mode === "inspection" || only === "inspection";
   }, [location.search]);
 
+  const serviceOnly = useMemo(() => {
+  const params = new URLSearchParams(location.search || "");
+  const mode = (params.get("bookingMode") || "").toLowerCase();
+  return mode === "service";
+  }, [location.search]); 
+
   useEffect(() => {
     if (!inspectionOnly) return;
     setShowBookingChoiceModal(false);
     setBookingMode("inspection");
   }, [inspectionOnly]);
+
+  useEffect(() => {
+  if (!serviceOnly) return;
+  setShowBookingChoiceModal(false); // ❌ skip modal
+  setBookingMode("service");        // ✅ open service directly
+}, [serviceOnly]);
 
   const [inspectionType, setInspectionType] = useState("");
   const [inspectionDate, setInspectionDate] = useState("");
@@ -2019,7 +2031,7 @@ const BookServicesLayer = () => {
         //   isSupervisorHead ||
         //   isAdmin;
         const canModify =
-          row.status !== "Confirmed" && isSupportDept;
+          row.status !== "Confirmed" && !isSupportDept;
         return (
           <input
             type="number"
@@ -2111,7 +2123,7 @@ const BookServicesLayer = () => {
         //   isSupervisorHead ||
         //   isAdmin;
         const canModify =
-          row.status !== "Confirmed" && isSupportDept;
+          row.status !== "Confirmed" && !isSupportDept;
         return (
           <input
             type="number"
@@ -2221,7 +2233,7 @@ const BookServicesLayer = () => {
         //   isSupervisorHead ||
         //   isAdmin;
         const canModify =
-          row.status !== "Confirmed" && isSupportDept;
+          row.status !== "Confirmed" && !isSupportDept;
         return (
           <input
             type="number"
@@ -2314,7 +2326,7 @@ const BookServicesLayer = () => {
         //   isSupervisorHead ||
         //   isAdmin;
         const canModify =
-          row.status !== "Confirmed" && isSupportDept;
+          row.status !== "Confirmed" && !isSupportDept;
         return (
           <input
             type="number"
@@ -2499,7 +2511,7 @@ const BookServicesLayer = () => {
             //   isSupervisorHead ||
             //   isAdmin;
             const canModify =
-          row.status !== "Confirmed" && isSupportDept;
+          row.status !== "Confirmed" && !isSupportDept;
             return (
               <input
                 type="number"
@@ -2558,7 +2570,7 @@ const BookServicesLayer = () => {
             //   isSupervisorHead ||
             //   isAdmin;
             const canModify =
-          row.status !== "Confirmed" && isSupportDept;
+          row.status !== "Confirmed" && !isSupportDept;
             return (
               <input
                 type="number"
@@ -3162,7 +3174,7 @@ const BookServicesLayer = () => {
                       className="form-control"
                       value={price}
                       min={0}
-                      disabled={!isSupportDept}
+                      disabled={isSupportDept}
                       // onChange={(e) => setPrice(Number(e.target.value) || 0)}
                       onChange={(e) => setPrice(e.target.value)}
                       placeholder="0.00"
