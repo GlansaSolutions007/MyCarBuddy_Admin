@@ -2099,9 +2099,10 @@ const handleConfirmService = async () => {
   `,
       });
 
-      return;
+      return false;
     }
-      navigate(`/invoice-view/${bookingData?.BookingID}?type=Estimation`);
+      // navigate(`/invoice-view/${bookingData?.BookingID}?type=Estimation`);
+      return true;
   }
 
   const showGenerateInvoiceConfirm = (name, generateHandler, invoiceType) => {
@@ -2402,7 +2403,6 @@ const handleConfirmService = async () => {
 
       return false;
     }
-
     return true;
   };
 
@@ -4042,16 +4042,12 @@ const handleConfirmService = async () => {
                     (bookingData?.BookingAddOns?.length ?? 0) === 1 &&
                     (bookingData?.SupervisorBookings?.length ?? 0) === 0 && (
                       <Link
-                        to={
-                          ensureBasicDetails()
-                            ? `/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`
-                            : "#"
-                        }
-                        onClick={(e) => {
-                          if (!ensureBasicDetails()) {
-                            e.preventDefault();
-                          }
-                        }}
+                        to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
+                          onClick={(e) => {
+                            if (!ensureBasicDetails()) {
+                              e.preventDefault(); 
+                            }
+                          }}
                         className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
                         title="Service converted, add extra services"
                       >
@@ -4073,16 +4069,12 @@ const handleConfirmService = async () => {
                         (bookingData?.Isinspection === 0 &&
                           bookingData?.Isservice_converted === 0)) && (
                         <Link
-                          to={
-                            ensureBasicDetails()
-                              ? `/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`
-                              : "#"
-                          }
-                          onClick={(e) => {
-                            if (!ensureBasicDetails()) {
-                              e.preventDefault();
-                            }
-                          }}
+                          to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
+                            onClick={(e) => {
+                              if (!ensureBasicDetails()) {
+                                e.preventDefault(); // Stop navigation if details are missing
+                              }
+                            }}
                           className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
                           title={
                             roleName === "Field Advisor"
@@ -5968,8 +5960,8 @@ const handleConfirmService = async () => {
                                             e.preventDefault();
                                            
                                           }
-                                          else{
-                                             CheckServiceAmount();
+                                          else if(!CheckServiceAmount()){
+                                             e.preventDefault();
                                           }
                                         }}
                                       >
