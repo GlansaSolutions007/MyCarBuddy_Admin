@@ -2069,6 +2069,41 @@ const handleConfirmService = async () => {
     }
   };
 
+  const CheckServiceAmount = () => {
+     const zeroAmountServices = [
+      ...(bookingData?.BookingAddOns || []),
+      ...(bookingData?.SupervisorBookings || []),
+    ].filter((item) => {
+      const total = Number(
+        item.TotalPrice ??
+          Number(item.Price || 0) +
+            Number(item.GSTAmount || 0) +
+            Number(item.LabourCharges || 0) -
+            Number(item.CouponAmount || 0),
+      );
+
+      return total === 0;
+    });
+
+    if (zeroAmountServices.length > 0) {
+      const serviceNames = zeroAmountServices
+        .map((s) => s.ServiceName || s.Name || "Unnamed Service")
+        .join("<br>");
+
+      Swal.fire({
+        icon: "warning",
+        title: "Invoice Cannot Be Generated",
+        html: `
+    Please update the price for the following services before generating the invoice:<br><br>
+    ${serviceNames}
+  `,
+      });
+
+      return;
+    }
+      navigate(`/invoice-view/${bookingData?.BookingID}?type=Estimation`);
+  }
+
   const showGenerateInvoiceConfirm = (name, generateHandler, invoiceType) => {
     // const bookingTotal =
     //   Number(bookingData?.TotalPrice || 0) +
@@ -3102,7 +3137,7 @@ const handleConfirmService = async () => {
 
     const bookingDoneStage = {
       id: "booking-done",
-      title: "Booking Done",
+      title: "Booking Completed",
       icon: "mdi:check-circle",
       date: bookingData.BookingStatusUpdatedDate,
       status:
@@ -5925,12 +5960,16 @@ const handleConfirmService = async () => {
                                   {!hideAllActions &&
                                     roleName !== "Field Advisor" && (
                                       <Link
-                                        to={`/invoice-view/${bookingData?.BookingID}?type=Estimation`}
+                                        // to={`/invoice-view/${bookingData?.BookingID}?type=Estimation`}
                                         className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center"
                                         title="View Estimation Invoice"
                                         onClick={(e) => {
                                           if (!ensureBasicDetails()) {
                                             e.preventDefault();
+                                           
+                                          }
+                                          else{
+                                             CheckServiceAmount();
                                           }
                                         }}
                                       >
@@ -9028,31 +9067,30 @@ const handleConfirmService = async () => {
                         }
                       />
                     </div>
-                   <div className="col-12">
- {pickupDropRescheduleRow?.ServiceType === "ServiceAtGarage" ? (
+<div className="col-12">
+  {pickupDropRescheduleRow?.ServiceType === "ServiceAtGarage" ? (
     <>
       <label className="form-label small fw-semibold">Time</label>
       <input
         type="time"
         className="form-control form-control-sm py-2"
-        value={pickupDropReassignTimeSlot?.[0] || ""}
+        value={pickupDropRescheduleTimeSlot?.[0] || ""}
         onChange={(e) => {
           const val = e.target.value;
-          if (isPastTimeForDate(pickupDropReassignDate, val)) {
-            e.currentTarget?.blur?.();
-            setTimeout(() => e.currentTarget?.blur?.(), 0);
-            document.activeElement?.blur?.();
+
+          if (isPastTimeForDate(pickupDropRescheduleDate, val)) {
             Swal.fire({
               icon: "warning",
               title: "Invalid Time",
               text: "You cannot select a past time for today.",
             });
-            setPickupDropReassignTimeSlot([]);
+            setPickupDropRescheduleTimeSlot([]);
             return;
           }
-          setPickupDropReassignTimeSlot(val ? [val] : []);
+
+          setPickupDropRescheduleTimeSlot(val ? [val] : []);
         }}
-        disabled={!pickupDropReassignDate}
+        disabled={!pickupDropRescheduleDate}
       />
     </>
   ) : (
@@ -9067,41 +9105,40 @@ const handleConfirmService = async () => {
           timeSlots
             ?.filter((slot) => {
               if (!slot?.IsActive) return false;
-              if (pickupDropReassignDate !== today) return true;
+              if (pickupDropRescheduleDate !== today) return true;
+
               const now = new Date();
               const [h, m] = (slot.StartTime || "00:00").split(":").map(Number);
               const slotTime = new Date();
               slotTime.setHours(h, m, 0, 0);
+
               return slotTime > now;
             })
-            ?.sort((a, b) => {
-              const [aH, aM] = (a.StartTime || "00:00").split(":").map(Number);
-              const [bH, bM] = (b.StartTime || "00:00").split(":").map(Number);
-              return aH * 60 + aM - (bH * 60 + bM);
-            })
-            ?.map((slot) => {
-              const val = `${slot.StartTime} - ${slot.EndTime}`;
-              return {
-                value: val,
-                label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}`,
-              };
-            }) ?? []
+            ?.map((slot) => ({
+              value: `${slot.StartTime} - ${slot.EndTime}`,
+              label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}`,
+            })) ?? []
         }
         value={
-          pickupDropReassignTimeSlot?.map((val) => {
-            const [s, e] = (val || "").split(/\s*-\s*/);
-            return { value: val, label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}` };
+          pickupDropRescheduleTimeSlot?.map((val) => {
+            const [s, e] = val.split(" - ");
+            return {
+              value: val,
+              label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}`,
+            };
           }) ?? []
         }
         onChange={(opts) =>
-          setPickupDropReassignTimeSlot(opts ? opts.map((o) => o.value) : [])
+          setPickupDropRescheduleTimeSlot(
+            opts ? opts.map((o) => o.value) : []
+          )
         }
         placeholder="Select time slot(s)"
-        isDisabled={!pickupDropReassignDate}
+        isDisabled={!pickupDropRescheduleDate}
       />
     </>
   )}
-  </div>
+</div>
                   </div>
                 </div>
                 <div className="modal-footer border-0 d-flex justify-content-end gap-2">
