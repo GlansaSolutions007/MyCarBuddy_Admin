@@ -954,6 +954,26 @@ const LeadViewLayer = () => {
         body: JSON.stringify(payload),
       });
 
+      const now = new Date();
+      // choose correct date based on flow
+      const selectedDateValue =
+        callAnswered === "Not Ans"
+          ? notAnsweredFollowUpDate
+          : nextFollowUpDate;
+
+      if (selectedDateValue) {
+        const selectedDate = new Date(selectedDateValue);
+
+        if (selectedDate < now) {
+          Swal.fire({
+            icon: "warning",
+            title: "Invalid Time",
+            text: "You cannot select past date/time. Please choose an upcoming time.",
+          });
+          return;
+        }
+      } 
+
       if (!response.ok) {
         // try to read error body for debugging (optional)
         let errText = "";
@@ -1646,7 +1666,8 @@ const LeadViewLayer = () => {
                                     placeholder="DD-MM-YYYY"
                                     className="form-control"
                                     value={nextFollowUpDate}
-                                    min={new Date().toISOString().split("T")[0]}
+                                    // min={new Date().toISOString().split("T")[0]}
+                                    min={new Date().toISOString().slice(0, 16)}
                                     onChange={(e) =>
                                       setNextFollowUpDate(e.target.value)
                                     }
