@@ -202,6 +202,11 @@ const FieldAdvisorDashboardLayer = () => {
     }
   };
 
+  const handleCardClick = (viewKey) => {
+    const encodedView = encodeURIComponent(viewKey || "");
+    navigate(`/bookings${encodedView ? `?view=${encodedView}` : ""}`);
+  };
+
   return (
     <div className="row gy-4">
       <div className="col-12">
@@ -375,7 +380,11 @@ const FieldAdvisorDashboardLayer = () => {
             {/* Stat cards – same layout as DealerDashboardLayer */}
             <div className="row row-cols-xxxl-4 row-cols-lg-3 row-cols-md-2 row-cols-1 gy-4 mt-2">
               <div className="col">
-                <div className="card shadow-none border bg-gradient-start-1 h-100">
+                <div 
+                className="card shadow-none border bg-gradient-start-1 h-100"
+                style={{ cursor: "pointer" }}
+                onClick={() => handleCardClick("all")}
+                >
                   <div className="card-body p-20">
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
                       <div>
@@ -391,7 +400,11 @@ const FieldAdvisorDashboardLayer = () => {
               </div>
 
               <div className="col">
-                <div className="card shadow-none border bg-gradient-start-2 h-100">
+                <div 
+                className="card shadow-none border bg-gradient-start-2 h-100"
+                style={{ cursor: "pointer" }}
+                onClick={() => handleCardClick("today-assigned")}
+                >
                   <div className="card-body p-20">
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
                       <div>
@@ -407,7 +420,11 @@ const FieldAdvisorDashboardLayer = () => {
               </div>
 
               <div className="col">
-                <div className="card shadow-none border bg-gradient-start-3 h-100">
+                <div 
+                className="card shadow-none border bg-gradient-start-3 h-100"
+                style={{ cursor: "pointer" }}
+                onClick={() => handleCardClick("ongoing")}
+                >
                   <div className="card-body p-20">
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
                       <div>
@@ -423,7 +440,11 @@ const FieldAdvisorDashboardLayer = () => {
               </div>
 
               <div className="col">
-                <div className="card shadow-none border bg-gradient-start-4 h-100">
+                <div 
+                className="card shadow-none border bg-gradient-start-4 h-100"
+                style={{ cursor: "pointer" }}
+                onClick={() => handleCardClick("completed")}
+                >
                   <div className="card-body p-20">
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
                       <div>

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Icon } from "@iconify/react";
 import axios from "axios";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
 const API_BASE = import.meta.env.VITE_APIURL;
@@ -19,25 +19,33 @@ const addonMatchesDealer = (addon, dealerId) => {
 
 // Build flat list of pending addon rows: only BookingAddOns (and BookingsTempAddons) where DealerID matches and IsDealer_Confirm is Pending
 const getPendingAddonRows = (bookings, dealerId) => {
-  const rows = [];
+  const bookingMap = new Map();
   (Array.isArray(bookings) ? bookings : []).forEach((booking) => {
     const addonSources = [
       ...(booking?.BookingAddOns || []).map((a) => ({ addon: a, source: "BookingAddOns" })),
       ...(booking?.BookingsTempAddons || []).map((a) => ({ addon: a, source: "BookingsTempAddons" })),
     ];
+    const pendingAddons = [];
     addonSources.forEach(({ addon, source }, idx) => {
       if (!addonMatchesDealer(addon, dealerId)) return;
       if (!isPendingDealerConfirm(addon)) return;
       const addonId = addon?.AddOnID ?? addon?.AddOnId ?? addon?.Id ?? addon?.id ?? idx;
-      rows.push({
-        rowId: `${booking.BookingID}-${addonId}-${idx}`,
-        booking,
+      pendingAddons.push({
+        addonId,
         addon,
         source,
       });
     });
+    if (pendingAddons.length > 0) {
+      bookingMap.set(booking.BookingID, {
+        rowId: booking.BookingID,
+        booking,
+        pendingAddons,
+        pendingCount: pendingAddons.length,
+      });
+    }
   });
-  return rows;
+  return Array.from(bookingMap.values());
 };
 
 // Single service name from addon
@@ -76,22 +84,24 @@ const getCarDetails = (b) => {
 };
 
 const DealerDashboardLayer = () => {
- const [dashboardData, setDashboardData] = useState({
-  totalServices: 0,
-  acceptedBookings: 0,
-  rejectedBookings: 0,
-  ongoingBookings: 0,
-  todaysVehiclesHandover: 0,
-  totalAmount: 0,
-  receivedPayment: 0,
-  balancePayment: 0,
-  comletedBookings: 0,
-});
-const [loading, setLoading] = useState(false);
-const [pendingRows, setPendingRows] = useState([]);
-const [pendingLoading, setPendingLoading] = useState(false);
-const [actionRowId, setActionRowId] = useState(null);
-const [actionStatus, setActionStatus] = useState(null);
+
+  const navigate = useNavigate();
+  const [dashboardData, setDashboardData] = useState({
+    totalServices: 0,
+    acceptedBookings: 0,
+    rejectedBookings: 0,
+    ongoingBookings: 0,
+    todaysVehiclesHandover: 0,
+    totalAmount: 0,
+    receivedPayment: 0,
+    balancePayment: 0,
+    comletedBookings: 0,
+  });
+  const [loading, setLoading] = useState(false);
+  const [pendingRows, setPendingRows] = useState([]);
+  const [pendingLoading, setPendingLoading] = useState(false);
+  const [actionRowId, setActionRowId] = useState(null);
+  const [actionStatus, setActionStatus] = useState(null);
   const [showPriceModal, setShowPriceModal] = useState(false);
   const [priceModalRow, setPriceModalRow] = useState(null);
   const [priceForm, setPriceForm] = useState({
@@ -105,23 +115,23 @@ const [actionStatus, setActionStatus] = useState(null);
   const [displayCount, setDisplayCount] = useState(10);
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
-  
+
   // Format currency
   const formatCurrency = (amount = 0) => {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(amount || 0);
-};
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(amount || 0);
+  };
 
   // 🔹 API integration
   useEffect(() => {
-  if (userId) {
-    fetchDashboardData();
-    fetchPendingBookings();
-  }
-}, [userId]);
+    if (userId) {
+      fetchDashboardData();
+      fetchPendingBookings();
+    }
+  }, [userId]);
 
   useEffect(() => {
     if (!showPriceModal || !priceModalRow?.booking?.BookingID) return;
@@ -154,7 +164,7 @@ const [actionStatus, setActionStatus] = useState(null);
   const fetchDashboardData = async () => {
 
     try {
-       setLoading(true);
+      setLoading(true);
       const res = await axios.get(
         `${API_BASE}Dealer/GetDealerDashboardSummary?DealerID=${userId}`,
       );
@@ -171,12 +181,12 @@ const [actionStatus, setActionStatus] = useState(null);
         comletedBookings: data.CompletedBookings,
       });
 
-    } 
+    }
     catch (error) {
       console.error("Dashboard API error:", error);
     } finally {
-    setLoading(false);
-  }
+      setLoading(false);
+    }
   };
 
   const fetchPendingBookings = async () => {
@@ -199,69 +209,9 @@ const [actionStatus, setActionStatus] = useState(null);
     }
   };
 
-  const confirmAddon = async (row, status) => {
-    setActionRowId(row.rowId);
-    setActionStatus(status);
-    const addon = row.addon;
-    const addonId = addon?.AddOnID ?? addon?.AddOnId ?? addon?.Id ?? addon?.id;
-    if (!addonId) {
-      Swal.fire({ icon: "error", title: "Error", text: "Item ID not found." });
-      setActionRowId(null);
-      setActionStatus(null);
-      return;
-    }
-    const type = row.source === "BookingAddOns" ? "AddOn" : "TempAddon";
-    const dealerId = addon?.DealerID ?? addon?.dealerId ?? userId;
-    try {
-      const res = await axios.post(
-        `${API_BASE}Dealer/DealerApproveBookingBulk`,
-        {
-          ids: String(addonId),
-          type,
-          status,
-          dealerId: Number(dealerId) || dealerId,
-          createdBy: userId,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        }
-      );
-      if (res.status === 200 || res.status === 201 || res.data?.success !== false) {
-        setPendingRows((prev) => prev.filter((r) => r.rowId !== row.rowId));
-        if (status === "Approved") {
-          setPriceForm({ priceType: "Service price", amount: "", gstPercent: 18, gstAmount: "" });
-          setPriceModalAddonEnriched(null);
-          setPriceModalRow(row);
-          setShowPriceModal(true);
-        } else {
-          Swal.fire({
-            icon: "success",
-            title: "Rejected",
-            text: "Service rejected.",
-            timer: 2000,
-            showConfirmButton: false,
-          });
-        }
-      } else {
-        throw new Error(res.data?.message || "Request failed");
-      }
-    } catch (err) {
-      const msg = err.response?.data?.message || err.message || "Request failed.";
-      Swal.fire({ icon: "error", title: "Error", text: msg });
-    } finally {
-      setActionRowId(null);
-      setActionStatus(null);
-    }
-  };
 
-  const handleAccept = (row) => () => confirmAddon(row, "Approved");
-  const handleReject = (row) => () => confirmAddon(row, "Rejected");
-  const rowBusy = (row) => actionRowId === row.rowId;
-  const acceptBusy = (row) => rowBusy(row) && actionStatus === "Approved";
-  const rejectBusy = (row) => rowBusy(row) && actionStatus === "Rejected";
+
+
 
   const updatePriceForm = (updates) => {
     setPriceForm((prev) => {
@@ -361,18 +311,23 @@ const [actionStatus, setActionStatus] = useState(null);
     [hasMore, pendingLoading, pendingRows.length]
   );
 
+  const handleCardClick = (viewKey) => {
+    const encodedView = encodeURIComponent(viewKey || "");
+    navigate(`/bookings${encodedView ? `?view=${encodedView}` : ""}`);
+  };
+
   return (
     <div className="row gy-4">
       <div className="col-12">
         <div className="card">
           <div className="card-body">
-             <div className="card radius-8 col-md-12 bg-none">
-                <div className="card-body dashboard-first-section radius-8">
-                  <div className="position-absolute">
-                    <div className=" text-2xl font-semibold text-primary-foreground">
-                      Welcome {localStorage.getItem("name")}!
-                    </div>
-                    {/* <div className="card col-md-6">
+            <div className="card radius-8 col-md-12 bg-none">
+              <div className="card-body dashboard-first-section radius-8">
+                <div className="position-absolute">
+                  <div className=" text-2xl font-semibold text-primary-foreground">
+                    Welcome {localStorage.getItem("name")}!
+                  </div>
+                  {/* <div className="card col-md-6">
                       <div className=" py-2 px-3 ">
                         <div className="flex-1">
                           <div className="text-xs font-semibold text-primary-foreground/80">
@@ -384,26 +339,26 @@ const [actionStatus, setActionStatus] = useState(null);
                         </div>
                       </div>
                     </div> */}
-                  </div>
+                </div>
 
-                  {/* Character Image */}
-                  <div className="position-relative text-end">
-                    <img
-                      alt="user"
-                      loading="lazy"
-                      width="50"
-                      // height="201"
-                      decoding="async"
-                      className="w-full h-full object-cover"
-                      src="/assets/images/admin.webp"
-                      style={{ color: "transparent" }}
-                    />
-                  </div>
+                {/* Character Image */}
+                <div className="position-relative text-end">
+                  <img
+                    alt="user"
+                    loading="lazy"
+                    width="50"
+                    // height="201"
+                    decoding="async"
+                    className="w-full h-full object-cover"
+                    src="/assets/images/admin.webp"
+                    style={{ color: "transparent" }}
+                  />
                 </div>
               </div>
+            </div>
 
             {/* Services to confirm — pending IsDealer_Confirm */}
-            {/* <div className="col-12 mt-4">
+            <div className="col-12 mt-4">
               <style>{`
                 @keyframes dealer-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
                 @keyframes spin { to { transform: rotate(360deg); } }
@@ -422,7 +377,7 @@ const [actionStatus, setActionStatus] = useState(null);
                 <div className="card-header card-header-trend d-flex align-items-center justify-content-between flex-wrap gap-2 py-3 px-4">
                   <div className="d-flex align-items-center gap-2">
                     <span className="dealer-dot-pending flex-shrink-0" />
-                    <h6 className="mb-0 fw-bold">Services to confirm</h6>
+                    <h6 className="mb-0 fw-bold">Bookings with pending services</h6>
                     {pendingRows.length > 0 && (
                       <span className="badge bg-success bg-opacity-25 text-success ms-2">{pendingRows.length}</span>
                     )}
@@ -459,7 +414,7 @@ const [actionStatus, setActionStatus] = useState(null);
                           <tr>
                             <th className="text-nowrap ps-4">Booking ID</th>
                             <th className="text-nowrap">Date</th>
-                            <th className="text-nowrap">Service name</th>
+                            <th className="text-nowrap">Pending Services</th>
                             <th className="text-nowrap">Car details</th>
                             <th className="text-nowrap text-end pe-4">Action</th>
                           </tr>
@@ -476,41 +431,26 @@ const [actionStatus, setActionStatus] = useState(null);
                                 </Link>
                               </td>
                               <td>{formatDate(row.booking.BookingDate)}</td>
-                              <td>{getAddonServiceName(row.addon)}</td>
+                              <td title={row.pendingAddons.map(p => getAddonServiceName(p.addon)).join(', ')}>
+                                <div>
+                                  <strong>{row.pendingCount}</strong> service{row.pendingCount !== 1 ? 's' : ''}
+                                  {row.pendingCount > 1 && (
+                                    <>
+                                      <br />
+                                      <small className="text-muted">{row.pendingAddons.slice(0, 2).map(p => getAddonServiceName(p.addon)).join(', ') + (row.pendingCount > 2 ? '...' : '')}</small>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
                               <td>{getCarDetails(row.booking)}</td>
                               <td className="text-end pe-4">
-                                <div className="d-flex gap-2 justify-content-end">
-                                  <button
-                                    type="button"
-                                    className="btn btn-sm btn-success"
-                                    onClick={handleAccept(row)}
-                                    disabled={rowBusy(row)}
-                                  >
-                                    {acceptBusy(row) ? (
-                                      <Icon icon="solar:loading-bold" className="fs-6" style={{ animation: "spin 1s linear infinite" }} />
-                                    ) : (
-                                      <>
-                                        <Icon icon="solar:check-circle-bold" className="me-1" />
-                                        Accept
-                                      </>
-                                    )}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="btn btn-sm btn-outline-danger"
-                                    onClick={handleReject(row)}
-                                    disabled={rowBusy(row)}
-                                  >
-                                    {rejectBusy(row) ? (
-                                      <Icon icon="solar:loading-bold" className="fs-6" style={{ animation: "spin 1s linear infinite" }} />
-                                    ) : (
-                                      <>
-                                        <Icon icon="solar:close-circle-bold" className="me-1" />
-                                        Reject
-                                      </>
-                                    )}
-                                  </button>
-                                </div>
+                                <Link
+                                  to={`/dealer-booking-view/${row.booking.LeadId}`}
+                                  className="btn btn-sm btn-outline-primary"
+                                >
+                                  <Icon icon="solar:eye-bold" className="me-1" />
+                                  View
+                                </Link>
                               </td>
                             </tr>
                           ))}
@@ -527,13 +467,16 @@ const [actionStatus, setActionStatus] = useState(null);
                   )}
                 </div>
               </div>
-            </div> */}
+            </div>
 
             <div className="row row-cols-xxxl-4 row-cols-lg-3 row-cols-md-2 row-cols-1 gy-4 mt-2">
-             
+
               {/* Total Bookings */}
               <div className="col">
-                <div className="card shadow-none border bg-gradient-start-1 h-100">
+                <div className="card shadow-none border bg-gradient-start-1 h-100"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => handleCardClick("all")}
+                >
                   <div className="card-body p-20">
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
                       <div>
@@ -601,7 +544,7 @@ const [actionStatus, setActionStatus] = useState(null);
                 </div>
               </div>
 
-            {/* Completed Bookings */}
+              {/* Completed Bookings */}
               <div className="col">
                 <div className="card shadow-none border bg-gradient-start-4 h-100">
                   <div className="card-body p-20">
