@@ -5960,7 +5960,7 @@ const handleConfirmService = async () => {
                                   {!hideAllActions &&
                                     roleName !== "Field Advisor" && (
                                       <Link
-                                        // to={`/invoice-view/${bookingData?.BookingID}?type=Estimation`}
+                                        to={`/invoice-view/${bookingData?.BookingID}?type=Estimation`}
                                         className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center"
                                         title="View Estimation Invoice"
                                         onClick={(e) => {
@@ -9247,65 +9247,88 @@ const handleConfirmService = async () => {
                         }
                       />
                     </div>
-                    <div className="col-12">
-                      <label className="form-label small fw-semibold">
-                        Time Slot
-                      </label>
-                      <Select
-                        isMulti
-                        menuPortalTarget={document.body}
-                        menuPosition="fixed"
-                        styles={{
-                          menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                        }}
-                        options={
-                          timeSlots
-                            ?.filter((slot) => {
-                              if (!slot?.IsActive) return false;
-                              if (pickupDropReassignDate !== today) return true;
-                              const now = new Date();
-                              const [h, m] = (slot.StartTime || "00:00")
-                                .split(":")
-                                .map(Number);
-                              const slotTime = new Date();
-                              slotTime.setHours(h, m, 0, 0);
-                              return slotTime > now;
-                            })
-                            ?.sort((a, b) => {
-                              const [aH, aM] = (a.StartTime || "00:00")
-                                .split(":")
-                                .map(Number);
-                              const [bH, bM] = (b.StartTime || "00:00")
-                                .split(":")
-                                .map(Number);
-                              return aH * 60 + aM - (bH * 60 + bM);
-                            })
-                            ?.map((slot) => {
-                              const val = `${slot.StartTime} - ${slot.EndTime}`;
-                              return {
-                                value: val,
-                                label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}`,
-                              };
-                            }) ?? []
-                        }
-                        value={
-                          pickupDropReassignTimeSlot?.map((val) => {
-                            const [s, e] = (val || "").split(/\s*-\s*/);
-                            return {
-                              value: val,
-                              label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}`,
-                            };
-                          }) ?? []
-                        }
-                        onChange={(opts) =>
-                          setPickupDropReassignTimeSlot(
-                            opts ? opts.map((o) => o.value) : [],
-                          )
-                        }
-                        placeholder="Select time slot(s)"
-                        isDisabled={!pickupDropReassignDate}
-                      />
-                    </div>
+                   <div className="col-12">
+  {pickupDropReassignRow?.ServiceType === "ServiceAtGarage" ? (
+    // SHOW TIME PICKER FOR GARAGE WITH VALIDATION
+    <>
+      <label className="form-label small fw-semibold">Time</label>
+      <input
+        type="time"
+        className="form-control form-control-sm py-2"
+        value={pickupDropReassignTimeSlot?.[0] || ""}
+        onChange={(e) => {
+          const val = e.target.value;
+
+          // VALIDATION LOGIC
+          if (isPastTimeForDate(pickupDropReassignDate, val)) {
+            // Force blur to close the native time picker popup
+            e.currentTarget?.blur?.();
+            setTimeout(() => e.currentTarget?.blur?.(), 0);
+            document.activeElement?.blur?.();
+
+            Swal.fire({
+              icon: "warning",
+              title: "Invalid Time",
+              text: "You cannot select a past time for today.",
+            });
+
+            setPickupDropReassignTimeSlot([]); // Clear selection
+            return;
+          }
+
+          setPickupDropReassignTimeSlot(val ? [val] : []);
+        }}
+        disabled={!pickupDropReassignDate}
+      />
+    </>
+  ) : (
+    // SHOW MULTI-SELECT FOR HOME SERVICE (Existing Logic)
+    <>
+      <label className="form-label small fw-semibold">Time Slot</label>
+      <Select
+        isMulti
+        menuPortalTarget={document.body}
+        menuPosition="fixed"
+        styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+        options={
+          timeSlots
+            ?.filter((slot) => {
+              if (!slot?.IsActive) return false;
+              if (pickupDropReassignDate !== today) return true;
+              const now = new Date();
+              const [h, m] = (slot.StartTime || "00:00").split(":").map(Number);
+              const slotTime = new Date();
+              slotTime.setHours(h, m, 0, 0);
+              return slotTime > now;
+            })
+            ?.sort((a, b) => {
+              const [aH, aM] = (a.StartTime || "00:00").split(":").map(Number);
+              const [bH, bM] = (b.StartTime || "00:00").split(":").map(Number);
+              return aH * 60 + aM - (bH * 60 + bM);
+            })
+            ?.map((slot) => ({
+              value: `${slot.StartTime} - ${slot.EndTime}`,
+              label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}`,
+            })) ?? []
+        }
+        value={
+          pickupDropReassignTimeSlot?.map((val) => {
+            const [s, e] = (val || "").split(/\s*-\s*/);
+            return {
+              value: val,
+              label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}`,
+            };
+          }) ?? []
+        }
+        onChange={(opts) =>
+          setPickupDropReassignTimeSlot(opts ? opts.map((o) => o.value) : [])
+        }
+        placeholder="Select time slot(s)"
+        isDisabled={!pickupDropReassignDate}
+      />
+    </>
+  )}
+</div>
                   </div>
                 </div>
                 <div className="modal-footer border-0 d-flex justify-content-end gap-2">
