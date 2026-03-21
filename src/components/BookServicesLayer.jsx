@@ -35,7 +35,7 @@ const BookServicesLayer = () => {
   const isAdmin = role === "Admin" || roleId === "1";
   const isTelecaller = roleId === "6" || employeeData?.RoleName === "Telecaller";
   const isTelecallerHead = roleId === "5" || employeeData?.RoleName === "Telecaller Head";
-  const isTelicaller = String(roleId) === "5";
+  const isSupportDept = employeeData?.DeptId === "2" || employeeData?.DepartmentName === "Support";
 
   const [dealersList, setDealersList] = useState([]);
   const [bookingData, setBookingData] = useState(null);
@@ -1383,11 +1383,12 @@ const BookServicesLayer = () => {
           );
 
           if (response.status === 200) {
-            Swal.fire("Deleted!", "Service removed successfully.", "success");
-            const next = addedItems.filter((_, i) => i !== index);
-            setAddedItems(next);
-            setInitialItemsSnapshot(buildSnapshot(next));
+            Swal.fire("Discarded!", "Service discarded successfully.", "success");
+            // const next = addedItems.filter((_, i) => i !== index);
+            // setAddedItems(next);
+            // setInitialItemsSnapshot(buildSnapshot(next));
           }
+          fetchBookingData();
         } catch (err) {
           console.error(err);
           Swal.fire("Error", "Failed to delete service from server", "error");
@@ -1395,7 +1396,7 @@ const BookServicesLayer = () => {
         return;
       }
       // CASE 2: DELETE LOCAL UNSAVED ITEM
-      setAddedItems((prev) => prev.filter((_, i) => i !== index));
+      // setAddedItems((prev) => prev.filter((_, i) => i !== index));
       Swal.fire("Discard", "Service discarded successfully.", "success");
     });
   };
@@ -1444,7 +1445,7 @@ const BookServicesLayer = () => {
       }
       // CASE 2: DELETE LOCAL UNSAVED ITEM
       setAddedItems((prev) => prev.filter((_, i) => i !== index));
-      Swal.fire("Removed", "Service removed successfully.", "success");
+      Swal.fire("Deleted!", "Service deleted successfully.", "success");
     });
   };
 
@@ -2018,7 +2019,7 @@ const BookServicesLayer = () => {
         //   isSupervisorHead ||
         //   isAdmin;
         const canModify =
-          row.status !== "Confirmed" && !isTelicaller;
+          row.status !== "Confirmed" && isSupportDept;
         return (
           <input
             type="number"
@@ -2110,7 +2111,7 @@ const BookServicesLayer = () => {
         //   isSupervisorHead ||
         //   isAdmin;
         const canModify =
-          row.status !== "Confirmed" && !isTelicaller;
+          row.status !== "Confirmed" && isSupportDept;
         return (
           <input
             type="number"
@@ -2220,7 +2221,7 @@ const BookServicesLayer = () => {
         //   isSupervisorHead ||
         //   isAdmin;
         const canModify =
-          row.status !== "Confirmed" && !isTelicaller;
+          row.status !== "Confirmed" && isSupportDept;
         return (
           <input
             type="number"
@@ -2313,7 +2314,7 @@ const BookServicesLayer = () => {
         //   isSupervisorHead ||
         //   isAdmin;
         const canModify =
-          row.status !== "Confirmed" && !isTelicaller;
+          row.status !== "Confirmed" && isSupportDept;
         return (
           <input
             type="number"
@@ -2498,7 +2499,7 @@ const BookServicesLayer = () => {
             //   isSupervisorHead ||
             //   isAdmin;
             const canModify =
-          row.status !== "Confirmed" && !isTelicaller;
+          row.status !== "Confirmed" && isSupportDept;
             return (
               <input
                 type="number"
@@ -2557,7 +2558,7 @@ const BookServicesLayer = () => {
             //   isSupervisorHead ||
             //   isAdmin;
             const canModify =
-          row.status !== "Confirmed" && !isTelicaller;
+          row.status !== "Confirmed" && isSupportDept;
             return (
               <input
                 type="number"
@@ -3161,7 +3162,7 @@ const BookServicesLayer = () => {
                       className="form-control"
                       value={price}
                       min={0}
-                      disabled={isTelicaller}
+                      disabled={!isSupportDept}
                       // onChange={(e) => setPrice(Number(e.target.value) || 0)}
                       onChange={(e) => setPrice(e.target.value)}
                       placeholder="0.00"
@@ -3524,7 +3525,7 @@ const BookServicesLayer = () => {
                           </div>
                         </div>
                       )}
-                    {(
+                    {/* {(
                       (isSupervisorHead || isAdmin) &&
                       employeeData?.DepartmentName !== "Support" &&
                       (hasNewItem || hasEdits)
@@ -3533,7 +3534,7 @@ const BookServicesLayer = () => {
                           You’ve added new items. Please submit them first to proceed
                           with booking confirmation.
                         </div>
-                      )}
+                      )} */}
                     <div className="d-flex justify-content-center gap-3 mt-6">
                       {/* showSubmitButton && */}
                       {
