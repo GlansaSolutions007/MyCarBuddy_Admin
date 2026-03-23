@@ -68,6 +68,8 @@ const BookServicesLayer = () => {
   const dealer = localStorage.getItem("role") || "Admin";
   const [showBookingChoiceModal, setShowBookingChoiceModal] = useState(false);
   const [bookingMode, setBookingMode] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmittingInspection, setIsSubmittingInspection] = useState(false);
   // null | "service" | "inspection"
 
   const inspectionOnly = useMemo(() => {
@@ -1468,7 +1470,7 @@ const BookServicesLayer = () => {
 
     const hasApiItems = addedItems.some((item) => item._apiId);
     const hasNewItems = addedItems.some((item) => !item._apiId);
-
+     setIsSubmitting(true);
     try {
       let apiItemsSaved = true;
       if (hasApiItems) {
@@ -1499,6 +1501,8 @@ const BookServicesLayer = () => {
     } catch (err) {
       console.error(err);
       Swal.fire("Error", err.response?.data?.message || "Failed to save changes", "error");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1745,7 +1749,7 @@ const BookServicesLayer = () => {
     if (!selectedInspectionPackage) {
       return Swal.fire("Error", "Please select an inspection package", "error");
     }
-
+     setIsSubmittingInspection(true);
     try {
       const timeSlotString = inspectionTimeSlot
         .map((slot) => slot.label)
@@ -1851,7 +1855,9 @@ const BookServicesLayer = () => {
           "Failed to submit inspection. Please try again.",
       });
       return false;
-    }
+    } finally {
+    setIsSubmittingInspection(false); 
+  }
   };
 
   const handleInspectionConfirm = async () => {
@@ -2972,9 +2978,16 @@ const BookServicesLayer = () => {
                       <button
                         className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
                         onClick={handleInspectionSubmit}
-                        disabled={!inspectionType || !inspectionDate || !Array.isArray(inspectionTimeSlot) || inspectionTimeSlot.length === 0}
+                        disabled={ isSubmittingInspection || !inspectionType || !inspectionDate || !Array.isArray(inspectionTimeSlot) || inspectionTimeSlot.length === 0}
                       >
-                        Submit
+                       {isSubmittingInspection ? ( 
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            Submitting...
+                          </>
+                        ) : (
+                          "Submit"
+                        )}
                       </button>
                     </div>
                   )}
@@ -3554,14 +3567,21 @@ const BookServicesLayer = () => {
                           <button
                             className="btn btn-primary-600 btn-sm px-3 text-success-main d-inline-flex align-items-center justify-content-center"
                             onClick={handleCombinedSubmit}
-                            disabled={
+                            disabled={ isSubmitting || 
                               (isSupervisorHead || isAdmin) &&
                               employeeData?.DepartmentName !== "Support"
                                 ? !isVerified
                                 : false
                             }
                           >
-                            Submit
+                           {isSubmitting ? ( 
+                            <>
+                              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                              Submitting...
+                            </>
+                          ) : (
+                            "Submit"
+                          )}
                           </button>
                         )}
                       {/* {(isSupervisorHead ||

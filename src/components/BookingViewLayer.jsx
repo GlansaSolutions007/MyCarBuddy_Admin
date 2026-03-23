@@ -181,6 +181,20 @@ const BookingViewLayer = () => {
   const nowTime = new Date().toTimeString().slice(0, 5); // HH:mm
   const [isLoading, setIsLoading] = useState(false);
 
+  // buttons loaders
+  const [isConverting, setIsConverting] = useState(false);
+  const [isConfirmingService, setIsConfirmingService] = useState(false);
+  const [isConfirmingCustomer, setIsConfirmingCustomer] = useState(false);
+  const [isRejectingCustomer, setIsRejectingCustomer] = useState(false);
+  const [isInitialAssigning, setIsInitialAssigning] = useState(false);
+  const [isReassigning, setIsReassigning] = useState(false);
+  const [isConfirmingCompletion, setIsConfirmingCompletion] = useState(false);
+  const [isGarageAssigning, setIsGarageAssigning] = useState(false);
+  const [revertingServiceId, setRevertingServiceId] = useState(null);
+  const [isGeneratingEstimation, setIsGeneratingEstimation] = useState(false);
+  const [isGeneratingFinal, setIsGeneratingFinal] = useState(false);
+  const [isGeneratingDealer, setIsGeneratingDealer] = useState(false);
+
   // Filter time slots by date: upcoming = all active slots, today = only future slots
   const getFilteredTimeSlotsForDate = (selectedDate) => {
     const slots = Array.isArray(timeSlots) ? timeSlots : [];
@@ -622,6 +636,7 @@ const BookingViewLayer = () => {
       });
     } finally {
       setPickupDropActionLoading(false);
+
     }
   };
 
@@ -777,7 +792,7 @@ const BookingViewLayer = () => {
         AssignedBy: localStorage.getItem("userId"),
       };
     }
-
+    setIsReassigning(true);
     try {
       const res = await axios.put(apiUrl, payload, {
         headers: { Authorization: `Bearer ${token}` },
@@ -820,6 +835,8 @@ const BookingViewLayer = () => {
           error.response?.data?.message ||
           `Failed to assign ${assignType}. Please try again.`,
       });
+    } finally {
+      setIsReassigning(false);
     }
   };
 
@@ -972,7 +989,7 @@ const BookingViewLayer = () => {
     });
 
     if (!result.isConfirmed) return;
-
+     setIsConverting(true);
     try {
       await axios.post(
         `${API_BASE}Bookings/convert-inspection-to-service`,
@@ -1016,6 +1033,8 @@ const BookingViewLayer = () => {
           error?.response?.data?.message ||
           "Failed to convert inspection to service.",
       });
+    } finally {
+      setIsConverting(false);
     }
   };
 
@@ -1148,7 +1167,7 @@ const handleConfirmService = async () => {
     cancelButtonText: "Cancel",
   });
   if (!result.isConfirmed) return;
-
+  setIsConfirmingService(true);
   try {
     const supervisorId = Number(duserId || localStorage.getItem("userId") || 0);
     const bookingId = bookingData?.BookingID;
@@ -1178,6 +1197,8 @@ const handleConfirmService = async () => {
       title: "Error",
       text: error?.response?.data?.message || "Failed to confirm services.",
     });
+  } finally {
+    setIsConfirmingService(false);
   }
 };
 
@@ -1218,7 +1239,7 @@ const handleConfirmService = async () => {
       });
       return;
     }
-
+    setIsConfirmingCompletion(true);
     try {
       const formData = new FormData();
 
@@ -1260,6 +1281,8 @@ const handleConfirmService = async () => {
           err.message ||
           "Failed to confirm service.",
       });
+    } finally {
+      setIsConfirmingCompletion(false);
     }
   };
 
@@ -1459,7 +1482,7 @@ const handleConfirmService = async () => {
         method = "post";
       }
     }
-
+     setIsInitialAssigning(true);
     try {
       const res = await axios({
         method: method,
@@ -1515,6 +1538,8 @@ const handleConfirmService = async () => {
           error.response?.data?.message ||
           `Error while assigning ${initialAssignType}. Please check the console for details.`,
       });
+    } finally {
+      setIsInitialAssigning(false);
     }
   };
 
@@ -1580,7 +1605,7 @@ const handleConfirmService = async () => {
       });
 
       if (!confirmRevert.isConfirmed) return;
-
+       setRevertingServiceId(service.Id);
       const payload = {
         // bookingId: service.BookingId,
         // serviceId: service.ServiceId,
@@ -1617,7 +1642,9 @@ const handleConfirmService = async () => {
         text: "Something went wrong while reverting the service.",
         icon: "error",
       });
-    }
+    } finally {
+    setRevertingServiceId(null); 
+  }
   };
 
   const handleRefund = async (payment) => {
@@ -2106,15 +2133,6 @@ const handleConfirmService = async () => {
   }
 
   const showGenerateInvoiceConfirm = (name, generateHandler, invoiceType) => {
-    // const bookingTotal =
-    //   Number(bookingData?.TotalPrice || 0) +
-    //   Number(bookingData?.GSTAmount || 0) +
-    //   Number(bookingData?.LabourCharges || 0) -
-    //   Number(bookingData?.CouponAmount || 0);
-    // if (bookingTotal <= 0) {
-    //   Swal.fire("Error", "Please check amount.", "error");
-    //   return;
-    // }
     const zeroAmountServices = [
       ...(bookingData?.BookingAddOns || []),
       ...(bookingData?.SupervisorBookings || []),
@@ -2170,6 +2188,7 @@ const handleConfirmService = async () => {
       Swal.fire("Error", "Booking data not available.", "error");
       return;
     }
+     setIsGeneratingFinal(true);
     try {
       const res = await axios.post(
         `${API_BASE}Leads/GenerateFinalInvoice`,
@@ -2196,7 +2215,9 @@ const handleConfirmService = async () => {
         error?.response?.data?.message || "Failed to generate Final invoice.",
         "error",
       );
-    }
+    } finally {
+    setIsGeneratingFinal(false);
+  }
   };
   const handleGenerateEstimationInvoice = async () => {
     if (!bookingData?.BookingID) {
@@ -2285,7 +2306,7 @@ const handleConfirmService = async () => {
       });
       return;
     }
-
+    setIsGeneratingEstimation(true);
     try {
       const res = await axios.post(
         `${API_BASE}Leads/GenerateEstimationInvoice`,
@@ -2314,7 +2335,9 @@ const handleConfirmService = async () => {
           "Failed to generate Estimation invoice.",
         "error",
       );
-    }
+    } finally {
+    setIsGeneratingEstimation(false); 
+  }
   };
 
   const handleGenerateDealerInvoice = async () => {
@@ -2330,7 +2353,7 @@ const handleConfirmService = async () => {
       Swal.fire("Error", "Dealer ID not found.", "error");
       return;
     }
-
+    setIsGeneratingDealer(true);
     try {
       const res = await axios.post(
         `${API_BASE}Dealer/GenerateDealerInvoice`,
@@ -2358,7 +2381,9 @@ const handleConfirmService = async () => {
         error?.response?.data?.message || "Failed to generate Dealer invoice.",
         "error",
       );
-    }
+    } finally {
+    setIsGeneratingDealer(false); 
+  }
   };
 
   // Ensure basic details (booking date, address, supervisor) are filled before key actions
@@ -2378,11 +2403,12 @@ const handleConfirmService = async () => {
         icon: "warning",
         title: "Details required",
         html: `
-        <div class='text-start small'>
-          <p class='mb-1'>Please enter following details before continuing:</p>
-          <ul class='mb-2 ps-3'>
+        <div class='text-center small'>
+          <p class='mb-1'>Please enter following details before continuing:</p> <br/>
+          <ul class='mb-2 ps-3'> <strong>
             ${fields.map((f) => `<li>${f}</li>`).join("")}
-          </ul>
+          </strong> </ul>
+          <br/>
           <p class='mb-0'>Click <strong>Enter Details</strong> to fill them now.</p>
         </div>
       `,
@@ -2391,8 +2417,8 @@ const handleConfirmService = async () => {
         cancelButtonText: "Cancel",
         customClass: {
           confirmButton:
-            "btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2",
-          cancelButton: "btn btn-secondary btn-sm",
+            "btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center me-2",
+          cancelButton: "btn btn-secondary btn-sm ms-2",
         },
         buttonsStyling: false,
       }).then((res) => {
@@ -2506,7 +2532,7 @@ const handleConfirmService = async () => {
       });
       return;
     }
-
+    setIsConfirmingCustomer(true);
     try {
       // ✅ Convert selected IDs to comma string
       const addOnIdsString = selectedServiceIds.join(",");
@@ -2563,6 +2589,8 @@ const handleConfirmService = async () => {
         error?.response?.data?.message || " Customer Confirmation Failed.",
         "error",
       );
+    } finally {
+      setIsConfirmingCustomer(false);
     }
   };
 
@@ -2590,7 +2618,7 @@ const handleConfirmService = async () => {
       });
       return;
     }
-
+     setIsRejectingCustomer(true);
     try {
       // Convert selected IDs to comma string
       const addOnIdsString = rejectedServiceIds.join(",");
@@ -2623,7 +2651,9 @@ const handleConfirmService = async () => {
         error?.response?.data?.message || "Customer Rejection Failed.",
         "error",
       );
-    }
+    } finally {
+    setIsRejectingCustomer(false); 
+  }
   };
 
   const totalAmount =
@@ -4032,9 +4062,19 @@ const handleConfirmService = async () => {
                         className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2"
                         onClick={handleConvertToService}
                         title="Convert To Service"
+                        disabled={isConverting}
                       >
-                        <Icon icon="mdi:swap-horizontal-bold" />
-                        Convert To Service
+                        {isConverting ? ( // <--- Add this conditional logic
+                          <>
+                            <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            Converting...
+                          </>
+                        ) : (
+                          <>
+                            <Icon icon="mdi:swap-horizontal-bold" />
+                            Convert To Service
+                          </>
+                        )}
                       </button>
                     )}
                   {bookingData?.Isinspection === 1 &&
@@ -4122,9 +4162,19 @@ const handleConfirmService = async () => {
                               handleConfirmService();
                             }}
                             title="Confirm Service"
+                             disabled={isConfirmingService} 
                           >
-                            <Icon icon="mdi:check-circle-outline" />
-                            Confirm Service
+                            {isConfirmingService ? ( 
+                              <>
+                                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                Confirming...
+                              </>
+                            ) : (
+                              <>
+                                <Icon icon="mdi:check-circle-outline" />
+                                Confirm Service
+                              </>
+                            )}
                           </button>
                         );
                       })()}
@@ -5678,9 +5728,19 @@ const handleConfirmService = async () => {
                                                         CustomerRejectedBookings,
                                                       )
                                                     }
+                                                    disabled={revertingServiceId === CustomerRejectedBookings.Id}
                                                   >
-                                                    <i className="bi bi-arrow-counterclockwise me-1"></i>
-                                                    Revert
+                                                   {revertingServiceId === CustomerRejectedBookings.Id ? ( // <--- SHOW SPINNER
+                                                      <>
+                                                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                                        Reverting...
+                                                      </>
+                                                    ) : (
+                                                      <>
+                                                        <i className="bi bi-arrow-counterclockwise me-1"></i>
+                                                        Revert
+                                                      </>
+                                                    )}
                                                   </button>
                                                 </td>
                                               </tr>
@@ -5976,9 +6036,17 @@ const handleConfirmService = async () => {
                                     onClick={() => {
                                       if (!ensureBasicDetails()) return;
                                       showGenerateInvoiceConfirm("Generate Estimation Invoice", handleGenerateEstimationInvoice, "Estimation");
+                                      disabled={isGeneratingEstimation}
                                     }}
                                   >
-                                    Generate Estimation Invoice
+                                   {isGeneratingEstimation ? ( 
+                                          <>
+                                            <span className="spinner-border spinner-border-sm" role="status"></span>
+                                            Generating...
+                                          </>
+                                        ) : (
+                                          "Generate Estimation Invoice"
+                                        )}
                                   </button>
                                   )} */}
                                   {/* )} */}
@@ -6009,8 +6077,16 @@ const handleConfirmService = async () => {
                                           "Final",
                                         );
                                       }}
+                                        disabled={isGeneratingFinal}
                                     >
-                                      Generate Final Invoice
+                                     {isGeneratingFinal ? ( 
+                                      <>
+                                        <span className="spinner-border spinner-border-sm" role="status"></span>
+                                        Generating...
+                                      </>
+                                    ) : (
+                                      " Generate Final Invoice"
+                                    )}
                                     </button>
                                   )} */}
                                   {showDealerInvoiceButton && (
@@ -6024,8 +6100,16 @@ const handleConfirmService = async () => {
                                           "Dealer",
                                         );
                                       }}
+                                       disabled={isGeneratingDealer}
                                     >
-                                      Generate Dealer Invoice
+                                        {isGeneratingDealer ? ( 
+                                          <>
+                                            <span className="spinner-border spinner-border-sm" role="status"></span>
+                                            Generating...
+                                          </>
+                                        ) : (
+                                          "Generate Dealer Invoice"
+                                        )}
                                     </button>
                                   )}
                                 </div>
@@ -7604,12 +7688,20 @@ const handleConfirmService = async () => {
                     className="btn btn-press-effect btn-primary-600 btn-sm"
                     onClick={handleAssignConfirm}
                     disabled={
+                      isReassigning || 
                       !selectedReassignTimeSlot ||
                       (assignType === "technician" && !selectedTechnician) ||
                       (assignType === "supervisor" && !selectedSupervisor)
                     }
                   >
-                    Assign
+                     {isReassigning ? ( // <--- SHOW SPINNER
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Assigning...
+                      </>
+                    ) : (
+                      "Assign"
+                    )}
                   </button>
                 </div>
               </div>
@@ -8422,6 +8514,7 @@ const handleConfirmService = async () => {
                     className="btn btn-press-effect btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
                     onClick={handleInitialAssignConfirm}
                     disabled={
+                       isInitialAssigning ||
                       //   (initialAssignType !== "fieldAdvisor" && !seleInitialTimeSlot) ||
                       (initialAssignType === "technician" &&
                         !selectedInitialTechnician) ||
@@ -8433,7 +8526,14 @@ const handleConfirmService = async () => {
                       pickupDropReassignTimeSlot.length === 0
                     }
                   >
-                    Assign
+                    {isInitialAssigning ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Assigning...
+                      </>
+                    ) : (
+                      "Assign"
+                    )}
                   </button>
                 </div>
               </div>
@@ -8898,6 +8998,7 @@ const handleConfirmService = async () => {
                           type="button"
                           className="btn btn-press-effect btn-primary-600 btn-sm"
                           disabled={
+                            isGarageAssigning ||
                             (garageRoute === "customerToDealer" &&
                               garageTask === "carPickup" &&
                               !garageDeliverDealer) ||
@@ -8942,8 +9043,10 @@ const handleConfirmService = async () => {
                               });
                               return;
                             }
+                            setIsGarageAssigning(true);
                             const result =
                               await savePickupDeliveryTime(payload);
+                              setIsGarageAssigning(false);
                             if (result.ok) {
                               Swal.fire({
                                 icon: "success",
@@ -8963,7 +9066,14 @@ const handleConfirmService = async () => {
                             }
                           }}
                         >
-                          Assign
+                          {isGarageAssigning ? (
+                            <>
+                              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                              Assigning...
+                            </>
+                          ) : (
+                            "Assign"
+                          )}
                         </button>
                       )}
                     {garageStep === "details" &&
@@ -8972,6 +9082,7 @@ const handleConfirmService = async () => {
                           type="button"
                           className="btn btn-press-effect btn-primary btn-sm"
                           disabled={
+                            isGarageAssigning ||
                             !garagePickupDealer ||
                             !garageDeliverDealer ||
                             !garageDriver ||
@@ -8988,8 +9099,10 @@ const handleConfirmService = async () => {
                               });
                               return;
                             }
+                            setIsGarageAssigning(true);
                             const result =
                               await savePickupDeliveryTime(payload);
+                              setIsGarageAssigning(false);
                             if (result.ok) {
                               Swal.fire({
                                 icon: "success",
@@ -9009,7 +9122,14 @@ const handleConfirmService = async () => {
                             }
                           }}
                         >
-                          Submit
+                          {isGarageAssigning ? (
+                            <>
+                              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                              Submiting...
+                            </>
+                          ) : (
+                            "Submit"
+                          )}
                         </button>
                       )}
                   </div>
@@ -9481,12 +9601,20 @@ const handleConfirmService = async () => {
                     className="btn btn-press-effect btn-primary-600 btn-sm"
                     onClick={handleCustomerConfirmationSubmit}
                     disabled={
+                      isConfirmingCustomer ||
                       !confirmationDescription ||
                       confirmationDescription.trim() === "" ||
                       selectedServiceIds.length === 0
                     }
                   >
-                    Confirm Services
+                    {isConfirmingCustomer ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Confirming...
+                      </>
+                    ) : (
+                      "Confirm Services"
+                    )}
                   </button>
                 </div>
               </div>
@@ -9603,12 +9731,20 @@ const handleConfirmService = async () => {
                     className="btn btn-press-effect btn-primary-600 btn-sm"
                     onClick={handleCustomerRejectionSubmit}
                     disabled={
+                      isRejectingCustomer ||
                       !rejectionDescription ||
                       rejectionDescription.trim() === "" ||
                       rejectedServiceIds.length === 0
                     }
                   >
-                    Reject Services
+                     {isRejectingCustomer ? ( 
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                          Rejecting...
+                        </>
+                      ) : (
+                        "Reject Services"
+                      )}
                   </button>
                 </div>
               </div>
@@ -9754,10 +9890,17 @@ const handleConfirmService = async () => {
 
                   <button
                     className="btn btn-primary-600 btn-sm"
-                    disabled={selectedImages.length === 0}
+                    disabled={selectedImages.length === 0 || isConfirmingCompletion}
                     onClick={handleFieldAdvisorConfirm}
                   >
-                    Confirm
+                     {isConfirmingCompletion ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                          Confirming...
+                        </>
+                      ) : (
+                        "Confirm"
+                      )}
                   </button>
                 </div>
               </div>
