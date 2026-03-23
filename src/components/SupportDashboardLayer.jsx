@@ -24,7 +24,8 @@ const SupportDashboardLayer = () => {
     needMoreInfo: 0,
     convertedCustomer: 0,
     notConverted: 0,
-    notHavingCar: 0
+    notHavingCar: 0,
+    nextFollowUpScheduled: 0,
   });
 
   const [loading, setLoading] = useState(false);
@@ -61,7 +62,8 @@ const SupportDashboardLayer = () => {
           needMoreInfo: data.NeedMoreInfo || 0,
           convertedCustomer: data.ConvertedCustomer || 0,
           notConverted: data.NotConverted || 0,
-          notHavingCar: data.NotHavingCar || 0
+          notHavingCar: data.NotHavingCar || 0,
+          nextFollowUpScheduled: data.TotalNextFollowUpScheduled || 0,
         });
       }
     } catch (error) {
@@ -285,6 +287,21 @@ const SupportDashboardLayer = () => {
                         <h6 className="mb-0">{dashboardData.notConverted}</h6></div>
                       <div className="w-50-px h-50-px bg-neutral-600 rounded-circle d-flex justify-content-center align-items-center">
                         <Icon icon="solar:user-cross-bold" className="text-white text-2xl" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+               {/* Card 10 */}
+              <div className="col">
+                <div className="card shadow-none border bg-gradient-start-5 h-100" style={{ cursor: "pointer" }} onClick={() => handleCardClick("Next Follow Up")}>
+                  <div className="card-body p-20">
+                    <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                      <div><p className="fw-medium text-primary-light mb-1">Next Follow-Up</p>
+                        <h6 className="mb-0">{dashboardData.nextFollowUpScheduled}</h6></div>
+                      <div className="w-50-px h-50-px bg-neutral-600 rounded-circle d-flex justify-content-center align-items-center">
+                        <Icon icon="solar:calendar-mark-bold" className="text-white text-2xl" />
                       </div>
                     </div>
                   </div>
