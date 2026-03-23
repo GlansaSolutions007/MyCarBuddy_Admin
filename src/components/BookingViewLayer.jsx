@@ -374,31 +374,87 @@ const BookingViewLayer = () => {
   }, [bookingId, token, roleId, duserId]);
 
   // Poll booking data so confirmations/updates reflect immediately on screen
-  useEffect(() => {
-    if (!bookingId || !token) return;
+  // useEffect(() => {
+  //   if (!bookingId || !token) return;
 
-    const refresh = () => {
-      // avoid refetching when tab is hidden
-      if (document.visibilityState !== "visible") return;
-      fetchBookingData();
-    };
+  //   const refresh = () => {
+  //     // avoid refetching when tab is hidden
+  //     if (document.visibilityState !== "visible") return;
+  //     fetchBookingData();
+  //   };
 
-    // initial quick refresh
-    refresh();
+  //   // initial quick refresh
+  //   refresh();
 
-    const intervalId = window.setInterval(refresh, AUTO_REFRESH_MS);
-    const onFocus = () => refresh();
-    const onVisibility = () => refresh();
+  //   const intervalId = window.setInterval(refresh, AUTO_REFRESH_MS);
+  //   const onFocus = () => refresh();
+  //   const onVisibility = () => refresh();
 
-    window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onVisibility);
+  //   window.addEventListener("focus", onFocus);
+  //   document.addEventListener("visibilitychange", onVisibility);
 
-    return () => {
-      window.clearInterval(intervalId);
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
-  }, [bookingId, token, roleId, duserId]);
+  //   return () => {
+  //     window.clearInterval(intervalId);
+  //     window.removeEventListener("focus", onFocus);
+  //     document.removeEventListener("visibilitychange", onVisibility);
+  //   };
+  // }, [bookingId, token, roleId, duserId]);
+
+useEffect(() => {
+  if (!bookingId || !token) return;
+
+  const refresh = () => {
+    if (document.visibilityState !== "visible") return;
+    fetchBookingData();
+  };
+
+  let idleTimeout;
+  let intervalId = null;
+
+  const startAutoRefresh = () => {
+    if (intervalId) return; // already running
+    intervalId = setInterval(() => {
+      refresh();
+    }, 15000); // every 15 seconds
+  };
+
+  const stopAutoRefresh = () => {
+    if (intervalId) {
+      clearInterval(intervalId);
+      intervalId = null;
+    }
+  };
+
+  const handleUserActivity = () => {
+    // user is active → stop interval
+    stopAutoRefresh();
+
+    // reset idle timer
+    clearTimeout(idleTimeout);
+    idleTimeout = setTimeout(() => {
+      console.log("User idle, starting auto-refresh");
+      startAutoRefresh(); // start after 15 seconds of inactivity
+    }, 15000);
+  };
+
+  const events = ["mousemove", "keydown", "scroll", "click"];
+
+  events.forEach((event) =>
+    window.addEventListener(event, handleUserActivity)
+  );
+
+  // start tracking initially
+  handleUserActivity();
+
+  return () => {
+    clearTimeout(idleTimeout);
+    stopAutoRefresh();
+
+    events.forEach((event) =>
+      window.removeEventListener(event, handleUserActivity)
+    );
+  };
+}, [bookingId, token, roleId, duserId]);
 
   const fetchSupervisors = async () => {
     try {
@@ -456,11 +512,6 @@ const BookingViewLayer = () => {
       setFieldAdvisors([]);
     }
   };
-
-  const payments = [
-    { id: 1, amount: "₹1500", method: "UPI", date: "2025-07-01" },
-    { id: 2, amount: "₹2500", method: "Credit Card", date: "2025-06-10" },
-  ];
 
   const handleReschedule = async () => {
     if (!newDate) {
@@ -978,66 +1029,142 @@ const BookingViewLayer = () => {
       return { ok: false, message: err.response?.data?.message || err.message };
     }
   };
-  const handleConvertToService = async () => {
-    const result = await Swal.fire({
-      title: "Convert Inspection?",
-      text: "This will convert the inspection into a service.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Yes, Convert",
-      cancelButtonText: "Cancel",
-    });
+  // const handleConvertToService = async () => {
+  //   const result = await Swal.fire({
+  //     title: "Convert Inspection?",
+  //     text: "This will convert the inspection into a service.",
+  //     icon: "warning",
+  //     showCancelButton: true,
+  //     confirmButtonText: "Yes, Convert",
+  //     cancelButtonText: "Cancel",
+  //   });
 
-    if (!result.isConfirmed) return;
-     setIsConverting(true);
-    try {
-      await axios.post(
-        `${API_BASE}Bookings/convert-inspection-to-service`,
-        {
-          bookingId: bookingData?.BookingID,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
+  //   if (!result.isConfirmed) return;
+  //    setIsConverting(true);
+  //   try {
+  //     await axios.post(
+  //       `${API_BASE}Bookings/convert-inspection-to-service`,
+  //       {
+  //         bookingId: bookingData?.BookingID,
+  //       },
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       },
+  //     );
+
+  //     await Swal.fire({
+  //       icon: "success",
+  //       title: "Converted",
+  //       text: "Inspection successfully converted to service. Please add extra services.",
+  //     });
+
+  //     // After successful convert, redirect to booking service page to add extra services
+  //     if (
+  //       bookingData?.LeadId &&
+  //       bookingData?.BookingID &&
+  //       bookingData?.BookingTrackID
+  //     ) {
+  //       navigate(
+  //         `/book-service/${bookingData.LeadId}/${bookingData.BookingID}/${bookingData.BookingTrackID}`,
+  //       );
+  //       return;
+  //     }
+
+  //     // Fallback: just refresh booking details
+  //     fetchBookingData();
+  //   } catch (error) {
+  //     console.error("Convert Error:", error);
+
+  //     Swal.fire({
+  //       icon: "error",
+  //       title: "Error",
+  //       text:
+  //         error?.response?.data?.message ||
+  //         "Failed to convert inspection to service.",
+  //     });
+  //   } finally {
+  //     setIsConverting(false);
+  //   }
+  // };
+  
+      const handleConvertToService = async () => {
+      const result = await Swal.fire({
+        title: "Convert Inspection?",
+        text: "This will convert the inspection into a service.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, Convert",
+        cancelButtonText: "Cancel",
+      });
+
+      if (!result.isConfirmed) return;
+
+      setIsConverting(true);
+
+      try {
+        // 1️⃣ Convert Inspection → Service
+        await axios.post(
+          `${API_BASE}Bookings/convert-inspection-to-service`,
+          {
+            bookingId: bookingData?.BookingID,
           },
-        },
-      );
-
-      await Swal.fire({
-        icon: "success",
-        title: "Converted",
-        text: "Inspection successfully converted to service. Please add extra services.",
-      });
-
-      // After successful convert, redirect to booking service page to add extra services
-      if (
-        bookingData?.LeadId &&
-        bookingData?.BookingID &&
-        bookingData?.BookingTrackID
-      ) {
-        navigate(
-          `/book-service/${bookingData.LeadId}/${bookingData.BookingID}/${bookingData.BookingTrackID}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
-        return;
+
+        // 2️⃣ Update Booking Status → ServiceInProgress
+        await axios.put(
+          `${API_BASE}Bookings/booking-status`,
+          {
+            bookingID: bookingData?.BookingID,
+            bookingStatus: "ServiceInProgress",
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        // 3️⃣ Success Message
+        await Swal.fire({
+          icon: "success",
+          title: "Converted",
+          text: "Inspection converted and service started. Please add extra services.",
+        });
+
+        // 4️⃣ Redirect
+        if (
+          bookingData?.LeadId &&
+          bookingData?.BookingID &&
+          bookingData?.BookingTrackID
+        ) {
+          navigate(
+            `/book-service/${bookingData.LeadId}/${bookingData.BookingID}/${bookingData.BookingTrackID}`
+          );
+          return;
+        }
+
+        fetchBookingData();
+      } catch (error) {
+        console.error("Convert Error:", error);
+
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text:
+            error?.response?.data?.message ||
+            "Failed to convert inspection to service.",
+        });
+      } finally {
+        setIsConverting(false);
       }
-
-      // Fallback: just refresh booking details
-      fetchBookingData();
-    } catch (error) {
-      console.error("Convert Error:", error);
-
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text:
-          error?.response?.data?.message ||
-          "Failed to convert inspection to service.",
-      });
-    } finally {
-      setIsConverting(false);
-    }
-  };
-
+    };
   // const handleConfirmService = async () => {
   //   const addOns = bookingData?.BookingAddOns || [];
   //   const supervisorBookings = bookingData?.SupervisorBookings || [];
