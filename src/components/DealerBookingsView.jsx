@@ -17,6 +17,7 @@ const DealerBookingsView = () => {
   const [initialItemsSnapshot, setInitialItemsSnapshot] = useState({});
   const [rowsWithAmountEntered, setRowsWithAmountEntered] = useState(() => new Set());
   const dealer = localStorage.getItem("role") || "Dealer";
+  const [loadingIndex, setLoadingIndex] = useState(null);
 
   const getItemFingerprint = (item) =>
     JSON.stringify({
@@ -104,6 +105,9 @@ const DealerBookingsView = () => {
 
     if (!confirmResult.isConfirmed) return;
 
+    // ✅ START LOADER
+    setLoadingIndex(index);
+
     try {
       const payload = {
         addOnID: item._apiId,   // 🔹 your AddOn ID
@@ -142,8 +146,26 @@ const DealerBookingsView = () => {
         error.response?.data?.message || "Failed to update service completion",
         "error"
       );
+    } finally {
+      // ✅ STOP LOADER
+      setLoadingIndex(null);
     }
   };
+
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.innerHTML = `
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style); // cleanup (optional)
+    };
+  }, []);
 
   const fetchBookingData = async () => {
     try {
@@ -353,13 +375,13 @@ const DealerBookingsView = () => {
           }
         } catch (err) {
           console.error(err);
-          Swal.fire("Error", "Failed to delete item from server", "error");
+          Swal.fire("Error", "Failed to delete service from server", "error");
         }
         return;
       }
       // CASE 2: DELETE LOCAL UNSAVED ITEM
       setAddedItems((prev) => prev.filter((_, i) => i !== index));
-      Swal.fire("Removed", "Item removed", "success");
+      Swal.fire("Removed", "Service removed", "success");
     });
   };
 
@@ -488,7 +510,7 @@ const DealerBookingsView = () => {
       console.error(err);
       Swal.fire(
         "Error",
-        err.response?.data?.message || `Failed to ${action} item`,
+        err.response?.data?.message || `Failed to ${action} service`,
         "error",
       );
     }
@@ -1091,6 +1113,7 @@ const DealerBookingsView = () => {
               <button
                 onClick={() => handleServiceCompleted(row.addedItemsIndex)}
                 title="Mark as Completed"
+                disabled={loadingIndex === row.addedItemsIndex}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = "#ffc107";
                   e.currentTarget.style.transform = "scale(1.05)";
@@ -1115,11 +1138,32 @@ const DealerBookingsView = () => {
                   cursor: "pointer",
                   transition: "all 0.3s ease",
                   fontSize: "12px",
-                  fontWeight: "500"
+                  fontWeight: "500",
+                  opacity: loadingIndex === row.addedItemsIndex ? 0.7 : 1
                 }}
               >
-                <Icon icon="mingcute:check-circle-fill" />
-                Mark as Completed
+                {loadingIndex === row.addedItemsIndex ? (
+                  <>
+                    <span
+                      style={{
+                        width: "14px",
+                        height: "14px",
+                        border: "2px solid #000",
+                        borderBottomColor: "transparent",
+                        borderRadius: "50%",
+                        display: "inline-block",
+                        marginRight: "6px",
+                        animation: "spin 0.8s linear infinite"
+                      }}
+                    ></span>
+                    Completing...
+                  </>
+                ) : (
+                  <>
+                    <Icon icon="mingcute:check-circle-fill" />
+                    Mark as Completed
+                  </>
+                )}
               </button>
             )}
           </div>

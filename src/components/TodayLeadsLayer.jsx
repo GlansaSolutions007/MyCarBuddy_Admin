@@ -1,233 +1,3 @@
-// import { useEffect, useState } from "react";
-// import axios from "axios";
-// import DataTable from "react-data-table-component";
-// import { Icon } from "@iconify/react";
-// import { Link } from "react-router-dom";
-
-// const API_BASE = import.meta.env.VITE_APIURL;
-
-// const TodayLeadsLayer = () => {
-//   const [leads, setLeads] = useState([]);
-//   const [filteredLeads, setFilteredLeads] = useState([]);
-//   const [searchTerm, setSearchTerm] = useState("");
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState("");
-//   const [page, setPage] = useState(1);
-//   const [pageSize, setPageSize] = useState(10);
-//   const [totalRows, setTotalRows] = useState(0);
-//   const [allLeads, setAllLeads] = useState([]);
-//   const [serverPage, setServerPage] = useState(1);
-
-
-
-//   // Assuming employee id is stored or retrieved from token or localStorage
-//   const userId = localStorage.getItem("userId");
-//   const token = localStorage.getItem("token");
-
-//   useEffect(() => {
-//     fetchChunk(1);
-//   }, []);
-
-//   useEffect(() => {
-//     const filtered = leads.filter((lead) => {
-//       // filter by searchable fields: FullName, PhoneNumber, Email, City, Leadcreateddate, AssignedDate
-//       const term = searchTerm.toLowerCase();
-//       return (
-//         (lead.FullName && lead.FullName.toLowerCase().includes(term)) ||
-//         (lead.PhoneNumber && lead.PhoneNumber.toLowerCase().includes(term)) ||
-//         (lead.Email && lead.Email.toLowerCase().includes(term)) ||
-//         (lead.City && lead.City.toLowerCase().includes(term)) ||
-//         (lead.AssignedDate && lead.AssignedDate.toLowerCase().includes(term)) ||
-//         (lead.Leadcreateddate &&
-//           lead.Leadcreateddate.toLowerCase().includes(term))
-//       );
-//     });
-//     setFilteredLeads(filtered);
-//   }, [searchTerm, allLeads]);
-
-//   const fetchChunk = async (pageNumber) => {
-//     try {
-//       setLoading(true);
-
-//       const url = `${API_BASE}Leads/TodayAssignedFollowUpLeads?EmpId=${userId}&PageNumber=${pageNumber}&PageSize=100`;
-
-//       const res = await axios.get(url, {
-//         headers: {
-//           Authorization: `Bearer ${token}`,
-//         },
-//       });
-
-//       if (res.data && Array.isArray(res.data.data)) {
-//         setAllLeads(prev => [...prev, ...res.data.data]); // append
-//         setTotalRows(res.data.totalCount);
-//       }
-
-//     } catch (err) {
-//       console.error(err);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-
-//   // Format date helper to show nicer dates (like DD-MM-YYYY)
-//   const formatDate = (dateStr) => {
-//     if (!dateStr) return "";
-//     const d = new Date(dateStr);
-//     if (isNaN(d)) return "";
-//     const day = String(d.getDate()).padStart(2, "0");
-//     const month = String(d.getMonth() + 1).padStart(2, "0");
-//     const year = d.getFullYear();
-//     return `${day}-${month}-${year}`;
-//   };
-
-//   const columns = [
-//     {
-//       name: "Assigning Date",
-//       selector: (row) => formatDate(row.AssignedDate),
-//       sortable: true,
-//       width: "150px",
-//     },
-//     {
-//       name: "Lead ID",
-//       selector: (row) =>
-//         (
-//           <Link to={`/lead-view/${row.LeadId}`} className="text-primary">
-//             {row.LeadId}
-//           </Link>
-//         ) || "-",
-//       sortable: true,
-//       width: "150px",
-//     },
-//     {
-//       name: "Full Name",
-//       selector: (row) => row.FullName || "-",
-//       sortable: true,
-//       wrap: true,
-//       width: "180px",
-//     },
-//     {
-//       name: "Phone Number",
-//       selector: (row) => row.PhoneNumber || "-",
-//       sortable: true,
-//       wrap: true,
-//       width: "150px",
-//     },
-//     {
-//       name: "Status",
-//       selector: (row) => row.Status || "-",
-//       sortable: true,
-//       wrap: true,
-//       width: "180px",
-//     },
-//     {
-//       name: "Email",
-//       selector: (row) => row.Email || "-",
-//       sortable: true,
-//       wrap: true,
-//       width: "180px",
-//     },
-//     {
-//       name: "Created Date",
-//       selector: (row) => formatDate(row.Leadcreateddate),
-//       sortable: true,
-//       wrap: true,
-//       width: "150px",
-//     },
-//     {
-//       name: "City",
-//       selector: (row) => row.City || "-",
-//       sortable: true,
-//       wrap: true,
-//       width: "180px",
-//     },
-//     {
-//       name: "Next FollowUp",
-//       selector: (row) => row.NextFollowUp_Date || "-",
-//       sortable: true,
-//       wrap: true,
-//       width: "150px",
-//     },
-//     {
-//       name: "Action",
-//       cell: (row) => (
-//         <Link
-//           to={`/lead-view/${row.LeadId}`}
-//           className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-//           title="View"
-//         >
-//           <Icon icon="lucide:eye" />
-//         </Link>
-//       ),
-//       ignoreRowClick: true,
-//       allowOverflow: true,
-//       button: true,
-//     },
-//   ];
-
-//   const displayLeads = allLeads.slice(
-//     (page - 1) * pageSize,
-//     page * pageSize
-//   );
-
-
-//   return (
-//     <div className="row gy-4">
-//       <div className="col-12">
-//         <div className="card p-3">
-//           <div className="card-header d-flex justify-content-between align-items-center mb-3">
-//             <form className="navbar-search" style={{ width: "300px" }}>
-//               <input
-//                 type="text"
-//                 className="form-control"
-//                 placeholder="Search leads"
-//                 value={searchTerm}
-//                 onChange={(e) => setSearchTerm(e.target.value)}
-//               />
-//             </form>
-//           </div>
-
-//           <DataTable
-//             columns={columns}
-//             data={displayLeads}
-//             progressPending={loading}
-//             paginationServer
-//             pagination
-//             paginationPerPage={pageSize}
-//             paginationTotalRows={totalRows}
-//             paginationRowsPerPageOptions={[10, 25, 50]}
-//             onChangePage={(newPage) => {
-//               setPage(newPage);
-
-//               const neededRecords = newPage * pageSize;
-//               const totalLoaded = allLeads.length;
-
-//               // If clicked page needs more records
-//               if (neededRecords > totalLoaded && totalLoaded < totalRows) {
-
-//                 // Calculate correct server page directly
-//                 const requiredServerPage = Math.ceil(neededRecords / 100);
-
-//                 fetchChunk(requiredServerPage);
-//                 setServerPage(requiredServerPage);
-//               }
-//             }}
-//             onChangeRowsPerPage={(newSize, page) => {
-//               setPageSize(newSize);
-//               setPage(page);
-//             }}
-//           />
-
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default TodayLeadsLayer;
-
-///////////////////////////////////////////////////////
-
 import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import DataTable from "react-data-table-component";
@@ -318,10 +88,11 @@ const TodayLeadsLayer = () => {
 
   const columns = [
     {
-      name: "Assigning Date",
-      selector: (row) => formatDate(row.AssignedDate),
+      name: "Assign Date",
+      selector: (row) => row.AssignedDate ? new Date(row.AssignedDate).toLocaleString("en-GB") : "-",
       sortable: true,
-      // width: "150px",
+      sortField: "CreatedDate",
+      width: "160px",
     },
     {
       name: "Lead ID",
@@ -363,7 +134,7 @@ const TodayLeadsLayer = () => {
       width: "130px",
     },
     {
-      name: "Full Name",
+      name: "Customer Name",
       selector: (row) => row.FullName || "-",
       sortable: true,
       wrap: true,
@@ -376,34 +147,117 @@ const TodayLeadsLayer = () => {
       width: "150px",
     },
     {
-      name: "Status",
-      selector: (row) => row.Status || "-",
-      sortable: true,
-      width: "180px",
-    },
-    {
       name: "Email",
       selector: (row) => row.Email || "-",
       sortable: true,
       width: "180px",
     },
     {
-      name: "Created Date",
-      selector: (row) => formatDate(row.Leadcreateddate),
-      sortable: true,
+      name: "Lead Status",
       width: "150px",
+      cell: (row) => (
+        <div>
+          <div style={{ fontWeight: 500 }}>
+            {row.Status || "No FollowUp Yet"} 
+          </div>
+          <div style={{ fontSize: "12px", color: "#6c757d" }}>
+            {row.NextAction || ""}
+          </div>
+        </div>
+      ),
+    },
+    {
+      name: "Next Follow-up",
+      sortable: true,
+      sortField: "NextFollowUp_Date",
+      width: "180px",
+      cell: (row) => {
+        if (!row.NextFollowUp_Date) {
+          return <span style={{ color: "#9ca3af" }}>-</span>;
+        }
+
+        const now = new Date();
+        const followUpDate = new Date(row.NextFollowUp_Date);
+
+        const diffMs = followUpDate - now;
+        const diffHours = diffMs / (1000 * 60 * 60);
+        const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+        let status = {
+          label: "Upcoming",
+          color: "#22c55e",
+          bg: "rgba(34,197,94,0.1)",
+          // icon: "✅",
+        };
+
+        if (diffMs < 0) {
+          status = {
+            label: "Overdue",
+            color: "#ef4444",
+            bg: "rgba(239,68,68,0.1)",
+            // icon: "⚠️",
+          };
+        } else if (diffHours <= 24) {
+          status = {
+            label: "Due Soon",
+            color: "#f59e0b",
+            bg: "rgba(245,158,11,0.1)",
+            // icon: "⏳",
+          };
+        }
+
+        const getTimeText = () => {
+          if (diffMs < 0) {
+            return `${Math.abs(Math.floor(diffHours))}h ago`;
+          }
+          if (diffHours < 24) {
+            return `${Math.ceil(diffHours)}h left`;
+          }
+          return `${Math.ceil(diffDays)}d left`;
+        };
+
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            {/* Date */}
+            <div style={{ fontWeight: 600, fontSize: "13px", color: "#1f2937" }}>
+              {followUpDate.toLocaleString("en-GB")}
+            </div>
+
+            {/* Status Badge */}
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                fontSize: "11px",
+                fontWeight: 600,
+                color: status.color,
+                background: status.bg,
+                padding: "3px 10px",
+                borderRadius: "999px",
+                width: "fit-content",
+              }}
+            >
+              <span>{status.icon}</span>
+              <span>{status.label}</span>
+              <span style={{ opacity: 0.7 }}>• {getTimeText()}</span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      name: "Created Date",
+      selector: (row) => row.LeadCreatedDate ? new Date(row.LeadCreatedDate).toLocaleString("en-GB") : "-",
+      sortable: true,
+      sortField: "CreatedDate",
+      width: "160px",
     },
     {
       name: "City",
       selector: (row) => row.City || "-",
       sortable: true,
       width: "180px",
-    },
-    {
-      name: "Next FollowUp",
-      selector: (row) => row.NextFollowUp_Date || "-",
-      sortable: true,
-      width: "150px",
     },
     {
       name: "Action",
@@ -467,6 +321,7 @@ const TodayLeadsLayer = () => {
                 <option value="Interested">Interested</option>
                 <option value="Not Interested">Not Interested</option>
                 <option value="No Follow Up">No Follow Up</option>
+                <option value="Next Follow Up">Next Follow-up</option>
                 <option value="Need More Info">Need More Info</option>
                 <option value="Converted to Customer">Converted to Customer</option>
                 <option value="Not Converted">Not Converted</option>
