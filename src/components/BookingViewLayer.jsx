@@ -2678,7 +2678,7 @@ const handleConfirmService = async () => {
     }, 0);
   const couponAmount = Number(bookingData?.CouponAmount ?? 0) || 0;
   const alreadyPaidDisplay = alreadyPaid + couponAmount;
-  const remainingAmount = Math.max(totalAmount - alreadyPaid, 0);
+  const remainingAmount = Math.max(Number((totalAmount - alreadyPaid).toFixed(2)), 0);
 
   const hasAtLeastOneService =
     bookingData?.BookingAddOns?.length > 0 ||
@@ -2738,7 +2738,7 @@ const handleConfirmService = async () => {
       if (payAmount > remainingAmount) {
         Swal.fire(
           "Validation",
-          "Amount cannot exceed remaining balance",
+          `Amount cannot be greater than remaining balance ₹${Number(remainingAmount || 0).toFixed(2)}.`,
           "warning",
         );
         return;
@@ -3079,28 +3079,53 @@ const handleConfirmService = async () => {
         bookingData.FieldAdvisorName || "—"
       }`,
     };
-
-    const dealerApprovalCount = addOns.filter(
+    const allDealerItems = [
+      ...(bookingData?.BookingAddOns || []),
+      ...(bookingData?.SupervisorBookings || [])
+    ];
+    const dealerApprovalCount = allDealerItems.filter(
       (a) => a.IsDealer_Confirm === "Approved",
     ).length;
     const dealerStage = {
       id: "dealer-confirmation",
       title: "Dealer Confirmation",
       icon: "mdi:handshake",
-      date: addOns.find((a) => a.IsDealer_Confirm)?.UpdatedDate,
+      date: allDealerItems.find((a) => a.IsDealer_Confirm)?.UpdatedDate,
       status:
-        addOns.length === 0
+        allDealerItems.length === 0
           ? "pending"
-          : addOns.every((a) => a.IsDealer_Confirm === "Approved")
+          : allDealerItems.every((a) => a.IsDealer_Confirm === "Approved")
             ? "completed"
-            : addOns.some((a) => a.IsDealer_Confirm === "Rejected")
+            : allDealerItems.some((a) => a.IsDealer_Confirm === "Rejected")
               ? "failed"
               : "in-progress",
       details:
-        addOns.length === 0
+        allDealerItems.length === 0
           ? "No dealers"
           : `${dealerApprovalCount} dealers confirmed services`,
     };
+
+    // const dealerApprovalCount = addOns.filter(
+    //   (a) => a.IsDealer_Confirm === "Approved",
+    // ).length;
+    // const dealerStage = {
+    //   id: "dealer-confirmation",
+    //   title: "Dealer Confirmation",
+    //   icon: "mdi:handshake",
+    //   date: addOns.find((a) => a.IsDealer_Confirm)?.UpdatedDate,
+    //   status:
+    //     addOns.length === 0
+    //       ? "pending"
+    //       : addOns.every((a) => a.IsDealer_Confirm === "Approved")
+    //         ? "completed"
+    //         : addOns.some((a) => a.IsDealer_Confirm === "Rejected")
+    //           ? "failed"
+    //           : "in-progress",
+    //   details:
+    //     addOns.length === 0
+    //       ? "No dealers"
+    //       : `${dealerApprovalCount} dealers confirmed services`,
+    // };
 
     const customerStage = {
       id: "customer-confirmation",
@@ -5442,12 +5467,6 @@ const handleConfirmService = async () => {
                                             Dealer Name
                                           </th>
                                           <th
-                                            style={{ width: "160px" }}
-                                            className="text-center"
-                                          >
-                                            Service Status
-                                          </th>
-                                          <th
                                             style={{ width: "100px" }}
                                             className="text-end"
                                           >
@@ -5663,59 +5682,6 @@ const handleConfirmService = async () => {
                                                         }
                                                       </span>
                                                     )}
-                                                </td>
-                                                <td className="text-center">
-                                                  {(() => {
-                                                    const isApproved =
-                                                      (
-                                                        CustomerRejectedBookings.IsDealer_Confirm ??
-                                                        CustomerRejectedBookings.isDealer_Confirm
-                                                      )
-                                                        ?.toString()
-                                                        .trim()
-                                                        .toLowerCase() ===
-                                                      "approved";
-                                                    const status = (
-                                                      CustomerRejectedBookings.StatusName ??
-                                                      CustomerRejectedBookings.statusName ??
-                                                      CustomerRejectedBookings.AddOnStatus ??
-                                                      CustomerRejectedBookings.addOnStatus
-                                                    )
-                                                      ?.toString()
-                                                      .trim();
-                                                    return (
-                                                      <div className="d-flex gap-2 align-items-center justify-content-center">
-                                                        {isApproved && (
-                                                          <select
-                                                            className="form-select form-select-sm"
-                                                            value={status}
-                                                            onChange={(e) =>
-                                                              handleAddOnStatusChange(
-                                                                CustomerRejectedBookings,
-                                                                e.target.value,
-                                                              )
-                                                            }
-                                                          >
-                                                            <option value="">
-                                                              Select Status
-                                                            </option>
-                                                            <option value="Pending">
-                                                              Pending
-                                                            </option>
-                                                            <option value="ServiceCompleted">
-                                                              Completed
-                                                            </option>
-                                                            <option value="Rework">
-                                                              Rework
-                                                            </option>
-                                                            <option value="InProgress">
-                                                              In-Progress
-                                                            </option>
-                                                          </select>
-                                                        )}
-                                                      </div>
-                                                    );
-                                                  })()}
                                                 </td>
                                                 <td className="text-end fw-bold text-primary">
                                                   {totalPrice.toFixed(2)}
@@ -7837,9 +7803,22 @@ const handleConfirmService = async () => {
                           min={0}
                           max={remainingAmount}
                           value={payAmount}
-                          onChange={(e) =>
-                            setPayAmount(Math.max(0, Number(e.target.value)))
-                          }
+                           onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === "") {
+                              setPayAmount("");
+                              return;
+                            }
+                            // Parse as float and limit to 2 decimal places
+                            const num = parseFloat(val);
+                            setPayAmount(num); 
+                          }}
+                          onBlur={() => {
+                            // Clean up the decimals when user stops typing
+                            if (payAmount !== "") {
+                              setPayAmount(Number(Number(payAmount).toFixed(2)));
+                            }
+                          }}
                           placeholder="Amount"
                         />
                       </div>
@@ -7891,9 +7870,9 @@ const handleConfirmService = async () => {
                               }}
                               placeholder="0"
                             /> */}
-                            {Number(payAmount || 0) > 0 && (
+                            {Number(remainingAmount || 0) > 0 && (
                               <small className="text-muted">
-                                Max: ₹{Number(payAmount || 0).toFixed(2)}
+                                Max: ₹{Number(remainingAmount || 0).toFixed(2)}
                               </small>
                             )}
                           </div>
@@ -8009,9 +7988,9 @@ const handleConfirmService = async () => {
                               }}
                               placeholder="0"
                             /> */}
-                            {Number(payAmount || 0) > 0 && (
+                            {Number(remainingAmount || 0) > 0 && (
                               <small className="text-muted">
-                                Max: ₹{Number(payAmount || 0).toFixed(2)}
+                                Max: ₹{Number(remainingAmount || 0).toFixed(2)}
                               </small>
                             )}
                           </div>

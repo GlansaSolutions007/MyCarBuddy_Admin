@@ -1411,7 +1411,7 @@ const BookServicesLayer = () => {
       }
       // CASE 2: DELETE LOCAL UNSAVED ITEM
       // setAddedItems((prev) => prev.filter((_, i) => i !== index));
-      Swal.fire("Discard", "Service discarded successfully.", "success");
+      Swal.fire("Discarded", "Service discarded successfully.", "success");
     });
   };
   const handleRemoveItem = (index) => {
@@ -1428,10 +1428,10 @@ const BookServicesLayer = () => {
     const item = addedItems[index];
     Swal.fire({
       title: "Are you sure?",
-      text: "Do you want to discard this service?",
+      text: "Do you want to delete this service?",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Yes, Discard",
+      confirmButtonText: "Yes, delete",
     }).then(async (result) => {
       if (!result.isConfirmed) return;
 
