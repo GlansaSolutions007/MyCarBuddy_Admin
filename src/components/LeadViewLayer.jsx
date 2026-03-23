@@ -927,6 +927,25 @@ const LeadViewLayer = () => {
         );
         return;
       }
+      const now = new Date();
+      // choose correct date based on flow
+      const selectedDateValue =
+        callAnswered === "Not Ans"
+          ? notAnsweredFollowUpDate
+          : nextFollowUpDate;
+
+      if (selectedDateValue) {
+        const selectedDate = new Date(selectedDateValue);
+
+        if (selectedDate < now) {
+          Swal.fire({
+            icon: "warning",
+            title: "Invalid Time",
+            text: "You cannot select past date/time. Please choose an upcoming time.",
+          });
+          return;
+        }
+      } 
 
       statusName = callOutcome;
       notes =
@@ -953,26 +972,6 @@ const LeadViewLayer = () => {
         },
         body: JSON.stringify(payload),
       });
-
-      const now = new Date();
-      // choose correct date based on flow
-      const selectedDateValue =
-        callAnswered === "Not Ans"
-          ? notAnsweredFollowUpDate
-          : nextFollowUpDate;
-
-      if (selectedDateValue) {
-        const selectedDate = new Date(selectedDateValue);
-
-        if (selectedDate < now) {
-          Swal.fire({
-            icon: "warning",
-            title: "Invalid Time",
-            text: "You cannot select past date/time. Please choose an upcoming time.",
-          });
-          return;
-        }
-      } 
 
       if (!response.ok) {
         // try to read error body for debugging (optional)
@@ -1651,7 +1650,7 @@ const LeadViewLayer = () => {
                                   className="text-secondary-light fw-medium"
                                   style={{ minWidth: 24 }}
                                 >
-                                  {isFollowUpNeeded ? "No" : "Yes"}
+                                  {isFollowUpNeeded || "Yes"}
                                 </span>
                               </div>
 
