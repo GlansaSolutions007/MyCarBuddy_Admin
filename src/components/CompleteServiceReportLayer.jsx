@@ -566,11 +566,15 @@ function CompleteServiceReportView({ data, onBack }) {
           <div className="col-lg-4">
             <ReportCard title="Lead Created" icon="mdi:lead-pencil">
               <div className="small">
-                <DetailRow label="Lead ID" value={data.LeadId ?? "—"} />
-                <DetailRow label="Created date" value={formatDate(data.LeadCreatedDate || data.CreatedDate)} />
-                <DetailRow label="Customer" value={data.CustomerName ?? data.CustFullName ?? "—"} />
-                <DetailRow label="Phone" value={data.PhoneNumber ?? "—"} />
-                <DetailRow label="Service type" value={data.ServiceType ?? "—"} />
+                <DetailRow label="Lead ID" value={data.LeadId ?? "N/A"} />
+                <DetailRow label="Created date" value={
+                  data.LeadCreatedDate || data.CreatedDate
+                    ? formatDate(data.LeadCreatedDate || data.CreatedDate)
+                    : "N/A"
+                } />
+                <DetailRow label="Customer Name" value={data.CustomerName ?? data.CustFullName ?? "N/A"} />
+                <DetailRow label="Phone Number" value={data.PhoneNumber ?? "N/A"} />
+                <DetailRow label="Service type" value={data.ServiceType ?? "N/A"} />
               </div>
             </ReportCard>
           </div>
@@ -608,13 +612,13 @@ function CompleteServiceReportView({ data, onBack }) {
                                 <th>Date</th>
                                 <th>Status</th>
                                 <th>Call Type</th>
-                                <th>Call Discussion</th>
+                                {/* <th>Call Discussion</th> */}
                                 <th>Next action</th>
                                 <th>Next Follow-Up Date</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {followUps.slice(0, 10).map((f) => (
+                              {followUps.slice(0, 10).reverse() .map((f) => (
                                 <tr key={f.Id}>
                                   <td>{formatDateTime(f.Updated_At ?? f.Created_At ?? "N/A")}</td>
                                   <td>
@@ -623,7 +627,7 @@ function CompleteServiceReportView({ data, onBack }) {
                                     </span>
                                   </td>
                                   <td>{f.Type ?? "N/A"}</td>
-                                  <td className="text-break">{f.Notes ?? "N/A"}</td>
+                                  {/* <td className="text-break">{f.Notes ?? "N/A"}</td> */}
                                   <td>{f.NextAction ?? "N/A"}</td>
                                   <td>{formatDateTime(f.NextFollowUp_Date ?? "N/A")}</td>
                                 </tr>
@@ -654,7 +658,7 @@ function CompleteServiceReportView({ data, onBack }) {
                 <DetailRow label="Booking ID" value={data.BookingID} />
                 <DetailRow label="Booking date" value={formatDate(data.BookingDate)} />
                 <DetailRow label="Time slot" value={data.TimeSlot ?? "—"} />
-                <DetailRow label="Status" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(data.BookingStatus)}`}>{data.BookingStatus ?? "—"}</span>} />
+                <DetailRow label="Booking Status" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(data.BookingStatus)}`}>{data.BookingStatus ?? "—"}</span>} />
                 {/* <DetailRow label="Total price" value={formatCurrency(data.TotalPrice)} />
               <DetailRow label="GST amount" value={formatCurrency(data.GSTAmount)} />
               <DetailRow label="Coupon amount" value={formatCurrency(data.CouponAmount)} />
@@ -710,7 +714,8 @@ function CompleteServiceReportView({ data, onBack }) {
                         <div className="small text-muted mb-2 fw-semibold">Pricing</div>
                         <DetailRow label="Service price" value={formatCurrency(svc.ServicePrice)} />
                         <DetailRow label="Labour Charges" value={formatCurrency(svc.LabourCharges)} />
-                        <DetailRow label="GST (18%)" value={formatCurrency(svc.GSTPrice)} />
+                        <DetailRow label="SGST (9%)" value={formatCurrency(svc.GSTPrice/2)} />
+                        <DetailRow label="CGST (9%)" value={formatCurrency(svc.GSTPrice/2)} />
                         <DetailRow label="Total Price" value={formatCurrency(svc.TotalPrice)} />
 
                         {/* <DetailRow label="Subtotal" value={formatCurrency(svc.DealerGSTAmount + svc.ServicePrice + svc.LabourCharges + svc.GSTPrice + svc.TotalPrice + svc.DealerPrice)} /> */}
@@ -720,7 +725,8 @@ function CompleteServiceReportView({ data, onBack }) {
                         <DetailRow label="Dealer Name" value={svc.DealerName ?? "N/A"} />
                         <DetailRow label="Dealer confirm" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(svc.IsDealer_Confirm)}`}>{svc.IsDealer_Confirm ?? "N/A"}</span>} />
                         <DetailRow label="Dealer price" value={formatCurrency(svc.DealerPrice)} />
-                        <DetailRow label="Dealer GST Amount" value={formatCurrency(svc.DealerGSTAmount)} />
+                        <DetailRow label="Dealer SGST Amount" value={formatCurrency(svc.DealerGSTAmount/2)} />
+                        <DetailRow label="Dealer CGST Amount" value={formatCurrency(svc.DealerGSTAmount/2)} />
                       </div>
                       <div className="col-md-4 col-lg-4">
                         <div className="small text-muted mb-2 fw-semibold">Status</div>
@@ -1083,7 +1089,7 @@ function CompleteServiceReportView({ data, onBack }) {
                               <th>Mode</th>
                               <th>Transaction ID</th>
                               <th>Status</th>
-                              <th>Refunded</th>
+                              {/* <th>Refunded</th> */}
                             </tr>
                           </thead>
                           <tbody>
@@ -1102,7 +1108,7 @@ function CompleteServiceReportView({ data, onBack }) {
                                     {p.PaymentStatus === "Success" ? "Paid" : p.PaymentStatus ?? "—"}
                                   </span>
                                 </td>
-                                <td>{p.IsRefunded ? "Yes" : "No"}</td>
+                                {/* <td>{p.IsRefunded ? "Yes" : "No"}</td> */}
                               </tr>
                             ))}
                           </tbody>
@@ -1122,9 +1128,10 @@ function CompleteServiceReportView({ data, onBack }) {
                               <th>Invoice #</th>
                               <th>Type</th>
                               <th>Status</th>
-                              <th>Total</th>
-                              <th>Tax</th>
-                              <th>Net</th>
+                              <th>Amount</th>
+                              <th>SGST</th>
+                              <th>CGST</th>
+                              <th>Total Cost</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1142,7 +1149,8 @@ function CompleteServiceReportView({ data, onBack }) {
                                   </span>
                                 </td>
                                 <td>{formatCurrency(inv.TotalAmount)}</td>
-                                <td>{formatCurrency(inv.TaxAmount)}</td>
+                                <td>{formatCurrency(inv.TaxAmount/2)}</td>
+                                <td>{formatCurrency(inv.TaxAmount/2)}</td>
                                 <td>{formatCurrency(inv.NetAmount)}</td>
                               </tr>
                             ))}
