@@ -501,7 +501,7 @@ const FieldAdvisorDashboardLayer = () => {
                     </tr>
                   </thead>
 
-                  <tbody>
+                  {/* <tbody>
                     {notConfirmedServices.map((booking) =>
                       booking.CustomerNotConfirmedServices?.map((svc) => (
                         <tr key={svc.Id}>
@@ -546,6 +546,71 @@ const FieldAdvisorDashboardLayer = () => {
                         </tr>
                       ))
                     )}
+                  </tbody> */}
+
+                  <tbody>
+                    {notConfirmedServices.map((booking) => {
+                      const services = booking.CustomerNotConfirmedServices || [];
+
+                      return (
+                        <tr key={booking.BookingID}>
+                          <td>{booking.BookingTrackID}</td>
+
+                          <td>{booking.CustFullName}</td>
+
+                          <td>{booking.CustPhoneNumber}</td>
+
+                          {/* ✅ Show all services in one cell */}
+                          <td>
+                            {services.length === 1 ? (
+                              services[0].ServiceName
+                            ) : (
+                              <>
+                                {services.slice(0, 2).map((s, i) => (
+                                  <div key={i}>{s.ServiceName}</div>
+                                ))}
+                                {services.length > 2 && (
+                                  <small className="text-muted">
+                                    +{services.length - 2} more
+                                  </small>
+                                )}
+                              </>
+                            )}
+                          </td>
+
+                          <td>
+                            <button
+                              className="view-btn btn btn-sm d-inline-flex align-items-center gap-1 px-3 py-1 rounded-pill"
+                              onClick={() => navigate(`/booking-view/${booking.BookingID}`)}
+                            >
+                              <Icon icon="solar:eye-bold" width={14} />
+                              View
+                            </button>
+
+                            <style>
+                              {`
+                              .view-btn {
+                                background: #eef2ff;
+                                color: #4f46e5;
+                                border: 1px solid #c7d2fe;
+                                font-size: 0.75rem;
+                                font-weight: 500;
+                                transition: all 0.25s ease;
+                              }
+
+                              .view-btn:hover {
+                                background: #4f46e5;
+                                color: #ffffff;
+                                border-color: #4f46e5;
+                                transform: translateY(-1px);
+                                box-shadow: 0 3px 8px rgba(79,70,229,0.25);
+                              }
+                            `}
+                            </style>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
 
                 </table>
