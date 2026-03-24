@@ -96,7 +96,7 @@ const InvoiceViewLayer = () => {
         showConfirmButton: false,
       });
 
-      fetchBookingData(); // refresh invoice view
+      await fetchBookingData(); 
     } catch (error) {
       console.error("Generate Dealer Invoice Error:", error);
       Swal.fire(
@@ -143,7 +143,7 @@ const InvoiceViewLayer = () => {
         title: "Invoice Sent",
         text: "Dealer invoice sent successfully.",
       });
-      fetchBookingData();
+      await fetchBookingData();
     } catch (error) {
       console.error("Send Dealer Invoice Error:", error);
       Swal.fire({
@@ -355,7 +355,7 @@ const InvoiceViewLayer = () => {
         title: "Invoice Sent",
         text: "Estimation invoice successfully sent on WhatsApp.",
       });
-      fetchBookingData();
+      await fetchBookingData();
     } catch (error) {
       console.error("WhatsApp Estimation Invoice Error:", error);
       Swal.fire({
@@ -403,7 +403,7 @@ const InvoiceViewLayer = () => {
         setIsInvoiceGenerated(false);
         navigate(`/booking-view/${bookingData.BookingID}`);
       });
-      fetchBookingData();
+      await fetchBookingData();
     } catch (error) {
       console.error("WhatsApp Final Invoice Error:", error);
       Swal.fire({
@@ -447,7 +447,7 @@ const InvoiceViewLayer = () => {
         title: "Invoice Sent",
         text: "Final invoice successfully send on email.",
       });
-      fetchBookingData();
+      await fetchBookingData();
     } catch (error) {
       console.error("Send Invoice Error:", error);
       Swal.fire({
@@ -524,7 +524,7 @@ const InvoiceViewLayer = () => {
         title: "Estimation Sent",
         text: "Estimation invoice successfully send on email.",
       });
-      fetchBookingData();
+      await fetchBookingData();
     } catch (error) {
       console.error("Send Estimation Invoice Error:", error);
       Swal.fire({

@@ -7566,9 +7566,21 @@ const handleConfirmService = async () => {
                   </Accordion.Header>
 
                   <Accordion.Body>
-                    {(bookingData?.ServiceImages ?? []).length > 0 ? (
+                    {(
+                      bookingData?.ServiceImages?.filter(
+                        (img) =>
+                          img.ImageUploadType !== "Pickup" &&
+                          img.ImageUploadType !== "Delivery"
+                      ) ?? []
+                    ).length > 0 ? (
                       <div className="row g-3">
-                        {(bookingData?.ServiceImages ?? []).map((img, idx) => (
+                        {bookingData?.ServiceImages
+                          ?.filter(
+                            (img) =>
+                              img.ImageUploadType !== "Pickup" &&
+                              img.ImageUploadType !== "Delivery"
+                          )
+                          .map((img, idx) => (
                           <div
                             className="col-lg-2 col-md-3 col-4"
                             key={img.ImageID ?? idx}
