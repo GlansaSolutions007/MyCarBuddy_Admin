@@ -1353,10 +1353,71 @@ const handleConfirmService = async () => {
     setSelectedImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleFieldAdvisorConfirm = async () => {
-    if (!selectedAddon) return;
+  // const handleFieldAdvisorConfirm = async () => {
+  //   if (!selectedAddon) return;
 
-    const addOnId = selectedAddon?.AddOnID ?? selectedAddon?.addOnId;
+  //   const addOnId = selectedAddon?.AddOnID ?? selectedAddon?.addOnId;
+  //   const employeeId = userId
+  //     ? Number(userId)
+  //     : Number(localStorage.getItem("userId") || 0);
+
+  //   if (!addOnId || !employeeId) {
+  //     Swal.fire({
+  //       icon: "warning",
+  //       title: "Invalid data",
+  //       text: "AddOn ID or Employee ID missing.",
+  //     });
+  //     return;
+  //   }
+  //   setIsConfirmingCompletion(true);
+  //   try {
+  //     const formData = new FormData();
+
+  //     formData.append("AddOnId", addOnId);
+  //     formData.append("EmployeeId", employeeId);
+
+  //     selectedImages.forEach((img) => {
+  //       formData.append("Images", img);
+  //     });
+
+  //     const res = await axios.post(`${API_BASE}Supervisor/confirm`, formData, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //         "Content-Type": "multipart/form-data",
+  //       },
+  //     });
+
+  //     if (res.status >= 200 && res.status < 300) {
+  //       Swal.fire({
+  //         icon: "success",
+  //         title: "Confirmed",
+  //         text: "Service confirmed successfully.",
+  //       });
+
+  //       setShowConfirmModal(false);
+  //       setSelectedImages([]);
+  //       setPreviewImages([]);
+
+  //       fetchBookingData();
+  //     }
+  //   } catch (err) {
+  //     console.error("Supervisor/confirm error:", err);
+
+  //     Swal.fire({
+  //       icon: "error",
+  //       title: "Error",
+  //       text:
+  //         err.response?.data?.message ||
+  //         err.message ||
+  //         "Failed to confirm service.",
+  //     });
+  //   } finally {
+  //     setIsConfirmingCompletion(false);
+  //   }
+  // };
+
+  const handleDirectApprove = async (addon) => {
+    const addOnId = addon?.AddOnID ?? addon?.addOnId;
     const employeeId = userId
       ? Number(userId)
       : Number(localStorage.getItem("userId") || 0);
@@ -1369,16 +1430,24 @@ const handleConfirmService = async () => {
       });
       return;
     }
+
+    const confirmResult = await Swal.fire({
+      title: "Approve Service?",
+      text: "Are you sure you want to approve this service completion?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Approve",
+      cancelButtonText: "Cancel",
+    });
+
+    if (!confirmResult.isConfirmed) return;
+
     setIsConfirmingCompletion(true);
     try {
       const formData = new FormData();
-
       formData.append("AddOnId", addOnId);
       formData.append("EmployeeId", employeeId);
-
-      selectedImages.forEach((img) => {
-        formData.append("Images", img);
-      });
+      // Images are not appended here as they are not required
 
       const res = await axios.post(`${API_BASE}Supervisor/confirm`, formData, {
         headers: {
@@ -1390,26 +1459,19 @@ const handleConfirmService = async () => {
       if (res.status >= 200 && res.status < 300) {
         Swal.fire({
           icon: "success",
-          title: "Confirmed",
-          text: "Service confirmed successfully.",
+          title: "Approved",
+          text: "Service approved successfully.",
+          timer: 1500,
+          showConfirmButton: false
         });
-
-        setShowConfirmModal(false);
-        setSelectedImages([]);
-        setPreviewImages([]);
-
         fetchBookingData();
       }
     } catch (err) {
-      console.error("Supervisor/confirm error:", err);
-
+      console.error("Approval error:", err);
       Swal.fire({
         icon: "error",
         title: "Error",
-        text:
-          err.response?.data?.message ||
-          err.message ||
-          "Failed to confirm service.",
+        text: err.response?.data?.message || "Failed to approve service.",
       });
     } finally {
       setIsConfirmingCompletion(false);
@@ -5270,14 +5332,16 @@ const showComparison = hasConfirmed && hasUnconfirmed;
                                                         type="button"
                                                         className="btn btn-primary-600 btn-sm"
                                                         // onClick={() => handleFieldAdvisorConfirm(addon)}
-                                                        onClick={() => {
-                                                          setSelectedAddon(
-                                                            addon,
-                                                          );
-                                                          setShowConfirmModal(
-                                                            true,
-                                                          );
-                                                        }}
+                                                        // onClick={() => {
+                                                        //   setSelectedAddon(
+                                                        //     addon,
+                                                        //   );
+                                                        //   setShowConfirmModal(
+                                                        //     true,
+                                                        //   );
+                                                        // }}
+                                                        disabled={isConfirmingCompletion}
+                                                        onClick={() => handleDirectApprove(addon)}
                                                       >
                                                         Approve
                                                       </button>
@@ -10015,7 +10079,7 @@ const showComparison = hasConfirmed && hasUnconfirmed;
           </div>
         )}
 
-        {showConfirmModal && (
+        {/* {showConfirmModal && (
           <div
             className="modal fade show d-block"
             style={{
@@ -10038,19 +10102,10 @@ const showComparison = hasConfirmed && hasUnconfirmed;
                     }}
                   />
                 </div>
-
                 <div className="modal-body">
                   <label className="form-label fw-semibold">
                     Upload Images
                   </label>
-
-                  {/* <input
-            type="file"
-            multiple
-            accept="image/*"
-            className="form-control"
-            onChange={handleImageChange}
-          /> */}
                   <div
                     className="border border-2 border-primary border-dashed rounded text-center p-4"
                     style={{
@@ -10062,29 +10117,21 @@ const showComparison = hasConfirmed && hasUnconfirmed;
                       document.getElementById("imageUploadInput").click()
                     }
                   >
-                    {/* Upload Icon */}
                     <div className="mb-2">
                       <span style={{ fontSize: "40px", color: "#0d6efd" }}>
                         ⬆
                       </span>
                     </div>
-
-                    {/* Browse Button */}
                     <button
                       type="button"
                       className="btn btn-primary rounded-pill px-5 py-2"
                     >
                       Browse
                     </button>
-
-                    {/* Text */}
                     <p className="text-muted mt-2 mb-1">drop a file here</p>
-
                     <small className="text-danger">
                       *File supported .png, .jpg & .webp
                     </small>
-
-                    {/* Hidden Input */}
                     <input
                       id="imageUploadInput"
                       type="file"
@@ -10094,8 +10141,6 @@ const showComparison = hasConfirmed && hasUnconfirmed;
                       onChange={handleImageChange}
                     />
                   </div>
-
-                  {/* Preview */}
                   {previewImages.length > 0 && (
                     <div className="row mt-3">
                       {previewImages.map((img, index) => (
@@ -10103,7 +10148,6 @@ const showComparison = hasConfirmed && hasUnconfirmed;
                           className="col-4 mb-2 position-relative"
                           key={index}
                         >
-                          {/* Remove Button */}
                           <button
                             type="button"
                             onClick={() => handleRemoveImage(index)}
@@ -10169,7 +10213,7 @@ const showComparison = hasConfirmed && hasUnconfirmed;
               </div>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Full-screen pickup image viewer with open/close effects */}
         {fullScreenImageUrl && (
