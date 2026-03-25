@@ -1327,7 +1327,9 @@ const LeadViewLayer = () => {
                           icon="lucide:calendar-check"
                           className="text-white"
                         />{" "}
-                        Book Services
+                        {lead?.NextAction === "Ok for Inspection"
+                          ? "Book Inspection"
+                          : "Book Services"}
                       </Link>
                     )}
                 </div>
