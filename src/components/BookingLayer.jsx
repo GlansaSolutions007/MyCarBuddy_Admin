@@ -224,9 +224,10 @@ const BookingLayer = () => {
     setSelectedTechnician(null);
     setSelectedSupervisor(null); // Reset supervisor selection
     setSelectedFieldAdvisor(null); // Reset field advisor selection
-    if (booking.FieldAdvisorName) {
-      setAssignType("fieldAdvisor");
-    } // Default to Field Advisor when opening modal
+    setAssignType("fieldAdvisor");
+    // if (booking.FieldAdvisorName) {
+    //   setAssignType("fieldAdvisor");
+    // } 
 
     const slots = booking.TimeSlot?.split(",").map((s) => s.trim()) || [];
     if (slots.length === 1) {
@@ -1014,6 +1015,7 @@ const BookingLayer = () => {
                     /> */}
                   </div>
                 )}
+                
 
                 {/* Employee Selection based on assignType */}
                 {assignType === "technician" ? (
