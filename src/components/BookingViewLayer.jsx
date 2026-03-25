@@ -3640,6 +3640,20 @@ const handleInitialAssignConfirm = async () => {
   return type;
 };
 
+// Calculate aggregate sums for Unconfirmed Services
+const cncTotals = (bookingData?.SupervisorBookings || []).reduce((acc, item) => {
+  acc.parts += Number(item.Price || 0);
+  acc.labour += Number(item.LabourCharges || 0);
+  acc.gst += Number(item.GSTAmount || 0);
+  return acc;
+}, { parts: 0, labour: 0, gst: 0 });
+
+cncTotals.total = cncTotals.parts + cncTotals.labour + cncTotals.gst;
+
+const hasConfirmed = (bookingData?.BookingAddOns?.length || 0) > 0;
+const hasUnconfirmed = (bookingData?.SupervisorBookings?.length || 0) > 0;
+const showComparison = hasConfirmed && hasUnconfirmed;
+
   return (
     <>
       <style>{`
@@ -4636,34 +4650,45 @@ const handleInitialAssignConfirm = async () => {
                                 <span className="ms-2 small">
                                   Payment Status:
                                 </span>
-                                {(() => {
-                                  const payments = bookingData?.Payments;
+                              {(() => {
+                                const bookingStatus = bookingData?.PaymentStatus; // 👈 root level
+                                const payments = bookingData?.Payments;
 
-                                  let label = "Pending";
-                                  let badgeClass = "bg-warning text-dark";
+                                let label = "Pending";
+                                let badgeClass = "bg-warning text-dark";
 
-                                  if (payments?.length > 0) {
-                                    const lastPayment = payments[0];
-                                    const status = lastPayment?.PaymentStatus;
+                                // ✅ Priority 1: Booking PaymentStatus
+                                if (bookingStatus === "Success") {
+                                  label = "Paid";
+                                  badgeClass = "bg-success";
+                                } else if (bookingStatus === "Partialpaid") {
+                                  label = "Partial Paid";
+                                  badgeClass = "bg-primary";
+                                } else if (bookingStatus === "Pending") {
+                                  label = "Pending";
+                                  badgeClass = "bg-warning text-dark";
+                                }
 
-                                    if (status === "Success") {
-                                      label = "Paid";
-                                      badgeClass = "bg-success";
-                                    } else if (status === "Partialpaid") {
-                                      label = "Partial Paid";
-                                      badgeClass = "bg-primary";
-                                    }
+                                // ✅ Optional fallback (if root status missing)
+                                else if (payments?.length > 0) {
+                                  const status = payments[0]?.PaymentStatus;
+
+                                  if (status === "Success") {
+                                    label = "Paid";
+                                    badgeClass = "bg-success";
+                                  } else if (status === "Partialpaid") {
+                                    label = "Partial Paid";
+                                    badgeClass = "bg-primary";
                                   }
-                                  return (
-                                    <span className="fw-semibold d-flex align-items-center">
-                                      <span
-                                        className={`badge px-3 py-1 rounded-pill ${badgeClass}`}
-                                      >
-                                        {label}
-                                      </span>
+                                }
+                                return (
+                                  <span className="fw-semibold d-flex align-items-center">
+                                    <span className={`badge px-3 py-1 rounded-pill ${badgeClass}`}>
+                                      {label}
                                     </span>
-                                  );
-                                })()}
+                                  </span>
+                                );
+                              })()}
 
                                 <span className="ms-2 small">
                                   Booking Status:
@@ -6041,150 +6066,87 @@ const handleInitialAssignConfirm = async () => {
                                 </div>
                               </div>
                             )}
-                            {/* <div className="d-flex justify-content-between align-items-center mb-2 mt-2">
-                            <h6 className="fw-bold mb-0">Billing Summary</h6>
-                          </div> */}
                             {bookingData ? (
                               <>
-                                <ul className="list-group list-group-flush ">
-                                  <li className="list-group-item d-flex justify-content-between p-0">
-                                    <span className="text-secondary">
-                                      Parts Subtotal
-                                    </span>
-                                    <span>
-                                      ₹
-                                      {Number(
-                                        bookingData.TotalPrice || 0,
-                                      ).toFixed(2)}
-                                    </span>
-                                  </li>
-                                  <li className="list-group-item d-flex justify-content-between p-0">
-                                    <span className="text-secondary">
-                                      Service Charges
-                                    </span>
-                                    <span>
-                                      ₹
-                                      {Number(
-                                        bookingData.LabourCharges || 0,
-                                      ).toFixed(2)}
-                                    </span>
-                                  </li>
-                                  {/* <li className="list-group-item d-flex justify-content-between p-0">
-                                  <span className="text-secondary">
-                                    GST Total
-                                  </span>
-                                  <span>
-                                    ₹
-                                    {Number(bookingData.GSTAmount || 0).toFixed(2)}
-                                  </span>
-                                </li> */}
-                                  <li className="list-group-item d-flex justify-content-between p-0">
-                                    <span className="text-secondary">
-                                      SGST(9%)
-                                    </span>
-                                    <span>
-                                      ₹
-                                      {(
-                                        Number(bookingData.GSTAmount || 0) / 2
-                                      ).toFixed(2)}
-                                    </span>
-                                  </li>
-                                  <li className="list-group-item d-flex justify-content-between p-0">
-                                    <span className="text-secondary">
-                                      CGST(9%)
-                                    </span>
-                                    <span>
-                                      ₹
-                                      {(
-                                        Number(bookingData.GSTAmount || 0) / 2
-                                      ).toFixed(2)}
-                                    </span>
-                                  </li>
-
-                                  {bookingData.CouponAmount ? (
-                                    <li className="list-group-item d-flex justify-content-between p-0">
-                                      <span className="fw-semibold text-secondary">
-                                        Coupon
-                                      </span>
-                                      <span>
-                                        - ₹
-                                        {Number(
-                                          bookingData.CouponAmount || 0,
-                                        ).toFixed(2)}
-                                      </span>
-                                    </li>
-                                  ) : null}
-
-                                  <li className="list-group-item d-flex justify-content-between border-top p-0">
-                                    <span className="fw-bold text-dark">
-                                      Total Amount
-                                    </span>
-                                    <span className="fw-bold text-success">
-                                      ₹
-                                      {Number(
-                                        (bookingData.TotalPrice || 0) +
-                                          (bookingData.GSTAmount || 0) +
-                                          (bookingData.LabourCharges || 0) -
-                                          (bookingData.CouponAmount || 0),
-                                      ).toFixed(2)}
-                                    </span>
-                                  </li>
-                                  {/* {alreadyPaid > 0 && (
-                                <> */}
-                                  <li className="list-group-item d-flex justify-content-between p-0">
-                                    <span className="text-secondary">
-                                      Paid Amount
-                                    </span>
-                                    <span className="text-primary">
-                                      - ₹{alreadyPaidDisplay.toFixed(2)}
-                                    </span>
-                                  </li>
-                                  {bookingData?.SupervisorBookings?.length >
-                                    0 && (
-                                    <li className="list-group-item d-flex justify-content-between border-top bg-warning p-0">
-                                      <span className="fw-bold text-dark">
-                                        Customer Not Confirmed Services Amount
-                                      </span>
-                                      <span className="fw-bold text-dark">
-                                        ₹
-                                        {Math.max(
-                                          (
-                                            bookingData?.SupervisorBookings ||
-                                            []
-                                          ).reduce((total, booking) => {
-                                            return (
-                                              total +
-                                              Number(booking?.Price || 0) +
-                                              Number(booking?.GSTAmount || 0) +
-                                              Number(
-                                                booking?.LabourCharges || 0,
-                                              )
-                                            );
-                                          }, 0),
-                                        ).toFixed(2)}
-                                      </span>
-                                    </li>
+                                <div className="mt-2 border-top pt-2">
+                                {/* Header for columns if both exist */}
+                              <div className="d-flex fw-bold mb-2 border-bottom pb-1 bg-primary-subtle text-primary-emphasis px-2 rounded-top" style={{ fontSize: '16px' }}>
+                                  <div style={{ flex: '1' }}>Billing Summary</div>
+                                  {showComparison && (
+                                    <div style={{ width: '150px' }} className="text-center">Not Confirmed</div>
                                   )}
-                                  <li className="list-group-item d-flex justify-content-between border-top p-0">
-                                    <span className="fw-bold text-dark">
-                                      Balance Amount
+                                  {(hasConfirmed || hasUnconfirmed) && (
+                                    <div style={{ width: '150px' }} className="text-end">
+                                      {hasConfirmed ? "Confirmed" : "Not Confirmed"}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="billing-rows">
+                                  {/* Helper function to render a row with dynamic columns */}
+                                  {[
+                                    { label: "Parts Subtotal", cnc: cncTotals.parts, cc: bookingData.TotalPrice },
+                                    { label: "Service Charges", cnc: cncTotals.labour, cc: bookingData.LabourCharges },
+                                    { label: "SGST(9%)", cnc: cncTotals.gst / 2, cc: (bookingData.GSTAmount || 0) / 2 },
+                                    { label: "CGST(9%)", cnc: cncTotals.gst / 2, cc: (bookingData.GSTAmount || 0) / 2 },
+                                    { label: "Coupon", cc: bookingData.CouponAmount, isCoupon: true },
+                                  ].map((row, idx) => {
+                                    // Logic: If only CNC exists, row.cc will show CNC value on the right
+                                    const centerValue = showComparison ? row.cnc : null;
+                                    const rightValue = !hasConfirmed && hasUnconfirmed ? row.cnc : row.cc;
+
+                                    if (row.isCoupon && !row.cc) return null; // Hide coupon if 0
+
+                                    return (
+                                      <div key={idx} className="d-flex py-1 border-bottom-dashed align-items-center">
+                                        <span className="text-secondary" style={{ flex: '1' }}>{row.label}</span>
+                                        
+                                        {/* Center Column: Only shows if both exist */}
+                                        {showComparison && (
+                                          <span className=" text-center" style={{ width: '120px' }}>
+                                            {row.label === "Coupon" ? "—" : `₹${Number(centerValue || 0).toFixed(2)}`}
+                                          </span>
+                                        )}
+
+                                        {/* Right Column: Shows either Confirmed OR (if CC empty) Unconfirmed */}
+                                        <span className={`text-end ${row.isCoupon ? 'text-danger' : ''}`} style={{ width: '120px' }}>
+                                          {row.isCoupon ? "-" : ""} ₹{Number(rightValue || 0).toFixed(2)}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+
+                                  {/* TOTAL AMOUNT BOLD ROW */}
+                                  <div className="d-flex py-2 align-items-center fw-bold border-top mt-1">
+                                    <span className="text-dark" style={{ flex: '1' }}>Total Amount</span>
+                                    {showComparison && (
+                                      <span className="text-dark text-center" style={{ width: '120px' }}>
+                                        ₹{cncTotals.total.toFixed(2)}
+                                      </span>
+                                    )}
+                                    <span className="text-dark text-end" style={{ width: '120px' }}>
+                                      ₹{(!hasConfirmed && hasUnconfirmed ? cncTotals.total : totalAmount).toFixed(2)}
                                     </span>
-                                    <span className="fw-bold text-success">
-                                      ₹
-                                      {Math.max(
-                                        Number(
-                                          (bookingData.TotalPrice || 0) +
-                                            (bookingData.GSTAmount || 0) +
-                                            (bookingData.LabourCharges || 0) -
-                                            (bookingData.CouponAmount || 0),
-                                        ) - alreadyPaid,
-                                        0,
-                                      ).toFixed(2)}
-                                    </span>
-                                  </li>
-                                  {/* </>
-                              )} */}
-                                </ul>
+                                  </div>
+
+                                  {/* Payments & Balance Logic - Only applies to Confirmed Services */}
+                                  {hasConfirmed && (
+                                    <>
+                                      <div className="d-flex py-1 align-items-center  fw-bold border-top mt-1">
+                                        <span className="text-secondary" style={{ flex: '1' }}>Paid Amount</span>
+                                        <span className="text-success text-end" style={{ width: '120px' }}>
+                                          - ₹{alreadyPaidDisplay.toFixed(2)}
+                                        </span>
+                                      </div>
+                                      <div className="d-flex py-2 align-items-center fw-bold border-top mt-1">
+                                        <span className="text-dark" style={{ flex: '1' }}>Balance Amount</span>
+                                        <span className="text-primary text-end" style={{ width: '120px' }}>
+                                          ₹{remainingAmount.toFixed(2)}
+                                        </span>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
                                 {bookingData?.SupervisorBookings &&
                                   bookingData.SupervisorBookings.length > 0 && (
                                     <div className="alert alert-info py-2 px-3 mb-2 mb-md-3 small">
