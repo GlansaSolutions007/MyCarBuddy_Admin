@@ -2624,7 +2624,7 @@ const BookServicesLayer = () => {
               />
             );
           },
-          width: "120px",
+          width: "150px",
           sortable: true,
         },
       ]

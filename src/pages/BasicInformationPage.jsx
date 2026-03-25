@@ -8,7 +8,7 @@ const BasicInformationPage = () => {
       {/* MasterLayout */}
       <MasterLayout>
         {/* Breadcrumb */}
-        <Breadcrumb title='Basic Information' />
+        <Breadcrumb title='Customer Details' />
 
         {/* BasicInformationLayer */}
         <BasicInformationLayer />
