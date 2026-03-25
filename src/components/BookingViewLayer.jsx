@@ -897,36 +897,34 @@ useEffect(() => {
   //   setShowAssignStep1Modal(true);
   // };
 
-  const handleInitialAssignClick = () => {
-    const routes = bookingData?.CarPickUpDelivery || [];
+ const handleInitialAssignClick = () => {
+  const routes = bookingData?.CarPickUpDelivery || [];
 
-    if (routes.length === 0) {
-      // No previous assignment → allow
-      setAssignServiceLocation(null);
-      setShowAssignStep1Modal(true);
-      return;
-    }
-
-    // Get last route (latest created)
+  // 1. Safety Check: If there are existing routes, ensure the last one is finished
+  if (routes.length > 0) {
     const lastRoute = routes[routes.length - 1];
-
     const lastStatus = lastRoute?.Status?.toLowerCase();
 
-    if (lastStatus === "completed" || lastStatus === "cancelled") {
-      // Allow new assignment
-      setAssignServiceLocation(null);
-      setShowAssignStep1Modal(true);
-    } else {
-      // Block assignment
-      // alert("Assigned technician not completed");
+    // If the technician is still active (not completed or cancelled), block and STOP
+    if (lastStatus !== "completed" && lastStatus !== "cancelled") {
       Swal.fire({
         icon: "warning",
         title: "Cannot Assign",
         text: "The previously assigned technician has not completed the service. Please wait until the current assignment is completed before assigning a new technician.",
       });
+      return; // Stop the function here so no modals open
     }
-  };
+  }
 
+  // 2. If we reached here, assignment is ALLOWED. 
+  // Now decide: Skip Step 1 if it's already a Garage Service
+  if (bookingData?.ServiceType === "ServiceAtGarage") {
+    openGarageFlowModal(); // Directly go to Pickup/Drop selection (Step 2)
+  } else {
+    setAssignServiceLocation(null);
+    setShowAssignStep1Modal(true); // Show Doorstep vs Garage choice (Step 1)
+  }
+};
   // After user selects "Service at doorstep" → open employee selection modal
   const openDoorstepAssignModal = () => {
     setShowAssignStep1Modal(false);
@@ -934,6 +932,11 @@ useEffect(() => {
     setSelectedInitialTechnician(null);
     setSelectedInitialSupervisor(null);
     setSelectedInitialFieldAdvisor(null);
+     const now = new Date();
+  const currentTime = now.getHours().toString().padStart(2, '0') + ":" + 
+                      now.getMinutes().toString().padStart(2, '0');
+  setGaragePickupDate(today);       // Sets the date input to Today
+  setGaragePickupTime(currentTime); // Sets the time input to Current Time
     if (bookingData && bookingData.TimeSlot) {
       const slots = bookingData.TimeSlot.split(",").map((s) => s.trim());
       if (slots.length === 1) {
@@ -1488,7 +1491,128 @@ const handleConfirmService = async () => {
     };
   };
 
-  const handleInitialAssignConfirm = async () => {
+const handleInitialAssignConfirm = async () => {
+  // 1. YOUR VALIDATION BLOCK (Kept exactly as requested)
+  if (!garagePickupDate) {
+    Swal.fire({ icon: "error", title: "Error", text: "Please select a date." });
+    return;
+  }
+  if (!garagePickupTime) {
+    Swal.fire({ icon: "error", title: "Error", text: "Please select a time." });
+    return;
+  }
+
+  let payload;
+  let apiUrl;
+  let method = "post";
+
+  // Combine Date and Time for the API (Format: YYYY-MM-DDTHH:mm:ss)
+  const combinedAssignDate = `${garagePickupDate}T${garagePickupTime}:00`;
+
+  // 2. Logic based on Assignment Type
+  if (initialAssignType === "fieldAdvisor") {
+    if (!selectedInitialFieldAdvisor) {
+      Swal.fire({ icon: "error", title: "Error", text: "Please select a field advisor before assigning." });
+      return;
+    }
+    payload = {
+      bookingIds: [bookingId],
+      supervisorHeadId: Number(userId),
+      fieldAdvisorId: selectedInitialFieldAdvisor.value,
+      assignTimeSlot: garagePickupTime, // Now sending the string from time picker
+    };
+    apiUrl = `${API_BASE}Supervisor/AssignToFieldAdvisor`;
+  } 
+  else if (initialAssignType === "technician") {
+    if (!selectedInitialTechnician) {
+      Swal.fire({ icon: "error", title: "Error", text: "Please select a technician before assigning." });
+      return;
+    }
+    if (!selectedServiceType || selectedServiceType.length === 0) {
+      Swal.fire({ icon: "error", title: "Error", text: "Please select at least one service." });
+      return;
+    }
+
+    // Get comma-separated IDs of selected services
+    const selectedServiceNames = selectedServiceType.map((st) => st.value);
+    const selectedAddOns = (bookingData?.BookingAddOns || []).filter(
+      (addon) => addon.ServiceName && selectedServiceNames.includes(addon.ServiceName)
+    );
+    const addOnIds = selectedAddOns.map((addon) => String(addon.AddOnID)).join(",") || "0";
+
+    payload = {
+      bookingID: bookingData.BookingID,
+      assignDate: combinedAssignDate,
+      role: "Technician",
+      techID: selectedInitialTechnician?.value,
+      addOnId: addOnIds,
+      leadId: bookingData.LeadId,
+      ServiceType: "ServiceAtHome",
+      assignTimeSlot: garagePickupTime, // Now sending the string from time picker
+    };
+    apiUrl = `${API_BASE}Supervisor/SavePickupDeliveryTime`;
+  } 
+  else { // Supervisor logic
+    if (!selectedInitialSupervisor) {
+      Swal.fire({ icon: "error", title: "Error", text: "Please select a supervisor before assigning." });
+      return;
+    }
+    payload = {
+      bookingID: bookingData.BookingID,
+      assignDate: combinedAssignDate,
+      role: "Supervisor",
+      techID: selectedInitialSupervisor?.value,
+      leadId: bookingData.LeadId,
+      ServiceType: "ServiceAtHome",
+      timeSlot: garagePickupTime, // Now sending the string from time picker
+    };
+    apiUrl = `${API_BASE}Supervisor/SavePickupDeliveryTime`;
+  }
+
+  // 3. Execution
+  setIsInitialAssigning(true);
+  try {
+    const res = await axios({
+      method: method,
+      url: apiUrl,
+      data: payload,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (res.status === 200 || res.status === 201) {
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: res.data.message || "Assigned successfully",
+      });
+      
+      // Cleanup and Refresh
+      setInitialAssignModalOpen(false);
+      fetchBookingData();
+      
+      // Reset local states
+      setSelectedInitialTechnician(null);
+      setSelectedInitialSupervisor(null);
+      setSelectedInitialFieldAdvisor(null);
+      setSelectedServiceType([]);
+      setGaragePickupDate("");
+      setGaragePickupTime("");
+    } else {
+      Swal.fire({ icon: "error", title: "Error", text: res.data.message || "Failed to assign" });
+    }
+  } catch (error) {
+    console.error("Assignment failed:", error);
+    Swal.fire({
+      icon: "error",
+      title: "API Error",
+      text: error.response?.data?.message || "Error while assigning. Please try again.",
+    });
+  } finally {
+    setIsInitialAssigning(false);
+  }
+};
+
+  const handleInitialyyyAssignConfirm = async () => {
     // Time slot validation for all assignment types
     if (
       !pickupDropReassignTimeSlot ||
@@ -2725,6 +2849,76 @@ const handleConfirmService = async () => {
     setRejectedServiceIds((prev) =>
       prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id],
     );
+  };
+
+  const handleCustomerRejection = () => {
+    if (!bookingData?.BookingID) {
+      Swal.fire("Error", "Booking data not available.", "error");
+      return;
+    }
+
+    const hasDealerId = (item) => {
+      const id = item?.DealerID;
+      return id != null && id !== "" && Number(id) !== 0;
+    };
+
+    // Filter services missing dealers
+    const addOnsWithoutDealer = (bookingData?.BookingAddOns || []).filter(
+      (item) => !hasDealerId(item),
+    );
+    const supervisorBookingsWithoutDealer = (
+      bookingData?.SupervisorBookings || []
+    ).filter((item) => !hasDealerId(item));
+
+    const missingDealer = [
+      ...addOnsWithoutDealer,
+      ...supervisorBookingsWithoutDealer,
+    ];
+
+    if (missingDealer.length > 0) {
+      const names = missingDealer
+        .map((item) => item?.ServiceName || item?.Description || "Service")
+        .filter(Boolean);
+      Swal.fire({
+        icon: "warning",
+        title: "Dealer Selection Required",
+        html: `Please select dealers for all services before rejection.<br/><br/><strong>Dealer selection missing for below services:</strong><br/><br/>${names.join("<br/>")}`,
+      });
+      return;
+    }
+
+    const isSupervisorConfirmed = (item) =>
+      item?.IsSupervisor_Confirm === 1 || item?.IsSupervisor_Confirm === true;
+
+    // Filter services not confirmed by supervisor
+    const addOnsNotConfirmed = (bookingData?.BookingAddOns || []).filter(
+      (item) => !isSupervisorConfirmed(item),
+    );
+    const supervisorBookingsNotConfirmed = (
+      bookingData?.SupervisorBookings || []
+    ).filter((item) => !isSupervisorConfirmed(item));
+
+    const missingConfirm = [
+      ...addOnsNotConfirmed,
+      ...supervisorBookingsNotConfirmed,
+    ];
+
+    if (missingConfirm.length > 0) {
+      const names = missingConfirm
+        .map((item) => item?.ServiceName || item?.Description || "Service")
+        .filter(Boolean);
+      Swal.fire({
+        icon: "error",
+        title: "Supervisor confirmation required",
+        html: `All services must be confirmed by supervisor before customer rejection.<br/><br/><strong>Pending supervisor confirmation for:</strong><br/>${names.join("<br/>")}`,
+      });
+      return;
+    }
+
+    // If all validations pass, open the rejection modal
+    setRejectionDescription("");
+    setRejectedServiceIds([]);
+    setShowCustomerRejectionModal(true);
   };
 
   const handleCustomerRejectionSubmit = async () => {
@@ -4192,7 +4386,7 @@ const handleConfirmService = async () => {
                     <button
                       type="button"
                       className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2"
-                      title="Fill Basic Details"
+                      title="Customer Details"
                       onClick={() => {
                         if (bookingData?.BookingID) {
                           navigate(`/booking-basic/${bookingData.BookingID}`);
@@ -4204,7 +4398,7 @@ const handleConfirmService = async () => {
                         width={16}
                         height={16}
                       />
-                      Fill Basic Details
+                      Customer Details
                     </button>
                   )}
                   {/* Convert To Service / Service Converted - Add Services Button */}
@@ -4351,7 +4545,7 @@ const handleConfirmService = async () => {
                         {bookingData?.SupervisorBookings?.length > 0 && (
                           <button
                             className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                            onClick={() => setShowCustomerRejectionModal(true)}
+                            onClick={handleCustomerRejection} 
                           >
                             Customer Rejection
                           </button>
@@ -4775,7 +4969,7 @@ const handleConfirmService = async () => {
                                             style={{ width: "160px" }}
                                             className="text-center"
                                           >
-                                            Confirm Service
+                                            MCB Approval
                                           </th>
                                           <th
                                             style={{ width: "100px" }}
@@ -5025,13 +5219,14 @@ const handleConfirmService = async () => {
                                                   1 ||
                                                 addon.isCompleted_Confirmation ===
                                                   1 ? (
-                                                  <div className="d-flex gap-2 align-items-center justify-content-center">
-                                                    <span className="badge bg-success px-3 py-3 py-4 rounded-pill">
-                                                      {addon.EmployeeName ??
-                                                        addon.employeeName ??
-                                                        "—"}
-                                                    </span>
-                                                  </div>
+                                                 <div className="d-flex flex-column align-items-center justify-content-center gap-1">
+                                                  <span>Approved By</span>
+                                                  <span className="badge bg-success px-3 py-3 py-4 rounded-pill">
+                                                    {addon.EmployeeName ??
+                                                      addon.employeeName ??
+                                                      "—"}
+                                                  </span>
+                                                </div>
                                                 ) : (
                                                   (() => {
                                                     const status = (
@@ -5059,7 +5254,7 @@ const handleConfirmService = async () => {
                                                           );
                                                         }}
                                                       >
-                                                        Confirm
+                                                        Approve
                                                       </button>
                                                     ) : null;
                                                   })()
@@ -6098,7 +6293,7 @@ const handleConfirmService = async () => {
                                           handleInitialAssignClick();
                                         }}
                                       >
-                                        Service Assignment
+                                        Assign Technician / Driver
                                       </button>
                                     )}
 
@@ -8290,6 +8485,10 @@ const handleConfirmService = async () => {
                         />
                       </button>
                     )}
+                     {!(
+                        bookingData?.BookingAddOns?.length === 1 && 
+                        bookingData?.BookingAddOns[0]?.ServiceType === "Inspection"
+                      ) && (
                     <button
                       type="button"
                       className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white position-relative overflow-hidden"
@@ -8333,6 +8532,7 @@ const handleConfirmService = async () => {
                         className="text-secondary opacity-75"
                       />
                     </button>
+                      )}
                   </div>
                 </div>
               </div>
@@ -8544,16 +8744,23 @@ const handleConfirmService = async () => {
                     />
                   )}
 
-                  <div class="row g-2 mb-2">
-                    <div class="col-6">
-                      <label class="form-label small mb-1">Date</label>
-                      <input
-                        type="date"
-                        className="form-control form-control-sm"
-                        min={today}
-                        value={garagePickupDate}
-                        onChange={(e) => setGaragePickupDate(e.target.value)}
-                      />
+                  <div className="row g-2 mb-2">
+                    <div className="col-12">
+                      <label className="form-label small mb-1"> Select Date</label>
+                       <input
+                          type="date"
+                          className="form-control form-control-sm"
+                          min={today}
+                          value={garagePickupDate}
+                          onChange={(e) => {
+                            const selectedDate = e.target.value;
+                            setGaragePickupDate(selectedDate);
+                            // Re-validate time if date changes to today
+                            if (selectedDate === today && isPastTimeForDate(selectedDate, garagePickupTime)) {
+                              setGaragePickupTime(""); 
+                            }
+                          }}
+                        />
                     </div>
                     {/* <div class="col-6">
                       <label class="form-label small mb-1">Time</label>
@@ -8566,51 +8773,27 @@ const handleConfirmService = async () => {
                     </div> */}
                   </div>
                   <div className="col-12">
-                    <label className="form-label small fw-semibold">
-                      Time Slot
-                    </label>
-                    <Select
-                      isMulti
-                      menuPortalTarget={document.body}
-                      menuPosition="fixed"
-                      styles={{
-                        menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                      }}
-                      options={getFilteredTimeSlotsForDate(garagePickupDate)
-                        .sort((a, b) => {
-                          const [aH, aM] = (a.StartTime || "00:00")
-                            .split(":")
-                            .map(Number);
-                          const [bH, bM] = (b.StartTime || "00:00")
-                            .split(":")
-                            .map(Number);
-                          return aH * 60 + aM - (bH * 60 + bM);
-                        })
-                        .map((slot) => {
-                          const val = `${slot.StartTime} - ${slot.EndTime}`;
-                          return {
-                            value: val,
-                            label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}`,
-                          };
-                        })}
-                      value={
-                        pickupDropReassignTimeSlot?.map((val) => {
-                          const [s, e] = (val || "").split(/\s*-\s*/);
-                          return {
-                            value: val,
-                            label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}`,
-                          };
-                        }) ?? []
-                      }
-                      onChange={(opts) =>
-                        setPickupDropReassignTimeSlot(
-                          opts ? opts.map((o) => o.value) : [],
-                        )
-                      }
-                      placeholder="Select time slot(s)"
-                      isDisabled={!garagePickupDate}
-                    />
-                  </div>
+                  <label className="form-label small fw-semibold">Select Time</label>
+                     <input
+                        type="time"
+                        className="form-control form-control-sm py-2"
+                        value={garagePickupTime} // This connects the state to the UI
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (isPastTimeForDate(garagePickupDate, val)) {
+                            e.currentTarget?.blur?.();
+                            Swal.fire({
+                              icon: "warning",
+                              title: "Invalid Time",
+                              text: "You cannot select a past time for today.",
+                            });
+                            setGaragePickupTime(""); 
+                            return;
+                          }
+                          setGaragePickupTime(val);
+                        }}
+                      />
+                </div>
                 </div>
                 <div className="modal-footer d-inline-flex align-items-center justify-content-center">
                   <button
@@ -8641,7 +8824,8 @@ const handleConfirmService = async () => {
                       (initialAssignType === "technician" &&
                         selectedServiceType.length === 0) ||
                       garagePickupDate === "" ||
-                      pickupDropReassignTimeSlot.length === 0
+                      !garagePickupTime
+                      // pickupDropReassignTimeSlot.length === 0
                     }
                   >
                     {isInitialAssigning ? (
@@ -8720,60 +8904,58 @@ const handleConfirmService = async () => {
                   {/* Step: Car pickup vs Car drop — tap to advance */}
                   {garageStep === "task" && (
                     <>
-                      <p className="text-muted small mb-3">
-                        Tap an option to continue.
-                      </p>
-                      <div className="d-flex flex-column gap-3">
-                        <button
-                          type="button"
-                          className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
-                          style={{
-                            minHeight: "72px",
-                            transition: "all 0.2s ease",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform =
-                              "translateY(-2px)";
-                            e.currentTarget.style.boxShadow =
-                              "0 6px 20px rgba(0,0,0,0.08)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = "";
-                            e.currentTarget.style.boxShadow = "";
-                          }}
-                          onClick={() => {
-                            setGarageTask("carPickup");
-                            setGarageStep("route");
-                          }}
-                        >
-                          <div className="d-flex align-items-center gap-3">
-                            <span
-                              className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
-                              style={{ width: 48, height: 48 }}
+                          <div className="d-flex flex-column gap-3">
+                          {/* Logic: Hide Car Pickup if only 1 dealer is assigned AND the car is already at a dealer */}
+                          {!(garageDealerOptions.length === 1 && hasExistingCustomerToDealerRoute) && (
+                            <button
+                              type="button"
+                              className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
+                              style={{
+                                minHeight: "72px",
+                                transition: "all 0.2s ease",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = "translateY(-2px)";
+                                e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "";
+                                e.currentTarget.style.boxShadow = "";
+                              }}
+                              onClick={() => {
+                                setGarageTask("carPickup");
+                                setGarageStep("route");
+                              }}
                             >
+                              <div className="d-flex align-items-center gap-3">
+                                <span
+                                  className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
+                                  style={{ width: 48, height: 48 }}
+                                >
+                                  <Icon
+                                    icon="mdi:car-pickup"
+                                    width={24}
+                                    height={24}
+                                    className="text-primary"
+                                  />
+                                </span>
+                                <div>
+                                  <span className="fw-semibold d-block text-dark">
+                                    Car pickup
+                                  </span>
+                                  <span className="small text-muted">
+                                    Pick up vehicle and take to dealer
+                                  </span>
+                                </div>
+                              </div>
                               <Icon
-                                icon="mdi:car-pickup"
-                                width={24}
-                                height={24}
-                                className="text-primary"
+                                icon="mdi:chevron-right"
+                                width={20}
+                                height={20}
+                                className="text-secondary opacity-75"
                               />
-                            </span>
-                            <div>
-                              <span className="fw-semibold d-block text-dark">
-                                Car pickup
-                              </span>
-                              <span className="small text-muted">
-                                Pick up vehicle and take to dealer
-                              </span>
-                            </div>
-                          </div>
-                          <Icon
-                            icon="mdi:chevron-right"
-                            width={20}
-                            height={20}
-                            className="text-secondary opacity-75"
-                          />
-                        </button>
+                            </button>
+                          )}
                         {/* Hide Car drop when CustomerToDealer route does NOT exist */}
                         {hasExistingCustomerToDealerRoute && (
                           <button
@@ -8883,8 +9065,8 @@ const handleConfirmService = async () => {
                                 </span>
                                 <span className="small text-muted">
                                   {garageTask === "carPickup"
-                                    ? "Pickup at customer → Deliver at dealer"
-                                    : "Pickup at dealer → Deliver at customer"}
+                                    ? "Pickup from Customer → Deliver to Dealer"
+                                    : "Pickup from Dealer → Deliver to Customer"}
                                 </span>
                               </div>
                             </div>
@@ -8943,7 +9125,7 @@ const handleConfirmService = async () => {
                                     Dealer to dealer
                                   </span>
                                   <span className="small text-muted">
-                                    Pickup at one dealer → Deliver at another
+                                    Pickup at one dealer → Deliver to another dealer
                                   </span>
                                 </div>
                               </div>
@@ -8963,7 +9145,7 @@ const handleConfirmService = async () => {
                   {garageStep === "details" && (
                     <>
                       <div className="small text-muted mb-2 fw-semibold">
-                        Pickup & deliver
+                        Pickup & delivery
                       </div>
                       {garageRoute === "customerToDealer" &&
                         garageTask === "carPickup" && (
@@ -8978,7 +9160,7 @@ const handleConfirmService = async () => {
                             </div>
                             <div className="mb-0">
                               <label className="form-label small mb-1">
-                                Deliver from (dealer)
+                                Deliver To (Dealer)
                               </label>
                               <Select
                                 options={garageDealerOptions}
@@ -8994,7 +9176,7 @@ const handleConfirmService = async () => {
                           <div className="rounded-3 border p-3 mb-3 bg-light">
                             <div className="mb-2">
                               <label className="form-label small mb-1">
-                                Pickup at (dealer)
+                                Pickup From (Dealer)
                               </label>
                               <Select
                                 options={garageDealerOptions}
@@ -9006,7 +9188,7 @@ const handleConfirmService = async () => {
                             </div>
                             <div className="mb-0">
                               <span className="small text-muted d-block">
-                                Deliver from
+                                Deliver To 
                               </span>
                               <span className="fw-semibold">
                                 {bookingData?.Address || "Customer location"}
@@ -9018,7 +9200,7 @@ const handleConfirmService = async () => {
                         <div className="rounded-3 border p-3 mb-3 bg-light">
                           <div className="mb-3">
                             <label className="form-label small mb-1">
-                              Pickup from (dealer)
+                              Pickup From (Dealer)
                             </label>
                             <Select
                               options={garageDealerOptions}
@@ -9030,7 +9212,7 @@ const handleConfirmService = async () => {
                           </div>
                           <div>
                             <label className="form-label small mb-1">
-                              Deliver at (dealer)
+                              Deliver To (Dealer)
                             </label>
                             <Select
                               options={garageDeliverDealerOptions}
@@ -9556,6 +9738,7 @@ const handleConfirmService = async () => {
         placeholder="Select time slot(s)"
         isDisabled={!pickupDropReassignDate}
       />
+      
     </>
   )}
 </div>
