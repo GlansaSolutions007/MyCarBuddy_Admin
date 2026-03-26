@@ -2488,11 +2488,17 @@ const handleInitialAssignConfirm = async () => {
       if (result.isConfirmed) {
         generateHandler();
       } else if (result.isDenied) {
-        const typeParam = invoiceType
-          ? `?type=${encodeURIComponent(invoiceType)}`
-          : "";
-        navigate(`/invoice-view/${bookingData.BookingID}${typeParam}`);
+      let url = `/invoice-view/${bookingData.BookingID}?type=${encodeURIComponent(invoiceType)}`;
+      
+      // If Dealer type, find the dealerId from the addons and append to URL
+      if (invoiceType.toLowerCase() === "dealer") {
+        const dealerID = bookingData?.BookingAddOns?.find((addon) => addon?.DealerID)?.DealerID;
+        if (dealerID) {
+          url += `&dealerId=${dealerID}`;
+        }
       }
+      navigate(url);
+    }
     });
   };
 
@@ -2686,7 +2692,8 @@ const handleInitialAssignConfirm = async () => {
         "success",
       );
       // change route if dealer invoice has different view
-      navigate(`/invoice-view/${bookingData.BookingID}?type=Dealer`);
+      // navigate(`/invoice-view/${bookingData.BookingID}?type=Dealer`);
+       navigate(`/invoice-view/${bookingData.BookingID}?type=Dealer&dealerId=${dealerId}`);
     } catch (error) {
       console.error("Generate Dealer Invoice Error:", error);
       Swal.fire(
@@ -3083,8 +3090,35 @@ const handleInitialAssignConfirm = async () => {
     hasAtLeastOneService &&
     allSupervisorConfirmed &&
     totalAmount > 0;
-  const showDealerInvoiceButton =
-    hasAtLeastOneService && allSupervisorConfirmed && totalAmount > 0;
+
+  // const showDealerInvoiceButton =
+  //   hasAtLeastOneService && allSupervisorConfirmed && totalAmount > 0;
+
+    // 1. Get all unique dealer IDs from the booking
+    const uniqueDealerIds = Array.from(
+      new Set(
+        [
+          ...(bookingData?.BookingAddOns || []),
+          ...(bookingData?.SupervisorBookings || []),
+        ]
+          .map((item) => String(item.DealerID || ""))
+          .filter((id) => id !== "" && id !== "0")
+      )
+    );
+
+    // 2. Filter out the MyCarBuddy internal ID (1)
+    const partnerDealers = uniqueDealerIds.filter((id) => id !== "1");
+
+    // 3. Show button ONLY if there is at least one partner dealer (External Dealer)
+    const showDealerInvoiceButton =
+      hasAtLeastOneService &&
+      allSupervisorConfirmed &&
+      totalAmount > 0 &&
+      partnerDealers.length > 0; // If Dealer 1 and Dealer 55 both exist, this will be TRUE.
+
+    // 4. Get the first actual partner dealer ID to use in the link
+    const firstPartnerDealerId = partnerDealers[0];
+
   const confirmationData = bookingData?.BookingAddOns?.find(
     (item) =>
       item?.ConfirmedBy && item?.ConfirmRole && item?.ConfirmDescription,
@@ -6404,6 +6438,32 @@ const showComparison = hasConfirmed && hasUnconfirmed;
                                     </button>
                                   )} */}
                                   {showDealerInvoiceButton && (
+                                  <Link
+                                    // to={`/invoice-view/${bookingData?.BookingID}?type=Dealer&dealerId=${
+                                    //   bookingData?.BookingAddOns?.find((addon) => addon?.DealerID)?.DealerID
+                                    // }`}
+                                     to={`/invoice-view/${bookingData?.BookingID}?type=Dealer&dealerId=${firstPartnerDealerId}`}
+                                    className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                                    title="View Dealer Invoice"
+                                    onClick={(e) => {
+                                      // 1. Check basic details (Date, Address, Supervisor)
+                                      if (!ensureBasicDetails()) {
+                                        e.preventDefault();
+                                        return;
+                                      }
+
+                                      // 2. Check if dealer ID exists before navigating
+                                      const dealerID = bookingData?.BookingAddOns?.find((addon) => addon?.DealerID)?.DealerID;
+                                      if (!dealerID) {
+                                        e.preventDefault();
+                                        Swal.fire("Error", "No Dealer is assigned to the services yet.", "error");
+                                      }
+                                    }}
+                                  >
+                                    View Dealer Invoice
+                                  </Link>
+                                )}
+                                  {/* {showDealerInvoiceButton && (
                                     <button
                                       className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                                       onClick={() => {
@@ -6425,7 +6485,7 @@ const showComparison = hasConfirmed && hasUnconfirmed;
                                           "Generate Dealer Invoice"
                                         )}
                                     </button>
-                                  )}
+                                  )} */}
                                 </div>
                                 {/* <div className="small text-muted mt-2 mb-0 fw-bold">
                                   <strong>Note:</strong> Estimation button displays when at least one service exists and supervisor has confirmed all services. Final Invoice button displays after full payment is completed.

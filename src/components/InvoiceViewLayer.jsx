@@ -21,6 +21,7 @@ const InvoiceViewLayer = () => {
   const token = localStorage.getItem("token");
 
   const typeFromUrl = searchParams.get("type");
+  const dealerIdFromUrl = searchParams.get("dealerId"); 
   const urlInvoiceType =
     typeFromUrl && VALID_INVOICE_TYPES.includes(typeFromUrl)
       ? typeFromUrl
@@ -31,6 +32,8 @@ const InvoiceViewLayer = () => {
   }, [bookingId]);
 
   const fetchBookingData = async () => {
+    const currentUserId = localStorage.getItem("userId");   
+    const currentRoleId = localStorage.getItem("roleId");  
     try {
       setLoading(true);
       const res = await axios.get(
@@ -59,7 +62,13 @@ const InvoiceViewLayer = () => {
           dealerId,
           dealerName,
         }),
-      );
+      ).filter((dealer) => {
+         if (currentRoleId === "3" && String(dealer.dealerId) === String(currentUserId)) {
+          return false;
+         }
+          return true;  
+      });
+
       setDealerList(dealers);
     } catch (error) {
       console.error("Error fetching booking data:", error);
@@ -158,8 +167,18 @@ const InvoiceViewLayer = () => {
   };
 
   // Resolve active invoice: use ?type=Estimation|Dealer|Final from URL when present, else first active
+// 1. Get all invoices
   const invoices = bookingData?.Invoices || [];
-  const sortedInvoices = [...invoices].sort((a, b) => {
+
+  // 2. Filter by type (Estimation, Dealer, or Final)
+  const filteredInvoices = invoices.filter((inv) => {
+    if (!urlInvoiceType) return true;
+    
+    // Simply check if the type matches (e.g., show all 'Dealer' invoices)
+    return inv.InvoiceType === urlInvoiceType;
+  });
+  // 3. Sort the filtered list
+  const sortedInvoices = [...filteredInvoices].sort((a, b) => {
     const ad = new Date(a.CreatedDate || a.InvoiceDate || 0).getTime() || 0;
     const bd = new Date(b.CreatedDate || b.InvoiceDate || 0).getTime() || 0;
     if (bd !== ad) return bd - ad;
@@ -176,16 +195,23 @@ const InvoiceViewLayer = () => {
   const activeInvoiceType = activeInvoice?.InvoiceType;
 
   // When in Dealer view and dealer list is loaded, default to first dealer so "Send Dealer Invoice" works
+  // useEffect(() => {
+  //   if (
+  //     activeInvoiceType === "Dealer" &&
+  //     dealerList.length > 0 &&
+  //     !selectedDealer &&
+  //     dealerList[0]?.dealerId != null
+  //   ) {
+  //     setSelectedDealer(String(dealerList[0].dealerId));
+  //   }
+  // }, [activeInvoiceType, dealerList]);
   useEffect(() => {
-    if (
-      activeInvoiceType === "Dealer" &&
-      dealerList.length > 0 &&
-      !selectedDealer &&
-      dealerList[0]?.dealerId != null
-    ) {
-      setSelectedDealer(String(dealerList[0].dealerId));
-    }
-  }, [activeInvoiceType, dealerList]);
+  if (activeInvoiceType === "Dealer" && dealerList.length > 0) {
+    // If dealerId is in URL, use it; otherwise default to the first dealer in the list
+    const idToSelect = dealerIdFromUrl || String(dealerList[0].dealerId);
+    setSelectedDealer(idToSelect);
+  }
+}, [activeInvoiceType, dealerList, dealerIdFromUrl]);
 
   const normalizedFolderPath = activeInvoice?.FolderPath
     ? (activeInvoice.FolderPath || "").replace(/\\/g, "/")
@@ -213,7 +239,7 @@ const InvoiceViewLayer = () => {
     (s) => (s.IsSupervisor_Confirm ?? s.isSupervisor_Confirm) !== 1,
   );
 
-  const handleGenerateInvoiceForView = async () => {
+const handleGenerateInvoiceForView = async () => {
     if (!bookingData?.BookingID) {
       Swal.fire("Error", "Booking data not available.", "error");
       return;
@@ -227,40 +253,36 @@ const InvoiceViewLayer = () => {
           { bookingID: bookingData.BookingID },
           { headers: { Authorization: `Bearer ${token}` } },
         );
-
-        setIsInvoiceGenerated(true); // ✅ IMPORTANT
-
-        Swal.fire({
-          icon: "success",
-          title: "Generated",
-          text: "Estimation invoice generated successfully.",
-        });
-      } else if (urlInvoiceType === "Final") {
+        setIsInvoiceGenerated(true);
+        Swal.fire({ icon: "success", title: "Generated", text: "Estimation invoice generated successfully." });
+      } 
+      else if (urlInvoiceType === "Final") {
         await axios.post(
           `${API_BASE}Leads/GenerateFinalInvoice`,
           { bookingID: bookingData.BookingID },
           { headers: { Authorization: `Bearer ${token}` } },
         );
+        setIsInvoiceGenerated(true);
+        Swal.fire({ icon: "success", title: "Generated", text: "Final invoice generated successfully." });
+      }  else if (urlInvoiceType === "Dealer") {
+      const dealerIdToGenerate = selectedDealer || dealerIdFromUrl;
 
-        setIsInvoiceGenerated(true); // ✅ (optional if needed for final too)
-
-        Swal.fire({
-          icon: "success",
-          title: "Generated",
-          text: "Final invoice generated successfully.",
-        });
-      } else {
-        Swal.fire({
-          icon: "info",
-          title: "Not available",
-          text: "Generate is available for Estimation/Final views.",
-        });
+      if (!dealerIdToGenerate) {
+        Swal.fire("Error", "Please select a dealer from the dropdown.", "error");
+        return;
       }
-
-      await fetchBookingData();
+      await axios.post(
+        `${API_BASE}Dealer/GenerateDealerInvoice`,
+        {
+          bookingID: bookingData.BookingID,
+          dealerID: dealerIdToGenerate,
+        },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      Swal.fire({ icon: "success", title: "Generated", text: "Dealer invoice generated successfully." });
+    }
+    await fetchBookingData(); 
     } catch (error) {
-      setIsInvoiceGenerated(false); // ❗ reset on failure
-
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -565,7 +587,7 @@ const InvoiceViewLayer = () => {
           <Icon icon="mdi:arrow-left" />
           <span>Back</span>
         </button>
-        {(urlInvoiceType === "Estimation" || urlInvoiceType === "Final") && (
+        {(urlInvoiceType === "Estimation" || urlInvoiceType === "Final"  || urlInvoiceType === "Dealer" ) && (
           <button
             className="btn btn-primary-600 d-inline-flex align-items-center gap-2"
             onClick={handleGenerateInvoiceForView}
@@ -581,27 +603,45 @@ const InvoiceViewLayer = () => {
           </button>
         )}
         {urlInvoiceType === "Dealer" && (
-          <div className="d-flex gap-2 align-items-center mb-3">
+          // <div className="d-flex gap-2 align-items-center mb-3">
+          //   <select
+          //     className="form-select w-auto"
+          //     value={selectedDealer}
+          //     onChange={(e) => {
+          //       const dealerId = e.target.value;
+          //       setSelectedDealer(dealerId);
+
+          //       if (dealerId) {
+          //         handleGenerateDealerInvoice(dealerId);
+          //       }
+          //     }}
+          //   >
+          //     {/* <option value="">Select Dealer</option> */}
+          //     {dealerList.map((dealer) => (
+          //       <option key={dealer.dealerId} value={dealer.dealerId}>
+          //         {dealer.dealerName}
+          //       </option>
+          //     ))}
+          //   </select>
+          // </div>
+          // Inside the return JSX for the Dealer dropdown:
             <select
               className="form-select w-auto"
               value={selectedDealer}
               onChange={(e) => {
                 const dealerId = e.target.value;
                 setSelectedDealer(dealerId);
-
-                if (dealerId) {
-                  handleGenerateDealerInvoice(dealerId);
-                }
+                
+                // Update the URL search params so the preview iframe and logic stay in sync
+                setSearchParams({ type: "Dealer", dealerId: dealerId });
               }}
             >
-              {/* <option value="">Select Dealer</option> */}
               {dealerList.map((dealer) => (
                 <option key={dealer.dealerId} value={dealer.dealerId}>
                   {dealer.dealerName}
                 </option>
               ))}
             </select>
-          </div>
         )}
       </div>
 
@@ -611,9 +651,10 @@ const InvoiceViewLayer = () => {
         <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
           <div className="fw-semibold">Invoices (latest first)</div>
           <div className="small text-muted">
-            {sortedInvoices.length > 0
+            {/* {sortedInvoices.length > 0
               ? `Showing ${sortedInvoices.length}`
-              : ""}
+              : ""} */}
+              {sortedInvoices.length > 0 ? `Showing ${sortedInvoices.length} ${urlInvoiceType || ''} Invoices` : ""}
           </div>
         </div>
 
@@ -629,7 +670,7 @@ const InvoiceViewLayer = () => {
                 </tr>
               </thead>
               <tbody>
-                {sortedInvoices.slice(0, 5).map((inv, idx) =>
+                {sortedInvoices.map((inv, idx) =>
                   (() => {
                     const isActiveRow = inv === activeInvoice;
                     return (
@@ -821,7 +862,27 @@ const InvoiceViewLayer = () => {
           </div>
         </div>
       )}
-
+     {/* Dealer HTML preview (API) */}
+      {urlInvoiceType === "Dealer" && (
+        <div className="mb-3">
+          <div className="bg-white shadow-sm" style={{ width: "100%", height: "85vh", border: "1px solid #dee2e6", borderRadius: "8px", overflow: "hidden" }}>
+            {/* Use selectedDealer first, fallback to dealerIdFromUrl */}
+            {(selectedDealer || dealerIdFromUrl) ? (
+              <iframe
+                src={`${API_BASE}Leads/ViewDealerInvoice?bookingId=${bookingId}&dealerId=${selectedDealer || dealerIdFromUrl}`}
+                title="Dealer Invoice Preview"
+                width="100%"
+                height="100%"
+                style={{ border: "none" }}
+              />
+            ) : (
+              <div className="p-4 text-center text-danger">
+                Please select a dealer to preview the invoice.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {/* {invoicePdfUrl ? (
         <div
           className="bg-white shadow-sm"

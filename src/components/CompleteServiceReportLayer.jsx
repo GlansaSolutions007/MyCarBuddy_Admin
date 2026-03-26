@@ -42,7 +42,7 @@ const getStatusBadgeClass = (status) =>
 
 const formatCurrency = (n) => {
   if (n == null || n === "" || isNaN(Number(n))) return "—";
-  return `₹ ${Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `₹${Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 const formatDate = (d) => {
   if (!d) return "—";
@@ -222,11 +222,11 @@ function CompleteServiceReportView({ data, onBack }) {
         icon: 'mdi:credit-card-check',
         date: payments[0]?.PaymentDate,
         status: payments.some(p => p.PaymentStatus === 'Success') ? 'completed' : 'pending',
-        details: `₹${formatCurrency(payments.reduce((sum, p) => sum + Number(p.AmountPaid || 0), 0))}`
+        details: `${formatCurrency(payments.reduce((sum, p) => sum + Number(p.AmountPaid || 0), 0))}`
       },
       {
         id: 'booking-done',
-        title: 'Booking Done',
+        title: 'Booking Completed',
         icon: 'mdi:check-circle',
         date: data.BookingStatusUpdatedDate,
         status: data.BookingStatus === 'Completed' ? 'completed' : 'pending',
