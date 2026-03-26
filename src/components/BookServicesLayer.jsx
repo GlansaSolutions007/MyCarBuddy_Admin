@@ -688,14 +688,14 @@ const BookServicesLayer = () => {
       itemType === "Package" &&
       selectedPackage &&
       !isExistingPackage &&
-      (!selectedIncludes || selectedIncludes.length === 0)
+      (!selectedIncludes || selectedIncludes.length < 2)
     )
-      return Swal.fire("Selection Required", "Please select at least one include for the package");
+      return Swal.fire("Selection Required", "Please select at least two includes for the package");
     if (
       itemType === "Service Group" &&
-      (!selectedServices || selectedServices.length === 0)
+      (!selectedServices || selectedServices.length < 2)
     )
-      return Swal.fire("Selection Required","Please select at least one service for service group");
+      return Swal.fire("Selection Required","Please select at least two services for service group");
     if (!name.trim()) return Swal.fire("Selection Required", "Please select a service.",);
 
     // ⭐ CASE: Create NEW package before adding item
@@ -706,10 +706,10 @@ const BookServicesLayer = () => {
       selectedPackage.toString().startsWith("new-")
     ) {
       try {
-        if (!selectedIncludes || selectedIncludes.length === 0) {
+        if (!selectedIncludes || selectedIncludes.length < 2) {
           return Swal.fire(
             "Error",
-            "Please select at least one include for the package",
+            "Please select at least two includes for the package",
             "error",
           );
         }
