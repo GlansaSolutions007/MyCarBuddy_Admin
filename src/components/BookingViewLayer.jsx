@@ -570,7 +570,10 @@ useEffect(() => {
   const openPickupDropRescheduleModal = (row) => {
     setPickupDropRescheduleRow(row);
     setPickupDropRescheduleDate(today);
-    setPickupDropRescheduleTimeSlot([]);
+     const now = new Date();
+  const currentTime = now.getHours().toString().padStart(2, '0') + ":" + 
+                      now.getMinutes().toString().padStart(2, '0');
+    setPickupDropRescheduleTimeSlot([currentTime]);
     setShowPickupDropRescheduleModal(true);
   };
 
@@ -625,77 +628,50 @@ useEffect(() => {
     }
   };
 
-  const handlePickupDropRescheduleSubmit = async () => {
+const handlePickupDropRescheduleSubmit = async () => {
     if (!pickupDropRescheduleDate) {
-      Swal.fire({
-        icon: "warning",
-        title: "Error",
-        text: "Please select reschedule date.",
-      });
+      Swal.fire({ icon: "warning", title: "Error", text: "Please select reschedule date." });
       return;
     }
-    if (
-      !pickupDropRescheduleTimeSlot ||
-      pickupDropRescheduleTimeSlot.length === 0
-    ) {
-      Swal.fire({
-        icon: "warning",
-        title: "Error",
-        text: "Please select at least one time slot.",
-      });
+    if (!pickupDropRescheduleTimeSlot || pickupDropRescheduleTimeSlot.length === 0) {
+      Swal.fire({ icon: "warning", title: "Error", text: "Please select time." });
       return;
     }
     const id = pickupDropRescheduleRow?.Id ?? pickupDropRescheduleRow?.id;
     if (!id) {
-      Swal.fire({
-        icon: "warning",
-        title: "Error",
-        text: "Record ID missing.",
-      });
+      Swal.fire({ icon: "warning", title: "Error", text: "Record ID missing." });
       return;
     }
-    const slotStr = pickupDropRescheduleTimeSlot[0] || "";
-    const startTime = slotStr.split(" - ")[0]?.trim() || "00:00";
-    const newAssignDate = `${pickupDropRescheduleDate}T${startTime}`;
-    const assignTimeSlot = pickupDropRescheduleTimeSlot.join(",");
+
+    const startTime = pickupDropRescheduleTimeSlot[0] || "00:00"; // Directly use the string "HH:MM"
+    const newAssignDate = `${pickupDropRescheduleDate}T${startTime}:00`;
+    const assignTimeSlot = startTime;
 
     setPickupDropActionLoading(true);
     try {
       await axios.post(
         `${API_BASE}ServiceImages/RescheduleCarPickupDelivery`,
         { id, newAssignDate, assignTimeSlot },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        },
+        { headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } }
       );
-      Swal.fire({
-        icon: "success",
-        title: "Success",
-        text: "Rescheduled successfully.",
-      });
+      Swal.fire({ icon: "success", title: "Success", text: "Rescheduled successfully." });
       closePickupDropRescheduleModal();
       fetchBookingData();
     } catch (err) {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text:
-          err.response?.data?.message || err.message || "Failed to reschedule.",
-      });
+      Swal.fire({ icon: "error", title: "Error", text: err.response?.data?.message || err.message || "Failed to reschedule." });
     } finally {
       setPickupDropActionLoading(false);
-
     }
   };
 
   const openPickupDropReassignModal = (row) => {
     setPickupDropReassignRow(row);
-    setPickupDropReassignTech(null);
+    const now = new Date();
     setPickupDropReassignDate(today);
-    setPickupDropReassignTimeSlot([]);
+  const currentTime = now.getHours().toString().padStart(2, '0') + ":" + 
+                      now.getMinutes().toString().padStart(2, '0');
+    setPickupDropReassignTech(null);
+    setPickupDropReassignTimeSlot([currentTime]);
     setShowPickupDropReassignModal(true);
   };
 
@@ -707,76 +683,42 @@ useEffect(() => {
     setPickupDropReassignTimeSlot([]);
   };
 
-  const handlePickupDropReassignSubmit = async () => {
+const handlePickupDropReassignSubmit = async () => {
     if (!pickupDropReassignTech) {
-      Swal.fire({
-        icon: "warning",
-        title: "Error",
-        text: "Please select a technician.",
-      });
+      Swal.fire({ icon: "warning", title: "Error", text: "Please select a technician." });
       return;
     }
     if (!pickupDropReassignDate) {
-      Swal.fire({
-        icon: "warning",
-        title: "Error",
-        text: "Please select assign date.",
-      });
+      Swal.fire({ icon: "warning", title: "Error", text: "Please select assign date." });
       return;
     }
-    if (
-      !pickupDropReassignTimeSlot ||
-      pickupDropReassignTimeSlot.length === 0
-    ) {
-      Swal.fire({
-        icon: "warning",
-        title: "Error",
-        text: "Please select at least one time slot.",
-      });
+    if (!pickupDropReassignTimeSlot || pickupDropReassignTimeSlot.length === 0) {
+      Swal.fire({ icon: "warning", title: "Error", text: "Please select time." });
       return;
     }
     const id = pickupDropReassignRow?.Id ?? pickupDropReassignRow?.id;
     if (!id) {
-      Swal.fire({
-        icon: "warning",
-        title: "Error",
-        text: "Record ID missing.",
-      });
+      Swal.fire({ icon: "warning", title: "Error", text: "Record ID missing." });
       return;
     }
-    const isGarage = pickupDropReassignRow?.ServiceType === "ServiceAtGarage";
+
     const newTechID = pickupDropReassignTech?.value ?? pickupDropReassignTech;
-    const slotStr = pickupDropReassignTimeSlot[0] || "";
-    const startTime = isGarage ? slotStr : slotStr.split(" - ")[0]?.trim() || "00:00";
-    const newAssignDate = `${pickupDropReassignDate}T${startTime}`;
-    const assignTimeSlot = isGarage ? slotStr : pickupDropReassignTimeSlot.join(",");
+    const startTime = pickupDropReassignTimeSlot[0] || "00:00"; // Directly use the string "HH:MM"
+    const newAssignDate = `${pickupDropReassignDate}T${startTime}:00`;
+    const assignTimeSlot = startTime;
 
     setPickupDropActionLoading(true);
     try {
       await axios.post(
         `${API_BASE}ServiceImages/ReassignCarPickupDelivery`,
         { id, newTechID, newAssignDate, assignTimeSlot },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        },
+        { headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } }
       );
-      Swal.fire({
-        icon: "success",
-        title: "Success",
-        text: "Reassigned successfully.",
-      });
+      Swal.fire({ icon: "success", title: "Success", text: "Reassigned successfully." });
       closePickupDropReassignModal();
       fetchBookingData();
     } catch (err) {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text:
-          err.response?.data?.message || err.message || "Failed to reassign.",
-      });
+      Swal.fire({ icon: "error", title: "Error", text: err.response?.data?.message || err.message || "Failed to reassign." });
     } finally {
       setPickupDropActionLoading(false);
     }
@@ -5507,16 +5449,16 @@ const showComparison = hasConfirmed && hasUnconfirmed;
                                             DLR GST Amt.
                                           </th>
                                           <th
-                                            style={{ width: "100px" }}
+                                            style={{ width: "130px" }}
                                             className="text-end"
                                           >
-                                            Our %
+                                            Company %
                                           </th>
                                           <th
-                                            style={{ width: "100px" }}
+                                            style={{ width: "150px" }}
                                             className="text-end"
                                           >
-                                            Our Amt.
+                                            Company Amt.
                                           </th>
                                           <th
                                             style={{ width: "170px" }}
@@ -9593,50 +9535,72 @@ const showComparison = hasConfirmed && hasUnconfirmed;
     </>
   ) : (
     <>
-      <label className="form-label small fw-semibold">Time Slot</label>
-      <Select
-        isMulti
-        menuPortalTarget={document.body}
-        menuPosition="fixed"
-        styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
-        options={
-          timeSlots
-            ?.filter((slot) => {
-              if (!slot?.IsActive) return false;
-              if (pickupDropRescheduleDate !== today) return true;
+      <label className="form-label small fw-semibold">Select Time </label>
+        <input
+        type="time"
+        className="form-control form-control-sm py-2"
+        value={pickupDropRescheduleTimeSlot?.[0] || ""}
+        onChange={(e) => {
+          const val = e.target.value;
 
-              const now = new Date();
-              const [h, m] = (slot.StartTime || "00:00").split(":").map(Number);
-              const slotTime = new Date();
-              slotTime.setHours(h, m, 0, 0);
+          if (isPastTimeForDate(pickupDropRescheduleDate, val)) {
+            e.currentTarget?.blur?.();
+            Swal.fire({
+              icon: "warning",
+              title: "Invalid Time",
+              text: "You cannot select a past time for today.",
+            });
+            setPickupDropRescheduleTimeSlot([]);
+            return;
+          }
 
-              return slotTime > now;
-            })
-            ?.map((slot) => ({
-              value: `${slot.StartTime} - ${slot.EndTime}`,
-              label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}`,
-            })) ?? []
-        }
-        value={
-          pickupDropRescheduleTimeSlot?.map((val) => {
-            const [s, e] = val.split(" - ");
-            return {
-              value: val,
-              label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}`,
-            };
-          }) ?? []
-        }
-        onChange={(opts) =>
-          setPickupDropRescheduleTimeSlot(
-            opts ? opts.map((o) => o.value) : []
-          )
-        }
-        placeholder="Select time slot(s)"
-        isDisabled={!pickupDropRescheduleDate}
+          setPickupDropRescheduleTimeSlot(val ? [val] : []);
+        }}
+        disabled={!pickupDropRescheduleDate}
       />
-    </>
-  )}
-</div>
+          {/* <Select
+            isMulti
+            menuPortalTarget={document.body}
+            menuPosition="fixed"
+            styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+            options={
+              timeSlots
+                ?.filter((slot) => {
+                  if (!slot?.IsActive) return false;
+                  if (pickupDropRescheduleDate !== today) return true;
+
+                  const now = new Date();
+                  const [h, m] = (slot.StartTime || "00:00").split(":").map(Number);
+                  const slotTime = new Date();
+                  slotTime.setHours(h, m, 0, 0);
+
+                  return slotTime > now;
+                })
+                ?.map((slot) => ({
+                  value: `${slot.StartTime} - ${slot.EndTime}`,
+                  label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}`,
+                })) ?? []
+            }
+            value={
+              pickupDropRescheduleTimeSlot?.map((val) => {
+                const [s, e] = val.split(" - ");
+                return {
+                  value: val,
+                  label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}`,
+                };
+              }) ?? []
+            }
+            onChange={(opts) =>
+              setPickupDropRescheduleTimeSlot(
+                opts ? opts.map((o) => o.value) : []
+              )
+            }
+            placeholder="Select time slot(s)"
+            isDisabled={!pickupDropRescheduleDate}
+          /> */}
+        </>
+      )}
+    </div>
                   </div>
                 </div>
                 <div className="modal-footer border-0 d-flex justify-content-end gap-2">
@@ -9690,7 +9654,7 @@ const showComparison = hasConfirmed && hasUnconfirmed;
                   <div className="row g-3">
                     <div className="col-12">
                       <label className="form-label small fw-semibold">
-                        Select Technician / Driver
+                        Select Technician / Driver  <span className="text-danger">*</span>
                       </label>
                       <Select
                         options={(() => {
@@ -9783,48 +9747,29 @@ const showComparison = hasConfirmed && hasUnconfirmed;
     // SHOW MULTI-SELECT FOR HOME SERVICE (Existing Logic)
     <>
       <label className="form-label small fw-semibold">Time Slot</label>
-      <Select
-        isMulti
-        menuPortalTarget={document.body}
-        menuPosition="fixed"
-        styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
-        options={
-          timeSlots
-            ?.filter((slot) => {
-              if (!slot?.IsActive) return false;
-              if (pickupDropReassignDate !== today) return true;
-              const now = new Date();
-              const [h, m] = (slot.StartTime || "00:00").split(":").map(Number);
-              const slotTime = new Date();
-              slotTime.setHours(h, m, 0, 0);
-              return slotTime > now;
-            })
-            ?.sort((a, b) => {
-              const [aH, aM] = (a.StartTime || "00:00").split(":").map(Number);
-              const [bH, bM] = (b.StartTime || "00:00").split(":").map(Number);
-              return aH * 60 + aM - (bH * 60 + bM);
-            })
-            ?.map((slot) => ({
-              value: `${slot.StartTime} - ${slot.EndTime}`,
-              label: `${toTimeDisplay(slot.StartTime)} - ${toTimeDisplay(slot.EndTime)}`,
-            })) ?? []
-        }
-        value={
-          pickupDropReassignTimeSlot?.map((val) => {
-            const [s, e] = (val || "").split(/\s*-\s*/);
-            return {
-              value: val,
-              label: `${toTimeDisplay(s)} - ${toTimeDisplay(e)}`,
-            };
-          }) ?? []
-        }
-        onChange={(opts) =>
-          setPickupDropReassignTimeSlot(opts ? opts.map((o) => o.value) : [])
-        }
-        placeholder="Select time slot(s)"
-        isDisabled={!pickupDropReassignDate}
-      />
-      
+    
+       <input
+    type="time"
+    className="form-control form-control-sm py-2"
+    value={pickupDropReassignTimeSlot?.[0] || ""}
+    onChange={(e) => {
+      const val = e.target.value;
+
+      if (isPastTimeForDate(pickupDropReassignDate, val)) {
+        e.currentTarget?.blur?.();
+        Swal.fire({
+          icon: "warning",
+          title: "Invalid Time",
+          text: "You cannot select a past time for today.",
+        });
+        setPickupDropReassignTimeSlot([]);
+        return;
+      }
+
+      setPickupDropReassignTimeSlot(val ? [val] : []);
+    }}
+    disabled={!pickupDropReassignDate}
+  />
     </>
   )}
 </div>
