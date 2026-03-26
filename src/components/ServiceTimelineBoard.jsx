@@ -9,14 +9,31 @@ const ServiceTimelineBoard = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const token = localStorage.getItem("token");
+  const roleId = localStorage.getItem("roleId");
+  const userId = localStorage.getItem("userId");
+  const role = localStorage.getItem("role"); 
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       setError("");
       try {
-        const token = localStorage.getItem("token");
-        const res = await axios.get(`${API_BASE}Bookings`, {
+        let url = "";
+        if (roleId === "8") {
+          // Supervisor
+          url = `${API_BASE}Supervisor/AssingedBookings?SupervisorID=${userId}`;
+        } else if (roleId === "3") {
+          // Dealer
+          url = `${API_BASE}Bookings?type=${role}&dealerid=${userId}`;
+        } else if (roleId === "9") {
+          // Employee
+          url = `${API_BASE}Bookings?employeeId=${userId}`;
+        } else {
+          // Default
+          url = `${API_BASE}Bookings`;
+        }
+        const res = await axios.get(url, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -42,7 +59,6 @@ const ServiceTimelineBoard = () => {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 

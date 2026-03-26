@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import DataTable from 'react-data-table-component';
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
@@ -121,6 +122,92 @@ const SupervisorHeadDashboardLayer = () => {
     }
   };
 
+  const pendingColumns = [
+  {
+    name: "Booking ID",
+    selector: (row) => row.BookingTrackID,
+    sortable: true,
+    cell: (row) => (
+      <span className="fw-semibold text-secondary">
+        {row.BookingTrackID}
+      </span>
+    ),
+  },
+  {
+    name: "Type",
+    selector: (row) => row.ServiceType,
+    sortable: true,
+    cell: (row) => row.ServiceType,
+  },
+  {
+    name: "Lead ID",
+    selector: (row) => row.LeadId,
+    sortable: true,
+  },
+  {
+    name: "Date",
+    selector: (row) => row.CreatedDate,
+    sortable: true,
+    cell: (row) =>
+      new Date(row.CreatedDate).toLocaleDateString(),
+  },
+  {
+    name: 'Action',
+    button: true,
+    cell: (row) => (
+      <Link
+        to={`/booking-view/${row.BookingID}`}
+        className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+        title="View"
+      >
+        <Icon icon="lucide:eye" />
+      </Link>
+    ),
+  }
+];
+
+  const columns = [
+  {
+    name: 'Booking ID',
+    selector: row => row.BookingTrackID,
+    sortable: true,
+    cell: row => (
+      <span className="fw-semibold text-secondary">
+        {row.BookingTrackID}
+      </span>
+    )
+  },
+  {
+    name: 'Customer',
+    selector: row => row.CustFullName,
+    sortable: true,
+  },
+  {
+    name: 'Phone',
+    selector: row => row.CustPhoneNumber,
+    sortable: false,
+  },
+   {
+    name: "Date",
+    selector: (row) => row.BookingDate,
+    sortable: true,
+    cell: (row) =>
+      new Date(row.BookingDate).toLocaleDateString(),
+  },
+  {
+    name: 'Action',
+    button: true,
+    cell: (row) => (
+      <Link
+        to={`/booking-view/${row.BookingID}`}
+        className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+        title="View"
+      >
+        <Icon icon="lucide:eye" />
+      </Link>
+    ),
+  }
+];
   return (
     <div className="row gy-3">
       <div className="col-12">
@@ -253,17 +340,14 @@ const SupervisorHeadDashboardLayer = () => {
             </div>
 
             {/* Pending Confirmation Section */}
-            <div className="mt-5">
+            {/* <div className="mt-5">
 
-              {/* Header */}
+              
               <div className="d-flex align-items-center justify-content-between mb-4">
                 <div>
                   <h6 className="mb-0 fw-bold text-primary-light">
                     Pending Confirmations
                   </h6>
-                  {/* <small className="text-muted">
-                    Bookings waiting for confirmation
-                  </small> */}
                 </div>
 
                 <span className="badge bg-warning text-black px-3 py-2 fs-12 fw-semibold">
@@ -271,7 +355,7 @@ const SupervisorHeadDashboardLayer = () => {
                 </span>
               </div>
 
-              {/* Cards */}
+            
               <div className="row gy-4">
                 {notConfirmedBookings.length > 0 ? (
                   groupedBookings.map((booking) => (
@@ -286,7 +370,7 @@ const SupervisorHeadDashboardLayer = () => {
                         }}
                       >
 
-                        {/* Card Header */}
+                       
                         <div className="card-header border-0 d-flex justify-content-between align-items-center px-3 py-2" style={{ backgroundColor: "#cccccc" }} >
                           <span className="text-xs fw-semibold text-muted py-4 ">
                             Booking ID: {booking.BookingTrackID}
@@ -302,10 +386,10 @@ const SupervisorHeadDashboardLayer = () => {
                           </span>
                         </div>
 
-                        {/* Card Body */}
+                        
                         <div className="card-body p-3">
 
-                          {/* Service Name */}
+                          
                           <div className="mb-3">
                             <div className="dropdown">
                               <button
@@ -336,7 +420,7 @@ const SupervisorHeadDashboardLayer = () => {
                               </ul>
                             </div>
                           </div>
-                          {/* Lead + Date */}
+                          
                           <div className="d-flex align-items-center gap-3 mb-3">
 
                             <span className="text-muted text-sm d-flex align-items-center gap-1">
@@ -353,8 +437,8 @@ const SupervisorHeadDashboardLayer = () => {
 
                           </div>
 
-                          {/* Stats Box */}
-                          {/* <div
+                         
+                          <div
                             className="d-flex justify-content-between bg-light rounded-3 p-1 mb-3"
                           >
                             <div className="text-center border-end flex-fill">
@@ -374,9 +458,9 @@ const SupervisorHeadDashboardLayer = () => {
                                 {booking.AssignStatus}
                               </h6>
                             </div>
-                          </div> */}
+                          </div>
 
-                          {/* Action Button */}
+                          
                           <button
                             className="btn btn-warning w-100 d-flex align-items-center justify-content-center gap-2"
                             onClick={() => handleViewBooking(booking.BookingId)}
@@ -414,100 +498,66 @@ const SupervisorHeadDashboardLayer = () => {
                   </div>
                 )}
               </div>
+            </div> */}
+
+            <div className="card mt-5">
+              <div className="card-body">
+
+                {/* Header */}
+                <div className="d-flex align-items-center justify-content-between mb-3">
+                  <h6 className="mb-0 fw-bold text-primary-light">
+                    Pending Confirmations
+                  </h6>
+
+                  <span className="badge bg-warning text-dark px-3 py-2">
+                    {groupedBookings.length} Bookings Required Actions
+                  </span>
+                </div>
+
+                <DataTable
+                  columns={pendingColumns}
+                  data={groupedBookings}
+                  progressPending={loading}
+                  pagination
+                  highlightOnHover
+                  pointerOnHover
+                  responsive
+                  striped
+                  noDataComponent={
+                    <div className="text-center py-4 text-muted">
+                      No pending bookings to confirm
+                    </div>
+                  }
+                  onRowClicked={(row) => navigate(`/booking-view/${row.BookingID}`)}
+                />
+
+                </div>
             </div>
-          </div>
-        </div>
-      </div>
-      {/* Customer Not Confirmed Services */}
-      <div className="col-12 mt-4">
-        <div className="card border radius-8">
-          <div className="card-header d-flex align-items-center justify-content-between">
-            <h6 className="mb-0 fw-bold">Awaiting Customer Confirmation</h6>
 
-            <button
-              className="btn btn-sm btn-outline-primary"
-              onClick={fetchNotConfirmedServices}
-            >
-              <Icon icon="solar:refresh-bold" className="me-1" />
-              Refresh
-            </button>
-          </div>
+            <div className="card mt-5">
+              <div className="card-body">
+              <div className="d-flex align-items-center justify-content-between mb-3">
+                  <h6 className="mb-0 fw-bold text-primary-light">
+                    Awaiting Customer Confirmation
+                  </h6>
 
-          <div className="card-body p-0">
-
-            {servicesLoading ? (
-              <div className="text-center py-4">
-                <Icon icon="solar:loading-bold" className="fs-2"
-                  style={{ animation: "spin 1s linear infinite" }} />
-              </div>
-            ) : notConfirmedServices.length === 0 ? (
-              <div className="text-center py-4 text-muted">
-                No pending services
-              </div>
-            ) : (
-              <div className="table-responsive">
-                <table className="table align-middle mb-0">
-                  <thead className="bg-light">
-                    <tr>
-                      <th>Booking ID</th>
-                      <th>Customer</th>
-                      <th>Phone</th>
-                      <th>Service</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {notConfirmedServices.map((booking) =>
-                      booking.CustomerNotConfirmedServices?.map((svc) => (
-                        <tr key={svc.Id}>
-                          <td>{booking.BookingTrackID}</td>
-
-                          <td>{booking.CustFullName}</td>
-
-                          <td>{booking.CustPhoneNumber}</td>
-
-                          <td>{svc.ServiceName}</td>
-
-                          <td>
-                            <button
-                              className="view-btn btn btn-sm d-inline-flex align-items-center gap-1 px-3 py-1 rounded-pill"
-                              onClick={() => navigate(`/booking-view/${booking.BookingID}`)}
-                            >
-                              <Icon icon="solar:eye-bold" width={14} />
-                              View
-                            </button>
-
-                            <style>
-                              {`
-                                    .view-btn {
-                                      background: #eef2ff;
-                                      color: #4f46e5;
-                                      border: 1px solid #c7d2fe;
-                                      font-size: 0.75rem;
-                                      font-weight: 500;
-                                      transition: all 0.25s ease;
-                                    }
-      
-                                    .view-btn:hover {
-                                      background: #4f46e5;
-                                      color: #ffffff;
-                                      border-color: #4f46e5;
-                                      transform: translateY(-1px);
-                                      box-shadow: 0 3px 8px rgba(79,70,229,0.25);
-                                    }
-                                  `}
-                            </style>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-
-                </table>
-              </div>
-            )}
-
+                  <span className="badge bg-warning text-dark px-3 py-2">
+                    {notConfirmedServices.length} Pending Customer Confirmation
+                  </span>
+                </div>
+              <DataTable
+                columns={columns}
+                data={notConfirmedServices}
+                progressPending={servicesLoading}
+                noDataComponent={<div className="text-center py-4 text-muted">No Pending Customer Confirmation</div>}
+                pagination
+                striped
+                highlightOnHover
+                pointerOnHover
+                onRowClicked={(row) => navigate(`/booking-view/${row.BookingID}`)}
+              />
+            </div>
+             </div>
           </div>
         </div>
       </div>
