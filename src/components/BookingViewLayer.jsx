@@ -282,7 +282,7 @@ const BookingViewLayer = () => {
       // Check if any CarPickUpDelivery has RouteType = "CustomerToDealer"
       const carPickUpDelivery = res.data?.[0]?.CarPickUpDelivery || [];
       const hasRoute = carPickUpDelivery.some(
-        (item) => item.RouteType === "CustomerToDealer",
+        (item) => item.RouteType === "CustomerToDealer" && item.Status?.toLowerCase() !== "cancelled",
       );
       setHasExistingCustomerToDealerRoute(hasRoute);
 
@@ -841,11 +841,13 @@ const handlePickupDropReassignSubmit = async () => {
 
  const handleInitialAssignClick = () => {
   const routes = bookingData?.CarPickUpDelivery || [];
+  const addOns = bookingData?.BookingAddOns || [];
 
   // 1. Safety Check: If there are existing routes, ensure the last one is finished
   if (routes.length > 0) {
     const lastRoute = routes[routes.length - 1];
     const lastStatus = lastRoute?.Status?.toLowerCase();
+    const routeType = lastRoute?.RouteType;
 
     // If the technician is still active (not completed or cancelled), block and STOP
     if (lastStatus !== "completed" && lastStatus !== "cancelled") {
@@ -856,8 +858,39 @@ const handlePickupDropReassignSubmit = async () => {
       });
       return; // Stop the function here so no modals open
     }
-  }
 
+     // 🚨 NEW CONDITION (Garage check)
+    if (
+      bookingData?.ServiceType === "ServiceAtGarage" &&
+      routeType === "CustomerToDealer" &&
+      lastStatus === "completed"
+    ) {
+      const dealerId = Number(lastRoute?.PickTo); // 👈 DealerID from route
+        // Filter only that dealer add-ons
+      const dealerAddOns = addOns.filter(
+        (a) => Number(a.DealerID) === dealerId
+      );
+
+       // Check if any service NOT completed
+      const hasPending = dealerAddOns.some(
+        (a) => (a.StatusName || "").toLowerCase() !== "servicecompleted"
+      );
+
+      if (hasPending) {
+        const dealerName =
+          dealerAddOns[0]?.DealerName || lastRoute?.PickToName || "Dealer";
+
+        Swal.fire({
+          icon: "warning",
+          title: "Service Still In Progress",
+          text: `Car is at ${dealerName}, but service is not completed yet.`,
+        });
+        return;
+      }
+    }
+
+
+  }
   // 2. If we reached here, assignment is ALLOWED. 
   // Now decide: Skip Step 1 if it's already a Garage Service
   if (bookingData?.ServiceType === "ServiceAtGarage") {
@@ -867,6 +900,7 @@ const handlePickupDropReassignSubmit = async () => {
     setShowAssignStep1Modal(true); // Show Doorstep vs Garage choice (Step 1)
   }
 };
+
   // After user selects "Service at doorstep" → open employee selection modal
   const openDoorstepAssignModal = () => {
     setShowAssignStep1Modal(false);
@@ -3692,6 +3726,28 @@ const hasConfirmed = (bookingData?.BookingAddOns?.length || 0) > 0;
 const hasUnconfirmed = (bookingData?.SupervisorBookings?.length || 0) > 0;
 const showComparison = hasConfirmed && hasUnconfirmed;
 
+// --- NEW DEALER TOTALS CALCULATION ---
+const dlrCcTotals = (bookingData?.BookingAddOns || []).reduce((acc, item) => {
+  acc.parts += Number(item.DealerSparePrice || 0);
+  acc.labour += Number(item.DealerPrice || 0);
+  acc.gst += Number(item.DealerGSTAmount || 0);
+  return acc;
+}, { parts: 0, labour: 0, gst: 0 });
+dlrCcTotals.total = dlrCcTotals.parts + dlrCcTotals.labour + dlrCcTotals.gst;
+
+const dlrCncTotals = (bookingData?.SupervisorBookings || []).reduce((acc, item) => {
+  acc.parts += Number(item.DealerSparePrice || 0);
+  acc.labour += Number(item.DealerPrice || 0);
+  acc.gst += Number(item.DealerGSTAmount || 0);
+  return acc;
+}, { parts: 0, labour: 0, gst: 0 });
+dlrCncTotals.total = dlrCncTotals.parts + dlrCncTotals.labour + dlrCncTotals.gst;
+
+const hasDlrConfirmed = (bookingData?.BookingAddOns?.length || 0) > 0;
+const hasDlrUnconfirmed = (bookingData?.SupervisorBookings?.length || 0) > 0;
+const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
+// -------------------------------------
+
   return (
     <>
       <style>{`
@@ -5034,11 +5090,14 @@ const showComparison = hasConfirmed && hasUnconfirmed;
                                           >
                                             MCB Approval
                                           </th>
+                                          <th style={{ width: "140px" }} className="text-end">
+                                            DLR Total Amt.
+                                          </th>
                                           <th
-                                            style={{ width: "100px" }}
+                                            style={{ width: "150px" }}
                                             className="text-end"
                                           >
-                                            Total Amt
+                                            MCB Total Amt.
                                           </th>
                                         </tr>
                                       </thead>
@@ -5325,6 +5384,13 @@ const showComparison = hasConfirmed && hasUnconfirmed;
                                                   })()
                                                 )}
                                               </td>
+                                              <td className="text-end fw-bold dlr-column">
+                                              {(
+                                                Number(addon.DealerSparePrice || 0) +
+                                                Number(addon.DealerPrice || 0) +
+                                                Number(addon.DealerGSTAmount || 0)
+                                              ).toFixed(2)}
+                                            </td>
                                               <td className="text-end fw-bold text-primary">
                                                 {Number(
                                                   addon.TotalPrice || 0,
@@ -5472,11 +5538,14 @@ const showComparison = hasConfirmed && hasUnconfirmed;
                                           >
                                             Service Status
                                           </th> */}
+                                          <th style={{ width: "140px" }} className="text-end">
+                                            DLR Total Amt.
+                                          </th>
                                           <th
-                                            style={{ width: "100px" }}
+                                            style={{ width: "150px" }}
                                             className="text-end"
                                           >
-                                            Total Amt
+                                            MCB Total Amt.
                                           </th>
                                         </tr>
                                       </thead>
@@ -5712,6 +5781,13 @@ const showComparison = hasConfirmed && hasUnconfirmed;
                                                     );
                                                   })()}
                                                 </td> */}
+                                                <td className="text-end fw-bold dlr-column">
+                                                {(
+                                                  Number(supervisorBooking.DealerSparePrice || 0) +
+                                                  Number(supervisorBooking.DealerPrice || 0) +
+                                                  Number(supervisorBooking.DealerGSTAmount || 0)
+                                                ).toFixed(2)}
+                                              </td>
                                                 <td className="text-end fw-bold text-primary">
                                                   {totalPrice.toFixed(2)}
                                                 </td>
@@ -5839,13 +5915,13 @@ const showComparison = hasConfirmed && hasUnconfirmed;
                                             style={{ width: "100px" }}
                                             className="text-end"
                                           >
-                                            Our %
+                                            Company %
                                           </th>
                                           <th
                                             style={{ width: "100px" }}
                                             className="text-end"
                                           >
-                                            Our Amt.
+                                            Company Amt.
                                           </th>
                                           <th
                                             style={{ width: "170px" }}
@@ -5853,11 +5929,14 @@ const showComparison = hasConfirmed && hasUnconfirmed;
                                           >
                                             Dealer Name
                                           </th>
+                                          <th style={{ width: "140px" }} className="text-end">
+                                            DLR Total Amt.
+                                          </th>
                                           <th
-                                            style={{ width: "100px" }}
+                                            style={{ width: "150px" }}
                                             className="text-end"
                                           >
-                                            Total Amt
+                                            MCB Total Amt.
                                           </th>
                                           <th
                                             style={{ width: "100px" }}
@@ -6070,6 +6149,13 @@ const showComparison = hasConfirmed && hasUnconfirmed;
                                                       </span>
                                                     )}
                                                 </td>
+                                                <td className="text-end fw-bold dlr-column">
+                                                {(
+                                                  Number(CustomerRejectedBookings.DealerSparePrice || 0) +
+                                                  Number(CustomerRejectedBookings.DealerPrice || 0) +
+                                                  Number(CustomerRejectedBookings.DealerGSTAmount || 0)
+                                                ).toFixed(2)}
+                                              </td>
                                                 <td className="text-end fw-bold text-primary">
                                                   {totalPrice.toFixed(2)}
                                                 </td>
@@ -6108,16 +6194,71 @@ const showComparison = hasConfirmed && hasUnconfirmed;
                             )}
                             {bookingData ? (
                               <>
+                              <div className="mt-2 border-top pt-2">
+  
+                            {/* ===================== DEALER BILLING SUMMARY ===================== */}
+                            {(hasDlrConfirmed || hasDlrUnconfirmed) && (
+                              <div className="mb-4">
+                                <div className="d-flex fw-bold mb-2 border-bottom pb-1 bg-warning-subtle text-warning-emphasis px-2 rounded-top" style={{ fontSize: '16px' }}>
+                                  <div style={{ flex: '1' }}>Dealer Billing Summary</div>
+                                  {showDlrComparison && (
+                                    <div style={{ width: '180px' }} className="text-center">Not Confirmed Services</div>
+                                  )}
+                                  <div style={{ width: '180px' }} className="text-end">
+                                    {hasDlrConfirmed ? "Confirmed Services" : "Not Confirmed Services"}
+                                  </div>
+                                </div>
+                                
+                                <div className="billing-rows">
+                                  {[
+                                    { label: "Parts Subtotal", cnc: dlrCncTotals.parts, cc: dlrCcTotals.parts },
+                                    { label: "Service Charges", cnc: dlrCncTotals.labour, cc: dlrCcTotals.labour },
+                                    { label: "SGST(9%)", cnc: dlrCncTotals.gst / 2, cc: dlrCcTotals.gst / 2 },
+                                    { label: "CGST(9%)", cnc: dlrCncTotals.gst / 2, cc: dlrCcTotals.gst / 2 },
+                                  ].map((row, idx) => {
+                                    const centerValue = showDlrComparison ? row.cnc : null;
+                                    const rightValue = !hasDlrConfirmed && hasDlrUnconfirmed ? row.cnc : row.cc;
+
+                                    return (
+                                      <div key={idx} className="d-flex py-1 border-bottom-dashed align-items-center">
+                                        <span className="text-secondary" style={{ flex: '1' }}>{row.label}</span>
+                                        {showDlrComparison && (
+                                          <span className="text-center" style={{ width: '180px' }}>
+                                            ₹{Number(centerValue || 0).toFixed(2)}
+                                          </span>
+                                        )}
+                                        <span className="text-end" style={{ width: '180px' }}>
+                                          ₹{Number(rightValue || 0).toFixed(2)}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+
+                                  <div className="d-flex py-2 align-items-center fw-bold border-top mt-1">
+                                    <span className="text-dark" style={{ flex: '1' }}>Dealer Total Amount</span>
+                                    {showDlrComparison && (
+                                      <span className="text-dark text-center" style={{ width: '180px' }}>
+                                        ₹{dlrCncTotals.total.toFixed(2)}
+                                      </span>
+                                    )}
+                                    <span className="text-dark text-end" style={{ width: '180px' }}>
+                                      ₹{(!hasDlrConfirmed && hasDlrUnconfirmed ? dlrCncTotals.total : dlrCcTotals.total).toFixed(2)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                                 <div className="mt-2 border-top pt-2">
                                 {/* Header for columns if both exist */}
                               <div className="d-flex fw-bold mb-2 border-bottom pb-1 bg-primary-subtle text-primary-emphasis px-2 rounded-top" style={{ fontSize: '16px' }}>
-                                  <div style={{ flex: '1' }}>Billing Summary</div>
+                                  <div style={{ flex: '1' }}>Customer Billing Summary</div>
                                   {showComparison && (
-                                    <div style={{ width: '150px' }} className="text-center">Not Confirmed</div>
+                                    <div style={{ width: '180px' }} className="text-center">Not Confirmed Services</div>
                                   )}
                                   {(hasConfirmed || hasUnconfirmed) && (
-                                    <div style={{ width: '150px' }} className="text-end">
-                                      {hasConfirmed ? "Confirmed" : "Not Confirmed"}
+                                    <div style={{ width: '180px' }} className="text-end">
+                                      {hasConfirmed ? "Confirmed Services" : "Not Confirmed Services"}
                                     </div>
                                   )}
                                 </div>
@@ -6142,13 +6283,13 @@ const showComparison = hasConfirmed && hasUnconfirmed;
                                         
                                         {/* Center Column: Only shows if both exist */}
                                         {showComparison && (
-                                          <span className=" text-center" style={{ width: '120px' }}>
+                                          <span className=" text-center" style={{ width: '180px' }}>
                                             {row.label === "Coupon" ? "—" : `₹${Number(centerValue || 0).toFixed(2)}`}
                                           </span>
                                         )}
 
                                         {/* Right Column: Shows either Confirmed OR (if CC empty) Unconfirmed */}
-                                        <span className={`text-end ${row.isCoupon ? 'text-danger' : ''}`} style={{ width: '120px' }}>
+                                        <span className={`text-end ${row.isCoupon ? 'text-danger' : ''}`} style={{ width: '180px' }}>
                                           {row.isCoupon ? "-" : ""} ₹{Number(rightValue || 0).toFixed(2)}
                                         </span>
                                       </div>
@@ -6157,13 +6298,13 @@ const showComparison = hasConfirmed && hasUnconfirmed;
 
                                   {/* TOTAL AMOUNT BOLD ROW */}
                                   <div className="d-flex py-2 align-items-center fw-bold border-top mt-1">
-                                    <span className="text-dark" style={{ flex: '1' }}>Total Amount</span>
+                                    <span className="text-dark" style={{ flex: '1' }}>Customer Total Amount</span>
                                     {showComparison && (
-                                      <span className="text-dark text-center" style={{ width: '120px' }}>
+                                      <span className="text-dark text-center" style={{ width: '180px' }}>
                                         ₹{cncTotals.total.toFixed(2)}
                                       </span>
                                     )}
-                                    <span className="text-dark text-end" style={{ width: '120px' }}>
+                                    <span className="text-dark text-end" style={{ width: '180px' }}>
                                       ₹{(!hasConfirmed && hasUnconfirmed ? cncTotals.total : totalAmount).toFixed(2)}
                                     </span>
                                   </div>
@@ -6173,13 +6314,13 @@ const showComparison = hasConfirmed && hasUnconfirmed;
                                     <>
                                       <div className="d-flex py-1 align-items-center  fw-bold border-top mt-1">
                                         <span className="text-secondary" style={{ flex: '1' }}>Paid Amount</span>
-                                        <span className="text-success text-end" style={{ width: '120px' }}>
+                                        <span className="text-success text-end" style={{ width: '180px' }}>
                                           - ₹{alreadyPaidDisplay.toFixed(2)}
                                         </span>
                                       </div>
                                       <div className="d-flex py-2 align-items-center fw-bold border-top mt-1">
                                         <span className="text-dark" style={{ flex: '1' }}>Balance Amount</span>
-                                        <span className="text-primary text-end" style={{ width: '120px' }}>
+                                        <span className="text-primary text-end" style={{ width: '180px' }}>
                                           ₹{remainingAmount.toFixed(2)}
                                         </span>
                                       </div>

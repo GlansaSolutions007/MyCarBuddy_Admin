@@ -14,6 +14,7 @@ const SupervisorHeadDashboardLayer = () => {
   const [servicesLoading, setServicesLoading] = useState(false);
   const token = localStorage.getItem("token");
   const employeeId = employeeData?.Id;
+  const supervisorHeadId = employeeData?.Id;
 
   const [dashboardData, setDashboardData] = useState({
     totalBookings: 0,
@@ -36,7 +37,6 @@ const SupervisorHeadDashboardLayer = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const supervisorHeadId = employeeData?.Id;
       const res = await axios.get(
         `${API_BASE}Supervisor/supervisor-booking-summary?supervisorHeadId=${supervisorHeadId}`
       );
@@ -59,7 +59,7 @@ const SupervisorHeadDashboardLayer = () => {
 
   const fetchNotConfirmedBookings = async () => {
     try {
-      const res = await axios.get(`${API_BASE}Supervisor/GetNotConfirmedBookings`);
+      const res = await axios.get(`${API_BASE}Supervisor/GetNotConfirmedBookings?supervisorHeadId=${supervisorHeadId}`);
       setNotConfirmedBookings(res.data.Bookings || []);
     } catch (error) {
       console.error("Error fetching not confirmed bookings:", error);

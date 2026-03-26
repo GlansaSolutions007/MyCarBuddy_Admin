@@ -1160,7 +1160,7 @@ const DealerBookingsView = () => {
                   </>
                 ) : (
                   <>
-                    <Icon icon="mingcute:check-circle-fill" />
+                    {/* <Icon icon="mingcute:check-circle-fill" /> */}
                     Mark as Completed
                   </>
                 )}
@@ -1327,7 +1327,7 @@ const DealerBookingsView = () => {
           <div className="card-body">
             {/* SINGLE TABLE FOR BOTH */}
             <div className="editable-table">
-              <h6>Added Services + Spare Parts</h6>
+              <h6>Services Spare Parts & Packages</h6>
               <DataTable
                 columns={columns}
                 data={flattenedRows}
