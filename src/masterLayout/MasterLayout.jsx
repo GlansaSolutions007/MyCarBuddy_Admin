@@ -370,6 +370,7 @@ const MasterLayout = ({ children }) => {
             new Date().toISOString(),
           read: Boolean(n.read ?? n.isRead ?? n.IsRead ?? false),
           type: n.type || n.Type || "general",
+          link: n.link || n.Link || n.url || n.Url || "#",
         }));
         setNotifications((prev) => {
           // Create a Map to track API notification IDs for deduplication
@@ -1417,8 +1418,8 @@ const MasterLayout = ({ children }) => {
                       ) : (
                         notifications.map((notification) => (
                           <Link
-                            key={notification.id}
-                            to="#"
+                             key={notification.id}
+                             to={notification.link || "#"}
                             className={`px-24 py-12 d-flex align-items-start gap-3 mb-2 ${
                               !notification.read ? "bg-neutral-50" : ""
                             }`}
