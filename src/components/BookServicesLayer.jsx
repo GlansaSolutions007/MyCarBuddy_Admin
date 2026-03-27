@@ -2482,7 +2482,31 @@ const BookServicesLayer = () => {
       sortable: true,
     },
     {
-      name: "Total Amt",
+      name: "DLR Total Amt.",
+      cell: (row) => {
+        if (row.isInclude) return null;
+
+        // Calculation: DLR Part Total + DLR Service Chg. + DLR GST Amt.
+        const dlrPartTotal = Number(row.dealerSparePrice || 0);
+        const dlrServiceChg = Number(row.dealerServicePrice || 0);
+        const dlrGstAmt = Number(row.dealerGstAmount || 0);
+
+        const total = dlrPartTotal + dlrServiceChg + dlrGstAmt;
+
+        return (
+          <input
+            type="number"
+            className="form-control form-control-sm"
+            value={total.toFixed(2)}
+            disabled
+          />
+        );
+      },
+      width: "150px",
+      sortable: true,
+    },
+    {
+      name: "Cust. Total Amt.",
       cell: (row) => {
         if (row.isInclude) return null;
 
@@ -2503,13 +2527,13 @@ const BookServicesLayer = () => {
           />
         );
       },
-      width: "140px",
+      width: "160px",
       sortable: true,
     },
     ...(isSupervisorHead || isAdmin
       ? [
         {
-          name: "Company %",
+          name: "MCB %",
           cell: (row, index) => {
             if (row.isInclude) return null;
             // const canModify =
@@ -2568,7 +2592,7 @@ const BookServicesLayer = () => {
           sortable: true,
         },
         {
-          name: "Company Amt.",
+          name: "MCB Amt.",
           cell: (row, index) => {
             if (row.isInclude) return null;
             // const canModify =
@@ -2721,7 +2745,7 @@ const BookServicesLayer = () => {
       name: "Description",
       selector: (row) => (row.isInclude ? "" : row.description),
       wrap: true,
-      width: "120px",
+      width: "160px",
       sortable: true,
     },
     // {

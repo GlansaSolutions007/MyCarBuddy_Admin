@@ -5058,13 +5058,13 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                                 style={{ width: "100px" }}
                                                 className="text-end"
                                               >
-                                                Company %
+                                                MCB %
                                               </th>
                                               <th
                                                 style={{ width: "140px" }}
                                                 className="text-end"
                                               >
-                                                Company Amt.
+                                                MCB Amt.
                                               </th>
                                             </>
                                           )}
@@ -5097,7 +5097,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                             style={{ width: "150px" }}
                                             className="text-end"
                                           >
-                                            MCB Total Amt.
+                                            Cust. Total Amt.
                                           </th>
                                         </tr>
                                       </thead>
@@ -5518,13 +5518,13 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                             style={{ width: "130px" }}
                                             className="text-end"
                                           >
-                                            Company %
+                                            MCB %
                                           </th>
                                           <th
                                             style={{ width: "150px" }}
                                             className="text-end"
                                           >
-                                            Company Amt.
+                                            MCB Amt.
                                           </th>
                                           <th
                                             style={{ width: "170px" }}
@@ -5545,7 +5545,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                             style={{ width: "150px" }}
                                             className="text-end"
                                           >
-                                            MCB Total Amt.
+                                            Cust. Total Amt.
                                           </th>
                                         </tr>
                                       </thead>
@@ -5915,13 +5915,13 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                             style={{ width: "100px" }}
                                             className="text-end"
                                           >
-                                            Company %
+                                            MCB %
                                           </th>
                                           <th
                                             style={{ width: "100px" }}
                                             className="text-end"
                                           >
-                                            Company Amt.
+                                            MCB Amt.
                                           </th>
                                           <th
                                             style={{ width: "170px" }}
@@ -5936,7 +5936,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                             style={{ width: "150px" }}
                                             className="text-end"
                                           >
-                                            MCB Total Amt.
+                                            Cust. Total Amt.
                                           </th>
                                           <th
                                             style={{ width: "100px" }}

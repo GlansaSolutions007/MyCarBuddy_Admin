@@ -68,7 +68,7 @@ const DashBoardLayerTen = () => {
           {/* RecentTransactions */}
 
           {/* TodayBookingsLayer */}
-          <TodaysBookings />
+          {/* <TodaysBookings /> */}
         </>
       )}
     </div>
