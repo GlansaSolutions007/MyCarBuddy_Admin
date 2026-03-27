@@ -689,7 +689,7 @@ const LeadViewLayer = () => {
             bookingIds: bookingIds,
             supervisorHeadId: selectedSupervisorHead.value,
             areaId: selectedArea.value,
-            assignedDate: new Date().toISOString().split("T")[0],
+            assignedDate: new Date().toLocaleString("sv-SE").replace(" ", "T"),
             assignStatus: "Assign",
             createdBy: parseInt(localStorage.getItem("userId")),
           }),

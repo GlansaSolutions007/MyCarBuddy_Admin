@@ -1149,7 +1149,7 @@ const MasterLayout = ({ children }) => {
             </div>
             <div className="col text-center d-none d-md-block">
               <div className="d-flex flex-column align-items-center">
-                <h6 className="mb-0 fw-semibold text-lg">{getDisplayRole()}</h6>
+                <h6 className="mb-0 fw-semibold text-lg">{getDisplayRole() === "Supervisor Head" ? "Supervisor" : getDisplayRole()}</h6>
                 <span className="text-secondary-light fw-medium text-md">
                   {localStorage.getItem("name") || "User"}
                 </span>
