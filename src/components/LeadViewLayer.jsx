@@ -160,7 +160,7 @@ const LeadViewLayer = () => {
     Array.isArray(lead?.FollowUps) && lead.FollowUps.length > 0;
   const hasCurrentLeadBooking = currentBookings.length > 0;
   const isSupervisorAssigned =
-    lead?.TrackingHistory?.[0]?.StatusName === "Assigned to supervisor head";
+    lead?.TrackingHistory?.[0]?.StatusName === "Assigned To Supervisor";
   const isCustomerConverted = lead?.CustID !== null;
   const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
@@ -703,7 +703,7 @@ const LeadViewLayer = () => {
       Swal.fire({
         icon: "success",
         title: "Assigned",
-        text: "Booking has been successfully assigned to the supervisor head.",
+        text: "Booking has been successfully assigned to the Supervisor.",
       });
 
       await fetchLead();
