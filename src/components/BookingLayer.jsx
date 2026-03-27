@@ -120,7 +120,8 @@ const BookingLayer = () => {
 
       if (roleId === "8") {
         // If supervisor
-        url = `${API_BASE}Supervisor/AssingedBookings?SupervisorID=${userId}`;
+        url = `${API_BASE}Bookings?employeeId=${userId}`;
+        // url = `${API_BASE}Supervisor/AssingedBookings?SupervisorID=${userId}`;
       } else if (roleId === "3") {
         url = `${API_BASE}Bookings?type=${role}&dealerid=${userId}`;
        } else if (roleId === "9") {
@@ -425,40 +426,160 @@ const BookingLayer = () => {
       width: "160px",
       sortable: true,
     },
-
-    {
-      name: "Service Date",
+   {
+      name: "Booking Date",
       selector: (row) => {
-        const rawDate = row.BookingDate || row.CreatedDate;
+        const rawDate = row.CreatedDate;
         if (!rawDate) return "-";
-
-        const date = new Date(rawDate);
-        if (isNaN(date)) return "-";
-
-        return `${String(date.getDate()).padStart(2, "0")}/${String(
-          date.getMonth() + 1,
-        ).padStart(2, "0")}/${date.getFullYear()}`;
+        const dateObj = new Date(rawDate);
+        const formattedDate = dateObj.toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+        const time = dateObj.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
+        return (
+          <>
+          <div className="d-flex justify-content-center"> 
+            <span className="fw-bold">{formattedDate}</span>
+            </div>
+             <span className="d-flex justify-content-center">{time}</span>
+          </>
+        );
       },
       sortField: "CreatedDate",
-      width: "150px",
+      width: "140px",
+      sortable: true,
+    },
+  {
+      name: "Service Time slots",
+      selector: (row) => {
+        const formattedDate = row.BookingDate
+          ? new Date(row.BookingDate).toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+          : "--";
+
+        let timeSlots = [];
+
+        if (row.TimeSlot || row.AssignedTimeSlot) {
+          const raw = row.TimeSlot || row.AssignedTimeSlot;
+
+          // split by comma and clean
+          timeSlots = raw.split(",").map((t) => t.trim()).filter(Boolean);
+        }
+
+        return (
+          <div className="d-flex flex-column align-items-center" style={{ lineHeight: "1.3" }}>
+            <span className="fw-bold">{formattedDate}</span>
+
+            {timeSlots.length > 0 ? (
+              timeSlots.map((slot, index) => (
+                <span key={index}>{slot}</span>
+              ))
+            ) : (
+              <span>--</span>
+            )}
+          </div>
+        );
+      },
+      width: "175px",
+      sortable: true,
+      wrap: true,
+    },
+    {
+      name: "Total Amount",
+      selector: (row) => {
+        const notConfirmed = (row.TotalCustNotConfirmedPrice || 0);
+
+        const confirmed =
+          (row.TotalPrice || 0) +
+          (row.GSTAmount || 0) +
+          (row.LabourCharges || 0) -
+          (row.CouponAmount || 0);
+
+        const total = (notConfirmed + confirmed).toFixed(2);
+
+        return (
+          <span className="fw-bold">
+            ₹{total}
+          </span>
+        );
+      },
+      width: "140px",
       sortable: true,
     },
     {
-      name: "Time slot",
-      selector: (row) => row.TimeSlot || row.AssignedTimeSlot || "-",
-      width: "220px",
+      name: "Booking Amount",
+      selector: (row) => {
+        const notConfirmed = (row.TotalCustNotConfirmedPrice || 0).toFixed(2);
+
+        const confirmed = (
+          (row.TotalPrice || 0) +
+          (row.GSTAmount || 0) +
+          (row.LabourCharges || 0) -
+          (row.CouponAmount || 0)
+        ).toFixed(2);
+
+        return (
+          <div className="d-flex flex-column" style={{ lineHeight: "1.3" }}>
+            <span>
+              <span
+                className="fw-semibold"
+                style={{ color: "#F7AE21" }}
+              >
+                Not Conf. -{"\u00A0"}
+              </span>
+              <span
+                className="fw-bold"
+                style={{ color: "#F7AE21" }}
+              >
+                {notConfirmed}
+              </span>
+            </span>
+
+            <span>
+              <span
+                className="fw-semibold"
+                style={{ color: "#28A745" }}
+              >
+                Conf. -{"\u00A0"}
+              </span>
+              <span
+                className="fw-bold"
+                style={{ color: "#28A745" }}
+              >
+                {confirmed}
+              </span>
+            </span>
+          </div>
+        );
+      },
+      width: "170px",
       sortable: true,
-      wrap: true
     },
     {
-      name: "Amount",
-      selector: (row) =>
-        `₹${(row.TotalPrice + row.GSTAmount + row.LabourCharges - row.CouponAmount).toFixed(2)}`,
-      width: "120px",
+      name: "Paid Amount",
+      selector: (row) => {
+        const paid = (row.AmountPaid || 0).toFixed(2);
+
+        return (
+          <span className="fw-bold">
+            ₹{paid}
+          </span>
+        );
+      },
+      width: "140px",
       sortable: true,
     },
     {
-      name: "Cust. Name",
+      name: "Customer Name",
       selector: (row) => (
         <>
           <span className="fw-bold">
@@ -469,7 +590,7 @@ const BookingLayer = () => {
           {row.CustPhoneNumber || row.PhoneNumber || ""}
         </>
       ),
-      width: "150px",
+      width: "160px",
       sortable: true,
     },
     {
@@ -570,7 +691,7 @@ const BookingLayer = () => {
 
         // Define colors similar to Ticket Status
         const colorMap = {
-          Pending: "#F57C00", // Orange
+          Pending: "#F7AE21", // Orange
           Confirmed: "#28A745", // Green
           Cancelled: "#E34242", // Red
           Completed: "#25878F", // Teal-blue

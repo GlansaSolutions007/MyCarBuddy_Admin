@@ -2822,7 +2822,7 @@ const BookServicesLayer = () => {
     //   ignoreRowClick: true,
     //   allowOverflow: true,
     // },
-    {
+   {
       name: "Actions",
       cell: (row) => {
         const isConfirmed = row.status === "Confirmed";
@@ -2833,10 +2833,14 @@ const BookServicesLayer = () => {
           isFieldAdvisor ||
           isAdmin;
 
-        return !row.isInclude ? (
+        const isServiceCompleted = row.addOnStatus === "ServiceCompleted";
+
+        if (row.isInclude || isServiceCompleted) return null;
+
+        return (
           <div className="d-flex gap-2">
-            {/* Delete */}
-            {row.isDealer_Confirm == 'Approved' && row.addOnStatus != 'ServiceCompleted' && (
+            {/* ❌ Discard */}
+            {(row.isDealer_Confirm === "Approved" || isConfirmed) && (
               <button
                 className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
                 onClick={() => handleDiscardItem(row.addedItemsIndex)}
@@ -2845,21 +2849,25 @@ const BookServicesLayer = () => {
                 <Icon icon="mdi:close-circle-outline" />
               </button>
             )}
-             {row.isDealer_Confirm != 'Approved' && row.addOnStatus != 'ServiceCompleted' && canModify &&(
-              <button
-                className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                onClick={() => handleRemoveItem(row.addedItemsIndex)}
-                title="remove"
-              >
-                <Icon icon="mingcute:delete-2-line" />
-              </button>
-            )}
+
+            {/* 🗑️ Remove */}
+            {row.isDealer_Confirm !== "Approved" &&
+              !isConfirmed &&
+              canModify && (
+                <button
+                  className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                  onClick={() => handleRemoveItem(row.addedItemsIndex)}
+                  title="Remove"
+                >
+                  <Icon icon="mingcute:delete-2-line" />
+                </button>
+              )}
           </div>
-        ) : null;
+        );
       },
       ignoreRowClick: true,
       allowOverflow: true,
-    },
+    }
 
   ];
 
@@ -2990,7 +2998,18 @@ const BookServicesLayer = () => {
                         menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                       }}
                       value={inspectionTimeSlot}
-                      onChange={(options) => setInspectionTimeSlot(options || [])}
+                        onChange={(options) => {
+                        if (options && options.length > 3) {
+                          Swal.fire({
+                            icon: 'warning',
+                            title: 'Limit Exceeded',
+                            text: 'You can select a maximum of 3 time slots.',
+                            confirmButtonColor: '#fb923c'
+                          });
+                          return;
+                        }
+                        setInspectionTimeSlot(options || []);
+                      }}
                     />
                   </div>
                 </div>
@@ -3525,9 +3544,19 @@ const BookServicesLayer = () => {
                                 menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                               }}
                               value={selectedTimeSlot}
-                              onChange={(options) =>
-                                setSelectedTimeSlot(options || [])
+                             onChange={(options) => {
+                              // Add this validation logic
+                              if (options && options.length > 3) {
+                                Swal.fire({
+                                  icon: 'warning',
+                                  title: 'Limit Exceeded',
+                                  text: 'You can select a maximum of 3 time slots.',
+                                  confirmButtonColor: '#0d9488'
+                                });
+                                return; // Prevent updating state if more than 3
                               }
+                              setSelectedTimeSlot(options || []);
+                            }}
                             />
                           )}
                         </div>
@@ -4065,7 +4094,7 @@ const BookServicesLayer = () => {
                     display: "block",
                   }}>
                     <Icon icon="mingcute:time-line" width={14} style={{ marginRight: "6px", verticalAlign: "middle" }} />
-                    Select Time Slotaaaa
+                    Select Time Slots
                   </label>
                   <Select
                     isMulti
@@ -4095,7 +4124,18 @@ const BookServicesLayer = () => {
                       label: `${slot.StartTime} - ${slot.EndTime}`,
                     }))}
                     value={inspectionTimeSlot}
-                    onChange={(options) => setInspectionTimeSlot(options || [])}
+                    onChange={(options) => {
+                      if (options && options.length > 3) {
+                        Swal.fire({
+                          icon: 'warning',
+                          title: 'Limit Exceeded',
+                          text: 'You can select a maximum of 3 time slots.',
+                          confirmButtonColor: '#fb923c'
+                        });
+                        return;
+                      }
+                      setInspectionTimeSlot(options || []);
+                    }}
                     placeholder="Choose time slots..."
                   />
                 </div>
