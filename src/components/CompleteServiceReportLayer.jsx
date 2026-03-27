@@ -47,7 +47,7 @@ const formatCurrency = (n) => {
 const formatDate = (d) => {
   if (!d) return "—";
   const dt = new Date(d);
-  return isNaN(dt.getTime()) ? d : dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  return isNaN(dt.getTime()) ? d : dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric",  hour: "2-digit", minute: "2-digit", hour12: true, });
 };
 const formatDateTime = (d) => {
   if (!d) return "—";
@@ -121,12 +121,20 @@ function CompleteServiceReportView({ data, onBack }) {
         details: `Booking ID: ${data.BookingID}`
       },
       {
-        id: 'assign-stage',
-        title: 'Supervisor/Field Advisor Assigned',
-        icon: 'mdi:account-group',
-        date: data.SupervisorHeadAssignDate || data.FieldAdvisorAssignDate,
-        status: (data.SupervisorHeadName || data.FieldAdvisorName) ? 'completed' : 'pending',
-        details: `${data.SupervisorHeadName || '—'} / ${data.FieldAdvisorName || '—'}`
+        id: 'supervisor-assigned',
+        title: 'Supervisor Assigned',
+        icon: 'mdi:account-tie',
+        date: data.SupervisorHeadAssignDate,
+        status: data.SupervisorHeadName ? 'completed' : 'pending',
+        details: data.SupervisorHeadName || '—'
+      },
+      {
+        id: 'field-advisor-assigned',
+        title: 'Field Advisor Assigned',
+        icon: 'mdi:account-hard-hat',
+        date: data.FieldAdvisorAssignDate,
+        status: data.FieldAdvisorName ? 'completed' : 'pending',
+        details: data.FieldAdvisorName || '—'
       },
       {
         id: 'dealer-confirmation',

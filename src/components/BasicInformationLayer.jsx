@@ -55,6 +55,10 @@ const BasicInformationLayer = () => {
     const year = currentYear - i;
     return { value: String(year), label: String(year) };
   });
+  const isValidEmail = (email) => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
 
   const allStages = [
     { id: "profile", label: "Profile Information" },
@@ -253,6 +257,53 @@ const BasicInformationLayer = () => {
     return <div className="p-4">Loading...</div>;
   }
 
+  const handleAssignConfirm = async () => {
+  if (!selectedFieldAdvisor) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Please select a field advisor before assigning.",
+    });
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `${API_BASE}Supervisor/AssignToFieldAdvisor`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          bookingIds: [bookingData.BookingID],
+          supervisorHeadId: parseInt(localStorage.getItem("userId")),
+          fieldAdvisorId: selectedFieldAdvisor.value,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to assign field advisor");
+    }
+
+    Swal.fire({
+      icon: "success",
+      title: bookingData.FieldAdvisorName ? "Reassigned" : "Assigned",
+      text: "Field Advisor assigned successfully",
+    });
+
+  } catch (error) {
+    console.error("Field Advisor assignment failed:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Failed to assign Field Advisor. Please try again.",
+    });
+  }
+};
+
   return (
     <div className="container-fluid py-3 card">
       <div className="d-flex flex-wrap gap-2 mb-4">
@@ -371,6 +422,16 @@ const BasicInformationLayer = () => {
                 type="button"
                 className="btn btn-primary-600 btn-sm"
                 onClick={async () => {
+                  // ✅ Email validation
+                  if (!email || email.trim() === "") {
+                    Swal.fire("Error", "Email is required", "error");
+                    return;
+                  }
+
+                  if (!isValidEmail(email)) {
+                    Swal.fire("Error", "Please enter a valid email address", "error");
+                    return;
+                  }
                   try {
                     // Save profile (Lead API)
                     if (bookingData.LeadId) {
@@ -819,6 +880,7 @@ const BasicInformationLayer = () => {
               <div className="d-flex justify-content-center mt-5">
                 <button
                   type="button"
+                  onClick={handleAssignConfirm}
                   className="btn btn-primary-600 btn-sm"
                 >
                   {bookingData.FieldAdvisorName ? "Reassign" : "Assign"}

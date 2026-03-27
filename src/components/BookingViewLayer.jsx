@@ -3415,10 +3415,13 @@ const handleInitialAssignConfirm = async () => {
   };
   const displayDate = (date) => {
     if (!date) return "N/A";
-    return new Date(date).toLocaleDateString("en-GB", {
+    return new Date(date).toLocaleDateString("en-IN", {
       day: "2-digit",
       month: "short",
       year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
     });
   };
 
@@ -3443,7 +3446,7 @@ const handleInitialAssignConfirm = async () => {
       id: "lead-created",
       title: "Lead Created",
       icon: "mdi:lead-pencil",
-      date: bookingData.CreatedDate || bookingData.LeadCreatedDate,
+      date: bookingData.LeadCreatedDate,
       status: "completed",
       details: `Lead ID: ${bookingData.LeadId ?? "—"}`,
     };
@@ -3457,20 +3460,38 @@ const handleInitialAssignConfirm = async () => {
       details: `Booking ID: ${bookingData.BookingID ?? "—"}`,
     };
 
-    const assignStage = {
-      id: "assign-stage",
-      title: "Supervisor/Field Advisor Assigned",
-      icon: "mdi:account-group",
-      date:
-        bookingData.SupervisorHeadAssignDate ||
-        bookingData.FieldAdvisorAssignDate,
-      status:
-        bookingData.SupervisorHeadName || bookingData.FieldAdvisorName
-          ? "completed"
-          : "pending",
-      details: `${bookingData.SupervisorHeadName || "—"} / ${
-        bookingData.FieldAdvisorName || "—"
-      }`,
+    // const assignStage = {
+    //   id: "assign-stage",
+    //   title: "Supervisor/Field Advisor Assigned",
+    //   icon: "mdi:account-group",
+    //   date:
+    //     bookingData.SupervisorHeadAssignDate ||
+    //     bookingData.FieldAdvisorAssignDate,
+    //   status:
+    //     bookingData.SupervisorHeadName || bookingData.FieldAdvisorName
+    //       ? "completed"
+    //       : "pending",
+    //   details: `${bookingData.SupervisorHeadName || "—"} / ${
+    //     bookingData.FieldAdvisorName || "—"
+    //   }`,
+    // };
+
+    const supervisorStage = {
+    id: "supervisor-assigned",
+    title: "Supervisor Assigned",
+    icon: "mdi:account-tie",
+    date: bookingData.SupervisorHeadAssignDate,
+    status: bookingData.SupervisorHeadName ? "completed" : "pending",
+    details: bookingData.SupervisorHeadName || "—",
+    };
+
+    const fieldAdvisorStage = {
+      id: "field-advisor-assigned",
+      title: "Field Advisor Assigned",
+      icon: "mdi:account-hard-hat",
+      date: bookingData.FieldAdvisorAssignDate,
+      status: bookingData.FieldAdvisorName ? "completed" : "pending",
+      details: bookingData.FieldAdvisorName || "—",
     };
     const allDealerItems = [
       ...(bookingData?.BookingAddOns || []),
@@ -3587,7 +3608,7 @@ const handleInitialAssignConfirm = async () => {
       id: "booking-done",
       title: "Booking Completed",
       icon: "mdi:check-circle",
-      date: bookingData.BookingStatusUpdatedDate,
+      date: bookingData.BookingCompletedDate,
       status:
         bookingData.BookingStatus === "Completed" ? "completed" : "pending",
       details: bookingData.BookingStatus || "—",
@@ -3596,7 +3617,9 @@ const handleInitialAssignConfirm = async () => {
     let stages = [
       leadStage,
       bookingStage,
-      assignStage,
+      // assignStage,
+      supervisorStage,
+      fieldAdvisorStage,
       dealerStage,
       customerStage,
       technicianStage,
@@ -3823,7 +3846,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                       )}
                       {bookingData.BookingStatus && (
                         <span className="me-2">
-                          <strong>Status:</strong>{" "}
+                          <strong>Booking Status:</strong>{" "}
                           <span
                             className={`badge rounded-pill px-3 py-1 ${getStatusBadgeClass(bookingData.BookingStatus)}`}
                           >
