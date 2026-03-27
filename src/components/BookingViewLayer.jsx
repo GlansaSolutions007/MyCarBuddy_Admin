@@ -3740,7 +3740,7 @@ const BookingViewLayer = () => {
     ).length;
     const dealerStage = {
       id: "dealer-confirmation",
-      title: "Dealer Confirmation",
+      title: "Dealer Side Approval",
       icon: "mdi:handshake",
       date: allDealerItems.find((a) => a.IsDealer_Confirm)?.UpdatedDate,
       status:
@@ -3754,7 +3754,7 @@ const BookingViewLayer = () => {
       details:
         allDealerItems.length === 0
           ? "No dealers"
-          : `${dealerApprovalCount} dealers confirmed services`,
+          : `${dealerApprovalCount} Serv(s) Approved / ${allDealerItems.length - dealerApprovalCount} Serv(s) Not Approved`,
     };
 
     // const dealerApprovalCount = addOns.filter(
