@@ -97,6 +97,8 @@ const BookingViewLayer = () => {
   const [garageStep, setGarageStep] = useState("task"); // "task" | "route" | "details" | "return"
   const [garageTask, setGarageTask] = useState(null); // "carPickup" | "carDrop"
   const [garageRoute, setGarageRoute] = useState(null); // "customerToDealer" | "dealerToDealer"
+  const [garageOpenedDirectToDetails, setGarageOpenedDirectToDetails] =
+    useState(false);
   const [garagePickupDealer, setGaragePickupDealer] = useState(null);
   const [garageDeliverDealer, setGarageDeliverDealer] = useState(null);
   const [garageDriver, setGarageDriver] = useState(null);
@@ -129,6 +131,85 @@ const BookingViewLayer = () => {
     (dealer) =>
       !garagePickupDealer || dealer.value !== garagePickupDealer.value,
   );
+  const singleGarageDealerOption =
+    garageDealerOptions.length === 1 ? garageDealerOptions[0] : null;
+  const garageProgressServices = [
+    ...(bookingData?.BookingAddOns || []),
+    ...(bookingData?.SupervisorBookings || []),
+  ].filter((item) => item?.DealerID != null && item?.DealerName);
+  const isGarageServiceCompletedApproved = (item) => {
+    const status = (
+      item?.StatusName ??
+      item?.statusName ??
+      item?.AddOnStatus ??
+      item?.addOnStatus
+    )
+      ?.toString()
+      .trim();
+    const isApproved =
+      item?.IsCompleted_Confirmation === 1 ||
+      item?.isCompleted_Confirmation === 1;
+    return status === "ServiceCompleted" && isApproved;
+  };
+  const garageDealerProgressGroups = Object.values(
+    garageProgressServices.reduce((acc, item) => {
+      const dealerId = Number(item.DealerID);
+      if (!acc[dealerId]) {
+        acc[dealerId] = {
+          dealerId,
+          dealerName: item.DealerName,
+          services: [],
+        };
+      }
+      acc[dealerId].services.push(item);
+      return acc;
+    }, {}),
+  );
+  const completedGarageDealerOptions = garageDealerProgressGroups
+    .filter(
+      (group) =>
+        group.services.length > 0 &&
+        group.services.every(isGarageServiceCompletedApproved),
+    )
+    .map((group) => ({
+      value: group.dealerId,
+      label: group.dealerName,
+    }));
+  const remainingGarageDealerOptions = garageDealerProgressGroups
+    .filter((group) => group.services.some((item) => !isGarageServiceCompletedApproved(item)))
+    .map((group) => ({
+      value: group.dealerId,
+      label: group.dealerName,
+    }));
+  const allGarageServicesCompletedApproved =
+    garageProgressServices.length > 0 &&
+    garageProgressServices.every(isGarageServiceCompletedApproved);
+  const lastGarageDealerOption = (() => {
+    const routes = bookingData?.CarPickUpDelivery || [];
+    if (routes.length === 0) return null;
+    const lastEntry = routes[routes.length - 1];
+    const dealerId =
+      Number(lastEntry?.PickTo) || Number(lastEntry?.PickFrom) || null;
+    if (!dealerId) return null;
+    return garageDealerOptions.find((opt) => opt.value === dealerId) || null;
+  })();
+  const currentGarageDealerOption =
+    lastGarageDealerOption ||
+    completedGarageDealerOptions[0] ||
+    singleGarageDealerOption ||
+    null;
+  const pendingNextGarageDealerOptions = remainingGarageDealerOptions.filter(
+    (dealer) => !currentGarageDealerOption || dealer.value !== currentGarageDealerOption.value,
+  );
+  const garageServiceItems = [
+    ...(bookingData?.BookingAddOns || []),
+    ...(bookingData?.SupervisorBookings || []),
+  ].filter((item) => item?.ServiceName);
+  const shouldSkipGaragePickupIntro =
+    bookingData?.ServiceType === "ServiceAtGarage" &&
+    garageServiceItems.length === 1 &&
+    !!singleGarageDealerOption &&
+    !hasExistingCustomerToDealerRoute;
   const [pickupDate, setPickupDate] = useState("");
   const [pickupTime, setPickupTime] = useState("");
   const [dropDate, setDropDate] = useState("");
@@ -219,7 +300,7 @@ const BookingViewLayer = () => {
     bookingData?.BookingStatus === "Completed" &&
     bookingData?.Payments?.length > 0 &&
     bookingData?.Payments?.[bookingData.Payments.length - 1]?.PaymentStatus ===
-      "Success";
+    "Success";
   // State for dynamically adding services
   const [servicesToAdd, setServicesToAdd] = useState([
     {
@@ -400,61 +481,61 @@ const BookingViewLayer = () => {
   //   };
   // }, [bookingId, token, roleId, duserId]);
 
-useEffect(() => {
-  if (!bookingId || !token) return;
+  useEffect(() => {
+    if (!bookingId || !token) return;
 
-  const refresh = () => {
-    if (document.visibilityState !== "visible") return;
-    fetchBookingData();
-  };
+    const refresh = () => {
+      if (document.visibilityState !== "visible") return;
+      fetchBookingData();
+    };
 
-  let idleTimeout;
-  let intervalId = null;
+    let idleTimeout;
+    let intervalId = null;
 
-  const startAutoRefresh = () => {
-    if (intervalId) return; // already running
-    intervalId = setInterval(() => {
-      refresh();
-    }, 15000); // every 15 seconds
-  };
+    const startAutoRefresh = () => {
+      if (intervalId) return; // already running
+      intervalId = setInterval(() => {
+        refresh();
+      }, 15000); // every 15 seconds
+    };
 
-  const stopAutoRefresh = () => {
-    if (intervalId) {
-      clearInterval(intervalId);
-      intervalId = null;
-    }
-  };
+    const stopAutoRefresh = () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
 
-  const handleUserActivity = () => {
-    // user is active → stop interval
-    stopAutoRefresh();
+    const handleUserActivity = () => {
+      // user is active → stop interval
+      stopAutoRefresh();
 
-    // reset idle timer
-    clearTimeout(idleTimeout);
-    idleTimeout = setTimeout(() => {
-      console.log("User idle, starting auto-refresh");
-      startAutoRefresh(); // start after 15 seconds of inactivity
-    }, 15000);
-  };
+      // reset idle timer
+      clearTimeout(idleTimeout);
+      idleTimeout = setTimeout(() => {
+        console.log("User idle, starting auto-refresh");
+        startAutoRefresh(); // start after 15 seconds of inactivity
+      }, 15000);
+    };
 
-  const events = ["mousemove", "keydown", "scroll", "click"];
-
-  events.forEach((event) =>
-    window.addEventListener(event, handleUserActivity)
-  );
-
-  // start tracking initially
-  handleUserActivity();
-
-  return () => {
-    clearTimeout(idleTimeout);
-    stopAutoRefresh();
+    const events = ["mousemove", "keydown", "scroll", "click"];
 
     events.forEach((event) =>
-      window.removeEventListener(event, handleUserActivity)
+      window.addEventListener(event, handleUserActivity)
     );
-  };
-}, [bookingId, token, roleId, duserId]);
+
+    // start tracking initially
+    handleUserActivity();
+
+    return () => {
+      clearTimeout(idleTimeout);
+      stopAutoRefresh();
+
+      events.forEach((event) =>
+        window.removeEventListener(event, handleUserActivity)
+      );
+    };
+  }, [bookingId, token, roleId, duserId]);
 
   const fetchSupervisors = async () => {
     try {
@@ -570,9 +651,9 @@ useEffect(() => {
   const openPickupDropRescheduleModal = (row) => {
     setPickupDropRescheduleRow(row);
     setPickupDropRescheduleDate(today);
-     const now = new Date();
-  const currentTime = now.getHours().toString().padStart(2, '0') + ":" + 
-                      now.getMinutes().toString().padStart(2, '0');
+    const now = new Date();
+    const currentTime = now.getHours().toString().padStart(2, '0') + ":" +
+      now.getMinutes().toString().padStart(2, '0');
     setPickupDropRescheduleTimeSlot([currentTime]);
     setShowPickupDropRescheduleModal(true);
   };
@@ -628,7 +709,7 @@ useEffect(() => {
     }
   };
 
-const handlePickupDropRescheduleSubmit = async () => {
+  const handlePickupDropRescheduleSubmit = async () => {
     if (!pickupDropRescheduleDate) {
       Swal.fire({ icon: "warning", title: "Error", text: "Please select reschedule date." });
       return;
@@ -668,8 +749,8 @@ const handlePickupDropRescheduleSubmit = async () => {
     setPickupDropReassignRow(row);
     const now = new Date();
     setPickupDropReassignDate(today);
-  const currentTime = now.getHours().toString().padStart(2, '0') + ":" + 
-                      now.getMinutes().toString().padStart(2, '0');
+    const currentTime = now.getHours().toString().padStart(2, '0') + ":" +
+      now.getMinutes().toString().padStart(2, '0');
     setPickupDropReassignTech(null);
     setPickupDropReassignTimeSlot([currentTime]);
     setShowPickupDropReassignModal(true);
@@ -683,7 +764,7 @@ const handlePickupDropRescheduleSubmit = async () => {
     setPickupDropReassignTimeSlot([]);
   };
 
-const handlePickupDropReassignSubmit = async () => {
+  const handlePickupDropReassignSubmit = async () => {
     if (!pickupDropReassignTech) {
       Swal.fire({ icon: "warning", title: "Error", text: "Please select a technician." });
       return;
@@ -797,8 +878,7 @@ const handlePickupDropReassignSubmit = async () => {
           title: "Success",
           text:
             res.data.message ||
-            `${
-              assignType === "technician" ? "Technician" : "Supervisor"
+            `${assignType === "technician" ? "Technician" : "Supervisor"
             } assigned successfully`,
         });
 
@@ -814,8 +894,7 @@ const handlePickupDropReassignSubmit = async () => {
           title: "Error",
           text:
             res.data.message ||
-            `${
-              assignType === "technician" ? "Technician" : "Supervisor"
+            `${assignType === "technician" ? "Technician" : "Supervisor"
             } assignment failed.`,
         });
       }
@@ -839,67 +918,67 @@ const handlePickupDropReassignSubmit = async () => {
   //   setShowAssignStep1Modal(true);
   // };
 
- const handleInitialAssignClick = () => {
-  const routes = bookingData?.CarPickUpDelivery || [];
-  const addOns = bookingData?.BookingAddOns || [];
+  const handleInitialAssignClick = () => {
+    const routes = bookingData?.CarPickUpDelivery || [];
+    const addOns = bookingData?.BookingAddOns || [];
 
-  // 1. Safety Check: If there are existing routes, ensure the last one is finished
-  if (routes.length > 0) {
-    const lastRoute = routes[routes.length - 1];
-    const lastStatus = lastRoute?.Status?.toLowerCase();
-    const routeType = lastRoute?.RouteType;
+    // 1. Safety Check: If there are existing routes, ensure the last one is finished
+    if (routes.length > 0) {
+      const lastRoute = routes[routes.length - 1];
+      const lastStatus = lastRoute?.Status?.toLowerCase();
+      const routeType = lastRoute?.RouteType;
 
-    // If the technician is still active (not completed or cancelled), block and STOP
-    if (lastStatus !== "completed" && lastStatus !== "cancelled") {
-      Swal.fire({
-        icon: "warning",
-        title: "Cannot Assign",
-        text: "The previously assigned technician has not completed the service. Please wait until the current assignment is completed before assigning a new technician.",
-      });
-      return; // Stop the function here so no modals open
-    }
-
-     // 🚨 NEW CONDITION (Garage check)
-    if (
-      bookingData?.ServiceType === "ServiceAtGarage" &&
-      routeType === "CustomerToDealer" &&
-      lastStatus === "completed"
-    ) {
-      const dealerId = Number(lastRoute?.PickTo); // 👈 DealerID from route
-        // Filter only that dealer add-ons
-      const dealerAddOns = addOns.filter(
-        (a) => Number(a.DealerID) === dealerId
-      );
-
-       // Check if any service NOT completed
-      const hasPending = dealerAddOns.some(
-        (a) => (a.StatusName || "").toLowerCase() !== "servicecompleted"
-      );
-
-      if (hasPending) {
-        const dealerName =
-          dealerAddOns[0]?.DealerName || lastRoute?.PickToName || "Dealer";
-
+      // If the technician is still active (not completed or cancelled), block and STOP
+      if (lastStatus !== "completed" && lastStatus !== "cancelled") {
         Swal.fire({
           icon: "warning",
-          title: "Service Still In Progress",
-          text: `Car is at ${dealerName}, but service is not completed yet.`,
+          title: "Cannot Assign",
+          text: "The previously assigned technician has not completed the service. Please wait until the current assignment is completed before assigning a new technician.",
         });
-        return;
+        return; // Stop the function here so no modals open
       }
+
+      // 🚨 NEW CONDITION (Garage check)
+      if (
+        bookingData?.ServiceType === "ServiceAtGarage" &&
+        routeType === "CustomerToDealer" &&
+        lastStatus === "completed"
+      ) {
+        const dealerId = Number(lastRoute?.PickTo); // 👈 DealerID from route
+        // Filter only that dealer add-ons
+        const dealerAddOns = addOns.filter(
+          (a) => Number(a.DealerID) === dealerId
+        );
+
+        // Check if any service NOT completed
+        const hasPending = dealerAddOns.some(
+          (a) => (a.StatusName || "").toLowerCase() !== "servicecompleted"
+        );
+
+        if (hasPending) {
+          const dealerName =
+            dealerAddOns[0]?.DealerName || lastRoute?.PickToName || "Dealer";
+
+          Swal.fire({
+            icon: "warning",
+            title: "Service Still In Progress",
+            text: `Car is at ${dealerName}, but service is not completed yet.`,
+          });
+          return;
+        }
+      }
+
+
     }
-
-
-  }
-  // 2. If we reached here, assignment is ALLOWED. 
-  // Now decide: Skip Step 1 if it's already a Garage Service
-  if (bookingData?.ServiceType === "ServiceAtGarage") {
-    openGarageFlowModal(); // Directly go to Pickup/Drop selection (Step 2)
-  } else {
-    setAssignServiceLocation(null);
-    setShowAssignStep1Modal(true); // Show Doorstep vs Garage choice (Step 1)
-  }
-};
+    // 2. If we reached here, assignment is ALLOWED. 
+    // Now decide: Skip Step 1 if it's already a Garage Service
+    if (bookingData?.ServiceType === "ServiceAtGarage") {
+      openGarageFlowModal(); // Directly go to Pickup/Drop selection (Step 2)
+    } else {
+      setAssignServiceLocation(null);
+      setShowAssignStep1Modal(true); // Show Doorstep vs Garage choice (Step 1)
+    }
+  };
 
   // After user selects "Service at doorstep" → open employee selection modal
   const openDoorstepAssignModal = () => {
@@ -908,11 +987,11 @@ const handlePickupDropReassignSubmit = async () => {
     setSelectedInitialTechnician(null);
     setSelectedInitialSupervisor(null);
     setSelectedInitialFieldAdvisor(null);
-     const now = new Date();
-  const currentTime = now.getHours().toString().padStart(2, '0') + ":" + 
-                      now.getMinutes().toString().padStart(2, '0');
-  setGaragePickupDate(today);       // Sets the date input to Today
-  setGaragePickupTime(currentTime); // Sets the time input to Current Time
+    const now = new Date();
+    const currentTime = now.getHours().toString().padStart(2, '0') + ":" +
+      now.getMinutes().toString().padStart(2, '0');
+    setGaragePickupDate(today);       // Sets the date input to Today
+    setGaragePickupTime(currentTime); // Sets the time input to Current Time
     if (bookingData && bookingData.TimeSlot) {
       const slots = bookingData.TimeSlot.split(",").map((s) => s.trim());
       if (slots.length === 1) {
@@ -931,12 +1010,36 @@ const handlePickupDropReassignSubmit = async () => {
 
   // After user selects "Service at garage" → open garage flow modal
   const openGarageFlowModal = () => {
+    const shouldOpenDealerToDealer =
+      hasExistingCustomerToDealerRoute &&
+      !allGarageServicesCompletedApproved &&
+      completedGarageDealerOptions.length > 0 &&
+      pendingNextGarageDealerOptions.length > 0;
+    const defaultGarageTask =
+      hasExistingCustomerToDealerRoute && allGarageServicesCompletedApproved
+        ? "carDrop"
+        : "carPickup";
+    const defaultGarageRoute = shouldOpenDealerToDealer
+      ? "dealerToDealer"
+      : "customerToDealer";
+
     setShowAssignStep1Modal(false);
-    setGarageStep("task");
-    setGarageTask(null);
-    setGarageRoute(null);
-    setGaragePickupDealer(null);
-    setGarageDeliverDealer(null);
+    setGarageOpenedDirectToDetails(true);
+    setGarageStep("details");
+    setGarageTask(defaultGarageTask);
+    setGarageRoute(defaultGarageRoute);
+    setGaragePickupDealer(
+      hasExistingCustomerToDealerRoute ? currentGarageDealerOption : null,
+    );
+    setGarageDeliverDealer(
+      defaultGarageRoute === "dealerToDealer"
+        ? pendingNextGarageDealerOptions.length === 1
+          ? pendingNextGarageDealerOptions[0]
+          : null
+        : defaultGarageTask === "carPickup"
+          ? singleGarageDealerOption
+          : null,
+    );
     setGarageDriver(null);
     setGarageServiceDone(false);
     setGaragePickupDate(new Date().toISOString().split("T")[0]);
@@ -948,6 +1051,7 @@ const handlePickupDropReassignSubmit = async () => {
 
   const closeGarageFlowModal = () => {
     setShowGarageFlowModal(false);
+    setGarageOpenedDirectToDetails(false);
     setGarageStep("task");
     setGarageTask(null);
     setGarageRoute(null);
@@ -960,6 +1064,23 @@ const handlePickupDropReassignSubmit = async () => {
     setGarageDeliveryDate("");
     setGarageDeliveryTime("");
   };
+
+  const renderAssignedDealerField = (label, dealerOption) => (
+    <div className="mb-0">
+      <label className="form-label small mb-1">{label}</label>
+      <div
+        className="form-control d-flex align-items-center justify-content-between"
+        style={{ minHeight: "42px", backgroundColor: "#fff" }}
+      >
+        <span className="fw-semibold">
+          {dealerOption?.label || "Dealer not assigned"}
+        </span>
+        <span className="badge bg-success-subtle text-success">
+          Assigned
+        </span>
+      </div>
+    </div>
+  );
 
   // Format time as HH:mm:ss for SavePickupDeliveryTime API
   const toTimeApi = (t) => {
@@ -1067,83 +1188,83 @@ const handlePickupDropReassignSubmit = async () => {
   //     setIsConverting(false);
   //   }
   // };
-  
-      const handleConvertToService = async () => {
-      const result = await Swal.fire({
-        title: "Convert Inspection?",
-        text: "This will convert the inspection into a service.",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "Yes, Convert",
-        cancelButtonText: "Cancel",
+
+  const handleConvertToService = async () => {
+    const result = await Swal.fire({
+      title: "Convert Inspection?",
+      text: "This will convert the inspection into a service.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Convert",
+      cancelButtonText: "Cancel",
+    });
+
+    if (!result.isConfirmed) return;
+
+    setIsConverting(true);
+
+    try {
+      // 1️⃣ Convert Inspection → Service
+      await axios.post(
+        `${API_BASE}Bookings/convert-inspection-to-service`,
+        {
+          bookingId: bookingData?.BookingID,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // 2️⃣ Update Booking Status → ServiceInProgress
+      await axios.put(
+        `${API_BASE}Bookings/booking-status`,
+        {
+          bookingID: bookingData?.BookingID,
+          bookingStatus: "ServiceInProgress",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // 3️⃣ Success Message
+      await Swal.fire({
+        icon: "success",
+        title: "Converted",
+        text: "Inspection converted and service started. Please add extra services.",
       });
 
-      if (!result.isConfirmed) return;
-
-      setIsConverting(true);
-
-      try {
-        // 1️⃣ Convert Inspection → Service
-        await axios.post(
-          `${API_BASE}Bookings/convert-inspection-to-service`,
-          {
-            bookingId: bookingData?.BookingID,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+      // 4️⃣ Redirect
+      if (
+        bookingData?.LeadId &&
+        bookingData?.BookingID &&
+        bookingData?.BookingTrackID
+      ) {
+        navigate(
+          `/book-service/${bookingData.LeadId}/${bookingData.BookingID}/${bookingData.BookingTrackID}`
         );
-
-        // 2️⃣ Update Booking Status → ServiceInProgress
-        await axios.put(
-          `${API_BASE}Bookings/booking-status`,
-          {
-            bookingID: bookingData?.BookingID,
-            bookingStatus: "ServiceInProgress",
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        // 3️⃣ Success Message
-        await Swal.fire({
-          icon: "success",
-          title: "Converted",
-          text: "Inspection converted and service started. Please add extra services.",
-        });
-
-        // 4️⃣ Redirect
-        if (
-          bookingData?.LeadId &&
-          bookingData?.BookingID &&
-          bookingData?.BookingTrackID
-        ) {
-          navigate(
-            `/book-service/${bookingData.LeadId}/${bookingData.BookingID}/${bookingData.BookingTrackID}`
-          );
-          return;
-        }
-
-        fetchBookingData();
-      } catch (error) {
-        console.error("Convert Error:", error);
-
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text:
-            error?.response?.data?.message ||
-            "Failed to convert inspection to service.",
-        });
-      } finally {
-        setIsConverting(false);
+        return;
       }
-    };
+
+      fetchBookingData();
+    } catch (error) {
+      console.error("Convert Error:", error);
+
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text:
+          error?.response?.data?.message ||
+          "Failed to convert inspection to service.",
+      });
+    } finally {
+      setIsConverting(false);
+    }
+  };
   // const handleConfirmService = async () => {
   //   const addOns = bookingData?.BookingAddOns || [];
   //   const supervisorBookings = bookingData?.SupervisorBookings || [];
@@ -1247,66 +1368,66 @@ const handlePickupDropReassignSubmit = async () => {
   //   }
   // };
 
-const handleConfirmService = async () => {
-  const addOns = bookingData?.BookingAddOns || [];
-  const supervisorBookings = bookingData?.SupervisorBookings || [];
-  const allServices = [...addOns, ...supervisorBookings];
-  const itemsToConfirm = allServices.filter(
-    (a) => (a.IsSupervisor_Confirm ?? a.isSupervisor_Confirm) !== 1,
-  );
-
-  if (itemsToConfirm.length === 0) {
-    Swal.fire({
-      icon: "info",
-      title: "No pending services",
-      text: "All services are already confirmed by supervisor.",
-    });
-    return;
-  }
-
-  const result = await Swal.fire({
-    title: "Confirm services?",
-    text: `This will confirm ${itemsToConfirm.length} service(s) for this booking.`,
-    icon: "question",
-    showCancelButton: true,
-    confirmButtonText: "Yes, Confirm",
-    cancelButtonText: "Cancel",
-  });
-  if (!result.isConfirmed) return;
-  setIsConfirmingService(true);
-  try {
-    const supervisorId = Number(duserId || localStorage.getItem("userId") || 0);
-    const bookingId = bookingData?.BookingID;
-
-    await axios.post(
-      `${API_BASE}Supervisor/confirm-by-bookingid?bookingId=${encodeURIComponent(
-        bookingId,
-      )}&supervisorId=${encodeURIComponent(supervisorId)}`,
-      null,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
+  const handleConfirmService = async () => {
+    const addOns = bookingData?.BookingAddOns || [];
+    const supervisorBookings = bookingData?.SupervisorBookings || [];
+    const allServices = [...addOns, ...supervisorBookings];
+    const itemsToConfirm = allServices.filter(
+      (a) => (a.IsSupervisor_Confirm ?? a.isSupervisor_Confirm) !== 1,
     );
 
-    Swal.fire({
-      icon: "success",
-      title: "Confirmed",
-      text: "Services confirmed successfully.",
+    if (itemsToConfirm.length === 0) {
+      Swal.fire({
+        icon: "info",
+        title: "No pending services",
+        text: "All services are already confirmed by supervisor.",
+      });
+      return;
+    }
+
+    const result = await Swal.fire({
+      title: "Confirm services?",
+      text: `This will confirm ${itemsToConfirm.length} service(s) for this booking.`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Confirm",
+      cancelButtonText: "Cancel",
     });
-    fetchBookingData();
-  } catch (error) {
-    console.error("Confirm Service Error:", error);
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: error?.response?.data?.message || "Failed to confirm services.",
-    });
-  } finally {
-    setIsConfirmingService(false);
-  }
-};
+    if (!result.isConfirmed) return;
+    setIsConfirmingService(true);
+    try {
+      const supervisorId = Number(duserId || localStorage.getItem("userId") || 0);
+      const bookingId = bookingData?.BookingID;
+
+      await axios.post(
+        `${API_BASE}Supervisor/confirm-by-bookingid?bookingId=${encodeURIComponent(
+          bookingId,
+        )}&supervisorId=${encodeURIComponent(supervisorId)}`,
+        null,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      Swal.fire({
+        icon: "success",
+        title: "Confirmed",
+        text: "Services confirmed successfully.",
+      });
+      fetchBookingData();
+    } catch (error) {
+      console.error("Confirm Service Error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error?.response?.data?.message || "Failed to confirm services.",
+      });
+    } finally {
+      setIsConfirmingService(false);
+    }
+  };
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
@@ -1529,126 +1650,126 @@ const handleConfirmService = async () => {
     };
   };
 
-const handleInitialAssignConfirm = async () => {
-  // 1. YOUR VALIDATION BLOCK (Kept exactly as requested)
-  if (!garagePickupDate) {
-    Swal.fire({ icon: "error", title: "Error", text: "Please select a date." });
-    return;
-  }
-  if (!garagePickupTime) {
-    Swal.fire({ icon: "error", title: "Error", text: "Please select a time." });
-    return;
-  }
-
-  let payload;
-  let apiUrl;
-  let method = "post";
-
-  // Combine Date and Time for the API (Format: YYYY-MM-DDTHH:mm:ss)
-  const combinedAssignDate = `${garagePickupDate}T${garagePickupTime}:00`;
-
-  // 2. Logic based on Assignment Type
-  if (initialAssignType === "fieldAdvisor") {
-    if (!selectedInitialFieldAdvisor) {
-      Swal.fire({ icon: "error", title: "Error", text: "Please select a field advisor before assigning." });
+  const handleInitialAssignConfirm = async () => {
+    // 1. YOUR VALIDATION BLOCK (Kept exactly as requested)
+    if (!garagePickupDate) {
+      Swal.fire({ icon: "error", title: "Error", text: "Please select a date." });
       return;
     }
-    payload = {
-      bookingIds: [bookingId],
-      supervisorHeadId: Number(userId),
-      fieldAdvisorId: selectedInitialFieldAdvisor.value,
-      assignTimeSlot: garagePickupTime, // Now sending the string from time picker
-    };
-    apiUrl = `${API_BASE}Supervisor/AssignToFieldAdvisor`;
-  } 
-  else if (initialAssignType === "technician") {
-    if (!selectedInitialTechnician) {
-      Swal.fire({ icon: "error", title: "Error", text: "Please select a technician before assigning." });
-      return;
-    }
-    if (!selectedServiceType || selectedServiceType.length === 0) {
-      Swal.fire({ icon: "error", title: "Error", text: "Please select at least one service." });
+    if (!garagePickupTime) {
+      Swal.fire({ icon: "error", title: "Error", text: "Please select a time." });
       return;
     }
 
-    // Get comma-separated IDs of selected services
-    const selectedServiceNames = selectedServiceType.map((st) => st.value);
-    const selectedAddOns = (bookingData?.BookingAddOns || []).filter(
-      (addon) => addon.ServiceName && selectedServiceNames.includes(addon.ServiceName)
-    );
-    const addOnIds = selectedAddOns.map((addon) => String(addon.AddOnID)).join(",") || "0";
+    let payload;
+    let apiUrl;
+    let method = "post";
 
-    payload = {
-      bookingID: bookingData.BookingID,
-      assignDate: combinedAssignDate,
-      role: "Technician",
-      techID: selectedInitialTechnician?.value,
-      addOnId: addOnIds,
-      leadId: bookingData.LeadId,
-      ServiceType: "ServiceAtHome",
-      assignTimeSlot: garagePickupTime, // Now sending the string from time picker
-    };
-    apiUrl = `${API_BASE}Supervisor/SavePickupDeliveryTime`;
-  } 
-  else { // Supervisor logic
-    if (!selectedInitialSupervisor) {
-      Swal.fire({ icon: "error", title: "Error", text: "Please select a supervisor before assigning." });
-      return;
+    // Combine Date and Time for the API (Format: YYYY-MM-DDTHH:mm:ss)
+    const combinedAssignDate = `${garagePickupDate}T${garagePickupTime}:00`;
+
+    // 2. Logic based on Assignment Type
+    if (initialAssignType === "fieldAdvisor") {
+      if (!selectedInitialFieldAdvisor) {
+        Swal.fire({ icon: "error", title: "Error", text: "Please select a field advisor before assigning." });
+        return;
+      }
+      payload = {
+        bookingIds: [bookingId],
+        supervisorHeadId: Number(userId),
+        fieldAdvisorId: selectedInitialFieldAdvisor.value,
+        assignTimeSlot: garagePickupTime, // Now sending the string from time picker
+      };
+      apiUrl = `${API_BASE}Supervisor/AssignToFieldAdvisor`;
     }
-    payload = {
-      bookingID: bookingData.BookingID,
-      assignDate: combinedAssignDate,
-      role: "Supervisor",
-      techID: selectedInitialSupervisor?.value,
-      leadId: bookingData.LeadId,
-      ServiceType: "ServiceAtHome",
-      timeSlot: garagePickupTime, // Now sending the string from time picker
-    };
-    apiUrl = `${API_BASE}Supervisor/SavePickupDeliveryTime`;
-  }
+    else if (initialAssignType === "technician") {
+      if (!selectedInitialTechnician) {
+        Swal.fire({ icon: "error", title: "Error", text: "Please select a technician before assigning." });
+        return;
+      }
+      if (!selectedServiceType || selectedServiceType.length === 0) {
+        Swal.fire({ icon: "error", title: "Error", text: "Please select at least one service." });
+        return;
+      }
 
-  // 3. Execution
-  setIsInitialAssigning(true);
-  try {
-    const res = await axios({
-      method: method,
-      url: apiUrl,
-      data: payload,
-      headers: { Authorization: `Bearer ${token}` },
-    });
+      // Get comma-separated IDs of selected services
+      const selectedServiceNames = selectedServiceType.map((st) => st.value);
+      const selectedAddOns = (bookingData?.BookingAddOns || []).filter(
+        (addon) => addon.ServiceName && selectedServiceNames.includes(addon.ServiceName)
+      );
+      const addOnIds = selectedAddOns.map((addon) => String(addon.AddOnID)).join(",") || "0";
 
-    if (res.status === 200 || res.status === 201) {
-      Swal.fire({
-        icon: "success",
-        title: "Success",
-        text: res.data.message || "Assigned successfully",
+      payload = {
+        bookingID: bookingData.BookingID,
+        assignDate: combinedAssignDate,
+        role: "Technician",
+        techID: selectedInitialTechnician?.value,
+        addOnId: addOnIds,
+        leadId: bookingData.LeadId,
+        ServiceType: "ServiceAtHome",
+        assignTimeSlot: garagePickupTime, // Now sending the string from time picker
+      };
+      apiUrl = `${API_BASE}Supervisor/SavePickupDeliveryTime`;
+    }
+    else { // Supervisor logic
+      if (!selectedInitialSupervisor) {
+        Swal.fire({ icon: "error", title: "Error", text: "Please select a supervisor before assigning." });
+        return;
+      }
+      payload = {
+        bookingID: bookingData.BookingID,
+        assignDate: combinedAssignDate,
+        role: "Supervisor",
+        techID: selectedInitialSupervisor?.value,
+        leadId: bookingData.LeadId,
+        ServiceType: "ServiceAtHome",
+        timeSlot: garagePickupTime, // Now sending the string from time picker
+      };
+      apiUrl = `${API_BASE}Supervisor/SavePickupDeliveryTime`;
+    }
+
+    // 3. Execution
+    setIsInitialAssigning(true);
+    try {
+      const res = await axios({
+        method: method,
+        url: apiUrl,
+        data: payload,
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
-      // Cleanup and Refresh
-      setInitialAssignModalOpen(false);
-      fetchBookingData();
-      
-      // Reset local states
-      setSelectedInitialTechnician(null);
-      setSelectedInitialSupervisor(null);
-      setSelectedInitialFieldAdvisor(null);
-      setSelectedServiceType([]);
-      setGaragePickupDate("");
-      setGaragePickupTime("");
-    } else {
-      Swal.fire({ icon: "error", title: "Error", text: res.data.message || "Failed to assign" });
+
+      if (res.status === 200 || res.status === 201) {
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: res.data.message || "Assigned successfully",
+        });
+
+        // Cleanup and Refresh
+        setInitialAssignModalOpen(false);
+        fetchBookingData();
+
+        // Reset local states
+        setSelectedInitialTechnician(null);
+        setSelectedInitialSupervisor(null);
+        setSelectedInitialFieldAdvisor(null);
+        setSelectedServiceType([]);
+        setGaragePickupDate("");
+        setGaragePickupTime("");
+      } else {
+        Swal.fire({ icon: "error", title: "Error", text: res.data.message || "Failed to assign" });
+      }
+    } catch (error) {
+      console.error("Assignment failed:", error);
+      Swal.fire({
+        icon: "error",
+        title: "API Error",
+        text: error.response?.data?.message || "Error while assigning. Please try again.",
+      });
+    } finally {
+      setIsInitialAssigning(false);
     }
-  } catch (error) {
-    console.error("Assignment failed:", error);
-    Swal.fire({
-      icon: "error",
-      title: "API Error",
-      text: error.response?.data?.message || "Error while assigning. Please try again.",
-    });
-  } finally {
-    setIsInitialAssigning(false);
-  }
-};
+  };
 
   const handleInitialyyyAssignConfirm = async () => {
     // Time slot validation for all assignment types
@@ -1771,7 +1892,7 @@ const handleInitialAssignConfirm = async () => {
         method = "post";
       }
     }
-     setIsInitialAssigning(true);
+    setIsInitialAssigning(true);
     try {
       const res = await axios({
         method: method,
@@ -1894,7 +2015,7 @@ const handleInitialAssignConfirm = async () => {
       });
 
       if (!confirmRevert.isConfirmed) return;
-       setRevertingServiceId(service.Id);
+      setRevertingServiceId(service.Id);
       const payload = {
         // bookingId: service.BookingId,
         // serviceId: service.ServiceId,
@@ -1932,8 +2053,8 @@ const handleInitialAssignConfirm = async () => {
         icon: "error",
       });
     } finally {
-    setRevertingServiceId(null); 
-  }
+      setRevertingServiceId(null);
+    }
   };
 
   const handleRefund = async (payment) => {
@@ -2117,9 +2238,9 @@ const handleInitialAssignConfirm = async () => {
   // Calculate Add Service total dynamically
   const addServiceTotal = bookingData?.BookingAddOns
     ? bookingData.BookingAddOns.reduce(
-        (sum, item) => sum + (item.TotalPrice || 0),
-        0,
-      )
+      (sum, item) => sum + (item.TotalPrice || 0),
+      0,
+    )
     : 0;
 
   const handleAddLocalService = async () => {
@@ -2386,16 +2507,16 @@ const handleInitialAssignConfirm = async () => {
   };
 
   const CheckServiceAmount = () => {
-     const zeroAmountServices = [
+    const zeroAmountServices = [
       ...(bookingData?.BookingAddOns || []),
       ...(bookingData?.SupervisorBookings || []),
     ].filter((item) => {
       const total = Number(
         item.TotalPrice ??
-          Number(item.Price || 0) +
-            Number(item.GSTAmount || 0) +
-            Number(item.LabourCharges || 0) -
-            Number(item.CouponAmount || 0),
+        Number(item.Price || 0) +
+        Number(item.GSTAmount || 0) +
+        Number(item.LabourCharges || 0) -
+        Number(item.CouponAmount || 0),
       );
 
       return total === 0;
@@ -2417,8 +2538,8 @@ const handleInitialAssignConfirm = async () => {
 
       return false;
     }
-      // navigate(`/invoice-view/${bookingData?.BookingID}?type=Estimation`);
-      return true;
+    // navigate(`/invoice-view/${bookingData?.BookingID}?type=Estimation`);
+    return true;
   }
 
   const showGenerateInvoiceConfirm = (name, generateHandler, invoiceType) => {
@@ -2428,10 +2549,10 @@ const handleInitialAssignConfirm = async () => {
     ].filter((item) => {
       const total = Number(
         item.TotalPrice ??
-          Number(item.Price || 0) +
-            Number(item.GSTAmount || 0) +
-            Number(item.LabourCharges || 0) -
-            Number(item.CouponAmount || 0),
+        Number(item.Price || 0) +
+        Number(item.GSTAmount || 0) +
+        Number(item.LabourCharges || 0) -
+        Number(item.CouponAmount || 0),
       );
 
       return total === 0;
@@ -2464,17 +2585,17 @@ const handleInitialAssignConfirm = async () => {
       if (result.isConfirmed) {
         generateHandler();
       } else if (result.isDenied) {
-      let url = `/invoice-view/${bookingData.BookingID}?type=${encodeURIComponent(invoiceType)}`;
-      
-      // If Dealer type, find the dealerId from the addons and append to URL
-      if (invoiceType.toLowerCase() === "dealer") {
-        const dealerID = bookingData?.BookingAddOns?.find((addon) => addon?.DealerID)?.DealerID;
-        if (dealerID) {
-          url += `&dealerId=${dealerID}`;
+        let url = `/invoice-view/${bookingData.BookingID}?type=${encodeURIComponent(invoiceType)}`;
+
+        // If Dealer type, find the dealerId from the addons and append to URL
+        if (invoiceType.toLowerCase() === "dealer") {
+          const dealerID = bookingData?.BookingAddOns?.find((addon) => addon?.DealerID)?.DealerID;
+          if (dealerID) {
+            url += `&dealerId=${dealerID}`;
+          }
         }
+        navigate(url);
       }
-      navigate(url);
-    }
     });
   };
 
@@ -2483,7 +2604,7 @@ const handleInitialAssignConfirm = async () => {
       Swal.fire("Error", "Booking data not available.", "error");
       return;
     }
-     setIsGeneratingFinal(true);
+    setIsGeneratingFinal(true);
     try {
       const res = await axios.post(
         `${API_BASE}Leads/GenerateFinalInvoice`,
@@ -2511,8 +2632,8 @@ const handleInitialAssignConfirm = async () => {
         "error",
       );
     } finally {
-    setIsGeneratingFinal(false);
-  }
+      setIsGeneratingFinal(false);
+    }
   };
   const handleGenerateEstimationInvoice = async () => {
     if (!bookingData?.BookingID) {
@@ -2578,10 +2699,10 @@ const handleInitialAssignConfirm = async () => {
     const zeroTotalSupervisorServices = supervisorBookings.filter((s) => {
       const total = Number(
         s.TotalPrice ??
-          Number(s.Price || 0) +
-            Number(s.GSTAmount || 0) +
-            Number(s.LabourCharges || 0) -
-            Number(s.CouponAmount || 0),
+        Number(s.Price || 0) +
+        Number(s.GSTAmount || 0) +
+        Number(s.LabourCharges || 0) -
+        Number(s.CouponAmount || 0),
       );
       return total === 0;
     });
@@ -2627,12 +2748,12 @@ const handleInitialAssignConfirm = async () => {
       Swal.fire(
         "Error",
         error?.response?.data?.message ||
-          "Failed to generate Estimation invoice.",
+        "Failed to generate Estimation invoice.",
         "error",
       );
     } finally {
-    setIsGeneratingEstimation(false); 
-  }
+      setIsGeneratingEstimation(false);
+    }
   };
 
   const handleGenerateDealerInvoice = async () => {
@@ -2669,7 +2790,7 @@ const handleInitialAssignConfirm = async () => {
       );
       // change route if dealer invoice has different view
       // navigate(`/invoice-view/${bookingData.BookingID}?type=Dealer`);
-       navigate(`/invoice-view/${bookingData.BookingID}?type=Dealer&dealerId=${dealerId}`);
+      navigate(`/invoice-view/${bookingData.BookingID}?type=Dealer&dealerId=${dealerId}`);
     } catch (error) {
       console.error("Generate Dealer Invoice Error:", error);
       Swal.fire(
@@ -2678,15 +2799,15 @@ const handleInitialAssignConfirm = async () => {
         "error",
       );
     } finally {
-    setIsGeneratingDealer(false); 
-  }
+      setIsGeneratingDealer(false);
+    }
   };
 
   // Ensure basic details (booking date, address, supervisor) are filled before key actions
   const ensureBasicDetails = () => {
     const fields = [
       (!bookingData?.BookingDate || !bookingData?.TimeSlot) &&
-        "Booking date & time slot",
+      "Booking date & time slot",
       !bookingData?.FullAddress && "Customer address",
       !(
         bookingData?.SupervisorHeadName ||
@@ -2984,7 +3105,7 @@ const handleInitialAssignConfirm = async () => {
       });
       return;
     }
-     setIsRejectingCustomer(true);
+    setIsRejectingCustomer(true);
     try {
       // Convert selected IDs to comma string
       const addOnIdsString = rejectedServiceIds.join(",");
@@ -3018,8 +3139,8 @@ const handleInitialAssignConfirm = async () => {
         "error",
       );
     } finally {
-    setIsRejectingCustomer(false); 
-  }
+      setIsRejectingCustomer(false);
+    }
   };
 
   const totalAmount =
@@ -3070,30 +3191,30 @@ const handleInitialAssignConfirm = async () => {
   // const showDealerInvoiceButton =
   //   hasAtLeastOneService && allSupervisorConfirmed && totalAmount > 0;
 
-    // 1. Get all unique dealer IDs from the booking
-    const uniqueDealerIds = Array.from(
-      new Set(
-        [
-          ...(bookingData?.BookingAddOns || []),
-          ...(bookingData?.SupervisorBookings || []),
-        ]
-          .map((item) => String(item.DealerID || ""))
-          .filter((id) => id !== "" && id !== "0")
-      )
-    );
+  // 1. Get all unique dealer IDs from the booking
+  const uniqueDealerIds = Array.from(
+    new Set(
+      [
+        ...(bookingData?.BookingAddOns || []),
+        ...(bookingData?.SupervisorBookings || []),
+      ]
+        .map((item) => String(item.DealerID || ""))
+        .filter((id) => id !== "" && id !== "0")
+    )
+  );
 
-    // 2. Filter out the MyCarBuddy internal ID (1)
-    const partnerDealers = uniqueDealerIds.filter((id) => id !== "1");
+  // 2. Filter out the MyCarBuddy internal ID (1)
+  const partnerDealers = uniqueDealerIds.filter((id) => id !== "1");
 
-    // 3. Show button ONLY if there is at least one partner dealer (External Dealer)
-    const showDealerInvoiceButton =
-      hasAtLeastOneService &&
-      allSupervisorConfirmed &&
-      totalAmount > 0 &&
-      partnerDealers.length > 0; // If Dealer 1 and Dealer 55 both exist, this will be TRUE.
+  // 3. Show button ONLY if there is at least one partner dealer (External Dealer)
+  const showDealerInvoiceButton =
+    hasAtLeastOneService &&
+    allSupervisorConfirmed &&
+    totalAmount > 0 &&
+    partnerDealers.length > 0; // If Dealer 1 and Dealer 55 both exist, this will be TRUE.
 
-    // 4. Get the first actual partner dealer ID to use in the link
-    const firstPartnerDealerId = partnerDealers[0];
+  // 4. Get the first actual partner dealer ID to use in the link
+  const firstPartnerDealerId = partnerDealers[0];
 
   const confirmationData = bookingData?.BookingAddOns?.find(
     (item) =>
@@ -3208,7 +3329,7 @@ const handleInitialAssignConfirm = async () => {
           Swal.fire(
             "Error",
             onlineErr?.response?.data?.message ||
-              "Failed to initiate online payment",
+            "Failed to initiate online payment",
             "error",
           );
           return;
@@ -3332,6 +3453,10 @@ const handleInitialAssignConfirm = async () => {
       (garageTask === "carDrop" || garageRoute === "dealerToDealer") &&
       !garagePickupDealer
     ) {
+      if (currentGarageDealerOption) {
+        setGaragePickupDealer(currentGarageDealerOption);
+        return;
+      }
       const carPickUpDelivery = bookingData?.CarPickUpDelivery || [];
       if (carPickUpDelivery.length > 0) {
         const lastEntry = carPickUpDelivery[carPickUpDelivery.length - 1];
@@ -3352,7 +3477,31 @@ const handleInitialAssignConfirm = async () => {
         setGaragePickupDealer(garageDealerOptions[0]);
       }
     }
-  }, [garageStep, garageTask, garageRoute, bookingData, garageDealerOptions]);
+  }, [
+    garageStep,
+    garageTask,
+    garageRoute,
+    bookingData,
+    garageDealerOptions,
+    currentGarageDealerOption,
+    garagePickupDealer,
+  ]);
+
+  useEffect(() => {
+    if (
+      garageStep === "details" &&
+      garageRoute === "dealerToDealer" &&
+      pendingNextGarageDealerOptions.length === 1 &&
+      !garageDeliverDealer
+    ) {
+      setGarageDeliverDealer(pendingNextGarageDealerOptions[0]);
+    }
+  }, [
+    garageStep,
+    garageRoute,
+    pendingNextGarageDealerOptions,
+    garageDeliverDealer,
+  ]);
 
   // const handleSubmitPickupDetails = async () => {
   //   if (!pickupDate || !pickupTime || !dropDate || !dropTime) {
@@ -3424,6 +3573,95 @@ const handleInitialAssignConfirm = async () => {
       hour12: true,
     });
   };
+  const formatDateTime = (value) => {
+    if (!value) return "N/A";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return parsed.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+  const formatCurrency = (value) =>
+    `₹${Number(value || 0).toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  const getDateValue = (value) => {
+    if (!value) return 0;
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+  };
+  const getCustomerPartsTotal = (item = {}) =>
+    Number(item.ServicePrice ?? item.Price ?? 0);
+  const getCustomerLabourTotal = (item = {}) =>
+    Number(item.LabourCharges || 0);
+  const getCustomerGstTotal = (item = {}) =>
+    Number(item.GSTPrice ?? item.GSTAmount ?? 0);
+  const getCustomerServiceTotal = (item = {}) => {
+    const directTotal = Number(item.TotalPrice ?? 0);
+    if (directTotal > 0) return directTotal;
+    return (
+      getCustomerPartsTotal(item) +
+      getCustomerLabourTotal(item) +
+      getCustomerGstTotal(item)
+    );
+  };
+  const getDealerPartsTotal = (item = {}) =>
+    Number(item.DealerSparePrice || 0);
+  const getDealerLabourTotal = (item = {}) =>
+    Number(item.DealerPrice || 0);
+  const getDealerGstTotal = (item = {}) =>
+    Number(item.DealerGSTAmount || 0);
+  const getDealerServiceTotal = (item = {}) =>
+    getDealerPartsTotal(item) +
+    getDealerLabourTotal(item) +
+    getDealerGstTotal(item);
+  const getMarginPercentValue = (item = {}) => Number(item.Percentage ?? 0);
+  const getMarginAmountValue = (item = {}) => {
+    const directAmount = Number(item.Our_Earnings ?? 0);
+    if (directAmount > 0) return directAmount;
+
+    const percent = getMarginPercentValue(item);
+    const dealerTotal = getDealerServiceTotal(item);
+
+    return percent > 0 && dealerTotal > 0
+      ? Number(((dealerTotal * percent) / 100).toFixed(2))
+      : 0;
+  };
+  const getIncludeNames = (item = {}) => {
+    const includes = item.Includes;
+    if (!includes) return [];
+    if (Array.isArray(includes)) {
+      return includes
+        .map((inc) => inc?.IncludeName || inc?.name || inc)
+        .filter(Boolean);
+    }
+    if (typeof includes === "string") {
+      return includes
+        .split(",")
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+    }
+    return [];
+  };
+  const normalizedReviewerRole = (
+    roleName ||
+    role ||
+    localStorage.getItem("role") ||
+    ""
+  )
+    .toString()
+    .trim()
+    .toLowerCase();
+  const canReviewDealerCompletedService = [
+    "admin",
+    "field advisor",
+    "supervisor",
+  ].some((allowedRole) => normalizedReviewerRole.includes(allowedRole));
 
   const serviceStages = (() => {
     if (!bookingData) return [];
@@ -3477,12 +3715,12 @@ const handleInitialAssignConfirm = async () => {
     // };
 
     const supervisorStage = {
-    id: "supervisor-assigned",
-    title: "Supervisor Assigned",
-    icon: "mdi:account-tie",
-    date: bookingData.SupervisorHeadAssignDate,
-    status: bookingData.SupervisorHeadName ? "completed" : "pending",
-    details: bookingData.SupervisorHeadName || "—",
+      id: "supervisor-assigned",
+      title: "Supervisor Assigned",
+      icon: "mdi:account-tie",
+      date: bookingData.SupervisorHeadAssignDate,
+      status: bookingData.SupervisorHeadName ? "completed" : "pending",
+      details: bookingData.SupervisorHeadName || "—",
     };
 
     const fieldAdvisorStage = {
@@ -3729,47 +3967,186 @@ const handleInitialAssignConfirm = async () => {
   }, [bookingData]);
 
   const formatPickType = (type = "") => {
-     if (!type) return "—";
-  if (type.toLowerCase().includes("pick")) return "Car Pick";
-  if (type.toLowerCase().includes("drop")) return "Car Drop";
-  return type;
-};
+    if (!type) return "—";
+    if (type.toLowerCase().includes("pick")) return "Car Pick";
+    if (type.toLowerCase().includes("drop")) return "Car Drop";
+    return type;
+  };
 
-// Calculate aggregate sums for Unconfirmed Services
-const cncTotals = (bookingData?.SupervisorBookings || []).reduce((acc, item) => {
-  acc.parts += Number(item.Price || 0);
-  acc.labour += Number(item.LabourCharges || 0);
-  acc.gst += Number(item.GSTAmount || 0);
-  return acc;
-}, { parts: 0, labour: 0, gst: 0 });
+  // Calculate aggregate sums for Unconfirmed Services
+  const cncTotals = (bookingData?.SupervisorBookings || []).reduce((acc, item) => {
+    acc.parts += Number(item.Price || 0);
+    acc.labour += Number(item.LabourCharges || 0);
+    acc.gst += Number(item.GSTAmount || 0);
+    return acc;
+  }, { parts: 0, labour: 0, gst: 0 });
 
-cncTotals.total = cncTotals.parts + cncTotals.labour + cncTotals.gst;
+  cncTotals.total = cncTotals.parts + cncTotals.labour + cncTotals.gst;
 
-const hasConfirmed = (bookingData?.BookingAddOns?.length || 0) > 0;
-const hasUnconfirmed = (bookingData?.SupervisorBookings?.length || 0) > 0;
-const showComparison = hasConfirmed && hasUnconfirmed;
+  const hasConfirmed = (bookingData?.BookingAddOns?.length || 0) > 0;
+  const hasUnconfirmed = (bookingData?.SupervisorBookings?.length || 0) > 0;
+  const showComparison = hasConfirmed && hasUnconfirmed;
 
-// --- NEW DEALER TOTALS CALCULATION ---
-const dlrCcTotals = (bookingData?.BookingAddOns || []).reduce((acc, item) => {
-  acc.parts += Number(item.DealerSparePrice || 0);
-  acc.labour += Number(item.DealerPrice || 0);
-  acc.gst += Number(item.DealerGSTAmount || 0);
-  return acc;
-}, { parts: 0, labour: 0, gst: 0 });
-dlrCcTotals.total = dlrCcTotals.parts + dlrCcTotals.labour + dlrCcTotals.gst;
+  // --- NEW DEALER TOTALS CALCULATION ---
+  const dlrCcTotals = (bookingData?.BookingAddOns || []).reduce((acc, item) => {
+    acc.parts += Number(item.DealerSparePrice || 0);
+    acc.labour += Number(item.DealerPrice || 0);
+    acc.gst += Number(item.DealerGSTAmount || 0);
+    return acc;
+  }, { parts: 0, labour: 0, gst: 0 });
+  dlrCcTotals.total = dlrCcTotals.parts + dlrCcTotals.labour + dlrCcTotals.gst;
 
-const dlrCncTotals = (bookingData?.SupervisorBookings || []).reduce((acc, item) => {
-  acc.parts += Number(item.DealerSparePrice || 0);
-  acc.labour += Number(item.DealerPrice || 0);
-  acc.gst += Number(item.DealerGSTAmount || 0);
-  return acc;
-}, { parts: 0, labour: 0, gst: 0 });
-dlrCncTotals.total = dlrCncTotals.parts + dlrCncTotals.labour + dlrCncTotals.gst;
+  const dlrCncTotals = (bookingData?.SupervisorBookings || []).reduce((acc, item) => {
+    acc.parts += Number(item.DealerSparePrice || 0);
+    acc.labour += Number(item.DealerPrice || 0);
+    acc.gst += Number(item.DealerGSTAmount || 0);
+    return acc;
+  }, { parts: 0, labour: 0, gst: 0 });
+  dlrCncTotals.total = dlrCncTotals.parts + dlrCncTotals.labour + dlrCncTotals.gst;
 
-const hasDlrConfirmed = (bookingData?.BookingAddOns?.length || 0) > 0;
-const hasDlrUnconfirmed = (bookingData?.SupervisorBookings?.length || 0) > 0;
-const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
-// -------------------------------------
+  const hasDlrConfirmed = (bookingData?.BookingAddOns?.length || 0) > 0;
+  const hasDlrUnconfirmed = (bookingData?.SupervisorBookings?.length || 0) > 0;
+  const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
+  // -------------------------------------
+
+  const liveComparisonServices = [
+    ...(bookingData?.BookingAddOns || []).map((item) => ({
+      ...item,
+      __pricingStage: "Customer Confirmed",
+    })),
+    ...(bookingData?.SupervisorBookings || []).map((item) => ({
+      ...item,
+      __pricingStage: "Awaiting Customer",
+    })),
+  ]
+    .map((item, index) => {
+      const customerTotal = getCustomerServiceTotal(item);
+      const dealerTotal = getDealerServiceTotal(item);
+      const marginAmount = getMarginAmountValue(item);
+      const marginPercent = getMarginPercentValue(item);
+      const priceSpread = Number((customerTotal - dealerTotal).toFixed(2));
+
+      return {
+        id:
+          item.AddOnID ||
+          item.Id ||
+          `${item.ServiceName || "service"}-${index}`,
+        stage: item.__pricingStage,
+        serviceName: item.ServiceName || "Service",
+        serviceType: item.ServiceType || "Service",
+        dealerName: item.DealerName || "Dealer not assigned",
+        quantity: Number(item.Quantity || 1),
+        createdAt: item.CreatedDate || item.BookingDate,
+        includeNames: getIncludeNames(item),
+        customerPartUnit: Number(item.BasePrice || 0),
+        customerParts: getCustomerPartsTotal(item),
+        customerLabour: getCustomerLabourTotal(item),
+        customerGst: getCustomerGstTotal(item),
+        customerGstPercent: Number(item.GSTPercent || 0),
+        customerTotal,
+        dealerPartUnit: Number(item.DealerBasePrice || 0),
+        dealerParts: getDealerPartsTotal(item),
+        dealerLabour: getDealerLabourTotal(item),
+        dealerGst: getDealerGstTotal(item),
+        dealerGstPercent: Number(item.DealerGSTPercent || 0),
+        dealerTotal,
+        dealerConfirmStatus:
+          item.IsDealer_Confirm || item.isDealer_Confirm || "Pending",
+        serviceStatus:
+          item.StatusName ||
+          item.statusName ||
+          item.AddOnStatus ||
+          item.addOnStatus ||
+          "Pending",
+        isCompletionApproved:
+          item.IsCompleted_Confirmation === 1 ||
+          item.isCompleted_Confirmation === 1,
+        completionApprovedBy:
+          item.EmployeeName || item.employeeName || employeeData?.Name || "",
+        sourceItem: item,
+        marginAmount,
+        marginPercent,
+        priceSpread,
+        spreadWithoutMargin: Number((priceSpread - marginAmount).toFixed(2)),
+        updatedAt: item.UpdatedDate || item.CreatedDate || item.BookingDate,
+      };
+    })
+    .sort(
+      (a, b) =>
+        Math.abs(b.priceSpread) - Math.abs(a.priceSpread) ||
+        getDateValue(b.updatedAt) - getDateValue(a.updatedAt),
+    );
+
+  const pricingTotals = liveComparisonServices.reduce(
+    (acc, item) => {
+      acc.customerParts += item.customerParts;
+      acc.customerLabour += item.customerLabour;
+      acc.customerGst += item.customerGst;
+      acc.customerTotal += item.customerTotal;
+      acc.dealerParts += item.dealerParts;
+      acc.dealerLabour += item.dealerLabour;
+      acc.dealerGst += item.dealerGst;
+      acc.dealerTotal += item.dealerTotal;
+      acc.marginAmount += item.marginAmount;
+      acc.priceSpread += item.priceSpread;
+      if (item.marginAmount > 0) acc.marginServices += 1;
+      if (Math.abs(item.priceSpread - item.marginAmount) > 1) {
+        acc.varianceServices += 1;
+      }
+      return acc;
+    },
+    {
+      customerParts: 0,
+      customerLabour: 0,
+      customerGst: 0,
+      customerTotal: 0,
+      dealerParts: 0,
+      dealerLabour: 0,
+      dealerGst: 0,
+      dealerTotal: 0,
+      marginAmount: 0,
+      priceSpread: 0,
+      marginServices: 0,
+      varianceServices: 0,
+    },
+  );
+
+  const effectiveMarginPercent =
+    pricingTotals.dealerTotal > 0
+      ? Number(
+        ((pricingTotals.marginAmount / pricingTotals.dealerTotal) * 100).toFixed(
+          2,
+        ),
+      )
+      : 0;
+  const priceSpreadPercent =
+    pricingTotals.dealerTotal > 0
+      ? Number(
+        ((pricingTotals.priceSpread / pricingTotals.dealerTotal) * 100).toFixed(
+          2,
+        ),
+      )
+      : 0;
+  const unmatchedSpreadAmount = Number(
+    (pricingTotals.priceSpread - pricingTotals.marginAmount).toFixed(2),
+  );
+  const pricingBarBase = Math.max(
+    pricingTotals.customerTotal,
+    pricingTotals.dealerTotal,
+    1,
+  );
+  const dealerBarWidth = Math.min(
+    100,
+    (pricingTotals.dealerTotal / pricingBarBase) * 100,
+  );
+  const marginBarWidth = Math.min(
+    100,
+    (pricingTotals.marginAmount / pricingBarBase) * 100,
+  );
+  const spreadExtraBarWidth = Math.min(
+    100,
+    (Math.max(unmatchedSpreadAmount, 0) / pricingBarBase) * 100,
+  );
 
   return (
     <>
@@ -3810,6 +4187,212 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
           50% { opacity: 0.4; transform: scale(1.03); }
           100% { opacity: 1; transform: scale(1); }
         }
+        .pricing-intelligence-card {
+          border: 1px solid rgba(15, 23, 42, 0.08);
+          overflow: hidden;
+        }
+        .pricing-intelligence-header {
+          padding: 1.25rem 1.5rem;
+          background:
+            radial-gradient(circle at top right, rgba(16, 185, 129, 0.18), transparent 32%),
+            linear-gradient(135deg, #0f172a 0%, #1d4ed8 52%, #eff6ff 100%);
+          color: #fff;
+        }
+        .pricing-intelligence-header h5 {
+          margin: 0.2rem 0;
+          color: #fff;
+        }
+        .pricing-intelligence-header p {
+          margin: 0;
+          color: rgba(255, 255, 255, 0.84);
+          max-width: 760px;
+        }
+        .pricing-kpi-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+          gap: 1rem;
+        }
+        .pricing-kpi-card {
+          border-radius: 18px;
+          border: 1px solid #e2e8f0;
+          padding: 1rem;
+          background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+          box-shadow: 0 14px 28px rgba(15, 23, 42, 0.05);
+        }
+        .pricing-kpi-label {
+          font-size: 0.76rem;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          color: #64748b;
+        }
+        .pricing-kpi-value {
+          font-size: 1.6rem;
+          line-height: 1.1;
+          font-weight: 700;
+          color: #0f172a;
+          margin-top: 0.45rem;
+        }
+        .pricing-kpi-subtext {
+          margin-top: 0.35rem;
+          font-size: 0.86rem;
+          color: #475569;
+        }
+        .pricing-panel {
+          height: 100%;
+          border: 1px solid #e2e8f0;
+          border-radius: 20px;
+          background: #fff;
+          box-shadow: 0 18px 38px rgba(15, 23, 42, 0.06);
+          padding: 1rem;
+        }
+        .pricing-breakdown-row {
+          display: flex;
+          justify-content: space-between;
+          gap: 1rem;
+          padding: 0.6rem 0;
+          border-bottom: 1px dashed #e2e8f0;
+        }
+        .pricing-breakdown-row:last-child {
+          border-bottom: none;
+        }
+        .pricing-visual-track {
+          display: flex;
+          width: 100%;
+          min-height: 16px;
+          border-radius: 999px;
+          overflow: hidden;
+          background: #e2e8f0;
+        }
+        .pricing-visual-track span {
+          display: block;
+          min-height: 16px;
+        }
+        .pricing-visual-dealer {
+          background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+        }
+        .pricing-visual-margin {
+          background: linear-gradient(90deg, #16a34a 0%, #22c55e 100%);
+        }
+        .pricing-visual-extra {
+          background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%);
+        }
+        .pricing-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          padding: 0.3rem 0.7rem;
+          border-radius: 999px;
+          background: #f1f5f9;
+          color: #334155;
+          font-size: 0.76rem;
+          font-weight: 600;
+        }
+        .pricing-comparison-table th {
+          white-space: nowrap;
+          font-size: 0.75rem;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
+        }
+        .pricing-spread-positive {
+          color: #047857;
+          font-weight: 700;
+        }
+        .pricing-spread-negative {
+          color: #dc2626;
+          font-weight: 700;
+        }
+        .pricing-note-card {
+          border-radius: 16px;
+          border: 1px dashed rgba(29, 78, 216, 0.25);
+          background: linear-gradient(180deg, rgba(239, 246, 255, 0.9) 0%, #fff 100%);
+          padding: 0.9rem 1rem;
+        }
+        .service-compare-list {
+          display: grid;
+          gap: 1rem;
+        }
+        .service-compare-card {
+          border: 1px solid #dbeafe;
+          border-radius: 22px;
+          background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+          box-shadow: 0 18px 38px rgba(15, 23, 42, 0.06);
+          padding: 1rem 1.1rem;
+        }
+        .service-compare-top {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: space-between;
+          gap: 0.9rem;
+          margin-bottom: 0.9rem;
+        }
+        .service-compare-title {
+          font-size: 1rem;
+          font-weight: 700;
+          color: #0f172a;
+        }
+        .service-compare-meta {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.45rem;
+          margin-top: 0.45rem;
+        }
+        .service-compare-grid {
+          display: grid;
+          grid-template-columns: 1.2fr 1.2fr 0.9fr;
+          gap: 0.9rem;
+        }
+        .service-compare-section {
+          border: 1px solid #e2e8f0;
+          border-radius: 16px;
+          background: rgba(255, 255, 255, 0.96);
+          padding: 0.85rem 0.9rem;
+        }
+        .service-compare-section h6 {
+          margin: 0 0 0.7rem;
+          font-size: 0.88rem;
+          font-weight: 700;
+          color: #0f172a;
+        }
+        .service-compare-line {
+          display: flex;
+          justify-content: space-between;
+          gap: 0.8rem;
+          padding: 0.35rem 0;
+          border-bottom: 1px dashed #e2e8f0;
+          font-size: 0.86rem;
+        }
+        .service-compare-line:last-child {
+          border-bottom: none;
+          padding-bottom: 0;
+        }
+        .service-compare-line span:first-child {
+          color: #64748b;
+        }
+        .service-compare-line strong {
+          color: #0f172a;
+        }
+        .service-compare-highlight {
+          border-radius: 16px;
+          padding: 0.9rem;
+          background: linear-gradient(180deg, rgba(240, 253, 244, 0.95) 0%, #fff 100%);
+          border: 1px solid rgba(34, 197, 94, 0.22);
+        }
+        .service-compare-highlight.warn {
+          background: linear-gradient(180deg, rgba(255, 251, 235, 0.98) 0%, #fff 100%);
+          border-color: rgba(245, 158, 11, 0.22);
+        }
+        .service-compare-include-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.45rem;
+          margin-top: 0.7rem;
+        }
+        @media (max-width: 991px) {
+          .service-compare-grid {
+            grid-template-columns: 1fr;
+          }
+        }
       `}</style>
       {/* Service Time line - top of page */}
       {bookingData && (
@@ -3844,16 +4427,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                           <strong>Time Slot:</strong> {bookingData.TimeSlot}
                         </span>
                       )}
-                      {bookingData.BookingStatus && (
-                        <span className="me-2">
-                          <strong>Booking Status:</strong>{" "}
-                          <span
-                            className={`badge rounded-pill px-3 py-1 ${getStatusBadgeClass(bookingData.BookingStatus)}`}
-                          >
-                            {bookingData.BookingStatus}
-                          </span>
-                        </span>
-                      )}
+
                     </div>
                   </div>
                 </div>
@@ -4129,7 +4703,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                     <span className="w-50 text-secondary-light fw-bold d-flex align-items-center justify-content-between">
                                       <span>
                                         {bookingData?.SupervisorHeadName ||
-                                        bookingData?.SupervisorHeadPhoneNumber ? (
+                                          bookingData?.SupervisorHeadPhoneNumber ? (
                                           <>
                                             {bookingData?.SupervisorHeadName ||
                                               ""}
@@ -4167,7 +4741,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                     <span className="w-50 text-secondary-light fw-bold d-flex align-items-center justify-content-between">
                                       <span>
                                         {bookingData?.FieldAdvisorName ||
-                                        bookingData?.FieldAdvisorPhoneNumber ? (
+                                          bookingData?.FieldAdvisorPhoneNumber ? (
                                           <>
                                             {bookingData?.FieldAdvisorName ||
                                               ""}
@@ -4239,8 +4813,8 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
 
                         <Accordion.Body>
                           {bookingData.VehicleDetails &&
-                          Array.isArray(bookingData.VehicleDetails) &&
-                          bookingData.VehicleDetails.length > 0 ? (
+                            Array.isArray(bookingData.VehicleDetails) &&
+                            bookingData.VehicleDetails.length > 0 ? (
                             <div>
                               {bookingData.VehicleDetails.map(
                                 (vehicle, index) => (
@@ -4308,7 +4882,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                         </span>
                                         <span className="w-70 text-secondary-light fw-bold ms-2">
                                           {vehicle.KmDriven !== null &&
-                                          vehicle.KmDriven !== undefined
+                                            vehicle.KmDriven !== undefined
                                             ? vehicle.KmDriven.toLocaleString()
                                             : "N/A"}{" "}
                                           km
@@ -4560,11 +5134,11 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                     (bookingData?.SupervisorBookings?.length ?? 0) === 0 && (
                       <Link
                         to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
-                          onClick={(e) => {
-                            if (!ensureBasicDetails()) {
-                              e.preventDefault(); 
-                            }
-                          }}
+                        onClick={(e) => {
+                          if (!ensureBasicDetails()) {
+                            e.preventDefault();
+                          }
+                        }}
                         className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
                         title="Service converted, add extra services"
                       >
@@ -4585,30 +5159,30 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                         bookingData?.Isservice_converted === 1) ||
                         (bookingData?.Isinspection === 0 &&
                           bookingData?.Isservice_converted === 0)) && (
-                        <Link
-                          to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
+                          <Link
+                            to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
                             onClick={(e) => {
                               if (!ensureBasicDetails()) {
                                 e.preventDefault(); // Stop navigation if details are missing
                               }
                             }}
-                          className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
-                          title={
-                            roleName === "Field Advisor"
+                            className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
+                            title={
+                              roleName === "Field Advisor"
+                                ? "Assign Dealers"
+                                : roleName === "Supervisor Head"
+                                  ? "Confirm Services"
+                                  : "Confirm Services"
+                            }
+                          >
+                            <Icon icon="mdi:pencil-outline" />
+                            {roleName === "Field Advisor"
                               ? "Assign Dealers"
                               : roleName === "Supervisor Head"
                                 ? "Confirm Services"
-                                : "Confirm Services"
-                          }
-                        >
-                          <Icon icon="mdi:pencil-outline" />
-                          {roleName === "Field Advisor"
-                            ? "Assign Dealers"
-                            : roleName === "Supervisor Head"
-                              ? "Confirm Services"
-                              : "Confirm Services"}
-                        </Link>
-                      )}
+                                : "Confirm Services"}
+                          </Link>
+                        )}
 
                       {/* Confirm Service Button - Admin & Supervisor only, when Convert To Service is enabled and there are unconfirmed services */}
                       {(() => {
@@ -4639,9 +5213,9 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                               handleConfirmService();
                             }}
                             title="Confirm Service"
-                             disabled={isConfirmingService} 
+                            disabled={isConfirmingService}
                           >
-                            {isConfirmingService ? ( 
+                            {isConfirmingService ? (
                               <>
                                 <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                                 Confirming...
@@ -4676,7 +5250,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                         {bookingData?.SupervisorBookings?.length > 0 && (
                           <button
                             className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                            onClick={handleCustomerRejection} 
+                            onClick={handleCustomerRejection}
                           >
                             Customer Rejection
                           </button>
@@ -4767,58 +5341,57 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                 <span className="ms-2 small">
                                   Payment Status:
                                 </span>
-                              {(() => {
-                                const bookingStatus = bookingData?.PaymentStatus; // 👈 root level
-                                const payments = bookingData?.Payments;
+                                {(() => {
+                                  const bookingStatus = bookingData?.PaymentStatus; // 👈 root level
+                                  const payments = bookingData?.Payments;
 
-                                let label = "Pending";
-                                let badgeClass = "bg-warning text-dark";
+                                  let label = "Pending";
+                                  let badgeClass = "bg-warning text-dark";
 
-                                // ✅ Priority 1: Booking PaymentStatus
-                                if (bookingStatus === "Success") {
-                                  label = "Paid";
-                                  badgeClass = "bg-success";
-                                } else if (bookingStatus === "Partialpaid") {
-                                  label = "Partial Paid";
-                                  badgeClass = "bg-primary";
-                                } else if (bookingStatus === "Pending") {
-                                  label = "Pending";
-                                  badgeClass = "bg-warning text-dark";
-                                }
-
-                                // ✅ Optional fallback (if root status missing)
-                                else if (payments?.length > 0) {
-                                  const status = payments[0]?.PaymentStatus;
-
-                                  if (status === "Success") {
+                                  // ✅ Priority 1: Booking PaymentStatus
+                                  if (bookingStatus === "Success") {
                                     label = "Paid";
                                     badgeClass = "bg-success";
-                                  } else if (status === "Partialpaid") {
+                                  } else if (bookingStatus === "Partialpaid") {
                                     label = "Partial Paid";
                                     badgeClass = "bg-primary";
+                                  } else if (bookingStatus === "Pending") {
+                                    label = "Pending";
+                                    badgeClass = "bg-warning text-dark";
                                   }
-                                }
-                                return (
-                                  <span className="fw-semibold d-flex align-items-center">
-                                    <span className={`badge px-3 py-1 rounded-pill ${badgeClass}`}>
-                                      {label}
+
+                                  // ✅ Optional fallback (if root status missing)
+                                  else if (payments?.length > 0) {
+                                    const status = payments[0]?.PaymentStatus;
+
+                                    if (status === "Success") {
+                                      label = "Paid";
+                                      badgeClass = "bg-success";
+                                    } else if (status === "Partialpaid") {
+                                      label = "Partial Paid";
+                                      badgeClass = "bg-primary";
+                                    }
+                                  }
+                                  return (
+                                    <span className="fw-semibold d-flex align-items-center">
+                                      <span className={`badge px-3 py-1 rounded-pill ${badgeClass}`}>
+                                        {label}
+                                      </span>
                                     </span>
-                                  </span>
-                                );
-                              })()}
+                                  );
+                                })()}
 
                                 <span className="ms-2 small">
                                   Booking Status:
                                 </span>
                                 <span
-                                  className={`badge px-3 py-1 rounded-pill ${
-                                    bookingData.BookingStatus === "Completed"
-                                      ? "bg-success"
-                                      : bookingData.BookingStatus ===
-                                          "Confirmed"
-                                        ? "bg-primary"
-                                        : "bg-warning text-dark"
-                                  }`}
+                                  className={`badge px-3 py-1 rounded-pill ${bookingData.BookingStatus === "Completed"
+                                    ? "bg-success"
+                                    : bookingData.BookingStatus ===
+                                      "Confirmed"
+                                      ? "bg-primary"
+                                      : "bg-warning text-dark"
+                                    }`}
                                 >
                                   {bookingData.BookingStatus}
                                 </span>
@@ -4871,37 +5444,37 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                                   {pkg.Category
                                                     ?.SubCategories?.[0]
                                                     ?.Includes?.length > 0 && (
-                                                    <ul className="text-muted small ps-3 mb-0">
-                                                      {pkg.Category.SubCategories[0].Includes.map(
-                                                        (inc) => (
-                                                          <li
-                                                            key={inc.IncludeID}
-                                                          >
-                                                            {inc.IncludeName}
-                                                          </li>
-                                                        ),
-                                                      )}
-                                                    </ul>
-                                                  )}
+                                                      <ul className="text-muted small ps-3 mb-0">
+                                                        {pkg.Category.SubCategories[0].Includes.map(
+                                                          (inc) => (
+                                                            <li
+                                                              key={inc.IncludeID}
+                                                            >
+                                                              {inc.IncludeName}
+                                                            </li>
+                                                          ),
+                                                        )}
+                                                      </ul>
+                                                    )}
                                                 </div>
 
                                                 <span className="badge bg-success-subtle text-success border border-success">
                                                   ⏱ Duration:{" "}
                                                   {pkg.EstimatedDurationMinutes >=
-                                                  60
+                                                    60
                                                     ? (() => {
-                                                        const hours =
-                                                          Math.floor(
-                                                            pkg.EstimatedDurationMinutes /
-                                                              60,
-                                                          );
-                                                        const minutes =
-                                                          pkg.EstimatedDurationMinutes %
-                                                          60;
-                                                        return minutes === 0
-                                                          ? `${hours} hr`
-                                                          : `${hours} hr ${minutes} mins`;
-                                                      })()
+                                                      const hours =
+                                                        Math.floor(
+                                                          pkg.EstimatedDurationMinutes /
+                                                          60,
+                                                        );
+                                                      const minutes =
+                                                        pkg.EstimatedDurationMinutes %
+                                                        60;
+                                                      return minutes === 0
+                                                        ? `${hours} hr`
+                                                        : `${hours} hr ${minutes} mins`;
+                                                    })()
                                                     : `${pkg.EstimatedDurationMinutes} mins`}
                                                 </span>
                                               </div>
@@ -4967,7 +5540,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                               </Accordion>
                             )}
 
-                            {bookingData?.BookingAddOns?.length > 0 && (
+                            {false && bookingData?.BookingAddOns?.length > 0 && (
                               <div className="card mb-4 mt-4">
                                 <div className="card-header bg-success">
                                   <h6 className="mb-0 fw-bold text-white">
@@ -5003,7 +5576,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                           <th style={{ width: "100px" }}>
                                             Type
                                           </th>
-                                          <th style={{ width: "200px" }}>
+                                          <th style={{ width: "180px" }}>
                                             Service Name
                                           </th>
                                           <th style={{ width: "100px" }}>
@@ -5145,7 +5718,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                                       addon.Includes,
                                                     ) &&
                                                     addon.Includes.length >
-                                                      0 && (
+                                                    0 && (
                                                       <ul
                                                         className="text-muted small ps-3 mb-0 mt-2"
                                                         style={{
@@ -5176,16 +5749,12 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
 
                                               <td className="normal">
                                                 {addon.CreatedDate
-                                                ? new Date(addon.CreatedDate).toLocaleString("en-IN", {
-                                                    day: "2-digit",
-                                                    month: "2-digit",
-                                                    year: "numeric",
-                                                    hour: "2-digit",
-                                                    minute: "2-digit",
-                                                    // second: "2-digit",
-                                                    hour12: true, // change to false if you want 24-hour format
-                                                  })
-                                                : "—"}
+                                                  ? new Date(
+                                                    addon.CreatedDate,
+                                                  ).toLocaleDateString(
+                                                    "en-IN",
+                                                  )
+                                                  : "—"}
                                               </td>
                                               <td className="text-end">
                                                 {Number(
@@ -5257,14 +5826,13 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                               >
                                                 {addon.DealerName || "—"}{" "}
                                                 {addon.IsDealer_Confirm &&
-                                                addon.DealerName ? (
+                                                  addon.DealerName ? (
                                                   <span
-                                                    className={`badge px-3 py-2 rounded-pill ${
-                                                      addon.IsDealer_Confirm ===
+                                                    className={`badge px-3 py-2 rounded-pill ${addon.IsDealer_Confirm ===
                                                       "Approved"
-                                                        ? "bg-success text-white"
-                                                        : "bg-danger text-white"
-                                                    }`}
+                                                      ? "bg-success text-white"
+                                                      : "bg-danger text-white"
+                                                      }`}
                                                   >
                                                     {addon.IsDealer_Confirm}
                                                   </span>
@@ -5319,7 +5887,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                                           }
                                                         >
                                                           {status ===
-                                                          "ServiceCompleted" ? (
+                                                            "ServiceCompleted" ? (
                                                             <>
                                                               <option value="ServiceCompleted">
                                                                 Completed
@@ -5366,16 +5934,16 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                               <td className="text-center">
                                                 {addon.IsCompleted_Confirmation ===
                                                   1 ||
-                                                addon.isCompleted_Confirmation ===
+                                                  addon.isCompleted_Confirmation ===
                                                   1 ? (
-                                                 <div className="d-flex flex-column align-items-center justify-content-center gap-1">
-                                                  <span>Approved By</span>
-                                                  <span className="badge bg-success px-3 py-3 py-4 rounded-pill">
-                                                    {addon.EmployeeName ??
-                                                      addon.employeeName ??
-                                                      "—"}
-                                                  </span>
-                                                </div>
+                                                  <div className="d-flex flex-column align-items-center justify-content-center gap-1">
+                                                    <span>Approved By</span>
+                                                    <span className="badge bg-success px-3 py-3 py-4 rounded-pill">
+                                                      {addon.EmployeeName ??
+                                                        addon.employeeName ??
+                                                        "—"}
+                                                    </span>
+                                                  </div>
                                                 ) : (
                                                   (() => {
                                                     const status = (
@@ -5412,12 +5980,12 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                                 )}
                                               </td>
                                               <td className="text-end fw-bold dlr-column">
-                                              {(
-                                                Number(addon.DealerSparePrice || 0) +
-                                                Number(addon.DealerPrice || 0) +
-                                                Number(addon.DealerGSTAmount || 0)
-                                              ).toFixed(2)}
-                                            </td>
+                                                {(
+                                                  Number(addon.DealerSparePrice || 0) +
+                                                  Number(addon.DealerPrice || 0) +
+                                                  Number(addon.DealerGSTAmount || 0)
+                                                ).toFixed(2)}
+                                              </td>
                                               <td className="text-end fw-bold text-primary">
                                                 {Number(
                                                   addon.TotalPrice || 0,
@@ -5433,7 +6001,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                               </div>
                             )}
 
-                            {bookingData?.SupervisorBookings?.length > 0 && (
+                            {false && bookingData?.SupervisorBookings?.length > 0 && (
                               <div className="card mb-4 mt-4">
                                 <div className="card-header bg-warning text-dark">
                                   <h6 className="mb-0 fw-bold">
@@ -5469,7 +6037,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                           <th style={{ width: "100px" }}>
                                             Type
                                           </th>
-                                          <th style={{ width: "200px" }}>
+                                          <th style={{ width: "180px" }}>
                                             Service Name
                                           </th>
                                           <th style={{ width: "100px" }}>
@@ -5586,11 +6154,11 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                               ) +
                                               Number(
                                                 supervisorBooking.GSTAmount ||
-                                                  0,
+                                                0,
                                               ) +
                                               Number(
                                                 supervisorBooking.LabourCharges ||
-                                                  0,
+                                                0,
                                               );
 
                                             return (
@@ -5615,68 +6183,64 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                                         supervisorBooking.Includes,
                                                       )
                                                         ? supervisorBooking
-                                                            .Includes.length >
-                                                            0 && (
-                                                            <ul
-                                                              className="text-muted small ps-3 mb-0 mt-2"
-                                                              style={{
-                                                                textAlign:
-                                                                  "left",
-                                                              }}
-                                                            >
-                                                              {supervisorBooking.Includes.map(
-                                                                (inc) => (
-                                                                  <li
-                                                                    key={
-                                                                      inc.IncludeID ||
-                                                                      inc.id ||
-                                                                      inc
-                                                                    }
-                                                                  >
-                                                                    {inc.IncludeName ||
-                                                                      inc.name ||
-                                                                      inc}
-                                                                  </li>
-                                                                ),
-                                                              )}
-                                                            </ul>
-                                                          )
+                                                          .Includes.length >
+                                                        0 && (
+                                                          <ul
+                                                            className="text-muted small ps-3 mb-0 mt-2"
+                                                            style={{
+                                                              textAlign:
+                                                                "left",
+                                                            }}
+                                                          >
+                                                            {supervisorBooking.Includes.map(
+                                                              (inc) => (
+                                                                <li
+                                                                  key={
+                                                                    inc.IncludeID ||
+                                                                    inc.id ||
+                                                                    inc
+                                                                  }
+                                                                >
+                                                                  {inc.IncludeName ||
+                                                                    inc.name ||
+                                                                    inc}
+                                                                </li>
+                                                              ),
+                                                            )}
+                                                          </ul>
+                                                        )
                                                         : typeof supervisorBooking.Includes ===
-                                                            "string" &&
-                                                          supervisorBooking.Includes.trim() !==
-                                                            "" && (
-                                                            <div className="text-muted small mt-2">
-                                                              {
-                                                                supervisorBooking.Includes
-                                                              }
-                                                            </div>
-                                                          ))}
+                                                        "string" &&
+                                                        supervisorBooking.Includes.trim() !==
+                                                        "" && (
+                                                          <div className="text-muted small mt-2">
+                                                            {
+                                                              supervisorBooking.Includes
+                                                            }
+                                                          </div>
+                                                        ))}
                                                   </div>
                                                 </td>
 
                                                 <td className="normal">
-                                                    {supervisorBooking.CreatedDate
-                                                      ? new Date(supervisorBooking.CreatedDate).toLocaleString("en-IN", {
-                                                          day: "2-digit",
-                                                          month: "2-digit",
-                                                          year: "numeric",
-                                                          hour: "2-digit",
-                                                          minute: "2-digit",
-                                                          // second: "2-digit",
-                                                          hour12: true,
-                                                        })
-                                                      : "—"}
+                                                  {supervisorBooking.CreatedDate
+                                                    ? new Date(
+                                                      supervisorBooking.CreatedDate,
+                                                    ).toLocaleDateString(
+                                                      "en-IN",
+                                                    )
+                                                    : "—"}
                                                 </td>
                                                 <td className="text-end">
                                                   {Number(
                                                     supervisorBooking.BasePrice ||
-                                                      0,
+                                                    0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 <td className="text-end dlr-column">
                                                   {Number(
                                                     supervisorBooking.DealerBasePrice ||
-                                                      0,
+                                                    0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 <td className="text-end">
@@ -5686,25 +6250,25 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                                 <td className="text-end">
                                                   {Number(
                                                     supervisorBooking.Price ||
-                                                      0,
+                                                    0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 <td className="text-end dlr-column">
                                                   {Number(
                                                     supervisorBooking.DealerSparePrice ||
-                                                      0,
+                                                    0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 <td className="text-end">
                                                   {Number(
                                                     supervisorBooking.LabourCharges ||
-                                                      0,
+                                                    0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 <td className="text-end dlr-column">
                                                   {Number(
                                                     supervisorBooking.DealerPrice ||
-                                                      0,
+                                                    0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 <td className="text-end">
@@ -5720,13 +6284,13 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                                 <td className="text-end">
                                                   {Number(
                                                     supervisorBooking.GSTAmount ||
-                                                      0,
+                                                    0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 <td className="text-end dlr-column">
                                                   {Number(
                                                     supervisorBooking.DealerGSTAmount ||
-                                                      0,
+                                                    0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 <td className="text-end">
@@ -5737,7 +6301,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                                 <td className="text-end">
                                                   {Number(
                                                     supervisorBooking.Our_Earnings ||
-                                                      0,
+                                                    0,
                                                   ).toFixed(2)}
                                                 </td>
                                                 {/* <td
@@ -5762,18 +6326,17 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                                   {supervisorBooking.IsDealer_Confirm &&
                                                     supervisorBooking.DealerName && (
                                                       <span
-                                                        className={`badge px-3 py-2 rounded-pill ${
-                                                          supervisorBooking.IsDealer_Confirm ===
+                                                        className={`badge px-3 py-2 rounded-pill ${supervisorBooking.IsDealer_Confirm ===
                                                           "Approved"
-                                                            ? "bg-success text-white"
+                                                          ? "bg-success text-white"
+                                                          : supervisorBooking.IsDealer_Confirm ===
+                                                            "Rejected"
+                                                            ? "bg-danger text-white"
                                                             : supervisorBooking.IsDealer_Confirm ===
-                                                                "Rejected"
-                                                              ? "bg-danger text-white"
-                                                              : supervisorBooking.IsDealer_Confirm ===
-                                                                  "Pending"
-                                                                ? "bg-warning text-dark"
-                                                                : "bg-secondary text-white"
-                                                        }`}
+                                                              "Pending"
+                                                              ? "bg-warning text-dark"
+                                                              : "bg-secondary text-white"
+                                                          }`}
                                                       >
                                                         {
                                                           supervisorBooking.IsDealer_Confirm
@@ -5813,12 +6376,12 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                                   })()}
                                                 </td> */}
                                                 <td className="text-end fw-bold dlr-column">
-                                                {(
-                                                  Number(supervisorBooking.DealerSparePrice || 0) +
-                                                  Number(supervisorBooking.DealerPrice || 0) +
-                                                  Number(supervisorBooking.DealerGSTAmount || 0)
-                                                ).toFixed(2)}
-                                              </td>
+                                                  {(
+                                                    Number(supervisorBooking.DealerSparePrice || 0) +
+                                                    Number(supervisorBooking.DealerPrice || 0) +
+                                                    Number(supervisorBooking.DealerGSTAmount || 0)
+                                                  ).toFixed(2)}
+                                                </td>
                                                 <td className="text-end fw-bold text-primary">
                                                   {totalPrice.toFixed(2)}
                                                 </td>
@@ -5835,191 +6398,191 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
 
                             {bookingData?.CustomerRejectedBookings?.length >
                               0 && (
-                              <div className="card mb-4 mt-4">
-                                <div className="card-header bg-danger text-light">
-                                  <h6 className="mb-0 fw-bold text-white">
-                                    Customer Rejected Services
-                                  </h6>
-                                </div>
-                                <div className="card-body p-0">
-                                  <div
-                                    className="table-responsive"
-                                    style={{
-                                      maxHeight: "800px",
-                                      overflowX: "auto",
-                                    }}
-                                  >
-                                    <table
-                                      className="table table-sm table-striped table-hover align-middle mb-0 table-center-all"
+                                <div className="card mb-4 mt-4">
+                                  <div className="card-header bg-danger text-light">
+                                    <h6 className="mb-0 fw-bold text-white">
+                                      Customer Rejected Services
+                                    </h6>
+                                  </div>
+                                  <div className="card-body p-0">
+                                    <div
+                                      className="table-responsive"
                                       style={{
-                                        tableLayout: "fixed",
-                                        minWidth: "1200px",
+                                        maxHeight: "800px",
+                                        overflowX: "auto",
                                       }}
                                     >
-                                      <thead
-                                        className="table-light sticky-top position-relative"
-                                        style={{ zIndex: 1 }}
+                                      <table
+                                        className="table table-sm table-striped table-hover align-middle mb-0 table-center-all"
+                                        style={{
+                                          tableLayout: "fixed",
+                                          minWidth: "1200px",
+                                        }}
                                       >
-                                        <tr>
-                                          <th
-                                            style={{ width: "60px" }}
-                                            className="text-center"
-                                          >
-                                            S.No
-                                          </th>
-                                          <th style={{ width: "100px" }}>
-                                            Type
-                                          </th>
-                                          <th style={{ width: "200px" }}>
-                                            Service Name
-                                          </th>
-                                          <th style={{ width: "100px" }}>
-                                            Date
-                                          </th>
-                                          <th
-                                            style={{ width: "100px" }}
-                                            className="text-end"
-                                          >
-                                            Part Price
-                                          </th>
-                                          <th
-                                            style={{ width: "125px" }}
-                                            className="text-end dlr-column"
-                                          >
-                                            DLR Part Price
-                                          </th>
-                                          <th
-                                            style={{ width: "70px" }}
-                                            className="text-end"
-                                          >
-                                            Qty
-                                          </th>
-                                          <th
-                                            style={{ width: "100px" }}
-                                            className="text-end"
-                                          >
-                                            Part Total
-                                          </th>
-                                          <th
-                                            style={{ width: "120px" }}
-                                            className="text-end dlr-column"
-                                          >
-                                            DLR Part Total
-                                          </th>
-                                          <th
-                                            style={{ width: "120px" }}
-                                            className="text-end"
-                                          >
-                                            Service Chg.
-                                          </th>
-                                          <th
-                                            style={{ width: "145px" }}
-                                            className="text-end dlr-column"
-                                          >
-                                            DLR Service Chg.
-                                          </th>
-                                          <th
-                                            style={{ width: "90px" }}
-                                            className="text-end"
-                                          >
-                                            GST %
-                                          </th>
-                                          <th
-                                            style={{ width: "120px" }}
-                                            className="text-end dlr-column"
-                                          >
-                                            DLR GST %
-                                          </th>
-                                          <th
-                                            style={{ width: "100px" }}
-                                            className="text-end"
-                                          >
-                                            GST Amt.
-                                          </th>
-                                          <th
-                                            style={{ width: "120px" }}
-                                            className="text-end dlr-column"
-                                          >
-                                            DLR GST Amt.
-                                          </th>
-                                          <th
-                                            style={{ width: "100px" }}
-                                            className="text-end"
-                                          >
-                                            MCB %
-                                          </th>
-                                          <th
-                                            style={{ width: "100px" }}
-                                            className="text-end"
-                                          >
-                                            MCB Amt.
-                                          </th>
-                                          <th
-                                            style={{ width: "170px" }}
-                                            className="text-center"
-                                          >
-                                            Dealer Name
-                                          </th>
-                                          <th style={{ width: "140px" }} className="text-end">
-                                            DLR Total Amt.
-                                          </th>
-                                          <th
-                                            style={{ width: "150px" }}
-                                            className="text-end"
-                                          >
-                                            Cust. Total Amt.
-                                          </th>
-                                          <th
-                                            style={{ width: "100px" }}
-                                            className="text-end"
-                                          >
-                                            Action
-                                          </th>
-                                        </tr>
-                                      </thead>
+                                        <thead
+                                          className="table-light sticky-top position-relative"
+                                          style={{ zIndex: 1 }}
+                                        >
+                                          <tr>
+                                            <th
+                                              style={{ width: "60px" }}
+                                              className="text-center"
+                                            >
+                                              S.No
+                                            </th>
+                                            <th style={{ width: "100px" }}>
+                                              Type
+                                            </th>
+                                            <th style={{ width: "180px" }}>
+                                              Service Name
+                                            </th>
+                                            <th style={{ width: "100px" }}>
+                                              Date
+                                            </th>
+                                            <th
+                                              style={{ width: "100px" }}
+                                              className="text-end"
+                                            >
+                                              Part Price
+                                            </th>
+                                            <th
+                                              style={{ width: "125px" }}
+                                              className="text-end dlr-column"
+                                            >
+                                              DLR Part Price
+                                            </th>
+                                            <th
+                                              style={{ width: "70px" }}
+                                              className="text-end"
+                                            >
+                                              Qty
+                                            </th>
+                                            <th
+                                              style={{ width: "100px" }}
+                                              className="text-end"
+                                            >
+                                              Part Total
+                                            </th>
+                                            <th
+                                              style={{ width: "120px" }}
+                                              className="text-end dlr-column"
+                                            >
+                                              DLR Part Total
+                                            </th>
+                                            <th
+                                              style={{ width: "120px" }}
+                                              className="text-end"
+                                            >
+                                              Service Chg.
+                                            </th>
+                                            <th
+                                              style={{ width: "145px" }}
+                                              className="text-end dlr-column"
+                                            >
+                                              DLR Service Chg.
+                                            </th>
+                                            <th
+                                              style={{ width: "90px" }}
+                                              className="text-end"
+                                            >
+                                              GST %
+                                            </th>
+                                            <th
+                                              style={{ width: "120px" }}
+                                              className="text-end dlr-column"
+                                            >
+                                              DLR GST %
+                                            </th>
+                                            <th
+                                              style={{ width: "100px" }}
+                                              className="text-end"
+                                            >
+                                              GST Amt.
+                                            </th>
+                                            <th
+                                              style={{ width: "120px" }}
+                                              className="text-end dlr-column"
+                                            >
+                                              DLR GST Amt.
+                                            </th>
+                                            <th
+                                              style={{ width: "100px" }}
+                                              className="text-end"
+                                            >
+                                              MCB %
+                                            </th>
+                                            <th
+                                              style={{ width: "100px" }}
+                                              className="text-end"
+                                            >
+                                              MCB Amt.
+                                            </th>
+                                            <th
+                                              style={{ width: "170px" }}
+                                              className="text-center"
+                                            >
+                                              Dealer Name
+                                            </th>
+                                            <th style={{ width: "140px" }} className="text-end">
+                                              DLR Total Amt.
+                                            </th>
+                                            <th
+                                              style={{ width: "150px" }}
+                                              className="text-end"
+                                            >
+                                              Cust. Total Amt.
+                                            </th>
+                                            <th
+                                              style={{ width: "100px" }}
+                                              className="text-end"
+                                            >
+                                              Action
+                                            </th>
+                                          </tr>
+                                        </thead>
 
-                                      <tbody>
-                                        {bookingData?.CustomerRejectedBookings?.map(
-                                          (CustomerRejectedBookings, index) => {
-                                            const totalPrice =
-                                              Number(
-                                                CustomerRejectedBookings.Price ||
+                                        <tbody>
+                                          {bookingData?.CustomerRejectedBookings?.map(
+                                            (CustomerRejectedBookings, index) => {
+                                              const totalPrice =
+                                                Number(
+                                                  CustomerRejectedBookings.Price ||
                                                   0,
-                                              ) +
-                                              Number(
-                                                CustomerRejectedBookings.GSTAmount ||
+                                                ) +
+                                                Number(
+                                                  CustomerRejectedBookings.GSTAmount ||
                                                   0,
-                                              ) +
-                                              Number(
-                                                CustomerRejectedBookings.LabourCharges ||
+                                                ) +
+                                                Number(
+                                                  CustomerRejectedBookings.LabourCharges ||
                                                   0,
-                                              );
+                                                );
 
-                                            return (
-                                              <tr
-                                                key={
-                                                  CustomerRejectedBookings.Id ||
-                                                  index
-                                                }
-                                              >
-                                                <td className="text-center">
-                                                  {index + 1}.
-                                                </td>
-                                                <td className="normal">
-                                                  {CustomerRejectedBookings.ServiceType ||
-                                                    "—"}
-                                                </td>
-                                                <td className="normal">
-                                                  <div className="normal">
-                                                    {CustomerRejectedBookings.ServiceName ||
+                                              return (
+                                                <tr
+                                                  key={
+                                                    CustomerRejectedBookings.Id ||
+                                                    index
+                                                  }
+                                                >
+                                                  <td className="text-center">
+                                                    {index + 1}.
+                                                  </td>
+                                                  <td className="normal">
+                                                    {CustomerRejectedBookings.ServiceType ||
                                                       "—"}
-                                                    {CustomerRejectedBookings.Includes &&
-                                                      (Array.isArray(
-                                                        CustomerRejectedBookings.Includes,
-                                                      )
-                                                        ? CustomerRejectedBookings
+                                                  </td>
+                                                  <td className="normal">
+                                                    <div className="normal">
+                                                      {CustomerRejectedBookings.ServiceName ||
+                                                        "—"}
+                                                      {CustomerRejectedBookings.Includes &&
+                                                        (Array.isArray(
+                                                          CustomerRejectedBookings.Includes,
+                                                        )
+                                                          ? CustomerRejectedBookings
                                                             .Includes.length >
-                                                            0 && (
+                                                          0 && (
                                                             <ul
                                                               className="text-muted small ps-3 mb-0 mt-2"
                                                               style={{
@@ -6044,106 +6607,102 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                                               )}
                                                             </ul>
                                                           )
-                                                        : typeof CustomerRejectedBookings.Includes ===
-                                                            "string" &&
+                                                          : typeof CustomerRejectedBookings.Includes ===
+                                                          "string" &&
                                                           CustomerRejectedBookings.Includes.trim() !==
-                                                            "" && (
+                                                          "" && (
                                                             <div className="text-muted small mt-2">
                                                               {
                                                                 CustomerRejectedBookings.Includes
                                                               }
                                                             </div>
                                                           ))}
-                                                  </div>
-                                                </td>
+                                                    </div>
+                                                  </td>
 
-                                                <td className="normal">
-                                                  {CustomerRejectedBookings.CreatedDate
-                                                  ? new Date(CustomerRejectedBookings.CreatedDate).toLocaleString("en-IN", {
-                                                      day: "2-digit",
-                                                      month: "2-digit",
-                                                      year: "numeric",
-                                                      hour: "2-digit",
-                                                      minute: "2-digit",
-                                                      // second: "2-digit",
-                                                      hour12: true,
-                                                    })
-                                                  : "—"}
-                                                </td>
-                                                <td className="text-end">
-                                                  {Number(
-                                                    CustomerRejectedBookings.BasePrice ||
+                                                  <td className="normal">
+                                                    {CustomerRejectedBookings.CreatedDate
+                                                      ? new Date(
+                                                        CustomerRejectedBookings.CreatedDate,
+                                                      ).toLocaleDateString(
+                                                        "en-IN",
+                                                      )
+                                                      : "—"}
+                                                  </td>
+                                                  <td className="text-end">
+                                                    {Number(
+                                                      CustomerRejectedBookings.BasePrice ||
                                                       0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                <td className="text-end dlr-column">
-                                                  {Number(
-                                                    CustomerRejectedBookings.DealerBasePrice ||
+                                                    ).toFixed(2)}
+                                                  </td>
+                                                  <td className="text-end dlr-column">
+                                                    {Number(
+                                                      CustomerRejectedBookings.DealerBasePrice ||
                                                       0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                <td className="text-end">
-                                                  {CustomerRejectedBookings.Quantity ??
-                                                    "1"}
-                                                </td>
-                                                <td className="text-end">
-                                                  {Number(
-                                                    CustomerRejectedBookings.Price ||
+                                                    ).toFixed(2)}
+                                                  </td>
+                                                  <td className="text-end">
+                                                    {CustomerRejectedBookings.Quantity ??
+                                                      "1"}
+                                                  </td>
+                                                  <td className="text-end">
+                                                    {Number(
+                                                      CustomerRejectedBookings.Price ||
                                                       0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                <td className="text-end dlr-column">
-                                                  {Number(
-                                                    CustomerRejectedBookings.DealerSparePrice ||
+                                                    ).toFixed(2)}
+                                                  </td>
+                                                  <td className="text-end dlr-column">
+                                                    {Number(
+                                                      CustomerRejectedBookings.DealerSparePrice ||
                                                       0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                <td className="text-end">
-                                                  {Number(
-                                                    CustomerRejectedBookings.LabourCharges ||
+                                                    ).toFixed(2)}
+                                                  </td>
+                                                  <td className="text-end">
+                                                    {Number(
+                                                      CustomerRejectedBookings.LabourCharges ||
                                                       0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                <td className="text-end dlr-column">
-                                                  {Number(
-                                                    CustomerRejectedBookings.DealerPrice ||
+                                                    ).toFixed(2)}
+                                                  </td>
+                                                  <td className="text-end dlr-column">
+                                                    {Number(
+                                                      CustomerRejectedBookings.DealerPrice ||
                                                       0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                <td className="text-end">
-                                                  {CustomerRejectedBookings.GSTPercent ??
-                                                    0}
-                                                  %
-                                                </td>
-                                                <td className="text-end dlr-column">
-                                                  {CustomerRejectedBookings.DealerGSTPercent ??
-                                                    0}
-                                                  %
-                                                </td>
-                                                <td className="text-end">
-                                                  {Number(
-                                                    CustomerRejectedBookings.GSTAmount ||
+                                                    ).toFixed(2)}
+                                                  </td>
+                                                  <td className="text-end">
+                                                    {CustomerRejectedBookings.GSTPercent ??
+                                                      0}
+                                                    %
+                                                  </td>
+                                                  <td className="text-end dlr-column">
+                                                    {CustomerRejectedBookings.DealerGSTPercent ??
+                                                      0}
+                                                    %
+                                                  </td>
+                                                  <td className="text-end">
+                                                    {Number(
+                                                      CustomerRejectedBookings.GSTAmount ||
                                                       0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                <td className="text-end dlr-column">
-                                                  {Number(
-                                                    CustomerRejectedBookings.DealerGSTAmount ||
+                                                    ).toFixed(2)}
+                                                  </td>
+                                                  <td className="text-end dlr-column">
+                                                    {Number(
+                                                      CustomerRejectedBookings.DealerGSTAmount ||
                                                       0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                <td className="text-end">
-                                                  {CustomerRejectedBookings.Percentage ??
-                                                    "0"}
-                                                  %
-                                                </td>
-                                                <td className="text-end">
-                                                  {Number(
-                                                    CustomerRejectedBookings.Our_Earnings ||
+                                                    ).toFixed(2)}
+                                                  </td>
+                                                  <td className="text-end">
+                                                    {CustomerRejectedBookings.Percentage ??
+                                                      "0"}
+                                                    %
+                                                  </td>
+                                                  <td className="text-end">
+                                                    {Number(
+                                                      CustomerRejectedBookings.Our_Earnings ||
                                                       0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                {/* <td
+                                                    ).toFixed(2)}
+                                                  </td>
+                                                  {/* <td
                                                   className="normal text-center"
                                                   style={{
                                                     whiteSpace: "normal",
@@ -6152,217 +6711,1041 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                                 >
                                                   {CustomerRejectedBookings.DealerName || "Not Assigned"}
                                                 </td> */}
-                                                <td
-                                                  className=" normal text-center"
-                                                  style={{
-                                                    whiteSpace: "normal",
-                                                    wordBreak: "break-word",
-                                                  }}
-                                                >
-                                                  {CustomerRejectedBookings.DealerName ||
-                                                    "—"}
+                                                  <td
+                                                    className=" normal text-center"
+                                                    style={{
+                                                      whiteSpace: "normal",
+                                                      wordBreak: "break-word",
+                                                    }}
+                                                  >
+                                                    {CustomerRejectedBookings.DealerName ||
+                                                      "—"}
 
-                                                  {CustomerRejectedBookings.IsDealer_Confirm &&
-                                                    CustomerRejectedBookings.DealerName && (
-                                                      <span
-                                                        className={`badge px-3 py-2 rounded-pill ${
-                                                          CustomerRejectedBookings.IsDealer_Confirm ===
-                                                          "Approved"
+                                                    {CustomerRejectedBookings.IsDealer_Confirm &&
+                                                      CustomerRejectedBookings.DealerName && (
+                                                        <span
+                                                          className={`badge px-3 py-2 rounded-pill ${CustomerRejectedBookings.IsDealer_Confirm ===
+                                                            "Approved"
                                                             ? "bg-success text-white"
                                                             : CustomerRejectedBookings.IsDealer_Confirm ===
-                                                                "Rejected"
+                                                              "Rejected"
                                                               ? "bg-danger text-white"
                                                               : CustomerRejectedBookings.IsDealer_Confirm ===
-                                                                  "Pending"
+                                                                "Pending"
                                                                 ? "bg-warning text-dark"
                                                                 : "bg-secondary text-white"
-                                                        }`}
+                                                            }`}
+                                                        >
+                                                          {
+                                                            CustomerRejectedBookings.IsDealer_Confirm
+                                                          }
+                                                        </span>
+                                                      )}
+                                                  </td>
+                                                  <td className="text-end fw-bold dlr-column">
+                                                    {(
+                                                      Number(CustomerRejectedBookings.DealerSparePrice || 0) +
+                                                      Number(CustomerRejectedBookings.DealerPrice || 0) +
+                                                      Number(CustomerRejectedBookings.DealerGSTAmount || 0)
+                                                    ).toFixed(2)}
+                                                  </td>
+                                                  <td className="text-end fw-bold text-primary">
+                                                    {totalPrice.toFixed(2)}
+                                                  </td>
+                                                  <td className="text-center">
+                                                    <button
+                                                      className="btn btn-sm btn-primary-600"
+                                                      onClick={() =>
+                                                        handleRevertService(
+                                                          CustomerRejectedBookings,
+                                                        )
+                                                      }
+                                                      disabled={revertingServiceId === CustomerRejectedBookings.Id}
+                                                    >
+                                                      {revertingServiceId === CustomerRejectedBookings.Id ? ( // <--- SHOW SPINNER
+                                                        <>
+                                                          <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                                          Reverting...
+                                                        </>
+                                                      ) : (
+                                                        <>
+                                                          <i className="bi bi-arrow-counterclockwise me-1"></i>
+                                                          Revert
+                                                        </>
+                                                      )}
+                                                    </button>
+                                                  </td>
+                                                </tr>
+                                              );
+                                            },
+                                          )}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                            {liveComparisonServices.length > 0 && (
+                              <div className="card mb-4 mt-4 shadow-sm pricing-intelligence-card">
+                                <div className="">
+                                  <div className="pricing-panel mb-4">
+                                    <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                                      <div>
+                                        <h6 className="mb-1 fw-bold">
+                                          Service-wise exact comparison
+                                        </h6>
+                                        <div className="small text-muted">
+                                          Combined view of confirmed-service
+                                          details and pricing comparison in one
+                                          service card per row.
+                                        </div>
+                                      </div>
+                                      <div className="d-flex flex-wrap gap-2">
+                                        <span className="pricing-chip">
+                                          Dealer{" "}
+                                          {formatCurrency(
+                                            pricingTotals.dealerTotal,
+                                          )}
+                                        </span>
+                                        <span className="pricing-chip">
+                                          Customer{" "}
+                                          {formatCurrency(
+                                            pricingTotals.customerTotal,
+                                          )}
+                                        </span>
+                                        <span className="pricing-chip">
+                                          Margin{" "}
+                                          {formatCurrency(
+                                            pricingTotals.marginAmount,
+                                          )}{" "}
+                                          ({effectiveMarginPercent.toFixed(2)}%)
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    <div className="service-compare-list">
+                                      {liveComparisonServices.map((service) => (
+                                        <div
+                                          key={service.id}
+                                          className="service-compare-card"
+                                        >
+                                          <div className="service-compare-top">
+                                            <div>
+                                              <div className="service-compare-title">
+                                                <b>Service Name: </b>{service.serviceName}
+                                                <span className="ms-2 pricing-chip">
+                                                  {service.serviceType}
+                                                </span>
+                                                <span className="ms-2 pricing-chip">
+                                                  Qty {service.quantity}
+                                                </span>
+                                              </div>
+                                              <div className="small text-muted mt-1">
+                                                <b>Dealer Name: </b>{service.dealerName} | <b>Added on: </b>{" "}
+                                                {service.createdAt
+                                                  ? formatDateTime(
+                                                    service.createdAt,
+                                                  )
+                                                  : "N/A"}
+                                              </div>
+                                              <div className="service-compare-meta">
+
+                                                <span
+                                                  className={`badge rounded-pill px-3 py-2 ${service.stage ===
+                                                    "Customer Confirmed"
+                                                    ? "bg-success-subtle text-success"
+                                                    : "bg-warning-subtle text-warning"
+                                                    }`}
+                                                >
+                                                  {service.stage}
+                                                </span>
+                                                <span
+                                                  className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(
+                                                    service.dealerConfirmStatus,
+                                                  )}`}
+                                                >
+                                                  Dealer{" "}
+                                                  {service.dealerConfirmStatus}
+                                                </span>
+                                                <span
+                                                  className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(
+                                                    service.serviceStatus,
+                                                  )}`}
+                                                >
+                                                  {service.serviceStatus}
+                                                </span>
+                                              </div>
+                                              {/* {service.includeNames.length >
+                                                0 && (
+                                                <div className="service-compare-include-row">
+                                                  {service.includeNames.map(
+                                                    (name, idx) => (
+                                                      <span
+                                                        key={`${service.id}-include-${idx}`}
+                                                        className="pricing-chip"
                                                       >
-                                                        {
-                                                          CustomerRejectedBookings.IsDealer_Confirm
-                                                        }
+                                                        {name}
                                                       </span>
-                                                    )}
-                                                </td>
-                                                <td className="text-end fw-bold dlr-column">
-                                                {(
-                                                  Number(CustomerRejectedBookings.DealerSparePrice || 0) +
-                                                  Number(CustomerRejectedBookings.DealerPrice || 0) +
-                                                  Number(CustomerRejectedBookings.DealerGSTAmount || 0)
-                                                ).toFixed(2)}
-                                              </td>
-                                                <td className="text-end fw-bold text-primary">
-                                                  {totalPrice.toFixed(2)}
-                                                </td>
-                                                <td className="text-center">
-                                                  <button
-                                                    className="btn btn-sm btn-primary-600"
-                                                    onClick={() =>
-                                                      handleRevertService(
-                                                        CustomerRejectedBookings,
-                                                      )
-                                                    }
-                                                    disabled={revertingServiceId === CustomerRejectedBookings.Id}
+                                                    ),
+                                                  )}
+                                                </div>
+                                              )} */}
+                                            </div>
+
+                                            <div className="text-end">
+                                              <div className="small text-muted">
+                                                Price spread
+                                              </div>
+                                              <div
+                                                className={
+                                                  service.priceSpread >= 0
+                                                    ? "pricing-spread-positive"
+                                                    : "pricing-spread-negative"
+                                                }
+                                                style={{ fontSize: "1.05rem" }}
+                                              >
+                                                {formatCurrency(
+                                                  service.priceSpread,
+                                                )}
+                                              </div>
+                                              <div className="small text-success mt-1">
+                                                Margin{" "}
+                                                {formatCurrency(
+                                                  service.marginAmount,
+                                                )}{" "}
+                                                ({service.marginPercent.toFixed(
+                                                  2,
+                                                )}
+                                                %)
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                          <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3 mb-3">
+                                            <div className="small text-muted">
+                                              Dealer-completed services need
+                                              approval from admin, field
+                                              advisor, or supervisor.
+                                            </div>
+                                            <div>
+                                              {service.isCompletionApproved ? (
+                                                <span className="badge bg-success-subtle text-success px-3 py-2 rounded-pill">
+                                                  Service completion approved by{" "}
+                                                  {service.completionApprovedBy ||
+                                                    "reviewer"}
+                                                </span>
+                                              ) : service.serviceStatus ===
+                                                "ServiceCompleted" ? (
+                                                canReviewDealerCompletedService ? (
+                                                  <select
+                                                    className="form-select form-select-sm"
+                                                    defaultValue=""
+                                                    onChange={(e) => {
+                                                      const selectedAction =
+                                                        e.target.value;
+                                                      if (!selectedAction) {
+                                                        return;
+                                                      }
+
+                                                      if (
+                                                        selectedAction ===
+                                                        "Approve"
+                                                      ) {
+                                                        handleDirectApprove(
+                                                          service.sourceItem,
+                                                        );
+                                                      } else if (
+                                                        selectedAction ===
+                                                        "Rework"
+                                                      ) {
+                                                        handleAddOnStatusChange(
+                                                          service.sourceItem,
+                                                          "Rework",
+                                                        );
+                                                      }
+
+                                                      e.target.value = "";
+                                                    }}
                                                   >
-                                                   {revertingServiceId === CustomerRejectedBookings.Id ? ( // <--- SHOW SPINNER
-                                                      <>
-                                                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                                        Reverting...
-                                                      </>
-                                                    ) : (
-                                                      <>
-                                                        <i className="bi bi-arrow-counterclockwise me-1"></i>
-                                                        Revert
-                                                      </>
-                                                    )}
-                                                  </button>
-                                                </td>
-                                              </tr>
-                                            );
-                                          },
+                                                    <option value="" disabled>
+                                                      Approve or Rework
+                                                    </option>
+                                                    <option value="Approve">
+                                                      Approve
+                                                    </option>
+                                                    <option value="Rework">
+                                                      Rework
+                                                    </option>
+                                                  </select>
+                                                ) : (
+                                                  <span className="badge bg-warning-subtle text-warning px-3 py-2 rounded-pill">
+                                                    Awaiting admin / field
+                                                    advisor / supervisor
+                                                    approval
+                                                  </span>
+                                                )
+                                              ) : (
+                                                <span className="badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill">
+                                                  Approval available after
+                                                  dealer marks service
+                                                  completed
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+
+                                          <div className="service-compare-grid">
+                                            <div className="service-compare-section">
+                                              <h6>Customer quote</h6>
+                                              <div className="service-compare-line">
+                                                <span>Part unit price</span>
+                                                <strong>
+                                                  {formatCurrency(
+                                                    service.customerPartUnit,
+                                                  )}
+                                                </strong>
+                                              </div>
+                                              <div className="service-compare-line">
+                                                <span>Part total</span>
+                                                <strong>
+                                                  {formatCurrency(
+                                                    service.customerParts,
+                                                  )}
+                                                </strong>
+                                              </div>
+                                              <div className="service-compare-line">
+                                                <span>Service charge</span>
+                                                <strong>
+                                                  {formatCurrency(
+                                                    service.customerLabour,
+                                                  )}
+                                                </strong>
+                                              </div>
+                                              <div className="service-compare-line">
+                                                <span>
+                                                  GST ({service.customerGstPercent.toFixed(
+                                                    2,
+                                                  )}
+                                                  %)
+                                                </span>
+                                                <strong>
+                                                  {formatCurrency(
+                                                    service.customerGst,
+                                                  )}
+                                                </strong>
+                                              </div>
+                                              <div className="service-compare-line">
+                                                <span>Customer total</span>
+                                                <strong className="text-primary">
+                                                  {formatCurrency(
+                                                    service.customerTotal,
+                                                  )}
+                                                </strong>
+                                              </div>
+                                            </div>
+
+                                            <div className="service-compare-section">
+                                              <h6>Dealer quote</h6>
+                                              <div className="service-compare-line">
+                                                <span>Part unit price</span>
+                                                <strong>
+                                                  {formatCurrency(
+                                                    service.dealerPartUnit,
+                                                  )}
+                                                </strong>
+                                              </div>
+                                              <div className="service-compare-line">
+                                                <span>Part total</span>
+                                                <strong>
+                                                  {formatCurrency(
+                                                    service.dealerParts,
+                                                  )}
+                                                </strong>
+                                              </div>
+                                              <div className="service-compare-line">
+                                                <span>Service charge</span>
+                                                <strong>
+                                                  {formatCurrency(
+                                                    service.dealerLabour,
+                                                  )}
+                                                </strong>
+                                              </div>
+                                              <div className="service-compare-line">
+                                                <span>
+                                                  GST ({service.dealerGstPercent.toFixed(
+                                                    2,
+                                                  )}
+                                                  %)
+                                                </span>
+                                                <strong>
+                                                  {formatCurrency(
+                                                    service.dealerGst,
+                                                  )}
+                                                </strong>
+                                              </div>
+                                              <div className="service-compare-line">
+                                                <span>Dealer total</span>
+                                                <strong className="text-warning-emphasis">
+                                                  {formatCurrency(
+                                                    service.dealerTotal,
+                                                  )}
+                                                </strong>
+                                              </div>
+                                            </div>
+
+                                            <div
+                                              className={`service-compare-highlight ${service.spreadWithoutMargin > 0
+                                                ? "warn"
+                                                : ""
+                                                }`}
+                                            >
+                                              <div className="service-compare-line">
+                                                <span>Company margin %</span>
+                                                <strong className="text-success">
+                                                  {service.marginPercent.toFixed(
+                                                    2,
+                                                  )}
+                                                  %
+                                                </strong>
+                                              </div>
+                                              <div className="service-compare-line">
+                                                <span>Company margin amount</span>
+                                                <strong className="text-success">
+                                                  {formatCurrency(
+                                                    service.marginAmount,
+                                                  )}
+                                                </strong>
+                                              </div>
+                                              <div className="service-compare-line">
+                                                <span>Customer - dealer</span>
+                                                <strong
+                                                  className={
+                                                    service.priceSpread >= 0
+                                                      ? "pricing-spread-positive"
+                                                      : "pricing-spread-negative"
+                                                  }
+                                                >
+                                                  {formatCurrency(
+                                                    service.priceSpread,
+                                                  )}
+                                                </strong>
+                                              </div>
+                                              <div className="service-compare-line">
+                                                <span>Spread beyond margin</span>
+                                                <strong
+                                                  className={
+                                                    service.spreadWithoutMargin >=
+                                                      0
+                                                      ? "text-info"
+                                                      : "text-danger"
+                                                  }
+                                                >
+                                                  {formatCurrency(
+                                                    service.spreadWithoutMargin,
+                                                  )}
+                                                </strong>
+                                              </div>
+                                              <div className="service-compare-line">
+                                                <span>Last updated</span>
+                                                <strong>
+                                                  {service.updatedAt
+                                                    ? formatDateTime(
+                                                      service.updatedAt,
+                                                    )
+                                                    : "N/A"}
+                                                </strong>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  <div className="pricing-panel mb-4">
+                                    <div className="d-flex justify-content-between align-items-center gap-2 mb-3">
+                                      <h6 className="mb-0 fw-bold">
+                                        Margin definition
+                                      </h6>
+                                      <span className="pricing-chip">
+                                        MCB Amt = Margin Amt
+                                      </span>
+                                    </div>
+
+                                    
+
+                                    <div className="row g-3">
+                                      <div className="col-md-6 col-xl-3">
+                                        <div className="pricing-kpi-card h-100">
+                                          <div className="pricing-kpi-label">
+                                            Dealer total
+                                          </div>
+                                          <div className="pricing-kpi-value">
+                                            {formatCurrency(
+                                              pricingTotals.dealerTotal,
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="col-md-6 col-xl-3">
+                                        <div className="pricing-kpi-card h-100">
+                                          <div className="pricing-kpi-label">
+                                            Customer total
+                                          </div>
+                                          <div className="pricing-kpi-value">
+                                            {formatCurrency(
+                                              pricingTotals.customerTotal,
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="col-md-6 col-xl-3">
+                                        <div className="pricing-kpi-card h-100">
+                                          <div className="pricing-kpi-label">
+                                            Company margin
+                                          </div>
+                                          <div className="pricing-kpi-value text-success">
+                                            {formatCurrency(
+                                              pricingTotals.marginAmount,
+                                            )}
+                                          </div>
+                                          <div className="pricing-kpi-subtext">
+                                            {effectiveMarginPercent.toFixed(2)}%
+                                            of dealer total
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="col-md-6 col-xl-3">
+                                        <div className="pricing-kpi-card h-100">
+                                          <div className="pricing-kpi-label">
+                                            Extra spread
+                                          </div>
+                                          <div className="pricing-kpi-value text-info">
+                                            {formatCurrency(
+                                              unmatchedSpreadAmount,
+                                            )}
+                                          </div>
+                                          <div className="pricing-kpi-subtext">
+                                            Spread minus company margin
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="mt-4">
+                                      <div className="d-flex justify-content-between small text-muted mb-2">
+                                        <span>Visual split</span>
+                                        <span>
+                                          Dealer + Margin + extra spread
+                                        </span>
+                                      </div>
+                                      <div className="pricing-visual-track">
+                                        <span
+                                          className="pricing-visual-dealer"
+                                          style={{
+                                            width: `${dealerBarWidth}%`,
+                                          }}
+                                        />
+                                        <span
+                                          className="pricing-visual-margin"
+                                          style={{
+                                            width: `${marginBarWidth}%`,
+                                          }}
+                                        />
+                                        <span
+                                          className="pricing-visual-extra"
+                                          style={{
+                                            width: `${spreadExtraBarWidth}%`,
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="pricing-kpi-grid mb-4" style={{ display: "none" }}>
+                                    <div className="pricing-kpi-card">
+                                      <div className="pricing-kpi-label">
+                                        Dealer total
+                                      </div>
+                                      <div className="pricing-kpi-value">
+                                        {formatCurrency(
+                                          pricingTotals.dealerTotal,
                                         )}
-                                      </tbody>
-                                    </table>
+                                      </div>
+                                      <div className="pricing-kpi-subtext">
+                                        Parts {formatCurrency(
+                                          pricingTotals.dealerParts,
+                                        )}, labour {formatCurrency(
+                                          pricingTotals.dealerLabour,
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    <div className="pricing-kpi-card">
+                                      <div className="pricing-kpi-label">
+                                        Customer total
+                                      </div>
+                                      <div className="pricing-kpi-value">
+                                        {formatCurrency(
+                                          pricingTotals.customerTotal,
+                                        )}
+                                      </div>
+                                      <div className="pricing-kpi-subtext">
+                                        Parts {formatCurrency(
+                                          pricingTotals.customerParts,
+                                        )}, labour {formatCurrency(
+                                          pricingTotals.customerLabour,
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    <div className="pricing-kpi-card">
+                                      <div className="pricing-kpi-label">
+                                        Company margin amount
+                                      </div>
+                                      <div className="pricing-kpi-value text-success">
+                                        {formatCurrency(
+                                          pricingTotals.marginAmount,
+                                        )}
+                                      </div>
+                                      <div className="pricing-kpi-subtext">
+                                        Margin available on{" "}
+                                        {pricingTotals.marginServices} service(s)
+                                      </div>
+                                    </div>
+
+                                    <div className="pricing-kpi-card">
+                                      <div className="pricing-kpi-label">
+                                        Effective margin %
+                                      </div>
+                                      <div className="pricing-kpi-value text-success">
+                                        {effectiveMarginPercent.toFixed(2)}%
+                                      </div>
+                                      <div className="pricing-kpi-subtext">
+                                        Margin amount divided by dealer total
+                                      </div>
+                                    </div>
+
+                                    <div className="pricing-kpi-card">
+                                      <div className="pricing-kpi-label">
+                                        Price spread
+                                      </div>
+                                      <div className="pricing-kpi-value text-primary">
+                                        {formatCurrency(
+                                          pricingTotals.priceSpread,
+                                        )}
+                                      </div>
+                                      <div className="pricing-kpi-subtext">
+                                        {priceSpreadPercent.toFixed(2)}% higher
+                                        than dealer total
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="row g-4" style={{ display: "none" }}>
+                                    <div className="col-12 col-xl-4">
+                                      <div className="pricing-panel">
+                                        <div className="d-flex justify-content-between align-items-center gap-2 mb-3">
+                                          <h6 className="mb-0 fw-bold">
+                                            Margin definition
+                                          </h6>
+                                          <span className="pricing-chip">
+                                            MCB Amt = Margin Amt
+                                          </span>
+                                        </div>
+
+                                        <div className="pricing-note-card mb-3">
+                                          <div className="fw-semibold text-dark mb-1">
+                                            Margin means the company earning
+                                          </div>
+                                          <div className="small text-muted">
+                                            Margin Amount is taken from{" "}
+                                            <strong>`Our_Earnings`</strong>.
+                                            Margin Percentage is taken from{" "}
+                                            <strong>`Percentage`</strong>.
+                                          </div>
+                                        </div>
+
+                                        <div className="pricing-breakdown-row">
+                                          <span className="text-muted">
+                                            Dealer quote total
+                                          </span>
+                                          <strong>
+                                            {formatCurrency(
+                                              pricingTotals.dealerTotal,
+                                            )}
+                                          </strong>
+                                        </div>
+                                        <div className="pricing-breakdown-row">
+                                          <span className="text-muted">
+                                            Customer quote total
+                                          </span>
+                                          <strong>
+                                            {formatCurrency(
+                                              pricingTotals.customerTotal,
+                                            )}
+                                          </strong>
+                                        </div>
+                                        <div className="pricing-breakdown-row">
+                                          <span className="text-muted">
+                                            Company margin amount
+                                          </span>
+                                          <strong className="text-success">
+                                            {formatCurrency(
+                                              pricingTotals.marginAmount,
+                                            )}
+                                          </strong>
+                                        </div>
+                                        <div className="pricing-breakdown-row">
+                                          <span className="text-muted">
+                                            Company margin %
+                                          </span>
+                                          <strong className="text-success">
+                                            {effectiveMarginPercent.toFixed(2)}%
+                                          </strong>
+                                        </div>
+                                        <div className="pricing-breakdown-row">
+                                          <span className="text-muted">
+                                            Customer price spread
+                                          </span>
+                                          <strong className="text-primary">
+                                            {formatCurrency(
+                                              pricingTotals.priceSpread,
+                                            )}
+                                          </strong>
+                                        </div>
+                                        <div className="pricing-breakdown-row">
+                                          <span className="text-muted">
+                                            Spread not explained by margin
+                                          </span>
+                                          <strong
+                                            className={
+                                              unmatchedSpreadAmount >= 0
+                                                ? "text-info"
+                                                : "text-danger"
+                                            }
+                                          >
+                                            {formatCurrency(
+                                              unmatchedSpreadAmount,
+                                            )}
+                                          </strong>
+                                        </div>
+
+                                        <div className="mt-4">
+                                          <div className="d-flex justify-content-between small text-muted mb-2">
+                                            <span>Visual split</span>
+                                            <span>
+                                              Dealer + Margin + extra spread
+                                            </span>
+                                          </div>
+                                          <div className="pricing-visual-track">
+                                            <span
+                                              className="pricing-visual-dealer"
+                                              style={{
+                                                width: `${dealerBarWidth}%`,
+                                              }}
+                                            />
+                                            <span
+                                              className="pricing-visual-margin"
+                                              style={{
+                                                width: `${marginBarWidth}%`,
+                                              }}
+                                            />
+                                            <span
+                                              className="pricing-visual-extra"
+                                              style={{
+                                                width: `${spreadExtraBarWidth}%`,
+                                              }}
+                                            />
+                                          </div>
+                                          <div className="d-flex flex-wrap gap-2 mt-3">
+                                            <span className="pricing-chip">
+                                              Dealer {formatCurrency(
+                                                pricingTotals.dealerTotal,
+                                              )}
+                                            </span>
+                                            <span className="pricing-chip">
+                                              Margin {formatCurrency(
+                                                pricingTotals.marginAmount,
+                                              )}
+                                            </span>
+                                            <span className="pricing-chip">
+                                              Extra spread {formatCurrency(
+                                                Math.max(
+                                                  unmatchedSpreadAmount,
+                                                  0,
+                                                ),
+                                              )}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="col-12 col-xl-8">
+                                      <div className="pricing-panel">
+                                        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                                          <div>
+                                            <h6 className="mb-1 fw-bold">
+                                              Service-wise exact comparison
+                                            </h6>
+                                            <div className="small text-muted">
+                                              Every row shows dealer total,
+                                              customer total, company margin,
+                                              and the final spread.
+                                            </div>
+                                          </div>
+                                          <div className="d-flex flex-wrap gap-2">
+                                            <span className="pricing-chip">
+                                              Services:{" "}
+                                              {liveComparisonServices.length}
+                                            </span>
+                                            <span className="pricing-chip">
+                                              Variance rows:{" "}
+                                              {pricingTotals.varianceServices}
+                                            </span>
+                                          </div>
+                                        </div>
+
+                                        <div className="table-responsive">
+                                          <table className="table table-hover align-middle pricing-comparison-table mb-0">
+                                            <thead className="table-light">
+                                              <tr>
+                                                <th>Service</th>
+                                                <th>Status</th>
+                                                <th>Dealer</th>
+                                                <th className="text-end">
+                                                  Dealer Total
+                                                </th>
+                                                <th className="text-end">
+                                                  Customer Total
+                                                </th>
+                                                <th className="text-end">
+                                                  Margin %
+                                                </th>
+                                                <th className="text-end">
+                                                  Margin Amt
+                                                </th>
+                                                <th className="text-end">
+                                                  Price Spread
+                                                </th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              {liveComparisonServices.map(
+                                                (service) => (
+                                                  <tr key={service.id}>
+                                                    <td>
+                                                      <div className="fw-semibold text-dark">
+                                                        {service.serviceName}
+                                                      </div>
+                                                      <div className="small text-muted">
+                                                        {service.dealerName}
+                                                      </div>
+                                                    </td>
+                                                    <td>
+                                                      <span
+                                                        className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(
+                                                          service.stage,
+                                                        )}`}
+                                                      >
+                                                        {service.stage}
+                                                      </span>
+                                                    </td>
+                                                    <td>
+                                                      <div className="small text-muted">
+                                                        Parts{" "}
+                                                        {formatCurrency(
+                                                          service.dealerParts,
+                                                        )}
+                                                      </div>
+                                                      <div className="small text-muted">
+                                                        Labour{" "}
+                                                        {formatCurrency(
+                                                          service.dealerLabour,
+                                                        )}
+                                                      </div>
+                                                      <div className="small text-muted">
+                                                        GST{" "}
+                                                        {formatCurrency(
+                                                          service.dealerGst,
+                                                        )}
+                                                      </div>
+                                                    </td>
+                                                    <td className="text-end fw-semibold">
+                                                      {formatCurrency(
+                                                        service.dealerTotal,
+                                                      )}
+                                                    </td>
+                                                    <td className="text-end fw-semibold text-primary">
+                                                      {formatCurrency(
+                                                        service.customerTotal,
+                                                      )}
+                                                    </td>
+                                                    <td className="text-end">
+                                                      {service.marginPercent.toFixed(
+                                                        2,
+                                                      )}
+                                                      %
+                                                    </td>
+                                                    <td className="text-end text-success fw-semibold">
+                                                      {formatCurrency(
+                                                        service.marginAmount,
+                                                      )}
+                                                    </td>
+                                                    <td
+                                                      className={`text-end ${service.priceSpread >= 0
+                                                        ? "pricing-spread-positive"
+                                                        : "pricing-spread-negative"
+                                                        }`}
+                                                    >
+                                                      {formatCurrency(
+                                                        service.priceSpread,
+                                                      )}
+                                                    </td>
+                                                  </tr>
+                                                ),
+                                              )}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
                             )}
                             {bookingData ? (
                               <>
-                              <div className="mt-2 border-top pt-2">
-  
-                            {/* ===================== DEALER BILLING SUMMARY ===================== */}
-                            {(hasDlrConfirmed || hasDlrUnconfirmed) && (
-                              <div className="mb-4">
-                                <div className="d-flex fw-bold mb-2 border-bottom pb-1 bg-warning-subtle text-warning-emphasis px-2 rounded-top" style={{ fontSize: '16px' }}>
-                                  <div style={{ flex: '1' }}>Dealer Billing Summary</div>
-                                  {showDlrComparison && (
-                                    <div style={{ width: '180px' }} className="text-center">Not Confirmed Services</div>
-                                  )}
-                                  <div style={{ width: '180px' }} className="text-end">
-                                    {hasDlrConfirmed ? "Confirmed Services" : "Not Confirmed Services"}
-                                  </div>
-                                </div>
-                                
-                                <div className="billing-rows">
-                                  {[
-                                    { label: "Parts Subtotal", cnc: dlrCncTotals.parts, cc: dlrCcTotals.parts },
-                                    { label: "Service Charges", cnc: dlrCncTotals.labour, cc: dlrCcTotals.labour },
-                                    { label: "SGST(9%)", cnc: dlrCncTotals.gst / 2, cc: dlrCcTotals.gst / 2 },
-                                    { label: "CGST(9%)", cnc: dlrCncTotals.gst / 2, cc: dlrCcTotals.gst / 2 },
-                                  ].map((row, idx) => {
-                                    const centerValue = showDlrComparison ? row.cnc : null;
-                                    const rightValue = !hasDlrConfirmed && hasDlrUnconfirmed ? row.cnc : row.cc;
-
-                                    return (
-                                      <div key={idx} className="d-flex py-1 border-bottom-dashed align-items-center">
-                                        <span className="text-secondary" style={{ flex: '1' }}>{row.label}</span>
-                                        {showDlrComparison && (
-                                          <span className="text-center" style={{ width: '180px' }}>
-                                            ₹{Number(centerValue || 0).toFixed(2)}
-                                          </span>
-                                        )}
-                                        <span className="text-end" style={{ width: '180px' }}>
-                                          ₹{Number(rightValue || 0).toFixed(2)}
-                                        </span>
-                                      </div>
-                                    );
-                                  })}
-
-                                  <div className="d-flex py-2 align-items-center fw-bold border-top mt-1">
-                                    <span className="text-dark" style={{ flex: '1' }}>Dealer Total Amount</span>
-                                    {showDlrComparison && (
-                                      <span className="text-dark text-center" style={{ width: '180px' }}>
-                                        ₹{dlrCncTotals.total.toFixed(2)}
-                                      </span>
-                                    )}
-                                    <span className="text-dark text-end" style={{ width: '180px' }}>
-                                      ₹{(!hasDlrConfirmed && hasDlrUnconfirmed ? dlrCncTotals.total : dlrCcTotals.total).toFixed(2)}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
                                 <div className="mt-2 border-top pt-2">
-                                {/* Header for columns if both exist */}
-                              <div className="d-flex fw-bold mb-2 border-bottom pb-1 bg-primary-subtle text-primary-emphasis px-2 rounded-top" style={{ fontSize: '16px' }}>
-                                  <div style={{ flex: '1' }}>Customer Billing Summary</div>
-                                  {showComparison && (
-                                    <div style={{ width: '180px' }} className="text-center">Not Confirmed Services</div>
-                                  )}
-                                  {(hasConfirmed || hasUnconfirmed) && (
-                                    <div style={{ width: '180px' }} className="text-end">
-                                      {hasConfirmed ? "Confirmed Services" : "Not Confirmed Services"}
+
+                                  {/* ===================== DEALER BILLING SUMMARY ===================== */}
+                                  {false && (hasDlrConfirmed || hasDlrUnconfirmed) && (
+                                    <div className="mb-4">
+                                      <div className="d-flex fw-bold mb-2 border-bottom pb-1 bg-warning-subtle text-warning-emphasis px-2 rounded-top" style={{ fontSize: '16px' }}>
+                                        <div style={{ flex: '1' }}>Dealer Billing Summary</div>
+                                        {showDlrComparison && (
+                                          <div style={{ width: '180px' }} className="text-center">Not Confirmed Services</div>
+                                        )}
+                                        <div style={{ width: '180px' }} className="text-end">
+                                          {hasDlrConfirmed ? "Confirmed Services" : "Not Confirmed Services"}
+                                        </div>
+                                      </div>
+
+                                      <div className="billing-rows">
+                                        {[
+                                          { label: "Parts Subtotal", cnc: dlrCncTotals.parts, cc: dlrCcTotals.parts },
+                                          { label: "Service Charges", cnc: dlrCncTotals.labour, cc: dlrCcTotals.labour },
+                                          { label: "SGST(9%)", cnc: dlrCncTotals.gst / 2, cc: dlrCcTotals.gst / 2 },
+                                          { label: "CGST(9%)", cnc: dlrCncTotals.gst / 2, cc: dlrCcTotals.gst / 2 },
+                                        ].map((row, idx) => {
+                                          const centerValue = showDlrComparison ? row.cnc : null;
+                                          const rightValue = !hasDlrConfirmed && hasDlrUnconfirmed ? row.cnc : row.cc;
+
+                                          return (
+                                            <div key={idx} className="d-flex py-1 border-bottom-dashed align-items-center">
+                                              <span className="text-secondary" style={{ flex: '1' }}>{row.label}</span>
+                                              {showDlrComparison && (
+                                                <span className="text-center" style={{ width: '180px' }}>
+                                                  ₹{Number(centerValue || 0).toFixed(2)}
+                                                </span>
+                                              )}
+                                              <span className="text-end" style={{ width: '180px' }}>
+                                                ₹{Number(rightValue || 0).toFixed(2)}
+                                              </span>
+                                            </div>
+                                          );
+                                        })}
+
+                                        <div className="d-flex py-2 align-items-center fw-bold border-top mt-1">
+                                          <span className="text-dark" style={{ flex: '1' }}>Dealer Total Amount</span>
+                                          {showDlrComparison && (
+                                            <span className="text-dark text-center" style={{ width: '180px' }}>
+                                              ₹{dlrCncTotals.total.toFixed(2)}
+                                            </span>
+                                          )}
+                                          <span className="text-dark text-end" style={{ width: '180px' }}>
+                                            ₹{(!hasDlrConfirmed && hasDlrUnconfirmed ? dlrCncTotals.total : dlrCcTotals.total).toFixed(2)}
+                                          </span>
+                                        </div>
+                                      </div>
                                     </div>
                                   )}
                                 </div>
-                                <div className="billing-rows">
-                                  {/* Helper function to render a row with dynamic columns */}
-                                  {[
-                                    { label: "Parts Subtotal", cnc: cncTotals.parts, cc: bookingData.TotalPrice },
-                                    { label: "Service Charges", cnc: cncTotals.labour, cc: bookingData.LabourCharges },
-                                    { label: "SGST(9%)", cnc: cncTotals.gst / 2, cc: (bookingData.GSTAmount || 0) / 2 },
-                                    { label: "CGST(9%)", cnc: cncTotals.gst / 2, cc: (bookingData.GSTAmount || 0) / 2 },
-                                    { label: "Coupon", cc: bookingData.CouponAmount, isCoupon: true },
-                                  ].map((row, idx) => {
-                                    // Logic: If only CNC exists, row.cc will show CNC value on the right
-                                    const centerValue = showComparison ? row.cnc : null;
-                                    const rightValue = !hasConfirmed && hasUnconfirmed ? row.cnc : row.cc;
-
-                                    if (row.isCoupon && !row.cc) return null; // Hide coupon if 0
-
-                                    return (
-                                      <div key={idx} className="d-flex py-1 border-bottom-dashed align-items-center">
-                                        <span className="text-secondary" style={{ flex: '1' }}>{row.label}</span>
-                                        
-                                        {/* Center Column: Only shows if both exist */}
-                                        {showComparison && (
-                                          <span className=" text-center" style={{ width: '180px' }}>
-                                            {row.label === "Coupon" ? "—" : `₹${Number(centerValue || 0).toFixed(2)}`}
-                                          </span>
-                                        )}
-
-                                        {/* Right Column: Shows either Confirmed OR (if CC empty) Unconfirmed */}
-                                        <span className={`text-end ${row.isCoupon ? 'text-danger' : ''}`} style={{ width: '180px' }}>
-                                          {row.isCoupon ? "-" : ""} ₹{Number(rightValue || 0).toFixed(2)}
-                                        </span>
-                                      </div>
-                                    );
-                                  })}
-
-                                  {/* TOTAL AMOUNT BOLD ROW */}
-                                  <div className="d-flex py-2 align-items-center fw-bold border-top mt-1">
-                                    <span className="text-dark" style={{ flex: '1' }}>Customer Total Amount</span>
+                                {/* <div className="mt-2 border-top pt-2">
+                                  <div className="d-flex fw-bold mb-2 border-bottom pb-1 bg-primary-subtle text-primary-emphasis px-2 rounded-top" style={{ fontSize: '16px', display: 'none' }}>
+                                    <div style={{ flex: '1' }}>Customer Billing Summary</div>
                                     {showComparison && (
-                                      <span className="text-dark text-center" style={{ width: '180px' }}>
-                                        ₹{cncTotals.total.toFixed(2)}
-                                      </span>
+                                      <div style={{ width: '180px' }} className="text-center">Not Confirmed Services</div>
                                     )}
-                                    <span className="text-dark text-end" style={{ width: '180px' }}>
-                                      ₹{(!hasConfirmed && hasUnconfirmed ? cncTotals.total : totalAmount).toFixed(2)}
-                                    </span>
+                                    {(hasConfirmed || hasUnconfirmed) && (
+                                      <div style={{ width: '180px' }} className="text-end">
+                                        {hasConfirmed ? "Confirmed Services" : "Not Confirmed Services"}
+                                      </div>
+                                    )}
                                   </div>
+                                  <div className="billing-rows" style={{ display: "none" }}>
+                                    {[
+                                      { label: "Parts Subtotal", cnc: cncTotals.parts, cc: bookingData.TotalPrice },
+                                      { label: "Service Charges", cnc: cncTotals.labour, cc: bookingData.LabourCharges },
+                                      { label: "SGST(9%)", cnc: cncTotals.gst / 2, cc: (bookingData.GSTAmount || 0) / 2 },
+                                      { label: "CGST(9%)", cnc: cncTotals.gst / 2, cc: (bookingData.GSTAmount || 0) / 2 },
+                                      { label: "Coupon", cc: bookingData.CouponAmount, isCoupon: true },
+                                    ].map((row, idx) => {
+                                      // Logic: If only CNC exists, row.cc will show CNC value on the right
+                                      const centerValue = showComparison ? row.cnc : null;
+                                      const rightValue = !hasConfirmed && hasUnconfirmed ? row.cnc : row.cc;
 
-                                  {/* Payments & Balance Logic - Only applies to Confirmed Services */}
-                                  {hasConfirmed && (
-                                    <>
-                                      <div className="d-flex py-1 align-items-center  fw-bold border-top mt-1">
-                                        <span className="text-secondary" style={{ flex: '1' }}>Paid Amount</span>
-                                        <span className="text-success text-end" style={{ width: '180px' }}>
-                                          - ₹{alreadyPaidDisplay.toFixed(2)}
+                                      if (row.isCoupon && !row.cc) return null; // Hide coupon if 0
+
+                                      return (
+                                        <div key={idx} className="d-flex py-1 border-bottom-dashed align-items-center">
+                                          <span className="text-secondary" style={{ flex: '1' }}>{row.label}</span>
+
+                                          {showComparison && (
+                                            <span className=" text-center" style={{ width: '180px' }}>
+                                              {row.label === "Coupon" ? "—" : `₹${Number(centerValue || 0).toFixed(2)}`}
+                                            </span>
+                                          )}
+
+                                          <span className={`text-end ${row.isCoupon ? 'text-danger' : ''}`} style={{ width: '180px' }}>
+                                            {row.isCoupon ? "-" : ""} ₹{Number(rightValue || 0).toFixed(2)}
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+
+                                    <div className="d-flex py-2 align-items-center fw-bold border-top mt-1">
+                                      <span className="text-dark" style={{ flex: '1' }}>Customer Total Amount</span>
+                                      {showComparison && (
+                                        <span className="text-dark text-center" style={{ width: '180px' }}>
+                                          ₹{cncTotals.total.toFixed(2)}
                                         </span>
-                                      </div>
-                                      <div className="d-flex py-2 align-items-center fw-bold border-top mt-1">
-                                        <span className="text-dark" style={{ flex: '1' }}>Balance Amount</span>
-                                        <span className="text-primary text-end" style={{ width: '180px' }}>
-                                          ₹{remainingAmount.toFixed(2)}
-                                        </span>
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
+                                      )}
+                                      <span className="text-dark text-end" style={{ width: '180px' }}>
+                                        ₹{(!hasConfirmed && hasUnconfirmed ? cncTotals.total : totalAmount).toFixed(2)}
+                                      </span>
+                                    </div>
+
+                                    {hasConfirmed && (
+                                      <>
+                                        <div className="d-flex py-1 align-items-center  fw-bold border-top mt-1">
+                                          <span className="text-secondary" style={{ flex: '1' }}>Paid Amount</span>
+                                          <span className="text-success text-end" style={{ width: '180px' }}>
+                                            - ₹{alreadyPaidDisplay.toFixed(2)}
+                                          </span>
+                                        </div>
+                                        <div className="d-flex py-2 align-items-center fw-bold border-top mt-1">
+                                          <span className="text-dark" style={{ flex: '1' }}>Balance Amount</span>
+                                          <span className="text-primary text-end" style={{ width: '180px' }}>
+                                            ₹{remainingAmount.toFixed(2)}
+                                          </span>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                </div> */}
                                 {bookingData?.SupervisorBookings &&
                                   bookingData.SupervisorBookings.length > 0 && (
                                     <div className="alert alert-info py-2 px-3 mb-2 mb-md-3 small">
@@ -6458,7 +7841,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                     roleName === "Supervisor Head" ||
                                     roleName === "Field Advisor") &&
                                     bookingData?.BookingStatus !==
-                                      "Completed" &&
+                                    "Completed" &&
                                     bookingData?.BookingAddOns != null &&
                                     Array.isArray(bookingData.BookingAddOns) &&
                                     bookingData.BookingAddOns.length > 0 &&
@@ -6484,10 +7867,10 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                         onClick={(e) => {
                                           if (!ensureBasicDetails()) {
                                             e.preventDefault();
-                                           
+
                                           }
-                                          else if(!CheckServiceAmount()){
-                                             e.preventDefault();
+                                          else if (!CheckServiceAmount()) {
+                                            e.preventDefault();
                                           }
                                         }}
                                       >
@@ -6519,18 +7902,18 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
 
                                   {/* Final Invoice: show only after full payment is completed */}
                                   {showFinalButton && (
-                                     <Link
-                                     to={`/invoice-view/${bookingData?.BookingID}?type=Final`}
-                                     className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                     title="View Estimation Invoice"
-                                     onClick={(e) => {
-                                       if (!ensureBasicDetails()) {
-                                         e.preventDefault();
-                                       }
-                                     }}
-                                   >
-                                     View Final Invoice
-                                   </Link>
+                                    <Link
+                                      to={`/invoice-view/${bookingData?.BookingID}?type=Final`}
+                                      className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                                      title="View Estimation Invoice"
+                                      onClick={(e) => {
+                                        if (!ensureBasicDetails()) {
+                                          e.preventDefault();
+                                        }
+                                      }}
+                                    >
+                                      View Final Invoice
+                                    </Link>
                                   )}
                                   {/* {showFinalButton && (
                                     <button
@@ -6556,31 +7939,31 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                     </button>
                                   )} */}
                                   {showDealerInvoiceButton && (
-                                  <Link
-                                    // to={`/invoice-view/${bookingData?.BookingID}?type=Dealer&dealerId=${
-                                    //   bookingData?.BookingAddOns?.find((addon) => addon?.DealerID)?.DealerID
-                                    // }`}
-                                     to={`/invoice-view/${bookingData?.BookingID}?type=Dealer&dealerId=${firstPartnerDealerId}`}
-                                    className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                    title="View Dealer Invoice"
-                                    onClick={(e) => {
-                                      // 1. Check basic details (Date, Address, Supervisor)
-                                      if (!ensureBasicDetails()) {
-                                        e.preventDefault();
-                                        return;
-                                      }
+                                    <Link
+                                      // to={`/invoice-view/${bookingData?.BookingID}?type=Dealer&dealerId=${
+                                      //   bookingData?.BookingAddOns?.find((addon) => addon?.DealerID)?.DealerID
+                                      // }`}
+                                      to={`/invoice-view/${bookingData?.BookingID}?type=Dealer&dealerId=${firstPartnerDealerId}`}
+                                      className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                                      title="View Dealer Invoice"
+                                      onClick={(e) => {
+                                        // 1. Check basic details (Date, Address, Supervisor)
+                                        if (!ensureBasicDetails()) {
+                                          e.preventDefault();
+                                          return;
+                                        }
 
-                                      // 2. Check if dealer ID exists before navigating
-                                      const dealerID = bookingData?.BookingAddOns?.find((addon) => addon?.DealerID)?.DealerID;
-                                      if (!dealerID) {
-                                        e.preventDefault();
-                                        Swal.fire("Error", "No Dealer is assigned to the services yet.", "error");
-                                      }
-                                    }}
-                                  >
-                                    View Dealer Invoice
-                                  </Link>
-                                )}
+                                        // 2. Check if dealer ID exists before navigating
+                                        const dealerID = bookingData?.BookingAddOns?.find((addon) => addon?.DealerID)?.DealerID;
+                                        if (!dealerID) {
+                                          e.preventDefault();
+                                          Swal.fire("Error", "No Dealer is assigned to the services yet.", "error");
+                                        }
+                                      }}
+                                    >
+                                      View Dealer Invoice
+                                    </Link>
+                                  )}
                                   {/* {showDealerInvoiceButton && (
                                     <button
                                       className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
@@ -6734,52 +8117,52 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                 ? `${m[1].padStart(2, "0")}:${m[2]}`
                                 : "";
                             };
-                        const steps = list.map((record, idx) => {
-                        const formattedPickType = formatPickType(record.PickType);
+                            const steps = list.map((record, idx) => {
+                              const formattedPickType = formatPickType(record.PickType);
 
-                        const routeType =
-                          record.RouteType === "CustomerToDealer"
-                            ? "Customer To Dealer"
-                            : record.RouteType === "DealerToCustomer"
-                            ? "Dealer To Customer"
-                            : record.RouteType === "DealerToDealer"
-                            ? "Dealer To Dealer"
-                            : "—";
+                              const routeType =
+                                record.RouteType === "CustomerToDealer"
+                                  ? "Customer To Dealer"
+                                  : record.RouteType === "DealerToCustomer"
+                                    ? "Dealer To Customer"
+                                    : record.RouteType === "DealerToDealer"
+                                      ? "Dealer To Dealer"
+                                      : "—";
 
-                        const isPick = (record.PickType || "").toLowerCase().includes("pick");
+                              const isPick = (record.PickType || "").toLowerCase().includes("pick");
 
-                        const assignStr = record.AssignDate
-                          ? new Date(record.AssignDate).toLocaleString("en-IN", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : "—";
+                              const assignStr = record.AssignDate
+                                ? new Date(record.AssignDate).toLocaleString("en-IN", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                                : "—";
 
-                        const sub =
-                          record.PickupDate && record.PickupTime
-                            ? `${displayDate(record.PickupDate)} ${formatTimeOnly(record.PickupTime)}`
-                            : record.DeliveryDate && record.DeliveryTime
-                            ? `${displayDate(record.DeliveryDate)} ${formatTimeOnly(record.DeliveryTime)}`
-                            : assignStr;
+                              const sub =
+                                record.PickupDate && record.PickupTime
+                                  ? `${displayDate(record.PickupDate)} ${formatTimeOnly(record.PickupTime)}`
+                                  : record.DeliveryDate && record.DeliveryTime
+                                    ? `${displayDate(record.DeliveryDate)} ${formatTimeOnly(record.DeliveryTime)}`
+                                    : assignStr;
 
-                        const label =
-                          [formattedPickType, routeType]
-                            .filter(Boolean)
-                            .join(" – ") || "Service at Doorstep";
+                              const label =
+                                [formattedPickType, routeType]
+                                  .filter(Boolean)
+                                  .join(" – ") || "Service at Doorstep";
 
-                        const done = !!(record.PickupDate || record.DeliveryDate);
+                              const done = !!(record.PickupDate || record.DeliveryDate);
 
-                        return {
-                          key: record.Id ?? idx,
-                          label,
-                          sub,
-                          icon: isPick ? "mdi:car-pickup" : "mdi:car-side",
-                          done,
-                        };
-                      });
+                              return {
+                                key: record.Id ?? idx,
+                                label,
+                                sub,
+                                icon: isPick ? "mdi:car-pickup" : "mdi:car-side",
+                                done,
+                              };
+                            });
                             if (steps.length === 0) {
                               return (
                                 <p className="text-muted small mb-0 text-center py-3">
@@ -7008,14 +8391,14 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                               >
                                                 {row.AssignDate
                                                   ? new Date(
-                                                      row.AssignDate,
-                                                    ).toLocaleString("en-IN", {
-                                                      day: "2-digit",
-                                                      month: "short",
-                                                      year: "numeric",
-                                                      hour: "2-digit",
-                                                      minute: "2-digit",
-                                                    })
+                                                    row.AssignDate,
+                                                  ).toLocaleString("en-IN", {
+                                                    day: "2-digit",
+                                                    month: "short",
+                                                    year: "numeric",
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                  })
                                                   : "—"}
                                               </td>
                                               <td
@@ -7023,13 +8406,13 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                                 style={{ color: "#475569" }}
                                               >
                                                 {row.RouteType ==
-                                                "CustomerToDealer"
+                                                  "CustomerToDealer"
                                                   ? "Customer To Dealer"
                                                   : row.RouteType ==
-                                                      "DealerToCustomer"
+                                                    "DealerToCustomer"
                                                     ? "Dealer To Customer"
                                                     : row.RouteType ==
-                                                        "DealerToDealer"
+                                                      "DealerToDealer"
                                                       ? "Dealer To Dealer"
                                                       : "—"}
                                               </td>
@@ -7038,7 +8421,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                                 style={{ color: "#475569" }}
                                               >
                                                 {row.ServiceType ==
-                                                "ServiceAtGarage"
+                                                  "ServiceAtGarage"
                                                   ? "Service At Garage"
                                                   : "Service At Home"}
                                               </td>
@@ -7052,14 +8435,14 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                                       (
                                                         row.Status || ""
                                                       ).toLowerCase() ===
-                                                      "assigned"
+                                                        "assigned"
                                                         ? "rgba(13,148,136,0.15)"
                                                         : "rgba(100,116,139,0.15)",
                                                     color:
                                                       (
                                                         row.Status || ""
                                                       ).toLowerCase() ===
-                                                      "assigned"
+                                                        "assigned"
                                                         ? "#0d9488"
                                                         : "#64748b",
                                                   }}
@@ -7093,7 +8476,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                                 )} */}
                                                   {row.IsCancelled === 0 &&
                                                     row.Status !==
-                                                      "completed" && (
+                                                    "completed" && (
                                                       <div className="d-flex gap-2 justify-content-center flex-wrap">
                                                         <button
                                                           type="button"
@@ -7366,14 +8749,14 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                   <td className="py-2 px-3">
                                     {pay.PaymentDate
                                       ? new Date(
-                                          pay.PaymentDate,
-                                        ).toLocaleString("en-IN", {
-                                          day: "2-digit",
-                                          month: "short",
-                                          year: "numeric",
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })
+                                        pay.PaymentDate,
+                                      ).toLocaleString("en-IN", {
+                                        day: "2-digit",
+                                        month: "short",
+                                        year: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })
                                       : "—"}
                                   </td>
                                   <td className="py-2 px-3">
@@ -7573,14 +8956,14 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                   <td className="py-2 px-3">
                                     {item.CreatedDate
                                       ? new Date(
-                                          item.CreatedDate,
-                                        ).toLocaleString("en-IN", {
-                                          day: "2-digit",
-                                          month: "short",
-                                          year: "numeric",
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })
+                                        item.CreatedDate,
+                                      ).toLocaleString("en-IN", {
+                                        day: "2-digit",
+                                        month: "short",
+                                        year: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })
                                       : "—"}
                                   </td>
                                 </tr>
@@ -7864,13 +9247,13 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                             >
                               {img.UploadedAt
                                 ? new Date(img.UploadedAt).toLocaleDateString(
-                                    "en-IN",
-                                    {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                    },
-                                  )
+                                  "en-IN",
+                                  {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  },
+                                )
                                 : ""}
                             </div>
                           </div>
@@ -7933,13 +9316,13 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                             >
                               {img.UploadedAt
                                 ? new Date(img.UploadedAt).toLocaleDateString(
-                                    "en-IN",
-                                    {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                    },
-                                  )
+                                  "en-IN",
+                                  {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  },
+                                )
                                 : ""}
                             </div>
                           </div>
@@ -7980,34 +9363,34 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                               img.ImageUploadType !== "Delivery"
                           )
                           .map((img, idx) => (
-                          <div
-                            className="col-lg-2 col-md-3 col-4"
-                            key={img.ImageID ?? idx}
-                          >
-                            <img
-                              src={`${API_IMAGE}${img.ImageURL}`}
-                              alt="Service Completion"
-                              className="img-fluid rounded border"
-                              style={{
-                                height: "100px",
-                                width: "100%",
-                                objectFit: "cover",
-                                cursor: "pointer",
-                              }}
-                              onClick={() =>
-                                window.open(
-                                  `${API_IMAGE}${img.ImageURL}`,
-                                  "_blank",
-                                )
-                              }
-                            />
-
                             <div
-                              className="text-muted text-center mt-1"
-                              style={{ fontSize: "0.7rem" }}
+                              className="col-lg-2 col-md-3 col-4"
+                              key={img.ImageID ?? idx}
                             >
-                              {img.UploadedAt
-                                ? new Date(img.UploadedAt).toLocaleDateString(
+                              <img
+                                src={`${API_IMAGE}${img.ImageURL}`}
+                                alt="Service Completion"
+                                className="img-fluid rounded border"
+                                style={{
+                                  height: "100px",
+                                  width: "100%",
+                                  objectFit: "cover",
+                                  cursor: "pointer",
+                                }}
+                                onClick={() =>
+                                  window.open(
+                                    `${API_IMAGE}${img.ImageURL}`,
+                                    "_blank",
+                                  )
+                                }
+                              />
+
+                              <div
+                                className="text-muted text-center mt-1"
+                                style={{ fontSize: "0.7rem" }}
+                              >
+                                {img.UploadedAt
+                                  ? new Date(img.UploadedAt).toLocaleDateString(
                                     "en-IN",
                                     {
                                       day: "2-digit",
@@ -8015,10 +9398,10 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                       year: "numeric",
                                     },
                                   )
-                                : ""}
+                                  : ""}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
                       </div>
                     ) : (
                       <p className="text-muted mb-0 text-center py-4">
@@ -8192,13 +9575,13 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                     className="btn btn-press-effect btn-primary-600 btn-sm"
                     onClick={handleAssignConfirm}
                     disabled={
-                      isReassigning || 
+                      isReassigning ||
                       !selectedReassignTimeSlot ||
                       (assignType === "technician" && !selectedTechnician) ||
                       (assignType === "supervisor" && !selectedSupervisor)
                     }
                   >
-                     {isReassigning ? ( // <--- SHOW SPINNER
+                    {isReassigning ? ( // <--- SHOW SPINNER
                       <>
                         <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                         Assigning...
@@ -8341,7 +9724,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                           min={0}
                           max={remainingAmount}
                           value={payAmount}
-                           onChange={(e) => {
+                          onChange={(e) => {
                             const val = e.target.value;
                             if (val === "") {
                               setPayAmount("");
@@ -8349,7 +9732,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                             }
                             // Parse as float and limit to 2 decimal places
                             const num = parseFloat(val);
-                            setPayAmount(num); 
+                            setPayAmount(num);
                           }}
                           onBlur={() => {
                             // Clean up the decimals when user stops typing
@@ -8419,7 +9802,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                               Final payable: ₹
                               {Math.max(
                                 Number(payAmount || 0) -
-                                  Number(discountAmount || 0),
+                                Number(discountAmount || 0),
                                 0,
                               ).toFixed(2)}
                             </div>
@@ -8537,7 +9920,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                               Final payable: ₹
                               {Math.max(
                                 Number(payAmount || 0) -
-                                  Number(discountAmount || 0),
+                                Number(discountAmount || 0),
                                 0,
                               ).toFixed(2)}
                             </div>
@@ -8570,42 +9953,42 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
 
                 {(paymentTypeChoice === "online" ||
                   paymentTypeChoice === "other") && (
-                  <div className="modal-footer border-0 justify-content-center gap-2">
-                    <button
-                      type="button"
-                      className="btn btn-press-effect btn-secondary btn-sm"
-                      onClick={() => {
-                        setPaymentTypeChoice(null);
-                        setPaymentMode("");
-                        setPayAmount(remainingAmount);
-                        setDiscountAmount("");
-                        setPaymentFile(null);
-                      }}
-                    >
-                      Back
-                    </button>
-                    <button
-                      type="button"
-                      className="btn  btn-primary-600 btn-sm"
-                      onClick={handleConfirmPayment}
-                      disabled={
-                        isLoading ||
-                        (paymentTypeChoice === "other" && !paymentFile)
-                      }
-                    >
-                      {isLoading ? (
-                        <>
-                          <span className="spinner-border spinner-border-sm me-2"></span>
-                          Processing...
-                        </>
-                      ) : paymentTypeChoice === "online" ? (
-                        "Send Payment Link"
-                      ) : (
-                        "Update Payment"
-                      )}
-                    </button>
-                  </div>
-                )}
+                    <div className="modal-footer border-0 justify-content-center gap-2">
+                      <button
+                        type="button"
+                        className="btn btn-press-effect btn-secondary btn-sm"
+                        onClick={() => {
+                          setPaymentTypeChoice(null);
+                          setPaymentMode("");
+                          setPayAmount(remainingAmount);
+                          setDiscountAmount("");
+                          setPaymentFile(null);
+                        }}
+                      >
+                        Back
+                      </button>
+                      <button
+                        type="button"
+                        className="btn  btn-primary-600 btn-sm"
+                        onClick={handleConfirmPayment}
+                        disabled={
+                          isLoading ||
+                          (paymentTypeChoice === "other" && !paymentFile)
+                        }
+                      >
+                        {isLoading ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2"></span>
+                            Processing...
+                          </>
+                        ) : paymentTypeChoice === "online" ? (
+                          "Send Payment Link"
+                        ) : (
+                          "Update Payment"
+                        )}
+                      </button>
+                    </div>
+                  )}
               </div>
             </div>
           </div>
@@ -8689,53 +10072,53 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                         />
                       </button>
                     )}
-                     {!(
-                        bookingData?.BookingAddOns?.length === 1 && 
-                        bookingData?.BookingAddOns[0]?.ServiceType === "Inspection"
-                      ) && (
-                    <button
-                      type="button"
-                      className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white position-relative overflow-hidden"
-                      style={{ minHeight: "72px", transition: "all 0.2s ease" }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "translateY(-2px)";
-                        e.currentTarget.style.boxShadow =
-                          "0 6px 20px rgba(0,0,0,0.08)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "";
-                        e.currentTarget.style.boxShadow = "";
-                      }}
-                      onClick={openGarageFlowModal}
-                    >
-                      <div className="d-flex align-items-center gap-3">
-                        <span
-                          className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
-                          style={{ width: 48, height: 48 }}
+                    {!(
+                      bookingData?.BookingAddOns?.length === 1 &&
+                      bookingData?.BookingAddOns[0]?.ServiceType === "Inspection"
+                    ) && (
+                        <button
+                          type="button"
+                          className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white position-relative overflow-hidden"
+                          style={{ minHeight: "72px", transition: "all 0.2s ease" }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = "translateY(-2px)";
+                            e.currentTarget.style.boxShadow =
+                              "0 6px 20px rgba(0,0,0,0.08)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = "";
+                            e.currentTarget.style.boxShadow = "";
+                          }}
+                          onClick={openGarageFlowModal}
                         >
+                          <div className="d-flex align-items-center gap-3">
+                            <span
+                              className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
+                              style={{ width: 48, height: 48 }}
+                            >
+                              <Icon
+                                icon="mdi:garage"
+                                width={24}
+                                height={24}
+                                className="text-primary"
+                              />
+                            </span>
+                            <div>
+                              <span className="fw-semibold d-block text-dark">
+                                Service at Garage
+                              </span>
+                              <span className="small text-muted">
+                                Car pickup/drop & service done on dealer location
+                              </span>
+                            </div>
+                          </div>
                           <Icon
-                            icon="mdi:garage"
-                            width={24}
-                            height={24}
-                            className="text-primary"
+                            icon="mdi:chevron-right"
+                            width={20}
+                            height={20}
+                            className="text-secondary opacity-75"
                           />
-                        </span>
-                        <div>
-                          <span className="fw-semibold d-block text-dark">
-                            Service at Garage
-                          </span>
-                          <span className="small text-muted">
-                            Car pickup/drop & service done on dealer location
-                          </span>
-                        </div>
-                      </div>
-                      <Icon
-                        icon="mdi:chevron-right"
-                        width={20}
-                        height={20}
-                        className="text-secondary opacity-75"
-                      />
-                    </button>
+                        </button>
                       )}
                   </div>
                 </div>
@@ -8904,25 +10287,25 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                           options={
                             bookingData?.BookingAddOns
                               ? Array.from(
-                                  new Set(
-                                    bookingData.BookingAddOns.filter(
-                                      (addon) =>
-                                        (
-                                          addon.StatusName ??
-                                          addon.statusName ??
-                                          addon.AddOnStatus ??
-                                          addon.addOnStatus
-                                        )
-                                          ?.toString()
-                                          .trim() !== "ServiceCompleted",
-                                    )
-                                      .map((addon) => addon.ServiceName)
-                                      .filter(Boolean),
-                                  ),
-                                ).map((serviceName) => ({
-                                  value: serviceName,
-                                  label: serviceName,
-                                }))
+                                new Set(
+                                  bookingData.BookingAddOns.filter(
+                                    (addon) =>
+                                      (
+                                        addon.StatusName ??
+                                        addon.statusName ??
+                                        addon.AddOnStatus ??
+                                        addon.addOnStatus
+                                      )
+                                        ?.toString()
+                                        .trim() !== "ServiceCompleted",
+                                  )
+                                    .map((addon) => addon.ServiceName)
+                                    .filter(Boolean),
+                                ),
+                              ).map((serviceName) => ({
+                                value: serviceName,
+                                label: serviceName,
+                              }))
                               : []
                           }
                           isMulti
@@ -8951,20 +10334,20 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                   <div className="row g-2 mb-2">
                     <div className="col-12">
                       <label className="form-label small mb-1"> Select Date</label>
-                       <input
-                          type="date"
-                          className="form-control form-control-sm"
-                          min={today}
-                          value={garagePickupDate}
-                          onChange={(e) => {
-                            const selectedDate = e.target.value;
-                            setGaragePickupDate(selectedDate);
-                            // Re-validate time if date changes to today
-                            if (selectedDate === today && isPastTimeForDate(selectedDate, garagePickupTime)) {
-                              setGaragePickupTime(""); 
-                            }
-                          }}
-                        />
+                      <input
+                        type="date"
+                        className="form-control form-control-sm"
+                        min={today}
+                        value={garagePickupDate}
+                        onChange={(e) => {
+                          const selectedDate = e.target.value;
+                          setGaragePickupDate(selectedDate);
+                          // Re-validate time if date changes to today
+                          if (selectedDate === today && isPastTimeForDate(selectedDate, garagePickupTime)) {
+                            setGaragePickupTime("");
+                          }
+                        }}
+                      />
                     </div>
                     {/* <div class="col-6">
                       <label class="form-label small mb-1">Time</label>
@@ -8977,27 +10360,27 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                     </div> */}
                   </div>
                   <div className="col-12">
-                  <label className="form-label small fw-semibold">Select Time</label>
-                     <input
-                        type="time"
-                        className="form-control form-control-sm py-2"
-                        value={garagePickupTime} // This connects the state to the UI
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (isPastTimeForDate(garagePickupDate, val)) {
-                            e.currentTarget?.blur?.();
-                            Swal.fire({
-                              icon: "warning",
-                              title: "Invalid Time",
-                              text: "You cannot select a past time for today.",
-                            });
-                            setGaragePickupTime(""); 
-                            return;
-                          }
-                          setGaragePickupTime(val);
-                        }}
-                      />
-                </div>
+                    <label className="form-label small fw-semibold">Select Time</label>
+                    <input
+                      type="time"
+                      className="form-control form-control-sm py-2"
+                      value={garagePickupTime} // This connects the state to the UI
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (isPastTimeForDate(garagePickupDate, val)) {
+                          e.currentTarget?.blur?.();
+                          Swal.fire({
+                            icon: "warning",
+                            title: "Invalid Time",
+                            text: "You cannot select a past time for today.",
+                          });
+                          setGaragePickupTime("");
+                          return;
+                        }
+                        setGaragePickupTime(val);
+                      }}
+                    />
+                  </div>
                 </div>
                 <div className="modal-footer d-inline-flex align-items-center justify-content-center">
                   <button
@@ -9019,7 +10402,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                     className="btn btn-press-effect btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center"
                     onClick={handleInitialAssignConfirm}
                     disabled={
-                       isInitialAssigning ||
+                      isInitialAssigning ||
                       //   (initialAssignType !== "fieldAdvisor" && !seleInitialTimeSlot) ||
                       (initialAssignType === "technician" &&
                         !selectedInitialTechnician) ||
@@ -9108,60 +10491,9 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                   {/* Step: Car pickup vs Car drop — tap to advance */}
                   {garageStep === "task" && (
                     <>
-                          <div className="d-flex flex-column gap-3">
-                          {/* Logic: Hide Car Pickup if only 1 dealer is assigned AND the car is already at a dealer */}
-                          {!(garageDealerOptions.length === 1 && hasExistingCustomerToDealerRoute) && (
-                            <button
-                              type="button"
-                              className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
-                              style={{
-                                minHeight: "72px",
-                                transition: "all 0.2s ease",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = "translateY(-2px)";
-                                e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = "";
-                                e.currentTarget.style.boxShadow = "";
-                              }}
-                              onClick={() => {
-                                setGarageTask("carPickup");
-                                setGarageStep("route");
-                              }}
-                            >
-                              <div className="d-flex align-items-center gap-3">
-                                <span
-                                  className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
-                                  style={{ width: 48, height: 48 }}
-                                >
-                                  <Icon
-                                    icon="mdi:car-pickup"
-                                    width={24}
-                                    height={24}
-                                    className="text-primary"
-                                  />
-                                </span>
-                                <div>
-                                  <span className="fw-semibold d-block text-dark">
-                                    Car pickup
-                                  </span>
-                                  <span className="small text-muted">
-                                    Pick up vehicle and take to dealer
-                                  </span>
-                                </div>
-                              </div>
-                              <Icon
-                                icon="mdi:chevron-right"
-                                width={20}
-                                height={20}
-                                className="text-secondary opacity-75"
-                              />
-                            </button>
-                          )}
-                        {/* Hide Car drop when CustomerToDealer route does NOT exist */}
-                        {hasExistingCustomerToDealerRoute && (
+                      <div className="d-flex flex-column gap-3">
+                        {/* Logic: Hide Car Pickup if only 1 dealer is assigned AND the car is already at a dealer */}
+                        {!(garageDealerOptions.length === 1 && hasExistingCustomerToDealerRoute) && (
                           <button
                             type="button"
                             className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
@@ -9170,17 +10502,15 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                               transition: "all 0.2s ease",
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.transform =
-                                "translateY(-2px)";
-                              e.currentTarget.style.boxShadow =
-                                "0 6px 20px rgba(0,0,0,0.08)";
+                              e.currentTarget.style.transform = "translateY(-2px)";
+                              e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.transform = "";
                               e.currentTarget.style.boxShadow = "";
                             }}
                             onClick={() => {
-                              setGarageTask("carDrop");
+                              setGarageTask("carPickup");
                               setGarageStep("route");
                             }}
                           >
@@ -9190,7 +10520,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                 style={{ width: 48, height: 48 }}
                               >
                                 <Icon
-                                  icon="mdi:car-side"
+                                  icon="mdi:car-pickup"
                                   width={24}
                                   height={24}
                                   className="text-primary"
@@ -9198,10 +10528,10 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                               </span>
                               <div>
                                 <span className="fw-semibold d-block text-dark">
-                                  Car drop
+                                  Car pickup
                                 </span>
                                 <span className="small text-muted">
-                                  Deliver vehicle back to customer
+                                  Pick up vehicle and take to dealer
                                 </span>
                               </div>
                             </div>
@@ -9213,6 +10543,60 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                             />
                           </button>
                         )}
+                        {/* Hide Car drop when CustomerToDealer route does NOT exist */}
+                        {hasExistingCustomerToDealerRoute &&
+                          allGarageServicesCompletedApproved && (
+                            <button
+                              type="button"
+                              className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
+                              style={{
+                                minHeight: "72px",
+                                transition: "all 0.2s ease",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform =
+                                  "translateY(-2px)";
+                                e.currentTarget.style.boxShadow =
+                                  "0 6px 20px rgba(0,0,0,0.08)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "";
+                                e.currentTarget.style.boxShadow = "";
+                              }}
+                              onClick={() => {
+                                setGarageTask("carDrop");
+                                setGarageStep("route");
+                              }}
+                            >
+                              <div className="d-flex align-items-center gap-3">
+                                <span
+                                  className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
+                                  style={{ width: 48, height: 48 }}
+                                >
+                                  <Icon
+                                    icon="mdi:car-side"
+                                    width={24}
+                                    height={24}
+                                    className="text-primary"
+                                  />
+                                </span>
+                                <div>
+                                  <span className="fw-semibold d-block text-dark">
+                                    Car drop
+                                  </span>
+                                  <span className="small text-muted">
+                                    Deliver vehicle back to customer
+                                  </span>
+                                </div>
+                              </div>
+                              <Icon
+                                icon="mdi:chevron-right"
+                                width={20}
+                                height={20}
+                                className="text-secondary opacity-75"
+                              />
+                            </button>
+                          )}
                       </div>
                     </>
                   )}
@@ -9227,69 +10611,65 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                         {/* Hide Customer to Dealer button if already exists (only when carPickup) */}
                         {(!hasExistingCustomerToDealerRoute ||
                           garageTask === "carDrop") && (
-                          <button
-                            type="button"
-                            className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
-                            style={{
-                              minHeight: "72px",
-                              transition: "all 0.2s ease",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform =
-                                "translateY(-2px)";
-                              e.currentTarget.style.boxShadow =
-                                "0 6px 20px rgba(0,0,0,0.08)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = "";
-                              e.currentTarget.style.boxShadow = "";
-                            }}
-                            onClick={() => {
-                              setGarageRoute("customerToDealer");
-                              setGarageStep("details");
-                            }}
-                          >
-                            <div className="d-flex align-items-center gap-3">
-                              <span
-                                className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
-                                style={{ width: 48, height: 48 }}
-                              >
-                                <Icon
-                                  icon="mdi:account-arrow-right"
-                                  width={24}
-                                  height={24}
-                                  className="text-primary"
-                                />
-                              </span>
-                              <div>
-                                <span className="fw-semibold d-block text-dark">
-                                  {garageTask === "carDrop"
-                                    ? "Dealer to Customer"
-                                    : "Customer to Dealer"}
+                            <button
+                              type="button"
+                              className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
+                              style={{
+                                minHeight: "72px",
+                                transition: "all 0.2s ease",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform =
+                                  "translateY(-2px)";
+                                e.currentTarget.style.boxShadow =
+                                  "0 6px 20px rgba(0,0,0,0.08)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "";
+                                e.currentTarget.style.boxShadow = "";
+                              }}
+                              onClick={() => {
+                                setGarageRoute("customerToDealer");
+                                setGarageStep("details");
+                              }}
+                            >
+                              <div className="d-flex align-items-center gap-3">
+                                <span
+                                  className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
+                                  style={{ width: 48, height: 48 }}
+                                >
+                                  <Icon
+                                    icon="mdi:account-arrow-right"
+                                    width={24}
+                                    height={24}
+                                    className="text-primary"
+                                  />
                                 </span>
-                                <span className="small text-muted">
-                                  {garageTask === "carPickup"
-                                    ? "Pickup from Customer → Deliver to Dealer"
-                                    : "Pickup from Dealer → Deliver to Customer"}
-                                </span>
+                                <div>
+                                  <span className="fw-semibold d-block text-dark">
+                                    {garageTask === "carDrop"
+                                      ? "Dealer to Customer"
+                                      : "Customer to Dealer"}
+                                  </span>
+                                  <span className="small text-muted">
+                                    {garageTask === "carPickup"
+                                      ? "Pickup from Customer → Deliver to Dealer"
+                                      : "Pickup from Dealer → Deliver to Customer"}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                            <Icon
-                              icon="mdi:chevron-right"
-                              width={20}
-                              height={20}
-                              className="text-secondary opacity-75"
-                            />
-                          </button>
-                        )}
+                              <Icon
+                                icon="mdi:chevron-right"
+                                width={20}
+                                height={20}
+                                className="text-secondary opacity-75"
+                              />
+                            </button>
+                          )}
                         {garageTask === "carPickup" &&
                           hasExistingCustomerToDealerRoute &&
-                          bookingData?.BookingAddOns &&
-                          new Set(
-                            bookingData.BookingAddOns.map(
-                              (item) => item.DealerName,
-                            ),
-                          ).size > 1 && (
+                          completedGarageDealerOptions.length > 0 &&
+                          pendingNextGarageDealerOptions.length > 0 && (
                             <button
                               type="button"
                               className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
@@ -9363,15 +10743,24 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                               </span>
                             </div>
                             <div className="mb-0">
-                              <label className="form-label small mb-1">
-                                Deliver To (Dealer)
-                              </label>
-                              <Select
-                                options={garageDealerOptions}
-                                value={garageDeliverDealer}
-                                onChange={setGarageDeliverDealer}
-                                placeholder="Select dealer"
-                              />
+                              {singleGarageDealerOption ? (
+                                renderAssignedDealerField(
+                                  "Deliver To (Dealer)",
+                                  garageDeliverDealer || singleGarageDealerOption,
+                                )
+                              ) : (
+                                <>
+                                  <label className="form-label small mb-1">
+                                    Deliver To (Dealer)
+                                  </label>
+                                  <Select
+                                    options={garageDealerOptions}
+                                    value={garageDeliverDealer}
+                                    onChange={setGarageDeliverDealer}
+                                    placeholder="Select dealer"
+                                  />
+                                </>
+                              )}
                             </div>
                           </div>
                         )}
@@ -9379,20 +10768,29 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                         garageTask === "carDrop" && (
                           <div className="rounded-3 border p-3 mb-3 bg-light">
                             <div className="mb-2">
-                              <label className="form-label small mb-1">
-                                Pickup From (Dealer)
-                              </label>
-                              <Select
-                                options={garageDealerOptions}
-                                value={garagePickupDealer}
-                                isDisabled={true}
-                                onChange={setGaragePickupDealer}
-                                placeholder="Select dealer"
-                              />
+                              {garagePickupDealer ? (
+                                renderAssignedDealerField(
+                                  "Pickup From (Dealer)",
+                                  garagePickupDealer,
+                                )
+                              ) : (
+                                <>
+                                  <label className="form-label small mb-1">
+                                    Pickup From (Dealer)
+                                  </label>
+                                  <Select
+                                    options={garageDealerOptions}
+                                    value={garagePickupDealer}
+                                    isDisabled={true}
+                                    onChange={setGaragePickupDealer}
+                                    placeholder="Select dealer"
+                                  />
+                                </>
+                              )}
                             </div>
                             <div className="mb-0">
                               <span className="small text-muted d-block">
-                                Deliver To 
+                                Deliver To
                               </span>
                               <span className="fw-semibold">
                                 {bookingData?.Address || "Customer location"}
@@ -9403,27 +10801,55 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                       {garageRoute === "dealerToDealer" && (
                         <div className="rounded-3 border p-3 mb-3 bg-light">
                           <div className="mb-3">
-                            <label className="form-label small mb-1">
-                              Pickup From (Dealer)
-                            </label>
-                            <Select
-                              options={garageDealerOptions}
-                              value={garagePickupDealer}
-                              onChange={setGaragePickupDealer}
-                              isDisabled={true}
-                              placeholder="Select pickup dealer"
-                            />
+                            {garagePickupDealer ? (
+                              renderAssignedDealerField(
+                                "Pickup From (Dealer)",
+                                garagePickupDealer,
+                              )
+                            ) : (
+                              <>
+                                <label className="form-label small mb-1">
+                                  Pickup From (Dealer)
+                                </label>
+                                <Select
+                                  options={garageDealerOptions}
+                                  value={garagePickupDealer}
+                                  onChange={setGaragePickupDealer}
+                                  isDisabled={true}
+                                  placeholder="Select pickup dealer"
+                                />
+                              </>
+                            )}
                           </div>
                           <div>
-                            <label className="form-label small mb-1">
-                              Deliver To (Dealer)
-                            </label>
-                            <Select
-                              options={garageDeliverDealerOptions}
-                              value={garageDeliverDealer}
-                              onChange={setGarageDeliverDealer}
-                              placeholder="Select deliver dealer"
-                            />
+                            {pendingNextGarageDealerOptions.length === 1 &&
+                              (garageDeliverDealer ||
+                                pendingNextGarageDealerOptions[0]) ? (
+                              renderAssignedDealerField(
+                                "Deliver To (Dealer)",
+                                garageDeliverDealer ||
+                                pendingNextGarageDealerOptions[0],
+                              )
+                            ) : (
+                              <>
+                                <label className="form-label small mb-1">
+                                  Deliver To (Dealer)
+                                </label>
+                                <Select
+                                  options={pendingNextGarageDealerOptions}
+                                  value={garageDeliverDealer}
+                                  onChange={setGarageDeliverDealer}
+                                  placeholder={
+                                    pendingNextGarageDealerOptions.length > 0
+                                      ? "Select remaining dealer"
+                                      : "No remaining dealers"
+                                  }
+                                  isDisabled={
+                                    pendingNextGarageDealerOptions.length === 0
+                                  }
+                                />
+                              </>
+                            )}
                           </div>
                         </div>
                       )}
@@ -9487,6 +10913,13 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                         type="button"
                         className="btn btn-press-effect btn-outline-secondary btn-sm"
                         onClick={() => {
+                          if (
+                            garageStep === "details" &&
+                            garageOpenedDirectToDetails
+                          ) {
+                            closeGarageFlowModal();
+                            return;
+                          }
                           if (garageStep === "details") setGarageStep("route");
                           else setGarageStep("task");
                         }}
@@ -9518,14 +10951,13 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                             if (garageTask === "carDrop") {
                               const bookingAddOns =
                                 bookingData?.BookingAddOns || [];
-                              const allConfirmed = bookingAddOns.every(
-                                (addon) => addon.IsCompleted_Confirmation === 1,
-                              );
+                              const allConfirmed =
+                                allGarageServicesCompletedApproved;
                               if (!allConfirmed) {
                                 const unconfirmedServices = bookingAddOns
                                   .filter(
                                     (addon) =>
-                                      addon.IsCompleted_Confirmation !== 1,
+                                      !isGarageServiceCompletedApproved(addon),
                                   )
                                   .map((addon) => addon.ServiceName)
                                   .join(", ");
@@ -9550,7 +10982,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                             setIsGarageAssigning(true);
                             const result =
                               await savePickupDeliveryTime(payload);
-                              setIsGarageAssigning(false);
+                            setIsGarageAssigning(false);
                             if (result.ok) {
                               Swal.fire({
                                 icon: "success",
@@ -9606,7 +11038,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                             setIsGarageAssigning(true);
                             const result =
                               await savePickupDeliveryTime(payload);
-                              setIsGarageAssigning(false);
+                            setIsGarageAssigning(false);
                             if (result.ok) {
                               Swal.fire({
                                 icon: "success",
@@ -9683,58 +11115,58 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                         }
                       />
                     </div>
-<div className="col-12">
-  {pickupDropRescheduleRow?.ServiceType === "ServiceAtGarage" ? (
-    <>
-      <label className="form-label small fw-semibold">Time</label>
-      <input
-        type="time"
-        className="form-control form-control-sm py-2"
-        value={pickupDropRescheduleTimeSlot?.[0] || ""}
-        onChange={(e) => {
-          const val = e.target.value;
+                    <div className="col-12">
+                      {pickupDropRescheduleRow?.ServiceType === "ServiceAtGarage" ? (
+                        <>
+                          <label className="form-label small fw-semibold">Time</label>
+                          <input
+                            type="time"
+                            className="form-control form-control-sm py-2"
+                            value={pickupDropRescheduleTimeSlot?.[0] || ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
 
-          if (isPastTimeForDate(pickupDropRescheduleDate, val)) {
-            Swal.fire({
-              icon: "warning",
-              title: "Invalid Time",
-              text: "You cannot select a past time for today.",
-            });
-            setPickupDropRescheduleTimeSlot([]);
-            return;
-          }
+                              if (isPastTimeForDate(pickupDropRescheduleDate, val)) {
+                                Swal.fire({
+                                  icon: "warning",
+                                  title: "Invalid Time",
+                                  text: "You cannot select a past time for today.",
+                                });
+                                setPickupDropRescheduleTimeSlot([]);
+                                return;
+                              }
 
-          setPickupDropRescheduleTimeSlot(val ? [val] : []);
-        }}
-        disabled={!pickupDropRescheduleDate}
-      />
-    </>
-  ) : (
-    <>
-      <label className="form-label small fw-semibold">Select Time </label>
-        <input
-        type="time"
-        className="form-control form-control-sm py-2"
-        value={pickupDropRescheduleTimeSlot?.[0] || ""}
-        onChange={(e) => {
-          const val = e.target.value;
+                              setPickupDropRescheduleTimeSlot(val ? [val] : []);
+                            }}
+                            disabled={!pickupDropRescheduleDate}
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <label className="form-label small fw-semibold">Select Time </label>
+                          <input
+                            type="time"
+                            className="form-control form-control-sm py-2"
+                            value={pickupDropRescheduleTimeSlot?.[0] || ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
 
-          if (isPastTimeForDate(pickupDropRescheduleDate, val)) {
-            e.currentTarget?.blur?.();
-            Swal.fire({
-              icon: "warning",
-              title: "Invalid Time",
-              text: "You cannot select a past time for today.",
-            });
-            setPickupDropRescheduleTimeSlot([]);
-            return;
-          }
+                              if (isPastTimeForDate(pickupDropRescheduleDate, val)) {
+                                e.currentTarget?.blur?.();
+                                Swal.fire({
+                                  icon: "warning",
+                                  title: "Invalid Time",
+                                  text: "You cannot select a past time for today.",
+                                });
+                                setPickupDropRescheduleTimeSlot([]);
+                                return;
+                              }
 
-          setPickupDropRescheduleTimeSlot(val ? [val] : []);
-        }}
-        disabled={!pickupDropRescheduleDate}
-      />
-          {/* <Select
+                              setPickupDropRescheduleTimeSlot(val ? [val] : []);
+                            }}
+                            disabled={!pickupDropRescheduleDate}
+                          />
+                          {/* <Select
             isMulti
             menuPortalTarget={document.body}
             menuPosition="fixed"
@@ -9774,9 +11206,9 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
             placeholder="Select time slot(s)"
             isDisabled={!pickupDropRescheduleDate}
           /> */}
-        </>
-      )}
-    </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="modal-footer border-0 d-flex justify-content-end gap-2">
@@ -9885,70 +11317,70 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                         }
                       />
                     </div>
-                   <div className="col-12">
-  {pickupDropReassignRow?.ServiceType === "ServiceAtGarage" ? (
-    // SHOW TIME PICKER FOR GARAGE WITH VALIDATION
-    <>
-      <label className="form-label small fw-semibold">Time</label>
-      <input
-        type="time"
-        className="form-control form-control-sm py-2"
-        value={pickupDropReassignTimeSlot?.[0] || ""}
-        onChange={(e) => {
-          const val = e.target.value;
+                    <div className="col-12">
+                      {pickupDropReassignRow?.ServiceType === "ServiceAtGarage" ? (
+                        // SHOW TIME PICKER FOR GARAGE WITH VALIDATION
+                        <>
+                          <label className="form-label small fw-semibold">Time</label>
+                          <input
+                            type="time"
+                            className="form-control form-control-sm py-2"
+                            value={pickupDropReassignTimeSlot?.[0] || ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
 
-          // VALIDATION LOGIC
-          if (isPastTimeForDate(pickupDropReassignDate, val)) {
-            // Force blur to close the native time picker popup
-            e.currentTarget?.blur?.();
-            setTimeout(() => e.currentTarget?.blur?.(), 0);
-            document.activeElement?.blur?.();
+                              // VALIDATION LOGIC
+                              if (isPastTimeForDate(pickupDropReassignDate, val)) {
+                                // Force blur to close the native time picker popup
+                                e.currentTarget?.blur?.();
+                                setTimeout(() => e.currentTarget?.blur?.(), 0);
+                                document.activeElement?.blur?.();
 
-            Swal.fire({
-              icon: "warning",
-              title: "Invalid Time",
-              text: "You cannot select a past time for today.",
-            });
+                                Swal.fire({
+                                  icon: "warning",
+                                  title: "Invalid Time",
+                                  text: "You cannot select a past time for today.",
+                                });
 
-            setPickupDropReassignTimeSlot([]); // Clear selection
-            return;
-          }
+                                setPickupDropReassignTimeSlot([]); // Clear selection
+                                return;
+                              }
 
-          setPickupDropReassignTimeSlot(val ? [val] : []);
-        }}
-        disabled={!pickupDropReassignDate}
-      />
-    </>
-  ) : (
-    // SHOW MULTI-SELECT FOR HOME SERVICE (Existing Logic)
-    <>
-      <label className="form-label small fw-semibold">Time Slot</label>
-    
-       <input
-    type="time"
-    className="form-control form-control-sm py-2"
-    value={pickupDropReassignTimeSlot?.[0] || ""}
-    onChange={(e) => {
-      const val = e.target.value;
+                              setPickupDropReassignTimeSlot(val ? [val] : []);
+                            }}
+                            disabled={!pickupDropReassignDate}
+                          />
+                        </>
+                      ) : (
+                        // SHOW MULTI-SELECT FOR HOME SERVICE (Existing Logic)
+                        <>
+                          <label className="form-label small fw-semibold">Time Slot</label>
 
-      if (isPastTimeForDate(pickupDropReassignDate, val)) {
-        e.currentTarget?.blur?.();
-        Swal.fire({
-          icon: "warning",
-          title: "Invalid Time",
-          text: "You cannot select a past time for today.",
-        });
-        setPickupDropReassignTimeSlot([]);
-        return;
-      }
+                          <input
+                            type="time"
+                            className="form-control form-control-sm py-2"
+                            value={pickupDropReassignTimeSlot?.[0] || ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
 
-      setPickupDropReassignTimeSlot(val ? [val] : []);
-    }}
-    disabled={!pickupDropReassignDate}
-  />
-    </>
-  )}
-</div>
+                              if (isPastTimeForDate(pickupDropReassignDate, val)) {
+                                e.currentTarget?.blur?.();
+                                Swal.fire({
+                                  icon: "warning",
+                                  title: "Invalid Time",
+                                  text: "You cannot select a past time for today.",
+                                });
+                                setPickupDropReassignTimeSlot([]);
+                                return;
+                              }
+
+                              setPickupDropReassignTimeSlot(val ? [val] : []);
+                            }}
+                            disabled={!pickupDropReassignDate}
+                          />
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="modal-footer border-0 d-flex justify-content-end gap-2">
@@ -10245,14 +11677,14 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                       rejectedServiceIds.length === 0
                     }
                   >
-                     {isRejectingCustomer ? ( 
-                        <>
-                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                          Rejecting...
-                        </>
-                      ) : (
-                        "Reject Services"
-                      )}
+                    {isRejectingCustomer ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Rejecting...
+                      </>
+                    ) : (
+                      "Reject Services"
+                    )}
                   </button>
                 </div>
               </div>
