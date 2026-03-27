@@ -8901,28 +8901,27 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                           //     }))
                           //     : []
                           // }
-                          options={
+                           options={
                             bookingData?.BookingAddOns
-                              ? Array.from(
-                                  new Set(
-                                    bookingData.BookingAddOns.filter(
-                                      (addon) =>
-                                        (
-                                          addon.StatusName ??
-                                          addon.statusName ??
-                                          addon.AddOnStatus ??
-                                          addon.addOnStatus
-                                        )
-                                          ?.toString()
-                                          .trim() !== "ServiceCompleted",
+                              ? bookingData.BookingAddOns
+                                  .filter((addon) => {
+                                    // Filter out completed services and items without a name
+                                    const status = (
+                                      addon.StatusName ??
+                                      addon.statusName ??
+                                      addon.AddOnStatus ??
+                                      addon.addOnStatus
                                     )
-                                      .map((addon) => addon.ServiceName)
-                                      .filter(Boolean),
-                                  ),
-                                ).map((serviceName) => ({
-                                  value: serviceName,
-                                  label: serviceName,
-                                }))
+                                      ?.toString()
+                                      .trim();
+                                    return status !== "ServiceCompleted" && addon.ServiceName;
+                                  })
+                                  .map((addon) => ({
+                                    value: addon.ServiceName, 
+                                  
+                                    label: `${addon.ServiceName} (${addon.DealerName || "No Dealer"})`,
+                                  }))
+                                  // .filter((v, i, a) => a.findIndex(t => t.label === v.label) === i)
                               : []
                           }
                           isMulti
