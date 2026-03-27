@@ -1135,6 +1135,38 @@ const MasterLayout = ({ children }) => {
                   )}
                 </button>
                 <button
+                  onClick={() => navigate(-1)}
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "8px",
+                    border: "none",
+                    backgroundColor: "transparent",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "#f1f5f9";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
+                  onMouseDown={(e) => {
+                    e.currentTarget.style.transform = "scale(0.9)";
+                  }}
+                  onMouseUp={(e) => {
+                    e.currentTarget.style.transform = "scale(1)";
+                  }}
+                >
+                  <Icon
+                    icon="iconoir:arrow-left"
+                    className="icon text-2xl non-active"
+                  />
+                </button>
+                <button
                   onClick={mobileMenuControl}
                   type="button"
                   className="sidebar-mobile-toggle"
