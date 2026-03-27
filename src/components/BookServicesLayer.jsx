@@ -2834,21 +2834,23 @@ const BookServicesLayer = () => {
           isAdmin;
 
         const isServiceCompleted = row.addOnStatus === "ServiceCompleted";
+        const isInspection = row.type?.toLowerCase() === "inspection";
 
         if (row.isInclude || isServiceCompleted) return null;
 
         return (
           <div className="d-flex gap-2">
-            {/* ❌ Discard */}
-            {(row.isDealer_Confirm === "Approved" || isConfirmed) && (
-              <button
-                className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                onClick={() => handleDiscardItem(row.addedItemsIndex)}
-                title="Discard"
-              >
-                <Icon icon="mdi:close-circle-outline" />
-              </button>
-            )}
+            {/* ❌ Discard (hide if inspection) */}
+            {!isInspection &&
+              (row.isDealer_Confirm === "Approved" || isConfirmed) && (
+                <button
+                  className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                  onClick={() => handleDiscardItem(row.addedItemsIndex)}
+                  title="Discard"
+                >
+                  <Icon icon="mdi:close-circle-outline" />
+                </button>
+              )}
 
             {/* 🗑️ Remove */}
             {row.isDealer_Confirm !== "Approved" &&
@@ -3399,7 +3401,7 @@ const BookServicesLayer = () => {
                     columns={columns}
                     data={flattenedRows}
                     fixedHeader
-                    fixedHeaderScrollHeight="420px"
+                    fixedHeaderScrollHeight="550px"
                     // pagination
                     highlightOnHover
                     responsive
