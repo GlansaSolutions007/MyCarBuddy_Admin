@@ -10286,32 +10286,40 @@ const BookingViewLayer = () => {
                           // }
                           options={
                             bookingData?.BookingAddOns
-                              ? Array.from(
-                                new Set(
-                                  bookingData.BookingAddOns.filter(
-                                    (addon) =>
-                                      (
-                                        addon.StatusName ??
-                                        addon.statusName ??
-                                        addon.AddOnStatus ??
-                                        addon.addOnStatus
-                                      )
-                                        ?.toString()
-                                        .trim() !== "ServiceCompleted",
-                                  )
-                                    .map((addon) => addon.ServiceName)
-                                    .filter(Boolean),
+                              ? bookingData.BookingAddOns
+                              .filter((addon) => {
+                                // Filter out completed services and items without a name
+                                const status = (
+                                  addon.StatusName ??
+                                  addon.statusName ??
+                                  addon.AddOnStatus ??
+                                  addon.addOnStatus
+                                )
+                                  ?.toString()
+                                  .trim();
+                                return status !== "ServiceCompleted" && addon.ServiceName;
+                              })
+                              .map((addon) => ({
+                                // The 'value' stays as the ServiceName (what the API expects)
+                                value: addon.ServiceName, 
+                                // The 'label' is what the user sees in the dropdown
+                                label: (
+                                  <>
+                                    {addon.ServiceName} (
+                                    <b>
+                                      {addon.DealerName || "No Dealer"}
+                                    </b>
+                                    )
+                                  </>
                                 ),
-                              ).map((serviceName) => ({
-                                value: serviceName,
-                                label: serviceName,
                               }))
-                              : []
+                        
+                          : []
                           }
                           isMulti
                           value={selectedServiceType}
                           onChange={(val) => setSelectedServiceType(val || [])}
-                          placeholder="Select Service Type(s)"
+                          placeholder="Select Service"
                         />
                       </div>
                     </>
