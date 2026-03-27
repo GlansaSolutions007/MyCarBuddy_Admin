@@ -18,6 +18,26 @@ const DealerBookingsView = () => {
   const [rowsWithAmountEntered, setRowsWithAmountEntered] = useState(() => new Set());
   const dealer = localStorage.getItem("role") || "Dealer";
   const [loadingIndex, setLoadingIndex] = useState(null);
+  const [bookingServiceType, setBookingServiceType] = useState("");
+
+  const normalizeServiceTypeValue = (value) =>
+    value?.toString().trim().toLowerCase().replace(/\s+/g, "") || "";
+
+  const isDoorstepServiceType = (value) => {
+    const normalized = normalizeServiceTypeValue(value);
+    return (
+      normalized === "serviceathome" ||
+      normalized === "serviceatdoorstep" ||
+      normalized === "doorstep" ||
+      normalized.includes("doorstep")
+    );
+  };
+
+  const getServiceLocationType = (item) =>
+    item?.serviceLocationType ||
+    item?.bookingServiceType ||
+    bookingServiceType ||
+    "";
 
   const getItemFingerprint = (item) =>
     JSON.stringify({
@@ -66,6 +86,7 @@ const DealerBookingsView = () => {
     } else {
       setAddedItems([]);
       setInitialItemsSnapshot({});
+      setBookingServiceType("");
     }
     setRowsWithAmountEntered(new Set());
   }, [leadId, userId]);
@@ -87,6 +108,15 @@ const DealerBookingsView = () => {
 
   const handleServiceCompleted = async (index) => {
     const item = addedItems[index];
+    const serviceLocationType = getServiceLocationType(item);
+
+    if (isDoorstepServiceType(serviceLocationType)) {
+      return Swal.fire(
+        "Technician Update Required",
+        "For doorstep services, only the technician can mark the service as completed from the mobile application.",
+        "info"
+      );
+    }
 
     if (!item?._apiId) {
       return Swal.fire("Error", "AddOn ID not found", "error");
@@ -174,6 +204,11 @@ const DealerBookingsView = () => {
         { headers: token ? { Authorization: `Bearer ${token}` } : {} },
       );
       const data = response.data || {};
+      setBookingServiceType(
+        data.ServiceType ||
+        data.serviceType ||
+        ""
+      );
 
       // const apiItems = [
       //   ...(data.notConfirmed || []),
@@ -235,6 +270,13 @@ const DealerBookingsView = () => {
                 ? (Number(item.dealerSparePrice) === 0 ? "" : Number(item.dealerSparePrice))
                 : "",
             isDealer_Confirm: item.isDealer_Confirm || "Pending",
+            serviceLocationType:
+              item.ServiceType ||
+              item.serviceLocationType ||
+              item.bookingServiceType ||
+              data.ServiceType ||
+              data.serviceType ||
+              "",
             includeId: item.serviceType === "Service" ? item.serviceId : null,
             packageId: item.serviceType === "Package" ? item.serviceId : null,
             isEditing: false,
@@ -294,6 +336,7 @@ const DealerBookingsView = () => {
       // Case 2: no data found (fresh new booking)
       setAddedItems([]);
       setInitialItemsSnapshot({});
+      setBookingServiceType("");
     } catch (err) {
       console.error("Failed to fetch booking data:", err);
     }
@@ -1097,6 +1140,7 @@ const DealerBookingsView = () => {
       cell: (row) => {
         const isApproved = row.isDealer_Confirm?.toString().trim().toLowerCase() === "approved";
         const isCompleted = row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted";
+        const isDoorstepService = isDoorstepServiceType(getServiceLocationType(row));
 
         return !row.isInclude ? (
           <div className="d-flex gap-2 align-items-center">
@@ -1108,8 +1152,31 @@ const DealerBookingsView = () => {
               </span>
             )}
 
+            {isApproved && !isCompleted && isDoorstepService && (
+              <span
+                title="Doorstep services are completed by the technician in the mobile application"
+                style={{
+                  minHeight: "32px",
+                  backgroundColor: "#e0f2fe",
+                  color: "#075985",
+                  border: "1px solid #7dd3fc",
+                  borderRadius: "6px",
+                  padding: "6px 10px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  lineHeight: 1.3,
+                  textAlign: "center",
+                }}
+              >
+                Technician updates completion
+              </span>
+            )}
+
             {/* Show Complete Button */}
-            {isApproved && !isCompleted && (
+            {isApproved && !isCompleted && !isDoorstepService && (
               <button
                 onClick={() => handleServiceCompleted(row.addedItemsIndex)}
                 title="Mark as Completed"
@@ -1328,6 +1395,22 @@ const DealerBookingsView = () => {
             {/* SINGLE TABLE FOR BOTH */}
             <div className="editable-table">
               <h6>Services Spare Parts & Packages</h6>
+              {isDoorstepServiceType(bookingServiceType) && (
+                <div
+                  className="mb-3"
+                  style={{
+                    background: "linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)",
+                    border: "1px solid #bfdbfe",
+                    borderRadius: "12px",
+                    padding: "12px 14px",
+                    color: "#1e3a8a",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                  }}
+                >
+                  Doorstep service booking: dealer can review and approve pricing here, but service completion must be updated by the assigned technician from the mobile application.
+                </div>
+              )}
               <DataTable
                 columns={columns}
                 data={flattenedRows}

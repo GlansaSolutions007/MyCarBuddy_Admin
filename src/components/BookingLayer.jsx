@@ -532,30 +532,31 @@ const BookingLayer = () => {
             <span>
               <span
                 className="fw-semibold"
-                style={{ color: "#F7AE21" }}
+                style={{ color: "#de4d14", fontSize: "12px" }}
               >
-                Not Conf. -{"\u00A0"}
+                Not Confirmed -{"\u00A0"}
               </span>
               <span
                 className="fw-bold"
-                style={{ color: "#F7AE21" }}
+                style={{ color: "#de4d14", fontSize: "12px" }}
               >
-                {notConfirmed}
+                ₹{notConfirmed}
               </span>
             </span>
+            <hr></hr>
 
             <span>
               <span
                 className="fw-semibold"
-                style={{ color: "#28A745" }}
+                style={{ color: "#106c6e", fontSize: "12px" }}
               >
-                Conf. -{"\u00A0"}
+                Confirmed -{"\u00A0"}
               </span>
               <span
                 className="fw-bold"
-                style={{ color: "#28A745" }}
+                style={{ color: "#106c6e", fontSize: "12px" }}
               >
-                {confirmed}
+                ₹{confirmed}
               </span>
             </span>
           </div>

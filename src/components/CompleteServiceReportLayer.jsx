@@ -116,7 +116,7 @@ function CompleteServiceReportView({ data, onBack }) {
         id: 'booking-created',
         title: 'Booking Created',
         icon: 'mdi:calendar-plus',
-        date: data.BookingDate,
+        date: data.CreatedDate,
         status: 'completed',
         details: `Booking ID: ${data.BookingID}`
       },
@@ -236,7 +236,7 @@ function CompleteServiceReportView({ data, onBack }) {
         id: 'booking-done',
         title: 'Booking Completed',
         icon: 'mdi:check-circle',
-        date: data.BookingStatusUpdatedDate,
+        date: data.BookingCompletedDate,
         status: data.BookingStatus === 'Completed' ? 'completed' : 'pending',
         details: data.BookingStatus
       }
