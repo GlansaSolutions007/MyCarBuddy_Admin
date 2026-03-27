@@ -5003,7 +5003,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                           <th style={{ width: "100px" }}>
                                             Type
                                           </th>
-                                          <th style={{ width: "180px" }}>
+                                          <th style={{ width: "200px" }}>
                                             Service Name
                                           </th>
                                           <th style={{ width: "100px" }}>
@@ -5176,12 +5176,16 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
 
                                               <td className="normal">
                                                 {addon.CreatedDate
-                                                  ? new Date(
-                                                      addon.CreatedDate,
-                                                    ).toLocaleDateString(
-                                                      "en-IN",
-                                                    )
-                                                  : "—"}
+                                                ? new Date(addon.CreatedDate).toLocaleString("en-IN", {
+                                                    day: "2-digit",
+                                                    month: "2-digit",
+                                                    year: "numeric",
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                    // second: "2-digit",
+                                                    hour12: true, // change to false if you want 24-hour format
+                                                  })
+                                                : "—"}
                                               </td>
                                               <td className="text-end">
                                                 {Number(
@@ -5465,7 +5469,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                           <th style={{ width: "100px" }}>
                                             Type
                                           </th>
-                                          <th style={{ width: "180px" }}>
+                                          <th style={{ width: "200px" }}>
                                             Service Name
                                           </th>
                                           <th style={{ width: "100px" }}>
@@ -5651,13 +5655,17 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                                 </td>
 
                                                 <td className="normal">
-                                                  {supervisorBooking.CreatedDate
-                                                    ? new Date(
-                                                        supervisorBooking.CreatedDate,
-                                                      ).toLocaleDateString(
-                                                        "en-IN",
-                                                      )
-                                                    : "—"}
+                                                    {supervisorBooking.CreatedDate
+                                                      ? new Date(supervisorBooking.CreatedDate).toLocaleString("en-IN", {
+                                                          day: "2-digit",
+                                                          month: "2-digit",
+                                                          year: "numeric",
+                                                          hour: "2-digit",
+                                                          minute: "2-digit",
+                                                          // second: "2-digit",
+                                                          hour12: true,
+                                                        })
+                                                      : "—"}
                                                 </td>
                                                 <td className="text-end">
                                                   {Number(
@@ -5862,7 +5870,7 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
                                           <th style={{ width: "100px" }}>
                                             Type
                                           </th>
-                                          <th style={{ width: "180px" }}>
+                                          <th style={{ width: "200px" }}>
                                             Service Name
                                           </th>
                                           <th style={{ width: "100px" }}>
@@ -6051,12 +6059,16 @@ const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
 
                                                 <td className="normal">
                                                   {CustomerRejectedBookings.CreatedDate
-                                                    ? new Date(
-                                                        CustomerRejectedBookings.CreatedDate,
-                                                      ).toLocaleDateString(
-                                                        "en-IN",
-                                                      )
-                                                    : "—"}
+                                                  ? new Date(CustomerRejectedBookings.CreatedDate).toLocaleString("en-IN", {
+                                                      day: "2-digit",
+                                                      month: "2-digit",
+                                                      year: "numeric",
+                                                      hour: "2-digit",
+                                                      minute: "2-digit",
+                                                      // second: "2-digit",
+                                                      hour12: true,
+                                                    })
+                                                  : "—"}
                                                 </td>
                                                 <td className="text-end">
                                                   {Number(
