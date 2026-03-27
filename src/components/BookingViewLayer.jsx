@@ -10306,11 +10306,40 @@ const BookingViewLayer = () => {
                                   }))
                                   // .filter((v, i, a) => a.findIndex(t => t.label === v.label) === i)
                               : []
+                              ? bookingData.BookingAddOns
+                              .filter((addon) => {
+                                // Filter out completed services and items without a name
+                                const status = (
+                                  addon.StatusName ??
+                                  addon.statusName ??
+                                  addon.AddOnStatus ??
+                                  addon.addOnStatus
+                                )
+                                  ?.toString()
+                                  .trim();
+                                return status !== "ServiceCompleted" && addon.ServiceName;
+                              })
+                              .map((addon) => ({
+                                // The 'value' stays as the ServiceName (what the API expects)
+                                value: addon.ServiceName, 
+                                // The 'label' is what the user sees in the dropdown
+                                label: (
+                                  <>
+                                    {addon.ServiceName} (
+                                    <b>
+                                      {addon.DealerName || "No Dealer"}
+                                    </b>
+                                    )
+                                  </>
+                                ),
+                              }))
+                        
+                          : []
                           }
                           isMulti
                           value={selectedServiceType}
                           onChange={(val) => setSelectedServiceType(val || [])}
-                          placeholder="Select Service Type(s)"
+                          placeholder="Select Service"
                         />
                       </div>
                     </>
