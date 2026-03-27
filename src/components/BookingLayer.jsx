@@ -540,7 +540,7 @@ const BookingLayer = () => {
                 className="fw-bold"
                 style={{ color: "#F7AE21" }}
               >
-                {notConfirmed}
+                ₹{notConfirmed}
               </span>
             </span>
 
@@ -555,7 +555,7 @@ const BookingLayer = () => {
                 className="fw-bold"
                 style={{ color: "#28A745" }}
               >
-                {confirmed}
+                ₹{confirmed}
               </span>
             </span>
           </div>
