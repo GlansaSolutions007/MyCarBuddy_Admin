@@ -518,51 +518,68 @@ const BookingLayer = () => {
     {
       name: "Booking Amount",
       selector: (row) => {
-        const notConfirmed = (row.TotalCustNotConfirmedPrice || 0).toFixed(2);
+        const notConfirmedValue = row.TotalCustNotConfirmedPrice || 0;
 
-        const confirmed = (
+        const confirmedValue =
           (row.TotalPrice || 0) +
           (row.GSTAmount || 0) +
           (row.LabourCharges || 0) -
-          (row.CouponAmount || 0)
-        ).toFixed(2);
+          (row.CouponAmount || 0);
+
+        const notConfirmed = notConfirmedValue.toFixed(2);
+        const confirmed = confirmedValue.toFixed(2);
+
+        // ✅ If both are 0 → show fallback
+        if (notConfirmedValue === 0 && confirmedValue === 0) {
+          return <span className="fw-semibold" style={{fontSize: "12px" }}>Amount Not Added</span>;
+        }
 
         return (
           <div className="d-flex flex-column" style={{ lineHeight: "1.3" }}>
-            <span>
-              <span
-                className="fw-semibold"
-                style={{ color: "#de4d14", fontSize: "12px" }}
-              >
-                Not Confirmed -{"\u00A0"}
+            
+            {/* Not Confirmed */}
+            {notConfirmedValue > 0 && (
+              <span>
+                <span
+                  className="fw-semibold"
+                  style={{ color: "#de4d14", fontSize: "12px" }}
+                >
+                  Not Confirmed -{"\u00A0"}
+                </span>
+                <span
+                  className="fw-bold"
+                  style={{ color: "#de4d14", fontSize: "12px" }}
+                >
+                  ₹{notConfirmed}
+                </span>
               </span>
-              <span
-                className="fw-bold"
-                style={{ color: "#de4d14", fontSize: "12px" }}
-              >
-                ₹{notConfirmed}
-              </span>
-            </span>
-            <hr></hr>
+            )}
 
-            <span>
-              <span
-                className="fw-semibold"
-                style={{ color: "#106c6e", fontSize: "12px" }}
-              >
-                Confirmed -{"\u00A0"}
+            {/* Divider (only if both exist) */}
+            {notConfirmedValue > 0 && confirmedValue > 0 && <hr />}
+
+            {/* Confirmed */}
+            {confirmedValue > 0 && (
+              <span>
+                <span
+                  className="fw-semibold"
+                  style={{ color: "#106c6e", fontSize: "12px" }}
+                >
+                  Confirmed -{"\u00A0"}
+                </span>
+                <span
+                  className="fw-bold"
+                  style={{ color: "#106c6e", fontSize: "12px" }}
+                >
+                  ₹{confirmed}
+                </span>
               </span>
-              <span
-                className="fw-bold"
-                style={{ color: "#106c6e", fontSize: "12px" }}
-              >
-                ₹{confirmed}
-              </span>
-            </span>
+            )}
+
           </div>
         );
       },
-      width: "170px",
+      width: "185px",
       sortable: true,
     },
     {
