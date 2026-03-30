@@ -70,6 +70,7 @@ const BookServicesLayer = () => {
   const [bookingMode, setBookingMode] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmittingInspection, setIsSubmittingInspection] = useState(false);
+  const [expandedIncludes, setExpandedIncludes] = useState(new Set());
   // null | "service" | "inspection"
 
   const inspectionOnly = useMemo(() => {
@@ -2015,18 +2016,68 @@ const BookServicesLayer = () => {
       width: "120px",
       fixed: true,
     },
-    {
+{
       name: "Name",
-      cell: (row) =>
-        row.isInclude ? (
-          <div style={{ paddingLeft: 1, color: "#444" }}>{row.includeName}</div>
-        ) : (
-          <div>{row.name}</div>
-        ),
+      cell: (row) => {
+        if (row.isInclude) return null;
+        
+        const hasIncludes = (row.type === "Package" && Array.isArray(row.includes) && row.includes.length > 0) ||
+                           (row.type === "Service Group" && Array.isArray(row.serviceGroupServices) && row.serviceGroupServices.length > 1);
+        
+        if (!hasIncludes) {
+          return <div>{row.name}</div>;
+        }
+        
+        let includeNames = [];
+        if (row.type === "Package") {
+          includeNames = row.includes
+            .map(id => includesList.find(inc => inc.IncludeID.toString() === id.toString())?.IncludeName || String(id))
+            .filter(Boolean);
+        } else if (row.type === "Service Group") {
+          includeNames = row.serviceGroupServices.slice(1).map(s => s.name).filter(Boolean);
+        }
+        
+        const isExpanded = expandedIncludes.has(row.__id);
+        const toggleIncludes = () => {
+          setExpandedIncludes(prev => {
+            const next = new Set(prev);
+            if (next.has(row.__id)) {
+              next.delete(row.__id);
+            } else {
+              next.add(row.__id);
+            }
+            return next;
+          });
+        };
+        
+        return (
+          <div>
+            <div className="fw-semibold mb-1">{row.name}</div>
+            <small 
+              className="text-muted d-block mb-2 cursor-pointer user-select-none"
+              style={{ fontSize: '0.8em', cursor: 'pointer' }}
+              onClick={toggleIncludes}
+              title={isExpanded ? 'Click to collapse' : 'Click to expand'}
+            >
+              includes: <span className="fw-medium">{includeNames.length}</span> 
+              {isExpanded ? ' ▲' : ' ▼'}
+            </small>
+            {isExpanded && (
+              <ul className="list-unstyled mb-0 ms-3 animate__animated animate__fadeIn" style={{fontSize: '0.8em'}}>
+                {includeNames.map((name, idx) => (
+                  <li key={idx} className="text-muted mb-1" style={{listStyleType: 'disc'}}>
+                    {name}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        );
+      },
       sortable: true,
       wrap: true,
       fixed: true,
-      width: "180px",
+      width: "280px", // Increased width for lists
     },
     {
       name: "Part Price",
@@ -2898,41 +2949,40 @@ const BookServicesLayer = () => {
       isInclude: false,
       addedItemsIndex: idx,
     });
+//  // Includes as separate rows (only for packages)
+//     if (item.type === "Package" && Array.isArray(item.includes)) {
+//       item.includes.forEach((incId, iIdx) => {
+//         // Match by string because one might be number, other string
+//         const incName =
+//           includesList.find(
+//             (inc) => inc.IncludeID.toString() === incId.toString(),
+//           )?.IncludeName || incId;
+//         flattenedRows.push({
+//           __id: `item-${idx}-inc-${iIdx}`,
+//           isInclude: true,
+//           includeName: incName,
+//           parentIndex: idx,
+//         });
+//       });
+//     }
 
-    // Includes as separate rows (only for packages)
-    if (item.type === "Package" && Array.isArray(item.includes)) {
-      item.includes.forEach((incId, iIdx) => {
-        // Match by string because one might be number, other string
-        const incName =
-          includesList.find(
-            (inc) => inc.IncludeID.toString() === incId.toString(),
-          )?.IncludeName || incId;
-        flattenedRows.push({
-          __id: `item-${idx}-inc-${iIdx}`,
-          isInclude: true,
-          includeName: incName,
-          parentIndex: idx,
-        });
-      });
-    }
-
-    // Service group includes as separate rows (remaining services after the first one)
-    if (
-      item.type === "Service Group" &&
-      Array.isArray(item.serviceGroupServices) &&
-      item.serviceGroupServices.length > 1
-    ) {
-      // Skip the first service (it's the main service), show the rest
-      item.serviceGroupServices.slice(1).forEach((service, sIdx) => {
-        flattenedRows.push({
-          __id: `item-${idx}-service-${sIdx}`,
-          isInclude: true,
-          includeName: service.name || `Service ${service.id}`,
-          parentIndex: idx,
-        });
-      });
-    }
-  });
+//     // Service group includes as separate rows (remaining services after the first one)
+//     if (
+//       item.type === "Service Group" &&
+//       Array.isArray(item.serviceGroupServices) &&
+//       item.serviceGroupServices.length > 1
+//     ) {
+//       // Skip the first service (it's the main service), show the rest
+//       item.serviceGroupServices.slice(1).forEach((service, sIdx) => {
+//         flattenedRows.push({
+//           __id: `item-${idx}-service-${sIdx}`,
+//           isInclude: true,
+//           includeName: service.name || `Service ${service.id}`,
+//           parentIndex: idx,
+//         });
+//       });
+//     }
+});
   const isScheduleAlreadySet =
     !!bookingData?.bookingDate && !!bookingData?.timeSlot;
   return (
