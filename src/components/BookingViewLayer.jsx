@@ -3161,7 +3161,7 @@ const BookingViewLayer = () => {
       Swal.fire({
         icon: "warning",
         title: "Dealer Selection Required",
-        html: `Please select dealers for all services before rejection.<br/><br/><strong>Dealer selection missing for below services:</strong><br/><br/>${names.join("<br/>")}`,
+        html: `<strong>Dealer selection missing for below services:</strong><br/><br/>${names.join("<br/>")}`,
       });
       return;
     }
@@ -4132,13 +4132,15 @@ const BookingViewLayer = () => {
   // -------------------------------------
 
   const liveComparisonServices = [
-    ...(bookingData?.BookingAddOns || []).map((item) => ({
+    ...(bookingData?.BookingAddOns || []).map((item, index) => ({
       ...item,
       __pricingStage: "Customer Confirmed",
+      __pricingOrder: index,
     })),
-    ...(bookingData?.SupervisorBookings || []).map((item) => ({
+    ...(bookingData?.SupervisorBookings || []).map((item, index) => ({
       ...item,
       __pricingStage: "Awaiting Customer",
+      __pricingOrder: (bookingData?.BookingAddOns?.length || 0) + index,
     })),
   ]
     .map((item, index) => {
@@ -4191,13 +4193,10 @@ const BookingViewLayer = () => {
         priceSpread,
         spreadWithoutMargin: Number((priceSpread - marginAmount).toFixed(2)),
         updatedAt: item.UpdatedDate || item.CreatedDate || item.BookingDate,
+        sourceOrder:
+          item.__pricingOrder !== undefined ? item.__pricingOrder : index,
       };
-    })
-    .sort(
-      (a, b) =>
-        Math.abs(b.priceSpread) - Math.abs(a.priceSpread) ||
-        getDateValue(b.updatedAt) - getDateValue(a.updatedAt),
-    );
+    });
 
   const pricingTotals = liveComparisonServices.reduce(
     (acc, item) => {
