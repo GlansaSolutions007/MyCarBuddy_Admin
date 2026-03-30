@@ -1086,7 +1086,7 @@ const BookServicesLayer = () => {
       dealerSparePrice: "0.00",
       dealerServicePrice: "0.00",
     };
-    setAddedItems((prev) => [...prev, updatedItem]);
+    setAddedItems((prev) => [updatedItem, ...prev]);
     resetForm();
   };
 
