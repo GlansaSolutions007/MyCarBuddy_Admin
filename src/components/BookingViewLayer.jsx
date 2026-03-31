@@ -305,7 +305,7 @@ const BookingViewLayer = () => {
     bookingData?.BookingStatus === "Completed" &&
     bookingData?.Payments?.length > 0 &&
     bookingData?.Payments?.[bookingData.Payments.length - 1]?.PaymentStatus ===
-    "Success";
+      "Success";
   // State for dynamically adding services
   const [servicesToAdd, setServicesToAdd] = useState([
     {
@@ -951,7 +951,8 @@ const BookingViewLayer = () => {
           title: "Success",
           text:
             res.data.message ||
-            `${assignType === "technician" ? "Technician" : "Supervisor"
+            `${
+              assignType === "technician" ? "Technician" : "Supervisor"
             } assigned successfully`,
         });
 
@@ -967,7 +968,8 @@ const BookingViewLayer = () => {
           title: "Error",
           text:
             res.data.message ||
-            `${assignType === "technician" ? "Technician" : "Supervisor"
+            `${
+              assignType === "technician" ? "Technician" : "Supervisor"
             } assignment failed.`,
         });
       }
@@ -2342,9 +2344,9 @@ const BookingViewLayer = () => {
   // Calculate Add Service total dynamically
   const addServiceTotal = bookingData?.BookingAddOns
     ? bookingData.BookingAddOns.reduce(
-      (sum, item) => sum + (item.TotalPrice || 0),
-      0,
-    )
+        (sum, item) => sum + (item.TotalPrice || 0),
+        0,
+      )
     : 0;
 
   const handleAddLocalService = async () => {
@@ -2621,18 +2623,16 @@ const BookingViewLayer = () => {
     ].filter((item) => {
       const total = Number(
         item.TotalPrice ??
-        Number(item.Price || 0) +
-        Number(item.GSTAmount || 0) +
-        Number(item.LabourCharges || 0) -
-        Number(item.CouponAmount || 0),
+          Number(item.Price || 0) +
+            Number(item.GSTAmount || 0) +
+            Number(item.LabourCharges || 0) -
+            Number(item.CouponAmount || 0),
       );
 
       return total === 0;
     });
 
-
-
-    console.log(zeroAmountServices, "zeroAmountServices")
+    console.log(zeroAmountServices, "zeroAmountServices");
     if (zeroAmountServices.length > 0) {
       const serviceNames = zeroAmountServices
         .map((s) => s.ServiceName || s.Name || "Unnamed Service")
@@ -2660,10 +2660,10 @@ const BookingViewLayer = () => {
     ].filter((item) => {
       const total = Number(
         item.TotalPrice ??
-        Number(item.Price || 0) +
-        Number(item.GSTAmount || 0) +
-        Number(item.LabourCharges || 0) -
-        Number(item.CouponAmount || 0),
+          Number(item.Price || 0) +
+            Number(item.GSTAmount || 0) +
+            Number(item.LabourCharges || 0) -
+            Number(item.CouponAmount || 0),
       );
 
       return total === 0;
@@ -2812,10 +2812,10 @@ const BookingViewLayer = () => {
     const zeroTotalSupervisorServices = supervisorBookings.filter((s) => {
       const total = Number(
         s.TotalPrice ??
-        Number(s.Price || 0) +
-        Number(s.GSTAmount || 0) +
-        Number(s.LabourCharges || 0) -
-        Number(s.CouponAmount || 0),
+          Number(s.Price || 0) +
+            Number(s.GSTAmount || 0) +
+            Number(s.LabourCharges || 0) -
+            Number(s.CouponAmount || 0),
       );
       return total === 0;
     });
@@ -2861,7 +2861,7 @@ const BookingViewLayer = () => {
       Swal.fire(
         "Error",
         error?.response?.data?.message ||
-        "Failed to generate Estimation invoice.",
+          "Failed to generate Estimation invoice.",
         "error",
       );
     } finally {
@@ -2922,7 +2922,7 @@ const BookingViewLayer = () => {
   const ensureBasicDetails = () => {
     const fields = [
       (!bookingData?.BookingDate || !bookingData?.TimeSlot) &&
-      "Booking date & time slot",
+        "Booking date & time slot",
       !bookingData?.FullAddress && "Customer address",
       !(
         bookingData?.SupervisorHeadName ||
@@ -3301,15 +3301,15 @@ const BookingViewLayer = () => {
     customerRejectedBookings.every((item) => {
       const customerTotal = Number(
         item.TotalPrice ??
-        Number(item.Price || 0) +
-        Number(item.GSTAmount || 0) +
-        Number(item.LabourCharges || 0) -
-        Number(item.CouponAmount || 0),
+          Number(item.Price || 0) +
+            Number(item.GSTAmount || 0) +
+            Number(item.LabourCharges || 0) -
+            Number(item.CouponAmount || 0),
       );
       const dealerTotal = Number(
         Number(item.DealerSparePrice || 0) +
-        Number(item.DealerPrice || 0) +
-        Number(item.DealerGSTAmount || 0),
+          Number(item.DealerPrice || 0) +
+          Number(item.DealerGSTAmount || 0),
       );
 
       return customerTotal === 0 && dealerTotal === 0;
@@ -3467,7 +3467,7 @@ const BookingViewLayer = () => {
           Swal.fire(
             "Error",
             onlineErr?.response?.data?.message ||
-            "Failed to initiate online payment",
+              "Failed to initiate online payment",
             "error",
           );
           return;
@@ -3814,20 +3814,16 @@ const BookingViewLayer = () => {
     const totalServices = addOns.length;
     const completedServices = addOns.filter((a) => a.Is_Completed).length;
     const normalizeTimelineValue = (value) =>
-      (value || "")
-        .toString()
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, "");
+      (value || "").toString().trim().toLowerCase().replace(/\s+/g, "");
     const normalizedBookingWorkflowStatus = normalizeTimelineValue(
       bookingData?.BookingStatus,
     );
     const normalizedServiceStatuses = addOns.map((item) =>
       normalizeTimelineValue(
         item?.StatusName ??
-        item?.statusName ??
-        item?.AddOnStatus ??
-        item?.addOnStatus,
+          item?.statusName ??
+          item?.AddOnStatus ??
+          item?.addOnStatus,
       ),
     );
     const normalizedPaymentStatuses = payments.map((payment) =>
@@ -3919,7 +3915,8 @@ const BookingViewLayer = () => {
     );
     const assignedDealerCount = new Set(
       assignedDealerEntries.map(
-        (item) => `${item?.DealerID ?? "no-id"}-${item?.DealerName ?? "no-name"}`,
+        (item) =>
+          `${item?.DealerID ?? "no-id"}-${item?.DealerName ?? "no-name"}`,
       ),
     ).size;
     const dealerApprovalCount = allDealerItems.filter(
@@ -4076,9 +4073,7 @@ const BookingViewLayer = () => {
     };
 
     paymentStage.details =
-      totalPaid > 0
-        ? `Paid ₹${totalPaid.toFixed(2)}`
-        : "Awaiting payment";
+      totalPaid > 0 ? `Paid ₹${totalPaid.toFixed(2)}` : "Awaiting payment";
 
     const bookingDoneStage = {
       id: "booking-done",
@@ -4274,61 +4269,61 @@ const BookingViewLayer = () => {
       __pricingStage: "Awaiting Customer",
       __pricingOrder: (bookingData?.BookingAddOns?.length || 0) + index,
     })),
-  ]
-    .map((item, index) => {
-      const customerTotal = getCustomerServiceTotal(item);
-      const dealerTotal = getDealerServiceTotal(item);
-      const marginAmount = getMarginAmountValue(item);
-      const marginPercent = getMarginPercentValue(item);
-      const priceSpread = Number((customerTotal - dealerTotal).toFixed(2));
+  ].map((item, index) => {
+    const customerTotal = getCustomerServiceTotal(item);
+    const dealerTotal = getDealerServiceTotal(item);
+    const marginAmount = getMarginAmountValue(item);
+    const marginPercent = getMarginPercentValue(item);
+    const priceSpread = Number((customerTotal - dealerTotal).toFixed(2));
 
-      return {
-        id:
-          item.AddOnID ||
-          item.Id ||
-          `${item.ServiceName || "service"}-${index}`,
-        stage: item.__pricingStage,
-        serviceName: item.ServiceName || "Service",
-        serviceType: item.ServiceType || "Service",
-        dealerName: item.DealerName || "Dealer not assigned",
-        quantity: Number(item.Quantity || 1),
-        createdAt: item.CreatedDate || item.BookingDate,
-        includeNames: getIncludeNames(item),
-        customerPartUnit: Number(item.BasePrice || 0),
-        customerParts: getCustomerPartsTotal(item),
-        customerLabour: getCustomerLabourTotal(item),
-        customerGst: getCustomerGstTotal(item),
-        customerGstPercent: Number(item.GSTPercent || 0),
-        customerTotal,
-        dealerPartUnit: Number(item.DealerBasePrice || 0),
-        dealerParts: getDealerPartsTotal(item),
-        dealerLabour: getDealerLabourTotal(item),
-        dealerGst: getDealerGstTotal(item),
-        dealerGstPercent: Number(item.DealerGSTPercent || 0),
-        dealerTotal,
-        dealerConfirmStatus:
-          item.IsDealer_Confirm || item.isDealer_Confirm || "Pending",
-        serviceStatus:
-          item.StatusName ||
-          item.statusName ||
-          item.AddOnStatus ||
-          item.addOnStatus ||
-          "Pending",
-        isCompletionApproved:
-          item.IsCompleted_Confirmation === 1 ||
-          item.isCompleted_Confirmation === 1,
-        completionApprovedBy:
-          item.EmployeeName || item.employeeName || employeeData?.Name || "",
-        sourceItem: item,
-        marginAmount,
-        marginPercent,
-        priceSpread,
-        spreadWithoutMargin: Number((priceSpread - marginAmount).toFixed(2)),
-        updatedAt: item.UpdatedDate || item.CreatedDate || item.BookingDate,
-        sourceOrder:
-          item.__pricingOrder !== undefined ? item.__pricingOrder : index,
-      };
-    });
+    return {
+      id:
+        item.AddOnID || item.Id || `${item.ServiceName || "service"}-${index}`,
+      stage: item.__pricingStage,
+      serviceName: item.ServiceName || "Service",
+      incNames:
+        item.Includes?.map((i) => i.IncludeName).join(" | ") ||
+        "Include not assigned",
+      serviceType: item.ServiceType || "Service",
+      dealerName: item.DealerName || "Dealer not assigned",
+      quantity: Number(item.Quantity || 1),
+      createdAt: item.CreatedDate || item.BookingDate,
+      includeNames: getIncludeNames(item),
+      customerPartUnit: Number(item.BasePrice || 0),
+      customerParts: getCustomerPartsTotal(item),
+      customerLabour: getCustomerLabourTotal(item),
+      customerGst: getCustomerGstTotal(item),
+      customerGstPercent: Number(item.GSTPercent || 0),
+      customerTotal,
+      dealerPartUnit: Number(item.DealerBasePrice || 0),
+      dealerParts: getDealerPartsTotal(item),
+      dealerLabour: getDealerLabourTotal(item),
+      dealerGst: getDealerGstTotal(item),
+      dealerGstPercent: Number(item.DealerGSTPercent || 0),
+      dealerTotal,
+      dealerConfirmStatus:
+        item.IsDealer_Confirm || item.isDealer_Confirm || "Pending",
+      serviceStatus:
+        item.StatusName ||
+        item.statusName ||
+        item.AddOnStatus ||
+        item.addOnStatus ||
+        "Pending",
+      isCompletionApproved:
+        item.IsCompleted_Confirmation === 1 ||
+        item.isCompleted_Confirmation === 1,
+      completionApprovedBy:
+        item.EmployeeName || item.employeeName || employeeData?.Name || "",
+      sourceItem: item,
+      marginAmount,
+      marginPercent,
+      priceSpread,
+      spreadWithoutMargin: Number((priceSpread - marginAmount).toFixed(2)),
+      updatedAt: item.UpdatedDate || item.CreatedDate || item.BookingDate,
+      sourceOrder:
+        item.__pricingOrder !== undefined ? item.__pricingOrder : index,
+    };
+  });
 
   const customerRejectedComparisonServices = (
     bookingData?.CustomerRejectedBookings || []
@@ -4340,7 +4335,10 @@ const BookingViewLayer = () => {
     const priceSpread = Number((customerTotal - dealerTotal).toFixed(2));
 
     return {
-      id: item.AddOnID || item.Id || `${item.ServiceName || "service"}-rejected-${index}`,
+      id:
+        item.AddOnID ||
+        item.Id ||
+        `${item.ServiceName || "service"}-rejected-${index}`,
       stage: "Customer Rejected",
       serviceName: item.ServiceName || "Service",
       serviceType: item.ServiceType || "Service",
@@ -4439,34 +4437,32 @@ const BookingViewLayer = () => {
   const effectiveMarginPercent =
     pricingTotals.dealerTotal > 0
       ? Number(
-        (
-          (pricingTotals.marginAmount / pricingTotals.dealerTotal) *
-          100
-        ).toFixed(2),
-      )
+          (
+            (pricingTotals.marginAmount / pricingTotals.dealerTotal) *
+            100
+          ).toFixed(2),
+        )
       : 0;
   const rejectedEffectiveMarginPercent =
     customerRejectedPricingTotals.dealerTotal > 0
       ? Number(
-        (
-          (customerRejectedPricingTotals.marginAmount /
-            customerRejectedPricingTotals.dealerTotal) *
-          100
-        ).toFixed(2),
-      )
+          (
+            (customerRejectedPricingTotals.marginAmount /
+              customerRejectedPricingTotals.dealerTotal) *
+            100
+          ).toFixed(2),
+        )
       : 0;
   const priceSpreadPercent =
     pricingTotals.dealerTotal > 0
       ? Number(
-        (
-          (pricingTotals.priceSpread / pricingTotals.dealerTotal) *
-          100
-        ).toFixed(2),
-      )
+          (
+            (pricingTotals.priceSpread / pricingTotals.dealerTotal) *
+            100
+          ).toFixed(2),
+        )
       : 0;
-  const unmatchedSpreadAmount = Number(
-    (pricingTotals.priceSpread),
-  );
+  const unmatchedSpreadAmount = Number(pricingTotals.priceSpread);
   const pricingBarBase = Math.max(
     pricingTotals.customerTotal,
     pricingTotals.dealerTotal,
@@ -4668,6 +4664,11 @@ const BookingViewLayer = () => {
           font-weight: 700;
           color: #0f172a;
         }
+          .service-compare-title-include {
+            font-size: 0.8rem;
+            font-weight: 400;
+            color: #64748b;
+          }
         .service-compare-meta {
           display: flex;
           flex-wrap: wrap;
@@ -4842,7 +4843,7 @@ const BookingViewLayer = () => {
                                     <span className="w-50 text-secondary-light fw-bold d-flex align-items-center justify-content-between">
                                       <span>
                                         {bookingData?.SupervisorHeadName ||
-                                          bookingData?.SupervisorHeadPhoneNumber ? (
+                                        bookingData?.SupervisorHeadPhoneNumber ? (
                                           <>
                                             {bookingData?.SupervisorHeadName ||
                                               ""}
@@ -4880,7 +4881,7 @@ const BookingViewLayer = () => {
                                     <span className="w-50 text-secondary-light fw-bold d-flex align-items-center justify-content-between">
                                       <span>
                                         {bookingData?.FieldAdvisorName ||
-                                          bookingData?.FieldAdvisorPhoneNumber ? (
+                                        bookingData?.FieldAdvisorPhoneNumber ? (
                                           <>
                                             {bookingData?.FieldAdvisorName ||
                                               ""}
@@ -4952,8 +4953,8 @@ const BookingViewLayer = () => {
 
                         <Accordion.Body>
                           {bookingData.VehicleDetails &&
-                            Array.isArray(bookingData.VehicleDetails) &&
-                            bookingData.VehicleDetails.length > 0 ? (
+                          Array.isArray(bookingData.VehicleDetails) &&
+                          bookingData.VehicleDetails.length > 0 ? (
                             <div>
                               {bookingData.VehicleDetails.map(
                                 (vehicle, index) => (
@@ -5021,7 +5022,7 @@ const BookingViewLayer = () => {
                                         </span>
                                         <span className="w-70 text-secondary-light fw-bold ms-2">
                                           {vehicle.KmDriven !== null &&
-                                            vehicle.KmDriven !== undefined
+                                          vehicle.KmDriven !== undefined
                                             ? vehicle.KmDriven.toLocaleString()
                                             : "N/A"}{" "}
                                           km
@@ -5302,30 +5303,30 @@ const BookingViewLayer = () => {
                         bookingData?.Isservice_converted === 1) ||
                         (bookingData?.Isinspection === 0 &&
                           bookingData?.Isservice_converted === 0)) && (
-                          <Link
-                            to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
-                            onClick={(e) => {
-                              if (!ensureBasicDetails()) {
-                                e.preventDefault(); // Stop navigation if details are missing
-                              }
-                            }}
-                            className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
-                            title={
-                              roleName === "Field Advisor"
-                                ? "Assign Dealers"
-                                : roleName === "Supervisor Head"
-                                  ? "Confirm Services"
-                                  : "Confirm Services"
+                        <Link
+                          to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
+                          onClick={(e) => {
+                            if (!ensureBasicDetails()) {
+                              e.preventDefault(); // Stop navigation if details are missing
                             }
-                          >
-                            <Icon icon="mdi:pencil-outline" />
-                            {roleName === "Field Advisor"
+                          }}
+                          className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
+                          title={
+                            roleName === "Field Advisor"
                               ? "Assign Dealers"
                               : roleName === "Supervisor Head"
                                 ? "Confirm Services"
-                                : "Confirm Services"}
-                          </Link>
-                        )}
+                                : "Confirm Services"
+                          }
+                        >
+                          <Icon icon="mdi:pencil-outline" />
+                          {roleName === "Field Advisor"
+                            ? "Assign Dealers"
+                            : roleName === "Supervisor Head"
+                              ? "Confirm Services"
+                              : "Confirm Services"}
+                        </Link>
+                      )}
 
                       {/* Confirm Service Button - Admin & Supervisor only, when Convert To Service is enabled and there are unconfirmed services */}
                       {(() => {
@@ -5535,13 +5536,14 @@ const BookingViewLayer = () => {
                                   Booking Status:
                                 </span>
                                 <span
-                                  className={`badge px-3 py-1 rounded-pill ${bookingData.BookingStatus === "Completed"
-                                    ? "bg-success"
-                                    : bookingData.BookingStatus ===
-                                      "Confirmed"
-                                      ? "bg-primary"
-                                      : "bg-warning text-dark"
-                                    }`}
+                                  className={`badge px-3 py-1 rounded-pill ${
+                                    bookingData.BookingStatus === "Completed"
+                                      ? "bg-success"
+                                      : bookingData.BookingStatus ===
+                                          "Confirmed"
+                                        ? "bg-primary"
+                                        : "bg-warning text-dark"
+                                  }`}
                                 >
                                   {bookingData.BookingStatus}
                                 </span>
@@ -5594,37 +5596,37 @@ const BookingViewLayer = () => {
                                                   {pkg.Category
                                                     ?.SubCategories?.[0]
                                                     ?.Includes?.length > 0 && (
-                                                      <ul className="text-muted small ps-3 mb-0">
-                                                        {pkg.Category.SubCategories[0].Includes.map(
-                                                          (inc) => (
-                                                            <li
-                                                              key={inc.IncludeID}
-                                                            >
-                                                              {inc.IncludeName}
-                                                            </li>
-                                                          ),
-                                                        )}
-                                                      </ul>
-                                                    )}
+                                                    <ul className="text-muted small ps-3 mb-0">
+                                                      {pkg.Category.SubCategories[0].Includes.map(
+                                                        (inc) => (
+                                                          <li
+                                                            key={inc.IncludeID}
+                                                          >
+                                                            {inc.IncludeName}
+                                                          </li>
+                                                        ),
+                                                      )}
+                                                    </ul>
+                                                  )}
                                                 </div>
 
                                                 <span className="badge bg-success-subtle text-success border border-success">
                                                   ⏱ Duration:{" "}
                                                   {pkg.EstimatedDurationMinutes >=
-                                                    60
+                                                  60
                                                     ? (() => {
-                                                      const hours =
-                                                        Math.floor(
-                                                          pkg.EstimatedDurationMinutes /
-                                                          60,
-                                                        );
-                                                      const minutes =
-                                                        pkg.EstimatedDurationMinutes %
-                                                        60;
-                                                      return minutes === 0
-                                                        ? `${hours} hr`
-                                                        : `${hours} hr ${minutes} mins`;
-                                                    })()
+                                                        const hours =
+                                                          Math.floor(
+                                                            pkg.EstimatedDurationMinutes /
+                                                              60,
+                                                          );
+                                                        const minutes =
+                                                          pkg.EstimatedDurationMinutes %
+                                                          60;
+                                                        return minutes === 0
+                                                          ? `${hours} hr`
+                                                          : `${hours} hr ${minutes} mins`;
+                                                      })()
                                                     : `${pkg.EstimatedDurationMinutes} mins`}
                                                 </span>
                                               </div>
@@ -5872,7 +5874,7 @@ const BookingViewLayer = () => {
                                                         addon.Includes,
                                                       ) &&
                                                       addon.Includes.length >
-                                                      0 && (
+                                                        0 && (
                                                         <ul
                                                           className="text-muted small ps-3 mb-0 mt-2"
                                                           style={{
@@ -5904,10 +5906,10 @@ const BookingViewLayer = () => {
                                                 <td className="normal">
                                                   {addon.CreatedDate
                                                     ? new Date(
-                                                      addon.CreatedDate,
-                                                    ).toLocaleDateString(
-                                                      "en-IN",
-                                                    )
+                                                        addon.CreatedDate,
+                                                      ).toLocaleDateString(
+                                                        "en-IN",
+                                                      )
                                                     : "—"}
                                                 </td>
                                                 <td className="text-end">
@@ -5961,17 +5963,17 @@ const BookingViewLayer = () => {
                                                 </td>
                                                 {roleName !==
                                                   "Field Advisor" && (
-                                                    <>
-                                                      <td className="text-end">
-                                                        {addon.Percentage ?? "0"}%
-                                                      </td>
-                                                      <td className="text-end">
-                                                        {Number(
-                                                          addon.Our_Earnings || 0,
-                                                        ).toFixed(2)}
-                                                      </td>
-                                                    </>
-                                                  )}
+                                                  <>
+                                                    <td className="text-end">
+                                                      {addon.Percentage ?? "0"}%
+                                                    </td>
+                                                    <td className="text-end">
+                                                      {Number(
+                                                        addon.Our_Earnings || 0,
+                                                      ).toFixed(2)}
+                                                    </td>
+                                                  </>
+                                                )}
                                                 <td
                                                   className=" normal text-center"
                                                   style={{
@@ -5981,13 +5983,14 @@ const BookingViewLayer = () => {
                                                 >
                                                   {addon.DealerName || "—"}{" "}
                                                   {addon.IsDealer_Confirm &&
-                                                    addon.DealerName ? (
+                                                  addon.DealerName ? (
                                                     <span
-                                                      className={`badge px-3 py-2 rounded-pill ${addon.IsDealer_Confirm ===
+                                                      className={`badge px-3 py-2 rounded-pill ${
+                                                        addon.IsDealer_Confirm ===
                                                         "Approved"
-                                                        ? "bg-success text-white"
-                                                        : "bg-danger text-white"
-                                                        }`}
+                                                          ? "bg-success text-white"
+                                                          : "bg-danger text-white"
+                                                      }`}
                                                     >
                                                       {addon.IsDealer_Confirm}
                                                     </span>
@@ -6042,7 +6045,7 @@ const BookingViewLayer = () => {
                                                             }
                                                           >
                                                             {status ===
-                                                              "ServiceCompleted" ? (
+                                                            "ServiceCompleted" ? (
                                                               <>
                                                                 <option value="ServiceCompleted">
                                                                   Completed
@@ -6089,7 +6092,7 @@ const BookingViewLayer = () => {
                                                 <td className="text-center">
                                                   {addon.IsCompleted_Confirmation ===
                                                     1 ||
-                                                    addon.isCompleted_Confirmation ===
+                                                  addon.isCompleted_Confirmation ===
                                                     1 ? (
                                                     <div className="d-flex flex-column align-items-center justify-content-center gap-1">
                                                       <span>Approved By</span>
@@ -6144,14 +6147,14 @@ const BookingViewLayer = () => {
                                                   {(
                                                     Number(
                                                       addon.DealerSparePrice ||
-                                                      0,
+                                                        0,
                                                     ) +
                                                     Number(
                                                       addon.DealerPrice || 0,
                                                     ) +
                                                     Number(
                                                       addon.DealerGSTAmount ||
-                                                      0,
+                                                        0,
                                                     )
                                                   ).toFixed(2)}
                                                 </td>
@@ -6327,11 +6330,11 @@ const BookingViewLayer = () => {
                                                 ) +
                                                 Number(
                                                   supervisorBooking.GSTAmount ||
-                                                  0,
+                                                    0,
                                                 ) +
                                                 Number(
                                                   supervisorBooking.LabourCharges ||
-                                                  0,
+                                                    0,
                                                 );
 
                                               return (
@@ -6357,64 +6360,64 @@ const BookingViewLayer = () => {
                                                           supervisorBooking.Includes,
                                                         )
                                                           ? supervisorBooking
-                                                            .Includes.length >
-                                                          0 && (
-                                                            <ul
-                                                              className="text-muted small ps-3 mb-0 mt-2"
-                                                              style={{
-                                                                textAlign:
-                                                                  "left",
-                                                              }}
-                                                            >
-                                                              {supervisorBooking.Includes.map(
-                                                                (inc) => (
-                                                                  <li
-                                                                    key={
-                                                                      inc.IncludeID ||
-                                                                      inc.id ||
-                                                                      inc
-                                                                    }
-                                                                  >
-                                                                    {inc.IncludeName ||
-                                                                      inc.name ||
-                                                                      inc}
-                                                                  </li>
-                                                                ),
-                                                              )}
-                                                            </ul>
-                                                          )
+                                                              .Includes.length >
+                                                              0 && (
+                                                              <ul
+                                                                className="text-muted small ps-3 mb-0 mt-2"
+                                                                style={{
+                                                                  textAlign:
+                                                                    "left",
+                                                                }}
+                                                              >
+                                                                {supervisorBooking.Includes.map(
+                                                                  (inc) => (
+                                                                    <li
+                                                                      key={
+                                                                        inc.IncludeID ||
+                                                                        inc.id ||
+                                                                        inc
+                                                                      }
+                                                                    >
+                                                                      {inc.IncludeName ||
+                                                                        inc.name ||
+                                                                        inc}
+                                                                    </li>
+                                                                  ),
+                                                                )}
+                                                              </ul>
+                                                            )
                                                           : typeof supervisorBooking.Includes ===
-                                                          "string" &&
-                                                          supervisorBooking.Includes.trim() !==
-                                                          "" && (
-                                                            <div className="text-muted small mt-2">
-                                                              {
-                                                                supervisorBooking.Includes
-                                                              }
-                                                            </div>
-                                                          ))}
+                                                              "string" &&
+                                                            supervisorBooking.Includes.trim() !==
+                                                              "" && (
+                                                              <div className="text-muted small mt-2">
+                                                                {
+                                                                  supervisorBooking.Includes
+                                                                }
+                                                              </div>
+                                                            ))}
                                                     </div>
                                                   </td>
 
                                                   <td className="normal">
                                                     {supervisorBooking.CreatedDate
                                                       ? new Date(
-                                                        supervisorBooking.CreatedDate,
-                                                      ).toLocaleDateString(
-                                                        "en-IN",
-                                                      )
+                                                          supervisorBooking.CreatedDate,
+                                                        ).toLocaleDateString(
+                                                          "en-IN",
+                                                        )
                                                       : "—"}
                                                   </td>
                                                   <td className="text-end">
                                                     {Number(
                                                       supervisorBooking.BasePrice ||
-                                                      0,
+                                                        0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end dlr-column">
                                                     {Number(
                                                       supervisorBooking.DealerBasePrice ||
-                                                      0,
+                                                        0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end">
@@ -6424,25 +6427,25 @@ const BookingViewLayer = () => {
                                                   <td className="text-end">
                                                     {Number(
                                                       supervisorBooking.Price ||
-                                                      0,
+                                                        0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end dlr-column">
                                                     {Number(
                                                       supervisorBooking.DealerSparePrice ||
-                                                      0,
+                                                        0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end">
                                                     {Number(
                                                       supervisorBooking.LabourCharges ||
-                                                      0,
+                                                        0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end dlr-column">
                                                     {Number(
                                                       supervisorBooking.DealerPrice ||
-                                                      0,
+                                                        0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end">
@@ -6458,13 +6461,13 @@ const BookingViewLayer = () => {
                                                   <td className="text-end">
                                                     {Number(
                                                       supervisorBooking.GSTAmount ||
-                                                      0,
+                                                        0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end dlr-column">
                                                     {Number(
                                                       supervisorBooking.DealerGSTAmount ||
-                                                      0,
+                                                        0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end">
@@ -6475,7 +6478,7 @@ const BookingViewLayer = () => {
                                                   <td className="text-end">
                                                     {Number(
                                                       supervisorBooking.Our_Earnings ||
-                                                      0,
+                                                        0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   {/* <td
@@ -6500,17 +6503,18 @@ const BookingViewLayer = () => {
                                                     {supervisorBooking.IsDealer_Confirm &&
                                                       supervisorBooking.DealerName && (
                                                         <span
-                                                          className={`badge px-3 py-2 rounded-pill ${supervisorBooking.IsDealer_Confirm ===
+                                                          className={`badge px-3 py-2 rounded-pill ${
+                                                            supervisorBooking.IsDealer_Confirm ===
                                                             "Approved"
-                                                            ? "bg-success text-white"
-                                                            : supervisorBooking.IsDealer_Confirm ===
-                                                              "Rejected"
-                                                              ? "bg-danger text-white"
+                                                              ? "bg-success text-white"
                                                               : supervisorBooking.IsDealer_Confirm ===
-                                                                "Pending"
-                                                                ? "bg-warning text-dark"
-                                                                : "bg-secondary text-white"
-                                                            }`}
+                                                                  "Rejected"
+                                                                ? "bg-danger text-white"
+                                                                : supervisorBooking.IsDealer_Confirm ===
+                                                                    "Pending"
+                                                                  ? "bg-warning text-dark"
+                                                                  : "bg-secondary text-white"
+                                                          }`}
                                                         >
                                                           {
                                                             supervisorBooking.IsDealer_Confirm
@@ -6553,15 +6557,15 @@ const BookingViewLayer = () => {
                                                     {(
                                                       Number(
                                                         supervisorBooking.DealerSparePrice ||
-                                                        0,
+                                                          0,
                                                       ) +
                                                       Number(
                                                         supervisorBooking.DealerPrice ||
-                                                        0,
+                                                          0,
                                                       ) +
                                                       Number(
                                                         supervisorBooking.DealerGSTAmount ||
-                                                        0,
+                                                          0,
                                                       )
                                                     ).toFixed(2)}
                                                   </td>
@@ -6579,8 +6583,9 @@ const BookingViewLayer = () => {
                                 </div>
                               )}
 
-                            {false && bookingData?.CustomerRejectedBookings?.length >
-                              0 && (
+                            {false &&
+                              bookingData?.CustomerRejectedBookings?.length >
+                                0 && (
                                 <div className="card mb-4 mt-4">
                                   <div className="card-header bg-danger text-light">
                                     <h6 className="mb-0 fw-bold text-white">
@@ -6729,19 +6734,22 @@ const BookingViewLayer = () => {
 
                                         <tbody>
                                           {bookingData?.CustomerRejectedBookings?.map(
-                                            (CustomerRejectedBookings, index) => {
+                                            (
+                                              CustomerRejectedBookings,
+                                              index,
+                                            ) => {
                                               const totalPrice =
                                                 Number(
                                                   CustomerRejectedBookings.Price ||
-                                                  0,
+                                                    0,
                                                 ) +
                                                 Number(
                                                   CustomerRejectedBookings.GSTAmount ||
-                                                  0,
+                                                    0,
                                                 ) +
                                                 Number(
                                                   CustomerRejectedBookings.LabourCharges ||
-                                                  0,
+                                                    0,
                                                 );
 
                                               return (
@@ -6767,64 +6775,64 @@ const BookingViewLayer = () => {
                                                           CustomerRejectedBookings.Includes,
                                                         )
                                                           ? CustomerRejectedBookings
-                                                            .Includes.length >
-                                                          0 && (
-                                                            <ul
-                                                              className="text-muted small ps-3 mb-0 mt-2"
-                                                              style={{
-                                                                textAlign:
-                                                                  "left",
-                                                              }}
-                                                            >
-                                                              {CustomerRejectedBookings.Includes.map(
-                                                                (inc) => (
-                                                                  <li
-                                                                    key={
-                                                                      inc.IncludeID ||
-                                                                      inc.id ||
-                                                                      inc
-                                                                    }
-                                                                  >
-                                                                    {inc.IncludeName ||
-                                                                      inc.name ||
-                                                                      inc}
-                                                                  </li>
-                                                                ),
-                                                              )}
-                                                            </ul>
-                                                          )
+                                                              .Includes.length >
+                                                              0 && (
+                                                              <ul
+                                                                className="text-muted small ps-3 mb-0 mt-2"
+                                                                style={{
+                                                                  textAlign:
+                                                                    "left",
+                                                                }}
+                                                              >
+                                                                {CustomerRejectedBookings.Includes.map(
+                                                                  (inc) => (
+                                                                    <li
+                                                                      key={
+                                                                        inc.IncludeID ||
+                                                                        inc.id ||
+                                                                        inc
+                                                                      }
+                                                                    >
+                                                                      {inc.IncludeName ||
+                                                                        inc.name ||
+                                                                        inc}
+                                                                    </li>
+                                                                  ),
+                                                                )}
+                                                              </ul>
+                                                            )
                                                           : typeof CustomerRejectedBookings.Includes ===
-                                                          "string" &&
-                                                          CustomerRejectedBookings.Includes.trim() !==
-                                                          "" && (
-                                                            <div className="text-muted small mt-2">
-                                                              {
-                                                                CustomerRejectedBookings.Includes
-                                                              }
-                                                            </div>
-                                                          ))}
+                                                              "string" &&
+                                                            CustomerRejectedBookings.Includes.trim() !==
+                                                              "" && (
+                                                              <div className="text-muted small mt-2">
+                                                                {
+                                                                  CustomerRejectedBookings.Includes
+                                                                }
+                                                              </div>
+                                                            ))}
                                                     </div>
                                                   </td>
 
                                                   <td className="normal">
                                                     {CustomerRejectedBookings.CreatedDate
                                                       ? new Date(
-                                                        CustomerRejectedBookings.CreatedDate,
-                                                      ).toLocaleDateString(
-                                                        "en-IN",
-                                                      )
+                                                          CustomerRejectedBookings.CreatedDate,
+                                                        ).toLocaleDateString(
+                                                          "en-IN",
+                                                        )
                                                       : "—"}
                                                   </td>
                                                   <td className="text-end">
                                                     {Number(
                                                       CustomerRejectedBookings.BasePrice ||
-                                                      0,
+                                                        0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end dlr-column">
                                                     {Number(
                                                       CustomerRejectedBookings.DealerBasePrice ||
-                                                      0,
+                                                        0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end">
@@ -6834,25 +6842,25 @@ const BookingViewLayer = () => {
                                                   <td className="text-end">
                                                     {Number(
                                                       CustomerRejectedBookings.Price ||
-                                                      0,
+                                                        0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end dlr-column">
                                                     {Number(
                                                       CustomerRejectedBookings.DealerSparePrice ||
-                                                      0,
+                                                        0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end">
                                                     {Number(
                                                       CustomerRejectedBookings.LabourCharges ||
-                                                      0,
+                                                        0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end dlr-column">
                                                     {Number(
                                                       CustomerRejectedBookings.DealerPrice ||
-                                                      0,
+                                                        0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end">
@@ -6868,13 +6876,13 @@ const BookingViewLayer = () => {
                                                   <td className="text-end">
                                                     {Number(
                                                       CustomerRejectedBookings.GSTAmount ||
-                                                      0,
+                                                        0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end dlr-column">
                                                     {Number(
                                                       CustomerRejectedBookings.DealerGSTAmount ||
-                                                      0,
+                                                        0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end">
@@ -6885,7 +6893,7 @@ const BookingViewLayer = () => {
                                                   <td className="text-end">
                                                     {Number(
                                                       CustomerRejectedBookings.Our_Earnings ||
-                                                      0,
+                                                        0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   {/* <td
@@ -6910,17 +6918,18 @@ const BookingViewLayer = () => {
                                                     {CustomerRejectedBookings.IsDealer_Confirm &&
                                                       CustomerRejectedBookings.DealerName && (
                                                         <span
-                                                          className={`badge px-3 py-2 rounded-pill ${CustomerRejectedBookings.IsDealer_Confirm ===
+                                                          className={`badge px-3 py-2 rounded-pill ${
+                                                            CustomerRejectedBookings.IsDealer_Confirm ===
                                                             "Approved"
-                                                            ? "bg-success text-white"
-                                                            : CustomerRejectedBookings.IsDealer_Confirm ===
-                                                              "Rejected"
-                                                              ? "bg-danger text-white"
+                                                              ? "bg-success text-white"
                                                               : CustomerRejectedBookings.IsDealer_Confirm ===
-                                                                "Pending"
-                                                                ? "bg-warning text-dark"
-                                                                : "bg-secondary text-white"
-                                                            }`}
+                                                                  "Rejected"
+                                                                ? "bg-danger text-white"
+                                                                : CustomerRejectedBookings.IsDealer_Confirm ===
+                                                                    "Pending"
+                                                                  ? "bg-warning text-dark"
+                                                                  : "bg-secondary text-white"
+                                                          }`}
                                                         >
                                                           {
                                                             CustomerRejectedBookings.IsDealer_Confirm
@@ -6932,15 +6941,15 @@ const BookingViewLayer = () => {
                                                     {(
                                                       Number(
                                                         CustomerRejectedBookings.DealerSparePrice ||
-                                                        0,
+                                                          0,
                                                       ) +
                                                       Number(
                                                         CustomerRejectedBookings.DealerPrice ||
-                                                        0,
+                                                          0,
                                                       ) +
                                                       Number(
                                                         CustomerRejectedBookings.DealerGSTAmount ||
-                                                        0,
+                                                          0,
                                                       )
                                                     ).toFixed(2)}
                                                   </td>
@@ -6961,7 +6970,7 @@ const BookingViewLayer = () => {
                                                       }
                                                     >
                                                       {revertingServiceId ===
-                                                        CustomerRejectedBookings.Id ? ( // <--- SHOW SPINNER
+                                                      CustomerRejectedBookings.Id ? ( // <--- SHOW SPINNER
                                                         <>
                                                           <span
                                                             className="spinner-border spinner-border-sm"
@@ -7050,14 +7059,20 @@ const BookingViewLayer = () => {
                                                     Qty {service.quantity}
                                                   </span>
                                                 </div>
+                                                <div className="service-compare-title-include">
+                                                  <span className="">
+                                                    <b>Includes: </b>{" "}
+                                                    {service.incNames}
+                                                  </span>
+                                                </div>
                                                 <div className="small text-muted mt-1">
                                                   <b>Dealer Name: </b>
                                                   {service.dealerName} |{" "}
                                                   <b>Added on: </b>{" "}
                                                   {service.createdAt
                                                     ? formatDateTime(
-                                                      service.createdAt,
-                                                    )
+                                                        service.createdAt,
+                                                      )
                                                     : "N/A"}
                                                 </div>
                                                 <div className="service-compare-meta">
@@ -7074,14 +7089,17 @@ const BookingViewLayer = () => {
                                                     )}`}
                                                   >
                                                     Dealer{" "}
-                                                    {service.dealerConfirmStatus}
+                                                    {
+                                                      service.dealerConfirmStatus
+                                                    }
                                                   </span>
                                                   <span
                                                     className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(
                                                       service.serviceStatus,
                                                     )}`}
                                                   >
-                                                    Service {service.serviceStatus}
+                                                    Service{" "}
+                                                    {service.serviceStatus}
                                                   </span>
                                                 </div>
                                               </div>
@@ -7138,7 +7156,7 @@ const BookingViewLayer = () => {
                                                   }
                                                 >
                                                   {revertingServiceId ===
-                                                    service.sourceItem?.Id ? (
+                                                  service.sourceItem?.Id ? (
                                                     <>
                                                       <span
                                                         className="spinner-border spinner-border-sm"
@@ -7269,11 +7287,12 @@ const BookingViewLayer = () => {
                                               </div>
 
                                               <div
-                                                className={`service-compare-highlight ${service.spreadWithoutMargin >
+                                                className={`service-compare-highlight ${
+                                                  service.spreadWithoutMargin >
                                                   0
-                                                  ? "warn"
-                                                  : ""
-                                                  }`}
+                                                    ? "warn"
+                                                    : ""
+                                                }`}
                                               >
                                                 <div className="service-compare-line">
                                                   <span>Company margin %</span>
@@ -7295,9 +7314,7 @@ const BookingViewLayer = () => {
                                                   </strong>
                                                 </div>
                                                 <div className="service-compare-line">
-                                                  <span>
-                                                    Customer - dealer
-                                                  </span>
+                                                  <span>Customer - dealer</span>
                                                   <strong
                                                     className={
                                                       service.priceSpread >= 0
@@ -7317,7 +7334,7 @@ const BookingViewLayer = () => {
                                                   <strong
                                                     className={
                                                       service.spreadWithoutMargin >=
-                                                        0
+                                                      0
                                                         ? "text-info"
                                                         : "text-danger"
                                                     }
@@ -7332,8 +7349,8 @@ const BookingViewLayer = () => {
                                                   <strong>
                                                     {service.updatedAt
                                                       ? formatDateTime(
-                                                        service.updatedAt,
-                                                      )
+                                                          service.updatedAt,
+                                                        )
                                                       : "N/A"}
                                                   </strong>
                                                 </div>
@@ -7404,14 +7421,20 @@ const BookingViewLayer = () => {
                                                   Qty {service.quantity}
                                                 </span>
                                               </div>
+                                              <div className="service-compare-title-include">
+                                                <span className="">
+                                                  <b>Includes: </b>{" "}
+                                                  {service.incNames}
+                                                </span>
+                                              </div>
                                               <div className="small text-muted mt-1">
                                                 <b>Dealer Name: </b>
                                                 {service.dealerName} |{" "}
                                                 <b>Added on: </b>{" "}
                                                 {service.createdAt
                                                   ? formatDateTime(
-                                                    service.createdAt,
-                                                  )
+                                                      service.createdAt,
+                                                    )
                                                   : "N/A"}
                                               </div>
                                               <div className="service-compare-meta">
@@ -7435,7 +7458,8 @@ const BookingViewLayer = () => {
                                                     service.serviceStatus,
                                                   )}`}
                                                 >
-                                                  Service {service.serviceStatus}
+                                                  Service{" "}
+                                                  {service.serviceStatus}
                                                 </span>
                                               </div>
                                               {/* {service.includeNames.length >
@@ -7593,7 +7617,9 @@ const BookingViewLayer = () => {
                                                 </span>
                                                 <strong>
                                                   {formatCurrency(
-                                                    ((service.customerGst) / 2).toFixed(2),
+                                                    (
+                                                      service.customerGst / 2
+                                                    ).toFixed(2),
                                                   )}
                                                 </strong>
                                               </div>
@@ -7682,10 +7708,11 @@ const BookingViewLayer = () => {
                                             </div>
 
                                             <div
-                                              className={`service-compare-highlight ${service.spreadWithoutMargin > 0
-                                                ? "warn"
-                                                : ""
-                                                }`}
+                                              className={`service-compare-highlight ${
+                                                service.spreadWithoutMargin > 0
+                                                  ? "warn"
+                                                  : ""
+                                              }`}
                                             >
                                               <div className="service-compare-line">
                                                 <span>Company margin %</span>
@@ -7727,7 +7754,7 @@ const BookingViewLayer = () => {
                                                 <strong
                                                   className={
                                                     service.spreadWithoutMargin >=
-                                                      0
+                                                    0
                                                       ? "text-info"
                                                       : "text-danger"
                                                   }
@@ -7742,8 +7769,8 @@ const BookingViewLayer = () => {
                                                 <strong>
                                                   {service.updatedAt
                                                     ? formatDateTime(
-                                                      service.updatedAt,
-                                                    )
+                                                        service.updatedAt,
+                                                      )
                                                     : "N/A"}
                                                 </strong>
                                               </div>
@@ -7815,7 +7842,6 @@ const BookingViewLayer = () => {
                                               unmatchedSpreadAmount,
                                             )}
                                           </div>
-
                                         </div>
                                       </div>
                                     </div>
@@ -8198,10 +8224,11 @@ const BookingViewLayer = () => {
                                                       )}
                                                     </td>
                                                     <td
-                                                      className={`text-end ${service.priceSpread >= 0
-                                                        ? "pricing-spread-positive"
-                                                        : "pricing-spread-negative"
-                                                        }`}
+                                                      className={`text-end ${
+                                                        service.priceSpread >= 0
+                                                          ? "pricing-spread-positive"
+                                                          : "pricing-spread-negative"
+                                                      }`}
                                                     >
                                                       {formatCurrency(
                                                         service.priceSpread,
@@ -8280,7 +8307,7 @@ const BookingViewLayer = () => {
                                                 : null;
                                             const rightValue =
                                               !hasDlrConfirmed &&
-                                                hasDlrUnconfirmed
+                                              hasDlrUnconfirmed
                                                 ? row.cnc
                                                 : row.cc;
 
@@ -8340,7 +8367,7 @@ const BookingViewLayer = () => {
                                             >
                                               ₹
                                               {(!hasDlrConfirmed &&
-                                                hasDlrUnconfirmed
+                                              hasDlrUnconfirmed
                                                 ? dlrCncTotals.total
                                                 : dlrCcTotals.total
                                               ).toFixed(2)}
@@ -8518,7 +8545,7 @@ const BookingViewLayer = () => {
                                     roleName === "Supervisor Head" ||
                                     roleName === "Field Advisor") &&
                                     bookingData?.BookingStatus !==
-                                    "Completed" &&
+                                      "Completed" &&
                                     bookingData?.BookingAddOns != null &&
                                     Array.isArray(bookingData.BookingAddOns) &&
                                     bookingData.BookingAddOns.length > 0 &&
@@ -8820,15 +8847,15 @@ const BookingViewLayer = () => {
 
                               const assignStr = record.AssignDate
                                 ? new Date(record.AssignDate).toLocaleString(
-                                  "en-IN",
-                                  {
-                                    day: "2-digit",
-                                    month: "short",
-                                    year: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  },
-                                )
+                                    "en-IN",
+                                    {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    },
+                                  )
                                 : "—";
 
                               const sub =
@@ -9085,14 +9112,14 @@ const BookingViewLayer = () => {
                                               >
                                                 {row.AssignDate
                                                   ? new Date(
-                                                    row.AssignDate,
-                                                  ).toLocaleString("en-IN", {
-                                                    day: "2-digit",
-                                                    month: "short",
-                                                    year: "numeric",
-                                                    hour: "2-digit",
-                                                    minute: "2-digit",
-                                                  })
+                                                      row.AssignDate,
+                                                    ).toLocaleString("en-IN", {
+                                                      day: "2-digit",
+                                                      month: "short",
+                                                      year: "numeric",
+                                                      hour: "2-digit",
+                                                      minute: "2-digit",
+                                                    })
                                                   : "—"}
                                               </td>
                                               <td
@@ -9100,13 +9127,13 @@ const BookingViewLayer = () => {
                                                 style={{ color: "#475569" }}
                                               >
                                                 {row.RouteType ==
-                                                  "CustomerToDealer"
+                                                "CustomerToDealer"
                                                   ? "Customer To Dealer"
                                                   : row.RouteType ==
-                                                    "DealerToCustomer"
+                                                      "DealerToCustomer"
                                                     ? "Dealer To Customer"
                                                     : row.RouteType ==
-                                                      "DealerToDealer"
+                                                        "DealerToDealer"
                                                       ? "Dealer To Dealer"
                                                       : "—"}
                                               </td>
@@ -9115,7 +9142,7 @@ const BookingViewLayer = () => {
                                                 style={{ color: "#475569" }}
                                               >
                                                 {row.ServiceType ==
-                                                  "ServiceAtGarage"
+                                                "ServiceAtGarage"
                                                   ? "Service At Garage"
                                                   : "Service At Home"}
                                               </td>
@@ -9129,14 +9156,14 @@ const BookingViewLayer = () => {
                                                       (
                                                         row.Status || ""
                                                       ).toLowerCase() ===
-                                                        "assigned"
+                                                      "assigned"
                                                         ? "rgba(13,148,136,0.15)"
                                                         : "rgba(100,116,139,0.15)",
                                                     color:
                                                       (
                                                         row.Status || ""
                                                       ).toLowerCase() ===
-                                                        "assigned"
+                                                      "assigned"
                                                         ? "#0d9488"
                                                         : "#64748b",
                                                   }}
@@ -9170,7 +9197,7 @@ const BookingViewLayer = () => {
                                                 )} */}
                                                   {row.IsCancelled === 0 &&
                                                     row.Status !==
-                                                    "completed" && (
+                                                      "completed" && (
                                                       <div className="d-flex gap-2 justify-content-center flex-wrap">
                                                         <button
                                                           type="button"
@@ -9443,14 +9470,14 @@ const BookingViewLayer = () => {
                                   <td className="py-2 px-3">
                                     {pay.PaymentDate
                                       ? new Date(
-                                        pay.PaymentDate,
-                                      ).toLocaleString("en-IN", {
-                                        day: "2-digit",
-                                        month: "short",
-                                        year: "numeric",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      })
+                                          pay.PaymentDate,
+                                        ).toLocaleString("en-IN", {
+                                          day: "2-digit",
+                                          month: "short",
+                                          year: "numeric",
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })
                                       : "—"}
                                   </td>
                                   <td className="py-2 px-3">
@@ -9650,14 +9677,14 @@ const BookingViewLayer = () => {
                                   <td className="py-2 px-3">
                                     {item.CreatedDate
                                       ? new Date(
-                                        item.CreatedDate,
-                                      ).toLocaleString("en-IN", {
-                                        day: "2-digit",
-                                        month: "short",
-                                        year: "numeric",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      })
+                                          item.CreatedDate,
+                                        ).toLocaleString("en-IN", {
+                                          day: "2-digit",
+                                          month: "short",
+                                          year: "numeric",
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })
                                       : "—"}
                                   </td>
                                 </tr>
@@ -9941,13 +9968,13 @@ const BookingViewLayer = () => {
                             >
                               {img.UploadedAt
                                 ? new Date(img.UploadedAt).toLocaleDateString(
-                                  "en-IN",
-                                  {
-                                    day: "2-digit",
-                                    month: "short",
-                                    year: "numeric",
-                                  },
-                                )
+                                    "en-IN",
+                                    {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                    },
+                                  )
                                 : ""}
                             </div>
                           </div>
@@ -10010,13 +10037,13 @@ const BookingViewLayer = () => {
                             >
                               {img.UploadedAt
                                 ? new Date(img.UploadedAt).toLocaleDateString(
-                                  "en-IN",
-                                  {
-                                    day: "2-digit",
-                                    month: "short",
-                                    year: "numeric",
-                                  },
-                                )
+                                    "en-IN",
+                                    {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                    },
+                                  )
                                 : ""}
                             </div>
                           </div>
@@ -10083,13 +10110,13 @@ const BookingViewLayer = () => {
                             >
                               {img.UploadedAt
                                 ? new Date(img.UploadedAt).toLocaleDateString(
-                                  "en-IN",
-                                  {
-                                    day: "2-digit",
-                                    month: "short",
-                                    year: "numeric",
-                                  },
-                                )
+                                    "en-IN",
+                                    {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                    },
+                                  )
                                 : ""}
                             </div>
                           </div>
@@ -10500,7 +10527,7 @@ const BookingViewLayer = () => {
                               Final payable: ₹
                               {Math.max(
                                 Number(payAmount || 0) -
-                                Number(discountAmount || 0),
+                                  Number(discountAmount || 0),
                                 0,
                               ).toFixed(2)}
                             </div>
@@ -10618,7 +10645,7 @@ const BookingViewLayer = () => {
                               Final payable: ₹
                               {Math.max(
                                 Number(payAmount || 0) -
-                                Number(discountAmount || 0),
+                                  Number(discountAmount || 0),
                                 0,
                               ).toFixed(2)}
                             </div>
@@ -10651,42 +10678,42 @@ const BookingViewLayer = () => {
 
                 {(paymentTypeChoice === "online" ||
                   paymentTypeChoice === "other") && (
-                    <div className="modal-footer border-0 justify-content-center gap-2">
-                      <button
-                        type="button"
-                        className="btn btn-press-effect btn-secondary btn-sm"
-                        onClick={() => {
-                          setPaymentTypeChoice(null);
-                          setPaymentMode("");
-                          setPayAmount(remainingAmount);
-                          setDiscountAmount("");
-                          setPaymentFile(null);
-                        }}
-                      >
-                        Back
-                      </button>
-                      <button
-                        type="button"
-                        className="btn  btn-primary-600 btn-sm"
-                        onClick={handleConfirmPayment}
-                        disabled={
-                          isLoading ||
-                          (paymentTypeChoice === "other" && !paymentFile)
-                        }
-                      >
-                        {isLoading ? (
-                          <>
-                            <span className="spinner-border spinner-border-sm me-2"></span>
-                            Processing...
-                          </>
-                        ) : paymentTypeChoice === "online" ? (
-                          "Send Payment Link"
-                        ) : (
-                          "Update Payment"
-                        )}
-                      </button>
-                    </div>
-                  )}
+                  <div className="modal-footer border-0 justify-content-center gap-2">
+                    <button
+                      type="button"
+                      className="btn btn-press-effect btn-secondary btn-sm"
+                      onClick={() => {
+                        setPaymentTypeChoice(null);
+                        setPaymentMode("");
+                        setPayAmount(remainingAmount);
+                        setDiscountAmount("");
+                        setPaymentFile(null);
+                      }}
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="button"
+                      className="btn  btn-primary-600 btn-sm"
+                      onClick={handleConfirmPayment}
+                      disabled={
+                        isLoading ||
+                        (paymentTypeChoice === "other" && !paymentFile)
+                      }
+                    >
+                      {isLoading ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2"></span>
+                          Processing...
+                        </>
+                      ) : paymentTypeChoice === "online" ? (
+                        "Send Payment Link"
+                      ) : (
+                        "Update Payment"
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -10773,55 +10800,55 @@ const BookingViewLayer = () => {
                     {!(
                       bookingData?.BookingAddOns?.length === 1 &&
                       bookingData?.BookingAddOns[0]?.ServiceType ===
-                      "Inspection"
+                        "Inspection"
                     ) && (
-                        <button
-                          type="button"
-                          className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white position-relative overflow-hidden"
-                          style={{
-                            minHeight: "72px",
-                            transition: "all 0.2s ease",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = "translateY(-2px)";
-                            e.currentTarget.style.boxShadow =
-                              "0 6px 20px rgba(0,0,0,0.08)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = "";
-                            e.currentTarget.style.boxShadow = "";
-                          }}
-                          onClick={openGarageFlowModal}
-                        >
-                          <div className="d-flex align-items-center gap-3">
-                            <span
-                              className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
-                              style={{ width: 48, height: 48 }}
-                            >
-                              <Icon
-                                icon="mdi:garage"
-                                width={24}
-                                height={24}
-                                className="text-primary"
-                              />
+                      <button
+                        type="button"
+                        className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white position-relative overflow-hidden"
+                        style={{
+                          minHeight: "72px",
+                          transition: "all 0.2s ease",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = "translateY(-2px)";
+                          e.currentTarget.style.boxShadow =
+                            "0 6px 20px rgba(0,0,0,0.08)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = "";
+                          e.currentTarget.style.boxShadow = "";
+                        }}
+                        onClick={openGarageFlowModal}
+                      >
+                        <div className="d-flex align-items-center gap-3">
+                          <span
+                            className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
+                            style={{ width: 48, height: 48 }}
+                          >
+                            <Icon
+                              icon="mdi:garage"
+                              width={24}
+                              height={24}
+                              className="text-primary"
+                            />
+                          </span>
+                          <div>
+                            <span className="fw-semibold d-block text-dark">
+                              Service at Garage
                             </span>
-                            <div>
-                              <span className="fw-semibold d-block text-dark">
-                                Service at Garage
-                              </span>
-                              <span className="small text-muted">
-                                Car pickup/drop & service done on dealer location
-                              </span>
-                            </div>
+                            <span className="small text-muted">
+                              Car pickup/drop & service done on dealer location
+                            </span>
                           </div>
-                          <Icon
-                            icon="mdi:chevron-right"
-                            width={20}
-                            height={20}
-                            className="text-secondary opacity-75"
-                          />
-                        </button>
-                      )}
+                        </div>
+                        <Icon
+                          icon="mdi:chevron-right"
+                          width={20}
+                          height={20}
+                          className="text-secondary opacity-75"
+                        />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -10989,27 +11016,6 @@ const BookingViewLayer = () => {
                           options={
                             bookingData?.BookingAddOns
                               ? bookingData.BookingAddOns.filter((addon) => {
-                                // Filter out completed services and items without a name
-                                const status = (
-                                  addon.StatusName ??
-                                  addon.statusName ??
-                                  addon.AddOnStatus ??
-                                  addon.addOnStatus
-                                )
-                                  ?.toString()
-                                  .trim();
-                                return (
-                                  status !== "ServiceCompleted" &&
-                                  addon.ServiceName
-                                );
-                              }).map((addon) => ({
-                                value: addon.ServiceName,
-
-                                label: `${addon.ServiceName} (${addon.DealerName || "No Dealer"})`,
-                              }))
-                              : // .filter((v, i, a) => a.findIndex(t => t.label === v.label) === i)
-                              []
-                                ? bookingData.BookingAddOns.filter((addon) => {
                                   // Filter out completed services and items without a name
                                   const status = (
                                     addon.StatusName ??
@@ -11024,17 +11030,38 @@ const BookingViewLayer = () => {
                                     addon.ServiceName
                                   );
                                 }).map((addon) => ({
-                                  // The 'value' stays as the ServiceName (what the API expects)
                                   value: addon.ServiceName,
-                                  // The 'label' is what the user sees in the dropdown
-                                  label: (
-                                    <>
-                                      {addon.ServiceName} (
-                                      <b>{addon.DealerName || "No Dealer"}</b>
-                                      )
-                                    </>
-                                  ),
+
+                                  label: `${addon.ServiceName} (${addon.DealerName || "No Dealer"})`,
                                 }))
+                              : // .filter((v, i, a) => a.findIndex(t => t.label === v.label) === i)
+                                []
+                                ? bookingData.BookingAddOns.filter((addon) => {
+                                    // Filter out completed services and items without a name
+                                    const status = (
+                                      addon.StatusName ??
+                                      addon.statusName ??
+                                      addon.AddOnStatus ??
+                                      addon.addOnStatus
+                                    )
+                                      ?.toString()
+                                      .trim();
+                                    return (
+                                      status !== "ServiceCompleted" &&
+                                      addon.ServiceName
+                                    );
+                                  }).map((addon) => ({
+                                    // The 'value' stays as the ServiceName (what the API expects)
+                                    value: addon.ServiceName,
+                                    // The 'label' is what the user sees in the dropdown
+                                    label: (
+                                      <>
+                                        {addon.ServiceName} (
+                                        <b>{addon.DealerName || "No Dealer"}</b>
+                                        )
+                                      </>
+                                    ),
+                                  }))
                                 : []
                           }
                           isMulti
@@ -11238,57 +11265,57 @@ const BookingViewLayer = () => {
                           garageDealerOptions.length === 1 &&
                           hasExistingCustomerToDealerRoute
                         ) && (
-                            <button
-                              type="button"
-                              className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
-                              style={{
-                                minHeight: "72px",
-                                transition: "all 0.2s ease",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.transform =
-                                  "translateY(-2px)";
-                                e.currentTarget.style.boxShadow =
-                                  "0 6px 20px rgba(0,0,0,0.08)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = "";
-                                e.currentTarget.style.boxShadow = "";
-                              }}
-                              onClick={() => {
-                                setGarageTask("carPickup");
-                                setGarageStep("route");
-                              }}
-                            >
-                              <div className="d-flex align-items-center gap-3">
-                                <span
-                                  className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
-                                  style={{ width: 48, height: 48 }}
-                                >
-                                  <Icon
-                                    icon="mdi:car-pickup"
-                                    width={24}
-                                    height={24}
-                                    className="text-primary"
-                                  />
+                          <button
+                            type="button"
+                            className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
+                            style={{
+                              minHeight: "72px",
+                              transition: "all 0.2s ease",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform =
+                                "translateY(-2px)";
+                              e.currentTarget.style.boxShadow =
+                                "0 6px 20px rgba(0,0,0,0.08)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = "";
+                              e.currentTarget.style.boxShadow = "";
+                            }}
+                            onClick={() => {
+                              setGarageTask("carPickup");
+                              setGarageStep("route");
+                            }}
+                          >
+                            <div className="d-flex align-items-center gap-3">
+                              <span
+                                className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
+                                style={{ width: 48, height: 48 }}
+                              >
+                                <Icon
+                                  icon="mdi:car-pickup"
+                                  width={24}
+                                  height={24}
+                                  className="text-primary"
+                                />
+                              </span>
+                              <div>
+                                <span className="fw-semibold d-block text-dark">
+                                  Car pickup
                                 </span>
-                                <div>
-                                  <span className="fw-semibold d-block text-dark">
-                                    Car pickup
-                                  </span>
-                                  <span className="small text-muted">
-                                    Pick up vehicle and take to dealer
-                                  </span>
-                                </div>
+                                <span className="small text-muted">
+                                  Pick up vehicle and take to dealer
+                                </span>
                               </div>
-                              <Icon
-                                icon="mdi:chevron-right"
-                                width={20}
-                                height={20}
-                                className="text-secondary opacity-75"
-                              />
-                            </button>
-                          )}
+                            </div>
+                            <Icon
+                              icon="mdi:chevron-right"
+                              width={20}
+                              height={20}
+                              className="text-secondary opacity-75"
+                            />
+                          </button>
+                        )}
                         {/* Hide Car drop when CustomerToDealer route does NOT exist */}
                         {hasExistingCustomerToDealerRoute &&
                           allGarageServicesCompletedApproved && (
@@ -11357,61 +11384,61 @@ const BookingViewLayer = () => {
                         {/* Hide Customer to Dealer button if already exists (only when carPickup) */}
                         {(!hasExistingCustomerToDealerRoute ||
                           garageTask === "carDrop") && (
-                            <button
-                              type="button"
-                              className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
-                              style={{
-                                minHeight: "72px",
-                                transition: "all 0.2s ease",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.transform =
-                                  "translateY(-2px)";
-                                e.currentTarget.style.boxShadow =
-                                  "0 6px 20px rgba(0,0,0,0.08)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = "";
-                                e.currentTarget.style.boxShadow = "";
-                              }}
-                              onClick={() => {
-                                setGarageRoute("customerToDealer");
-                                setGarageStep("details");
-                              }}
-                            >
-                              <div className="d-flex align-items-center gap-3">
-                                <span
-                                  className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
-                                  style={{ width: 48, height: 48 }}
-                                >
-                                  <Icon
-                                    icon="mdi:account-arrow-right"
-                                    width={24}
-                                    height={24}
-                                    className="text-primary"
-                                  />
+                          <button
+                            type="button"
+                            className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
+                            style={{
+                              minHeight: "72px",
+                              transition: "all 0.2s ease",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform =
+                                "translateY(-2px)";
+                              e.currentTarget.style.boxShadow =
+                                "0 6px 20px rgba(0,0,0,0.08)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = "";
+                              e.currentTarget.style.boxShadow = "";
+                            }}
+                            onClick={() => {
+                              setGarageRoute("customerToDealer");
+                              setGarageStep("details");
+                            }}
+                          >
+                            <div className="d-flex align-items-center gap-3">
+                              <span
+                                className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
+                                style={{ width: 48, height: 48 }}
+                              >
+                                <Icon
+                                  icon="mdi:account-arrow-right"
+                                  width={24}
+                                  height={24}
+                                  className="text-primary"
+                                />
+                              </span>
+                              <div>
+                                <span className="fw-semibold d-block text-dark">
+                                  {garageTask === "carDrop"
+                                    ? "Dealer to Customer"
+                                    : "Customer to Dealer"}
                                 </span>
-                                <div>
-                                  <span className="fw-semibold d-block text-dark">
-                                    {garageTask === "carDrop"
-                                      ? "Dealer to Customer"
-                                      : "Customer to Dealer"}
-                                  </span>
-                                  <span className="small text-muted">
-                                    {garageTask === "carPickup"
-                                      ? "Pickup from Customer → Deliver to Dealer"
-                                      : "Pickup from Dealer → Deliver to Customer"}
-                                  </span>
-                                </div>
+                                <span className="small text-muted">
+                                  {garageTask === "carPickup"
+                                    ? "Pickup from Customer → Deliver to Dealer"
+                                    : "Pickup from Dealer → Deliver to Customer"}
+                                </span>
                               </div>
-                              <Icon
-                                icon="mdi:chevron-right"
-                                width={20}
-                                height={20}
-                                className="text-secondary opacity-75"
-                              />
-                            </button>
-                          )}
+                            </div>
+                            <Icon
+                              icon="mdi:chevron-right"
+                              width={20}
+                              height={20}
+                              className="text-secondary opacity-75"
+                            />
+                          </button>
+                        )}
                         {garageTask === "carPickup" &&
                           hasExistingCustomerToDealerRoute &&
                           completedGarageDealerOptions.length > 0 &&
@@ -11494,7 +11521,7 @@ const BookingViewLayer = () => {
                                 renderAssignedDealerField(
                                   "Deliver To (Dealer)",
                                   garageDeliverDealer ||
-                                  singleGarageDealerOption,
+                                    singleGarageDealerOption,
                                 )
                               ) : (
                                 <>
@@ -11571,12 +11598,12 @@ const BookingViewLayer = () => {
                           </div>
                           <div>
                             {pendingNextGarageDealerOptions.length === 1 &&
-                              (garageDeliverDealer ||
-                                pendingNextGarageDealerOptions[0]) ? (
+                            (garageDeliverDealer ||
+                              pendingNextGarageDealerOptions[0]) ? (
                               renderAssignedDealerField(
                                 "Deliver To (Dealer)",
                                 garageDeliverDealer ||
-                                pendingNextGarageDealerOptions[0],
+                                  pendingNextGarageDealerOptions[0],
                               )
                             ) : (
                               <>
@@ -11873,7 +11900,7 @@ const BookingViewLayer = () => {
                     </div>
                     <div className="col-12">
                       {pickupDropRescheduleRow?.ServiceType ===
-                        "ServiceAtGarage" ? (
+                      "ServiceAtGarage" ? (
                         <>
                           <label className="form-label small fw-semibold">
                             Time
@@ -12085,7 +12112,7 @@ const BookingViewLayer = () => {
                     </div>
                     <div className="col-12">
                       {pickupDropReassignRow?.ServiceType ===
-                        "ServiceAtGarage" ? (
+                      "ServiceAtGarage" ? (
                         // SHOW TIME PICKER FOR GARAGE WITH VALIDATION
                         <>
                           <label className="form-label small fw-semibold">
