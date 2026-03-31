@@ -10064,7 +10064,7 @@ const BookingViewLayer = () => {
                   <Accordion.Header>
                     <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
                       <Icon icon="mdi:image-multiple" width={20} height={20} />
-                      Service Completion Images
+                      Customer Confirmation Images
                     </h6>
                   </Accordion.Header>
 
