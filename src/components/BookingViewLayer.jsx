@@ -6,6 +6,7 @@ import axios from "axios";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import Select from "react-select";
+import TimeLineView from "./TimeLineView";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 const API_IMAGE = import.meta.env.VITE_APIURL_IMAGE;
@@ -304,7 +305,7 @@ const BookingViewLayer = () => {
     bookingData?.BookingStatus === "Completed" &&
     bookingData?.Payments?.length > 0 &&
     bookingData?.Payments?.[bookingData.Payments.length - 1]?.PaymentStatus ===
-      "Success";
+    "Success";
   // State for dynamically adding services
   const [servicesToAdd, setServicesToAdd] = useState([
     {
@@ -950,8 +951,7 @@ const BookingViewLayer = () => {
           title: "Success",
           text:
             res.data.message ||
-            `${
-              assignType === "technician" ? "Technician" : "Supervisor"
+            `${assignType === "technician" ? "Technician" : "Supervisor"
             } assigned successfully`,
         });
 
@@ -967,8 +967,7 @@ const BookingViewLayer = () => {
           title: "Error",
           text:
             res.data.message ||
-            `${
-              assignType === "technician" ? "Technician" : "Supervisor"
+            `${assignType === "technician" ? "Technician" : "Supervisor"
             } assignment failed.`,
         });
       }
@@ -2343,9 +2342,9 @@ const BookingViewLayer = () => {
   // Calculate Add Service total dynamically
   const addServiceTotal = bookingData?.BookingAddOns
     ? bookingData.BookingAddOns.reduce(
-        (sum, item) => sum + (item.TotalPrice || 0),
-        0,
-      )
+      (sum, item) => sum + (item.TotalPrice || 0),
+      0,
+    )
     : 0;
 
   const handleAddLocalService = async () => {
@@ -2622,15 +2621,18 @@ const BookingViewLayer = () => {
     ].filter((item) => {
       const total = Number(
         item.TotalPrice ??
-          Number(item.Price || 0) +
-            Number(item.GSTAmount || 0) +
-            Number(item.LabourCharges || 0) -
-            Number(item.CouponAmount || 0),
+        Number(item.Price || 0) +
+        Number(item.GSTAmount || 0) +
+        Number(item.LabourCharges || 0) -
+        Number(item.CouponAmount || 0),
       );
 
       return total === 0;
     });
 
+
+
+    console.log(zeroAmountServices, "zeroAmountServices")
     if (zeroAmountServices.length > 0) {
       const serviceNames = zeroAmountServices
         .map((s) => s.ServiceName || s.Name || "Unnamed Service")
@@ -2658,10 +2660,10 @@ const BookingViewLayer = () => {
     ].filter((item) => {
       const total = Number(
         item.TotalPrice ??
-          Number(item.Price || 0) +
-            Number(item.GSTAmount || 0) +
-            Number(item.LabourCharges || 0) -
-            Number(item.CouponAmount || 0),
+        Number(item.Price || 0) +
+        Number(item.GSTAmount || 0) +
+        Number(item.LabourCharges || 0) -
+        Number(item.CouponAmount || 0),
       );
 
       return total === 0;
@@ -2810,10 +2812,10 @@ const BookingViewLayer = () => {
     const zeroTotalSupervisorServices = supervisorBookings.filter((s) => {
       const total = Number(
         s.TotalPrice ??
-          Number(s.Price || 0) +
-            Number(s.GSTAmount || 0) +
-            Number(s.LabourCharges || 0) -
-            Number(s.CouponAmount || 0),
+        Number(s.Price || 0) +
+        Number(s.GSTAmount || 0) +
+        Number(s.LabourCharges || 0) -
+        Number(s.CouponAmount || 0),
       );
       return total === 0;
     });
@@ -2859,7 +2861,7 @@ const BookingViewLayer = () => {
       Swal.fire(
         "Error",
         error?.response?.data?.message ||
-          "Failed to generate Estimation invoice.",
+        "Failed to generate Estimation invoice.",
         "error",
       );
     } finally {
@@ -2920,7 +2922,7 @@ const BookingViewLayer = () => {
   const ensureBasicDetails = () => {
     const fields = [
       (!bookingData?.BookingDate || !bookingData?.TimeSlot) &&
-        "Booking date & time slot",
+      "Booking date & time slot",
       !bookingData?.FullAddress && "Customer address",
       !(
         bookingData?.SupervisorHeadName ||
@@ -3292,6 +3294,26 @@ const BookingViewLayer = () => {
     hasAtLeastOneService &&
     (bookingData?.BookingAddOns || []).every(isSupervisorConfirmed) &&
     (bookingData?.SupervisorBookings || []).every(isSupervisorConfirmed);
+  const customerRejectedBookings = bookingData?.CustomerRejectedBookings || [];
+  const hasOnlyZeroValueRejectedServices =
+    !hasAtLeastOneService &&
+    customerRejectedBookings.length > 0 &&
+    customerRejectedBookings.every((item) => {
+      const customerTotal = Number(
+        item.TotalPrice ??
+        Number(item.Price || 0) +
+        Number(item.GSTAmount || 0) +
+        Number(item.LabourCharges || 0) -
+        Number(item.CouponAmount || 0),
+      );
+      const dealerTotal = Number(
+        Number(item.DealerSparePrice || 0) +
+        Number(item.DealerPrice || 0) +
+        Number(item.DealerGSTAmount || 0),
+      );
+
+      return customerTotal === 0 && dealerTotal === 0;
+    });
   const showEstimationButton = allSupervisorConfirmed;
   const showFinalButton =
     remainingAmount === 0 &&
@@ -3445,7 +3467,7 @@ const BookingViewLayer = () => {
           Swal.fire(
             "Error",
             onlineErr?.response?.data?.message ||
-              "Failed to initiate online payment",
+            "Failed to initiate online payment",
             "error",
           );
           return;
@@ -3791,10 +3813,50 @@ const BookingViewLayer = () => {
 
     const totalServices = addOns.length;
     const completedServices = addOns.filter((a) => a.Is_Completed).length;
+    const normalizeTimelineValue = (value) =>
+      (value || "")
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "");
+    const normalizedBookingWorkflowStatus = normalizeTimelineValue(
+      bookingData?.BookingStatus,
+    );
+    const normalizedServiceStatuses = addOns.map((item) =>
+      normalizeTimelineValue(
+        item?.StatusName ??
+        item?.statusName ??
+        item?.AddOnStatus ??
+        item?.addOnStatus,
+      ),
+    );
+    const normalizedPaymentStatuses = payments.map((payment) =>
+      normalizeTimelineValue(payment?.PaymentStatus),
+    );
+    const hasServiceInProgressSignal =
+      normalizedBookingWorkflowStatus.includes("serviceinprogress") ||
+      normalizedServiceStatuses.some(
+        (status) =>
+          status.includes("inprogress") || status.includes("serviceinprogress"),
+      );
+    const hasServiceStartedSignal =
+      normalizedBookingWorkflowStatus.includes("servicestart") ||
+      normalizedServiceStatuses.some((status) => status.includes("started"));
+    const hasAnyServiceProgress =
+      hasServiceInProgressSignal ||
+      hasServiceStartedSignal ||
+      completedServices > 0;
+    const hasCompletedPayment = normalizedPaymentStatuses.some(
+      (status) => status === "success" || status === "paid",
+    );
+    const hasPartialPayment =
+      !hasCompletedPayment &&
+      (normalizedPaymentStatuses.some((status) => status === "partialpaid") ||
+        payments.some((payment) => Number(payment?.AmountPaid || 0) > 0));
 
     const leadStage = {
       id: "lead-created",
-      title: "Lead Created",
+      title: "Lead created",
       icon: "mdi:lead-pencil",
       date: bookingData.LeadCreatedDate,
       status: "completed",
@@ -3803,11 +3865,11 @@ const BookingViewLayer = () => {
 
     const bookingStage = {
       id: "booking-created",
-      title: "Booking Created",
+      title: "Booking created",
       icon: "mdi:calendar-plus",
       date: bookingData.BookingDate,
       status: "completed",
-      details: `Booking ID: ${bookingData.BookingID ?? "—"}`,
+      details: `Booking ID: ${bookingData.BookingTrackID ?? "—"}`,
     };
 
     // const assignStage = {
@@ -3828,7 +3890,9 @@ const BookingViewLayer = () => {
 
     const supervisorStage = {
       id: "supervisor-assigned",
-      title: "Supervisor Assigned",
+      title: bookingData.SupervisorHeadName
+        ? "Supervisor assigned"
+        : "Supervisor assignment pending",
       icon: "mdi:account-tie",
       date: bookingData.SupervisorHeadAssignDate,
       status: bookingData.SupervisorHeadName ? "completed" : "pending",
@@ -3837,7 +3901,9 @@ const BookingViewLayer = () => {
 
     const fieldAdvisorStage = {
       id: "field-advisor-assigned",
-      title: "Field Advisor Assigned",
+      title: bookingData.FieldAdvisorName
+        ? "Field advisor assigned"
+        : "Field advisor assignment",
       icon: "mdi:account-hard-hat",
       date: bookingData.FieldAdvisorAssignDate,
       status: bookingData.FieldAdvisorName ? "completed" : "pending",
@@ -3847,12 +3913,44 @@ const BookingViewLayer = () => {
       ...(bookingData?.BookingAddOns || []),
       ...(bookingData?.SupervisorBookings || []),
     ];
+    const assignedDealerEntries = allDealerItems.filter(
+      (item) =>
+        (item?.DealerID != null && item?.DealerID !== "") || item?.DealerName,
+    );
+    const assignedDealerCount = new Set(
+      assignedDealerEntries.map(
+        (item) => `${item?.DealerID ?? "no-id"}-${item?.DealerName ?? "no-name"}`,
+      ),
+    ).size;
     const dealerApprovalCount = allDealerItems.filter(
       (a) => a.IsDealer_Confirm === "Approved",
     ).length;
-    const dealerStage = {
+    const dealerAssignmentStage = {
+      id: "dealer-assignment",
+      title:
+        assignedDealerCount > 0
+          ? "Dealer assigned"
+          : "Dealer assignment pending",
+      icon: "mdi:store-check-outline",
+      date:
+        assignedDealerEntries[0]?.UpdatedDate ||
+        assignedDealerEntries[0]?.CreatedDate,
+      status: assignedDealerCount > 0 ? "completed" : "pending",
+      details:
+        assignedDealerCount > 0
+          ? `${assignedDealerCount} dealer(s) assigned`
+          : "No dealers assigned",
+    };
+    const dealerApprovalStage = {
       id: "dealer-confirmation",
-      title: "Dealer Side Approval",
+      title:
+        allDealerItems.length === 0
+          ? "Dealer approval pending"
+          : allDealerItems.every((a) => a.IsDealer_Confirm === "Approved")
+            ? "Dealer approval completed"
+            : allDealerItems.some((a) => a.IsDealer_Confirm === "Rejected")
+              ? "Dealer approval failed"
+              : "Dealer approval in progress",
       icon: "mdi:handshake",
       date: allDealerItems.find((a) => a.IsDealer_Confirm)?.UpdatedDate,
       status:
@@ -3893,7 +3991,14 @@ const BookingViewLayer = () => {
 
     const customerStage = {
       id: "customer-confirmation",
-      title: "Customer Confirmation",
+      title:
+        confirmedLength === 0 && pendingLength === 0
+          ? "Customer confirmation pending"
+          : confirmedLength > 0
+            ? pendingLength === 0
+              ? "Customer confirmed"
+              : "Customer confirmation in progress"
+            : "Customer confirmation pending",
       icon: "mdi:account-check",
       date: addOns.find((a) => a.ConfirmRole)?.ConfirmDate,
       status:
@@ -3909,7 +4014,10 @@ const BookingViewLayer = () => {
 
     const technicianStage = {
       id: "technician-assigned",
-      title: "Technician Assigned",
+      title:
+        carPickUpDelivery.length > 0
+          ? "Technician assigned"
+          : "Technician assignment",
       icon: "mdi:engineer",
       date: carPickUpDelivery[0]?.AssignDate,
       status: carPickUpDelivery.length > 0 ? "completed" : "pending",
@@ -3922,7 +4030,14 @@ const BookingViewLayer = () => {
 
     const serviceCompletedStage = {
       id: "service-completed",
-      title: "Service Completed",
+      title:
+        totalServices === 0
+          ? "Service pending"
+          : completedServices === totalServices
+            ? "Services completed"
+            : hasAnyServiceProgress
+              ? "Service in progress"
+              : "Service pending",
       icon: "mdi:car-check",
       date: addOns.find((a) => a.Is_Completed)?.CompletedDate,
       status:
@@ -3930,7 +4045,7 @@ const BookingViewLayer = () => {
           ? "pending"
           : completedServices === totalServices
             ? "completed"
-            : completedServices > 0
+            : hasAnyServiceProgress
               ? "in-progress"
               : "pending",
       details:
@@ -3945,18 +4060,32 @@ const BookingViewLayer = () => {
     );
     const paymentStage = {
       id: "payment-done",
-      title: "Payment Done",
+      title: hasCompletedPayment
+        ? "Payment completed"
+        : hasPartialPayment
+          ? "Payment in progress"
+          : "Payment pending",
       icon: "mdi:credit-card-check",
-      date: payments[0]?.PaymentDate,
-      status: payments.some((p) => p.PaymentStatus === "Success")
+      date: payments[payments.length - 1]?.PaymentDate,
+      status: hasCompletedPayment
         ? "completed"
-        : "pending",
+        : hasPartialPayment
+          ? "in-progress"
+          : "pending",
       details: `₹ ${totalPaid.toFixed(2)}`,
     };
 
+    paymentStage.details =
+      totalPaid > 0
+        ? `Paid ₹${totalPaid.toFixed(2)}`
+        : "Awaiting payment";
+
     const bookingDoneStage = {
       id: "booking-done",
-      title: "Booking Completed",
+      title:
+        bookingData.BookingStatus === "Completed"
+          ? "Booking completed"
+          : "Booking completion pending",
       icon: "mdi:check-circle",
       date: bookingData.BookingCompletedDate,
       status:
@@ -3970,7 +4099,8 @@ const BookingViewLayer = () => {
       // assignStage,
       supervisorStage,
       fieldAdvisorStage,
-      dealerStage,
+      dealerAssignmentStage,
+      dealerApprovalStage,
       customerStage,
       technicianStage,
       serviceCompletedStage,
@@ -4007,6 +4137,38 @@ const BookingViewLayer = () => {
       return s;
     });
 
+    const paymentStageIndex = stages.findIndex(
+      (stage) => stage.id === "payment-done",
+    );
+    if (
+      paymentStageIndex >= 0 &&
+      ["completed", "in-progress"].includes(stages[paymentStageIndex].status)
+    ) {
+      const lastProgressedNonPaymentStageIndex = stages.reduce(
+        (lastIndex, stage, index) => {
+          if (stage.id === "payment-done") return lastIndex;
+          return ["completed", "in-progress"].includes(stage.status)
+            ? index
+            : lastIndex;
+        },
+        -1,
+      );
+
+      const desiredPaymentIndex = Math.min(
+        lastProgressedNonPaymentStageIndex + 1,
+        stages.length - 1,
+      );
+
+      if (desiredPaymentIndex !== paymentStageIndex) {
+        const [paymentStageItem] = stages.splice(paymentStageIndex, 1);
+        const adjustedInsertIndex =
+          paymentStageIndex < desiredPaymentIndex
+            ? desiredPaymentIndex - 1
+            : desiredPaymentIndex;
+        stages.splice(adjustedInsertIndex, 0, paymentStageItem);
+      }
+    }
+
     return stages;
   })();
 
@@ -4027,36 +4189,6 @@ const BookingViewLayer = () => {
     }
     return "bg-secondary-subtle text-secondary";
   };
-
-  // Auto-scroll & briefly blink the next (in-progress) stage in the timeline
-  useEffect(() => {
-    if (!bookingData || !serviceStages || serviceStages.length === 0) return;
-    const nextStage = serviceStages.find((s) => s.status === "in-progress");
-    if (!nextStage) return;
-
-    const el = document.querySelector(`[data-stage-id="${nextStage.id}"]`);
-    if (!el) return;
-
-    try {
-      el.scrollIntoView({
-        behavior: "smooth",
-        inline: "center",
-        block: "nearest",
-      });
-    } catch {
-      // ignore scroll errors
-    }
-
-    el.classList.add("stage-blink");
-    const timeoutId = window.setTimeout(() => {
-      el.classList.remove("stage-blink");
-    }, 4000);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-      el.classList.remove("stage-blink");
-    };
-  }, [bookingData, serviceStages]);
 
   // When both Supervisor and Field Advisor are missing, auto-scroll to Personal Information
   useEffect(() => {
@@ -4198,60 +4330,142 @@ const BookingViewLayer = () => {
       };
     });
 
-  const pricingTotals = liveComparisonServices.reduce(
-    (acc, item) => {
-      acc.customerParts += item.customerParts;
-      acc.customerLabour += item.customerLabour;
-      acc.customerGst += item.customerGst;
-      acc.customerTotal += item.customerTotal;
-      acc.dealerParts += item.dealerParts;
-      acc.dealerLabour += item.dealerLabour;
-      acc.dealerGst += item.dealerGst;
-      acc.dealerTotal += item.dealerTotal;
-      acc.marginAmount += item.marginAmount;
-      acc.priceSpread += item.priceSpread;
-      if (item.marginAmount > 0) acc.marginServices += 1;
-      if (Math.abs(item.priceSpread - item.marginAmount) > 1) {
-        acc.varianceServices += 1;
-      }
-      return acc;
-    },
-    {
-      customerParts: 0,
-      customerLabour: 0,
-      customerGst: 0,
-      customerTotal: 0,
-      dealerParts: 0,
-      dealerLabour: 0,
-      dealerGst: 0,
-      dealerTotal: 0,
-      marginAmount: 0,
-      priceSpread: 0,
-      marginServices: 0,
-      varianceServices: 0,
-    },
+  const customerRejectedComparisonServices = (
+    bookingData?.CustomerRejectedBookings || []
+  ).map((item, index) => {
+    const customerTotal = getCustomerServiceTotal(item);
+    const dealerTotal = getDealerServiceTotal(item);
+    const marginAmount = getMarginAmountValue(item);
+    const marginPercent = getMarginPercentValue(item);
+    const priceSpread = Number((customerTotal - dealerTotal).toFixed(2));
+
+    return {
+      id: item.AddOnID || item.Id || `${item.ServiceName || "service"}-rejected-${index}`,
+      stage: "Customer Rejected",
+      serviceName: item.ServiceName || "Service",
+      serviceType: item.ServiceType || "Service",
+      dealerName: item.DealerName || "Dealer not assigned",
+      quantity: Number(item.Quantity || 1),
+      createdAt: item.CreatedDate || item.BookingDate,
+      includeNames: getIncludeNames(item),
+      customerPartUnit: Number(item.BasePrice || 0),
+      customerParts: getCustomerPartsTotal(item),
+      customerLabour: getCustomerLabourTotal(item),
+      customerGst: getCustomerGstTotal(item),
+      customerGstPercent: Number(item.GSTPercent || 0),
+      customerTotal,
+      dealerPartUnit: Number(item.DealerBasePrice || 0),
+      dealerParts: getDealerPartsTotal(item),
+      dealerLabour: getDealerLabourTotal(item),
+      dealerGst: getDealerGstTotal(item),
+      dealerGstPercent: Number(item.DealerGSTPercent || 0),
+      dealerTotal,
+      dealerConfirmStatus:
+        item.IsDealer_Confirm || item.isDealer_Confirm || "Pending",
+      serviceStatus:
+        item.StatusName ||
+        item.statusName ||
+        item.AddOnStatus ||
+        item.addOnStatus ||
+        "Rejected",
+      isCompletionApproved:
+        item.IsCompleted_Confirmation === 1 ||
+        item.isCompleted_Confirmation === 1,
+      completionApprovedBy:
+        item.EmployeeName || item.employeeName || employeeData?.Name || "",
+      sourceItem: item,
+      marginAmount,
+      marginPercent,
+      priceSpread,
+      spreadWithoutMargin: Number((priceSpread - marginAmount).toFixed(2)),
+      updatedAt: item.UpdatedDate || item.CreatedDate || item.BookingDate,
+      sourceOrder: index,
+    };
+  });
+
+  const buildPricingTotals = (services) =>
+    services.reduce(
+      (acc, item) => {
+        acc.customerParts += item.customerParts;
+        acc.customerLabour += item.customerLabour;
+        acc.customerGst += item.customerGst;
+        acc.customerTotal += item.customerTotal;
+        acc.dealerParts += item.dealerParts;
+        acc.dealerLabour += item.dealerLabour;
+        acc.dealerGst += item.dealerGst;
+        acc.dealerTotal += item.dealerTotal;
+        acc.marginAmount += item.marginAmount;
+        acc.priceSpread += item.priceSpread;
+        if (item.marginAmount > 0) acc.marginServices += 1;
+        if (Math.abs(item.priceSpread - item.marginAmount) > 1) {
+          acc.varianceServices += 1;
+        }
+        return acc;
+      },
+      {
+        customerParts: 0,
+        customerLabour: 0,
+        customerGst: 0,
+        customerTotal: 0,
+        dealerParts: 0,
+        dealerLabour: 0,
+        dealerGst: 0,
+        dealerTotal: 0,
+        marginAmount: 0,
+        priceSpread: 0,
+        marginServices: 0,
+        varianceServices: 0,
+      },
+    );
+
+  const getPricingStageBadgeClass = (stage) => {
+    if (stage === "Customer Confirmed") {
+      return "bg-success-subtle text-success";
+    }
+
+    if (stage === "Customer Rejected") {
+      return "bg-danger-subtle text-danger";
+    }
+
+    return "bg-warning-subtle text-warning";
+  };
+
+  const pricingTotals = buildPricingTotals(liveComparisonServices);
+
+  const customerRejectedPricingTotals = buildPricingTotals(
+    customerRejectedComparisonServices,
   );
 
   const effectiveMarginPercent =
     pricingTotals.dealerTotal > 0
       ? Number(
-          (
-            (pricingTotals.marginAmount / pricingTotals.dealerTotal) *
-            100
-          ).toFixed(2),
-        )
+        (
+          (pricingTotals.marginAmount / pricingTotals.dealerTotal) *
+          100
+        ).toFixed(2),
+      )
+      : 0;
+  const rejectedEffectiveMarginPercent =
+    customerRejectedPricingTotals.dealerTotal > 0
+      ? Number(
+        (
+          (customerRejectedPricingTotals.marginAmount /
+            customerRejectedPricingTotals.dealerTotal) *
+          100
+        ).toFixed(2),
+      )
       : 0;
   const priceSpreadPercent =
     pricingTotals.dealerTotal > 0
       ? Number(
-          (
-            (pricingTotals.priceSpread / pricingTotals.dealerTotal) *
-            100
-          ).toFixed(2),
-        )
+        (
+          (pricingTotals.priceSpread / pricingTotals.dealerTotal) *
+          100
+        ).toFixed(2),
+      )
       : 0;
   const unmatchedSpreadAmount = Number(
-    (pricingTotals.priceSpread - pricingTotals.marginAmount).toFixed(2),
+    (pricingTotals.priceSpread),
   );
   const pricingBarBase = Math.max(
     pricingTotals.customerTotal,
@@ -4517,204 +4731,7 @@ const BookingViewLayer = () => {
           }
         }
       `}</style>
-      {/* Service Time line - top of page */}
-      {bookingData && (
-        <div className="mb-3">
-          <div className="card border-0 shadow-sm">
-            <div className="card-body py-3 px-3">
-              <div className="d-flex flex-wrap align-items-center gap-3">
-                <div className="d-flex align-items-center gap-2">
-                  <span
-                    className="badge rounded-pill bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center"
-                    style={{ width: 28, height: 28 }}
-                  >
-                    <Icon
-                      icon="mdi:timeline-clock-outline"
-                      width={18}
-                      height={18}
-                    />
-                  </span>
-                  <div>
-                    <div className="fw-semibold small text-uppercase text-muted">
-                      Service Timeline
-                    </div>
-                    <div className="small text-body-secondary">
-                      <span className="me-2">
-                        <strong>Booking Date:</strong>{" "}
-                        {bookingData.BookingDate
-                          ? displayDate(bookingData.BookingDate)
-                          : "N/A"}
-                      </span>
-                      {bookingData.TimeSlot && (
-                        <span className="me-2">
-                          <strong>Time Slot:</strong> {bookingData.TimeSlot}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="ms-auto small text-muted d-flex flex-wrap gap-3">
-                  {bookingData.LeadCreatedDate && (
-                    <span>
-                      <strong>Lead Created:</strong>{" "}
-                      {displayDate(bookingData.LeadCreatedDate)}
-                    </span>
-                  )}
-                  {bookingData.ServiceScheduledDate && (
-                    <span>
-                      <strong>Service Scheduled:</strong>{" "}
-                      {displayDate(bookingData.ServiceScheduledDate)}
-                    </span>
-                  )}
-                  {bookingData.ServiceCompletedDate && (
-                    <span>
-                      <strong>Service Completed:</strong>{" "}
-                      {displayDate(bookingData.ServiceCompletedDate)}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Stages timeline container - same style as CompleteServiceReportLayer */}
-              {serviceStages.length > 0 && (
-                <div className="mt-3 service-timeline position-relative">
-                  <style>{`
-                    .service-timeline { 
-                      padding: 0.75rem 0; 
-                      overflow-x: auto;
-                      scrollbar-width: thin;
-                    }
-                    .timeline-container {
-                      display: flex;
-                      align-items: flex-start;
-                      gap: 1rem;
-                      min-width: max-content;
-                      position: relative;
-                    }
-                    .timeline-step {
-                      display: flex;
-                      flex-direction: column;
-                      align-items: center;
-                      position: relative;
-                      min-width: 180px;
-                      flex: 0 0 auto;
-                    }
-                    .timeline-step:not(:last-child)::after {
-                      content: '';
-                      position: absolute;
-                      top: 2.5rem;
-                      right: -1rem;
-                      width: 2rem;
-                      height: 3px;
-                      background: linear-gradient(to right, var(--step-bg, #e5e7eb) 0%, var(--step-bg, #e5e7eb) 100%);
-                    }
-                    .step-circle {
-                      width: 3rem;
-                      height: 3rem;
-                      border-radius: 50%;
-                      display: flex;
-                      align-items: center;
-                      justify-content: center;
-                      font-weight: 600;
-                      font-size: 0.875rem;
-                      color: white;
-                      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                      z-index: 1;
-                      position: relative;
-                      border: 3px solid white;
-                    }
-                    .timeline-step.stage-blink .step-circle {
-                      animation: stageBlink 1.1s ease-in-out infinite;
-                    }
-                    @keyframes stageBlink {
-                      0% {
-                        transform: scale(1);
-                        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6);
-                      }
-                      50% {
-                        transform: scale(1.08);
-                        box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
-                      }
-                      100% {
-                        transform: scale(1);
-                        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
-                      }
-                    }
-                    .step-content {
-                      margin-top: 0.75rem;
-                      text-align: center;
-                      max-width: 160px;
-                    }
-                    .step-title {
-                      font-weight: 600;
-                      font-size: 0.85rem;
-                      margin-bottom: 0.25rem;
-                      line-height: 1.2;
-                    }
-                    .step-date {
-                      font-size: 0.75rem;
-                      opacity: 0.8;
-                      line-height: 1.3;
-                    }
-                    @media (max-width: 768px) {
-                      .timeline-container { flex-direction: column; }
-                      .timeline-step:not(:last-child)::after { display: none; }
-                      .timeline-step { flex-direction: row; align-items: center; min-width: auto; }
-                      .timeline-step::before {
-                        content: '';
-                        position: absolute;
-                        left: 1.25rem;
-                        top: 0;
-                        bottom: 0;
-                        width: 3px;
-                        background: #e5e7eb;
-                      }
-                    }
-                  `}</style>
-                  <div className="timeline-container">
-                    {serviceStages.map((stage, index) => {
-                      let color = "#dc2626"; // default red for failed/pending
-                      if (stage.status === "completed") {
-                        color = "#16a34a"; // green
-                      } else if (stage.status === "in-progress") {
-                        color = "#eab308"; // yellow
-                      } else if (stage.status === "pending") {
-                        color = "#9ca3af"; // gray
-                      }
-                      return (
-                        <div
-                          key={stage.id}
-                          className="timeline-step"
-                          data-stage-id={stage.id}
-                        >
-                          <div
-                            className="step-circle"
-                            style={{
-                              "--step-bg": color,
-                              backgroundColor: color,
-                            }}
-                          >
-                            {index + 1}
-                          </div>
-                          <div className="step-content">
-                            <div className="step-title">{stage.title}</div>
-                            <div className="step-date">
-                              {stage.date ? displayDate(stage.date) : "—"}
-                            </div>
-                            {stage.details && (
-                              <div className="step-date">{stage.details}</div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <TimeLineView bookingData={bookingData} displayDate={displayDate} />
 
       <div className="row gy-2">
         {/* Right Tabs Content */}
@@ -4825,7 +4842,7 @@ const BookingViewLayer = () => {
                                     <span className="w-50 text-secondary-light fw-bold d-flex align-items-center justify-content-between">
                                       <span>
                                         {bookingData?.SupervisorHeadName ||
-                                        bookingData?.SupervisorHeadPhoneNumber ? (
+                                          bookingData?.SupervisorHeadPhoneNumber ? (
                                           <>
                                             {bookingData?.SupervisorHeadName ||
                                               ""}
@@ -4863,7 +4880,7 @@ const BookingViewLayer = () => {
                                     <span className="w-50 text-secondary-light fw-bold d-flex align-items-center justify-content-between">
                                       <span>
                                         {bookingData?.FieldAdvisorName ||
-                                        bookingData?.FieldAdvisorPhoneNumber ? (
+                                          bookingData?.FieldAdvisorPhoneNumber ? (
                                           <>
                                             {bookingData?.FieldAdvisorName ||
                                               ""}
@@ -4935,8 +4952,8 @@ const BookingViewLayer = () => {
 
                         <Accordion.Body>
                           {bookingData.VehicleDetails &&
-                          Array.isArray(bookingData.VehicleDetails) &&
-                          bookingData.VehicleDetails.length > 0 ? (
+                            Array.isArray(bookingData.VehicleDetails) &&
+                            bookingData.VehicleDetails.length > 0 ? (
                             <div>
                               {bookingData.VehicleDetails.map(
                                 (vehicle, index) => (
@@ -5004,7 +5021,7 @@ const BookingViewLayer = () => {
                                         </span>
                                         <span className="w-70 text-secondary-light fw-bold ms-2">
                                           {vehicle.KmDriven !== null &&
-                                          vehicle.KmDriven !== undefined
+                                            vehicle.KmDriven !== undefined
                                             ? vehicle.KmDriven.toLocaleString()
                                             : "N/A"}{" "}
                                           km
@@ -5285,30 +5302,30 @@ const BookingViewLayer = () => {
                         bookingData?.Isservice_converted === 1) ||
                         (bookingData?.Isinspection === 0 &&
                           bookingData?.Isservice_converted === 0)) && (
-                        <Link
-                          to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
-                          onClick={(e) => {
-                            if (!ensureBasicDetails()) {
-                              e.preventDefault(); // Stop navigation if details are missing
+                          <Link
+                            to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
+                            onClick={(e) => {
+                              if (!ensureBasicDetails()) {
+                                e.preventDefault(); // Stop navigation if details are missing
+                              }
+                            }}
+                            className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
+                            title={
+                              roleName === "Field Advisor"
+                                ? "Assign Dealers"
+                                : roleName === "Supervisor Head"
+                                  ? "Confirm Services"
+                                  : "Confirm Services"
                             }
-                          }}
-                          className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
-                          title={
-                            roleName === "Field Advisor"
+                          >
+                            <Icon icon="mdi:pencil-outline" />
+                            {roleName === "Field Advisor"
                               ? "Assign Dealers"
                               : roleName === "Supervisor Head"
                                 ? "Confirm Services"
-                                : "Confirm Services"
-                          }
-                        >
-                          <Icon icon="mdi:pencil-outline" />
-                          {roleName === "Field Advisor"
-                            ? "Assign Dealers"
-                            : roleName === "Supervisor Head"
-                              ? "Confirm Services"
-                              : "Confirm Services"}
-                        </Link>
-                      )}
+                                : "Confirm Services"}
+                          </Link>
+                        )}
 
                       {/* Confirm Service Button - Admin & Supervisor only, when Convert To Service is enabled and there are unconfirmed services */}
                       {(() => {
@@ -5518,14 +5535,13 @@ const BookingViewLayer = () => {
                                   Booking Status:
                                 </span>
                                 <span
-                                  className={`badge px-3 py-1 rounded-pill ${
-                                    bookingData.BookingStatus === "Completed"
-                                      ? "bg-success"
-                                      : bookingData.BookingStatus ===
-                                          "Confirmed"
-                                        ? "bg-primary"
-                                        : "bg-warning text-dark"
-                                  }`}
+                                  className={`badge px-3 py-1 rounded-pill ${bookingData.BookingStatus === "Completed"
+                                    ? "bg-success"
+                                    : bookingData.BookingStatus ===
+                                      "Confirmed"
+                                      ? "bg-primary"
+                                      : "bg-warning text-dark"
+                                    }`}
                                 >
                                   {bookingData.BookingStatus}
                                 </span>
@@ -5578,37 +5594,37 @@ const BookingViewLayer = () => {
                                                   {pkg.Category
                                                     ?.SubCategories?.[0]
                                                     ?.Includes?.length > 0 && (
-                                                    <ul className="text-muted small ps-3 mb-0">
-                                                      {pkg.Category.SubCategories[0].Includes.map(
-                                                        (inc) => (
-                                                          <li
-                                                            key={inc.IncludeID}
-                                                          >
-                                                            {inc.IncludeName}
-                                                          </li>
-                                                        ),
-                                                      )}
-                                                    </ul>
-                                                  )}
+                                                      <ul className="text-muted small ps-3 mb-0">
+                                                        {pkg.Category.SubCategories[0].Includes.map(
+                                                          (inc) => (
+                                                            <li
+                                                              key={inc.IncludeID}
+                                                            >
+                                                              {inc.IncludeName}
+                                                            </li>
+                                                          ),
+                                                        )}
+                                                      </ul>
+                                                    )}
                                                 </div>
 
                                                 <span className="badge bg-success-subtle text-success border border-success">
                                                   ⏱ Duration:{" "}
                                                   {pkg.EstimatedDurationMinutes >=
-                                                  60
+                                                    60
                                                     ? (() => {
-                                                        const hours =
-                                                          Math.floor(
-                                                            pkg.EstimatedDurationMinutes /
-                                                              60,
-                                                          );
-                                                        const minutes =
-                                                          pkg.EstimatedDurationMinutes %
-                                                          60;
-                                                        return minutes === 0
-                                                          ? `${hours} hr`
-                                                          : `${hours} hr ${minutes} mins`;
-                                                      })()
+                                                      const hours =
+                                                        Math.floor(
+                                                          pkg.EstimatedDurationMinutes /
+                                                          60,
+                                                        );
+                                                      const minutes =
+                                                        pkg.EstimatedDurationMinutes %
+                                                        60;
+                                                      return minutes === 0
+                                                        ? `${hours} hr`
+                                                        : `${hours} hr ${minutes} mins`;
+                                                    })()
                                                     : `${pkg.EstimatedDurationMinutes} mins`}
                                                 </span>
                                               </div>
@@ -5856,7 +5872,7 @@ const BookingViewLayer = () => {
                                                         addon.Includes,
                                                       ) &&
                                                       addon.Includes.length >
-                                                        0 && (
+                                                      0 && (
                                                         <ul
                                                           className="text-muted small ps-3 mb-0 mt-2"
                                                           style={{
@@ -5888,10 +5904,10 @@ const BookingViewLayer = () => {
                                                 <td className="normal">
                                                   {addon.CreatedDate
                                                     ? new Date(
-                                                        addon.CreatedDate,
-                                                      ).toLocaleDateString(
-                                                        "en-IN",
-                                                      )
+                                                      addon.CreatedDate,
+                                                    ).toLocaleDateString(
+                                                      "en-IN",
+                                                    )
                                                     : "—"}
                                                 </td>
                                                 <td className="text-end">
@@ -5945,17 +5961,17 @@ const BookingViewLayer = () => {
                                                 </td>
                                                 {roleName !==
                                                   "Field Advisor" && (
-                                                  <>
-                                                    <td className="text-end">
-                                                      {addon.Percentage ?? "0"}%
-                                                    </td>
-                                                    <td className="text-end">
-                                                      {Number(
-                                                        addon.Our_Earnings || 0,
-                                                      ).toFixed(2)}
-                                                    </td>
-                                                  </>
-                                                )}
+                                                    <>
+                                                      <td className="text-end">
+                                                        {addon.Percentage ?? "0"}%
+                                                      </td>
+                                                      <td className="text-end">
+                                                        {Number(
+                                                          addon.Our_Earnings || 0,
+                                                        ).toFixed(2)}
+                                                      </td>
+                                                    </>
+                                                  )}
                                                 <td
                                                   className=" normal text-center"
                                                   style={{
@@ -5965,14 +5981,13 @@ const BookingViewLayer = () => {
                                                 >
                                                   {addon.DealerName || "—"}{" "}
                                                   {addon.IsDealer_Confirm &&
-                                                  addon.DealerName ? (
+                                                    addon.DealerName ? (
                                                     <span
-                                                      className={`badge px-3 py-2 rounded-pill ${
-                                                        addon.IsDealer_Confirm ===
+                                                      className={`badge px-3 py-2 rounded-pill ${addon.IsDealer_Confirm ===
                                                         "Approved"
-                                                          ? "bg-success text-white"
-                                                          : "bg-danger text-white"
-                                                      }`}
+                                                        ? "bg-success text-white"
+                                                        : "bg-danger text-white"
+                                                        }`}
                                                     >
                                                       {addon.IsDealer_Confirm}
                                                     </span>
@@ -6027,7 +6042,7 @@ const BookingViewLayer = () => {
                                                             }
                                                           >
                                                             {status ===
-                                                            "ServiceCompleted" ? (
+                                                              "ServiceCompleted" ? (
                                                               <>
                                                                 <option value="ServiceCompleted">
                                                                   Completed
@@ -6074,7 +6089,7 @@ const BookingViewLayer = () => {
                                                 <td className="text-center">
                                                   {addon.IsCompleted_Confirmation ===
                                                     1 ||
-                                                  addon.isCompleted_Confirmation ===
+                                                    addon.isCompleted_Confirmation ===
                                                     1 ? (
                                                     <div className="d-flex flex-column align-items-center justify-content-center gap-1">
                                                       <span>Approved By</span>
@@ -6129,14 +6144,14 @@ const BookingViewLayer = () => {
                                                   {(
                                                     Number(
                                                       addon.DealerSparePrice ||
-                                                        0,
+                                                      0,
                                                     ) +
                                                     Number(
                                                       addon.DealerPrice || 0,
                                                     ) +
                                                     Number(
                                                       addon.DealerGSTAmount ||
-                                                        0,
+                                                      0,
                                                     )
                                                   ).toFixed(2)}
                                                 </td>
@@ -6312,11 +6327,11 @@ const BookingViewLayer = () => {
                                                 ) +
                                                 Number(
                                                   supervisorBooking.GSTAmount ||
-                                                    0,
+                                                  0,
                                                 ) +
                                                 Number(
                                                   supervisorBooking.LabourCharges ||
-                                                    0,
+                                                  0,
                                                 );
 
                                               return (
@@ -6342,64 +6357,64 @@ const BookingViewLayer = () => {
                                                           supervisorBooking.Includes,
                                                         )
                                                           ? supervisorBooking
-                                                              .Includes.length >
-                                                              0 && (
-                                                              <ul
-                                                                className="text-muted small ps-3 mb-0 mt-2"
-                                                                style={{
-                                                                  textAlign:
-                                                                    "left",
-                                                                }}
-                                                              >
-                                                                {supervisorBooking.Includes.map(
-                                                                  (inc) => (
-                                                                    <li
-                                                                      key={
-                                                                        inc.IncludeID ||
-                                                                        inc.id ||
-                                                                        inc
-                                                                      }
-                                                                    >
-                                                                      {inc.IncludeName ||
-                                                                        inc.name ||
-                                                                        inc}
-                                                                    </li>
-                                                                  ),
-                                                                )}
-                                                              </ul>
-                                                            )
+                                                            .Includes.length >
+                                                          0 && (
+                                                            <ul
+                                                              className="text-muted small ps-3 mb-0 mt-2"
+                                                              style={{
+                                                                textAlign:
+                                                                  "left",
+                                                              }}
+                                                            >
+                                                              {supervisorBooking.Includes.map(
+                                                                (inc) => (
+                                                                  <li
+                                                                    key={
+                                                                      inc.IncludeID ||
+                                                                      inc.id ||
+                                                                      inc
+                                                                    }
+                                                                  >
+                                                                    {inc.IncludeName ||
+                                                                      inc.name ||
+                                                                      inc}
+                                                                  </li>
+                                                                ),
+                                                              )}
+                                                            </ul>
+                                                          )
                                                           : typeof supervisorBooking.Includes ===
-                                                              "string" &&
-                                                            supervisorBooking.Includes.trim() !==
-                                                              "" && (
-                                                              <div className="text-muted small mt-2">
-                                                                {
-                                                                  supervisorBooking.Includes
-                                                                }
-                                                              </div>
-                                                            ))}
+                                                          "string" &&
+                                                          supervisorBooking.Includes.trim() !==
+                                                          "" && (
+                                                            <div className="text-muted small mt-2">
+                                                              {
+                                                                supervisorBooking.Includes
+                                                              }
+                                                            </div>
+                                                          ))}
                                                     </div>
                                                   </td>
 
                                                   <td className="normal">
                                                     {supervisorBooking.CreatedDate
                                                       ? new Date(
-                                                          supervisorBooking.CreatedDate,
-                                                        ).toLocaleDateString(
-                                                          "en-IN",
-                                                        )
+                                                        supervisorBooking.CreatedDate,
+                                                      ).toLocaleDateString(
+                                                        "en-IN",
+                                                      )
                                                       : "—"}
                                                   </td>
                                                   <td className="text-end">
                                                     {Number(
                                                       supervisorBooking.BasePrice ||
-                                                        0,
+                                                      0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end dlr-column">
                                                     {Number(
                                                       supervisorBooking.DealerBasePrice ||
-                                                        0,
+                                                      0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end">
@@ -6409,25 +6424,25 @@ const BookingViewLayer = () => {
                                                   <td className="text-end">
                                                     {Number(
                                                       supervisorBooking.Price ||
-                                                        0,
+                                                      0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end dlr-column">
                                                     {Number(
                                                       supervisorBooking.DealerSparePrice ||
-                                                        0,
+                                                      0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end">
                                                     {Number(
                                                       supervisorBooking.LabourCharges ||
-                                                        0,
+                                                      0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end dlr-column">
                                                     {Number(
                                                       supervisorBooking.DealerPrice ||
-                                                        0,
+                                                      0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end">
@@ -6443,13 +6458,13 @@ const BookingViewLayer = () => {
                                                   <td className="text-end">
                                                     {Number(
                                                       supervisorBooking.GSTAmount ||
-                                                        0,
+                                                      0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end dlr-column">
                                                     {Number(
                                                       supervisorBooking.DealerGSTAmount ||
-                                                        0,
+                                                      0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   <td className="text-end">
@@ -6460,7 +6475,7 @@ const BookingViewLayer = () => {
                                                   <td className="text-end">
                                                     {Number(
                                                       supervisorBooking.Our_Earnings ||
-                                                        0,
+                                                      0,
                                                     ).toFixed(2)}
                                                   </td>
                                                   {/* <td
@@ -6485,18 +6500,17 @@ const BookingViewLayer = () => {
                                                     {supervisorBooking.IsDealer_Confirm &&
                                                       supervisorBooking.DealerName && (
                                                         <span
-                                                          className={`badge px-3 py-2 rounded-pill ${
-                                                            supervisorBooking.IsDealer_Confirm ===
+                                                          className={`badge px-3 py-2 rounded-pill ${supervisorBooking.IsDealer_Confirm ===
                                                             "Approved"
-                                                              ? "bg-success text-white"
+                                                            ? "bg-success text-white"
+                                                            : supervisorBooking.IsDealer_Confirm ===
+                                                              "Rejected"
+                                                              ? "bg-danger text-white"
                                                               : supervisorBooking.IsDealer_Confirm ===
-                                                                  "Rejected"
-                                                                ? "bg-danger text-white"
-                                                                : supervisorBooking.IsDealer_Confirm ===
-                                                                    "Pending"
-                                                                  ? "bg-warning text-dark"
-                                                                  : "bg-secondary text-white"
-                                                          }`}
+                                                                "Pending"
+                                                                ? "bg-warning text-dark"
+                                                                : "bg-secondary text-white"
+                                                            }`}
                                                         >
                                                           {
                                                             supervisorBooking.IsDealer_Confirm
@@ -6539,15 +6553,15 @@ const BookingViewLayer = () => {
                                                     {(
                                                       Number(
                                                         supervisorBooking.DealerSparePrice ||
-                                                          0,
+                                                        0,
                                                       ) +
                                                       Number(
                                                         supervisorBooking.DealerPrice ||
-                                                          0,
+                                                        0,
                                                       ) +
                                                       Number(
                                                         supervisorBooking.DealerGSTAmount ||
-                                                          0,
+                                                        0,
                                                       )
                                                     ).toFixed(2)}
                                                   </td>
@@ -6565,196 +6579,196 @@ const BookingViewLayer = () => {
                                 </div>
                               )}
 
-                            {bookingData?.CustomerRejectedBookings?.length >
+                            {false && bookingData?.CustomerRejectedBookings?.length >
                               0 && (
-                              <div className="card mb-4 mt-4">
-                                <div className="card-header bg-danger text-light">
-                                  <h6 className="mb-0 fw-bold text-white">
-                                    Customer Rejected Services
-                                  </h6>
-                                </div>
-                                <div className="card-body p-0">
-                                  <div
-                                    className="table-responsive"
-                                    style={{
-                                      maxHeight: "800px",
-                                      overflowX: "auto",
-                                    }}
-                                  >
-                                    <table
-                                      className="table table-sm table-striped table-hover align-middle mb-0 table-center-all"
+                                <div className="card mb-4 mt-4">
+                                  <div className="card-header bg-danger text-light">
+                                    <h6 className="mb-0 fw-bold text-white">
+                                      Customer Rejected Services
+                                    </h6>
+                                  </div>
+                                  <div className="card-body p-0">
+                                    <div
+                                      className="table-responsive"
                                       style={{
-                                        tableLayout: "fixed",
-                                        minWidth: "1200px",
+                                        maxHeight: "800px",
+                                        overflowX: "auto",
                                       }}
                                     >
-                                      <thead
-                                        className="table-light sticky-top position-relative"
-                                        style={{ zIndex: 1 }}
+                                      <table
+                                        className="table table-sm table-striped table-hover align-middle mb-0 table-center-all"
+                                        style={{
+                                          tableLayout: "fixed",
+                                          minWidth: "1200px",
+                                        }}
                                       >
-                                        <tr>
-                                          <th
-                                            style={{ width: "60px" }}
-                                            className="text-center"
-                                          >
-                                            S.No
-                                          </th>
-                                          <th style={{ width: "100px" }}>
-                                            Type
-                                          </th>
-                                          <th style={{ width: "180px" }}>
-                                            Service Name
-                                          </th>
-                                          <th style={{ width: "100px" }}>
-                                            Date
-                                          </th>
-                                          <th
-                                            style={{ width: "100px" }}
-                                            className="text-end"
-                                          >
-                                            Part Price
-                                          </th>
-                                          <th
-                                            style={{ width: "125px" }}
-                                            className="text-end dlr-column"
-                                          >
-                                            DLR Part Price
-                                          </th>
-                                          <th
-                                            style={{ width: "70px" }}
-                                            className="text-end"
-                                          >
-                                            Qty
-                                          </th>
-                                          <th
-                                            style={{ width: "100px" }}
-                                            className="text-end"
-                                          >
-                                            Part Total
-                                          </th>
-                                          <th
-                                            style={{ width: "120px" }}
-                                            className="text-end dlr-column"
-                                          >
-                                            DLR Part Total
-                                          </th>
-                                          <th
-                                            style={{ width: "120px" }}
-                                            className="text-end"
-                                          >
-                                            Service Chg.
-                                          </th>
-                                          <th
-                                            style={{ width: "145px" }}
-                                            className="text-end dlr-column"
-                                          >
-                                            DLR Service Chg.
-                                          </th>
-                                          <th
-                                            style={{ width: "90px" }}
-                                            className="text-end"
-                                          >
-                                            GST %
-                                          </th>
-                                          <th
-                                            style={{ width: "120px" }}
-                                            className="text-end dlr-column"
-                                          >
-                                            DLR GST %
-                                          </th>
-                                          <th
-                                            style={{ width: "100px" }}
-                                            className="text-end"
-                                          >
-                                            GST Amt.
-                                          </th>
-                                          <th
-                                            style={{ width: "120px" }}
-                                            className="text-end dlr-column"
-                                          >
-                                            DLR GST Amt.
-                                          </th>
-                                          <th
-                                            style={{ width: "100px" }}
-                                            className="text-end"
-                                          >
-                                            MCB %
-                                          </th>
-                                          <th
-                                            style={{ width: "100px" }}
-                                            className="text-end"
-                                          >
-                                            MCB Amt.
-                                          </th>
-                                          <th
-                                            style={{ width: "170px" }}
-                                            className="text-center"
-                                          >
-                                            Dealer Name
-                                          </th>
-                                          <th
-                                            style={{ width: "140px" }}
-                                            className="text-end"
-                                          >
-                                            DLR Total Amt.
-                                          </th>
-                                          <th
-                                            style={{ width: "150px" }}
-                                            className="text-end"
-                                          >
-                                            Cust. Total Amt.
-                                          </th>
-                                          <th
-                                            style={{ width: "100px" }}
-                                            className="text-end"
-                                          >
-                                            Action
-                                          </th>
-                                        </tr>
-                                      </thead>
+                                        <thead
+                                          className="table-light sticky-top position-relative"
+                                          style={{ zIndex: 1 }}
+                                        >
+                                          <tr>
+                                            <th
+                                              style={{ width: "60px" }}
+                                              className="text-center"
+                                            >
+                                              S.No
+                                            </th>
+                                            <th style={{ width: "100px" }}>
+                                              Type
+                                            </th>
+                                            <th style={{ width: "180px" }}>
+                                              Service Name
+                                            </th>
+                                            <th style={{ width: "100px" }}>
+                                              Date
+                                            </th>
+                                            <th
+                                              style={{ width: "100px" }}
+                                              className="text-end"
+                                            >
+                                              Part Price
+                                            </th>
+                                            <th
+                                              style={{ width: "125px" }}
+                                              className="text-end dlr-column"
+                                            >
+                                              DLR Part Price
+                                            </th>
+                                            <th
+                                              style={{ width: "70px" }}
+                                              className="text-end"
+                                            >
+                                              Qty
+                                            </th>
+                                            <th
+                                              style={{ width: "100px" }}
+                                              className="text-end"
+                                            >
+                                              Part Total
+                                            </th>
+                                            <th
+                                              style={{ width: "120px" }}
+                                              className="text-end dlr-column"
+                                            >
+                                              DLR Part Total
+                                            </th>
+                                            <th
+                                              style={{ width: "120px" }}
+                                              className="text-end"
+                                            >
+                                              Service Chg.
+                                            </th>
+                                            <th
+                                              style={{ width: "145px" }}
+                                              className="text-end dlr-column"
+                                            >
+                                              DLR Service Chg.
+                                            </th>
+                                            <th
+                                              style={{ width: "90px" }}
+                                              className="text-end"
+                                            >
+                                              GST %
+                                            </th>
+                                            <th
+                                              style={{ width: "120px" }}
+                                              className="text-end dlr-column"
+                                            >
+                                              DLR GST %
+                                            </th>
+                                            <th
+                                              style={{ width: "100px" }}
+                                              className="text-end"
+                                            >
+                                              GST Amt.
+                                            </th>
+                                            <th
+                                              style={{ width: "120px" }}
+                                              className="text-end dlr-column"
+                                            >
+                                              DLR GST Amt.
+                                            </th>
+                                            <th
+                                              style={{ width: "100px" }}
+                                              className="text-end"
+                                            >
+                                              MCB %
+                                            </th>
+                                            <th
+                                              style={{ width: "100px" }}
+                                              className="text-end"
+                                            >
+                                              MCB Amt.
+                                            </th>
+                                            <th
+                                              style={{ width: "170px" }}
+                                              className="text-center"
+                                            >
+                                              Dealer Name
+                                            </th>
+                                            <th
+                                              style={{ width: "140px" }}
+                                              className="text-end"
+                                            >
+                                              DLR Total Amt.
+                                            </th>
+                                            <th
+                                              style={{ width: "150px" }}
+                                              className="text-end"
+                                            >
+                                              Cust. Total Amt.
+                                            </th>
+                                            <th
+                                              style={{ width: "100px" }}
+                                              className="text-end"
+                                            >
+                                              Action
+                                            </th>
+                                          </tr>
+                                        </thead>
 
-                                      <tbody>
-                                        {bookingData?.CustomerRejectedBookings?.map(
-                                          (CustomerRejectedBookings, index) => {
-                                            const totalPrice =
-                                              Number(
-                                                CustomerRejectedBookings.Price ||
+                                        <tbody>
+                                          {bookingData?.CustomerRejectedBookings?.map(
+                                            (CustomerRejectedBookings, index) => {
+                                              const totalPrice =
+                                                Number(
+                                                  CustomerRejectedBookings.Price ||
                                                   0,
-                                              ) +
-                                              Number(
-                                                CustomerRejectedBookings.GSTAmount ||
+                                                ) +
+                                                Number(
+                                                  CustomerRejectedBookings.GSTAmount ||
                                                   0,
-                                              ) +
-                                              Number(
-                                                CustomerRejectedBookings.LabourCharges ||
+                                                ) +
+                                                Number(
+                                                  CustomerRejectedBookings.LabourCharges ||
                                                   0,
-                                              );
+                                                );
 
-                                            return (
-                                              <tr
-                                                key={
-                                                  CustomerRejectedBookings.Id ||
-                                                  index
-                                                }
-                                              >
-                                                <td className="text-center">
-                                                  {index + 1}.
-                                                </td>
-                                                <td className="normal">
-                                                  {CustomerRejectedBookings.ServiceType ||
-                                                    "—"}
-                                                </td>
-                                                <td className="normal">
-                                                  <div className="normal">
-                                                    {CustomerRejectedBookings.ServiceName ||
+                                              return (
+                                                <tr
+                                                  key={
+                                                    CustomerRejectedBookings.Id ||
+                                                    index
+                                                  }
+                                                >
+                                                  <td className="text-center">
+                                                    {index + 1}.
+                                                  </td>
+                                                  <td className="normal">
+                                                    {CustomerRejectedBookings.ServiceType ||
                                                       "—"}
-                                                    {CustomerRejectedBookings.Includes &&
-                                                      (Array.isArray(
-                                                        CustomerRejectedBookings.Includes,
-                                                      )
-                                                        ? CustomerRejectedBookings
+                                                  </td>
+                                                  <td className="normal">
+                                                    <div className="normal">
+                                                      {CustomerRejectedBookings.ServiceName ||
+                                                        "—"}
+                                                      {CustomerRejectedBookings.Includes &&
+                                                        (Array.isArray(
+                                                          CustomerRejectedBookings.Includes,
+                                                        )
+                                                          ? CustomerRejectedBookings
                                                             .Includes.length >
-                                                            0 && (
+                                                          0 && (
                                                             <ul
                                                               className="text-muted small ps-3 mb-0 mt-2"
                                                               style={{
@@ -6779,102 +6793,102 @@ const BookingViewLayer = () => {
                                                               )}
                                                             </ul>
                                                           )
-                                                        : typeof CustomerRejectedBookings.Includes ===
-                                                            "string" &&
+                                                          : typeof CustomerRejectedBookings.Includes ===
+                                                          "string" &&
                                                           CustomerRejectedBookings.Includes.trim() !==
-                                                            "" && (
+                                                          "" && (
                                                             <div className="text-muted small mt-2">
                                                               {
                                                                 CustomerRejectedBookings.Includes
                                                               }
                                                             </div>
                                                           ))}
-                                                  </div>
-                                                </td>
+                                                    </div>
+                                                  </td>
 
-                                                <td className="normal">
-                                                  {CustomerRejectedBookings.CreatedDate
-                                                    ? new Date(
+                                                  <td className="normal">
+                                                    {CustomerRejectedBookings.CreatedDate
+                                                      ? new Date(
                                                         CustomerRejectedBookings.CreatedDate,
                                                       ).toLocaleDateString(
                                                         "en-IN",
                                                       )
-                                                    : "—"}
-                                                </td>
-                                                <td className="text-end">
-                                                  {Number(
-                                                    CustomerRejectedBookings.BasePrice ||
+                                                      : "—"}
+                                                  </td>
+                                                  <td className="text-end">
+                                                    {Number(
+                                                      CustomerRejectedBookings.BasePrice ||
                                                       0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                <td className="text-end dlr-column">
-                                                  {Number(
-                                                    CustomerRejectedBookings.DealerBasePrice ||
+                                                    ).toFixed(2)}
+                                                  </td>
+                                                  <td className="text-end dlr-column">
+                                                    {Number(
+                                                      CustomerRejectedBookings.DealerBasePrice ||
                                                       0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                <td className="text-end">
-                                                  {CustomerRejectedBookings.Quantity ??
-                                                    "1"}
-                                                </td>
-                                                <td className="text-end">
-                                                  {Number(
-                                                    CustomerRejectedBookings.Price ||
+                                                    ).toFixed(2)}
+                                                  </td>
+                                                  <td className="text-end">
+                                                    {CustomerRejectedBookings.Quantity ??
+                                                      "1"}
+                                                  </td>
+                                                  <td className="text-end">
+                                                    {Number(
+                                                      CustomerRejectedBookings.Price ||
                                                       0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                <td className="text-end dlr-column">
-                                                  {Number(
-                                                    CustomerRejectedBookings.DealerSparePrice ||
+                                                    ).toFixed(2)}
+                                                  </td>
+                                                  <td className="text-end dlr-column">
+                                                    {Number(
+                                                      CustomerRejectedBookings.DealerSparePrice ||
                                                       0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                <td className="text-end">
-                                                  {Number(
-                                                    CustomerRejectedBookings.LabourCharges ||
+                                                    ).toFixed(2)}
+                                                  </td>
+                                                  <td className="text-end">
+                                                    {Number(
+                                                      CustomerRejectedBookings.LabourCharges ||
                                                       0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                <td className="text-end dlr-column">
-                                                  {Number(
-                                                    CustomerRejectedBookings.DealerPrice ||
+                                                    ).toFixed(2)}
+                                                  </td>
+                                                  <td className="text-end dlr-column">
+                                                    {Number(
+                                                      CustomerRejectedBookings.DealerPrice ||
                                                       0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                <td className="text-end">
-                                                  {CustomerRejectedBookings.GSTPercent ??
-                                                    0}
-                                                  %
-                                                </td>
-                                                <td className="text-end dlr-column">
-                                                  {CustomerRejectedBookings.DealerGSTPercent ??
-                                                    0}
-                                                  %
-                                                </td>
-                                                <td className="text-end">
-                                                  {Number(
-                                                    CustomerRejectedBookings.GSTAmount ||
+                                                    ).toFixed(2)}
+                                                  </td>
+                                                  <td className="text-end">
+                                                    {CustomerRejectedBookings.GSTPercent ??
+                                                      0}
+                                                    %
+                                                  </td>
+                                                  <td className="text-end dlr-column">
+                                                    {CustomerRejectedBookings.DealerGSTPercent ??
+                                                      0}
+                                                    %
+                                                  </td>
+                                                  <td className="text-end">
+                                                    {Number(
+                                                      CustomerRejectedBookings.GSTAmount ||
                                                       0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                <td className="text-end dlr-column">
-                                                  {Number(
-                                                    CustomerRejectedBookings.DealerGSTAmount ||
+                                                    ).toFixed(2)}
+                                                  </td>
+                                                  <td className="text-end dlr-column">
+                                                    {Number(
+                                                      CustomerRejectedBookings.DealerGSTAmount ||
                                                       0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                <td className="text-end">
-                                                  {CustomerRejectedBookings.Percentage ??
-                                                    "0"}
-                                                  %
-                                                </td>
-                                                <td className="text-end">
-                                                  {Number(
-                                                    CustomerRejectedBookings.Our_Earnings ||
+                                                    ).toFixed(2)}
+                                                  </td>
+                                                  <td className="text-end">
+                                                    {CustomerRejectedBookings.Percentage ??
+                                                      "0"}
+                                                    %
+                                                  </td>
+                                                  <td className="text-end">
+                                                    {Number(
+                                                      CustomerRejectedBookings.Our_Earnings ||
                                                       0,
-                                                  ).toFixed(2)}
-                                                </td>
-                                                {/* <td
+                                                    ).toFixed(2)}
+                                                  </td>
+                                                  {/* <td
                                                   className="normal text-center"
                                                   style={{
                                                     whiteSpace: "normal",
@@ -6883,94 +6897,452 @@ const BookingViewLayer = () => {
                                                 >
                                                   {CustomerRejectedBookings.DealerName || "Not Assigned"}
                                                 </td> */}
-                                                <td
-                                                  className=" normal text-center"
-                                                  style={{
-                                                    whiteSpace: "normal",
-                                                    wordBreak: "break-word",
-                                                  }}
-                                                >
-                                                  {CustomerRejectedBookings.DealerName ||
-                                                    "—"}
+                                                  <td
+                                                    className=" normal text-center"
+                                                    style={{
+                                                      whiteSpace: "normal",
+                                                      wordBreak: "break-word",
+                                                    }}
+                                                  >
+                                                    {CustomerRejectedBookings.DealerName ||
+                                                      "—"}
 
-                                                  {CustomerRejectedBookings.IsDealer_Confirm &&
-                                                    CustomerRejectedBookings.DealerName && (
-                                                      <span
-                                                        className={`badge px-3 py-2 rounded-pill ${
-                                                          CustomerRejectedBookings.IsDealer_Confirm ===
-                                                          "Approved"
+                                                    {CustomerRejectedBookings.IsDealer_Confirm &&
+                                                      CustomerRejectedBookings.DealerName && (
+                                                        <span
+                                                          className={`badge px-3 py-2 rounded-pill ${CustomerRejectedBookings.IsDealer_Confirm ===
+                                                            "Approved"
                                                             ? "bg-success text-white"
                                                             : CustomerRejectedBookings.IsDealer_Confirm ===
-                                                                "Rejected"
+                                                              "Rejected"
                                                               ? "bg-danger text-white"
                                                               : CustomerRejectedBookings.IsDealer_Confirm ===
-                                                                  "Pending"
+                                                                "Pending"
                                                                 ? "bg-warning text-dark"
                                                                 : "bg-secondary text-white"
-                                                        }`}
-                                                      >
-                                                        {
-                                                          CustomerRejectedBookings.IsDealer_Confirm
-                                                        }
-                                                      </span>
-                                                    )}
-                                                </td>
-                                                <td className="text-end fw-bold dlr-column">
-                                                  {(
-                                                    Number(
-                                                      CustomerRejectedBookings.DealerSparePrice ||
+                                                            }`}
+                                                        >
+                                                          {
+                                                            CustomerRejectedBookings.IsDealer_Confirm
+                                                          }
+                                                        </span>
+                                                      )}
+                                                  </td>
+                                                  <td className="text-end fw-bold dlr-column">
+                                                    {(
+                                                      Number(
+                                                        CustomerRejectedBookings.DealerSparePrice ||
                                                         0,
-                                                    ) +
-                                                    Number(
-                                                      CustomerRejectedBookings.DealerPrice ||
+                                                      ) +
+                                                      Number(
+                                                        CustomerRejectedBookings.DealerPrice ||
                                                         0,
-                                                    ) +
-                                                    Number(
-                                                      CustomerRejectedBookings.DealerGSTAmount ||
+                                                      ) +
+                                                      Number(
+                                                        CustomerRejectedBookings.DealerGSTAmount ||
                                                         0,
-                                                    )
-                                                  ).toFixed(2)}
-                                                </td>
-                                                <td className="text-end fw-bold text-primary">
-                                                  {totalPrice.toFixed(2)}
-                                                </td>
-                                                <td className="text-center">
-                                                  <button
-                                                    className="btn btn-sm btn-primary-600"
-                                                    onClick={() =>
-                                                      handleRevertService(
-                                                        CustomerRejectedBookings,
                                                       )
-                                                    }
-                                                    disabled={
-                                                      revertingServiceId ===
-                                                      CustomerRejectedBookings.Id
+                                                    ).toFixed(2)}
+                                                  </td>
+                                                  <td className="text-end fw-bold text-primary">
+                                                    {totalPrice.toFixed(2)}
+                                                  </td>
+                                                  <td className="text-center">
+                                                    <button
+                                                      className="btn btn-sm btn-primary-600"
+                                                      onClick={() =>
+                                                        handleRevertService(
+                                                          CustomerRejectedBookings,
+                                                        )
+                                                      }
+                                                      disabled={
+                                                        revertingServiceId ===
+                                                        CustomerRejectedBookings.Id
+                                                      }
+                                                    >
+                                                      {revertingServiceId ===
+                                                        CustomerRejectedBookings.Id ? ( // <--- SHOW SPINNER
+                                                        <>
+                                                          <span
+                                                            className="spinner-border spinner-border-sm"
+                                                            role="status"
+                                                            aria-hidden="true"
+                                                          ></span>
+                                                          Reverting...
+                                                        </>
+                                                      ) : (
+                                                        <>
+                                                          <i className="bi bi-arrow-counterclockwise me-1"></i>
+                                                          Revert
+                                                        </>
+                                                      )}
+                                                    </button>
+                                                  </td>
+                                                </tr>
+                                              );
+                                            },
+                                          )}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                            {customerRejectedComparisonServices.length > 0 && (
+                              <div className="card mb-4 mt-4 shadow-sm pricing-intelligence-card">
+                                <div className="">
+                                  <div className="pricing-panel mb-4">
+                                    <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                                      <div>
+                                        <h6 className="mb-1 fw-bold text-danger">
+                                          Customer rejected services
+                                        </h6>
+                                        <div className="small text-muted">
+                                          Rejected services shown in the same
+                                          detailed pricing-card layout with a
+                                          direct revert action in each row.
+                                        </div>
+                                      </div>
+                                      <div className="d-flex flex-wrap gap-2">
+                                        <span className="pricing-chip">
+                                          Dealer{" "}
+                                          {formatCurrency(
+                                            customerRejectedPricingTotals.dealerTotal,
+                                          )}
+                                        </span>
+                                        <span className="pricing-chip">
+                                          Customer{" "}
+                                          {formatCurrency(
+                                            customerRejectedPricingTotals.customerTotal,
+                                          )}
+                                        </span>
+                                        <span className="pricing-chip">
+                                          Margin{" "}
+                                          {formatCurrency(
+                                            customerRejectedPricingTotals.marginAmount,
+                                          )}{" "}
+                                          (
+                                          {rejectedEffectiveMarginPercent.toFixed(
+                                            2,
+                                          )}
+                                          %)
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    <div className="service-compare-list">
+                                      {customerRejectedComparisonServices.map(
+                                        (service) => (
+                                          <div
+                                            key={service.id}
+                                            className="service-compare-card"
+                                          >
+                                            <div className="service-compare-top">
+                                              <div>
+                                                <div className="service-compare-title">
+                                                  <b>Service Name: </b>
+                                                  {service.serviceName}
+                                                  <span className="ms-2 pricing-chip">
+                                                    {service.serviceType}
+                                                  </span>
+                                                  <span className="ms-2 pricing-chip">
+                                                    Qty {service.quantity}
+                                                  </span>
+                                                </div>
+                                                <div className="small text-muted mt-1">
+                                                  <b>Dealer Name: </b>
+                                                  {service.dealerName} |{" "}
+                                                  <b>Added on: </b>{" "}
+                                                  {service.createdAt
+                                                    ? formatDateTime(
+                                                      service.createdAt,
+                                                    )
+                                                    : "N/A"}
+                                                </div>
+                                                <div className="service-compare-meta">
+                                                  <span
+                                                    className={`badge rounded-pill px-3 py-2 ${getPricingStageBadgeClass(
+                                                      service.stage,
+                                                    )}`}
+                                                  >
+                                                    {service.stage}
+                                                  </span>
+                                                  <span
+                                                    className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(
+                                                      service.dealerConfirmStatus,
+                                                    )}`}
+                                                  >
+                                                    Dealer{" "}
+                                                    {service.dealerConfirmStatus}
+                                                  </span>
+                                                  <span
+                                                    className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(
+                                                      service.serviceStatus,
+                                                    )}`}
+                                                  >
+                                                    Service {service.serviceStatus}
+                                                  </span>
+                                                </div>
+                                              </div>
+
+                                              <div className="text-end">
+                                                <div className="small text-muted">
+                                                  Price spread
+                                                </div>
+                                                <div
+                                                  className={
+                                                    service.priceSpread >= 0
+                                                      ? "pricing-spread-positive"
+                                                      : "pricing-spread-negative"
+                                                  }
+                                                  style={{
+                                                    fontSize: "1.05rem",
+                                                  }}
+                                                >
+                                                  {formatCurrency(
+                                                    service.priceSpread,
+                                                  )}
+                                                </div>
+                                                <div className="small text-success mt-1">
+                                                  Margin{" "}
+                                                  {formatCurrency(
+                                                    service.marginAmount,
+                                                  )}{" "}
+                                                  (
+                                                  {service.marginPercent.toFixed(
+                                                    2,
+                                                  )}
+                                                  %)
+                                                </div>
+                                              </div>
+                                            </div>
+
+                                            <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3 mb-3">
+                                              <div className="small text-muted">
+                                                Customer rejected this service.
+                                                Use revert if you want to move
+                                                it back into the active flow.
+                                              </div>
+                                              <div>
+                                                <button
+                                                  className="btn btn-sm btn-primary-600"
+                                                  onClick={() =>
+                                                    handleRevertService(
+                                                      service.sourceItem,
+                                                    )
+                                                  }
+                                                  disabled={
+                                                    revertingServiceId ===
+                                                    service.sourceItem?.Id
+                                                  }
+                                                >
+                                                  {revertingServiceId ===
+                                                    service.sourceItem?.Id ? (
+                                                    <>
+                                                      <span
+                                                        className="spinner-border spinner-border-sm"
+                                                        role="status"
+                                                        aria-hidden="true"
+                                                      ></span>{" "}
+                                                      Reverting...
+                                                    </>
+                                                  ) : (
+                                                    <>
+                                                      <i className="bi bi-arrow-counterclockwise me-1"></i>
+                                                      Revert
+                                                    </>
+                                                  )}
+                                                </button>
+                                              </div>
+                                            </div>
+
+                                            <div className="service-compare-grid">
+                                              <div className="service-compare-section">
+                                                <h6>Customer quote</h6>
+                                                <div className="service-compare-line">
+                                                  <span>Part total</span>
+                                                  <strong>
+                                                    {formatCurrency(
+                                                      service.customerParts,
+                                                    )}
+                                                  </strong>
+                                                </div>
+                                                <div className="service-compare-line">
+                                                  <span>Service charge</span>
+                                                  <strong>
+                                                    {formatCurrency(
+                                                      service.customerLabour,
+                                                    )}
+                                                  </strong>
+                                                </div>
+                                                <div className="service-compare-line">
+                                                  <span>
+                                                    CGST (
+                                                    {service.customerGstPercent /
+                                                      2}
+                                                    %)
+                                                  </span>
+                                                  <strong>
+                                                    {formatCurrency(
+                                                      (
+                                                        service.customerGst / 2
+                                                      ).toFixed(2),
+                                                    )}
+                                                  </strong>
+                                                </div>
+                                                <div className="service-compare-line">
+                                                  <span>
+                                                    SGST (
+                                                    {service.customerGstPercent /
+                                                      2}
+                                                    %)
+                                                  </span>
+                                                  <strong>
+                                                    {formatCurrency(
+                                                      service.customerGst / 2,
+                                                    )}
+                                                  </strong>
+                                                </div>
+                                                <div className="service-compare-line">
+                                                  <span>Customer total</span>
+                                                  <strong className="text-primary">
+                                                    {formatCurrency(
+                                                      service.customerTotal,
+                                                    )}
+                                                  </strong>
+                                                </div>
+                                              </div>
+
+                                              <div className="service-compare-section">
+                                                <h6>Dealer quote</h6>
+                                                <div className="service-compare-line">
+                                                  <span>Part total</span>
+                                                  <strong>
+                                                    {formatCurrency(
+                                                      service.dealerParts,
+                                                    )}
+                                                  </strong>
+                                                </div>
+                                                <div className="service-compare-line">
+                                                  <span>Service charge</span>
+                                                  <strong>
+                                                    {formatCurrency(
+                                                      service.dealerLabour,
+                                                    )}
+                                                  </strong>
+                                                </div>
+                                                <div className="service-compare-line">
+                                                  <span>
+                                                    CGST (
+                                                    {service.dealerGstPercent /
+                                                      2}
+                                                    )%
+                                                  </span>
+                                                  <strong>
+                                                    {formatCurrency(
+                                                      service.dealerGst / 2,
+                                                    )}
+                                                  </strong>
+                                                </div>
+                                                <div className="service-compare-line">
+                                                  <span>
+                                                    SGST (
+                                                    {service.dealerGstPercent /
+                                                      2}
+                                                    )%
+                                                  </span>
+                                                  <strong>
+                                                    {formatCurrency(
+                                                      service.dealerGst / 2,
+                                                    )}
+                                                  </strong>
+                                                </div>
+                                                <div className="service-compare-line">
+                                                  <span>Dealer total</span>
+                                                  <strong className="text-warning-emphasis">
+                                                    {formatCurrency(
+                                                      service.dealerTotal,
+                                                    )}
+                                                  </strong>
+                                                </div>
+                                              </div>
+
+                                              <div
+                                                className={`service-compare-highlight ${service.spreadWithoutMargin >
+                                                  0
+                                                  ? "warn"
+                                                  : ""
+                                                  }`}
+                                              >
+                                                <div className="service-compare-line">
+                                                  <span>Company margin %</span>
+                                                  <strong className="text-success">
+                                                    {service.marginPercent.toFixed(
+                                                      2,
+                                                    )}
+                                                    %
+                                                  </strong>
+                                                </div>
+                                                <div className="service-compare-line">
+                                                  <span>
+                                                    Company margin amount
+                                                  </span>
+                                                  <strong className="text-success">
+                                                    {formatCurrency(
+                                                      service.marginAmount,
+                                                    )}
+                                                  </strong>
+                                                </div>
+                                                <div className="service-compare-line">
+                                                  <span>
+                                                    Customer - dealer
+                                                  </span>
+                                                  <strong
+                                                    className={
+                                                      service.priceSpread >= 0
+                                                        ? "pricing-spread-positive"
+                                                        : "pricing-spread-negative"
                                                     }
                                                   >
-                                                    {revertingServiceId ===
-                                                    CustomerRejectedBookings.Id ? ( // <--- SHOW SPINNER
-                                                      <>
-                                                        <span
-                                                          className="spinner-border spinner-border-sm"
-                                                          role="status"
-                                                          aria-hidden="true"
-                                                        ></span>
-                                                        Reverting...
-                                                      </>
-                                                    ) : (
-                                                      <>
-                                                        <i className="bi bi-arrow-counterclockwise me-1"></i>
-                                                        Revert
-                                                      </>
+                                                    {formatCurrency(
+                                                      service.priceSpread,
                                                     )}
-                                                  </button>
-                                                </td>
-                                              </tr>
-                                            );
-                                          },
-                                        )}
-                                      </tbody>
-                                    </table>
+                                                  </strong>
+                                                </div>
+                                                <div className="service-compare-line">
+                                                  <span>
+                                                    Spread beyond margin
+                                                  </span>
+                                                  <strong
+                                                    className={
+                                                      service.spreadWithoutMargin >=
+                                                        0
+                                                        ? "text-info"
+                                                        : "text-danger"
+                                                    }
+                                                  >
+                                                    {formatCurrency(
+                                                      service.spreadWithoutMargin,
+                                                    )}
+                                                  </strong>
+                                                </div>
+                                                <div className="service-compare-line">
+                                                  <span>Last updated</span>
+                                                  <strong>
+                                                    {service.updatedAt
+                                                      ? formatDateTime(
+                                                        service.updatedAt,
+                                                      )
+                                                      : "N/A"}
+                                                  </strong>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        ),
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -7038,18 +7410,15 @@ const BookingViewLayer = () => {
                                                 <b>Added on: </b>{" "}
                                                 {service.createdAt
                                                   ? formatDateTime(
-                                                      service.createdAt,
-                                                    )
+                                                    service.createdAt,
+                                                  )
                                                   : "N/A"}
                                               </div>
                                               <div className="service-compare-meta">
                                                 <span
-                                                  className={`badge rounded-pill px-3 py-2 ${
-                                                    service.stage ===
-                                                    "Customer Confirmed"
-                                                      ? "bg-success-subtle text-success"
-                                                      : "bg-warning-subtle text-warning"
-                                                  }`}
+                                                  className={`badge rounded-pill px-3 py-2 ${getPricingStageBadgeClass(
+                                                    service.stage,
+                                                  )}`}
                                                 >
                                                   {service.stage}
                                                 </span>
@@ -7066,7 +7435,7 @@ const BookingViewLayer = () => {
                                                     service.serviceStatus,
                                                   )}`}
                                                 >
-                                                  Service {service.serviceStatus} 
+                                                  Service {service.serviceStatus}
                                                 </span>
                                               </div>
                                               {/* {service.includeNames.length >
@@ -7224,7 +7593,7 @@ const BookingViewLayer = () => {
                                                 </span>
                                                 <strong>
                                                   {formatCurrency(
-                                                    ((service.customerGst )/ 2).toFixed(2),
+                                                    ((service.customerGst) / 2).toFixed(2),
                                                   )}
                                                 </strong>
                                               </div>
@@ -7313,11 +7682,10 @@ const BookingViewLayer = () => {
                                             </div>
 
                                             <div
-                                              className={`service-compare-highlight ${
-                                                service.spreadWithoutMargin > 0
-                                                  ? "warn"
-                                                  : ""
-                                              }`}
+                                              className={`service-compare-highlight ${service.spreadWithoutMargin > 0
+                                                ? "warn"
+                                                : ""
+                                                }`}
                                             >
                                               <div className="service-compare-line">
                                                 <span>Company margin %</span>
@@ -7359,7 +7727,7 @@ const BookingViewLayer = () => {
                                                 <strong
                                                   className={
                                                     service.spreadWithoutMargin >=
-                                                    0
+                                                      0
                                                       ? "text-info"
                                                       : "text-danger"
                                                   }
@@ -7374,8 +7742,8 @@ const BookingViewLayer = () => {
                                                 <strong>
                                                   {service.updatedAt
                                                     ? formatDateTime(
-                                                        service.updatedAt,
-                                                      )
+                                                      service.updatedAt,
+                                                    )
                                                     : "N/A"}
                                                 </strong>
                                               </div>
@@ -7447,14 +7815,12 @@ const BookingViewLayer = () => {
                                               unmatchedSpreadAmount,
                                             )}
                                           </div>
-                                          <div className="pricing-kpi-subtext">
-                                            Spread minus company margin
-                                          </div>
+
                                         </div>
                                       </div>
                                     </div>
 
-                                    <div className="mt-4">
+                                    {/* <div className="mt-4">
                                       <div className="d-flex justify-content-between small text-muted mb-2">
                                         <span>Visual split</span>
                                         <span>
@@ -7481,7 +7847,7 @@ const BookingViewLayer = () => {
                                           }}
                                         />
                                       </div>
-                                    </div>
+                                    </div> */}
                                   </div>
 
                                   <div
@@ -7666,7 +8032,7 @@ const BookingViewLayer = () => {
                                           </strong>
                                         </div>
 
-                                        <div className="mt-4">
+                                        {/* <div className="mt-4">
                                           <div className="d-flex justify-content-between small text-muted mb-2">
                                             <span>Visual split</span>
                                             <span>
@@ -7716,7 +8082,7 @@ const BookingViewLayer = () => {
                                               )}
                                             </span>
                                           </div>
-                                        </div>
+                                        </div> */}
                                       </div>
                                     </div>
 
@@ -7832,11 +8198,10 @@ const BookingViewLayer = () => {
                                                       )}
                                                     </td>
                                                     <td
-                                                      className={`text-end ${
-                                                        service.priceSpread >= 0
-                                                          ? "pricing-spread-positive"
-                                                          : "pricing-spread-negative"
-                                                      }`}
+                                                      className={`text-end ${service.priceSpread >= 0
+                                                        ? "pricing-spread-positive"
+                                                        : "pricing-spread-negative"
+                                                        }`}
                                                     >
                                                       {formatCurrency(
                                                         service.priceSpread,
@@ -7915,7 +8280,7 @@ const BookingViewLayer = () => {
                                                 : null;
                                             const rightValue =
                                               !hasDlrConfirmed &&
-                                              hasDlrUnconfirmed
+                                                hasDlrUnconfirmed
                                                 ? row.cnc
                                                 : row.cc;
 
@@ -7975,7 +8340,7 @@ const BookingViewLayer = () => {
                                             >
                                               ₹
                                               {(!hasDlrConfirmed &&
-                                              hasDlrUnconfirmed
+                                                hasDlrUnconfirmed
                                                 ? dlrCncTotals.total
                                                 : dlrCcTotals.total
                                               ).toFixed(2)}
@@ -8153,7 +8518,7 @@ const BookingViewLayer = () => {
                                     roleName === "Supervisor Head" ||
                                     roleName === "Field Advisor") &&
                                     bookingData?.BookingStatus !==
-                                      "Completed" &&
+                                    "Completed" &&
                                     bookingData?.BookingAddOns != null &&
                                     Array.isArray(bookingData.BookingAddOns) &&
                                     bookingData.BookingAddOns.length > 0 &&
@@ -8171,7 +8536,8 @@ const BookingViewLayer = () => {
                                     )}
 
                                   {!hideAllActions &&
-                                    roleName !== "Field Advisor" && (
+                                    roleName !== "Field Advisor" &&
+                                    !hasOnlyZeroValueRejectedServices && (
                                       <Link
                                         to={`/invoice-view/${bookingData?.BookingID}?type=Estimation`}
                                         className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center"
@@ -8454,15 +8820,15 @@ const BookingViewLayer = () => {
 
                               const assignStr = record.AssignDate
                                 ? new Date(record.AssignDate).toLocaleString(
-                                    "en-IN",
-                                    {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    },
-                                  )
+                                  "en-IN",
+                                  {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  },
+                                )
                                 : "—";
 
                               const sub =
@@ -8719,14 +9085,14 @@ const BookingViewLayer = () => {
                                               >
                                                 {row.AssignDate
                                                   ? new Date(
-                                                      row.AssignDate,
-                                                    ).toLocaleString("en-IN", {
-                                                      day: "2-digit",
-                                                      month: "short",
-                                                      year: "numeric",
-                                                      hour: "2-digit",
-                                                      minute: "2-digit",
-                                                    })
+                                                    row.AssignDate,
+                                                  ).toLocaleString("en-IN", {
+                                                    day: "2-digit",
+                                                    month: "short",
+                                                    year: "numeric",
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                  })
                                                   : "—"}
                                               </td>
                                               <td
@@ -8734,13 +9100,13 @@ const BookingViewLayer = () => {
                                                 style={{ color: "#475569" }}
                                               >
                                                 {row.RouteType ==
-                                                "CustomerToDealer"
+                                                  "CustomerToDealer"
                                                   ? "Customer To Dealer"
                                                   : row.RouteType ==
-                                                      "DealerToCustomer"
+                                                    "DealerToCustomer"
                                                     ? "Dealer To Customer"
                                                     : row.RouteType ==
-                                                        "DealerToDealer"
+                                                      "DealerToDealer"
                                                       ? "Dealer To Dealer"
                                                       : "—"}
                                               </td>
@@ -8749,7 +9115,7 @@ const BookingViewLayer = () => {
                                                 style={{ color: "#475569" }}
                                               >
                                                 {row.ServiceType ==
-                                                "ServiceAtGarage"
+                                                  "ServiceAtGarage"
                                                   ? "Service At Garage"
                                                   : "Service At Home"}
                                               </td>
@@ -8763,14 +9129,14 @@ const BookingViewLayer = () => {
                                                       (
                                                         row.Status || ""
                                                       ).toLowerCase() ===
-                                                      "assigned"
+                                                        "assigned"
                                                         ? "rgba(13,148,136,0.15)"
                                                         : "rgba(100,116,139,0.15)",
                                                     color:
                                                       (
                                                         row.Status || ""
                                                       ).toLowerCase() ===
-                                                      "assigned"
+                                                        "assigned"
                                                         ? "#0d9488"
                                                         : "#64748b",
                                                   }}
@@ -8804,7 +9170,7 @@ const BookingViewLayer = () => {
                                                 )} */}
                                                   {row.IsCancelled === 0 &&
                                                     row.Status !==
-                                                      "completed" && (
+                                                    "completed" && (
                                                       <div className="d-flex gap-2 justify-content-center flex-wrap">
                                                         <button
                                                           type="button"
@@ -9077,14 +9443,14 @@ const BookingViewLayer = () => {
                                   <td className="py-2 px-3">
                                     {pay.PaymentDate
                                       ? new Date(
-                                          pay.PaymentDate,
-                                        ).toLocaleString("en-IN", {
-                                          day: "2-digit",
-                                          month: "short",
-                                          year: "numeric",
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })
+                                        pay.PaymentDate,
+                                      ).toLocaleString("en-IN", {
+                                        day: "2-digit",
+                                        month: "short",
+                                        year: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })
                                       : "—"}
                                   </td>
                                   <td className="py-2 px-3">
@@ -9284,14 +9650,14 @@ const BookingViewLayer = () => {
                                   <td className="py-2 px-3">
                                     {item.CreatedDate
                                       ? new Date(
-                                          item.CreatedDate,
-                                        ).toLocaleString("en-IN", {
-                                          day: "2-digit",
-                                          month: "short",
-                                          year: "numeric",
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })
+                                        item.CreatedDate,
+                                      ).toLocaleString("en-IN", {
+                                        day: "2-digit",
+                                        month: "short",
+                                        year: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })
                                       : "—"}
                                   </td>
                                 </tr>
@@ -9575,13 +9941,13 @@ const BookingViewLayer = () => {
                             >
                               {img.UploadedAt
                                 ? new Date(img.UploadedAt).toLocaleDateString(
-                                    "en-IN",
-                                    {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                    },
-                                  )
+                                  "en-IN",
+                                  {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  },
+                                )
                                 : ""}
                             </div>
                           </div>
@@ -9644,13 +10010,13 @@ const BookingViewLayer = () => {
                             >
                               {img.UploadedAt
                                 ? new Date(img.UploadedAt).toLocaleDateString(
-                                    "en-IN",
-                                    {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                    },
-                                  )
+                                  "en-IN",
+                                  {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  },
+                                )
                                 : ""}
                             </div>
                           </div>
@@ -9717,13 +10083,13 @@ const BookingViewLayer = () => {
                             >
                               {img.UploadedAt
                                 ? new Date(img.UploadedAt).toLocaleDateString(
-                                    "en-IN",
-                                    {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                    },
-                                  )
+                                  "en-IN",
+                                  {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  },
+                                )
                                 : ""}
                             </div>
                           </div>
@@ -10134,7 +10500,7 @@ const BookingViewLayer = () => {
                               Final payable: ₹
                               {Math.max(
                                 Number(payAmount || 0) -
-                                  Number(discountAmount || 0),
+                                Number(discountAmount || 0),
                                 0,
                               ).toFixed(2)}
                             </div>
@@ -10252,7 +10618,7 @@ const BookingViewLayer = () => {
                               Final payable: ₹
                               {Math.max(
                                 Number(payAmount || 0) -
-                                  Number(discountAmount || 0),
+                                Number(discountAmount || 0),
                                 0,
                               ).toFixed(2)}
                             </div>
@@ -10285,42 +10651,42 @@ const BookingViewLayer = () => {
 
                 {(paymentTypeChoice === "online" ||
                   paymentTypeChoice === "other") && (
-                  <div className="modal-footer border-0 justify-content-center gap-2">
-                    <button
-                      type="button"
-                      className="btn btn-press-effect btn-secondary btn-sm"
-                      onClick={() => {
-                        setPaymentTypeChoice(null);
-                        setPaymentMode("");
-                        setPayAmount(remainingAmount);
-                        setDiscountAmount("");
-                        setPaymentFile(null);
-                      }}
-                    >
-                      Back
-                    </button>
-                    <button
-                      type="button"
-                      className="btn  btn-primary-600 btn-sm"
-                      onClick={handleConfirmPayment}
-                      disabled={
-                        isLoading ||
-                        (paymentTypeChoice === "other" && !paymentFile)
-                      }
-                    >
-                      {isLoading ? (
-                        <>
-                          <span className="spinner-border spinner-border-sm me-2"></span>
-                          Processing...
-                        </>
-                      ) : paymentTypeChoice === "online" ? (
-                        "Send Payment Link"
-                      ) : (
-                        "Update Payment"
-                      )}
-                    </button>
-                  </div>
-                )}
+                    <div className="modal-footer border-0 justify-content-center gap-2">
+                      <button
+                        type="button"
+                        className="btn btn-press-effect btn-secondary btn-sm"
+                        onClick={() => {
+                          setPaymentTypeChoice(null);
+                          setPaymentMode("");
+                          setPayAmount(remainingAmount);
+                          setDiscountAmount("");
+                          setPaymentFile(null);
+                        }}
+                      >
+                        Back
+                      </button>
+                      <button
+                        type="button"
+                        className="btn  btn-primary-600 btn-sm"
+                        onClick={handleConfirmPayment}
+                        disabled={
+                          isLoading ||
+                          (paymentTypeChoice === "other" && !paymentFile)
+                        }
+                      >
+                        {isLoading ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2"></span>
+                            Processing...
+                          </>
+                        ) : paymentTypeChoice === "online" ? (
+                          "Send Payment Link"
+                        ) : (
+                          "Update Payment"
+                        )}
+                      </button>
+                    </div>
+                  )}
               </div>
             </div>
           </div>
@@ -10407,55 +10773,55 @@ const BookingViewLayer = () => {
                     {!(
                       bookingData?.BookingAddOns?.length === 1 &&
                       bookingData?.BookingAddOns[0]?.ServiceType ===
-                        "Inspection"
+                      "Inspection"
                     ) && (
-                      <button
-                        type="button"
-                        className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white position-relative overflow-hidden"
-                        style={{
-                          minHeight: "72px",
-                          transition: "all 0.2s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = "translateY(-2px)";
-                          e.currentTarget.style.boxShadow =
-                            "0 6px 20px rgba(0,0,0,0.08)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = "";
-                          e.currentTarget.style.boxShadow = "";
-                        }}
-                        onClick={openGarageFlowModal}
-                      >
-                        <div className="d-flex align-items-center gap-3">
-                          <span
-                            className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
-                            style={{ width: 48, height: 48 }}
-                          >
-                            <Icon
-                              icon="mdi:garage"
-                              width={24}
-                              height={24}
-                              className="text-primary"
-                            />
-                          </span>
-                          <div>
-                            <span className="fw-semibold d-block text-dark">
-                              Service at Garage
+                        <button
+                          type="button"
+                          className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white position-relative overflow-hidden"
+                          style={{
+                            minHeight: "72px",
+                            transition: "all 0.2s ease",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = "translateY(-2px)";
+                            e.currentTarget.style.boxShadow =
+                              "0 6px 20px rgba(0,0,0,0.08)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = "";
+                            e.currentTarget.style.boxShadow = "";
+                          }}
+                          onClick={openGarageFlowModal}
+                        >
+                          <div className="d-flex align-items-center gap-3">
+                            <span
+                              className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
+                              style={{ width: 48, height: 48 }}
+                            >
+                              <Icon
+                                icon="mdi:garage"
+                                width={24}
+                                height={24}
+                                className="text-primary"
+                              />
                             </span>
-                            <span className="small text-muted">
-                              Car pickup/drop & service done on dealer location
-                            </span>
+                            <div>
+                              <span className="fw-semibold d-block text-dark">
+                                Service at Garage
+                              </span>
+                              <span className="small text-muted">
+                                Car pickup/drop & service done on dealer location
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                        <Icon
-                          icon="mdi:chevron-right"
-                          width={20}
-                          height={20}
-                          className="text-secondary opacity-75"
-                        />
-                      </button>
-                    )}
+                          <Icon
+                            icon="mdi:chevron-right"
+                            width={20}
+                            height={20}
+                            className="text-secondary opacity-75"
+                          />
+                        </button>
+                      )}
                   </div>
                 </div>
               </div>
@@ -10623,6 +10989,27 @@ const BookingViewLayer = () => {
                           options={
                             bookingData?.BookingAddOns
                               ? bookingData.BookingAddOns.filter((addon) => {
+                                // Filter out completed services and items without a name
+                                const status = (
+                                  addon.StatusName ??
+                                  addon.statusName ??
+                                  addon.AddOnStatus ??
+                                  addon.addOnStatus
+                                )
+                                  ?.toString()
+                                  .trim();
+                                return (
+                                  status !== "ServiceCompleted" &&
+                                  addon.ServiceName
+                                );
+                              }).map((addon) => ({
+                                value: addon.ServiceName,
+
+                                label: `${addon.ServiceName} (${addon.DealerName || "No Dealer"})`,
+                              }))
+                              : // .filter((v, i, a) => a.findIndex(t => t.label === v.label) === i)
+                              []
+                                ? bookingData.BookingAddOns.filter((addon) => {
                                   // Filter out completed services and items without a name
                                   const status = (
                                     addon.StatusName ??
@@ -10637,38 +11024,17 @@ const BookingViewLayer = () => {
                                     addon.ServiceName
                                   );
                                 }).map((addon) => ({
+                                  // The 'value' stays as the ServiceName (what the API expects)
                                   value: addon.ServiceName,
-
-                                  label: `${addon.ServiceName} (${addon.DealerName || "No Dealer"})`,
+                                  // The 'label' is what the user sees in the dropdown
+                                  label: (
+                                    <>
+                                      {addon.ServiceName} (
+                                      <b>{addon.DealerName || "No Dealer"}</b>
+                                      )
+                                    </>
+                                  ),
                                 }))
-                              : // .filter((v, i, a) => a.findIndex(t => t.label === v.label) === i)
-                                []
-                                ? bookingData.BookingAddOns.filter((addon) => {
-                                    // Filter out completed services and items without a name
-                                    const status = (
-                                      addon.StatusName ??
-                                      addon.statusName ??
-                                      addon.AddOnStatus ??
-                                      addon.addOnStatus
-                                    )
-                                      ?.toString()
-                                      .trim();
-                                    return (
-                                      status !== "ServiceCompleted" &&
-                                      addon.ServiceName
-                                    );
-                                  }).map((addon) => ({
-                                    // The 'value' stays as the ServiceName (what the API expects)
-                                    value: addon.ServiceName,
-                                    // The 'label' is what the user sees in the dropdown
-                                    label: (
-                                      <>
-                                        {addon.ServiceName} (
-                                        <b>{addon.DealerName || "No Dealer"}</b>
-                                        )
-                                      </>
-                                    ),
-                                  }))
                                 : []
                           }
                           isMulti
@@ -10872,57 +11238,57 @@ const BookingViewLayer = () => {
                           garageDealerOptions.length === 1 &&
                           hasExistingCustomerToDealerRoute
                         ) && (
-                          <button
-                            type="button"
-                            className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
-                            style={{
-                              minHeight: "72px",
-                              transition: "all 0.2s ease",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform =
-                                "translateY(-2px)";
-                              e.currentTarget.style.boxShadow =
-                                "0 6px 20px rgba(0,0,0,0.08)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = "";
-                              e.currentTarget.style.boxShadow = "";
-                            }}
-                            onClick={() => {
-                              setGarageTask("carPickup");
-                              setGarageStep("route");
-                            }}
-                          >
-                            <div className="d-flex align-items-center gap-3">
-                              <span
-                                className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
-                                style={{ width: 48, height: 48 }}
-                              >
-                                <Icon
-                                  icon="mdi:car-pickup"
-                                  width={24}
-                                  height={24}
-                                  className="text-primary"
-                                />
-                              </span>
-                              <div>
-                                <span className="fw-semibold d-block text-dark">
-                                  Car pickup
+                            <button
+                              type="button"
+                              className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
+                              style={{
+                                minHeight: "72px",
+                                transition: "all 0.2s ease",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform =
+                                  "translateY(-2px)";
+                                e.currentTarget.style.boxShadow =
+                                  "0 6px 20px rgba(0,0,0,0.08)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "";
+                                e.currentTarget.style.boxShadow = "";
+                              }}
+                              onClick={() => {
+                                setGarageTask("carPickup");
+                                setGarageStep("route");
+                              }}
+                            >
+                              <div className="d-flex align-items-center gap-3">
+                                <span
+                                  className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
+                                  style={{ width: 48, height: 48 }}
+                                >
+                                  <Icon
+                                    icon="mdi:car-pickup"
+                                    width={24}
+                                    height={24}
+                                    className="text-primary"
+                                  />
                                 </span>
-                                <span className="small text-muted">
-                                  Pick up vehicle and take to dealer
-                                </span>
+                                <div>
+                                  <span className="fw-semibold d-block text-dark">
+                                    Car pickup
+                                  </span>
+                                  <span className="small text-muted">
+                                    Pick up vehicle and take to dealer
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                            <Icon
-                              icon="mdi:chevron-right"
-                              width={20}
-                              height={20}
-                              className="text-secondary opacity-75"
-                            />
-                          </button>
-                        )}
+                              <Icon
+                                icon="mdi:chevron-right"
+                                width={20}
+                                height={20}
+                                className="text-secondary opacity-75"
+                              />
+                            </button>
+                          )}
                         {/* Hide Car drop when CustomerToDealer route does NOT exist */}
                         {hasExistingCustomerToDealerRoute &&
                           allGarageServicesCompletedApproved && (
@@ -10991,61 +11357,61 @@ const BookingViewLayer = () => {
                         {/* Hide Customer to Dealer button if already exists (only when carPickup) */}
                         {(!hasExistingCustomerToDealerRoute ||
                           garageTask === "carDrop") && (
-                          <button
-                            type="button"
-                            className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
-                            style={{
-                              minHeight: "72px",
-                              transition: "all 0.2s ease",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform =
-                                "translateY(-2px)";
-                              e.currentTarget.style.boxShadow =
-                                "0 6px 20px rgba(0,0,0,0.08)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = "";
-                              e.currentTarget.style.boxShadow = "";
-                            }}
-                            onClick={() => {
-                              setGarageRoute("customerToDealer");
-                              setGarageStep("details");
-                            }}
-                          >
-                            <div className="d-flex align-items-center gap-3">
-                              <span
-                                className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
-                                style={{ width: 48, height: 48 }}
-                              >
-                                <Icon
-                                  icon="mdi:account-arrow-right"
-                                  width={24}
-                                  height={24}
-                                  className="text-primary"
-                                />
-                              </span>
-                              <div>
-                                <span className="fw-semibold d-block text-dark">
-                                  {garageTask === "carDrop"
-                                    ? "Dealer to Customer"
-                                    : "Customer to Dealer"}
+                            <button
+                              type="button"
+                              className="btn btn-press-effect border-0 rounded-3 p-3 text-start d-flex align-items-center justify-content-between gap-3 shadow-sm bg-white"
+                              style={{
+                                minHeight: "72px",
+                                transition: "all 0.2s ease",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform =
+                                  "translateY(-2px)";
+                                e.currentTarget.style.boxShadow =
+                                  "0 6px 20px rgba(0,0,0,0.08)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "";
+                                e.currentTarget.style.boxShadow = "";
+                              }}
+                              onClick={() => {
+                                setGarageRoute("customerToDealer");
+                                setGarageStep("details");
+                              }}
+                            >
+                              <div className="d-flex align-items-center gap-3">
+                                <span
+                                  className="rounded-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
+                                  style={{ width: 48, height: 48 }}
+                                >
+                                  <Icon
+                                    icon="mdi:account-arrow-right"
+                                    width={24}
+                                    height={24}
+                                    className="text-primary"
+                                  />
                                 </span>
-                                <span className="small text-muted">
-                                  {garageTask === "carPickup"
-                                    ? "Pickup from Customer → Deliver to Dealer"
-                                    : "Pickup from Dealer → Deliver to Customer"}
-                                </span>
+                                <div>
+                                  <span className="fw-semibold d-block text-dark">
+                                    {garageTask === "carDrop"
+                                      ? "Dealer to Customer"
+                                      : "Customer to Dealer"}
+                                  </span>
+                                  <span className="small text-muted">
+                                    {garageTask === "carPickup"
+                                      ? "Pickup from Customer → Deliver to Dealer"
+                                      : "Pickup from Dealer → Deliver to Customer"}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                            <Icon
-                              icon="mdi:chevron-right"
-                              width={20}
-                              height={20}
-                              className="text-secondary opacity-75"
-                            />
-                          </button>
-                        )}
+                              <Icon
+                                icon="mdi:chevron-right"
+                                width={20}
+                                height={20}
+                                className="text-secondary opacity-75"
+                              />
+                            </button>
+                          )}
                         {garageTask === "carPickup" &&
                           hasExistingCustomerToDealerRoute &&
                           completedGarageDealerOptions.length > 0 &&
@@ -11128,7 +11494,7 @@ const BookingViewLayer = () => {
                                 renderAssignedDealerField(
                                   "Deliver To (Dealer)",
                                   garageDeliverDealer ||
-                                    singleGarageDealerOption,
+                                  singleGarageDealerOption,
                                 )
                               ) : (
                                 <>
@@ -11205,12 +11571,12 @@ const BookingViewLayer = () => {
                           </div>
                           <div>
                             {pendingNextGarageDealerOptions.length === 1 &&
-                            (garageDeliverDealer ||
-                              pendingNextGarageDealerOptions[0]) ? (
+                              (garageDeliverDealer ||
+                                pendingNextGarageDealerOptions[0]) ? (
                               renderAssignedDealerField(
                                 "Deliver To (Dealer)",
                                 garageDeliverDealer ||
-                                  pendingNextGarageDealerOptions[0],
+                                pendingNextGarageDealerOptions[0],
                               )
                             ) : (
                               <>
@@ -11507,7 +11873,7 @@ const BookingViewLayer = () => {
                     </div>
                     <div className="col-12">
                       {pickupDropRescheduleRow?.ServiceType ===
-                      "ServiceAtGarage" ? (
+                        "ServiceAtGarage" ? (
                         <>
                           <label className="form-label small fw-semibold">
                             Time
@@ -11719,7 +12085,7 @@ const BookingViewLayer = () => {
                     </div>
                     <div className="col-12">
                       {pickupDropReassignRow?.ServiceType ===
-                      "ServiceAtGarage" ? (
+                        "ServiceAtGarage" ? (
                         // SHOW TIME PICKER FOR GARAGE WITH VALIDATION
                         <>
                           <label className="form-label small fw-semibold">
