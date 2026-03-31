@@ -166,6 +166,7 @@ const buildServiceStages = (bookingData) => {
   if (!bookingData) return [];
 
   const addOns = bookingData.BookingAddOns || [];
+  const supervisorAddOns = bookingData.SupervisorBookings || [];
   const carPickUpDelivery = bookingData.CarPickUpDelivery || [];
   const payments = bookingData.Payments || [];
 
@@ -174,7 +175,7 @@ const buildServiceStages = (bookingData) => {
     (a) => a.IsSupervisor_Confirm !== 1,
   );
   const confirmedLength = confirmedAddOns.length;
-  const pendingLength = pendingAddOns.length;
+  const pendingLength = supervisorAddOns.length;
 
   const totalServices = addOns.length;
   const completedServices = addOns.filter((a) => a.Is_Completed).length;
@@ -336,7 +337,7 @@ const buildServiceStages = (bookingData) => {
             ? "completed"
             : "in-progress"
           : "pending",
-    details: `${confirmedLength} Service(s) Confirmed`,
+    details: `${confirmedLength} Service(s) Confirmed / ${pendingLength} pending`,
   };
 
   const technicianStage = {
