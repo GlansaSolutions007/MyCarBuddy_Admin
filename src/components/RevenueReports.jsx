@@ -41,9 +41,9 @@ const EXPORT_COLUMNS = {
     { key: "DealerPrice", label: "Dealer Price" },
     { key: "DealerGSTPercent", label: "Dealer GST %" },
     { key: "DealerGSTAmount", label: "Dealer GST Amount" },
-    { key: "OurPercentage", label: "Our %" },
-    { key: "OurEarningsStored", label: "Our Earnings" },
-    { key: "DealerPaidAmount", label: "Dealer Payment Amount" },
+    { key: "OurPercentage", label: "MCB %" },
+    { key: "OurEarningsStored", label: "MCB Amount" },
+    { key: "DealerPaidAmount", label: "Paid To Dealer" },
     { key: "DealerPaymentDate", label: "Dealer Payment Date" },
     { key: "DealerPaymentMode", label: "Dealer Payment Mode" },
     { key: "DealerPaymentStatus", label: "Dealer Payment Status" },
@@ -243,13 +243,21 @@ const RevenueReports = () => {
   const serviceColumns = [
     {
       name: "Booking ID",
-      selector: (r) => r.BookingTrackID || "-",
+      selector: (r) => (
+        <Link to={`/booking-view/${r.BookingID}`} className="text-primary">
+          {r.BookingTrackID || "-"}
+        </Link>
+      ),
       sortable: true,
       width: "150px",
     },
     {
       name: "Lead ID",
-      selector: (r) => r.LeadId || "-",
+      selector: (r) => (
+        <Link to={`/lead-view/${r.LeadId}`} className="text-primary">
+          {r.LeadId || "-"}
+        </Link>
+      ),
       sortable: true,
       width: "120px",
     },
@@ -372,13 +380,13 @@ const RevenueReports = () => {
       name: "MCB Amount",
       selector: (r) => r.OurEarningsStored ?? "-",
       sortable: true,
-      width: "160px",
+      width: "150px",
     },
     {
       name: " Paid to DLR",
       selector: (r) => r.DealerPaidAmount ?? "-",
       sortable: true,
-      width: "160px",
+      width: "150px",
     },
     {
       name: "DLR Pay. Date",
@@ -395,13 +403,13 @@ const RevenueReports = () => {
             })
           : "-",
       sortable: true,
-      width: "180px",
+      width: "150px",
     },
     {
       name: "DLR Pay. Mode",
       selector: (r) => r.DealerPaymentMode ?? "-",
       sortable: true,
-      width: "180px",
+      width: "150px",
     },
     {
       name: "DLR Pay. Status",
@@ -429,7 +437,7 @@ const RevenueReports = () => {
         );
       },
       sortable: true,
-      width: "180px",
+      width: "170px",
     },
   ];
   const bookingColumns = [
