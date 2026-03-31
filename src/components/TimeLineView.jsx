@@ -336,7 +336,7 @@ const buildServiceStages = (bookingData) => {
             ? "completed"
             : "in-progress"
           : "pending",
-    details: `${confirmedLength} confirmed / ${pendingLength} pending`,
+    details: `${confirmedLength} Service(s) Confirmed`,
   };
 
   const technicianStage = {

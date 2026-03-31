@@ -2079,6 +2079,87 @@ const BookServicesLayer = () => {
       fixed: true,
       width: "280px", // Increased width for lists
     },
+    ...(isSupervisorHead || isFieldAdvisor || isAdmin
+      ? [
+        {
+          name: "Select Dealer",
+          cell: (row, index) => {
+            if (row.isInclude) return null;
+            const dealerConfirm = row.isDealer_Confirm?.toString().trim().toLowerCase();
+            const isApproved = dealerConfirm === "approved";
+            const isRejected = dealerConfirm === "rejected";
+            const canModifyBase =
+              row.status !== "Confirmed" ||
+              isSupervisorHead || isFieldAdvisor ||
+              isAdmin;
+            const canModify =
+              isRejected ? true : isApproved ? false : canModifyBase;
+            return (
+              <div className="position-relative overflow-visible w-100">
+                <Select
+                  isDisabled={!canModify}
+                  className="react-select-container text-sm"
+                  classNamePrefix="react-select"
+                  isClearable
+                  menuPortalTarget={document.body}
+                  menuPosition="fixed"
+                  value={
+                    row.dealerID
+                      ? {
+                        value: row.dealerID,
+                        label:
+                          dealersList.find((d) => d.DealerID === row.dealerID)
+                            ?.FullName || "Unknown Dealer",
+                      }
+                      : null
+                  }
+                  options={dealersList.map((d) => ({
+                    value: d.DealerID,
+                    label: d.FullName,
+                  }))}
+                  onChange={(opt) =>
+                    updateTableRow(row.addedItemsIndex, {
+                      dealerID: opt ? opt.value : "",
+                    })
+                  }
+                  styles={{
+                    container: (base) => ({
+                      ...base,
+                      minWidth: 200,
+                      fontSize: "0.75rem",
+                    }),
+                    control: (base) => ({
+                      ...base,
+                      height: 32,
+                    }),
+                    valueContainer: (base) => ({
+                      ...base,
+                      padding: "0 6px",
+                    }),
+                    input: (base) => ({
+                      ...base,
+                      margin: 0,
+                      padding: 0,
+                    }),
+                    option: (base) => ({
+                      ...base,
+                      fontSize: "0.75rem",
+                      padding: "4px 8px",
+                    }),
+                    menuPortal: (base) => ({
+                      ...base,
+                      zIndex: 1080,
+                    }),
+                  }}
+                />
+              </div>
+            );
+          },
+          minWidth: "250px",
+          sortable: true,
+        },
+      ]
+      : []),
     {
       name: "Part Price",
       cell: (row) => {
@@ -2704,87 +2785,7 @@ const BookServicesLayer = () => {
         },
       ]
       : []),
-    ...(isSupervisorHead || isFieldAdvisor || isAdmin
-      ? [
-        {
-          name: "Select Dealer",
-          cell: (row, index) => {
-            if (row.isInclude) return null;
-            const dealerConfirm = row.isDealer_Confirm?.toString().trim().toLowerCase();
-            const isApproved = dealerConfirm === "approved";
-            const isRejected = dealerConfirm === "rejected";
-            const canModifyBase =
-              row.status !== "Confirmed" ||
-              isSupervisorHead || isFieldAdvisor ||
-              isAdmin;
-            const canModify =
-              isRejected ? true : isApproved ? false : canModifyBase;
-            return (
-              <div className="position-relative overflow-visible w-100">
-                <Select
-                  isDisabled={!canModify}
-                  className="react-select-container text-sm"
-                  classNamePrefix="react-select"
-                  isClearable
-                  menuPortalTarget={document.body}
-                  menuPosition="fixed"
-                  value={
-                    row.dealerID
-                      ? {
-                        value: row.dealerID,
-                        label:
-                          dealersList.find((d) => d.DealerID === row.dealerID)
-                            ?.FullName || "Unknown Dealer",
-                      }
-                      : null
-                  }
-                  options={dealersList.map((d) => ({
-                    value: d.DealerID,
-                    label: d.FullName,
-                  }))}
-                  onChange={(opt) =>
-                    updateTableRow(row.addedItemsIndex, {
-                      dealerID: opt ? opt.value : "",
-                    })
-                  }
-                  styles={{
-                    container: (base) => ({
-                      ...base,
-                      minWidth: 200,
-                      fontSize: "0.75rem",
-                    }),
-                    control: (base) => ({
-                      ...base,
-                      height: 32,
-                    }),
-                    valueContainer: (base) => ({
-                      ...base,
-                      padding: "0 6px",
-                    }),
-                    input: (base) => ({
-                      ...base,
-                      margin: 0,
-                      padding: 0,
-                    }),
-                    option: (base) => ({
-                      ...base,
-                      fontSize: "0.75rem",
-                      padding: "4px 8px",
-                    }),
-                    menuPortal: (base) => ({
-                      ...base,
-                      zIndex: 1080,
-                    }),
-                  }}
-                />
-              </div>
-            );
-          },
-          minWidth: "200px",
-          sortable: true,
-        },
-      ]
-      : []),
+    
     {
       name: "Customer Status",
       selector: (row) => (row.isInclude ? "" : row.status),
