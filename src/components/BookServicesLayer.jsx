@@ -3451,13 +3451,13 @@ const BookServicesLayer = () => {
                     columns={columns}
                     data={flattenedRows}
                     fixedHeader
-                    fixedHeaderScrollHeight="550px"
+                    fixedHeaderScrollHeight="600px"
                     // pagination
                     highlightOnHover
                     responsive
                     striped
                     persistTableHead
-                    noDataComponent="No items added yet"
+                    noDataComponent="No services added yet"
                     conditionalRowStyles={[
                       {
                         when: (row) =>

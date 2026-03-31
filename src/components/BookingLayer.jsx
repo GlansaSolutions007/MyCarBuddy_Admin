@@ -456,7 +456,7 @@ const BookingLayer = () => {
       sortable: true,
     },
   {
-      name: "Service Time slots",
+      name: "Service Time Slots",
       selector: (row) => {
         const formattedDate = row.BookingDate
           ? new Date(row.BookingDate).toLocaleDateString("en-IN", {
@@ -625,7 +625,7 @@ const BookingLayer = () => {
       width: "150px",
       sortable: true,
     },
-     {
+    {
       name: "Field Advisor",
       selector: (row) => (
         <>
@@ -846,7 +846,7 @@ const BookingLayer = () => {
 
   // 👇 Existing logic (hide some columns for Dealer)
   if (role === "Dealer") {
-    return !["Amount", "Cust. Name", "Booking Status", "Payment Status"].includes(col.name);
+    return !["Total Amount", "Booking Amount", "Paid Amount", "Customer Name", "Booking Status", "Payment Status", "Service Time Slots"].includes(col.name);
   }
 
   return true;

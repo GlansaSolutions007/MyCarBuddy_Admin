@@ -15,7 +15,7 @@ const EXPORT_COLUMNS = [
   { key: "serviceCompletionDate", label: "Service Completion Date" },
   { key: "serviceTotalAmount", label: "Service Total Amount" },
   { key: "dealerTotalAmount", label: "Dealer Total Amount" },
-  { key: "ourPercentAmount", label: "Our % Amount" },
+  { key: "ourPercentAmount", label: "MCB Amount" },
   { key: "dealerPaymentStatus", label: "Payment Status" },
   { key: "paidAmount", label: "Paid Amount" },
   { key: "paymentDate", label: "Payment Date" },
@@ -477,7 +477,7 @@ const DealerPaymentsLayer = () => {
       width: "150px",
     },
     {
-      name: "Our Amount",
+      name: "MCB Amount",
       selector: (row) => formatCurrency(row.ourPercentAmount),
       sortable: true,
       right: true,
@@ -782,7 +782,7 @@ const DealerPaymentsLayer = () => {
                     </span>
                   </div>
                   <div className="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
-                    <span className="fw-semibold">Our % Amount:</span>
+                    <span className="fw-semibold">MCB Amount:</span>
                     <span className="fw-bold">
                       {formatCurrency(selectedPayment.ourPercentAmount)}
                     </span>

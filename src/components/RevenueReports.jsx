@@ -363,22 +363,22 @@ const RevenueReports = () => {
       width: "160px",
     },
     {
-      name: "Our %",
+      name: "MCB %",
       selector: (r) => r.OurPercentage ?? "-",
       sortable: true,
       width: "100px",
     },
     {
-      name: "Our Earnings",
+      name: "MCB Amount",
       selector: (r) => r.OurEarningsStored ?? "-",
       sortable: true,
-      width: "180px",
+      width: "160px",
     },
     {
-      name: "DLR Payment Amt.",
+      name: " Paid to DLR",
       selector: (r) => r.DealerPaidAmount ?? "-",
       sortable: true,
-      width: "180px",
+      width: "160px",
     },
     {
       name: "DLR Pay. Date",
@@ -513,7 +513,7 @@ const RevenueReports = () => {
       sortable: true,
     },
     {
-      name: "Our Earnings",
+      name: "MCB Earnings",
       selector: (r) => r.OurEarnings,
       // selector: (r) => (r.AmountPaid === 0 ? 0 : r.OurEarnings),
       sortable: true,
@@ -530,7 +530,78 @@ const RevenueReports = () => {
 
   // ---------------- UI ----------------
   return (
-    <div className="row gy-4">
+    
+   <div className="row gy-3 px-3">
+     <div className="col-12">
+      <div className="card overflow-hidden py-3">
+        <div className="card-body">
+          <div className="row 2">
+
+            {/* ROW 1 */}
+            <div className="col-12 col-md-6">
+              <label className="form-label mb-1 fw-semibold">
+                Report Type
+              </label>
+              <select
+                className="form-select"
+                value={reportType}
+                onChange={(e) => setReportType(e.target.value)}
+              >
+                <option value="garage">Dealer Wise</option>
+                <option value="service">Service Wise</option>
+                <option value="booking">Booking Reports</option>
+              </select>
+            </div>
+
+            <div className="col-12 col-md-6">
+              <label className="form-label mb-1">
+                Service Type
+              </label>
+              <select
+                className="form-control"
+                value={serviceType}
+                onChange={(e) => setServiceType(e.target.value)}
+                disabled={reportType !== "service"} // optional
+              >
+                <option value="">All</option>
+                <option value="Service">Service</option>
+                <option value="Spare Part">Spare Part</option>
+                <option value="Package">Package</option>
+                <option value="Service Group">Service Group</option>
+              </select>
+            </div>
+
+            {/* ROW 2 */}
+            <div className="col-12 col-md-6">
+              <label className="form-label mb-1">
+                From Date
+              </label>
+              <input
+                type="date"
+                className="form-control"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                disabled={reportType === "garage"}
+              />
+            </div>
+
+            <div className="col-12 col-md-6">
+              <label className="form-label mb-1">
+                To Date
+              </label>
+              <input
+                type="date"
+                className="form-control"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                disabled={reportType === "garage"} // optional
+              />
+            </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="col-12">
         <div className="card overflow-hidden py-3">
           <div className="card-header">
@@ -538,26 +609,11 @@ const RevenueReports = () => {
               {/* LEFT: REPORT + SEARCH (col-4) */}
               <div className="col-12 col-md-5">
                 <div className="d-flex align-items-center gap-1 flex-wrap">
-                  <div className="d-flex align-items-center gap-2">
-                    <label className="form-label mb-0 fw-semibold">
-                      Report:
-                    </label>
-                    <select
-                      className="form-select"
-                      value={reportType}
-                      onChange={(e) => setReportType(e.target.value)}
-                    >
-                      <option value="garage">Dealer Wise</option>
-                      <option value="service">Service Wise</option>
-                      <option value="booking">Booking Reports</option>
-                    </select>
-                  </div>
-
                   <div className="navbar-search" style={{ width: "250px" }}>
                     <input
                       type="text"
                       className="form-control"
-                      style={{ width: "250px" }}
+                      style={{ width: "350px" }}
                       placeholder="Search"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
@@ -568,48 +624,8 @@ const RevenueReports = () => {
               </div>
 
               {/* RIGHT: FILTERS + BUTTONS (col-6) */}
-              <div className="col-12 col-md-7 ms-auto">
-                <div className="d-flex flex-wrap align-items-center gap-1 justify-content-end">
-                  {reportType === "service" && (
-                    <div className="d-flex align-items-center gap-2">
-                      <label className="form-label mb-0">Type:</label>
-                      <select
-                        className="form-control"
-                        value={serviceType}
-                        onChange={(e) => setServiceType(e.target.value)}
-                      >
-                        <option value="">All</option>
-                        <option value="Service">Service</option>
-                        <option value="Spare Part">Spare Part</option>
-                        <option value="Package">Package</option>
-                        <option value="Service Group">Service Group</option>
-                      </select>
-                    </div>
-                  )}
-                  {reportType !== "garage" && (
-                  <>
-                  <div className="d-flex align-items-center gap-2">
-                    <label className="form-label mb-0">From:</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      value={fromDate}
-                      onChange={(e) => setFromDate(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="d-flex align-items-center gap-2">
-                    <label className="form-label mb-0">To:</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      value={toDate}
-                      onChange={(e) => setToDate(e.target.value)}
-                    />
-                  </div>
-                  </>
-                  )}
-
+              <div className="col-12 col-md-6 ms-auto">
+                <div className="d-flex flex-wrap align-items-center gap-3 justify-content-end">
                   <div className="dropdown">
                     <button
                       className="btn btn-outline-secondary dropdown-toggle px-3 d-flex align-items-center"
