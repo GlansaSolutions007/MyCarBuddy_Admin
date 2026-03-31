@@ -122,49 +122,49 @@ const SupervisorHeadDashboardLayer = () => {
     }
   };
 
-  const pendingColumns = [
-  {
-    name: "Booking ID",
-    selector: (row) => row.BookingTrackID,
-    sortable: true,
-    cell: (row) => (
-      <span className="fw-semibold text-secondary">
-        {row.BookingTrackID}
-      </span>
-    ),
-  },
-  {
-    name: "Type",
-    selector: (row) => row.ServiceType,
-    sortable: true,
-    cell: (row) => row.ServiceType,
-  },
-  {
-    name: "Lead ID",
-    selector: (row) => row.LeadId,
-    sortable: true,
-  },
-  {
-    name: "Date",
-    selector: (row) => row.CreatedDate,
-    sortable: true,
-    cell: (row) =>
-      new Date(row.CreatedDate).toLocaleDateString(),
-  },
-  {
-    name: 'Action',
-    button: true,
-    cell: (row) => (
-      <Link
-        to={`/booking-view/${row.BookingID}`}
-        className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-        title="View"
-      >
-        <Icon icon="lucide:eye" />
-      </Link>
-    ),
-  }
-];
+//   const pendingColumns = [
+//   {
+//     name: "Booking ID",
+//     selector: (row) => row.BookingTrackID,
+//     sortable: true,
+//     cell: (row) => (
+//       <span className="fw-semibold text-secondary">
+//         {row.BookingTrackID}
+//       </span>
+//     ),
+//   },
+//   {
+//     name: "Type",
+//     selector: (row) => row.ServiceType,
+//     sortable: true,
+//     cell: (row) => row.ServiceType,
+//   },
+//   {
+//     name: "Lead ID",
+//     selector: (row) => row.LeadId,
+//     sortable: true,
+//   },
+//   {
+//     name: "Date",
+//     selector: (row) => row.CreatedDate,
+//     sortable: true,
+//     cell: (row) =>
+//       new Date(row.CreatedDate).toLocaleDateString(),
+//   },
+//   {
+//     name: 'Action',
+//     button: true,
+//     cell: (row) => (
+//       <Link
+//         to={`/booking-view/${row.BookingID}`}
+//         className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+//         title="View"
+//       >
+//         <Icon icon="lucide:eye" />
+//       </Link>
+//     ),
+//   }
+// ];
 
   const columns = [
   {
@@ -500,10 +500,10 @@ const SupervisorHeadDashboardLayer = () => {
               </div>
             </div> */}
 
-            <div className="card mt-5">
+            {/* <div className="card mt-5">
               <div className="card-body">
 
-                {/* Header */}
+               
                 <div className="d-flex align-items-center justify-content-between mb-3">
                   <h6 className="mb-0 fw-bold text-primary-light">
                     Pending Confirmations
@@ -532,7 +532,7 @@ const SupervisorHeadDashboardLayer = () => {
                 />
 
                 </div>
-            </div>
+            </div> */}
 
             <div className="card mt-5">
               <div className="card-body">
