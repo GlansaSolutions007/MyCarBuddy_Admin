@@ -3,6 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import DataTable from "react-data-table-component";
 import axios from "axios";
+import TimeLineView from "./TimeLineView";
+
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
@@ -37,6 +39,17 @@ const STATUS_BADGE_CLASS = {
   ServiceInProgress: "bg-warning bg-opacity-25 text-warning",
   OutForDelivery: "bg-info bg-opacity-25 text-info",
 };
+const displayDate = (date) => {
+  if (!date) return "N/A";
+  return new Date(date).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
 const getStatusBadgeClass = (status) =>
   status ? (STATUS_BADGE_CLASS[status] || "bg-secondary bg-opacity-25 text-secondary") : "bg-secondary bg-opacity-25 text-secondary";
 
@@ -47,7 +60,7 @@ const formatCurrency = (n) => {
 const formatDate = (d) => {
   if (!d) return "—";
   const dt = new Date(d);
-  return isNaN(dt.getTime()) ? d : dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric",  hour: "2-digit", minute: "2-digit", hour12: true, });
+  return isNaN(dt.getTime()) ? d : dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true, });
 };
 const formatDateTime = (d) => {
   if (!d) return "—";
@@ -84,301 +97,6 @@ const API_IMAGE = import.meta.env.VITE_APIURL_IMAGE || "";
 function CompleteServiceReportView({ data, onBack }) {
   const [fullscreenImageUrl, setFullscreenImageUrl] = useState(null);
 
-  // Timeline data extraction
-  const getTimelineData = () => {
-    const addOns = data.BookingAddOns || [];
-    const carPickUpDelivery = data.CarPickUpDelivery || [];
-    const dealerApprovals = data.DealerAddOnApproval || [];
-    const payments = data.Payments || [];
-    const bookingStatusTracking = data.BookingStatusTracking || [];
-
-    // Determine service location from latest CarPickUpDelivery or default home
-    const latestPickup = carPickUpDelivery[carPickUpDelivery.length - 1];
-    const isGarageService = latestPickup?.ServiceType === 'ServiceAtGarage';
-    const isHomeService = latestPickup?.ServiceType === 'ServiceAtHome';
-
-    // Separate confirmed vs pending services
-    const confirmedAddOns = addOns.filter(a => a.IsSupervisor_Confirm === 1);
-    const pendingAddOns = (data.BookingsTempAddons || []).filter(a => a.IsSupervisor_Confirm !== 1);
-    const confirmedLength = confirmedAddOns.length;
-    const pendingLength = pendingAddOns.length;
-
-    const baseStages = [
-      {
-        id: 'lead-created',
-        title: 'Lead Created',
-        icon: 'mdi:lead-pencil',
-        date: data.CreatedDate || data.LeadCreatedDate,
-        status: 'completed',
-        details: `Lead ID: ${data.LeadId}`
-      },
-      {
-        id: 'booking-created',
-        title: 'Booking Created',
-        icon: 'mdi:calendar-plus',
-        date: data.CreatedDate,
-        status: 'completed',
-        details: `Booking ID: ${data.BookingID}`
-      },
-      {
-        id: 'supervisor-assigned',
-        title: 'Supervisor Assigned',
-        icon: 'mdi:account-tie',
-        date: data.SupervisorHeadAssignDate,
-        status: data.SupervisorHeadName ? 'completed' : 'pending',
-        details: data.SupervisorHeadName || '—'
-      },
-      {
-        id: 'field-advisor-assigned',
-        title: 'Field Advisor Assigned',
-        icon: 'mdi:account-hard-hat',
-        date: data.FieldAdvisorAssignDate,
-        status: data.FieldAdvisorName ? 'completed' : 'pending',
-        details: data.FieldAdvisorName || '—'
-      },
-      {
-        id: 'dealer-confirmation',
-        title: 'Dealer Confirmation',
-        icon: 'mdi:handshake',
-        date: dealerApprovals[0]?.CreatedDate,
-        status: dealerApprovals.length === 0 ? 'pending' :
-          dealerApprovals.every(d => d.IsDealer_Confirm === 'Approved') ? 'completed' :
-            dealerApprovals.some(d => d.IsDealer_Confirm === 'Rejected') ? 'failed' : 'in-progress',
-        details: dealerApprovals.length === 0 ? 'No dealers' : `${dealerApprovals.filter(d => d.IsDealer_Confirm === 'Approved').length} dealers confirmed services`
-      },
-      {
-        id: 'customer-confirmation',
-        title: 'Customer Confirmation',
-        icon: 'mdi:account-check',
-        date: addOns.find(a => a.ConfirmRole)?.ConfirmDate,
-        status: (confirmedLength === 0 && pendingLength === 0) ? 'pending' :
-          confirmedLength > 0 ? (pendingLength === 0 ? 'completed' : 'in-progress') : 'pending',
-        details: `${confirmedLength} confirmed / ${pendingLength} pending`
-      },
-      {
-        id: 'technician-assigned',
-        title: 'Technician Assigned',
-        icon: 'mdi:engineer',
-        date: carPickUpDelivery[0]?.AssignDate,
-        status: carPickUpDelivery.length > 0 ? 'completed' : 'pending',
-        details: carPickUpDelivery.map(p => p.TechnicinaName).filter(Boolean).join(', ') || '—'
-      }
-    ];
-
-    // Conditional garage vs home flow
-    let conditionalStages = [];
-    if (isGarageService && carPickUpDelivery.length > 0) {
-      // Garage flow stages
-      conditionalStages = [
-        {
-          id: 'garage-customer-to-dealer',
-          title: 'Customer to Dealer',
-          icon: 'mdi:car-pickup',
-          date: carPickUpDelivery.find(p => p.RouteType === 'CustomerToDealer')?.PickupDate,
-          status: 'completed',
-          details: 'Car picked from customer → delivered to dealer'
-        },
-        {
-          id: 'garage-dealer-service',
-          title: 'Service at Dealer',
-          icon: 'mdi:car-wrench',
-          date: addOns.find(a => a.StatusName === 'ServiceCompleted')?.UpdatedDate,
-          status: addOns.every(a => a.StatusName === 'ServiceCompleted') ? 'completed' : 'in-progress',
-          details: `${addOns.filter(a => a.StatusName === 'ServiceCompleted').length} services done`
-        },
-        ...(carPickUpDelivery.some(p => p.RouteType === 'DealerToDealer') ? [{
-          id: 'garage-dealer-to-dealer',
-          title: 'Dealer to Dealer (Multi-dealer)',
-          icon: 'mdi:cars',
-          date: carPickUpDelivery.find(p => p.RouteType === 'DealerToDealer')?.PickupDate,
-          status: 'completed',
-          details: 'Car transferred between dealers'
-        }] : []),
-        {
-          id: 'garage-dealer-to-customer',
-          title: 'Dealer to Customer',
-          icon: 'mdi:car-deliver',
-          date: carPickUpDelivery.find(p => p.RouteType === 'DealerToCustomer')?.DeliveryDate,
-          status: carPickUpDelivery.some(p => p.RouteType === 'DealerToCustomer' && p.Status === 'completed') ? 'completed' : 'pending',
-          details: 'Car delivered back to customer'
-        }
-      ];
-    } else {
-      // Home service flow
-      conditionalStages = bookingStatusTracking.map((track, idx) => ({
-        id: `home-service-${idx}`,
-        title: track.Status === 'BuddyStarted' && track.Status != 'completed' ? 'Buddy Started' : track.Status === 'BuddyReached' && track.Role === 'Buddy' ? 'Buddy Reached' : track.Status === 'ServiceStarted' && track.Role === 'Technician' ? 'Service Started' : 'Service In progress',
-        icon: 'mdi:home-wrench',
-        date: track.Created_At,
-        status: track.Status === 'ServiceCompleted' ? 'completed' : 'in-progress',
-        details: `${track.Role || '—'} - 'Service At Home'}`
-      }));
-    }
-
-    const finalStages = [
-      {
-        id: 'service-completed',
-        title: 'Service Completed',
-        icon: 'mdi:car-check',
-        date: addOns.filter(a => a.Is_Completed)[0]?.CompletedDate,
-        status: addOns.length === 0 ? 'pending' : addOns.every(a => a.Is_Completed) ? 'completed' : addOns.some(a => a.Is_Completed) ? 'in-progress' : 'pending',
-        details: addOns.length === 0 ? 'No services' : `${addOns.filter(a => a.Is_Completed).length}/${addOns.length} services`
-      },
-      {
-        id: 'payment-done',
-        title: 'Payment Done',
-        icon: 'mdi:credit-card-check',
-        date: payments[0]?.PaymentDate,
-        status: payments.some(p => p.PaymentStatus === 'Success') ? 'completed' : 'pending',
-        details: `${formatCurrency(payments.reduce((sum, p) => sum + Number(p.AmountPaid || 0), 0))}`
-      },
-      {
-        id: 'booking-done',
-        title: 'Booking Completed',
-        icon: 'mdi:check-circle',
-        date: data.BookingCompletedDate,
-        status: data.BookingStatus === 'Completed' ? 'completed' : 'pending',
-        details: data.BookingStatus
-      }
-    ];
-
-    return [...baseStages, ...conditionalStages, ...finalStages];
-  };
-
-  const TimelineSection = () => {
-    const stages = getTimelineData();
-    const getStatusColor = (status) => {
-      switch (status) {
-        case 'completed': return '#10b981';
-        case 'in-progress': return '#10b981';
-        case 'pending': return '#6b7280';
-        case 'failed': return '#ef4444';
-        default: return '#6b7280';
-      }
-    };
-
-    return (
-      <div className="service-timeline position-relative">
-        <style jsx>{`
-          .service-timeline { 
-            padding: 1.5rem 0; 
-            overflow-x: auto;
-            scrollbar-width: thin;
-          }
-          .timeline-container {
-            display: flex;
-            align-items: flex-start;
-            gap: 1rem;
-            min-width: max-content;
-            position: relative;
-          }
-          .timeline-step {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-            min-width: 180px;
-            flex: 0 0 auto;
-          }
-          .timeline-step:not(:last-child)::after {
-            content: '';
-            position: absolute;
-            top: 2.5rem;
-            right: -1rem;
-            width: 2rem;
-            height: 3px;
-            background: linear-gradient(to right, var(--step-bg, #e5e7eb) 0%, var(--step-bg, #e5e7eb) 100%);
-          }
-          .step-circle {
-            width: 3rem;
-            height: 3rem;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 0.875rem;
-            color: white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 2;
-            position: relative;
-            border: 3px solid white;
-          }
-          .step-content {
-            margin-top: 0.75rem;
-            text-align: center;
-            max-width: 160px;
-          }
-          .step-title {
-            font-weight: 600;
-            font-size: 0.85rem;
-            margin-bottom: 0.25rem;
-            line-height: 1.2;
-          }
-          .step-date, .step-details {
-            font-size: 0.75rem;
-            opacity: 0.8;
-            line-height: 1.3;
-          }
-          .step-badge {
-            position: absolute;
-            top: -0.25rem;
-            right: -0.25rem;
-            padding: 0.125rem 0.375rem;
-            font-size: 0.65rem;
-            border-radius: 0.375rem;
-            font-weight: 600;
-          }
-          @media (max-width: 768px) {
-            .timeline-container { flex-direction: column; }
-            .timeline-step:not(:last-child)::after { display: none; }
-            .timeline-step { flex-direction: row; align-items: center; min-width: auto; }
-            .timeline-step::before {
-              content: '';
-              position: absolute;
-              left: 1.25rem;
-              top: 0;
-              bottom: 0;
-              width: 3px;
-              background: #e5e7eb;
-            }
-          }
-        `}</style>
-        <div className="timeline-container">
-          {stages.map((step, index) => {
-            const color = getStatusColor(step.status);
-            return (
-              <div key={step.id} className="timeline-step">
-                <div
-                  className="step-circle"
-                  style={{
-                    '--step-bg': color,
-                    backgroundColor: color
-                  }}
-                >
-                  <Icon icon={step.icon} width="16" height="16" />
-                  {index + 1}
-                </div>
-                <div className="step-content">
-                  <div className="step-title" title={step.title}>{step.title}</div>
-                  {step.date && (
-                    <div className="step-date">
-                      {formatDate(step.date)}
-                    </div>
-                  )}
-                  {step.details && (
-                    <div className="step-details" title={step.details}>
-                      {step.details}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
   if (!data) return null;
   const addOns = data.BookingAddOns || [];
   const vehicles = data.VehicleDetails || [];
@@ -432,11 +150,11 @@ function CompleteServiceReportView({ data, onBack }) {
   };
 
   const formatStatus = (status) => {
-  return status
-    ?.replace(/_/g, " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-};
+    return status
+      ?.replace(/_/g, " ")
+      .toLowerCase()
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  };
 
   return (
     <div className="mb-4">
@@ -558,10 +276,7 @@ function CompleteServiceReportView({ data, onBack }) {
 
       {/* NEW SERVICE TIMELINE - TOP OF PAGE */}
       <div className="mb-4">
-
-        <ReportCard title="Service Timeline" icon="mdi:timeline-clock-outline">
-          <TimelineSection data={data} />
-        </ReportCard>
+        <TimeLineView bookingData={data} displayDate={displayDate} />
       </div>
 
       {/* Lead stage cards */}
@@ -626,7 +341,7 @@ function CompleteServiceReportView({ data, onBack }) {
                               </tr>
                             </thead>
                             <tbody>
-                              {followUps.slice(0, 10).reverse() .map((f) => (
+                              {followUps.slice(0, 10).reverse().map((f) => (
                                 <tr key={f.Id}>
                                   <td>{formatDateTime(f.Updated_At ?? f.Created_At ?? "N/A")}</td>
                                   <td>
@@ -722,8 +437,8 @@ function CompleteServiceReportView({ data, onBack }) {
                         <div className="small text-muted mb-2 fw-semibold">Pricing</div>
                         <DetailRow label="Service price" value={formatCurrency(svc.ServicePrice)} />
                         <DetailRow label="Labour Charges" value={formatCurrency(svc.LabourCharges)} />
-                        <DetailRow label="SGST (9%)" value={formatCurrency(svc.GSTPrice/2)} />
-                        <DetailRow label="CGST (9%)" value={formatCurrency(svc.GSTPrice/2)} />
+                        <DetailRow label="SGST (9%)" value={formatCurrency(svc.GSTPrice / 2)} />
+                        <DetailRow label="CGST (9%)" value={formatCurrency(svc.GSTPrice / 2)} />
                         <DetailRow label="Total Price" value={formatCurrency(svc.TotalPrice)} />
 
                         {/* <DetailRow label="Subtotal" value={formatCurrency(svc.DealerGSTAmount + svc.ServicePrice + svc.LabourCharges + svc.GSTPrice + svc.TotalPrice + svc.DealerPrice)} /> */}
@@ -733,8 +448,8 @@ function CompleteServiceReportView({ data, onBack }) {
                         <DetailRow label="Dealer Name" value={svc.DealerName ?? "N/A"} />
                         <DetailRow label="Dealer confirm" value={<span className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(svc.IsDealer_Confirm)}`}>{svc.IsDealer_Confirm ?? "N/A"}</span>} />
                         <DetailRow label="Dealer price" value={formatCurrency(svc.DealerPrice)} />
-                        <DetailRow label="Dealer SGST Amount" value={formatCurrency(svc.DealerGSTAmount/2)} />
-                        <DetailRow label="Dealer CGST Amount" value={formatCurrency(svc.DealerGSTAmount/2)} />
+                        <DetailRow label="Dealer SGST Amount" value={formatCurrency(svc.DealerGSTAmount / 2)} />
+                        <DetailRow label="Dealer CGST Amount" value={formatCurrency(svc.DealerGSTAmount / 2)} />
                       </div>
                       <div className="col-md-4 col-lg-4">
                         <div className="small text-muted mb-2 fw-semibold">Status</div>
@@ -1157,8 +872,8 @@ function CompleteServiceReportView({ data, onBack }) {
                                   </span>
                                 </td>
                                 <td>{formatCurrency(inv.TotalAmount)}</td>
-                                <td>{formatCurrency(inv.TaxAmount/2)}</td>
-                                <td>{formatCurrency(inv.TaxAmount/2)}</td>
+                                <td>{formatCurrency(inv.TaxAmount / 2)}</td>
+                                <td>{formatCurrency(inv.TaxAmount / 2)}</td>
                                 <td>{formatCurrency(inv.NetAmount)}</td>
                               </tr>
                             ))}
@@ -1721,3 +1436,4 @@ const CompleteServiceReportLayer = () => {
 };
 
 export default CompleteServiceReportLayer;
+

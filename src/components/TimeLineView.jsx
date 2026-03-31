@@ -275,7 +275,7 @@ const buildServiceStages = (bookingData) => {
   const dealerAssignmentStage = {
     id: "dealer-assignment",
     title:
-      assignedDealerCount > 0 ? "Dealer assigned" : "Dealer assignment pending",
+      assignedDealerCount > 0 ? "Dealer(s) assigned" : "Dealer(s) assignment",
     date:
       assignedDealerEntries[0]?.UpdatedDate ||
       assignedDealerEntries[0]?.CreatedDate,
@@ -289,26 +289,32 @@ const buildServiceStages = (bookingData) => {
   const dealerApprovalStage = {
     id: "dealer-confirmation",
     title:
-      allDealerItems.length === 0
-        ? "Dealer approval pending"
-        : allDealerItems.every((item) => item.IsDealer_Confirm === "Approved")
-          ? "Dealer approval completed"
-          : allDealerItems.some((item) => item.IsDealer_Confirm === "Rejected")
-            ? "Dealer approval failed"
-            : "Dealer approval in progress",
+      assignedDealerCount === 0
+        ? "Dealer(s) approval"
+        : allDealerItems.length === 0
+          ? "Dealer(s) approval"
+          : allDealerItems.every((item) => item.IsDealer_Confirm === "Approved")
+            ? "Dealer(s) approval"
+            : allDealerItems.some((item) => item.IsDealer_Confirm === "Rejected")
+              ? "Dealer(s) approval failed"
+              : "Dealer(s) approval",
     date: allDealerItems.find((item) => item.IsDealer_Confirm)?.UpdatedDate,
     status:
-      allDealerItems.length === 0
+      assignedDealerCount === 0
         ? "pending"
-        : allDealerItems.every((item) => item.IsDealer_Confirm === "Approved")
-          ? "completed"
-          : allDealerItems.some((item) => item.IsDealer_Confirm === "Rejected")
-            ? "failed"
-            : "in-progress",
+        : allDealerItems.length === 0
+          ? "pending"
+          : allDealerItems.every((item) => item.IsDealer_Confirm === "Approved")
+            ? "completed"
+            : allDealerItems.some((item) => item.IsDealer_Confirm === "Rejected")
+              ? "failed"
+              : "in-progress",
     details:
-      allDealerItems.length === 0
-        ? "No dealers"
-        : `${dealerApprovalCount} Serv(s) Approved / ${allDealerItems.length - dealerApprovalCount} Serv(s) Not Approved`,
+      assignedDealerCount === 0
+        ? "Awaiting dealer assignment"
+        : allDealerItems.length === 0
+          ? "No dealers"
+          : `${dealerApprovalCount} / ${allDealerItems.length} Service(s) Approved`,
   };
 
   const customerStage = {
@@ -432,22 +438,6 @@ const buildServiceStages = (bookingData) => {
     return stage;
   });
 
-  let lastCompletedIndex = -1;
-  stages.forEach((stage, idx) => {
-    if (stage.status === "completed") {
-      lastCompletedIndex = idx;
-    }
-  });
-
-  let promoted = false;
-  stages = stages.map((stage, idx) => {
-    if (!promoted && idx > lastCompletedIndex && stage.status === "pending") {
-      promoted = true;
-      return { ...stage, status: "in-progress" };
-    }
-    return stage;
-  });
-
   const paymentStageIndex = stages.findIndex(
     (stage) => stage.id === "payment-done",
   );
@@ -541,7 +531,7 @@ const TimeLineView = ({ bookingData, displayDate }) => {
         badgeClass: "bg-warning-subtle text-warning-emphasis",
         cardClass: "timeline-step-card is-live",
         stepClass: "timeline-step is-live",
-        label: "Live now",
+        label: "Current stage",
       };
     }
 
