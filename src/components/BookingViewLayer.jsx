@@ -4318,7 +4318,7 @@ const BookingViewLayer = () => {
       marginAmount,
       marginPercent,
       priceSpread,
-      spreadWithoutMargin: Number((priceSpread - marginAmount).toFixed(2)),
+      spreadWithoutMargin: Number((priceSpread + marginAmount).toFixed(2)),
       updatedAt: item.UpdatedDate || item.CreatedDate || item.BookingDate,
       sourceOrder:
         item.__pricingOrder !== undefined ? item.__pricingOrder : index,
@@ -7839,8 +7839,8 @@ const BookingViewLayer = () => {
                                           </div>
                                           <div className="pricing-kpi-value text-primary">
                                             {formatCurrency(
-                                              unmatchedSpreadAmount,
-                                            )}
+  Number(unmatchedSpreadAmount) + Number(pricingTotals.marginAmount)
+)}
                                           </div>
                                         </div>
                                       </div>
