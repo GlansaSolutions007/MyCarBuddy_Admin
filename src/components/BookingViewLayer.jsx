@@ -5480,8 +5480,43 @@ const BookingViewLayer = () => {
                                     Booking #{bookingData.BookingTrackID}
                                   </h6>
                                   <small className="text-muted">
-                                    Scheduled: {bookingData.BookingDate} (
-                                    {bookingData.TimeSlot})
+                                    Scheduled: {new Date(bookingData.BookingDate).toLocaleDateString()}{" "} 
+                                    <>
+                                    <style>
+                                      {`
+                                        .hover-dropdown:hover .dropdown-menu {
+                                          display: block;
+                                          margin-top: 10px;
+                                        }
+                                      `}
+                                    </style>
+
+                                    {bookingData.TimeSlot?.includes(",") ? (
+                                      <div className="dropdown d-inline hover-dropdown">
+                                        <span
+                                          className="dropdown-toggle"
+                                          style={{ cursor: "pointer" }}
+                                        >
+                                          ({bookingData.TimeSlot.split(",")[0].trim()})
+                                        </span>
+
+                                        <ul
+                                          className="dropdown-menu p-2"
+                                          style={{ minWidth: "max-content", left: "auto", right: 0 }}
+                                        >
+                                          {bookingData.TimeSlot.split(",").map((slot, index) => (
+                                            <li key={index}>
+                                              <span className="dropdown-item-text">
+                                                {slot.trim()}
+                                              </span>
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    ) : (
+                                      <>({bookingData.TimeSlot})</>
+                                    )}
+                                  </>
                                   </small>
                                 </div>
                               </div>
@@ -5545,7 +5580,7 @@ const BookingViewLayer = () => {
                                         : "bg-warning text-dark"
                                   }`}
                                 >
-                                  {bookingData.BookingStatus}
+                                  {bookingData.BookingStatus === "ServiceInProgress" ? "Service in progress" : bookingData.BookingStatus}
                                 </span>
                               </div>
                             </div>
@@ -10932,6 +10967,8 @@ const BookingViewLayer = () => {
                       >
                         Technician
                       </label>
+                      
+                      
                     </div>
                     {/* Supervisor Checkbox: show only if roleId is NOT 8 */}
                     {/* {roleId !== "8" && roleName !== "Field Advisor" && (
@@ -11088,6 +11125,34 @@ const BookingViewLayer = () => {
                   )}
 
                   <div className="row g-2 mb-2">
+                     <span className="text-muted mt-20 small text-center fw-semibold">
+                      Customer Scheduled:{" "}
+                      {new Date(bookingData.BookingDate).toLocaleDateString()}{" "}
+
+                      {bookingData.TimeSlot?.includes(",") ? (
+                        <div className="dropdown d-inline">
+                          <span
+                            className="dropdown-toggle"
+                            style={{ cursor: "pointer" }}
+                            data-bs-toggle="dropdown"
+                          >
+                            ({bookingData.TimeSlot.split(",")[0].trim()})
+                          </span>
+
+                          <ul className="dropdown-menu p-2" style={{ minWidth: "max-content", left: "auto", right: 0 }}>
+                            {bookingData.TimeSlot.split(",").map((slot, index) => (
+                              <li key={index}>
+                                <span className="dropdown-item-text">
+                                  {slot.trim()}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : (
+                        <>({bookingData.TimeSlot})</>
+                      )}
+                    </span>
                     <div className="col-12">
                       <label className="form-label small mb-1">
                         {" "}
@@ -11640,6 +11705,34 @@ const BookingViewLayer = () => {
                         />
                       </div>
                       <div className="row g-2">
+                        <span className="text-muted small fw-semibold text-center ">
+                          Customer Scheduled:{" "}
+                          {new Date(bookingData.BookingDate).toLocaleDateString()}{" "}
+
+                          {bookingData.TimeSlot?.includes(",") ? (
+                            <div className="dropdown d-inline">
+                              <span
+                                className="dropdown-toggle"
+                                style={{ cursor: "pointer" }}
+                                data-bs-toggle="dropdown"
+                              >
+                                ({bookingData.TimeSlot.split(",")[0].trim()})
+                              </span>
+
+                              <ul className="dropdown-menu p-2" style={{ minWidth: "max-content", left: "auto", right: 0 }}>
+                                {bookingData.TimeSlot.split(",").map((slot, index) => (
+                                  <li key={index}>
+                                    <span className="dropdown-item-text">
+                                      {slot.trim()}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : (
+                            <>({bookingData.TimeSlot})</>
+                          )}
+                        </span>
                         <div className="col-6">
                           <label className="form-label small mb-1">Date</label>
                           <input

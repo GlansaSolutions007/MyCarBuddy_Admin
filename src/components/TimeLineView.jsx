@@ -355,13 +355,25 @@ const buildServiceStages = (bookingData) => {
         .join(", ") || "—",
   };
 
+  const approverNames = addOns
+  .map((item) => item.EmployeeName)
+  .filter(Boolean);
+
+  const uniqueApprovers = [...new Set(approverNames)];
+  const approverText =
+    uniqueApprovers.length === 0
+      ? ""
+      : uniqueApprovers.length === 1
+      ? ` approved by ${uniqueApprovers[0]}`
+      // : ` approved by ${uniqueApprovers.length} users (${uniqueApprovers.join(", ")})`;
+      : ` approved by (${uniqueApprovers.join(", ")})`;
   const serviceCompletedStage = {
     id: "service-completed",
     title:
       totalServices === 0
         ? "Service pending"
         : completedServices === totalServices
-          ? "Services completed"
+          ? `(${completedServices}/${totalServices}) Services completed`
           : hasAnyServiceProgress
             ? "Service in progress"
             : "Service pending",
@@ -374,10 +386,22 @@ const buildServiceStages = (bookingData) => {
           : hasAnyServiceProgress
             ? "in-progress"
             : "pending",
-    details:
-      totalServices === 0
-        ? "No services"
-        : `${completedServices}/${totalServices} services`,
+          // details:
+          //   totalServices === 0
+          //     ? "No services"
+          //     : `${completedServices}/${totalServices} services`,
+          details:
+          totalServices === 0
+            ? "No services"
+            : approverText
+            ? `${approverText.replace(" approved by ", "Approved by ")} (${
+                addOns.filter(item => item.IsCompleted_Confirmation === 1).length
+              } service${
+                addOns.filter(item => item.IsCompleted_Confirmation === 1).length > 1
+                  ? "s"
+                  : ""
+              })`
+            : "Not approved",
   };
 
   const totalPaid = payments.reduce(
@@ -407,8 +431,8 @@ const buildServiceStages = (bookingData) => {
     id: "booking-done",
     title:
       bookingData.BookingStatus === "Completed"
-        ? "Booking completed"
-        : "Booking completion pending",
+        ? "Booking closed"
+        : "Booking closed pending",
     date: bookingData.BookingCompletedDate,
     status: bookingData.BookingStatus === "Completed" ? "completed" : "pending",
     details: bookingData.BookingStatus || "—",

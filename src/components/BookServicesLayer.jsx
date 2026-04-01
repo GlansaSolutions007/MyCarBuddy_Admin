@@ -279,7 +279,7 @@ const BookServicesLayer = () => {
     }
     if (selectedDate === today) {
       const now = new Date();
-      const currentTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+      const currentTimeStr = `${String(now.getHours() + 2).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
       return timeSlots.filter((slot) => {
         // const slotEnd = (slot.EndTime || slot.StartTime || "23:59").substring(0, 5);
         const slotEnd = (slot.StartTime || "23:59").substring(0, 5);
