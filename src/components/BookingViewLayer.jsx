@@ -306,6 +306,7 @@ const BookingViewLayer = () => {
     bookingData?.Payments?.length > 0 &&
     bookingData?.Payments?.[bookingData.Payments.length - 1]?.PaymentStatus ===
       "Success";
+
   // State for dynamically adding services
   const [servicesToAdd, setServicesToAdd] = useState([
     {
@@ -995,13 +996,23 @@ const BookingViewLayer = () => {
 
   const handleInitialAssignClick = () => {
     const routes = bookingData?.CarPickUpDelivery || [];
+    const filteredRoutes = routes.filter(
+      route => route.Status !== "Cancelled"
+    );
+    console.log(filteredRoutes, "asdasdd");
     const addOns = bookingData?.BookingAddOns || [];
 
+    const lastRoute = filteredRoutes[filteredRoutes.length - 1];
+
+    console.log(lastRoute, "lastRoute");
+    const lastStatus = lastRoute?.Status?.toLowerCase();
+    const routeType = lastRoute?.RouteType;
+
+
     // 1. Safety Check: If there are existing routes, ensure the last one is finished
-    if (routes.length > 0) {
-      const lastRoute = routes[routes.length - 1];
-      const lastStatus = lastRoute?.Status?.toLowerCase();
-      const routeType = lastRoute?.RouteType;
+    if (filteredRoutes.length > 0) {
+     
+      
 
       // If the technician is still active (not completed or cancelled), block and STOP
       if (lastStatus !== "completed" && lastStatus !== "cancelled") {
@@ -1042,10 +1053,44 @@ const BookingViewLayer = () => {
           return;
         }
       }
+
+      
+
     }
     // 2. If we reached here, assignment is ALLOWED.
     // Now decide: Skip Step 1 if it's already a Garage Service
     if (bookingData?.ServiceType === "ServiceAtGarage") {
+      console.log(lastRoute, "lastRoute");
+      if (
+        bookingData?.ServiceType === "ServiceAtGarage" &&
+        lastRoute?.RouteType === "CustomerToDealer" &&
+        lastRoute?.Status === "completed"
+      ) {
+        const dealerId = Number(lastRoute?.PickTo); // 👈 DealerID from route
+        // Filter only that dealer add-ons
+        const dealerAddOns = addOns.filter(
+          (a) => Number(a.DealerID) === dealerId,
+        );
+        console.log(dealerAddOns, "dealerAddOns");
+        // Check if any service NOT completed
+        const hasApproved = dealerAddOns.some(
+          (a) => a.IsCompleted_Confirmation === 0,
+        );
+        console.log(hasApproved, "hasApproved");
+        if (hasApproved) {
+          const dealerName =
+            dealerAddOns[0]?.DealerName || lastRoute?.PickToName || "Dealer";
+
+          Swal.fire({
+            icon: "warning",
+            title: "Service Not Approved",
+            text: `Service is completed at ${dealerName}, Service final approval is pending.`,
+          });
+          return;
+        }
+      }
+      
+      
       openGarageFlowModal(); // Directly go to Pickup/Drop selection (Step 2)
     } else {
       setAssignServiceLocation(null);
