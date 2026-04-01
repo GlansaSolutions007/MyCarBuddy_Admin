@@ -200,10 +200,10 @@ const buildServiceStages = (bookingData) => {
     normalizeTimelineValue(payment?.PaymentStatus),
   );
   const hasServiceInProgressSignal =
-    normalizedBookingWorkflowStatus.includes("serviceinprogress") ||
+    normalizedBookingWorkflowStatus.includes("service inprogress") ||
     normalizedServiceStatuses.some(
       (status) =>
-        status.includes("inprogress") || status.includes("serviceinprogress"),
+        status.includes("inprogress") || status.includes("service inprogress"),
     );
   const hasServiceStartedSignal =
     normalizedBookingWorkflowStatus.includes("servicestart") ||

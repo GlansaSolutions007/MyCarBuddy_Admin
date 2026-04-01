@@ -5842,7 +5842,7 @@ const BookingViewLayer = () => {
                                                   style={{ width: "100px" }}
                                                   className="text-end"
                                                 >
-                                                  MCB %
+                                                  MCB Margin Amount
                                                 </th>
                                                 <th
                                                   style={{ width: "140px" }}
@@ -6321,7 +6321,7 @@ const BookingViewLayer = () => {
                                               style={{ width: "130px" }}
                                               className="text-end"
                                             >
-                                              MCB %
+                                              MCB Margin Amount
                                             </th>
                                             <th
                                               style={{ width: "150px" }}
@@ -6732,7 +6732,7 @@ const BookingViewLayer = () => {
                                               style={{ width: "100px" }}
                                               className="text-end"
                                             >
-                                              MCB %
+                                              MCB Margin Amount
                                             </th>
                                             <th
                                               style={{ width: "100px" }}
@@ -7330,7 +7330,7 @@ const BookingViewLayer = () => {
                                                 }`}
                                               >
                                                 <div className="service-compare-line">
-                                                  <span>Company margin %</span>
+                                                  <span>MCB Margin %</span>
                                                   <strong className="text-success">
                                                     {service.marginPercent.toFixed(
                                                       2,
@@ -7340,7 +7340,7 @@ const BookingViewLayer = () => {
                                                 </div>
                                                 <div className="service-compare-line">
                                                   <span>
-                                                    Company margin amount
+                                                    MCB Margin Amount
                                                   </span>
                                                   <strong className="text-success">
                                                     {formatCurrency(
@@ -7349,7 +7349,7 @@ const BookingViewLayer = () => {
                                                   </strong>
                                                 </div>
                                                 <div className="service-compare-line">
-                                                  <span>Customer - dealer</span>
+                                                  <span>Company Profit</span>
                                                   <strong
                                                     className={
                                                       service.priceSpread >= 0
@@ -7364,7 +7364,7 @@ const BookingViewLayer = () => {
                                                 </div>
                                                 <div className="service-compare-line">
                                                   <span>
-                                                    Spread beyond margin
+                                                    Service Wise Profit
                                                   </span>
                                                   <strong
                                                     className={
@@ -7493,7 +7493,7 @@ const BookingViewLayer = () => {
                                                     service.serviceStatus,
                                                   )}`}
                                                 >
-                                                  Service{" "}
+                                                  {" "}
                                                   {service.serviceStatus}
                                                 </span>
                                               </div>
@@ -7750,7 +7750,7 @@ const BookingViewLayer = () => {
                                               }`}
                                             >
                                               <div className="service-compare-line">
-                                                <span>Company margin %</span>
+                                                <span>MCB Margin %</span>
                                                 <strong className="text-success">
                                                   {service.marginPercent.toFixed(
                                                     2,
@@ -7760,7 +7760,7 @@ const BookingViewLayer = () => {
                                               </div>
                                               <div className="service-compare-line">
                                                 <span>
-                                                  Company margin amount
+                                                  MCB Margin Amount
                                                 </span>
                                                 <strong className="text-success">
                                                   {formatCurrency(
@@ -7769,7 +7769,7 @@ const BookingViewLayer = () => {
                                                 </strong>
                                               </div>
                                               <div className="service-compare-line">
-                                                <span>Customer - dealer</span>
+                                                <span>Company Profit</span>
                                                 <strong
                                                   className={
                                                     service.priceSpread >= 0
@@ -7784,7 +7784,7 @@ const BookingViewLayer = () => {
                                               </div>
                                               <div className="service-compare-line">
                                                 <span>
-                                                  Spread beyond margin
+                                                  Service Wise Profit
                                                 </span>
                                                 <strong
                                                   className={
@@ -7822,7 +7822,7 @@ const BookingViewLayer = () => {
                                         Margin definition
                                       </h6>
                                       <span className="pricing-chip">
-                                        MCB Amt = Margin Amt
+                                      Total Profit = Customer Total - Dealer Total + MCB Margin
                                       </span>
                                     </div>
 
@@ -7854,7 +7854,7 @@ const BookingViewLayer = () => {
                                       <div className="col-md-6 col-xl-3">
                                         <div className="pricing-kpi-card h-100">
                                           <div className="pricing-kpi-label">
-                                            Company margin
+                                            MCB Margin
                                           </div>
                                           <div className="pricing-kpi-value text-success">
                                             {formatCurrency(
@@ -7870,7 +7870,7 @@ const BookingViewLayer = () => {
                                       <div className="col-md-6 col-xl-3">
                                         <div className="pricing-kpi-card h-100">
                                           <div className="pricing-kpi-label">
-                                            Extra spread
+                                            Total Profit
                                           </div>
                                           <div className="pricing-kpi-value text-primary">
                                             {formatCurrency(
@@ -7885,7 +7885,7 @@ const BookingViewLayer = () => {
                                       <div className="d-flex justify-content-between small text-muted mb-2">
                                         <span>Visual split</span>
                                         <span>
-                                          Dealer + Margin + extra spread
+                                          Dealer + Margin + Total Profit
                                         </span>
                                       </div>
                                       <div className="pricing-visual-track">
@@ -7959,7 +7959,7 @@ const BookingViewLayer = () => {
 
                                     <div className="pricing-kpi-card">
                                       <div className="pricing-kpi-label">
-                                        Company margin amount
+                                        MCB Margin Amount
                                       </div>
                                       <div className="pricing-kpi-value text-success">
                                         {formatCurrency(
@@ -8012,7 +8012,9 @@ const BookingViewLayer = () => {
                                             Margin definition
                                           </h6>
                                           <span className="pricing-chip">
-                                            MCB Amt = Margin Amt
+                                            Total Profit = Customer Total
+                                            - Dealer Total
+                                            + MCB Margin
                                           </span>
                                         </div>
 
@@ -8050,7 +8052,7 @@ const BookingViewLayer = () => {
                                         </div>
                                         <div className="pricing-breakdown-row">
                                           <span className="text-muted">
-                                            Company margin amount
+                                            MCB Margin Amount
                                           </span>
                                           <strong className="text-success">
                                             {formatCurrency(
@@ -8060,7 +8062,7 @@ const BookingViewLayer = () => {
                                         </div>
                                         <div className="pricing-breakdown-row">
                                           <span className="text-muted">
-                                            Company margin %
+                                            MCB Margin %
                                           </span>
                                           <strong className="text-success">
                                             {effectiveMarginPercent.toFixed(2)}%
@@ -8097,7 +8099,7 @@ const BookingViewLayer = () => {
                                           <div className="d-flex justify-content-between small text-muted mb-2">
                                             <span>Visual split</span>
                                             <span>
-                                              Dealer + Margin + extra spread
+                                              Dealer + Margin + Total Profit
                                             </span>
                                           </div>
                                           <div className="pricing-visual-track">
@@ -8134,7 +8136,7 @@ const BookingViewLayer = () => {
                                               )}
                                             </span>
                                             <span className="pricing-chip">
-                                              Extra spread{" "}
+                                              Total Profit{" "}
                                               {formatCurrency(
                                                 Math.max(
                                                   unmatchedSpreadAmount,
@@ -8156,7 +8158,7 @@ const BookingViewLayer = () => {
                                             </h6>
                                             <div className="small text-muted">
                                               Every row shows dealer total,
-                                              customer total, company margin,
+                                              customer total, MCB Margin,
                                               and the final spread.
                                             </div>
                                           </div>
@@ -8517,7 +8519,7 @@ const BookingViewLayer = () => {
                                       .trim()
                                       .toLowerCase();
                                     return (
-                                      s !== "servicecompleted" &&
+                                      s !== "service completed" &&
                                       s !== "completed"
                                     );
                                   }).length;
