@@ -7494,7 +7494,15 @@ const BookingViewLayer = () => {
                                                   )}`}
                                                 >
                                                   {" "}
-                                                  {service.serviceStatus}
+                                                  {
+                                                  service.serviceStatus === "InProgress"
+                                                    ? "Service In Progress"
+                                                    : service.serviceStatus === "ServiceCompleted"
+                                                    ? "Service Completed"
+                                                    : service.serviceStatus === "Pending"
+                                                    ? "Service Pending"
+                                                    : service.serviceStatus
+                                                }
                                                 </span>
                                               </div>
                                               {/* {service.includeNames.length >
@@ -7618,7 +7626,7 @@ const BookingViewLayer = () => {
 
                                           <div className="service-compare-grid">
                                             <div className="service-compare-section">
-                                              <h6>Customer quote</h6>
+                                              <h6>Customer Quote</h6>
                                               {/* <div className="service-compare-line">
                                                 <span>Part unit price</span>
                                                 <strong>
@@ -7683,7 +7691,7 @@ const BookingViewLayer = () => {
                                             </div>
 
                                             <div className="service-compare-section">
-                                              <h6>Dealer quote</h6>
+                                              <h6>Dealer Quote</h6>
                                               {/* <div className="service-compare-line">
                                                 <span>Part unit price</span>
                                                 <strong>
@@ -7749,6 +7757,7 @@ const BookingViewLayer = () => {
                                                   : ""
                                               }`}
                                             >
+                                              <h6>Profit Summary</h6>
                                               <div className="service-compare-line">
                                                 <span>MCB Margin %</span>
                                                 <strong className="text-success">
@@ -7800,8 +7809,8 @@ const BookingViewLayer = () => {
                                                 </strong>
                                               </div>
                                               <div className="service-compare-line">
-                                                <span>Last updated</span>
-                                                <strong>
+                                                <span>Last Updated</span>
+                                                <strong  style={{fontSize: "12px"}} >
                                                   {service.updatedAt
                                                     ? formatDateTime(
                                                         service.updatedAt,

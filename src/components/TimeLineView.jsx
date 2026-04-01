@@ -435,7 +435,7 @@ const buildServiceStages = (bookingData) => {
         : "Booking closed pending",
     date: bookingData.BookingCompletedDate,
     status: bookingData.BookingStatus === "Completed" ? "completed" : "pending",
-    details: bookingData.BookingStatus || "—",
+    details: bookingData.BookingStatus === "ServiceInProgress" ? "Service in progress" : bookingData.BookingStatus || "—",
   };
 
   let stages = [
