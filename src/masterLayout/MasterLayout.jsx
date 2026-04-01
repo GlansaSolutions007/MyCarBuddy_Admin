@@ -529,18 +529,11 @@ const MasterLayout = ({ children }) => {
         // { title: "Employee Tickets", to: "/employee-tickets", color: "text-danger-main", permission: "employee_ticket_view", page: "Employee_Tickets" },
       ],
     },
-    {
-      title: "Customer Details",
-      icon: "flowbite:users-group-outline",
+     {
+      title: "Booking Details",
+      icon: "mdi:clipboard-list-outline",
       children: [
-        {
-          title: "Customers",
-          to: "/customers",
-          color: "text-primary-600",
-          permission: "customers_view",
-          page: "Customers",
-        },
-        {
+         {
           title: "Bookings",
           to: "/bookings",
           color: "text-warning-main",
@@ -561,7 +554,19 @@ const MasterLayout = ({ children }) => {
           permission: "payments_view",
           page: "Payments",
         },
-      
+      ],
+    },
+    {
+      title: "Customer Details",
+      icon: "flowbite:users-group-outline",
+      children: [
+        {
+          title: "Customers",
+          to: "/customers",
+          color: "text-primary-600",
+          permission: "customers_view",
+          page: "Customers",
+        },
       ],
     },
     {

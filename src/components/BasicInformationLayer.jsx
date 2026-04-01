@@ -390,6 +390,7 @@ const BasicInformationLayer = () => {
                     if (!selectedDate) return true;
                     if (selectedDate !== today) return true;
                     const now = new Date();
+                    now.setHours(now.getHours() + 2);
                     const [h, m] = String(slot.StartTime).split(":").map(Number);
                     const slotTime = new Date();
                     slotTime.setHours(h, m || 0, 0, 0);
