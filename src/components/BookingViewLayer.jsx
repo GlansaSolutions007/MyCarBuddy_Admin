@@ -4526,6 +4526,69 @@ const BookingViewLayer = () => {
     (Math.max(unmatchedSpreadAmount, 0) / pricingBarBase) * 100,
   );
 
+  const handleBookingCancellation = async () => {
+    try {
+      // 1️⃣ Ask reason (with validation)
+      const { value: reason } = await Swal.fire({
+        title: "Cancel Booking",
+        input: "textarea",
+        inputLabel: "Enter cancellation reason",
+        inputPlaceholder: "Type reason...",
+        showCancelButton: true,
+        confirmButtonText: "Submit",
+        inputValidator: (value) => {
+          if (!value || !value.trim()) {
+            return "Reason is required!";
+          }
+        },
+      });
+
+      if (!reason) return;
+
+      // 2️⃣ Prepare payload
+      const payload = {
+        bookingID: bookingData?.Id || bookingId, // fallback safe
+        cancelledBy: String(userId) || localStorage.getItem("userId"),
+        reason: reason.trim(),
+        refundStatus: "",
+      };
+
+      console.log("Cancellation Payload:", payload);
+
+      // 3️⃣ API call
+      const res = await axios.post(
+        `${API_BASE}cancellations`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // 4️⃣ Success
+      Swal.fire({
+        icon: "success",
+        title: "Cancelled",
+        text: "Booking cancelled successfully!",
+      });
+
+      // 5️⃣ Refresh UI
+      fetchBookingData();
+
+    } catch (error) {
+      console.error("Cancellation Error:", error);
+
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text:
+          error?.response?.data?.message ||
+          "Failed to cancel booking.",
+      });
+    }
+  };
+
   return (
     <>
       <style>{`
@@ -5272,7 +5335,8 @@ const BookingViewLayer = () => {
                     />
                     View Lead
                   </Link>
-                  {!hideAllActions && (
+                  {!hideAllActions && 
+                  bookingData?.BookingStatus !== "Cancelled" && (
                     <button
                       type="button"
                       className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2"
@@ -5293,7 +5357,8 @@ const BookingViewLayer = () => {
                   )}
                   {/* Convert To Service / Service Converted - Add Services Button */}
                   {bookingData?.Isinspection === 1 &&
-                    bookingData?.Isservice_converted === 0 && (
+                    bookingData?.Isservice_converted === 0 &&
+                      bookingData?.BookingStatus !== "Cancelled" && (
                       <button
                         className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2"
                         onClick={handleConvertToService}
@@ -5347,7 +5412,8 @@ const BookingViewLayer = () => {
                       {((bookingData?.Isinspection === 1 &&
                         bookingData?.Isservice_converted === 1) ||
                         (bookingData?.Isinspection === 0 &&
-                          bookingData?.Isservice_converted === 0)) && (
+                          bookingData?.Isservice_converted === 0)) &&
+                          bookingData?.BookingStatus !== "Cancelled" && (
                         <Link
                           to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
                           onClick={(e) => {
@@ -5432,22 +5498,66 @@ const BookingViewLayer = () => {
                       bookingData.BookingStatus,
                     ) && (
                       <div className="d-flex gap-2 flex-wrap">
-                        {bookingData?.SupervisorBookings?.length > 0 && (
+                        <div className="dropdown">
                           <button
-                            className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                            onClick={handleCustomerConfirmation}
+                            className="btn btn-primary-600 btn-sm dropdown-toggle d-inline-flex align-items-center"
+                            type="button"
+                            id="bookingActionsDropdown"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                            ref={(el) => {
+                              if (el) el.style.setProperty("color", "#fff", "important");
+                            }}
                           >
-                            Customer Confirmation
+                            Customer Actions
                           </button>
-                        )}
-                        {bookingData?.SupervisorBookings?.length > 0 && (
-                          <button
-                            className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                            onClick={handleCustomerRejection}
-                          >
-                            Customer Rejection
-                          </button>
-                        )}
+                          
+                          {/* Added 'dropdown-menu-end' to align to the right edge if needed, 
+                              and 'p-3' for internal padding like in your image */}
+                          <ul className="dropdown-menu dropdown-menu-end shadow border-0 p-3" 
+                              aria-labelledby="bookingActionsDropdown" 
+                              style={{ minWidth: '206px', borderRadius: '12px' }}>
+                            
+                            {bookingData?.SupervisorBookings?.length > 0 && (
+                              <li className="mb-2"> {/* Added margin bottom for spacing */}
+                                <button
+                                  className="btn btn-success btn-sm w-100 d-inline-flex align-items-center justify-content-center"
+                                  onClick={handleCustomerConfirmation}
+                                  style={{ height: '40px', whiteSpace: 'normal', lineHeight: '1.2' }}
+                                >
+                                  Customer Confirmation
+                                </button>
+                              </li>
+                            )}
+
+                            {bookingData?.SupervisorBookings?.length > 0 && (
+                              <li className="mb-2">
+                                <button
+                                  className="btn btn-danger btn-sm w-100 d-inline-flex align-items-center justify-content-center"
+                                  onClick={handleCustomerRejection}
+                                  style={{ height: '40px', whiteSpace: 'normal', lineHeight: '1.2' }}
+                                >
+                                  Customer Rejection
+                                </button>
+                              </li>
+                            )}
+
+                            {/* Divider - only shows if the buttons above are present */}
+                            {bookingData?.SupervisorBookings?.length > 0 && (
+                                <li className="my-2"><hr className="dropdown-divider" /></li>
+                            )}
+
+                            <li>
+                              <button
+                                className="btn btn-warning btn-sm w-100 d-inline-flex align-items-center justify-content-center"
+                                onClick={handleBookingCancellation}
+                                style={{ height: '40px', whiteSpace: 'normal', lineHeight: '1.2' }}
+                              >
+                                Booking Cancellation
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
                         {/* <button
                           className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
                           onClick={() => setShowReschedule(!showReschedule)}
@@ -8619,7 +8729,8 @@ const BookingViewLayer = () => {
                                 <div className="d-flex justify-content-center gap-2 mt-3 mb-3 flex-wrap">
                                   {/* Show Confirm Payment only if not paid */}
                                   {showEnterPaymentButton &&
-                                    !hideAllActions && (
+                                    !hideAllActions &&
+                                    bookingData?.BookingStatus !== "Cancelled" && (
                                       <button
                                         className="btn btn-primary-600 btn-sm"
                                         onClick={() => {
@@ -8640,7 +8751,8 @@ const BookingViewLayer = () => {
                                     bookingData?.BookingAddOns != null &&
                                     Array.isArray(bookingData.BookingAddOns) &&
                                     bookingData.BookingAddOns.length > 0 &&
-                                    !hideAllActions && (
+                                    !hideAllActions &&
+                                    bookingData?.BookingStatus !== "Cancelled" && (
                                       <button
                                         className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center"
                                         // onClick={handleInitialAssignClick}
@@ -8655,7 +8767,8 @@ const BookingViewLayer = () => {
 
                                   {!hideAllActions &&
                                     roleName !== "Field Advisor" &&
-                                    !hasOnlyZeroValueRejectedServices && (
+                                    !hasOnlyZeroValueRejectedServices &&
+                                    bookingData?.BookingStatus !== "Cancelled" && (
                                       <Link
                                         to={`/invoice-view/${bookingData?.BookingID}?type=Estimation`}
                                         className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center"
@@ -8695,7 +8808,8 @@ const BookingViewLayer = () => {
                                   {/* )} */}
 
                                   {/* Final Invoice: show only after full payment is completed */}
-                                  {showFinalButton && (
+                                  {showFinalButton &&
+                                  bookingData?.BookingStatus !== "Cancelled" && (
                                     <Link
                                       to={`/invoice-view/${bookingData?.BookingID}?type=Final`}
                                       className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"

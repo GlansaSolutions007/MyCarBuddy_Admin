@@ -477,6 +477,13 @@ const MasterLayout = ({ children }) => {
           page: "Assign Leads",
         },
         {
+          title: "Forward Leads",
+          to: "/forward-leads",
+          color: "text-purple",
+          permission: "forwardleads_view",
+          page: "Forward Leads",
+        },
+        {
           title: "Social Leads",
           to: "/leads",
           color: "text-info-danger",
