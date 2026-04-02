@@ -452,15 +452,17 @@ const MasterLayout = ({ children }) => {
   };
 
   const SIDEBAR_MENU = [
+    // 🔷 DASHBOARD
     {
       title: "Dashboard",
       icon: "solar:home-smile-angle-outline",
       to: "/dashboard",
     },
+  
+    // 🔷 CORE OPERATIONS
     {
       title: "Leads",
       icon: "mdi:account-multiple",
-
       children: [
         {
           title: "All Leads",
@@ -490,7 +492,6 @@ const MasterLayout = ({ children }) => {
           permission: "leads_view",
           page: "Social Leads",
         },
-
         ...(role !== "Admin"
           ? [
               {
@@ -511,36 +512,12 @@ const MasterLayout = ({ children }) => {
         },
       ],
     },
+  
     {
-      title: "Support",
-      icon: "hugeicons:user-check-02",
-      children: [
-        // { title: "Assign Bookings", to: "/telecaler-bookings", color: "text-warning-main", permission: "telecaler_booking_view", page: "Telecaler_Bookings" },
-        // { title: "Telecaller Tickets", to: "/telecaler-tickets", color: "text-info-main", permission: "telecaler_ticket_view", page: "Telecaler_Tickets" },
-          {
-          title: "Tickets",
-          to: "/tickets",
-          color: "text-info-danger",
-          permission: "tickets_view",
-          page: "Tickets",
-        },
-        {
-          title: "Assign Tickets",
-          to: "/assign-tickets",
-          color: "text-success-main",
-          permission: "assigntickets_view",
-          page: "Assign Tickets",
-        },
-        
-
-        // { title: "Employee Tickets", to: "/employee-tickets", color: "text-danger-main", permission: "employee_ticket_view", page: "Employee_Tickets" },
-      ],
-    },
-     {
       title: "Booking Details",
       icon: "mdi:clipboard-list-outline",
       children: [
-         {
+        {
           title: "Bookings",
           to: "/bookings",
           color: "text-warning-main",
@@ -563,6 +540,7 @@ const MasterLayout = ({ children }) => {
         },
       ],
     },
+  
     {
       title: "Customer Details",
       icon: "flowbite:users-group-outline",
@@ -576,60 +554,150 @@ const MasterLayout = ({ children }) => {
         },
       ],
     },
+  
+    // 🔷 SERVICE CONFIGURATION
     {
-      title: "Departments",
-      icon: "mdi:office-building",
+      title: "Services",
+      icon: "hugeicons:invoice-03",
       children: [
         {
-          title: "Departments",
-          to: "/departments",
+          title: "Categories",
+          to: "/service-category",
           color: "text-primary-600",
-          permission: "department_view",
-          page: "Departments",
+          permission: "servicecategory_view",
+          page: "Service Categories",
         },
         {
-          title: "Designations",
-          to: "/designations",
+          title: "Sub Categories 1",
+          to: "/service-subcategory1",
           color: "text-warning-main",
-          permission: "designation_view",
-          page: "Designations",
-        },
-      ],
-    },
-    {
-      title: "Regions",
-      icon: "material-symbols:map-outline",
-      children: [
-        {
-          title: "States",
-          to: "/states",
-          color: "text-primary-600",
-          permission: "state_view",
-          page: "States",
+          permission: "servicesubcategory1_view",
+          page: "Service Subcategory1",
         },
         {
-          title: "Cities",
-          to: "/cities",
-          color: "text-warning-main",
-          permission: "city_view",
-          page: "Cities",
-        },
-        {
-          title: "Areas",
-          to: "/areas",
-          color: "text-info-danger",
-          permission: "areas_view",
-          page: "Areas",
-        },
-        {
-          title: "Assign Area",
-          to: "/assign-area",
+          title: "Skill",
+          to: "/skills",
           color: "text-info-main",
-          permission: "assignarea_view",
-          page: "Assign Area",
+          permission: "skills_view",
+          page: "Skills",
+        },
+        {
+          title: "Include",
+          to: "/service-includes",
+          color: "text-info-main",
+          permission: "serviceincludes_view",
+          page: "Service Includes",
+        },
+        {
+          title: "Package",
+          to: "/service-plans",
+          color: "text-info-main",
+          permission: "serviceplans_view",
+          page: "Service Plans",
+        },
+        {
+          title: "Packages Price",
+          to: "/service-plan-prices",
+          color: "text-info-main",
+          permission: "serviceplanprices_view",
+          page: "Service Plan Price",
         },
       ],
     },
+   // 🔷 FINANCE & REPORTS
+   {
+    title: "Reports",
+    icon: "ion:document-text-outline",
+    children: [
+      {
+        title: "Ticket Reports",
+        to: "/ticket-reports",
+        permission: "ticketreports_view",
+        page: "Ticket Reports",
+      },
+      ...(role === "Dealer"
+        ? [
+            {
+              title: "Vehicle Reports",
+              to: "/vehicle-reports",
+              permission: "vehiclereports_view",
+              page: "Vehicle Reports",
+            },
+          ]
+        : []),
+      {
+        title: "Complete Ser. Rep",
+        to: "/complete-service-reports",
+        permission: "completeservicereports_view",
+        page: "Complete Service Reports",
+      },
+      {
+        title: "Lead Reports",
+        to: "/lead-reports",
+        permission: "leadreports_view",
+        page: "Lead Reports",
+      },
+      {
+        title: "Revenue Reports",
+        to: "/revenue-reports",
+        permission: "revenuereports_view",
+        page: "Revenue Reports",
+      },
+      ...(role === "Dealer"
+        ? [
+            {
+              title: "Dealer Report",
+              to: "/dealer-report",
+              permission: "dealerreport_view",
+              page: "Dealer Report",
+            },
+          ]
+        : []),
+    ],
+  },  
+    {
+      title: "Time Slots",
+      icon: "ion:time-outline",
+      children: [
+        {
+          title: "Time Slots",
+          to: "/booking-time-slot",
+          color: "text-primary-600",
+          permission: "bookingtimeslot_view",
+          page: "Booking Time Slot",
+        },
+      ],
+    },
+  
+    {
+      title: "Vehicle",
+      icon: "hugeicons:car-03",
+      children: [
+        {
+          title: "Brand",
+          to: "/vehicle-brand",
+          color: "text-primary-600",
+          permission: "vehiclebrand_view",
+          page: "Vehicle Brand",
+        },
+        {
+          title: "Model",
+          to: "/vehicle-model",
+          color: "text-warning-main",
+          permission: "vehiclemodel_view",
+          page: "Vehicle Model",
+        },
+        {
+          title: "Fuel",
+          to: "/vehicle-fuel",
+          color: "text-info-main",
+          permission: "vehiclefuel_view",
+          page: "Vehicle Fuel",
+        },
+      ],
+    },
+  
+    // 🔷 TEAM MANAGEMENT
     {
       title: "Performers",
       icon: "flowbite:users-group-outline",
@@ -664,234 +732,63 @@ const MasterLayout = ({ children }) => {
         },
       ],
     },
+  
     {
-      title: "Digital Marketing",
-      icon: "mdi:bullhorn-outline",
+      title: "Departments",
+      icon: "mdi:office-building",
       children: [
         {
-          title: "SEO",
-          to: "/seo",
-          color: "text-info-main",
-          permission: "seo_view",
-          page: "SEO",
-        },
-        {
-          title: "FAQs",
-          to: "/faqs",
+          title: "Departments",
+          to: "/departments",
           color: "text-primary-600",
-          permission: "faqs_view",
-          page: "FAQs",
+          permission: "department_view",
+          page: "Departments",
         },
         {
-          title: "Explanations",
-          to: "/explanations",
+          title: "Designations",
+          to: "/designations",
           color: "text-warning-main",
-          permission: "explanations_view",
-          page: "Explanations",
-        },
-        {
-          title: "Case Studies",
-          to: "/case-studies",
-          color: "text-purple-main",
-          permission: "case_studies_view",
-          page: "Case Studies",
+          permission: "designation_view",
+          page: "Designations",
         },
       ],
     },
+  
     {
-      title: "Reports",
-      icon: "ion:document-text-outline",
+      title: "Regions",
+      icon: "material-symbols:map-outline",
       children: [
         {
-          title: "Ticket Reports",
-          to: "/ticket-reports",
-          color: "text-warning-main",
-          permission: "ticketreports_view",
-          page: "Ticket Reports",
-        },
-         ...(role === "Dealer"
-          ? [
-        {
-          title: "Vehicle Reports",
-          to: "/vehicle-reports",
-          color: "text-warning-main",
-          permission: "vehiclereports_view",
-          page: "Vehicle Reports",
-        },
-            ]
-          : []),
-        {
-          title: "Complete Ser. Rep",
-          to: "/complete-service-reports",
-          color: "text-warning-main",
-          permission: "completeservicereports_view",
-          page: "Complete Service Reports",
+          title: "States",
+          to: "/states",
+          color: "text-primary-600",
+          permission: "state_view",
+          page: "States",
         },
         {
-          title: "Lead Reports",
-          to: "/lead-reports",
+          title: "Cities",
+          to: "/cities",
+          color: "text-warning-main",
+          permission: "city_view",
+          page: "Cities",
+        },
+        {
+          title: "Areas",
+          to: "/areas",
+          color: "text-info-danger",
+          permission: "areas_view",
+          page: "Areas",
+        },
+        {
+          title: "Assign Area",
+          to: "/assign-area",
           color: "text-info-main",
-          permission: "leadreports_view",
-          page: "Lead Reports",
-        },
-        // { title: "Booking Reports", to: "/booking-reports", color: "text-success-main", permission: "bookingreports_view", page: "Booking Reports" },
-        // { title: "Services Earning Report", to: "/services-earning-report", color: "text-danger-main", permission: "servicesearningreport_view", page: "Services Earning Report" },
-        {
-          title: "Revenue Reports",
-          to: "/revenue-reports",
-          color: "text-primary-600",
-          permission: "revenuereports_view",
-          page: "Revenue Reports",
-        },
-        ...(role === "Dealer"
-          ? [
-              {
-                title: "Dealer Report",
-                to: "/dealer-report",
-                color: "text-success-main",
-                permission: "dealerreport_view",
-                page: "Dealer Report",
-              },
-            ]
-          : []),
-      ],
-    },
-    {
-      title: "Expanses",
-      icon: "mdi:cash-multiple",
-      children: [
-        {
-          title: "Expenditures Category",
-          to: "/expenditure-cat",
-          color: "text-warning-main",
-          permission: "expenditurecat_view",
-          page: "Expenditures Category",
-        },
-        {
-          title: "Expenditures",
-          to: "/expenditures",
-          color: "text-primary-600",
-          permission: "expenditures_view",
-          page: "Expenditures",
-        },
-        {
-          title: "Dealer Expenditures",
-          to: "/dealer-expenditure",
-          color: "text-warning-main",
-          permission: "dealerexpenditure_view",
-          page: "Dealer Expenditures",
+          permission: "assignarea_view",
+          page: "Assign Area",
         },
       ],
     },
-    // {
-    //   title: "Supervisor Assignment",
-    //   icon: "hugeicons:user-settings-02",
-    //   children: [
-    //     { title: "Assign Supervisor", to: "/supervisor-Assign-Bookings", color: "text-primary-600", permission: "assignsupervisor_view", page: "Assign Supervisor" },
-    //   ],
-    // },
-    {
-      title: "Vehicle",
-      icon: "hugeicons:car-03",
-      children: [
-        {
-          title: "Brand",
-          to: "/vehicle-brand",
-          color: "text-primary-600",
-          permission: "vehiclebrand_view",
-          page: "Vehicle Brand",
-        },
-        {
-          title: "Model",
-          to: "/vehicle-model",
-          color: "text-warning-main",
-          permission: "vehiclemodel_view",
-          page: "Vehicle Model",
-        },
-        {
-          title: "Fuel",
-          to: "/vehicle-fuel",
-          color: "text-info-main",
-          permission: "vehiclefuel_view",
-          page: "Vehicle Fuel",
-        },
-      ],
-    },
-    {
-      title: "Services",
-      icon: "hugeicons:invoice-03",
-      children: [
-        {
-          title: "Categories",
-          to: "/service-category",
-          color: "text-primary-600",
-          permission: "servicecategory_view",
-          page: "Service Categories",
-        },
-        {
-          title: "Sub Categories 1",
-          to: "/service-subcategory1",
-          color: "text-warning-main",
-          permission: "servicesubcategory1_view",
-          page: "Service Subcategory1",
-        },
-        // { title: "Sub Categories 2", to: "/service-subcategory2", color: "text-info-main" },
-        {
-          title: "Skill",
-          to: "/skills",
-          color: "text-info-main",
-          permission: "skills_view",
-          page: "Skills",
-        },
-        {
-          title: "Include",
-          to: "/service-includes",
-          color: "text-info-main",
-          permission: "serviceincludes_view",
-          page: "Service Includes",
-        },
-        {
-          title: "Package",
-          to: "/service-plans",
-          color: "text-info-main",
-          permission: "serviceplans_view",
-          page: "Service Plans",
-        },
-        {
-          title: "Packages Price",
-          to: "/service-plan-prices",
-          color: "text-info-main",
-          permission: "serviceplanprices_view",
-          page: "Service Plan Price",
-        },
-      ],
-    },
-    {
-      title: "Time Slots",
-      icon: "ion:time-outline",
-      children: [
-        {
-          title: "Time Slots",
-          to: "/booking-time-slot",
-          color: "text-primary-600",
-          permission: "bookingtimeslot_view",
-          page: "Booking Time Slot",
-        },
-      ],
-    },
-    {
-      title: "Coupons",
-      icon: "ion:card-outline",
-      children: [
-        {
-          title: "Coupons",
-          to: "/coupons",
-          color: "text-primary-600",
-          permission: "coupons_view",
-          page: "Coupons",
-        },
-      ],
-    },
+  
     {
       title: "Leave Management",
       icon: "mdi:account-clock-outline",
@@ -905,11 +802,29 @@ const MasterLayout = ({ children }) => {
         },
       ],
     },
-    // {
-    //   title: "Blog",
-    //   icon: "material-symbols:article-outline",
-    //   children: [{ title: "Blog", to: "/blog", color: "text-primary-600", permission: "blog_view", page: "Blog" }],
-    // },
+  
+    // 🔷 SUPPORT
+    {
+      title: "Support",
+      icon: "hugeicons:user-check-02",
+      children: [
+        {
+          title: "Tickets",
+          to: "/tickets",
+          color: "text-info-danger",
+          permission: "tickets_view",
+          page: "Tickets",
+        },
+        {
+          title: "Assign Tickets",
+          to: "/assign-tickets",
+          color: "text-success-main",
+          permission: "assigntickets_view",
+          page: "Assign Tickets",
+        },
+      ],
+    },
+  
     {
       title: "Contacts",
       icon: "flowbite:address-book-outline",
@@ -923,19 +838,80 @@ const MasterLayout = ({ children }) => {
         },
       ],
     },
-    // {
-    //   title: "Dealer Service Price",
-    //   icon: "material-symbols:request-quote-outline",
-    //   children: [
-    //     {
-    //       title: "Dealer Service Price",
-    //       to: "/dealer-service-price",
-    //       color: "text-primary-600",
-    //       permission: "dealerserviceprice_view",
-    //       page: "Dealer Service Price",
-    //     },
-    //   ],
-    // },
+  
+   
+  
+    {
+      title: "Expenses",
+      icon: "mdi:cash-multiple",
+      children: [
+        {
+          title: "Expenditures Category",
+          to: "/expenditure-cat",
+          permission: "expenditurecat_view",
+          page: "Expenditures Category",
+        },
+        {
+          title: "Expenditures",
+          to: "/expenditures",
+          permission: "expenditures_view",
+          page: "Expenditures",
+        },
+        {
+          title: "Dealer Expenditures",
+          to: "/dealer-expenditure",
+          permission: "dealerexpenditure_view",
+          page: "Dealer Expenditures",
+        },
+      ],
+    },
+  
+    {
+      title: "Coupons",
+      icon: "ion:card-outline",
+      children: [
+        {
+          title: "Coupons",
+          to: "/coupons",
+          permission: "coupons_view",
+          page: "Coupons",
+        },
+      ],
+    },
+  
+    // 🔷 MARKETING
+    {
+      title: "Digital Marketing",
+      icon: "mdi:bullhorn-outline",
+      children: [
+        {
+          title: "SEO",
+          to: "/seo",
+          permission: "seo_view",
+          page: "SEO",
+        },
+        {
+          title: "FAQs",
+          to: "/faqs",
+          permission: "faqs_view",
+          page: "FAQs",
+        },
+        {
+          title: "Explanations",
+          to: "/explanations",
+          permission: "explanations_view",
+          page: "Explanations",
+        },
+        {
+          title: "Case Studies",
+          to: "/case-studies",
+          permission: "case_studies_view",
+          page: "Case Studies",
+        },
+      ],
+    },
+  
+    // 🔷 SETTINGS
     {
       title: "Settings",
       icon: "material-symbols:settings-outline-rounded",
@@ -943,63 +919,37 @@ const MasterLayout = ({ children }) => {
         {
           title: "Reasons",
           to: "/reasons",
-          color: "text-primary-600",
           permission: "reasons_view",
           page: "Reasons",
         },
-        // {
-        //   title: "Notification Templates",
-        //   to: "/notification-templates",
-        //   color: "text-warning-main",
-        //   permission: "notificationtemplates_view",
-        //   page: "Notification Template",
-        // },
-        // {
-        //   title: "Notifications",
-        //   to: "/notifications",
-        //   color: "text-info-main",
-        //   permission: "notifications_view",
-        //   page: "Notifications",
-        // },
         {
           title: "Roles",
           to: "/roles",
-          color: "text-info-main",
           permission: "roles_view",
           page: "Roles",
         },
         {
           title: "Permission Pages",
           to: "/permission-pages",
-          color: "text-info-main",
           permission: "permissionpages_view",
           page: "Permission Pages",
         },
         {
           title: "Company Information",
           to: "/company-information",
-          color: "text-secondary-600",
           permission: "companyinformation_view",
           page: "Company Information",
         },
       ],
     },
-    // {
-    //   title: "Master Settings",
-    //   icon: "material-symbols:admin-panel-settings-outline",
-    //   children: [
-    //     { title: "Admin Users", to: "/admin-users", color: "text-primary-600", permission: "admin_user_view", page: "Admin_User" },
-    //   ],
-
-    // },
+  
+    // 🔷 EXTERNAL
     {
       title: "Go To Website",
       icon: "mdi:earth",
       to: "https://mycarbuddy.in/",
-      color: "text-primary-600",
     },
   ];
-
   if (!token) {
     return null;
   }
