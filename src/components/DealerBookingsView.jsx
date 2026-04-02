@@ -1192,6 +1192,8 @@ const DealerBookingsView = () => {
         const isApproved = row.isDealer_Confirm?.toString().trim().toLowerCase() === "approved";
         const isCompleted = row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted";
         const isDoorstepService = isDoorstepServiceType(getServiceLocationType(row));
+        const addOnStatus = row.addOnStatus?.toString().trim().toLowerCase();
+        const isInProgressOrRework = addOnStatus === "inprogress" || addOnStatus === "rework";
 
         return !row.isInclude ? (
           <div className="d-flex gap-2 align-items-center">
@@ -1227,7 +1229,7 @@ const DealerBookingsView = () => {
             )}
 
             {/* Show Complete Button */}
-            {isApproved && !isCompleted && !isDoorstepService && (
+            {isApproved && !isCompleted && !isDoorstepService && isInProgressOrRework && (
               <button
                 onClick={() => handleServiceCompleted(row.addedItemsIndex)}
                 title="Mark as Completed"
