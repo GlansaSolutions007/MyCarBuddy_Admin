@@ -913,7 +913,7 @@ const ForwardLeadsLayer = () => {
           </div>
           <div className="col-md-6 d-flex gap-2 align-items-center flex-wrap justify-content-end">
             <label className="text-sm fw-semibold">Platform:</label>
-            <select className="form-select radius-8 px-10 py-1 text-sm w-auto" value={platformFilter} onChange={(e) => setPlatformFilter(e.target.value)}>
+            <select className="form-select radius-8 px-10 py-1 text-sm w-auto" value={platformFilter} onChange={(e) => setPlatformFilter(e.target.value)} style={{ textAlign: "center", minWidth: "110px" }}>
               <option value="All">All</option>
               <option value="Web">Web</option>
               <option value="App">App</option>
@@ -953,7 +953,7 @@ const ForwardLeadsLayer = () => {
             <input type="number" className="form-control" placeholder="Count" value={leadCount} min={1} max={filteredLeads.length} onChange={(e) => setLeadCount(e.target.value)} />
           </div>
           <div className="col-md-3">
-            <button type="button" className="btn btn-primary-600 radius-8 px-14 py-10 text-sm w-100" onClick={handleForwardLeads} disabled={loading}>
+            <button type="button" className="btn btn-primary-600 radius-8 px-14 py-8 text-sm w-100" onClick={handleForwardLeads} disabled={loading}>
               {loading ? "Processing..." : "Forward Leads"}
             </button>
           </div>
