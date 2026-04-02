@@ -547,8 +547,13 @@ const DealerBookingsView = () => {
           `Service ${action === "approve" ? "Approved" : "Rejected"} Successfully`,
           "success",
         );
-        // Refresh the data
-        await fetchBookingData();
+        if (action?.toLowerCase() === "approve") {
+          // Only update the confirmed row's status — keep all other rows' prices intact
+          updateTableRow(index, { isDealer_Confirm: "Approved", isEditing: false });
+        } else {
+          // Remove rejected row from local state (matches fetchBookingData filter behavior)
+          setAddedItems((prev) => prev.filter((_, i) => i !== index));
+        }
       }
     } catch (err) {
       console.error(err);
