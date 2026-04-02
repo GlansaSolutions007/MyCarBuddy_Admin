@@ -791,6 +791,20 @@ const LeadViewLayer = () => {
       });
     }
 
+    const isOrgFilled = gstName?.trim() !== "";
+    const isGstFilled = gstNumber?.trim() !== "";
+
+    // ❗ Conditional validation
+    if ((isOrgFilled && !isGstFilled) || (!isOrgFilled && isGstFilled)) {
+      return Swal.fire({
+        icon: "warning",
+        title: "Missing Information",
+        text: isOrgFilled
+          ? "Please enter GST Number."
+          : "Please enter Organisation Name.",
+      });
+    }
+
     const payload = {
       Id: lead.Id,
       FullName: personalFullName,

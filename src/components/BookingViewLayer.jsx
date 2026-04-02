@@ -8503,7 +8503,7 @@ const BookingViewLayer = () => {
                                       <strong>
                                         {bookingData.SupervisorBookings.length}
                                       </strong>{" "}
-                                      booking(s) that need to be confirmed by
+                                      service(s) that need to be confirmed by
                                       the customer.
                                     </div>
                                   )}
