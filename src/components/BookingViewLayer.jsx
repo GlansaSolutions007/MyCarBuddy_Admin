@@ -12,6 +12,19 @@ const API_BASE = import.meta.env.VITE_APIURL;
 const API_IMAGE = import.meta.env.VITE_APIURL_IMAGE;
 
 // Helper function to convert various time formats into 12-hour AM/PM format
+
+const formatTo12Hour = (time) => {
+  const [hour, minute] = time.split(":");
+  const date = new Date();
+  date.setHours(hour, minute);
+
+  return date.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
 const formatTime = (timeStr) => {
   if (!timeStr) return "";
   const raw = timeStr.toString().trim();
@@ -997,7 +1010,7 @@ const BookingViewLayer = () => {
   const handleInitialAssignClick = () => {
     const routes = bookingData?.CarPickUpDelivery || [];
     const filteredRoutes = routes.filter(
-      route => route.Status !== "Cancelled"
+      (route) => route.Status !== "Cancelled",
     );
     console.log(filteredRoutes, "asdasdd");
     const addOns = bookingData?.BookingAddOns || [];
@@ -1008,12 +1021,8 @@ const BookingViewLayer = () => {
     const lastStatus = lastRoute?.Status?.toLowerCase();
     const routeType = lastRoute?.RouteType;
 
-
     // 1. Safety Check: If there are existing routes, ensure the last one is finished
     if (filteredRoutes.length > 0) {
-     
-      
-
       // If the technician is still active (not completed or cancelled), block and STOP
       if (lastStatus !== "completed" && lastStatus !== "cancelled") {
         Swal.fire({
@@ -1053,9 +1062,6 @@ const BookingViewLayer = () => {
           return;
         }
       }
-
-      
-
     }
     // 2. If we reached here, assignment is ALLOWED.
     // Now decide: Skip Step 1 if it's already a Garage Service
@@ -1089,8 +1095,7 @@ const BookingViewLayer = () => {
           return;
         }
       }
-      
-      
+
       openGarageFlowModal(); // Directly go to Pickup/Drop selection (Step 2)
     } else {
       setAssignServiceLocation(null);
@@ -4328,7 +4333,7 @@ const BookingViewLayer = () => {
       serviceName: item.ServiceName || "Service",
       incNames:
         item.Includes?.map((i) => i.IncludeName).join(" | ") ||
-        "Include not assigned",
+        "No Includes Added",
       serviceType: item.ServiceType || "Service",
       dealerName: item.DealerName || "Dealer not assigned",
       quantity: Number(item.Quantity || 1),
@@ -4556,15 +4561,11 @@ const BookingViewLayer = () => {
       console.log("Cancellation Payload:", payload);
 
       // 3️⃣ API call
-      const res = await axios.post(
-        `${API_BASE}cancellations`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await axios.post(`${API_BASE}cancellations`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       // 4️⃣ Success
       Swal.fire({
@@ -4575,16 +4576,13 @@ const BookingViewLayer = () => {
 
       // 5️⃣ Refresh UI
       fetchBookingData();
-
     } catch (error) {
       console.error("Cancellation Error:", error);
 
       Swal.fire({
         icon: "error",
         title: "Error",
-        text:
-          error?.response?.data?.message ||
-          "Failed to cancel booking.",
+        text: error?.response?.data?.message || "Failed to cancel booking.",
       });
     }
   };
@@ -5335,30 +5333,30 @@ const BookingViewLayer = () => {
                     />
                     View Lead
                   </Link>
-                  {!hideAllActions && 
-                  bookingData?.BookingStatus !== "Cancelled" && (
-                    <button
-                      type="button"
-                      className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2"
-                      title="Customer Details"
-                      onClick={() => {
-                        if (bookingData?.BookingID) {
-                          navigate(`/booking-basic/${bookingData.BookingID}`);
-                        }
-                      }}
-                    >
-                      <Icon
-                        icon="mdi:format-list-checkbox"
-                        width={16}
-                        height={16}
-                      />
-                      Customer Details
-                    </button>
-                  )}
+                  {!hideAllActions &&
+                    bookingData?.BookingStatus !== "Cancelled" && (
+                      <button
+                        type="button"
+                        className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2"
+                        title="Customer Details"
+                        onClick={() => {
+                          if (bookingData?.BookingID) {
+                            navigate(`/booking-basic/${bookingData.BookingID}`);
+                          }
+                        }}
+                      >
+                        <Icon
+                          icon="mdi:format-list-checkbox"
+                          width={16}
+                          height={16}
+                        />
+                        Customer Details
+                      </button>
+                    )}
                   {/* Convert To Service / Service Converted - Add Services Button */}
                   {bookingData?.Isinspection === 1 &&
                     bookingData?.Isservice_converted === 0 &&
-                      bookingData?.BookingStatus !== "Cancelled" && (
+                    bookingData?.BookingStatus !== "Cancelled" && (
                       <button
                         className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2"
                         onClick={handleConvertToService}
@@ -5413,31 +5411,31 @@ const BookingViewLayer = () => {
                         bookingData?.Isservice_converted === 1) ||
                         (bookingData?.Isinspection === 0 &&
                           bookingData?.Isservice_converted === 0)) &&
-                          bookingData?.BookingStatus !== "Cancelled" && (
-                        <Link
-                          to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
-                          onClick={(e) => {
-                            if (!ensureBasicDetails()) {
-                              e.preventDefault(); // Stop navigation if details are missing
+                        bookingData?.BookingStatus !== "Cancelled" && (
+                          <Link
+                            to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
+                            onClick={(e) => {
+                              if (!ensureBasicDetails()) {
+                                e.preventDefault(); // Stop navigation if details are missing
+                              }
+                            }}
+                            className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
+                            title={
+                              roleName === "Field Advisor"
+                                ? "Assign Dealers"
+                                : roleName === "Supervisor Head"
+                                  ? "Confirm Services"
+                                  : "Confirm Services"
                             }
-                          }}
-                          className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
-                          title={
-                            roleName === "Field Advisor"
+                          >
+                            <Icon icon="mdi:pencil-outline" />
+                            {roleName === "Field Advisor"
                               ? "Assign Dealers"
                               : roleName === "Supervisor Head"
                                 ? "Confirm Services"
-                                : "Confirm Services"
-                          }
-                        >
-                          <Icon icon="mdi:pencil-outline" />
-                          {roleName === "Field Advisor"
-                            ? "Assign Dealers"
-                            : roleName === "Supervisor Head"
-                              ? "Confirm Services"
-                              : "Confirm Services"}
-                        </Link>
-                      )}
+                                : "Confirm Services"}
+                          </Link>
+                        )}
 
                       {/* Confirm Service Button - Admin & Supervisor only, when Convert To Service is enabled and there are unconfirmed services */}
                       {(() => {
@@ -5506,24 +5504,36 @@ const BookingViewLayer = () => {
                             data-bs-toggle="dropdown"
                             aria-expanded="false"
                             ref={(el) => {
-                              if (el) el.style.setProperty("color", "#fff", "important");
+                              if (el)
+                                el.style.setProperty(
+                                  "color",
+                                  "#fff",
+                                  "important",
+                                );
                             }}
                           >
                             Customer Actions
                           </button>
-                          
+
                           {/* Added 'dropdown-menu-end' to align to the right edge if needed, 
                               and 'p-3' for internal padding like in your image */}
-                          <ul className="dropdown-menu dropdown-menu-end shadow border-0 p-3" 
-                              aria-labelledby="bookingActionsDropdown" 
-                              style={{ minWidth: '206px', borderRadius: '12px' }}>
-                            
+                          <ul
+                            className="dropdown-menu dropdown-menu-end shadow border-0 p-3"
+                            aria-labelledby="bookingActionsDropdown"
+                            style={{ minWidth: "206px", borderRadius: "12px" }}
+                          >
                             {bookingData?.SupervisorBookings?.length > 0 && (
-                              <li className="mb-2"> {/* Added margin bottom for spacing */}
+                              <li className="mb-2">
+                                {" "}
+                                {/* Added margin bottom for spacing */}
                                 <button
                                   className="btn btn-success btn-sm w-100 d-inline-flex align-items-center justify-content-center"
                                   onClick={handleCustomerConfirmation}
-                                  style={{ height: '40px', whiteSpace: 'normal', lineHeight: '1.2' }}
+                                  style={{
+                                    height: "40px",
+                                    whiteSpace: "normal",
+                                    lineHeight: "1.2",
+                                  }}
                                 >
                                   Customer Confirmation
                                 </button>
@@ -5535,7 +5545,11 @@ const BookingViewLayer = () => {
                                 <button
                                   className="btn btn-danger btn-sm w-100 d-inline-flex align-items-center justify-content-center"
                                   onClick={handleCustomerRejection}
-                                  style={{ height: '40px', whiteSpace: 'normal', lineHeight: '1.2' }}
+                                  style={{
+                                    height: "40px",
+                                    whiteSpace: "normal",
+                                    lineHeight: "1.2",
+                                  }}
                                 >
                                   Customer Rejection
                                 </button>
@@ -5544,14 +5558,20 @@ const BookingViewLayer = () => {
 
                             {/* Divider - only shows if the buttons above are present */}
                             {bookingData?.SupervisorBookings?.length > 0 && (
-                                <li className="my-2"><hr className="dropdown-divider" /></li>
+                              <li className="my-2">
+                                <hr className="dropdown-divider" />
+                              </li>
                             )}
 
                             <li>
                               <button
                                 className="btn btn-warning btn-sm w-100 d-inline-flex align-items-center justify-content-center"
                                 onClick={handleBookingCancellation}
-                                style={{ height: '40px', whiteSpace: 'normal', lineHeight: '1.2' }}
+                                style={{
+                                  height: "40px",
+                                  whiteSpace: "normal",
+                                  lineHeight: "1.2",
+                                }}
                               >
                                 Booking Cancellation
                               </button>
@@ -5635,43 +5655,60 @@ const BookingViewLayer = () => {
                                     Booking #{bookingData.BookingTrackID}
                                   </h6>
                                   <small className="text-muted">
-                                    Scheduled: {new Date(bookingData.BookingDate).toLocaleDateString()}{" "} 
+                                    Scheduled:{" "}
+                                    {new Date(
+                                      bookingData.BookingDate,
+                                    ).toLocaleString("en-IN", {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                    })}{" "}
                                     <>
-                                    <style>
-                                      {`
+                                      <style>
+                                        {`
                                         .hover-dropdown:hover .dropdown-menu {
                                           display: block;
                                           margin-top: 10px;
                                         }
                                       `}
-                                    </style>
+                                      </style>
 
-                                    {bookingData.TimeSlot?.includes(",") ? (
-                                      <div className="dropdown d-inline hover-dropdown">
-                                        <span
-                                          className="dropdown-toggle"
-                                          style={{ cursor: "pointer" }}
-                                        >
-                                          ({bookingData.TimeSlot.split(",")[0].trim()})
-                                        </span>
+                                      {bookingData.TimeSlot?.includes(",") ? (
+                                        <div className="dropdown d-inline hover-dropdown">
+                                          <span
+                                            className="dropdown-toggle"
+                                            style={{ cursor: "pointer" }}
+                                          >
+                                            (
+                                            {bookingData.TimeSlot.split(
+                                              ",",
+                                            )[0].trim()}
+                                            )
+                                          </span>
 
-                                        <ul
-                                          className="dropdown-menu p-2"
-                                          style={{ minWidth: "max-content", left: "auto", right: 0 }}
-                                        >
-                                          {bookingData.TimeSlot.split(",").map((slot, index) => (
-                                            <li key={index}>
-                                              <span className="dropdown-item-text">
-                                                {slot.trim()}
-                                              </span>
-                                            </li>
-                                          ))}
-                                        </ul>
-                                      </div>
-                                    ) : (
-                                      <>({bookingData.TimeSlot})</>
-                                    )}
-                                  </>
+                                          <ul
+                                            className="dropdown-menu p-2"
+                                            style={{
+                                              minWidth: "max-content",
+                                              left: "auto",
+                                              right: 0,
+                                            }}
+                                          >
+                                            {bookingData.TimeSlot.split(
+                                              ",",
+                                            ).map((slot, index) => (
+                                              <li key={index}>
+                                                <span className="dropdown-item-text">
+                                                {formatTo12Hour(slot.trim())}
+                                                </span>
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      ) : (
+                                        <>({formatTo12Hour(bookingData.TimeSlot)})</>
+                                      )}
+                                    </>
                                   </small>
                                 </div>
                               </div>
@@ -5735,7 +5772,10 @@ const BookingViewLayer = () => {
                                         : "bg-warning text-dark"
                                   }`}
                                 >
-                                  {bookingData.BookingStatus === "ServiceInProgress" ? "Service in progress" : bookingData.BookingStatus}
+                                  {bookingData.BookingStatus ===
+                                  "ServiceInProgress"
+                                    ? "Service in progress"
+                                    : bookingData.BookingStatus}
                                 </span>
                               </div>
                             </div>
@@ -7217,15 +7257,12 @@ const BookingViewLayer = () => {
                                           )}
                                         </span>
                                         <span className="pricing-chip">
-                                          Margin{" "}
+                                          Total Profit{" "}
                                           {formatCurrency(
-                                            customerRejectedPricingTotals.marginAmount,
-                                          )}{" "}
-                                          (
-                                          {rejectedEffectiveMarginPercent.toFixed(
-                                            2,
+                                            customerRejectedPricingTotals.customerTotal -
+                                              customerRejectedPricingTotals.dealerTotal +
+                                              customerRejectedPricingTotals.marginAmount,
                                           )}
-                                          %)
                                         </span>
                                       </div>
                                     </div>
@@ -7494,9 +7531,7 @@ const BookingViewLayer = () => {
                                                   </strong>
                                                 </div>
                                                 <div className="service-compare-line">
-                                                  <span>
-                                                    MCB Margin Amount
-                                                  </span>
+                                                  <span>MCB Margin Amount</span>
                                                   <strong className="text-success">
                                                     {formatCurrency(
                                                       service.marginAmount,
@@ -7587,7 +7622,15 @@ const BookingViewLayer = () => {
                                           Total Profit{" "}
                                           {formatCurrency(
                                             // pricingTotals.marginAmount,
-                                            Number(pricingTotals.customerTotal) - Number(pricingTotals.dealerTotal) + Number(pricingTotals.marginAmount)
+                                            Number(
+                                              pricingTotals.customerTotal,
+                                            ) -
+                                              Number(
+                                                pricingTotals.dealerTotal,
+                                              ) +
+                                              Number(
+                                                pricingTotals.marginAmount,
+                                              ),
                                           )}{" "}
                                           {/* ({effectiveMarginPercent.toFixed(2)}%) */}
                                         </span>
@@ -7650,15 +7693,16 @@ const BookingViewLayer = () => {
                                                   )}`}
                                                 >
                                                   {" "}
-                                                  {
-                                                  service.serviceStatus === "InProgress"
+                                                  {service.serviceStatus ===
+                                                  "InProgress"
                                                     ? "Service In Progress"
-                                                    : service.serviceStatus === "ServiceCompleted"
-                                                    ? "Service Completed"
-                                                    : service.serviceStatus === "Pending"
-                                                    ? "Service Pending"
-                                                    : service.serviceStatus
-                                                }
+                                                    : service.serviceStatus ===
+                                                        "ServiceCompleted"
+                                                      ? "Service Completed"
+                                                      : service.serviceStatus ===
+                                                          "Pending"
+                                                        ? "Service Pending"
+                                                        : service.serviceStatus}
                                                 </span>
                                               </div>
                                               {/* {service.includeNames.length >
@@ -7924,9 +7968,7 @@ const BookingViewLayer = () => {
                                                 </strong>
                                               </div>
                                               <div className="service-compare-line">
-                                                <span>
-                                                  MCB Margin Amount
-                                                </span>
+                                                <span>MCB Margin Amount</span>
                                                 <strong className="text-success">
                                                   {formatCurrency(
                                                     service.marginAmount,
@@ -7948,9 +7990,7 @@ const BookingViewLayer = () => {
                                                 </strong>
                                               </div>
                                               <div className="service-compare-line">
-                                                <span>
-                                                  Service Wise Profit
-                                                </span>
+                                                <span>Service Wise Profit</span>
                                                 <strong
                                                   className={
                                                     service.spreadWithoutMargin >=
@@ -7966,7 +8006,9 @@ const BookingViewLayer = () => {
                                               </div>
                                               <div className="service-compare-line">
                                                 <span>Last Updated</span>
-                                                <strong  style={{fontSize: "12px"}} >
+                                                <strong
+                                                  style={{ fontSize: "12px" }}
+                                                >
                                                   {service.updatedAt
                                                     ? formatDateTime(
                                                         service.updatedAt,
@@ -7987,7 +8029,8 @@ const BookingViewLayer = () => {
                                         Margin definition
                                       </h6>
                                       <span className="pricing-chip">
-                                      Total Profit = Customer Total - Dealer Total + MCB Margin
+                                        Total Profit = Customer Total - Dealer
+                                        Total + MCB Margin
                                       </span>
                                     </div>
 
@@ -8039,8 +8082,11 @@ const BookingViewLayer = () => {
                                           </div>
                                           <div className="pricing-kpi-value text-primary">
                                             {formatCurrency(
-  Number(unmatchedSpreadAmount) + Number(pricingTotals.marginAmount)
-)}
+                                              Number(unmatchedSpreadAmount) +
+                                                Number(
+                                                  pricingTotals.marginAmount,
+                                                ),
+                                            )}
                                           </div>
                                         </div>
                                       </div>
@@ -8177,9 +8223,8 @@ const BookingViewLayer = () => {
                                             Margin definition
                                           </h6>
                                           <span className="pricing-chip">
-                                            Total Profit = Customer Total
-                                            - Dealer Total
-                                            + MCB Margin
+                                            Total Profit = Customer Total -
+                                            Dealer Total + MCB Margin
                                           </span>
                                         </div>
 
@@ -8323,8 +8368,8 @@ const BookingViewLayer = () => {
                                             </h6>
                                             <div className="small text-muted">
                                               Every row shows dealer total,
-                                              customer total, MCB Margin,
-                                              and the final spread.
+                                              customer total, MCB Margin, and
+                                              the final spread.
                                             </div>
                                           </div>
                                           <div className="d-flex flex-wrap gap-2">
@@ -8731,7 +8776,8 @@ const BookingViewLayer = () => {
                                   {/* Show Confirm Payment only if not paid */}
                                   {showEnterPaymentButton &&
                                     !hideAllActions &&
-                                    bookingData?.BookingStatus !== "Cancelled" && (
+                                    bookingData?.BookingStatus !==
+                                      "Cancelled" && (
                                       <button
                                         className="btn btn-primary-600 btn-sm"
                                         onClick={() => {
@@ -8753,7 +8799,8 @@ const BookingViewLayer = () => {
                                     Array.isArray(bookingData.BookingAddOns) &&
                                     bookingData.BookingAddOns.length > 0 &&
                                     !hideAllActions &&
-                                    bookingData?.BookingStatus !== "Cancelled" && (
+                                    bookingData?.BookingStatus !==
+                                      "Cancelled" && (
                                       <button
                                         className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center"
                                         // onClick={handleInitialAssignClick}
@@ -8769,7 +8816,8 @@ const BookingViewLayer = () => {
                                   {!hideAllActions &&
                                     roleName !== "Field Advisor" &&
                                     !hasOnlyZeroValueRejectedServices &&
-                                    bookingData?.BookingStatus !== "Cancelled" && (
+                                    bookingData?.BookingStatus !==
+                                      "Cancelled" && (
                                       <Link
                                         to={`/invoice-view/${bookingData?.BookingID}?type=Estimation`}
                                         className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center"
@@ -8810,20 +8858,21 @@ const BookingViewLayer = () => {
 
                                   {/* Final Invoice: show only after full payment is completed */}
                                   {showFinalButton &&
-                                  bookingData?.BookingStatus !== "Cancelled" && (
-                                    <Link
-                                      to={`/invoice-view/${bookingData?.BookingID}?type=Final`}
-                                      className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
-                                      title="View Estimation Invoice"
-                                      onClick={(e) => {
-                                        if (!ensureBasicDetails()) {
-                                          e.preventDefault();
-                                        }
-                                      }}
-                                    >
-                                      View Final Invoice
-                                    </Link>
-                                  )}
+                                    bookingData?.BookingStatus !==
+                                      "Cancelled" && (
+                                      <Link
+                                        to={`/invoice-view/${bookingData?.BookingID}?type=Final`}
+                                        className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
+                                        title="View Estimation Invoice"
+                                        onClick={(e) => {
+                                          if (!ensureBasicDetails()) {
+                                            e.preventDefault();
+                                          }
+                                        }}
+                                      >
+                                        View Final Invoice
+                                      </Link>
+                                    )}
                                   {/* {showFinalButton && (
                                     <button
                                       className="btn btn-primary-600 btn-sm d-inline-flex align-items-center"
@@ -11138,8 +11187,6 @@ const BookingViewLayer = () => {
                       >
                         Technician
                       </label>
-                      
-                      
                     </div>
                     {/* Supervisor Checkbox: show only if roleId is NOT 8 */}
                     {/* {roleId !== "8" && roleName !== "Field Advisor" && (
@@ -11296,10 +11343,9 @@ const BookingViewLayer = () => {
                   )}
 
                   <div className="row g-2 mb-2">
-                     <span className="text-muted mt-20 small text-center fw-semibold">
+                    <span className="text-muted mt-20 small text-center fw-semibold">
                       Customer Scheduled:{" "}
                       {new Date(bookingData.BookingDate).toLocaleDateString()}{" "}
-
                       {bookingData.TimeSlot?.includes(",") ? (
                         <div className="dropdown d-inline">
                           <span
@@ -11310,14 +11356,23 @@ const BookingViewLayer = () => {
                             ({bookingData.TimeSlot.split(",")[0].trim()})
                           </span>
 
-                          <ul className="dropdown-menu p-2" style={{ minWidth: "max-content", left: "auto", right: 0 }}>
-                            {bookingData.TimeSlot.split(",").map((slot, index) => (
-                              <li key={index}>
-                                <span className="dropdown-item-text">
-                                  {slot.trim()}
-                                </span>
-                              </li>
-                            ))}
+                          <ul
+                            className="dropdown-menu p-2"
+                            style={{
+                              minWidth: "max-content",
+                              left: "auto",
+                              right: 0,
+                            }}
+                          >
+                            {bookingData.TimeSlot.split(",").map(
+                              (slot, index) => (
+                                <li key={index}>
+                                  <span className="dropdown-item-text">
+                                    {slot.trim()}
+                                  </span>
+                                </li>
+                              ),
+                            )}
                           </ul>
                         </div>
                       ) : (
@@ -11878,8 +11933,9 @@ const BookingViewLayer = () => {
                       <div className="row g-2">
                         <span className="text-muted small fw-semibold text-center ">
                           Customer Scheduled:{" "}
-                          {new Date(bookingData.BookingDate).toLocaleDateString()}{" "}
-
+                          {new Date(
+                            bookingData.BookingDate,
+                          ).toLocaleDateString()}{" "}
                           {bookingData.TimeSlot?.includes(",") ? (
                             <div className="dropdown d-inline">
                               <span
@@ -11890,14 +11946,23 @@ const BookingViewLayer = () => {
                                 ({bookingData.TimeSlot.split(",")[0].trim()})
                               </span>
 
-                              <ul className="dropdown-menu p-2" style={{ minWidth: "max-content", left: "auto", right: 0 }}>
-                                {bookingData.TimeSlot.split(",").map((slot, index) => (
-                                  <li key={index}>
-                                    <span className="dropdown-item-text">
-                                      {slot.trim()}
-                                    </span>
-                                  </li>
-                                ))}
+                              <ul
+                                className="dropdown-menu p-2"
+                                style={{
+                                  minWidth: "max-content",
+                                  left: "auto",
+                                  right: 0,
+                                }}
+                              >
+                                {bookingData.TimeSlot.split(",").map(
+                                  (slot, index) => (
+                                    <li key={index}>
+                                      <span className="dropdown-item-text">
+                                        {slot.trim()}
+                                      </span>
+                                    </li>
+                                  ),
+                                )}
                               </ul>
                             </div>
                           ) : (
