@@ -7584,11 +7584,12 @@ const BookingViewLayer = () => {
                                           )}
                                         </span>
                                         <span className="pricing-chip">
-                                          Margin{" "}
+                                          Total Profit{" "}
                                           {formatCurrency(
-                                            pricingTotals.marginAmount,
+                                            // pricingTotals.marginAmount,
+                                            Number(pricingTotals.customerTotal) - Number(pricingTotals.dealerTotal) + Number(pricingTotals.marginAmount)
                                           )}{" "}
-                                          ({effectiveMarginPercent.toFixed(2)}%)
+                                          {/* ({effectiveMarginPercent.toFixed(2)}%) */}
                                         </span>
                                       </div>
                                     </div>
