@@ -18,7 +18,7 @@ const EmployeeViewLayer = () => {
 
   const fetchEmployee = async () => {
     try {
-      const res = await axios.get(`${API_BASE}Employee/${EmployeeID}`, {
+      const res = await axios.get(`${API_BASE}Employee/Id?Id=${EmployeeID}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setEmployee(res.data?.[0] || res.data || null);

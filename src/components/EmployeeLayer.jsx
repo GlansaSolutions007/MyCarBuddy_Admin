@@ -221,6 +221,7 @@ const EmployeeLayer = () => {
           </Link>
         </div>
       ),
+       width: "120px",
     },
       ]
     : []),
