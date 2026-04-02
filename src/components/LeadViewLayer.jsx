@@ -1901,8 +1901,8 @@ const LeadViewLayer = () => {
                           >
                             {/* Check if lead has existing data to determine button text */}
                             {lead?.FullName || lead?.PhoneNumber || lead?.City
-                              ? "Update Information"
-                              : "Save Information"}
+                              ? "Update"
+                              : "Save"}
                           </button>
                         </div>
                       </div>
@@ -2058,8 +2058,8 @@ const LeadViewLayer = () => {
                           >
                             {/* Check if vehicle record exists via BrandID or RegistrationNumber */}
                             {vehicle?.BrandID || vehicle?.RegistrationNumber || vehicle?.ModelID
-                              ? "Update Car Details"
-                              : "Save Car Details"}
+                              ? "Update"
+                              : "Save"}
                           </button>
                         </div>
                       </div>

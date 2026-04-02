@@ -166,6 +166,7 @@ const buildServiceStages = (bookingData) => {
   if (!bookingData) return [];
 
   const addOns = bookingData.BookingAddOns || [];
+  const custRej = bookingData.CustomerRejectedBookings || [];
   const supervisorAddOns = bookingData.SupervisorBookings || [];
   const carPickUpDelivery = bookingData.CarPickUpDelivery || [];
   const payments = bookingData.Payments || [];
@@ -180,20 +181,16 @@ const buildServiceStages = (bookingData) => {
   const totalServices = addOns.length;
   const completedServices = addOns.filter((a) => a.Is_Completed).length;
   const normalizeTimelineValue = (value) =>
-    (value || "")
-      .toString()
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, "");
+    (value || "").toString().trim().toLowerCase().replace(/\s+/g, "");
   const normalizedBookingWorkflowStatus = normalizeTimelineValue(
     bookingData?.BookingStatus,
   );
   const normalizedServiceStatuses = addOns.map((item) =>
     normalizeTimelineValue(
       item?.StatusName ??
-      item?.statusName ??
-      item?.AddOnStatus ??
-      item?.addOnStatus,
+        item?.statusName ??
+        item?.AddOnStatus ??
+        item?.addOnStatus,
     ),
   );
   const normalizedPaymentStatuses = payments.map((payment) =>
@@ -239,8 +236,8 @@ const buildServiceStages = (bookingData) => {
   const supervisorStage = {
     id: "supervisor-assigned",
     title: bookingData.SupervisorHeadName
-      ? "Supervisor assigned"
-      : "Supervisor assignment pending",
+      ? "Supervisor Assigned"
+      : "Supervisor Assignment Pending",
     date: bookingData.SupervisorHeadAssignDate,
     status: bookingData.SupervisorHeadName ? "completed" : "pending",
     details: bookingData.SupervisorHeadName || "—",
@@ -249,8 +246,8 @@ const buildServiceStages = (bookingData) => {
   const fieldAdvisorStage = {
     id: "field-advisor-assigned",
     title: bookingData.FieldAdvisorName
-      ? "Field advisor assigned"
-      : "Field advisor assignment",
+      ? "Field Advisor Assigned"
+      : "Field Advisor Assignment",
     date: bookingData.FieldAdvisorAssignDate,
     status: bookingData.FieldAdvisorName ? "completed" : "pending",
     details: bookingData.FieldAdvisorName || "—",
@@ -291,14 +288,16 @@ const buildServiceStages = (bookingData) => {
     id: "dealer-confirmation",
     title:
       assignedDealerCount === 0
-        ? "Dealer(s) approval"
+        ? "Dealer(s) Approval"
         : allDealerItems.length === 0
-          ? "Dealer(s) approval"
+          ? "Dealer(s) Approval"
           : allDealerItems.every((item) => item.IsDealer_Confirm === "Approved")
-            ? "Dealer(s) approval"
-            : allDealerItems.some((item) => item.IsDealer_Confirm === "Rejected")
-              ? "Dealer(s) approval failed"
-              : "Dealer(s) approval",
+            ? "Dealer(s) Approval"
+            : allDealerItems.some(
+                  (item) => item.IsDealer_Confirm === "Rejected",
+                )
+              ? "Dealer(s) Approval Failed"
+              : "Dealer(s) Approval",
     date: allDealerItems.find((item) => item.IsDealer_Confirm)?.UpdatedDate,
     status:
       assignedDealerCount === 0
@@ -307,27 +306,29 @@ const buildServiceStages = (bookingData) => {
           ? "pending"
           : allDealerItems.every((item) => item.IsDealer_Confirm === "Approved")
             ? "completed"
-            : allDealerItems.some((item) => item.IsDealer_Confirm === "Rejected")
+            : allDealerItems.some(
+                  (item) => item.IsDealer_Confirm === "Rejected",
+                )
               ? "failed"
               : "in-progress",
     details:
       assignedDealerCount === 0
-        ? "Awaiting dealer assignment"
+        ? "Awaiting Dealer Assignment"
         : allDealerItems.length === 0
-          ? "No dealers"
-          : `${dealerApprovalCount} / ${allDealerItems.length} Service(s) Approved`,
+          ? "No Dealers"
+          : `${dealerApprovalCount} / ${allDealerItems.length} Service(s) Approved by Dealers`,
   };
 
   const customerStage = {
     id: "customer-confirmation",
     title:
       confirmedLength === 0 && pendingLength === 0
-        ? "Customer confirmation pending"
+        ? "Customer Confirmation Pending"
         : confirmedLength > 0
           ? pendingLength === 0
-            ? "Customer confirmed"
-            : "Customer confirmation in progress"
-          : "Customer confirmation pending",
+            ? "Customer Confirmed"
+            : "Customer Confirmation In Progress"
+          : "Customer Confirmation Pending",
     date: addOns.find((item) => item.ConfirmRole)?.ConfirmDate,
     status:
       confirmedLength === 0 && pendingLength === 0
@@ -337,46 +338,53 @@ const buildServiceStages = (bookingData) => {
             ? "completed"
             : "in-progress"
           : "pending",
-    details: `${confirmedLength} Service(s) Confirmed / ${pendingLength} pending`,
+    details: `${confirmedLength} Service(s) Confirmed / ${custRej.length} Service(s) Rejected`,
   };
+  const nameCounts = carPickUpDelivery.reduce((acc, item) => {
+    const name = item.TechnicinaName;
+    if (!name) return acc;
+
+    acc[name] = (acc[name] || 0) + 1;
+    return acc;
+  }, {});
 
   const technicianStage = {
     id: "technician-assigned",
     title:
-      carPickUpDelivery.length > 0
-        ? "Technician assigned"
-        : "Technician assignment",
+      Object.keys(nameCounts).length > 0
+        ? "Technician Assigned"
+        : "Technician Assignment",
     date: carPickUpDelivery[0]?.AssignDate,
-    status: carPickUpDelivery.length > 0 ? "completed" : "pending",
-    details:
-      carPickUpDelivery
-        .map((item) => item.TechnicinaName)
-        .filter(Boolean)
-        .join(", ") || "—",
+    status: Object.keys(nameCounts).length > 0 ? "completed" : "pending",
+    details: Object.keys(nameCounts).length > 0 ? Object.entries(nameCounts).map(([name, count]) => (
+      <span key={name}>
+        {name}
+        <sup className="text-muted bg-success-subtle text-success-emphasis rounded-pill px-1 py-0.5 text-xs">{count}</sup>
+        
+      </span>
+    )) : "—",
   };
 
-  const approverNames = addOns
-  .map((item) => item.EmployeeName)
-  .filter(Boolean);
+  const approverNames = addOns.map((item) => item.EmployeeName).filter(Boolean);
 
   const uniqueApprovers = [...new Set(approverNames)];
   const approverText =
     uniqueApprovers.length === 0
       ? ""
       : uniqueApprovers.length === 1
-      ? ` approved by ${uniqueApprovers[0]}`
-      // : ` approved by ${uniqueApprovers.length} users (${uniqueApprovers.join(", ")})`;
-      : ` approved by (${uniqueApprovers.join(", ")})`;
+        ? ` approved by ${uniqueApprovers[0]}`
+        : // : ` approved by ${uniqueApprovers.length} users (${uniqueApprovers.join(", ")})`;
+          ` approved by (${uniqueApprovers.join(", ")})`;
   const serviceCompletedStage = {
     id: "service-completed",
     title:
       totalServices === 0
-        ? "Service pending"
+        ? "Service Pending"
         : completedServices === totalServices
           ? `(${completedServices}/${totalServices}) Services completed`
           : hasAnyServiceProgress
-            ? "Service in progress"
-            : "Service pending",
+            ? "Service In Progress"
+            : "Service Pending",
     date: addOns.find((item) => item.Is_Completed)?.CompletedDate,
     status:
       totalServices === 0
@@ -386,22 +394,24 @@ const buildServiceStages = (bookingData) => {
           : hasAnyServiceProgress
             ? "in-progress"
             : "pending",
-          // details:
-          //   totalServices === 0
-          //     ? "No services"
-          //     : `${completedServices}/${totalServices} services`,
-          details:
-          totalServices === 0
-            ? "No services"
-            : approverText
-            ? `${approverText.replace(" approved by ", "Approved by ")} (${
-                addOns.filter(item => item.IsCompleted_Confirmation === 1).length
-              } service${
-                addOns.filter(item => item.IsCompleted_Confirmation === 1).length > 1
-                  ? "s"
-                  : ""
-              })`
-            : "Not approved",
+    // details:
+    //   totalServices === 0
+    //     ? "No services"
+    //     : `${completedServices}/${totalServices} services`,
+    details:
+      totalServices === 0
+        ? "No Services"
+        : approverText
+          ? `${approverText.replace(" approved by ", "Approved by ")} (${
+              addOns.filter((item) => item.IsCompleted_Confirmation === 1)
+                .length
+            } service${
+              addOns.filter((item) => item.IsCompleted_Confirmation === 1)
+                .length > 1
+                ? "s"
+                : ""
+            })`
+          : "Not approved",
   };
 
   const totalPaid = payments.reduce(
@@ -411,10 +421,10 @@ const buildServiceStages = (bookingData) => {
   const paymentStage = {
     id: "payment-done",
     title: hasCompletedPayment
-      ? "Payment completed"
+      ? "Payment Completed"
       : hasPartialPayment
-        ? "Payment in progress"
-        : "Payment pending",
+        ? "Payment In Progress"
+        : "Payment Pending",
     date: payments[payments.length - 1]?.PaymentDate,
     status: hasCompletedPayment
       ? "completed"
@@ -422,20 +432,21 @@ const buildServiceStages = (bookingData) => {
         ? "in-progress"
         : "pending",
     details:
-      totalPaid > 0
-        ? `Paid ₹${totalPaid.toFixed(2)}`
-        : "Awaiting payment",
+      totalPaid > 0 ? `Paid ₹${totalPaid.toFixed(2)}` : "Awaiting payment",
   };
 
   const bookingDoneStage = {
     id: "booking-done",
     title:
       bookingData.BookingStatus === "Completed"
-        ? "Booking closed"
-        : "Booking closed pending",
+        ? "Booking Closed"
+        : "Booking Closed Pending",
     date: bookingData.BookingCompletedDate,
     status: bookingData.BookingStatus === "Completed" ? "completed" : "pending",
-    details: bookingData.BookingStatus === "ServiceInProgress" ? "Service in progress" : bookingData.BookingStatus || "—",
+    details:
+      bookingData.BookingStatus === "ServiceInProgress"
+        ? "Service In Progress"
+        : bookingData.BookingStatus || "—",
   };
 
   let stages = [
@@ -697,9 +708,7 @@ const TimeLineView = ({ bookingData, displayDate }) => {
                             >
                               {stagePresentation.label}
                             </span>
-                            <span className="step-index">
-                              Step {index + 1}
-                            </span>
+                            <span className="step-index">Step {index + 1}</span>
                           </div>
                           <div className="step-title">{stage.title}</div>
                           <div className="step-date">
