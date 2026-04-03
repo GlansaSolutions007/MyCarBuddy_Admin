@@ -219,7 +219,7 @@ const buildServiceStages = (bookingData) => {
 
   const leadStage = {
     id: "lead-created",
-    title: "Lead created",
+    title: "Lead Created",
     date: bookingData.LeadCreatedDate,
     status: "completed",
     details: `Lead ID: ${bookingData.LeadId ?? "—"}`,
@@ -227,7 +227,7 @@ const buildServiceStages = (bookingData) => {
 
   const bookingStage = {
     id: "booking-created",
-    title: "Booking created",
+    title: "Booking Created",
     date: bookingData.BookingDate,
     status: "completed",
     details: `Booking ID: ${bookingData.BookingTrackID ?? "—"}`,
@@ -273,14 +273,14 @@ const buildServiceStages = (bookingData) => {
   const dealerAssignmentStage = {
     id: "dealer-assignment",
     title:
-      assignedDealerCount > 0 ? "Dealer(s) assigned" : "Dealer(s) assignment",
+      assignedDealerCount > 0 ? "Dealer(s) Assigned" : "Dealer(s) Assignment",
     date:
       assignedDealerEntries[0]?.UpdatedDate ||
       assignedDealerEntries[0]?.CreatedDate,
     status: assignedDealerCount > 0 ? "completed" : "pending",
     details:
       assignedDealerCount > 0
-        ? `${assignedDealerCount} dealer(s) assigned`
+        ? `${assignedDealerCount} Dealer(s) Assigned`
         : "No dealers assigned",
   };
 
@@ -381,7 +381,9 @@ const buildServiceStages = (bookingData) => {
       totalServices === 0
         ? "Service Pending"
         : completedServices === totalServices
-          ? `(${completedServices}/${totalServices}) Services completed`
+          ? `${completedServices}/${totalServices} Services Completed${
+          custRej.length > 0 ? ` (${custRej.length} rejected)` : ""
+        }`
           : hasAnyServiceProgress
             ? "Service In Progress"
             : "Service Pending",
@@ -405,12 +407,7 @@ const buildServiceStages = (bookingData) => {
           ? `${approverText.replace(" approved by ", "Approved by ")} (${
               addOns.filter((item) => item.IsCompleted_Confirmation === 1)
                 .length
-            } service${
-              addOns.filter((item) => item.IsCompleted_Confirmation === 1)
-                .length > 1
-                ? "s"
-                : ""
-            })`
+            } approved)`
           : "Not approved",
   };
 

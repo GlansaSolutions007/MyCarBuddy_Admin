@@ -377,6 +377,63 @@ const BookingLayer = () => {
     console.log("selected");
   };
 
+  const getDealerServiceStatuses = (row) => {
+    const dealerId = Number(userId);
+    const bookingAddOns = Array.isArray(row?.BookingAddOns) ? row.BookingAddOns : [];
+    const tempAddOns = Array.isArray(row?.BookingsTempAddons)
+      ? row.BookingsTempAddons
+      : [];
+
+    return [
+      ...new Set(
+        [...bookingAddOns, ...tempAddOns]
+          .filter((item) => Number(item?.DealerID) === dealerId)
+          .map((item) => item?.IsDealer_Confirm)
+          .filter(Boolean),
+      ),
+    ];
+  };
+
+  const renderDealerServiceStatus = (row) => {
+    const statuses = getDealerServiceStatuses(row);
+
+    if (statuses.length === 0) {
+      return <span className="text-muted">-</span>;
+    }
+
+    const colorMap = {
+      Pending: "#F7AE21",
+      Approved: "#28A745",
+      Rejected: "#E34242",
+      Assigned: "#25878F",
+    };
+
+    return (
+      <div className="d-flex flex-column gap-1">
+        {statuses.map((serviceStatus) => {
+          const color = colorMap[serviceStatus] || "#6c757d";
+
+          return (
+            <span
+              key={serviceStatus}
+              className="fw-semibold d-flex align-items-center"
+            >
+              <span
+                className="rounded-circle d-inline-block me-1"
+                style={{
+                  width: "8px",
+                  height: "8px",
+                  backgroundColor: color,
+                }}
+              ></span>
+              <span style={{ color }}>{serviceStatus}</span>
+            </span>
+          );
+        })}
+      </div>
+    );
+  };
+
   // const getTimeSlotOptions = async () => {
   //   try {
   //     const response = await axios.get(`${API_BASE}TimeSlot`, {
@@ -698,7 +755,7 @@ const BookingLayer = () => {
           </span>
         </>
       ),
-      width: "150px",
+      width: "120px",
       sortable: true,
     },
     {
@@ -736,6 +793,13 @@ const BookingLayer = () => {
       wrap: true,
       width: "160px",
       sortable: true,
+    },
+    {
+      name: "Service Status",
+      cell: (row) => renderDealerServiceStatus(row),
+      wrap: true,
+      width: "160px",
+      sortable: false,
     },
     {
       name: "Payment Status",
@@ -845,6 +909,10 @@ const BookingLayer = () => {
   }
 
   // 👇 Existing logic (hide some columns for Dealer)
+  if (col.name === "Service Status") {
+    return role === "Dealer";
+  }
+
   if (role === "Dealer") {
     return !["Total Amount", "Booking Amount", "Paid Amount", "Customer Name", "Booking Status", "Payment Status", "Service Time Slots"].includes(col.name);
   }

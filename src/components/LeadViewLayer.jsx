@@ -129,6 +129,9 @@ const LeadViewLayer = () => {
   const [allSupervisors, setAllSupervisors] = useState([]);
   const [selectedArea, setSelectedArea] = useState(null);
   const [areas, setAreas] = useState([]);
+  const [timeSlots, setTimeSlots] = useState([]);
+  const [selectedBookingDate, setSelectedBookingDate] = useState("");
+  const [selectedBookingTimeSlot, setSelectedBookingTimeSlot] = useState(null);
   const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
   const [selectedWhatsappTemplate, setSelectedWhatsappTemplate] = useState(null);
   const shouldDisableActions = lead?.NextAction === "Lead Closed";
@@ -159,11 +162,16 @@ const LeadViewLayer = () => {
   const hasAtLeastOneFollowUp =
     Array.isArray(lead?.FollowUps) && lead.FollowUps.length > 0;
   const hasCurrentLeadBooking = currentBookings.length > 0;
+  const currentLeadBooking =
+    currentBookings.find((booking) => booking.BookingDate || booking.TimeSlot) ||
+    currentBookings[0] ||
+    null;
   const isSupervisorAssigned = currentBookings.some((b) => b.SupervisorHeadId);
   const isCustomerConverted = lead?.CustID !== null;
   const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
   const navigate = useNavigate();
+  const today = new Date().toISOString().split("T")[0];
 
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
@@ -261,6 +269,7 @@ const LeadViewLayer = () => {
     fetchFuelTypes();
     fetchSupervisorHeads();
     fetchAreas();
+    fetchTimeSlots();
   }, [leadId]);
 
   useEffect(() => {
@@ -592,11 +601,73 @@ const LeadViewLayer = () => {
     }
   };
 
+  const fetchTimeSlots = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}TimeSlot`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const sortedSlots = (res.data || []).sort((a, b) =>
+        String(a.StartTime).localeCompare(String(b.StartTime)),
+      );
+
+      setTimeSlots(sortedSlots);
+    } catch (error) {
+      console.error("Failed to fetch time slots:", error);
+      setTimeSlots([]);
+    }
+  };
+
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: currentYear - 1979 }, (_, i) => {
     const year = 1980 + i;
     return { value: year, label: year.toString() };
   });
+
+  useEffect(() => {
+    const latestCurrentBooking = currentLeadBooking;
+
+    if (!latestCurrentBooking) {
+      setSelectedBookingDate("");
+      setSelectedBookingTimeSlot(null);
+      return;
+    }
+
+    const bookingDateValue = latestCurrentBooking.BookingDate
+      ? latestCurrentBooking.BookingDate.split("T")[0]
+      : "";
+
+    setSelectedBookingDate(bookingDateValue);
+    setSelectedBookingTimeSlot(
+      latestCurrentBooking.TimeSlot
+        ? {
+            value: latestCurrentBooking.TimeSlot,
+            label: latestCurrentBooking.TimeSlot,
+          }
+        : null,
+    );
+  }, [currentLeadBooking]);
+
+  const getFilteredTimeSlotOptions = () => {
+    return timeSlots
+      .filter((slot) => {
+        if (!selectedBookingDate) return true;
+        if (selectedBookingDate !== today) return true;
+
+        const now = new Date();
+        now.setHours(now.getHours() + 2);
+
+        const [h, m] = String(slot.StartTime).split(":").map(Number);
+        const slotTime = new Date();
+        slotTime.setHours(h, m || 0, 0, 0);
+
+        return slotTime > now;
+      })
+      .map((slot) => {
+        const label = `${slot.StartTime} - ${slot.EndTime}`;
+        return { value: label, label };
+      });
+  };
 
   const handleWhatsapp = () => {
     if (!lead?.PhoneNumber) {
@@ -636,6 +707,11 @@ const LeadViewLayer = () => {
         title: "Assignment Not Allowed",
         text: "Supervisor cannot be assigned when current bookings are 0.",
       });
+      return;
+    }
+
+    if (!currentLeadBooking?.BookingDate || !currentLeadBooking?.TimeSlot) {
+      showBookingDateTimeRequiredAlert();
       return;
     }
 
@@ -765,6 +841,7 @@ const LeadViewLayer = () => {
         text: "Car details have been successfully saved.",
       });
       await fetchLead();
+      setActiveAccordionKey("2");
     } catch (err) {
       console.error("Car details save failed", err);
       Swal.fire({
@@ -860,6 +937,61 @@ const LeadViewLayer = () => {
         icon: "error",
         title: "Error",
         text: "Failed to save information. Please try again.",
+      });
+    }
+  };
+
+  const handleSubmitBookingDateTime = async () => {
+    const currentBooking = currentLeadBooking;
+
+    if (!currentBooking?.BookingID) {
+      Swal.fire({
+        icon: "warning",
+        title: "Booking Not Found",
+        text: "No current booking available for this lead.",
+      });
+      return;
+    }
+
+    if (!selectedBookingDate || !selectedBookingTimeSlot?.value) {
+      Swal.fire({
+        icon: "warning",
+        title: "Missing Details",
+        text: "Please select booking date and time slot.",
+      });
+      return;
+    }
+
+    try {
+      await axios.put(
+        `${API_BASE}Supervisor/Booking`,
+        {
+          bookingID: currentBooking.BookingID,
+          bookingDate: selectedBookingDate,
+          TimeSlot: selectedBookingTimeSlot.value,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      Swal.fire({
+        icon: "success",
+        title: "Saved",
+        text: "Booking date and time updated successfully.",
+      });
+
+      await fetchBookings();
+      await fetchLead();
+    } catch (error) {
+      console.error("Booking date/time update failed", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to save booking date and time. Please try again.",
       });
     }
   };
@@ -1080,6 +1212,14 @@ const LeadViewLayer = () => {
       confirmButtonText: "OK",
     });
   };
+  const showBookingDateTimeRequiredAlert = () => {
+    Swal.fire({
+      icon: "warning",
+      title: "Booking Date & Time Required",
+      text: "Please add booking date and time slot before assigning supervisor.",
+      confirmButtonText: "OK",
+    });
+  };
   const handleConvertCustomer = async () => {
     // Check if at least one follow-up exists
     if (!hasAtLeastOneFollowUp) {
@@ -1124,7 +1264,7 @@ const LeadViewLayer = () => {
   };
   return (
     <>
-      <div className="row gy-4 mt-3">
+      <div className="row gy-4">
         {/* ------------------ Left: Customer Info ------------------ */}
         <div className="col-lg-4">
           <div className="user-grid-card pt-3 border radius-16 overflow-hidden bg-base h-100">
@@ -1287,6 +1427,10 @@ const LeadViewLayer = () => {
                           }
                           if (!isAddressPresent) {
                             showAddressRequiredAlert();
+                            return;
+                          }
+                          if (!currentLeadBooking?.BookingDate || !currentLeadBooking?.TimeSlot) {
+                            showBookingDateTimeRequiredAlert();
                             return;
                           }
                           setAssignModalOpen(true);
@@ -2062,6 +2206,72 @@ const LeadViewLayer = () => {
                               : "Save"}
                           </button>
                         </div>
+                      </div>
+                    </Accordion.Body>
+                  </Accordion.Item>
+
+                  <Accordion.Item eventKey="2">
+                    <Accordion.Header>Booking Date & Time Slot</Accordion.Header>
+                    <Accordion.Body>
+                      <div className="p-3 border radius-16 bg-light">
+                        {!hasCurrentLeadBooking ? (
+                          <p className="text-muted mb-0">
+                            No current booking available for this lead.
+                          </p>
+                        ) : (
+                          <>
+                            <div className="row g-3">
+                              <div className="col-md-12">
+                                <label className="form-label fw-semibold text-primary-light">
+                                  Booking Date
+                                </label>
+                                <input
+                                  type="date"
+                                  className="form-control"
+                                  min={today}
+                                  value={selectedBookingDate}
+                                  onChange={(e) => {
+                                    setSelectedBookingDate(e.target.value);
+                                    setSelectedBookingTimeSlot(null);
+                                  }}
+                                  disabled={isLeadClosed}
+                                />
+                              </div>
+                              <div className="col-md-12">
+                                <label className="form-label fw-semibold text-primary-light">
+                                  Booking Time Slot
+                                </label>
+                                <Select
+                                  options={getFilteredTimeSlotOptions()}
+                                  value={selectedBookingTimeSlot}
+                                  onChange={setSelectedBookingTimeSlot}
+                                  placeholder="Select time slot"
+                                  className="react-select-container text-sm"
+                                  isSearchable
+                                  isClearable
+                                  menuPortalTarget={document.body}
+                                  menuPosition="fixed"
+                                  styles={{
+                                    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                                  }}
+                                  isDisabled={isLeadClosed || !selectedBookingDate}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="d-flex justify-content-end mt-3 gap-10">
+                              <button
+                                className="btn btn-primary-600 px-20 btn-sm"
+                                onClick={handleSubmitBookingDateTime}
+                                disabled={isLeadClosed}
+                              >
+                                {currentLeadBooking?.BookingDate || currentLeadBooking?.TimeSlot
+                                  ? "Update"
+                                  : "Submit"}
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </Accordion.Body>
                   </Accordion.Item>

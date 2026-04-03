@@ -14,6 +14,7 @@ const API_IMAGE = import.meta.env.VITE_APIURL_IMAGE;
 // Helper function to convert various time formats into 12-hour AM/PM format
 
 const formatTo12Hour = (time) => {
+  if (!time) return "";
   const [hour, minute] = time.split(":");
   const date = new Date();
   date.setHours(hour, minute);

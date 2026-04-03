@@ -38,6 +38,7 @@ const OrganicLeadsLayer = () => {
   const [employees, setEmployees] = useState([]);
   const [showForwardModal, setShowForwardModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
+  const [selectedTransferRole, setSelectedTransferRole] = useState("Telecaller");
   const [fromEmployee, setFromEmployee] = useState(null);
   const [toEmployee, setToEmployee] = useState(null);
   const [forwardReason, setForwardReason] = useState("");
@@ -143,20 +144,19 @@ const OrganicLeadsLayer = () => {
         ? res.data
         : res.data.data || [];
 
-      const telecallerList = empArray
+      const supportEmployees = empArray
         .filter(
-          (emp) =>
-            emp.DepartmentName?.trim() === "Support" &&
-            emp.RoleName?.trim() === "Telecaller"
+          (emp) => emp.DepartmentName?.trim() === "Support"
         )
         .map((emp) => ({
           value: emp.Id,
-          label: `${emp.Name} (${emp.PhoneNumber})`,
+          label: `${emp.Name} (${emp.PhoneNumber}) - ${emp.RoleName}`,
+          role: emp.RoleName?.trim(),
         }));
 
-      setEmployees(telecallerList);
+      setEmployees(supportEmployees);
     } catch (err) {
-      console.error("Failed to fetch telecallers:", err);
+      console.error("Failed to fetch employees:", err);
     }
   }, [token]);
 
@@ -182,30 +182,89 @@ const OrganicLeadsLayer = () => {
   const closeForwardModal = () => {
     setShowForwardModal(false);
     setSelectedLead(null);
+    setSelectedTransferRole("Telecaller");
     setFromEmployee(null);
     setToEmployee(null);
     setForwardReason("");
   };
 
-  const openForwardModal = (row) => {
-    const assignedEmployeeId =
-      row.EmployeeAssignId || row.Emp_Assign || row.EmployeeId;
+  const getAvailableTransferRoles = useCallback((row) => {
+    if (!row) return [];
 
-    const matchedFromEmployee =
-      employees.find((emp) => Number(emp.value) === Number(assignedEmployeeId)) ||
-      employees.find((emp) => emp.label.includes(row.EmployeeAssignName || ""));
+    const hasTelecaller = Boolean(
+      row.EmployeeAssignName || row.EmployeeAssignId || row.Emp_Assign || row.EmployeeId
+    );
+    const hasTelecallerHead = Boolean(
+      row.HeadAssignName || row.HeadAssignId || row.HeadEmployeeId
+    );
+
+    const roles = [];
+
+    if (hasTelecaller) {
+      roles.push("Telecaller");
+    }
+
+    if (hasTelecallerHead) {
+      roles.push("Telecaller Head");
+    }
+
+    return roles;
+  }, []);
+
+  const getAutoFromEmployee = useCallback((row, roleValue) => {
+    if (!row) return null;
+
+    const assignedEmployeeId = roleValue === "Telecaller Head"
+      ? row.HeadAssignId || row.HeadEmployeeId
+      : row.EmployeeAssignId || row.Emp_Assign || row.EmployeeId;
+
+    const assignedEmployeeName = roleValue === "Telecaller Head"
+      ? row.HeadAssignName
+      : row.EmployeeAssignName;
+
+    return (
+      employees.find(
+        (emp) =>
+          emp.role === roleValue &&
+          Number(emp.value) === Number(assignedEmployeeId)
+      ) ||
+      employees.find(
+        (emp) =>
+          emp.role === roleValue &&
+          emp.label.includes(assignedEmployeeName || "")
+      ) ||
+      null
+    );
+  }, [employees]);
+
+  const openForwardModal = (row) => {
+    const availableRoles = getAvailableTransferRoles(row);
+
+    if (availableRoles.length === 0) {
+      return;
+    }
+
+    const defaultRole = availableRoles[0];
 
     setSelectedLead(row);
-    setFromEmployee(matchedFromEmployee || null);
+    setSelectedTransferRole(defaultRole);
+    setFromEmployee(getAutoFromEmployee(row, defaultRole));
     setToEmployee(null);
     setShowForwardModal(true);
   };
+
+  useEffect(() => {
+    if (!selectedLead || !showForwardModal) return;
+
+    setFromEmployee(getAutoFromEmployee(selectedLead, selectedTransferRole));
+    setToEmployee(null);
+  }, [selectedTransferRole, selectedLead, showForwardModal, getAutoFromEmployee]);
 
   const handleForwardLead = async () => {
     if (!selectedLead) return;
 
     if (!fromEmployee || !toEmployee) {
-      Swal.fire("Warning", "Select both From and To telecaller", "warning");
+      Swal.fire("Warning", `Select both From and To ${selectedTransferRole}`, "warning");
       return;
     }
 
@@ -226,7 +285,7 @@ const OrganicLeadsLayer = () => {
         leadIds: String(selectedLead.Id),
         fromEmployeeId: fromEmployee.value,
         toEmployeeId: toEmployee.value,
-        roleName: "Telecaller",
+        roleName: selectedTransferRole,
         createdBy: employeeData?.Id || 1,
         reason: forwardReason.trim(),
       };
@@ -263,6 +322,26 @@ const OrganicLeadsLayer = () => {
       .filter(Boolean);
 
   }, [isSearching, searchResults, allLeads, pageNumber, pageSize]);
+
+  const roleBasedEmployees = useMemo(
+    () =>
+      employees.filter(
+        (emp) =>
+          emp.role === "Telecaller" || emp.role === "Telecaller Head"
+      ),
+    [employees]
+  );
+
+  const filteredRoleEmployees = useMemo(
+    () =>
+      roleBasedEmployees.filter((emp) => emp.role === selectedTransferRole),
+    [roleBasedEmployees, selectedTransferRole]
+  );
+
+  const availableTransferRoles = useMemo(
+    () => getAvailableTransferRoles(selectedLead),
+    [selectedLead, getAvailableTransferRoles]
+  );
 
 
   // Columns Configuration (Preserved your design)
@@ -493,17 +572,19 @@ const OrganicLeadsLayer = () => {
         name: "Action",
         cell: (row) => (
           <>
-            <Link to={`/lead-view/${row.Id}`} className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center">
+            <Link to={`/lead-view/${row.Id}`} title="View Lead" className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center">
               <Icon icon="lucide:eye" />
             </Link>
-            <button
-              type="button"
-              className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center border-0"
-              onClick={() => openForwardModal(row)}
-              title="Forward Lead"
-            >
-              <Icon icon="flowbite:forward-outline" />
-            </button>
+            {getAvailableTransferRoles(row).length > 0 && (
+              <button
+                type="button"
+                className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center border-0"
+                onClick={() => openForwardModal(row)}
+                title="Forward Lead"
+              >
+                <Icon icon="flowbite:forward-outline" />
+              </button>
+            )}
           </>
         ),
         button: true,
@@ -841,9 +922,16 @@ const OrganicLeadsLayer = () => {
       <div
         className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
         style={{
-          backgroundColor: "rgba(30, 41, 59, 0.5)", // Slightly darker for better focus
+          inset: 0,
+          width: "100vw",
+          minHeight: "100vh",
+          margin: 0,
+          padding: "24px 16px",
+          backgroundColor: "rgba(30, 41, 59, 0.58)",
           backdropFilter: "blur(2px)",
+          WebkitBackdropFilter: "blur(2px)",
           zIndex: 1060,
+          overflowY: "auto",
         }}
       >
         <div
@@ -889,14 +977,46 @@ const OrganicLeadsLayer = () => {
 
           {/* 2. Body Section - Significant padding for "distance between content and edge" */}
           <div className="p-4 pt-4">
+            <div className="mb-4">
+              <label className="form-label small fw-bold text-muted mb-2 ls-1">
+                Select Role
+              </label>
+              <div className="d-flex gap-3 flex-wrap">
+                {availableTransferRoles.map((roleOption) => (
+                  <label
+                    key={roleOption}
+                    className="d-flex align-items-center gap-2 px-3 py-2 border rounded-pill"
+                    style={{
+                      cursor: availableTransferRoles.length > 1 ? "pointer" : "default",
+                      backgroundColor:
+                        selectedTransferRole === roleOption ? "#eef2ff" : "#fff",
+                      borderColor:
+                        selectedTransferRole === roleOption ? "#818cf8" : "#cbd5e1",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      className="form-check-input m-0"
+                      checked={selectedTransferRole === roleOption}
+                      onChange={() => setSelectedTransferRole(roleOption)}
+                      disabled={availableTransferRoles.length === 1}
+                    />
+                    <span className="fw-semibold text-dark">{roleOption}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
             
             {/* Source Agent */}
             <div className="mb-1">
-              <label className="form-label small fw-bold text-muted mb-2 ls-1">From Employee (Transfer From)</label>
+              <label className="form-label small fw-bold text-muted mb-2 ls-1">
+                From {selectedTransferRole} (Transfer From)
+              </label>
               <Select
-                options={employees}
+                options={filteredRoleEmployees}
                 value={fromEmployee}
                 isDisabled
+                placeholder={`Assigned ${selectedTransferRole.toLowerCase()} will show here`}
                 styles={{
                   control: (base) => ({ 
                     ...base, 
@@ -919,14 +1039,16 @@ const OrganicLeadsLayer = () => {
 
             {/* Target Agent */}
             <div className="mb-4">
-              <label className="form-label small fw-bold text-muted mb-2 ls-1">To Employee (Transfer To)</label>
+              <label className="form-label small fw-bold text-muted mb-2 ls-1">
+                To {selectedTransferRole} (Transfer To)
+              </label>
               <Select
-                options={employees.filter(
+                options={filteredRoleEmployees.filter(
                   (emp) => Number(emp.value) !== Number(fromEmployee?.value)
                 )}
                 value={toEmployee}
                 onChange={setToEmployee}
-                placeholder="Search team member..."
+                placeholder={`Search ${selectedTransferRole.toLowerCase()}...`}
                 styles={{
                   control: (base) => ({ 
                     ...base, 
