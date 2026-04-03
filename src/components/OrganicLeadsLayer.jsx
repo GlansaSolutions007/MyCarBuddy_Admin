@@ -6,6 +6,7 @@ import { Link, useParams } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { usePermissions } from "../context/PermissionContext";
 import * as XLSX from "xlsx";
+import Select from "react-select";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 const CHUNK_SIZE = 100; // Fetch 100 at a time as requested
@@ -15,6 +16,7 @@ const OrganicLeadsLayer = () => {
   const employeeData = JSON.parse(localStorage.getItem("employeeData"));
   const roleName = employeeData?.RoleName;
   const role = localStorage.getItem("role");
+  const token = localStorage.getItem("token");
 
   const [allLeads, setAllLeads] = useState([]); // Master cache 
   const [searchText, setSearchText] = useState("");
@@ -33,6 +35,13 @@ const OrganicLeadsLayer = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [callOutcome, setCallOutcome] = useState("");
+  const [employees, setEmployees] = useState([]);
+  const [showForwardModal, setShowForwardModal] = useState(false);
+  const [selectedLead, setSelectedLead] = useState(null);
+  const [fromEmployee, setFromEmployee] = useState(null);
+  const [toEmployee, setToEmployee] = useState(null);
+  const [forwardReason, setForwardReason] = useState("");
+  const [isForwarding, setIsForwarding] = useState(false);
   const { status } = useParams();
   const decodedStatus = status ? decodeURIComponent(status) : "";
 
@@ -124,6 +133,37 @@ const OrganicLeadsLayer = () => {
     setPageNumber(1);
   }, []);
 
+  const fetchAllEmployees = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_BASE}Employee`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const empArray = Array.isArray(res.data)
+        ? res.data
+        : res.data.data || [];
+
+      const telecallerList = empArray
+        .filter(
+          (emp) =>
+            emp.DepartmentName?.trim() === "Support" &&
+            emp.RoleName?.trim() === "Telecaller"
+        )
+        .map((emp) => ({
+          value: emp.Id,
+          label: `${emp.Name} (${emp.PhoneNumber})`,
+        }));
+
+      setEmployees(telecallerList);
+    } catch (err) {
+      console.error("Failed to fetch telecallers:", err);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    fetchAllEmployees();
+  }, [fetchAllEmployees]);
+
   const handlePageChange = (page) => {
     setPageNumber(page);
     if (isSearching) {
@@ -138,6 +178,77 @@ const OrganicLeadsLayer = () => {
   };
 
   const filteredLeads = allLeads.filter(Boolean);
+
+  const closeForwardModal = () => {
+    setShowForwardModal(false);
+    setSelectedLead(null);
+    setFromEmployee(null);
+    setToEmployee(null);
+    setForwardReason("");
+  };
+
+  const openForwardModal = (row) => {
+    const assignedEmployeeId =
+      row.EmployeeAssignId || row.Emp_Assign || row.EmployeeId;
+
+    const matchedFromEmployee =
+      employees.find((emp) => Number(emp.value) === Number(assignedEmployeeId)) ||
+      employees.find((emp) => emp.label.includes(row.EmployeeAssignName || ""));
+
+    setSelectedLead(row);
+    setFromEmployee(matchedFromEmployee || null);
+    setToEmployee(null);
+    setShowForwardModal(true);
+  };
+
+  const handleForwardLead = async () => {
+    if (!selectedLead) return;
+
+    if (!fromEmployee || !toEmployee) {
+      Swal.fire("Warning", "Select both From and To telecaller", "warning");
+      return;
+    }
+
+    if (Number(fromEmployee.value) === Number(toEmployee.value)) {
+      Swal.fire("Warning", "From and To telecaller cannot be the same", "warning");
+      return;
+    }
+
+    if (!forwardReason.trim()) {
+      Swal.fire("Warning", "Reason is required", "warning");
+      return;
+    }
+
+    try {
+      setIsForwarding(true);
+
+      const payload = {
+        leadIds: String(selectedLead.Id),
+        fromEmployeeId: fromEmployee.value,
+        toEmployeeId: toEmployee.value,
+        roleName: "Telecaller",
+        createdBy: employeeData?.Id || 1,
+        reason: forwardReason.trim(),
+      };
+
+      await axios.post(`${API_BASE}Leads/TransferLead`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      Swal.fire("Success", "Lead forwarded successfully!", "success");
+      closeForwardModal();
+      if (isSearching) {
+        fetchSearchLeads(searchText, pageNumber);
+      } else {
+        fetchLeadsChunk(pageNumber);
+      }
+    } catch (error) {
+      console.error("Failed to forward lead:", error);
+      Swal.fire("Error", "Failed to forward lead", "error");
+    } finally {
+      setIsForwarding(false);
+    }
+  };
 
   const displayLeads = useMemo(() => {
 
@@ -381,9 +492,19 @@ const OrganicLeadsLayer = () => {
       {
         name: "Action",
         cell: (row) => (
-          <Link to={`/lead-view/${row.Id}`} className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center">
-            <Icon icon="lucide:eye" />
-          </Link>
+          <>
+            <Link to={`/lead-view/${row.Id}`} className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center">
+              <Icon icon="lucide:eye" />
+            </Link>
+            <button
+              type="button"
+              className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center border-0"
+              onClick={() => openForwardModal(row)}
+              title="Forward Lead"
+            >
+              <Icon icon="flowbite:forward-outline" />
+            </button>
+          </>
         ),
         button: true,
       },
@@ -715,6 +836,173 @@ const OrganicLeadsLayer = () => {
           />
         </div>
       </div>
+
+      {showForwardModal && (
+      <div
+        className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+        style={{
+          backgroundColor: "rgba(30, 41, 59, 0.5)", // Slightly darker for better focus
+          backdropFilter: "blur(2px)",
+          zIndex: 1060,
+        }}
+      >
+        <div
+          className="bg-white"
+          style={{
+            width: "100%",
+            maxWidth: "480px",
+            borderRadius: "28px",
+            border: "1px solid #e2e8f0", // The "outer line" for definition
+            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+            overflow: "hidden",
+            padding: "10px"
+          }}
+        >
+          {/* 1. Header Section - Added more horizontal padding */}
+          <div className="pt-4 px-4 pb-3 d-flex justify-content-between align-items-start">
+            <div className="d-flex align-items-start gap-2">
+              <div className="mt-1">
+                <Icon icon="solar:forward-bold-duotone" className="text-primary" width="28" />
+              </div>
+              <div>
+                <h5 className="fw-bold text-dark mb-1" style={{ fontSize: '1.4rem' }}>Forward Lead</h5>
+                <div className="d-flex align-items-center gap-2">
+                  <span className="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1" style={{ fontSize: '11px' }}>
+                    ID: {selectedLead?.Id}
+                  </span>
+                  <span className="text-secondary fw-medium small">
+                    {selectedLead?.FullName || "Raaz"}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={closeForwardModal}
+              className="btn btn-link text-muted p-0 mt-1"
+              style={{ textDecoration: 'none' }}
+            >
+              <Icon icon="iconamoon:close-bold" width="24" />
+            </button>
+          </div>
+
+          <hr className="m-0 opacity-10" />
+
+          {/* 2. Body Section - Significant padding for "distance between content and edge" */}
+          <div className="p-4 pt-4">
+            
+            {/* Source Agent */}
+            <div className="mb-1">
+              <label className="form-label small fw-bold text-muted mb-2 ls-1">From Employee (Transfer From)</label>
+              <Select
+                options={employees}
+                value={fromEmployee}
+                isDisabled
+                styles={{
+                  control: (base) => ({ 
+                    ...base, 
+                    borderRadius: "14px", 
+                    padding: "4px", 
+                    backgroundColor: "#f8fafc",
+                    border: "1px solid #e2e8f0" 
+                  })
+                }}
+              />
+            </div>
+
+            {/* Floating Arrow Icon */}
+            <div className="d-flex justify-content-center my-n2 position-relative" style={{ zIndex: 10 }}>
+              <div className="bg-white rounded-circle border shadow-sm p-1 d-flex align-items-center justify-content-center" 
+                  style={{ width: "38px", height: "38px" }}>
+                <Icon icon="solar:arrow-down-bold-duotone" className="text-primary" width="24" />
+              </div>
+            </div>
+
+            {/* Target Agent */}
+            <div className="mb-4">
+              <label className="form-label small fw-bold text-muted mb-2 ls-1">To Employee (Transfer To)</label>
+              <Select
+                options={employees.filter(
+                  (emp) => Number(emp.value) !== Number(fromEmployee?.value)
+                )}
+                value={toEmployee}
+                onChange={setToEmployee}
+                placeholder="Search team member..."
+                styles={{
+                  control: (base) => ({ 
+                    ...base, 
+                    borderRadius: "14px", 
+                    padding: "4px",
+                    border: "1px solid #cbd5e1"
+                  })
+                }}
+              />
+            </div>
+
+            {/* Reason Box */}
+            <div className="mb-4">
+              <label className="form-label small fw-bold text-muted mb-2 ls-1">
+                Reason for Transfer <span className="text-danger">*</span>
+              </label>
+              <textarea
+                className="form-control"
+                rows="3"
+                placeholder="Add a note for the next agent..."
+                style={{ 
+                    borderRadius: "16px", 
+                    padding: "15px", 
+                    fontSize: "14px", 
+                    resize: "none", 
+                    border: "1px solid #cbd5e1",
+                    backgroundColor: "#fff"
+                }}
+                value={forwardReason}
+                onChange={(e) => setForwardReason(e.target.value)}
+              />
+            </div>
+
+            {/* 3. Footer Section - Modern Button Layout */}
+            <div className="d-flex gap-3 mt-2 pb-2">
+              <button
+                type="button"
+                className="btn btn-light w-100 fw-bold border"
+                style={{ 
+                    borderRadius: "16px", 
+                    padding: "14px", 
+                    color: "#64748b",
+                    backgroundColor: "#fff"
+                }}
+                onClick={closeForwardModal}
+                disabled={isForwarding}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn w-100 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2"
+                style={{ 
+                    borderRadius: "16px", 
+                    padding: "14px", 
+                    backgroundColor: "#818cf8", // Soft Purple/Blue from your image
+                    border: "none",
+                    color: "white"
+                }}
+                onClick={handleForwardLead}
+                disabled={isForwarding || !toEmployee || !forwardReason.trim()}
+              >
+                {isForwarding ? (
+                  <span className="spinner-border spinner-border-sm"></span>
+                ) : (
+                  <>
+                    <Icon icon="solar:share-circle-bold-duotone" width="22" />
+                    Forward
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
     </div>
   );
 };
