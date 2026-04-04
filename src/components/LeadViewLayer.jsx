@@ -818,6 +818,8 @@ const LeadViewLayer = () => {
       FuelTypeID: carFuelType?.value ?? null,
       KmDriven: carKmDriven || null,
       YearOfPurchase: carYearOfPurchase ? String(carYearOfPurchase) : null,
+      VehicleId: lead?.VehiclesDetails?.[0]?.VehicleID || 0,
+      custID: lead.CustID || null,
     };
 
     try {
@@ -893,6 +895,8 @@ const LeadViewLayer = () => {
       Latitude: latitude,
       Longitude: longitude,
       bookingID: currentBookings?.[0]?.BookingID || 0,
+      AddressId: lead?.AddressId || 0,
+      custID: lead.CustID || null,
     };
 
     try {
