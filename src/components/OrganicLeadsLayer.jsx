@@ -200,6 +200,12 @@ const OrganicLeadsLayer = () => {
 
     const roles = [];
 
+    if (employeeData?.RoleName === "Telecaller") {
+      if (hasTelecaller) {
+        roles.push("Telecaller");
+      }
+      return roles;
+    }
     if (hasTelecaller) {
       roles.push("Telecaller");
     }
@@ -403,7 +409,7 @@ const OrganicLeadsLayer = () => {
       name: "Next Follow-up",
       sortable: true,
       sortField: "NextFollowUp_Date",
-      width: "180px",
+      width: "190px",
       cell: (row) => {
         if (!row.NextFollowUp_Date) {
           return <span style={{ color: "#9ca3af" }}>-</span>;
@@ -440,17 +446,46 @@ const OrganicLeadsLayer = () => {
         }
 
         const getTimeText = () => {
+          const absDiffMs = Math.abs(diffMs);
+          const totalMinutes = Math.floor(absDiffMs / (1000 * 60));
+          const hours = Math.floor(totalMinutes / 60);
+          const minutes = totalMinutes % 60;
+
+          const formatHoursAndMinutes = (hourValue, minuteValue) => {
+            if (hourValue <= 0) {
+              return `${minuteValue}m`;
+            }
+
+            if (minuteValue === 0) {
+              return `${hourValue}h`;
+            }
+
+            return `${hourValue}h ${minuteValue}m`;
+          };
+
           if (diffMs < 0) {
-            return `${Math.abs(Math.floor(diffHours))}h ago`;
+            return `${formatHoursAndMinutes(hours, minutes)} ago`;
           }
+
           if (diffHours < 24) {
-            return `${Math.ceil(diffHours)}h left`;
+            return `${formatHoursAndMinutes(hours, minutes)} left`;
           }
+
           return `${Math.ceil(diffDays)}d left`;
         };
 
         return (
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "4px",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              width: "100%",
+            }}
+          >
             {/* Date */}
             <div style={{ fontWeight: 600, fontSize: "13px", color: "#1f2937" }}>
               {followUpDate.toLocaleString("en-GB")}
@@ -461,6 +496,7 @@ const OrganicLeadsLayer = () => {
               style={{
                 display: "inline-flex",
                 alignItems: "center",
+                justifyContent: "center",
                 gap: "6px",
                 fontSize: "11px",
                 fontWeight: 600,
@@ -469,6 +505,7 @@ const OrganicLeadsLayer = () => {
                 padding: "3px 10px",
                 borderRadius: "999px",
                 width: "fit-content",
+                margin: "0 auto",
               }}
             >
               <span>{status.icon}</span>

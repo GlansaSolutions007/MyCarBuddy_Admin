@@ -5657,13 +5657,13 @@ const BookingViewLayer = () => {
                                   </h6>
                                   <small className="text-muted">
                                     Scheduled:{" "}
-                                    {new Date(
-                                      bookingData.BookingDate,
-                                    ).toLocaleString("en-IN", {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                    })}{" "}
+                                    {bookingData?.BookingDate
+                                      ? new Date(bookingData.BookingDate).toLocaleString("en-IN", {
+                                          day: "2-digit",
+                                          month: "short",
+                                          year: "numeric",
+                                        })
+                                      : " "}
                                     <>
                                       <style>
                                         {`

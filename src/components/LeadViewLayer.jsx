@@ -131,7 +131,7 @@ const LeadViewLayer = () => {
   const [areas, setAreas] = useState([]);
   const [timeSlots, setTimeSlots] = useState([]);
   const [selectedBookingDate, setSelectedBookingDate] = useState("");
-  const [selectedBookingTimeSlot, setSelectedBookingTimeSlot] = useState(null);
+  const [selectedBookingTimeSlot, setSelectedBookingTimeSlot] = useState([]);
   const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
   const [selectedWhatsappTemplate, setSelectedWhatsappTemplate] = useState(null);
   const shouldDisableActions = lead?.NextAction === "Lead Closed";
@@ -629,7 +629,7 @@ const LeadViewLayer = () => {
 
     if (!latestCurrentBooking) {
       setSelectedBookingDate("");
-      setSelectedBookingTimeSlot(null);
+      setSelectedBookingTimeSlot([]);
       return;
     }
 
@@ -640,11 +640,14 @@ const LeadViewLayer = () => {
     setSelectedBookingDate(bookingDateValue);
     setSelectedBookingTimeSlot(
       latestCurrentBooking.TimeSlot
-        ? {
-            value: latestCurrentBooking.TimeSlot,
-            label: latestCurrentBooking.TimeSlot,
-          }
-        : null,
+        ? latestCurrentBooking.TimeSlot.split(",")
+            .map((slot) => slot.trim())
+            .filter(Boolean)
+            .map((slot) => ({
+              value: slot,
+              label: slot,
+            }))
+        : [],
     );
   }, [currentLeadBooking]);
 
@@ -957,7 +960,11 @@ const LeadViewLayer = () => {
       return;
     }
 
-    if (!selectedBookingDate || !selectedBookingTimeSlot?.value) {
+    if (
+      !selectedBookingDate ||
+      !Array.isArray(selectedBookingTimeSlot) ||
+      selectedBookingTimeSlot.length === 0
+    ) {
       Swal.fire({
         icon: "warning",
         title: "Missing Details",
@@ -972,7 +979,7 @@ const LeadViewLayer = () => {
         {
           bookingID: currentBooking.BookingID,
           bookingDate: selectedBookingDate,
-          TimeSlot: selectedBookingTimeSlot.value,
+          TimeSlot: selectedBookingTimeSlot.map((slot) => slot.value).join(","),
         },
         {
           headers: {
@@ -2236,7 +2243,7 @@ const LeadViewLayer = () => {
                                   value={selectedBookingDate}
                                   onChange={(e) => {
                                     setSelectedBookingDate(e.target.value);
-                                    setSelectedBookingTimeSlot(null);
+                                    setSelectedBookingTimeSlot([]);
                                   }}
                                   disabled={isLeadClosed}
                                 />
@@ -2248,11 +2255,24 @@ const LeadViewLayer = () => {
                                 <Select
                                   options={getFilteredTimeSlotOptions()}
                                   value={selectedBookingTimeSlot}
-                                  onChange={setSelectedBookingTimeSlot}
-                                  placeholder="Select time slot"
+                                  onChange={(options) => {
+                                    if (options && options.length > 3) {
+                                      Swal.fire({
+                                        icon: "warning",
+                                        title: "Limit Exceeded",
+                                        text: "You can select a maximum of 3 time slots.",
+                                        confirmButtonColor: "#fb923c",
+                                      });
+                                      return;
+                                    }
+                                    setSelectedBookingTimeSlot(options || []);
+                                  }}
+                                  placeholder="Select time slots"
                                   className="react-select-container text-sm"
+                                  isMulti
                                   isSearchable
                                   isClearable
+                                  closeMenuOnSelect={false}
                                   menuPortalTarget={document.body}
                                   menuPosition="fixed"
                                   styles={{
