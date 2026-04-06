@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import ThemeToggleButton from "../helper/ThemeToggleButton";
@@ -9,6 +9,86 @@ import { notificationService } from "../services/notificationService";
 import { toast, ToastContainer } from "react-toastify";
 import axios from "axios";
 // import CrytoJS from "crypto-js";
+
+const FOLLOW_UP_ALERT_WINDOW_MINUTES = 60;
+const FOLLOW_UP_REFRESH_INTERVAL = 60000;
+const FOLLOW_UP_FETCH_LIMIT = 500;
+
+const parseFollowUpDate = (dateValue) => {
+  if (!dateValue) return null;
+  const parsedDate = new Date(dateValue);
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+};
+
+const getLeadIdentifier = (lead) =>
+  lead?.Id || lead?.LeadId || lead?.LeadTrackId || null;
+
+const formatFollowUpDateTime = (dateValue) =>
+  new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  }).format(dateValue);
+
+const formatCountdown = (diffMs) => {
+  const absMinutes = Math.max(0, Math.floor(Math.abs(diffMs) / (1000 * 60)));
+  const days = Math.floor(absMinutes / 1440);
+  const hours = Math.floor((absMinutes % 1440) / 60);
+  const minutes = absMinutes % 60;
+
+  const parts = [];
+  if (days) parts.push(`${days}d`);
+  if (hours) parts.push(`${hours}h`);
+  if (minutes || parts.length === 0) parts.push(`${minutes}m`);
+
+  return parts.slice(0, 2).join(" ");
+};
+
+const getReminderMeta = (lead, now) => {
+  const followUpDate = parseFollowUpDate(lead?.NextFollowUp_Date);
+  if (!followUpDate) return null;
+
+  const diffMs = followUpDate.getTime() - now.getTime();
+  const isOverdue = diffMs < 0;
+  const isWithinUrgentWindow =
+    !isOverdue && diffMs <= FOLLOW_UP_ALERT_WINDOW_MINUTES * 60 * 1000;
+  const isDueNow = Math.abs(diffMs) <= 60 * 1000;
+  const isUpcoming = diffMs >= 0;
+
+  let tone = "calm";
+  let label = "Upcoming Follow-up";
+  let helperText = `${formatCountdown(diffMs)} left`;
+
+  if (isOverdue) {
+    tone = "danger";
+    label = "Follow-up Overdue";
+    helperText = `${formatCountdown(diffMs)} overdue`;
+  } else if (isDueNow) {
+    tone = "danger";
+    label = "Follow-up Due Now";
+    helperText = "Open lead now";
+  } else if (isWithinUrgentWindow) {
+    tone = "warning";
+    label = "Due Within 1 Hour";
+    helperText = `${formatCountdown(diffMs)} left`;
+  }
+
+  return {
+    leadId: getLeadIdentifier(lead),
+    followUpDate,
+    diffMs,
+    isOverdue,
+    isWithinUrgentWindow,
+    isDueNow,
+    isUpcoming,
+    tone,
+    label,
+    helperText,
+  };
+};
 
 const MasterLayout = ({ children }) => {
   let [sidebarActive, seSidebarActive] = useState(false);
@@ -28,6 +108,12 @@ const MasterLayout = ({ children }) => {
   const API_IMAGE = import.meta.env.VITE_APIURL_IMAGE;
   const navigate = useNavigate();
   const [userImage, setUserImage] = useState("");
+  const [followUpLeads, setFollowUpLeads] = useState([]);
+  const [followUpNow, setFollowUpNow] = useState(() => new Date());
+  const dropdownScrollRef = useRef(null);
+  const overdueSectionRef = useRef(null);
+  const warningSectionRef = useRef(null);
+  const upcomingSectionRef = useRef(null);
 
   useEffect(() => {
     if (!token) {
@@ -433,6 +519,111 @@ const MasterLayout = ({ children }) => {
       setHasNewNotification(false);
     }
   }, [unreadCount]);
+
+  useEffect(() => {
+    const clockInterval = setInterval(() => {
+      setFollowUpNow(new Date());
+    }, 1000);
+
+    return () => clearInterval(clockInterval);
+  }, []);
+
+  useEffect(() => {
+    const fetchFollowUpLeads = async () => {
+      try {
+        if (!token) return;
+
+        const employeeData =
+          JSON.parse(localStorage.getItem("employeeData") || "null") || {};
+        if (!employeeData?.Id || !employeeData?.RoleName) {
+          setFollowUpLeads([]);
+          return;
+        }
+
+        let reminderUrl =
+          `${API_BASE}ServiceLeads/FacebookLeads?pageNumber=1&pageSize=${FOLLOW_UP_FETCH_LIMIT}&Status=Next+Follow+Up`;
+
+        if (role !== "Admin" && employeeData?.Id && employeeData?.RoleName) {
+          reminderUrl += `&EmployeeId=${employeeData.Id}&RoleName=${encodeURIComponent(employeeData.RoleName)}`;
+        }
+
+        const response = await axios.get(
+          reminderUrl,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        const rows = Array.isArray(response.data?.data)
+          ? response.data.data
+          : Array.isArray(response.data)
+            ? response.data
+            : [];
+
+        const normalizedRows = rows
+          .filter((lead) => parseFollowUpDate(lead?.NextFollowUp_Date))
+          .sort(
+            (leadA, leadB) =>
+              parseFollowUpDate(leadA?.NextFollowUp_Date).getTime() -
+              parseFollowUpDate(leadB?.NextFollowUp_Date).getTime(),
+          );
+
+        setFollowUpLeads(normalizedRows);
+      } catch (error) {
+        console.error("Error fetching follow-up reminders:", error);
+      }
+    };
+
+    fetchFollowUpLeads();
+    const reminderPoll = setInterval(
+      fetchFollowUpLeads,
+      FOLLOW_UP_REFRESH_INTERVAL,
+    );
+
+    return () => clearInterval(reminderPoll);
+  }, [API_BASE, role, token]);
+
+const alertLeads = useMemo(() => {
+  if (!followUpLeads.length) return [];
+  const now = followUpNow;
+  
+  return followUpLeads
+    .map((lead) => ({
+      lead,
+      meta: getReminderMeta(lead, now),
+    }))
+    .filter((item) => item.meta?.leadId)
+    .sort((a, b) => a.meta.diffMs - b.meta.diffMs); 
+}, [followUpLeads, followUpNow]);
+
+  const overdueLeads = alertLeads.filter((item) => item.meta.isOverdue);
+  const dueWithinHourLeads = alertLeads.filter(
+    (item) => !item.meta.isOverdue && item.meta.isWithinUrgentWindow,
+  );
+  const upcomingLeads = alertLeads.filter(
+    (item) => item.meta.isUpcoming && !item.meta.isWithinUrgentWindow,
+  );
+
+  const overdueCount = overdueLeads.length;
+  const dueWithinHourCount = dueWithinHourLeads.length;
+  const upcomingCount = upcomingLeads.length;
+  const overdueOrUrgentCount = overdueCount + dueWithinHourCount;
+  const hasOverdueFollowUps = alertLeads.some((item) => item.meta.isOverdue);
+  const hasWarningFollowUps = alertLeads.some(
+    (item) => item.meta.tone === "warning",
+  );
+
+  const scrollToReminderSection = (sectionRef) => {
+    if (!sectionRef?.current || !dropdownScrollRef?.current) return;
+
+    const topStickyOffset = 120;
+    dropdownScrollRef.current.scrollTo({
+      top: Math.max(sectionRef.current.offsetTop - topStickyOffset, 0),
+      behavior: "smooth",
+    });
+  };
 
   let sidebarControl = () => {
     seSidebarActive(!sidebarActive);
@@ -955,6 +1146,59 @@ const MasterLayout = ({ children }) => {
   }
   return (
     <section className={mobileMenu ? "overlay active" : "overlay "}>
+      <style>
+        {`
+          @keyframes followUpPulse {
+            0% { opacity: 1; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.18); }
+            50% { opacity: 0.72; box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { opacity: 1; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+          }
+
+          @keyframes followUpGlow {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-1px); }
+            100% { transform: translateY(0); }
+          }
+
+          @keyframes followUpUrgentBadge {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.28); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(249, 115, 22, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+          }
+
+          .followup-dropdown-menu {
+            position: relative;
+            margin-top: 12px;
+            overflow: visible;
+          }
+
+          .followup-dropdown-menu::before {
+            content: "";
+            position: absolute;
+            top: -10px;
+            right: 26px;
+            width: 20px;
+            height: 20px;
+            background: #ffffff;
+            border-top: 1px solid rgba(15, 23, 42, 0.08);
+            border-left: 1px solid rgba(15, 23, 42, 0.08);
+            transform: rotate(45deg);
+            border-top-left-radius: 4px;
+            z-index: -1;
+            box-shadow: -4px -4px 12px rgba(15, 23, 42, 0.04);
+          }
+
+          .followup-due-now {
+            color: #9a3412;
+            background: linear-gradient(135deg, rgba(255, 237, 213, 0.98), rgba(254, 215, 170, 0.95));
+            border: 1px solid rgba(249, 115, 22, 0.28);
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-weight: 700;
+            animation: followUpUrgentBadge 1.25s ease-in-out infinite;
+          }
+        `}
+      </style>
       {/* sidebar */}
       <aside
         className={
@@ -1153,13 +1397,288 @@ const MasterLayout = ({ children }) => {
               <div className="d-flex flex-wrap align-items-center gap-3">
                 {/* ThemeToggleButton */}
                 <ThemeToggleButton />
-                
 
+                {/* Follow-up Alert Dropdown */}
+                {alertLeads.length > 0 && (
+                <div className="dropdown" data-bs-auto-close="outside">
+                  <button
+                    className={`w-40-px h-40-px rounded-circle d-flex justify-content-center align-items-center position-relative ${
+                      hasOverdueFollowUps
+                        ? "bg-danger-100"
+                        : hasWarningFollowUps
+                          ? "bg-warning-100"
+                          : alertLeads.length > 0
+                            ? "bg-success-100"
+                          : "bg-neutral-200"
+                    }`}
+                    type="button"
+                    data-bs-toggle="dropdown"
+                    title="Follow-up Reminders"
+                    style={{
+                      animation: hasOverdueFollowUps
+                        ? "followUpPulse 2s infinite"
+                        : "none"
+                    }}
+                  >
+                    <Icon
+                      icon="solar:alarm-bold-duotone"
+                      className={
+                        hasOverdueFollowUps
+                          ? "text-danger-main"
+                          : hasWarningFollowUps
+                            ? "text-warning-main"
+                            : alertLeads.length > 0
+                              ? "text-success-main"
+                            : "text-primary-light"
+                      }
+                      width="16"
+                    />
+                    {alertLeads.length > 0 && (
+                      <span
+                        // className={`notification-badge ${
+                        //   hasOverdueFollowUps
+                        //     ? "bg-danger-main"
+                        //     : hasWarningFollowUps
+                        //       ? "bg-warning-main"
+                        //       : "bg-success-main"
+                        // }`}
+                      >
+                        {alertLeads.length}
+                      </span>
+                    )}
+                  </button>
+
+                  <div
+                    className="dropdown-menu to-top p-0 followup-dropdown-menu"
+                    style={{ width: "450px" }}
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <div
+                      className={`m-16 py-12 px-16 radius-8 d-flex align-items-center justify-content-between ${
+                        hasOverdueFollowUps
+                          ? "bg-danger-50"
+                          : hasWarningFollowUps
+                            ? "bg-warning-50"
+                            : "bg-success-50"
+                      }`}
+                    >
+                      <h6
+                        className={`text-md fw-semibold mb-0 ${
+                          hasOverdueFollowUps
+                            ? "text-danger-main"
+                            : hasWarningFollowUps
+                              ? "text-warning-main"
+                              : "text-success-main"
+                        }`}
+                      >
+                        Follow-up Reminders
+                      </h6>
+                      <span
+                        className={`badge ${
+                          hasOverdueFollowUps
+                            ? "bg-danger-main"
+                            : hasWarningFollowUps
+                              ? "bg-warning-main"
+                              : "bg-success-main"
+                        }`}
+                      >
+                        {alertLeads.length} Leads
+                      </span>
+                    </div>
+
+                    <div className="px-16 pb-12 d-flex flex-wrap gap-8">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          scrollToReminderSection(overdueSectionRef);
+                        }}
+                        className="border-0 bg-danger-100 text-danger-600 fw-semibold text-xs px-10 py-6 radius-8"
+                      >
+                        Overdue: {overdueCount}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          scrollToReminderSection(warningSectionRef);
+                        }}
+                        className="border-0 bg-warning-100 text-warning-600 fw-semibold text-xs px-10 py-6 radius-8"
+                      >
+                        Due Within 1 Hour: {dueWithinHourCount}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          scrollToReminderSection(upcomingSectionRef);
+                        }}
+                        className="border-0 bg-success-100 text-success-600 fw-semibold text-xs px-10 py-6 radius-8"
+                      >
+                        Upcoming: {upcomingCount}
+                      </button>
+                    </div>
+
+                    <div
+                      ref={dropdownScrollRef}
+                      className="max-h-400-px overflow-y-auto scroll-sm"
+                    >
+                      {alertLeads.length === 0 ? (
+                        <div className="p-20 text-center">
+                          <Icon icon="solar:check-read-linear" width="40" className="text-success-main mb-8" />
+                          <p className="text-secondary-light text-sm mb-0">No next follow-up reminders right now.</p>
+                        </div>
+                      ) : (
+                        <>
+                          <div ref={overdueSectionRef} className="px-16 pt-4 pb-8">
+                            <span className="text-xs fw-bold px-8 py-2 radius-4 bg-danger-100 text-danger-600">
+                              Follow-up Overdue
+                            </span>
+                          </div>
+                          {overdueLeads.length > 0 ? (
+                            overdueLeads.map((item) => (
+                              <div
+                                key={item.meta.leadId}
+                                onClick={() => navigate(`/lead-view/${item.meta.leadId}`)}
+                                className="px-16 py-12 border-bottom border-neutral-200 hover-bg-neutral-50 cursor-pointer transition-all"
+                                style={{ backgroundColor: "rgba(254, 242, 242, 0.85)" }}
+                              >
+                                <div className="d-flex align-items-start justify-content-between gap-12 mb-6">
+                                  <h6 className="text-sm fw-bold mb-0">{item.lead.FullName} (Lead Id: {item.lead.Id})</h6>
+                                  <span className="text-xs text-secondary-light">{item.meta.helperText}</span>
+                                </div>
+                                <div className="d-flex align-items-center gap-2 text-xs text-secondary-light">
+                                  <Icon icon="solar:phone-calling-linear" />
+                                  <span>{item.lead.PhoneNumber}</span>
+                                </div>
+                                <div className="d-flex align-items-center gap-2 text-xs text-secondary-light mt-4">
+                                  <Icon icon="solar:map-point-wave-linear" />
+                                  <span>{item.lead.Platform || "Platform"}</span>
+                                </div>
+                                <div className="d-flex align-items-end justify-content-between gap-12 mt-4">
+                                  <div className="text-xs text-primary-600 fw-medium">
+                                    Due: {formatFollowUpDateTime(item.meta.followUpDate)}
+                                  </div>
+                                  <div className="text-xs text-secondary-light text-end">
+                                    <span className="fw-medium">Emp:</span>{" "}
+                                    {item.lead.EmployeeAssignName || "Admin"}
+                                    {" | "}
+                                    <span className="fw-medium">Head:</span>{" "}
+                                    {item.lead.HeadAssignName || "Admin"}
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="px-16 pb-12 text-xs text-secondary-light">
+                              No overdue follow-ups.
+                            </div>
+                          )}
+
+                          <div ref={warningSectionRef} className="px-16 pt-12 pb-8">
+                            <span className="text-xs fw-bold px-8 py-2 radius-4 bg-warning-100 text-warning-600">
+                              Due Within 1 Hour
+                            </span>
+                          </div>
+                          {dueWithinHourLeads.length > 0 ? (
+                            dueWithinHourLeads.map((item) => (
+                              <div
+                                key={item.meta.leadId}
+                                onClick={() => navigate(`/lead-view/${item.meta.leadId}`)}
+                                className="px-16 py-12 border-bottom border-neutral-100 hover-bg-neutral-50 cursor-pointer transition-all"
+                                style={{ backgroundColor: "rgba(255, 251, 235, 0.92)" }}
+                              >
+                                <div className="d-flex align-items-start justify-content-between gap-12 mb-6">
+                                  <h6 className="text-sm fw-bold mb-0">{item.lead.FullName} (Lead Id: {item.lead.Id})</h6>
+                                  <span className="text-xs text-secondary-light">{item.meta.helperText}</span>
+                                </div>
+                                <div className="d-flex align-items-center gap-2 text-xs text-secondary-light">
+                                  <Icon icon="solar:phone-calling-linear" />
+                                  <span>{item.lead.PhoneNumber}</span>
+                                </div>
+                                <div className="d-flex align-items-center gap-2 text-xs text-secondary-light mt-4">
+                                  <Icon icon="solar:map-point-wave-linear" />
+                                  <span>{item.lead.Platform || "Platform"}</span>
+                                </div>
+                                <div className="d-flex align-items-end justify-content-between gap-12 mt-4">
+                                  <div className="text-xs text-primary-600 fw-medium">
+                                    Due: {formatFollowUpDateTime(item.meta.followUpDate)}
+                                  </div>
+                                  <div className="text-xs text-secondary-light text-end">
+                                    <span className="fw-medium">Emp:</span>{" "}
+                                    {item.lead.EmployeeAssignName || "Admin"}
+                                    {" | "}
+                                    <span className="fw-medium">Head:</span>{" "}
+                                    {item.lead.HeadAssignName || "Admin"}
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="px-16 pb-12 text-xs text-secondary-light">
+                              No follow-ups due within 1 hour.
+                            </div>
+                          )}
+
+                          <div ref={upcomingSectionRef} className="px-16 pt-12 pb-8">
+                            <span className="text-xs fw-bold px-8 py-2 radius-4 bg-success-100 text-success-600">
+                              Upcoming Follow-up
+                            </span>
+                          </div>
+                          {upcomingLeads.length > 0 ? (
+                            upcomingLeads.map((item) => (
+                              <div
+                                key={item.meta.leadId}
+                                onClick={() => navigate(`/lead-view/${item.meta.leadId}`)}
+                                className="px-16 py-12 border-bottom border-neutral-100 hover-bg-neutral-50 cursor-pointer transition-all"
+                                style={{ backgroundColor: "rgba(240, 253, 244, 0.85)" }}
+                              >
+                                <div className="d-flex align-items-start justify-content-between gap-12 mb-6">
+                                  <h6 className="text-sm fw-bold mb-0">{item.lead.FullName} (Lead Id: {item.lead.Id})</h6>
+                                  <span className="text-xs text-secondary-light">{item.meta.helperText}</span>
+                                </div>
+                                <div className="d-flex align-items-center gap-2 text-xs text-secondary-light">
+                                  <Icon icon="solar:phone-calling-linear" />
+                                  <span>{item.lead.PhoneNumber}</span>
+                                </div>
+                                <div className="d-flex align-items-center gap-2 text-xs text-secondary-light mt-4">
+                                  <Icon icon="solar:map-point-wave-linear" />
+                                  <span>{item.lead.Platform || "Platform"}</span>
+                                </div>
+                                <div className="d-flex align-items-end justify-content-between gap-12 mt-4">
+                                  <div className="text-xs text-primary-600 fw-medium">
+                                    Due: {formatFollowUpDateTime(item.meta.followUpDate)}
+                                  </div>
+                                  <div className="text-xs text-secondary-light text-end">
+                                    <span className="fw-medium">Emp:</span>{" "}
+                                    {item.lead.EmployeeAssignName || "Admin"}
+                                    {" | "}
+                                    <span className="fw-medium">Head:</span>{" "}
+                                    {item.lead.HeadAssignName || "Admin"}
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="px-16 pb-12 text-xs text-secondary-light">
+                              No upcoming follow-ups.
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    <div className="p-12 text-center border-top">
+                        <Link to="/organic-leads/Next%20Follow%20Up" className="text-primary-600 fw-semibold text-xs">View All Pending Leads</Link>
+                    </div>
+                  </div>
+                </div>
+                )}
                 {/* Message dropdown end */}
                 <div className="dropdown">
                   <button
                     className="has-indicator w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center"
                     type="button"
+                    title="Notifications"
                     data-bs-toggle="dropdown"
                   >
                     <Icon
@@ -1289,6 +1808,7 @@ const MasterLayout = ({ children }) => {
                     <img
                       src="/assets/images/user-grid/user-grid-img13.png"
                       alt="image_user"
+                      title="Profile"
                       className="w-40-px h-40-px object-fit-cover rounded-circle"
                     />
                   </button>

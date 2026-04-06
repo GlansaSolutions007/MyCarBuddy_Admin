@@ -4221,7 +4221,7 @@ const BookingViewLayer = () => {
   const getStatusBadgeClass = (status) => {
     if (!status) return "bg-secondary-subtle text-secondary";
     const normalized = status.toString().toLowerCase();
-    if (["completed", "paid", "closed", "success"].includes(normalized)) {
+    if (["completed", "paid", "closed", "success", "approved", "servicecompleted"].includes(normalized)) {
       return "bg-success-subtle text-success";
     }
     if (["pending", "in-progress", "processing"].includes(normalized)) {
