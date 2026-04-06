@@ -1415,7 +1415,7 @@ const alertLeads = useMemo(() => {
                     data-bs-toggle="dropdown"
                     title="Follow-up Reminders"
                     style={{
-                      animation: hasOverdueFollowUps
+                      animation: hasOverdueFollowUps || hasWarningFollowUps
                         ? "followUpPulse 2s infinite"
                         : "none"
                     }}

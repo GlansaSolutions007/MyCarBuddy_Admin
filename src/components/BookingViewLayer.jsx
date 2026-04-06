@@ -8790,7 +8790,7 @@ const BookingViewLayer = () => {
                                         Payment Options
                                       </button>
                                     )}
-                                  {/* Assign Button - show only when BookingAddOns has at least one service */}
+                                  {/* Assign Button - hide when customer confirmation is pending */}
                                   {(role === "Admin" ||
                                     roleName === "Supervisor Head" ||
                                     roleName === "Field Advisor") &&
@@ -8799,6 +8799,8 @@ const BookingViewLayer = () => {
                                     bookingData?.BookingAddOns != null &&
                                     Array.isArray(bookingData.BookingAddOns) &&
                                     bookingData.BookingAddOns.length > 0 &&
+                                    (bookingData?.SupervisorBookings?.length ??
+                                      0) === 0 &&
                                     !hideAllActions &&
                                     bookingData?.BookingStatus !==
                                       "Cancelled" && (
