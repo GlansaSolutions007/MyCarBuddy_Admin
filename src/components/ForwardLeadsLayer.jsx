@@ -318,7 +318,7 @@ const ForwardLeadsLayer = () => {
         </div>
 
         <div className="d-flex justify-content-center gap-3 mt-4">
-          <button type="button" className="btn btn-secondary radius-8 px-14 py-6 text-sm" onClick={() => navigate("/leads")}>
+          <button type="button" className="btn btn-secondary radius-8 px-14 py-6 text-sm" onClick={() => navigate("/dashboard")}>
             Cancel
           </button>
         </div>
