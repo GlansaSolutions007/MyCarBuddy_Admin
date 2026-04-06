@@ -518,19 +518,32 @@ const OrganicLeadsLayer = () => {
     },
     {
       name: "Created Date",
-      selector: (row) => row.CreatedDate
-      ? new Date(row.CreatedDate).toLocaleString("en-GB", {
+      selector: (row) => {
+        const rawDate = row.CreatedDate;
+        if (!rawDate) return "-";
+        const dateObj = new Date(rawDate);
+        const formattedDate = dateObj.toLocaleDateString("en-IN", {
           day: "2-digit",
-          month: "2-digit",
+          month: "short",
           year: "numeric",
+        });
+        const time = dateObj.toLocaleTimeString("en-IN", {
           hour: "2-digit",
           minute: "2-digit",
           hour12: true,
-        })
-      : "-",
-      sortable: true,
+        });
+        return (
+          <>
+          <div className="d-flex justify-content-center"> 
+            <span className="fw-bold">{formattedDate}</span>
+            </div>
+             <span className="d-flex justify-content-center">{time}</span>
+          </>
+        );
+      },
       sortField: "CreatedDate",
-      width: "160px",
+      width: "140px",
+      sortable: true,
     },
     // {
     //   name: "Assigned Date",
@@ -555,7 +568,35 @@ const OrganicLeadsLayer = () => {
     //   sortable: true,
     //   width: "150px",
     // },
-    { name: "Updated Date", selector: (row) => row.Updated_At ? new Date(row.Updated_At).toLocaleString("en-GB") : "-", sortable: true, width: "160px" },
+    {
+      name: "Updated Date",
+      selector: (row) => {
+        const rawDate = row.Updated_At;
+        if (!rawDate) return "-";
+        const dateObj = new Date(rawDate);
+        const formattedDate = dateObj.toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+        const time = dateObj.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
+        return (
+          <>
+          <div className="d-flex justify-content-center"> 
+            <span className="fw-bold">{formattedDate}</span>
+            </div>
+             <span className="d-flex justify-content-center">{time}</span>
+          </>
+        );
+      },
+      sortField: "CreatedDate",
+      width: "140px",
+      sortable: true,
+    },
     { name: "City", selector: (row) => row.City || "-", sortable: true, width: "180px" },
     { name: "Platform", selector: (row) => row.Platform || "-", width: "120px" },
     {

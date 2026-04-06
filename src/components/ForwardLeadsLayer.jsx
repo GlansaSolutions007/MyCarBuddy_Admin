@@ -209,9 +209,32 @@ const ForwardLeadsLayer = () => {
     { name: "Platform", selector: (row) => row.Platform || "-", width: "120px" },
     {
       name: "Created Date",
-      cell: (row) => <span>{row.CreatedDate ? new Date(row.CreatedDate).toLocaleDateString("en-GB") : "-"}</span>,
+      selector: (row) => {
+        const rawDate = row.CreatedDate;
+        if (!rawDate) return "-";
+        const dateObj = new Date(rawDate);
+        const formattedDate = dateObj.toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+        const time = dateObj.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
+        return (
+          <>
+          <div className="d-flex justify-content-center"> 
+            <span className="fw-bold">{formattedDate}</span>
+            </div>
+             <span className="d-flex justify-content-center">{time}</span>
+          </>
+        );
+      },
+      sortField: "CreatedDate",
+      width: "140px",
       sortable: true,
-      width: "150px"
     },
     { name: "Description", selector: (row) => row.Description, wrap: true, width: "200px" },
   ];
