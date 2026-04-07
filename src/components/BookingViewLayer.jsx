@@ -4499,6 +4499,14 @@ const BookingViewLayer = () => {
   };
 
   const pricingTotals = buildPricingTotals(liveComparisonServices);
+  const pricingCustomerNetTotal = Math.max(
+    Number(pricingTotals.customerTotal || 0) - Number(couponAmount || 0),
+    0,
+  );
+  const pricingNetProfit =
+    pricingCustomerNetTotal -
+    Number(pricingTotals.dealerTotal || 0) +
+    Number(pricingTotals.marginAmount || 0);
 
   const customerRejectedPricingTotals = buildPricingTotals(
     customerRejectedComparisonServices,
@@ -8056,8 +8064,8 @@ const BookingViewLayer = () => {
                                       </span>
                                     </div>
 
-                                    <div className="row g-3">
-                                      <div className="col-md-6 col-xl-3">
+                                    <div className="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-3">
+                                      <div className="col">
                                         <div className="pricing-kpi-card h-100">
                                           <div className="pricing-kpi-label">
                                             Dealer total
@@ -8069,19 +8077,35 @@ const BookingViewLayer = () => {
                                           </div>
                                         </div>
                                       </div>
-                                      <div className="col-md-6 col-xl-3">
+                                      <div className="col">
                                         <div className="pricing-kpi-card h-100">
                                           <div className="pricing-kpi-label">
                                             Customer total
                                           </div>
                                           <div className="pricing-kpi-value">
                                             {formatCurrency(
-                                              pricingTotals.customerTotal,
+                                              pricingCustomerNetTotal,
                                             )}
+                                          </div>
+                                          <div className="pricing-kpi-subtext">
+                                            Coupon applied{" "}
+                                            {formatCurrency(couponAmount)}
                                           </div>
                                         </div>
                                       </div>
-                                      <div className="col-md-6 col-xl-3">
+                                      <div className="col">
+                                        <div className="pricing-kpi-card h-100">
+                                        <div className="pricing-kpi-label">
+                                          Paid Amount  
+                                        </div>
+                                        <div className="pricing-kpi-value">
+                                          {formatCurrency(
+                                              alreadyPaid,
+                                            )}
+                                        </div>
+                                      </div>
+                                      </div>
+                                      <div className="col">
                                         <div className="pricing-kpi-card h-100">
                                           <div className="pricing-kpi-label">
                                             MCB Margin
@@ -8097,17 +8121,14 @@ const BookingViewLayer = () => {
                                           </div>
                                         </div>
                                       </div>
-                                      <div className="col-md-6 col-xl-3">
+                                      <div className="col">
                                         <div className="pricing-kpi-card h-100">
                                           <div className="pricing-kpi-label">
                                             Total Profit
                                           </div>
                                           <div className="pricing-kpi-value text-primary">
                                             {formatCurrency(
-                                              Number(unmatchedSpreadAmount) +
-                                                Number(
-                                                  pricingTotals.marginAmount,
-                                                ),
+                                              pricingNetProfit,
                                             )}
                                           </div>
                                         </div>

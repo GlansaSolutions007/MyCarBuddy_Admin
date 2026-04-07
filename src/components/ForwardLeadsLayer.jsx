@@ -34,6 +34,16 @@ const ForwardLeadsLayer = () => {
   const [roles, setRoles] = useState([]);
   const [isRoleLocked, setIsRoleLocked] = useState(false);
   const [isFromEmployeeLocked, setIsFromEmployeeLocked] = useState(false);
+  const toEmployeeOptions = employees.filter((employee) => {
+    if (employee.value === fromEmployee?.value) return false;
+    if (
+      isFromEmployeeLocked &&
+      normalizeValue(employee.role) === "telecaller head"
+    ) {
+      return false;
+    }
+    return true;
+  });
 
   // ===== FETCH LEADS FOR SELECTED EMPLOYEE =====
   const fetchLeads = async () => {
@@ -115,6 +125,13 @@ const ForwardLeadsLayer = () => {
   useEffect(() => {
     fetchAllEmployees();
   }, []);
+
+  useEffect(() => {
+    setFromEmployee(null);
+    setToEmployee(null);
+    setSelectedLeads([]);
+    setLeadCount("");
+  }, [roleName]);
 
   // Re-fetch leads when the "From" person changes
   useEffect(() => {
@@ -328,7 +345,18 @@ const ForwardLeadsLayer = () => {
           </div>
           <div className="col-md-4">
             <label className="form-label fw-semibold mb-1">To Employee (Transfer To)</label>
-            <Select options={employees.filter(e => e.value !== fromEmployee?.value)} value={toEmployee} onChange={setToEmployee} placeholder="Select Target Employee..." classNamePrefix="react-select" />
+            <Select
+              options={toEmployeeOptions}
+              value={toEmployee}
+              onChange={setToEmployee}
+              placeholder={
+                fromEmployee
+                  ? "Select Target Employee..."
+                  : "Select From Employee first..."
+              }
+              classNamePrefix="react-select"
+              isDisabled={!fromEmployee}
+            />
           </div>
         </div>
 
