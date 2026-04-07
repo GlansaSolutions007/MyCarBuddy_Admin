@@ -556,9 +556,9 @@ const BookingLayer = () => {
         const notConfirmed = (row.TotalCustNotConfirmedPrice || 0);
 
         const confirmed =
-          (row.TotalPrice || 0) +
-          (row.GSTAmount || 0) +
-          (row.LabourCharges || 0) -
+          (row.TotalPrice || 0) -
+          // (row.GSTAmount || 0) +
+          // (row.LabourCharges || 0) -
           (row.CouponAmount || 0);
 
         const total = (notConfirmed + confirmed).toFixed(2);
@@ -578,9 +578,9 @@ const BookingLayer = () => {
         const notConfirmedValue = row.TotalCustNotConfirmedPrice || 0;
 
         const confirmedValue =
-          (row.TotalPrice || 0) +
-          (row.GSTAmount || 0) +
-          (row.LabourCharges || 0) -
+          (row.TotalPrice || 0) -
+          // (row.GSTAmount || 0) 
+          // (row.LabourCharges || 0) -
           (row.CouponAmount || 0);
 
         const notConfirmed = notConfirmedValue.toFixed(2);

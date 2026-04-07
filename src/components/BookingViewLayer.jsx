@@ -11,10 +11,29 @@ import TimeLineView from "./TimeLineView";
 const API_BASE = import.meta.env.VITE_APIURL;
 const API_IMAGE = import.meta.env.VITE_APIURL_IMAGE;
 
-// Helper function to convert various time formats into 12-hour AM/PM format
-
 const formatTo12Hour = (time) => {
   if (!time) return "";
+
+  // 🔹 If it's a range like "18:00:00 - 19:00:00"
+  if (time.includes("-")) {
+    const [start, end] = time.split("-").map((t) => t.trim());
+
+    const formatSingle = (t) => {
+      const [hour, minute] = t.split(":");
+      const date = new Date();
+      date.setHours(hour, minute);
+
+      return date.toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+    };
+
+    return `${formatSingle(start)} - ${formatSingle(end)}`;
+  }
+
+  // 🔹 Single time (your original logic)
   const [hour, minute] = time.split(":");
   const date = new Date();
   date.setHours(hour, minute);
@@ -7649,7 +7668,7 @@ const BookingViewLayer = () => {
                                           <div className="service-compare-top">
                                             <div>
                                               <div className="service-compare-title">
-                                                <b>Service Name: </b>
+                                                <b>{service.serviceType} Name: </b>
                                                 {service.serviceName}
                                                 <span className="ms-2 pricing-chip">
                                                   {service.serviceType}
@@ -8731,10 +8750,7 @@ const BookingViewLayer = () => {
                                       ?.toString()
                                       .trim()
                                       .toLowerCase();
-                                    return (
-                                      s !== "service completed" &&
-                                      s !== "completed"
-                                    );
+                                    return !["service completed", "servicecompleted", "completed"].includes(s);
                                   }).length;
                                   const supervisorPendingCount =
                                     supervisorItems.filter(

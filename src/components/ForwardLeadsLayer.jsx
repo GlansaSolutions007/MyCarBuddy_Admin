@@ -8,6 +8,7 @@ import { Icon } from "@iconify/react";
 import { usePermissions } from "../context/PermissionContext";
 
 const API_BASE = import.meta.env.VITE_APIURL;
+const normalizeValue = (value) => (value || "").toString().trim().toLowerCase();
 
 const ForwardLeadsLayer = () => {
   const { hasPermission } = usePermissions();
@@ -32,6 +33,7 @@ const ForwardLeadsLayer = () => {
   const [roleName, setRoleName] = useState({ value: "Telecaller", label: "Telecaller" });
   const [roles, setRoles] = useState([]);
   const [isRoleLocked, setIsRoleLocked] = useState(false);
+  const [isFromEmployeeLocked, setIsFromEmployeeLocked] = useState(false);
 
   // ===== FETCH LEADS FOR SELECTED EMPLOYEE =====
   const fetchLeads = async () => {
@@ -85,6 +87,7 @@ const ForwardLeadsLayer = () => {
   .map((emp) => ({
     value: emp.Id,
     label: `${emp.Name} (${emp.PhoneNumber}) - ${emp.RoleName}`,
+    name: emp.Name,
     role: emp.RoleName,
   }));
 
@@ -250,6 +253,29 @@ const ForwardLeadsLayer = () => {
   }
 }, []);
 
+  useEffect(() => {
+    if (!userDetails || employees.length === 0) return;
+
+    const userRole = userDetails.RoleName?.trim();
+    const userName = userDetails.Name?.trim();
+
+    if (userRole !== "Telecaller" || !userName) {
+      setIsFromEmployeeLocked(false);
+      return;
+    }
+
+    const matchedEmployee = employees.find(
+      (emp) =>
+        normalizeValue(emp.role) === "telecaller" &&
+        normalizeValue(emp.name) === normalizeValue(userName),
+    );
+
+    if (matchedEmployee) {
+      setFromEmployee(matchedEmployee);
+      setIsFromEmployeeLocked(true);
+    }
+  }, [employees, userDetails]);
+
   return (
     <div className="card h-100 p-0 radius-12 overflow-hidden mt-3">
       <div className="card-body p-20">
@@ -297,6 +323,7 @@ const ForwardLeadsLayer = () => {
               onChange={setFromEmployee}
               placeholder="Select Source Employee..."
               classNamePrefix="react-select"
+              isDisabled={isFromEmployeeLocked}
             />
           </div>
           <div className="col-md-4">
