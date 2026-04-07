@@ -1,6 +1,8 @@
+/* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
+import { Icon } from "@iconify/react/dist/iconify.js";
 
-const ThemeToggleButton = () => {
+const ThemeToggleButton = ({ className = "" }) => {
   // 1. Initialize state for the current theme
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
 
@@ -24,13 +26,20 @@ const ThemeToggleButton = () => {
 
   return (
     <button
-      type='button'
+      type="button"
       data-theme-toggle
-      title="Theme Toggle"
-      className='w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center'
+      title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      aria-label={
+        theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
+      }
+      className={`${className} topbar-theme-button`.trim()}
       onClick={handleThemeToggle}
     >
-      Toggle Theme
+      <Icon
+        icon={theme === "dark" ? "line-md:sunny-outline-to-moon-loop-transition" : "line-md:moon-alt-to-sunny-outline-loop-transition"}
+        className="topbar-icon topbar-theme-icon"
+        width="25"
+      />
     </button>
   );
 };

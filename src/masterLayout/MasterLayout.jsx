@@ -11,7 +11,7 @@ import axios from "axios";
 // import CrytoJS from "crypto-js";
 
 const FOLLOW_UP_ALERT_WINDOW_MINUTES = 60;
-const FOLLOW_UP_REFRESH_INTERVAL = 60000;
+const FOLLOW_UP_REFRESH_INTERVAL = 30000;
 const FOLLOW_UP_FETCH_LIMIT = 500;
 
 const parseFollowUpDate = (dateValue) => {
@@ -594,7 +594,8 @@ const alertLeads = useMemo(() => {
       lead,
       meta: getReminderMeta(lead, now),
     }))
-    .filter((item) => item.meta?.leadId)
+    // .filter((item) => item.meta?.leadId)
+    .filter((item) => item.meta?.leadId && (item.meta.isOverdue || item.meta.isWithinUrgentWindow))
     .sort((a, b) => a.meta.diffMs - b.meta.diffMs); 
 }, [followUpLeads, followUpNow]);
 
@@ -1172,11 +1173,33 @@ const alertLeads = useMemo(() => {
             overflow: visible;
           }
 
+          .notification-dropdown-menu {
+            position: relative;
+            margin-top: 12px;
+            overflow: visible;
+          }
+
           .followup-dropdown-menu::before {
             content: "";
             position: absolute;
             top: -10px;
             right: 26px;
+            width: 20px;
+            height: 20px;
+            background: #ffffff;
+            border-top: 1px solid rgba(15, 23, 42, 0.08);
+            border-left: 1px solid rgba(15, 23, 42, 0.08);
+            transform: rotate(45deg);
+            border-top-left-radius: 4px;
+            z-index: -1;
+            box-shadow: -4px -4px 12px rgba(15, 23, 42, 0.04);
+          }
+
+          .notification-dropdown-menu::before {
+            content: "";
+            position: absolute;
+            top: -10px;
+            right: 22px;
             width: 20px;
             height: 20px;
             background: #ffffff;
@@ -1196,6 +1219,88 @@ const alertLeads = useMemo(() => {
             padding: 4px 10px;
             font-weight: 700;
             animation: followUpUrgentBadge 1.25s ease-in-out infinite;
+          }
+
+          .topbar-icon-button {
+            width: 44px;
+            height: 44px;
+            border: 0;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: linear-gradient(180deg, #ffffff 0%, #f4f7fb 100%);
+            box-shadow:
+              0 10px 24px rgba(15, 23, 42, 0.08),
+              inset 0 1px 0 rgba(255, 255, 255, 0.95);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+          }
+
+          .topbar-icon-button:hover {
+            transform: translateY(-1px);
+            box-shadow:
+              0 14px 28px rgba(15, 23, 42, 0.12),
+              inset 0 1px 0 rgba(255, 255, 255, 0.95);
+          }
+
+          .topbar-icon-button:focus-visible {
+            outline: 2px solid rgba(14, 116, 144, 0.28);
+            outline-offset: 2px;
+          }
+
+          .topbar-icon {
+            color: #0f766e;
+          }
+
+          .topbar-theme-button {
+            flex-shrink: 0;
+          }
+
+          .topbar-theme-icon {
+            display: block;
+            color: #0f766e;
+          }
+
+          .topbar-profile-button {
+            padding: 0;
+            overflow: hidden;
+          }
+
+          .topbar-profile-avatar {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: inherit;
+            display: block;
+          }
+
+          .topbar-icon-button.is-alert .topbar-icon {
+            color: #d97706;
+          }
+
+          .topbar-icon-button.is-urgent .topbar-icon {
+            color: #dc2626;
+          }
+
+          .topbar-count-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            border-radius: 999px;
+            background: #116d6e;
+            color: #fff;
+            border: 2px solid #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 1;
+            // box-shadow: 0 6px 14px rgba(239, 68, 68, 0.35);
           }
         `}
       </style>
@@ -1261,7 +1366,7 @@ const alertLeads = useMemo(() => {
 
                 if (hasChildren && visibleChildren.length === 0) return null;
 
-                return (
+  return (
                   <li key={idx} className={hasChildren ? "dropdown" : ""}>
                     {hasChildren ? (
                       <>
@@ -1396,20 +1501,18 @@ const alertLeads = useMemo(() => {
             <div className="col-auto ">
               <div className="d-flex flex-wrap align-items-center gap-3">
                 {/* ThemeToggleButton */}
-                <ThemeToggleButton />
+                <ThemeToggleButton className="topbar-icon-button" />
 
                 {/* Follow-up Alert Dropdown */}
                 {alertLeads.length > 0 && (
                 <div className="dropdown" data-bs-auto-close="outside">
                   <button
-                    className={`w-40-px h-40-px rounded-circle d-flex justify-content-center align-items-center position-relative ${
+                    className={`topbar-icon-button ${
                       hasOverdueFollowUps
-                        ? "bg-danger-100"
+                        ? "is-urgent"
                         : hasWarningFollowUps
-                          ? "bg-warning-100"
-                          : alertLeads.length > 0
-                            ? "bg-success-100"
-                          : "bg-neutral-200"
+                          ? "is-alert"
+                          : ""
                     }`}
                     type="button"
                     data-bs-toggle="dropdown"
@@ -1422,27 +1525,11 @@ const alertLeads = useMemo(() => {
                   >
                     <Icon
                       icon="solar:alarm-bold-duotone"
-                      className={
-                        hasOverdueFollowUps
-                          ? "text-danger-main"
-                          : hasWarningFollowUps
-                            ? "text-warning-main"
-                            : alertLeads.length > 0
-                              ? "text-success-main"
-                            : "text-primary-light"
-                      }
-                      width="16"
+                      className="topbar-icon"
+                      width="25"
                     />
                     {alertLeads.length > 0 && (
-                      <span
-                        // className={`notification-badge ${
-                        //   hasOverdueFollowUps
-                        //     ? "bg-danger-main"
-                        //     : hasWarningFollowUps
-                        //       ? "bg-warning-main"
-                        //       : "bg-success-main"
-                        // }`}
-                      >
+                      <span className="topbar-count-badge">
                         {alertLeads.length}
                       </span>
                     )}
@@ -1507,7 +1594,7 @@ const alertLeads = useMemo(() => {
                       >
                         Due Within 1 Hour: {dueWithinHourCount}
                       </button>
-                      <button
+                      {/* <button
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
@@ -1516,7 +1603,7 @@ const alertLeads = useMemo(() => {
                         className="border-0 bg-success-100 text-success-600 fw-semibold text-xs px-10 py-6 radius-8"
                       >
                         Upcoming: {upcomingCount}
-                      </button>
+                      </button> */}
                     </div>
 
                     <div
@@ -1620,7 +1707,7 @@ const alertLeads = useMemo(() => {
                             </div>
                           )}
 
-                          <div ref={upcomingSectionRef} className="px-16 pt-12 pb-8">
+                          {/* <div ref={upcomingSectionRef} className="px-16 pt-12 pb-8">
                             <span className="text-xs fw-bold px-8 py-2 radius-4 bg-success-100 text-success-600">
                               Upcoming Follow-up
                             </span>
@@ -1663,7 +1750,7 @@ const alertLeads = useMemo(() => {
                             <div className="px-16 pb-12 text-xs text-secondary-light">
                               No upcoming follow-ups.
                             </div>
-                          )}
+                          )} */}
                         </>
                       )}
                     </div>
@@ -1676,22 +1763,23 @@ const alertLeads = useMemo(() => {
                 {/* Message dropdown end */}
                 <div className="dropdown">
                   <button
-                    className="has-indicator w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center"
+                    className="topbar-icon-button"
                     type="button"
                     title="Notifications"
                     data-bs-toggle="dropdown"
                   >
                     <Icon
                       icon="iconoir:bell"
-                      className="text-primary-light text-l"
+                      className="topbar-icon"
+                      width="25"
                     />
                     {unreadCount > 0 && (
-                      <span className="notification-badge">{unreadCount}</span>
+                      <span className="topbar-count-badge">{unreadCount}</span>
                     )}
                   </button>
 
                   <div
-                    className="dropdown-menu to-top  p-0"
+                    className="dropdown-menu to-top p-0 notification-dropdown-menu"
                     style={{ width: "520px" }}
                   >
                     {" "}
@@ -1801,15 +1889,24 @@ const alertLeads = useMemo(() => {
                 {/* Notification dropdown end */}
                 <div className="dropdown">
                   <button
-                    className="d-flex justify-content-center align-items-center rounded-circle"
+                    className="topbar-icon-button topbar-profile-button"
                     type="button"
                     data-bs-toggle="dropdown"
+                    title="Profile"
+                    aria-label="Open profile menu"
                   >
                     <img
-                      src="/assets/images/user-grid/user-grid-img13.png"
+                      src={
+                        userImage
+                          ? `${API_IMAGE}${userImage}`
+                          : "/assets/images/user-grid/user-grid-img13.png"
+                      }
                       alt="image_user"
-                      title="Profile"
-                      className="w-40-px h-40-px object-fit-cover rounded-circle"
+                      className="topbar-profile-avatar"
+                      onError={(event) => {
+                        event.currentTarget.src =
+                          "/assets/images/user-grid/user-grid-img13.png";
+                      }}
                     />
                   </button>
                   <div className="dropdown-menu to-top dropdown-menu-sm">

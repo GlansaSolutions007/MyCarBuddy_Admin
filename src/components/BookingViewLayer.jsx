@@ -1,4 +1,4 @@
-import { Icon } from "@iconify/react";
+﻿import { Icon } from "@iconify/react";
 import { useState, useEffect } from "react";
 import Accordion from "react-bootstrap/Accordion";
 import { Modal, Button } from "react-bootstrap";
@@ -5355,8 +5355,8 @@ const BookingViewLayer = () => {
                       </button>
                     )}
                   {/* Convert To Service / Service Converted - Add Services Button */}
-                  {bookingData?.Isinspection === 1 &&
-                    bookingData?.Isservice_converted === 0 &&
+                  { bookingData?.InspectionTracking == null &&
+                    bookingData?.Isinspection === 1 &&
                     bookingData?.BookingStatus !== "Cancelled" && (
                       <button
                         className="btn btn-primary-600 btn-sm d-inline-flex align-items-center justify-content-center gap-2"
@@ -5410,6 +5410,7 @@ const BookingViewLayer = () => {
                       {/* Confirm Services Button */}
                       {((bookingData?.Isinspection === 1 &&
                         bookingData?.Isservice_converted === 1) ||
+                         bookingData?.InspectionTracking != null ||
                         (bookingData?.Isinspection === 0 &&
                           bookingData?.Isservice_converted === 0)) &&
                         bookingData?.BookingStatus !== "Cancelled" && (
@@ -5441,6 +5442,7 @@ const BookingViewLayer = () => {
                       {/* Confirm Service Button - Admin & Supervisor only, when Convert To Service is enabled and there are unconfirmed services */}
                       {(() => {
                         if (
+                          bookingData?.InspectionTracking != null ||
                           bookingData?.Isinspection !== 1 ||
                           bookingData?.Isservice_converted !== 0 ||
                           !(roleId === "1" || roleId === "8")
@@ -9958,8 +9960,101 @@ const BookingViewLayer = () => {
                   </Accordion.Body>
                 </Accordion.Item>
               </Accordion>
-
-              {/* ================= INVOICES (ESTIMATION & FINAL) ACCORDION ================= */}
+              {/* ================= Inspection Details ================= */}
+              <Accordion className="mb-3" defaultActiveKey="">
+                <Accordion.Item eventKey="inspectionDetails">
+                  <Accordion.Header>
+                    <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
+                      <Icon
+                        icon="mdi:file-document-multiple"
+                        width={20}
+                        height={20}
+                      />
+                      Inspection Details
+                    </h6>
+                  </Accordion.Header>
+                  <Accordion.Body>
+                    {(bookingData?.InspectionTracking ?? []).length > 0 ? (
+                      <div className="table-responsive">
+                        <table
+                          className="table table-bordered table-hover align-middle mb-0"
+                          style={{ fontSize: "0.875rem" }}
+                        >
+                          <thead
+                            style={{
+                              backgroundColor: "#f8fafc",
+                              borderBottom: "1px solid #e2e8f0",
+                            }}
+                          >
+                            <tr>
+                              {/* <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>S.No</th> */}
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Service Name</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Type</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Lead ID</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Inspection Amount</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>GST Amount</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>GST %</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Total Price</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Confirmed</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Created Date</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(bookingData?.InspectionTracking ?? [])
+                              .slice()
+                              .reverse()
+                              .map((inspection, idx) => (
+                                <tr key={inspection.Id ?? idx}>
+                                  <td className="py-2 px-3 fw-semibold">{inspection.ServiceName ?? "-"}</td>
+                                  <td className="py-2 px-3">
+                                    <span
+                                      className="badge rounded-pill px-2 py-1"
+                                      style={{
+                                        fontSize: "0.7rem",
+                                        backgroundColor: "rgba(59,130,246,0.15)",
+                                        color: "#2563eb",
+                                      }}
+                                    >
+                                      {inspection.Type ?? "-"}
+                                    </span>
+                                  </td>
+                                  <td className="py-2 px-3">{inspection.LeadId ?? "-"}</td>
+                                  <td className="py-2 px-3">{formatCurrency(inspection.LabourCharges ?? 0)}</td>
+                                  <td className="py-2 px-3">{formatCurrency(inspection.GSTAmount ?? 0)}</td>
+                                  <td className="py-2 px-3">{(inspection.GSTPercent)}%</td>
+                                  <td className="py-2 px-3 fw-bold">{formatCurrency(inspection.TotalPrice)}</td>
+                                  <td className="py-2 px-3">
+                                    <span
+                                      className="badge rounded-pill px-2 py-1"
+                                      style={{
+                                        fontSize: "0.7rem",
+                                        backgroundColor:
+                                          inspection.IsConfirm === 1
+                                            ? "rgba(34,197,94,0.15)"
+                                            : "rgba(148,163,184,0.2)",
+                                        color:
+                                          inspection.IsConfirm === 1
+                                            ? "#16a34a"
+                                            : "#64748b",
+                                      }}
+                                    >
+                                      {inspection.IsConfirm === 1 ? "Yes" : "No"}
+                                    </span>
+                                  </td>
+                                  <td className="py-2 px-3">{formatDateTime(inspection.CreatedDate)}</td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p className="text-muted mb-0 text-center py-4">
+                        No inspection details recorded for this booking.
+                      </p>
+                    )}
+                  </Accordion.Body>
+                </Accordion.Item>
+              </Accordion>
               <Accordion className="mb-3" defaultActiveKey="">
                 <Accordion.Item eventKey="invoices">
                   <Accordion.Header>
@@ -13138,3 +13233,4 @@ const BookingViewLayer = () => {
 };
 
 export default BookingViewLayer;
+
