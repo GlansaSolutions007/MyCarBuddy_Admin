@@ -3042,6 +3042,7 @@ const BookingViewLayer = () => {
     setPaymentFile(null);
     setIsDiscountApplicable(false);
     setDiscountAmount("");
+    setSelectedCoupon("");
     setPaymentEmail("");
   };
 
@@ -3433,6 +3434,14 @@ const BookingViewLayer = () => {
     try {
       setIsLoading(true); // start loader
       const isOnline = paymentTypeChoice === "online";
+      const hasAppliedCoupon =
+        alreadyPaid === 0 &&
+        Boolean(selectedCoupon) &&
+        Number(discountAmount || 0) > 0;
+      const appliedCouponCode = hasAppliedCoupon ? selectedCoupon : "";
+      const appliedCouponAmount = hasAppliedCoupon
+        ? Number(discountAmount || 0)
+        : 0;
       if (!isOnline && !paymentMode) {
         Swal.fire("Validation", "Please select payment mode", "warning");
         return;
@@ -3496,8 +3505,8 @@ const BookingViewLayer = () => {
           paymentAmount: finalAmount,
           phoneNumber: bookingData.PhoneNumber,
           email: bookingData.CustEmail,
-          couponCode: selectedCoupon || "",
-          couponAmount: discountAmount || 0,
+          couponCode: appliedCouponCode,
+          couponAmount: appliedCouponAmount,
           customerId: bookingData.CustID,
         };
 
@@ -3551,8 +3560,8 @@ const BookingViewLayer = () => {
       formData.append("paymentMode", paymentMode);
       formData.append("paymentStatus", "Success");
       formData.append("paymentType", "Static");
-      formData.append("couponAmount", discountAmount || 0);
-      formData.append("couponCode", selectedCoupon || "");
+      formData.append("couponAmount", appliedCouponAmount);
+      formData.append("couponCode", appliedCouponCode);
       formData.append("createdBy", userId);
       formData.append("ProofAttachment", paymentFile); // file
 
@@ -8103,6 +8112,10 @@ const BookingViewLayer = () => {
                                               alreadyPaid,
                                             )}
                                         </div>
+                                        <div className="pricing-kpi-subtext">
+                                            Remaining{" "}
+                                            ₹{remainingAmount.toFixed(2)}
+                                        </div>
                                       </div>
                                       </div>
                                       <div className="col">
@@ -8823,6 +8836,10 @@ const BookingViewLayer = () => {
                                         onClick={() => {
                                           setPaymentMode("");
                                           setPayAmount(remainingAmount);
+                                          setDiscountAmount("");
+                                          setSelectedCoupon("");
+                                          setPaymentFile(null);
+                                          setPaymentTypeChoice(null);
                                           setShowPaymentModal(true);
                                         }}
                                       >
@@ -11077,6 +11094,7 @@ const BookingViewLayer = () => {
                         setPaymentMode("");
                         setPayAmount(remainingAmount);
                         setDiscountAmount("");
+                        setSelectedCoupon("");
                         setPaymentFile(null);
                       }}
                     >
