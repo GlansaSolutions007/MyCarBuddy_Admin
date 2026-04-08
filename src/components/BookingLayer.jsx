@@ -38,6 +38,15 @@ const formatTime = (timeStr) => {
   return `${hour12}:${minute.toString().padStart(2, "0")} ${period}`;
 };
 
+const formatBookingStatusLabel = (status) => {
+  if (!status) return "";
+
+  return status
+    .toString()
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .trim();
+};
+
 const BookingLayer = () => {
   const { hasPermission } = usePermissions();
   const [bookings, setBookings] = useState([]);
@@ -763,6 +772,7 @@ const BookingLayer = () => {
       cell: (row) => {
         let status = row?.BookingStatus ?? "-";
         if (!status || status === "-") status = "Not Assigned";
+        const displayStatus = formatBookingStatusLabel(status);
 
         // Define colors similar to Ticket Status
         const colorMap = {
@@ -786,7 +796,7 @@ const BookingLayer = () => {
                 backgroundColor: color,
               }}
             ></span>
-            <span style={{ color }}>{status}</span>
+            <span style={{ color }}>{displayStatus}</span>
           </span>
         );
       },

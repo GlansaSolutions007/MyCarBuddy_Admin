@@ -82,6 +82,29 @@ const formatTimeSlot = (timeSlotStr) => {
   return `${formatTime(parts[0])} - ${formatTime(parts[1])}`;
 };
 
+const formatBookingStatusLabel = (status) => {
+  if (!status) return "";
+
+  const statusMap = {
+    ServiceInProgress: "Service In Progress",
+    ServiceStarted: "Service Started",
+    ServiceCompleted: "Service Completed",
+    BuddyStarted: "Buddy Started",
+    BuddyReached: "Buddy Reached",
+    CarPicked: "Car Picked",
+    OutForDelivery: "Out For Delivery",
+  };
+
+  if (statusMap[status]) {
+    return statusMap[status];
+  }
+
+  return status
+    .toString()
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .trim();
+};
+
 const BookingViewLayer = () => {
   const [bookingData, setBookingData] = useState(null);
   const [showReschedule, setShowReschedule] = useState(false);
@@ -3330,9 +3353,9 @@ const BookingViewLayer = () => {
   };
 
   const totalAmount =
-    (bookingData?.TotalPrice || 0) +
-    (bookingData?.GSTAmount || 0) +
-    (bookingData?.LabourCharges || 0) -
+    (bookingData?.TotalPrice || 0) -
+    // (bookingData?.GSTAmount || 0) +
+    // (bookingData?.LabourCharges || 0) -
     (bookingData?.CouponAmount || 0);
 
   // const alreadyPaid = bookingData?.PaidAmount || 0;
@@ -5417,7 +5440,7 @@ const BookingViewLayer = () => {
                         )}
                       </button>
                     )}
-                  {bookingData?.Isinspection === 1 &&
+                  {/* {bookingData?.Isinspection === 1 &&
                     bookingData?.Isservice_converted === 1 &&
                     (bookingData?.BookingAddOns?.length ?? 0) === 1 &&
                     (bookingData?.SupervisorBookings?.length ?? 0) === 0 && (
@@ -5434,7 +5457,7 @@ const BookingViewLayer = () => {
                         <Icon icon="mdi:plus-circle-outline" />
                         Service Converted – Add Services
                       </Link>
-                    )}
+                    )} */}
                   {/* {!(
                     bookingData?.BookingStatus === "Completed" &&
                     bookingData?.Payments?.length > 0 &&
@@ -5811,10 +5834,9 @@ const BookingViewLayer = () => {
                                         : "bg-warning text-dark"
                                   }`}
                                 >
-                                  {bookingData.BookingStatus ===
-                                  "ServiceInProgress"
-                                    ? "Service in progress"
-                                    : bookingData.BookingStatus}
+                                  {formatBookingStatusLabel(
+                                    bookingData.BookingStatus,
+                                  )}
                                 </span>
                               </div>
                             </div>
@@ -8097,7 +8119,7 @@ const BookingViewLayer = () => {
                                             )}
                                           </div>
                                           <div className="pricing-kpi-subtext">
-                                            Coupon applied{" "}
+                                            Discount applied{" "}
                                             {formatCurrency(couponAmount)}
                                           </div>
                                         </div>

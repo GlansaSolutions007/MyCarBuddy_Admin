@@ -665,6 +665,7 @@ const handleGenerateInvoiceForView = async () => {
                 <tr>
                   <th>Invoice No</th>
                   <th>Type</th>
+                  <th>Date & Time</th>
                   <th>Status</th>
                   <th className="text-end">Action</th>
                 </tr>
@@ -687,6 +688,18 @@ const handleGenerateInvoiceForView = async () => {
                           {inv.InvoiceNumber ?? "—"}
                         </td>
                         <td>{inv.InvoiceType ?? "—"}</td>
+                        <td>
+                          {inv.CreatedDate
+                            ? new Date(inv.CreatedDate).toLocaleString("en-IN", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: true,
+                              })
+                            : "—"}
+                        </td>
                         <td>{inv.InvoiceStatus ?? "—"}</td>
                         <td className="text-end">
                           {isActiveRow &&
