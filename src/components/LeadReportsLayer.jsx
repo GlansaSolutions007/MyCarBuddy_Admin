@@ -55,8 +55,8 @@ const LeadReportsLayer = () => {
     // Filter leads based on search term
     const filtered = leads.filter(
       (lead) =>
-        lead.Name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        String(lead.EmployeeId).includes(searchTerm),
+        lead.EmployeeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        String(lead.EmpId).includes(searchTerm),
     );
     setFilteredLeads(filtered);
   }, [searchTerm, leads]);
@@ -266,11 +266,55 @@ const LeadReportsLayer = () => {
       : []),
   ];
 
+  const [activeTab, setActiveTab] = useState("efficiency"); // 'efficiency' or 'forward'
+  // Static data showing lead movement through multiple people
+  const forwardData = [
+    {
+      leadId: "L-9920",
+      customerName: "John Doe",
+      transferChain: [
+        { from: "System", to: "Amit (Telecaller)", date: "2023-11-01 10:00 AM", reason: "Initial Assign" },
+        { from: "Amit (Telecaller)", to: "Priya (Head)", date: "2023-11-02 02:30 PM", reason: "Escalated: High Value" },
+        { from: "Priya (Head)", to: "Suresh (Telecaller)", date: "2023-11-03 11:15 AM", reason: "Final Follow-up" }
+      ]
+    }
+  ];
+
+  const forwardColumns = [
+    { name: "Lead ID", selector: (row) => row.leadId, width: "100px", sortable: true },
+    { name: "Customer", selector: (row) => row.customerName, width: "150px", sortable: true },
+    { name: "Forwarding History",
+      cell: (row) => {
+        if (!row?.transferChain || !Array.isArray(row.transferChain)) {
+          return <span className="text-muted">No history</span>;
+        }
+
+        return (
+          <div className="py-2">
+            {row.transferChain.map((step, idx) => (
+              <div key={idx} className="d-flex align-items-center mb-1 text-xs">
+                <span className="badge bg-info-focus text-info-main">{step.from}</span>
+                <Icon icon="line-md:arrow-right" className="mx-1 text-secondary" />
+                <span className="badge bg-success-focus text-success-main">{step.to}</span>
+                <span className="ms-2 text-secondary" style={{ fontSize: "11px" }}>
+                  ({step.date}){" "}
+                  <span className="text-dark fw-bold">| {step.reason}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        );
+    },
+    grow: 3,
+  }
+  ];
+
   return (
     <div className="row gy-4">
       <div className="col-12">
         <div className="card overflow-hidden p-3">
           <div className="card-header">
+           
             <div className="d-flex justify-content-between align-items-center mb-2">
               <form className="navbar-search">
                 <input
@@ -350,6 +394,33 @@ const LeadReportsLayer = () => {
               </div>
             </div>
           </div>
+           {/* Report Type Selector */}
+            <div className="d-flex justify-content-center gap-3 mb-4 border-bottom pb-3 mt-12">
+              <button
+                onClick={() => setActiveTab("efficiency")}
+                className={`btn btn-press-effect btn-sm d-inline-flex align-items-center gap-2 ${
+                  activeTab === "efficiency"
+                    ? "btn-primary-600 text-white shadow"
+                    : "btn-outline-primary"
+                }`}
+              >
+                <Icon icon="mdi:chart-box-outline" width="18" />
+                Efficiency Report
+              </button>
+
+              <button
+                onClick={() => setActiveTab("forward")}
+                className={`btn btn-press-effect btn-sm d-inline-flex align-items-center gap-2 ${
+                  activeTab === "forward"
+                    ? "btn-primary-600 text-white shadow"
+                    : "btn-outline-primary"
+                }`}
+              >
+                <Icon icon="mdi:forwardburger" width="18" />
+                Forward Leads Report
+              </button>
+            </div>
+          {activeTab === "efficiency" ? (
           <DataTable
             columns={columns}
             data={filteredLeads}
@@ -367,6 +438,15 @@ const LeadReportsLayer = () => {
                 : "No leads reports available for selected date"
             }
           />
+          ) : (
+          <DataTable
+            columns={forwardColumns}
+            data={forwardData}
+            pagination
+            highlightOnHover
+            striped
+          />
+        )}
         </div>
       </div>
     </div>

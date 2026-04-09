@@ -3461,10 +3461,12 @@ const BookingViewLayer = () => {
         alreadyPaid === 0 &&
         Boolean(selectedCoupon) &&
         Number(discountAmount || 0) > 0;
-      const appliedCouponCode = hasAppliedCoupon ? selectedCoupon : "";
-      const appliedCouponAmount = hasAppliedCoupon
-        ? Number(discountAmount || 0)
-        : 0;
+      //   const appliedCouponCode = hasAppliedCoupon ? selectedCoupon : "";
+      // const appliedCouponAmount = hasAppliedCoupon
+      //   ? Number(discountAmount || 0)
+      //   : 0;
+      const appliedCouponCode = discountAmount ? "manual" : "";
+      const appliedCouponAmount = Number(discountAmount || 0);
       if (!isOnline && !paymentMode) {
         Swal.fire("Validation", "Please select payment mode", "warning");
         return;
@@ -4533,6 +4535,10 @@ const BookingViewLayer = () => {
   const pricingTotals = buildPricingTotals(liveComparisonServices);
   const pricingCustomerNetTotal = Math.max(
     Number(pricingTotals.customerTotal || 0) - Number(couponAmount || 0),
+    0,
+  );
+  const pricingCustomerNetTotalNew = Math.max(
+    Number(pricingTotals.customerTotal || 0),
     0,
   );
   const pricingNetProfit =
@@ -7658,7 +7664,7 @@ const BookingViewLayer = () => {
                                     <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                                       <div>
                                         <h6 className="mb-1 fw-bold">
-                                          Service-wise exact comparison
+                                          Service-wise comparison
                                         </h6>
                                         <div className="small text-muted">
                                           Combined view of confirmed-service
@@ -8095,7 +8101,7 @@ const BookingViewLayer = () => {
                                       </span>
                                     </div>
 
-                                    <div className="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-3">
+                                    <div className="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-3">
                                       <div className="col">
                                         <div className="pricing-kpi-card h-100">
                                           <div className="pricing-kpi-label">
@@ -8115,7 +8121,7 @@ const BookingViewLayer = () => {
                                           </div>
                                           <div className="pricing-kpi-value">
                                             {formatCurrency(
-                                              pricingCustomerNetTotal,
+                                              pricingCustomerNetTotalNew,
                                             )}
                                           </div>
                                           <div className="pricing-kpi-subtext">
@@ -8123,22 +8129,6 @@ const BookingViewLayer = () => {
                                             {formatCurrency(couponAmount)}
                                           </div>
                                         </div>
-                                      </div>
-                                      <div className="col">
-                                        <div className="pricing-kpi-card h-100">
-                                        <div className="pricing-kpi-label">
-                                          Paid Amount  
-                                        </div>
-                                        <div className="pricing-kpi-value">
-                                          {formatCurrency(
-                                              alreadyPaid,
-                                            )}
-                                        </div>
-                                        <div className="pricing-kpi-subtext">
-                                            Remaining{" "}
-                                            ₹{remainingAmount.toFixed(2)}
-                                        </div>
-                                      </div>
                                       </div>
                                       <div className="col">
                                         <div className="pricing-kpi-card h-100">
@@ -8290,97 +8280,104 @@ const BookingViewLayer = () => {
                                     </div>
                                   </div>
 
-                                  <div
-                                    className="row g-4"
-                                    style={{ display: "none" }}
-                                  >
-                                    <div className="col-12 col-xl-4">
+                                  <div className="row g-4">
+                                    <div className="col-12">
                                       <div className="pricing-panel">
                                         <div className="d-flex justify-content-between align-items-center gap-2 mb-3">
                                           <h6 className="mb-0 fw-bold">
-                                            Margin definition
+                                            Margin Overall Definition
                                           </h6>
-                                          <span className="pricing-chip">
-                                            Total Profit = Customer Total -
-                                            Dealer Total + MCB Margin
-                                          </span>
                                         </div>
 
-                                        <div className="pricing-note-card mb-3">
-                                          <div className="fw-semibold text-dark mb-1">
-                                            Margin means the company earning
-                                          </div>
-                                          <div className="small text-muted">
-                                            Margin Amount is taken from{" "}
-                                            <strong>`Our_Earnings`</strong>.
-                                            Margin Percentage is taken from{" "}
-                                            <strong>`Percentage`</strong>.
-                                          </div>
-                                        </div>
-
-                                        <div className="pricing-breakdown-row">
-                                          <span className="text-muted">
-                                            Dealer quote total
-                                          </span>
-                                          <strong>
-                                            {formatCurrency(
-                                              pricingTotals.dealerTotal,
-                                            )}
-                                          </strong>
-                                        </div>
-                                        <div className="pricing-breakdown-row">
-                                          <span className="text-muted">
-                                            Customer quote total
-                                          </span>
-                                          <strong>
-                                            {formatCurrency(
-                                              pricingTotals.customerTotal,
-                                            )}
-                                          </strong>
-                                        </div>
-                                        <div className="pricing-breakdown-row">
-                                          <span className="text-muted">
-                                            MCB Margin Amount
-                                          </span>
-                                          <strong className="text-success">
-                                            {formatCurrency(
-                                              pricingTotals.marginAmount,
-                                            )}
-                                          </strong>
-                                        </div>
-                                        <div className="pricing-breakdown-row">
-                                          <span className="text-muted">
-                                            MCB Margin %
-                                          </span>
-                                          <strong className="text-success">
-                                            {effectiveMarginPercent.toFixed(2)}%
-                                          </strong>
-                                        </div>
-                                        <div className="pricing-breakdown-row">
-                                          <span className="text-muted">
-                                            Customer price spread
-                                          </span>
-                                          <strong className="text-primary">
-                                            {formatCurrency(
-                                              pricingTotals.priceSpread,
-                                            )}
-                                          </strong>
-                                        </div>
-                                        <div className="pricing-breakdown-row">
-                                          <span className="text-muted">
-                                            Spread not explained by margin
-                                          </span>
-                                          <strong
-                                            className={
-                                              unmatchedSpreadAmount >= 0
-                                                ? "text-info"
-                                                : "text-danger"
-                                            }
-                                          >
-                                            {formatCurrency(
-                                              unmatchedSpreadAmount,
-                                            )}
-                                          </strong>
+                                        <div className="table-responsive mt-3">
+                                          <table className="table table-sm table-borderless mb-0">
+                                            <tbody>
+                                              <tr style={{borderBottom: "1px dashed #e2e8f0"}}>
+                                                <td className="text-muted">
+                                                  Parts Amount
+                                                </td>
+                                                <td className="text-end fw-semibold">
+                                                  {formatCurrency(
+                                                    pricingTotals.customerParts,
+                                                  )}
+                                                </td>
+                                              </tr>
+                                              <tr style={{borderBottom: "1px dashed #e2e8f0"}}>
+                                                <td className="text-muted">
+                                                  Service Charges Total
+                                                </td>
+                                                <td className="text-end fw-semibold">
+                                                  {formatCurrency(
+                                                    pricingTotals.customerLabour,
+                                                  )}
+                                                </td>
+                                              </tr>
+                                              <tr style={{borderBottom: "1px dashed #e2e8f0"}}>
+                                                <td className="text-muted">
+                                                  SGST Amount
+                                                </td>
+                                                <td className="text-end fw-semibold">
+                                                  {formatCurrency(
+                                                    pricingTotals.customerGst/2,
+                                                  )}
+                                                </td>
+                                              </tr>
+                                              <tr style={{borderBottom: "1px dashed #e2e8f0"}}>
+                                                <td className="text-muted">
+                                                  CGST Amount
+                                                </td>
+                                                <td className="text-end fw-semibold">
+                                                  {formatCurrency(
+                                                    pricingTotals.customerGst/2,
+                                                  )}
+                                                </td>
+                                              </tr>
+                                              <tr style={{borderBottom: "1px dashed #e2e8f0"}}>
+                                                <td className="text-muted">
+                                                  Customer Total (without discount)
+                                                </td>
+                                                <td className="text-end fw-semibold">
+                                                  {formatCurrency(
+                                                    pricingTotals.customerTotal,
+                                                  )}
+                                                </td>
+                                              </tr>
+                                              <tr style={{borderBottom: "1px dashed #e2e8f0"}}>
+                                                <td className="text-muted">
+                                                  Discount Amount
+                                                </td>
+                                                <td className="text-end fw-semibold text-danger">
+                                                  -{formatCurrency(couponAmount)}
+                                                </td>
+                                              </tr>
+                                              <tr style={{borderBottom: "1px dashed #e2e8f0"}}>
+                                                <td className="text-muted">
+                                                  Customer Total (with discount)
+                                                </td>
+                                                <td className="text-end fw-semibold">
+                                                  {formatCurrency(
+                                                    pricingCustomerNetTotal,
+                                                  )}
+                                                </td>
+                                              </tr>
+                                              <tr style={{borderBottom: "1px dashed #e2e8f0"}}>
+                                                <td className="text-muted">
+                                                  Customer Total Paid
+                                                </td>
+                                                <td className="text-end fw-semibold text-success">
+                                                  {formatCurrency(alreadyPaid)}
+                                                </td>
+                                              </tr>
+                                              <tr>
+                                                <td className="text-muted">
+                                                  Customer Total Remaining
+                                                </td>
+                                                <td className="text-end fw-semibold text-danger">
+                                                  {formatCurrency(remainingAmount)}
+                                                </td>
+                                              </tr>
+                                            </tbody>
+                                          </table>
                                         </div>
 
                                         {/* <div className="mt-4">
@@ -8434,137 +8431,6 @@ const BookingViewLayer = () => {
                                             </span>
                                           </div>
                                         </div> */}
-                                      </div>
-                                    </div>
-
-                                    <div className="col-12 col-xl-8">
-                                      <div className="pricing-panel">
-                                        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-                                          <div>
-                                            <h6 className="mb-1 fw-bold">
-                                              Service-wise exact comparison
-                                            </h6>
-                                            <div className="small text-muted">
-                                              Every row shows dealer total,
-                                              customer total, MCB Margin, and
-                                              the final spread.
-                                            </div>
-                                          </div>
-                                          <div className="d-flex flex-wrap gap-2">
-                                            <span className="pricing-chip">
-                                              Services:{" "}
-                                              {liveComparisonServices.length}
-                                            </span>
-                                            <span className="pricing-chip">
-                                              Variance rows:{" "}
-                                              {pricingTotals.varianceServices}
-                                            </span>
-                                          </div>
-                                        </div>
-
-                                        <div className="table-responsive">
-                                          <table className="table table-hover align-middle pricing-comparison-table mb-0">
-                                            <thead className="table-light">
-                                              <tr>
-                                                <th>Service</th>
-                                                <th>Status</th>
-                                                <th>Dealer</th>
-                                                <th className="text-end">
-                                                  Dealer Total
-                                                </th>
-                                                <th className="text-end">
-                                                  Customer Total
-                                                </th>
-                                                <th className="text-end">
-                                                  Margin %
-                                                </th>
-                                                <th className="text-end">
-                                                  Margin Amt
-                                                </th>
-                                                <th className="text-end">
-                                                  Price Spread
-                                                </th>
-                                              </tr>
-                                            </thead>
-                                            <tbody>
-                                              {liveComparisonServices.map(
-                                                (service) => (
-                                                  <tr key={service.id}>
-                                                    <td>
-                                                      <div className="fw-semibold text-dark">
-                                                        {service.serviceName}
-                                                      </div>
-                                                      <div className="small text-muted">
-                                                        {service.dealerName}
-                                                      </div>
-                                                    </td>
-                                                    <td>
-                                                      <span
-                                                        className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(
-                                                          service.stage,
-                                                        )}`}
-                                                      >
-                                                        {service.stage}
-                                                      </span>
-                                                    </td>
-                                                    <td>
-                                                      <div className="small text-muted">
-                                                        Parts{" "}
-                                                        {formatCurrency(
-                                                          service.dealerParts,
-                                                        )}
-                                                      </div>
-                                                      <div className="small text-muted">
-                                                        Labour{" "}
-                                                        {formatCurrency(
-                                                          service.dealerLabour,
-                                                        )}
-                                                      </div>
-                                                      <div className="small text-muted">
-                                                        GST{" "}
-                                                        {formatCurrency(
-                                                          service.dealerGst,
-                                                        )}
-                                                      </div>
-                                                    </td>
-                                                    <td className="text-end fw-semibold">
-                                                      {formatCurrency(
-                                                        service.dealerTotal,
-                                                      )}
-                                                    </td>
-                                                    <td className="text-end fw-semibold text-primary">
-                                                      {formatCurrency(
-                                                        service.customerTotal,
-                                                      )}
-                                                    </td>
-                                                    <td className="text-end">
-                                                      {service.marginPercent.toFixed(
-                                                        2,
-                                                      )}
-                                                      %
-                                                    </td>
-                                                    <td className="text-end text-success fw-semibold">
-                                                      {formatCurrency(
-                                                        service.marginAmount,
-                                                      )}
-                                                    </td>
-                                                    <td
-                                                      className={`text-end ${
-                                                        service.priceSpread >= 0
-                                                          ? "pricing-spread-positive"
-                                                          : "pricing-spread-negative"
-                                                      }`}
-                                                    >
-                                                      {formatCurrency(
-                                                        service.priceSpread,
-                                                      )}
-                                                    </td>
-                                                  </tr>
-                                                ),
-                                              )}
-                                            </tbody>
-                                          </table>
-                                        </div>
                                       </div>
                                     </div>
                                   </div>
@@ -10903,7 +10769,7 @@ const BookingViewLayer = () => {
                             <label className="form-label fw-semibold">
                               Apply Discount
                             </label>
-                            <select
+                            {/* <select
                               className="form-select mb-2"
                               value={selectedCoupon}
                               onChange={(e) =>
@@ -10929,7 +10795,7 @@ const BookingViewLayer = () => {
                                     : `₹${Number(sel.discountValue).toFixed(2)}`}
                                 </small>
                               );
-                            })()}
+                            })()} */}
                             {/* <label className="form-label fw-semibold">Discount Amount</label>
                             <input
                               type="number"
@@ -10945,6 +10811,21 @@ const BookingViewLayer = () => {
                               }}
                               placeholder="0"
                             /> */}
+                            <input
+                              type="number"
+                              className="form-control mb-2"
+                              placeholder="Enter discount amount"
+                              min={0}
+                              max={Math.max(0, Number(remainingAmount || 0))}
+                              value={discountAmount}
+                              onChange={(e) => {
+                                const val = Math.max(0, Number(e.target.value));
+                                const max = Number(remainingAmount || 0);
+
+                                // prevent exceeding amount
+                                setDiscountAmount(val > max ? max : val);
+                              }}
+                            />
                             {Number(remainingAmount || 0) > 0 && (
                               <small className="text-muted">
                                 Max: ₹{Number(remainingAmount || 0).toFixed(2)}
@@ -11021,7 +10902,7 @@ const BookingViewLayer = () => {
                             <label className="form-label fw-semibold">
                               Apply Discount
                             </label>
-                            <select
+                            {/* <select
                               className="form-select mb-2"
                               value={selectedCoupon}
                               onChange={(e) =>
@@ -11047,7 +10928,7 @@ const BookingViewLayer = () => {
                                     : `₹${Number(sel.discountValue).toFixed(2)}`}
                                 </small>
                               );
-                            })()}
+                            })()} */}
                             {/* <label className="form-label fw-semibold">Discount Amount</label>
                             <input
                               type="number"
@@ -11063,6 +10944,21 @@ const BookingViewLayer = () => {
                               }}
                               placeholder="0"
                             /> */}
+                            <input
+                              type="number"
+                              className="form-control mb-2"
+                              placeholder="Enter discount amount"
+                              min={0}
+                              max={Math.max(0, Number(remainingAmount || 0))}
+                              value={discountAmount}
+                              onChange={(e) => {
+                                const val = Math.max(0, Number(e.target.value));
+                                const max = Number(remainingAmount || 0);
+
+                                // prevent exceeding amount
+                                setDiscountAmount(val > max ? max : val);
+                              }}
+                            />
                             {Number(remainingAmount || 0) > 0 && (
                               <small className="text-muted">
                                 Max: ₹{Number(remainingAmount || 0).toFixed(2)}

@@ -134,9 +134,9 @@ const LeadViewLayer = () => {
   const [selectedBookingTimeSlot, setSelectedBookingTimeSlot] = useState([]);
   const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
   const [selectedWhatsappTemplate, setSelectedWhatsappTemplate] = useState(null);
-  const shouldDisableActions = lead?.NextAction === "Lead Closed";
+  const shouldDisableActions = lead?.NextAction === "Lead Closed" || currentBookings.some((b) => b.BookingStatus === "Cancelled");
   const isBookingCompletedAndPaid = lead?.BookingStatus === "Completed" && lead?.PaymentStatus === "Success";
-  const isLeadClosed = shouldDisableActions || isBookingCompletedAndPaid;
+  const isLeadClosed = shouldDisableActions || isBookingCompletedAndPaid || currentBookings.some((b) => b.BookingStatus === "Cancelled");
   const [existingFeedback, setExistingFeedback] = useState(null);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
 

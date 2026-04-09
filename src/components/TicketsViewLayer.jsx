@@ -344,7 +344,7 @@ const TicketsViewLayer = () => {
               </select>
 
               {/* ➕ Add Ticket Button */}
-              <Link
+              {/* <Link
                 to="/add-tickets"
                 className="btn btn-primary-600 d-flex align-items-center gap-1 text-sm flex-shrink-0"
                 style={{
@@ -356,7 +356,7 @@ const TicketsViewLayer = () => {
               >
                 <Icon icon="ic:baseline-plus" width="18" height="18" />
                 Add Ticket
-              </Link>
+              </Link> */}
             </div>
           </div>
             <DataTable
