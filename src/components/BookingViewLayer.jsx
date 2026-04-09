@@ -10901,7 +10901,7 @@ const BookingViewLayer = () => {
                         <>
                           <div className="mb-0">
                             <label className="form-label fw-semibold">
-                              Apply Coupon
+                              Apply Discount
                             </label>
                             <select
                               className="form-select mb-2"
@@ -11019,7 +11019,7 @@ const BookingViewLayer = () => {
                         <>
                           <div className="mb-0">
                             <label className="form-label fw-semibold">
-                              Apply Coupon
+                              Apply Discount
                             </label>
                             <select
                               className="form-select mb-2"

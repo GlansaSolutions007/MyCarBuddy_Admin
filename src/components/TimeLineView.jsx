@@ -1,6 +1,29 @@
 import { Icon } from "@iconify/react";
 import { useEffect } from "react";
 
+const formatBookingStatusLabel = (status) => {
+  if (!status) return "";
+
+  const statusMap = {
+    ServiceInProgress: "Service In Progress",
+    ServiceStarted: "Service Started",
+    ServiceCompleted: "Service Completed",
+    BuddyStarted: "Buddy Started",
+    BuddyReached: "Buddy Reached",
+    CarPicked: "Car Picked",
+    OutForDelivery: "Out For Delivery",
+  };
+
+  if (statusMap[status]) {
+    return statusMap[status];
+  }
+
+  return status
+    .toString()
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .trim();
+};
+
 const TIMELINE_STYLES = `
   .service-timeline {
     padding: 0.75rem 0;
@@ -712,7 +735,11 @@ const TimeLineView = ({ bookingData, displayDate }) => {
                             {stage.date ? displayDate(stage.date) : "—"}
                           </div>
                           {stage.details && (
-                            <div className="step-details">{stage.details}</div>
+                            <div className="step-details">
+                              {stage.id === "booking-done"
+                                ? formatBookingStatusLabel(stage.details)
+                                : stage.details}
+                            </div>
                           )}
                         </div>
                       </div>
