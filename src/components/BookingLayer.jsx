@@ -651,7 +651,7 @@ const BookingLayer = () => {
     {
       name: "Paid Amount",
       selector: (row) => {
-        const paid = (row.AmountPaid || 0).toFixed(2);
+        const paid = (row.TotalPaidAmount || 0).toFixed(2);
 
         return (
           <span className="fw-bold">
