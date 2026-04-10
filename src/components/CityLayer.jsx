@@ -12,7 +12,6 @@ import { usePermissions } from "../context/PermissionContext";
 const API_CITIES = `${import.meta.env.VITE_APIURL}City`;
 const API_STATES = `${import.meta.env.VITE_APIURL}State`;
 
-
 const CityLayer = () => {
     const { hasPermission } = usePermissions();
 //   const [cityName, setCityName] = useState("");
