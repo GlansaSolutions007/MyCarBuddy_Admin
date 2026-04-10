@@ -3618,6 +3618,33 @@ const BookingViewLayer = () => {
     }
   };
 
+  // Logic: Cancellation is allowed only if no technician has reached the location yet.
+    const isCancellationAllowed = (() => {
+      if (!bookingData) return false;
+
+      // 1. If the overall booking is already completed or cancelled, don't show cancellation
+      if (["Completed", "Cancelled", "Refunded"].includes(bookingData.BookingStatus)) {
+        return false;
+      }
+
+      // 2. Check the Service Tracking (CarPickUpDelivery)
+      // If any record has reached "BuddyReached" or further, cancellation is blocked.
+      const trackingRecords = bookingData.CarPickUpDelivery || [];
+      const hasTechnicianReached = trackingRecords.some((record) => {
+        const status = (record.Status || "").toLowerCase();
+        return [
+          "buddyreached", 
+          "carpicked", 
+          "serviceinprogress", 
+          "servicestarted", 
+          "servicecompleted", 
+          "completed"
+        ].includes(status);
+      });
+
+      return !hasTechnicianReached;
+    })();
+
   // Fetch coupons from API and filter by min booking amount
   useEffect(() => {
     const fetchCoupons = async () => {
@@ -5625,16 +5652,17 @@ const BookingViewLayer = () => {
                             )}
 
                             {/* Divider - only shows if the buttons above are present */}
-                            {bookingData?.SupervisorBookings?.length > 0 && (
+                            {bookingData?.SupervisorBookings?.length > 0 && isCancellationAllowed && (
                               <li className="my-2">
                                 <hr className="dropdown-divider" />
                               </li>
                             )}
-
+                            {isCancellationAllowed && (
                             <li>
                               <button
                                 className="btn btn-danger btn-sm w-100 d-inline-flex align-items-center justify-content-center"
                                 onClick={handleBookingCancellation}
+                                disabled={!isCancellationAllowed}
                                 style={{
                                   height: "40px",
                                   whiteSpace: "normal",
@@ -5644,6 +5672,7 @@ const BookingViewLayer = () => {
                                 Booking Cancellation
                               </button>
                             </li>
+                            )}
                           </ul>
                         </div>
                         {/* <button
