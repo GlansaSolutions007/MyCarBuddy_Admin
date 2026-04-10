@@ -3375,7 +3375,7 @@ const BookingViewLayer = () => {
   const couponAmount = Number(bookingData?.CouponAmount ?? 0) || 0;
   const alreadyPaidDisplay = alreadyPaid + couponAmount;
   const remainingAmount = Math.max(
-    Number((totalAmount - alreadyPaid).toFixed(2)),
+    Number((bookingData?.TotalPrice - alreadyPaid - couponAmount).toFixed(2)),
     0,
   );
 
@@ -5611,7 +5611,7 @@ const BookingViewLayer = () => {
                             {bookingData?.SupervisorBookings?.length > 0 && (
                               <li className="mb-2">
                                 <button
-                                  className="btn btn-danger btn-sm w-100 d-inline-flex align-items-center justify-content-center"
+                                  className="btn btn-warning btn-sm w-100 d-inline-flex align-items-center justify-content-center"
                                   onClick={handleCustomerRejection}
                                   style={{
                                     height: "40px",
@@ -5633,7 +5633,7 @@ const BookingViewLayer = () => {
 
                             <li>
                               <button
-                                className="btn btn-warning btn-sm w-100 d-inline-flex align-items-center justify-content-center"
+                                className="btn btn-danger btn-sm w-100 d-inline-flex align-items-center justify-content-center"
                                 onClick={handleBookingCancellation}
                                 style={{
                                   height: "40px",
@@ -8285,7 +8285,7 @@ const BookingViewLayer = () => {
                                       <div className="pricing-panel">
                                         <div className="d-flex justify-content-between align-items-center gap-2 mb-3">
                                           <h6 className="mb-0 fw-bold">
-                                            Margin Overall Definition
+                                            Total Amount Summary
                                           </h6>
                                         </div>
 
@@ -8294,9 +8294,9 @@ const BookingViewLayer = () => {
                                             <tbody>
                                               <tr style={{borderBottom: "1px dashed #e2e8f0"}}>
                                                 <td className="text-muted">
-                                                  Parts Amount
+                                                  Parts Total
                                                 </td>
-                                                <td className="text-end fw-semibold">
+                                                <td className="text-end">
                                                   {formatCurrency(
                                                     pricingTotals.customerParts,
                                                   )}
@@ -8304,9 +8304,9 @@ const BookingViewLayer = () => {
                                               </tr>
                                               <tr style={{borderBottom: "1px dashed #e2e8f0"}}>
                                                 <td className="text-muted">
-                                                  Service Charges Total
+                                                  Service Charges
                                                 </td>
-                                                <td className="text-end fw-semibold">
+                                                <td className="text-end">
                                                   {formatCurrency(
                                                     pricingTotals.customerLabour,
                                                   )}
@@ -8314,9 +8314,9 @@ const BookingViewLayer = () => {
                                               </tr>
                                               <tr style={{borderBottom: "1px dashed #e2e8f0"}}>
                                                 <td className="text-muted">
-                                                  SGST Amount
+                                                  SGST (9%)
                                                 </td>
-                                                <td className="text-end fw-semibold">
+                                                <td className="text-end ">
                                                   {formatCurrency(
                                                     pricingTotals.customerGst/2,
                                                   )}
@@ -8324,35 +8324,35 @@ const BookingViewLayer = () => {
                                               </tr>
                                               <tr style={{borderBottom: "1px dashed #e2e8f0"}}>
                                                 <td className="text-muted">
-                                                  CGST Amount
+                                                  CGST (9%)
                                                 </td>
-                                                <td className="text-end fw-semibold">
+                                                <td className="text-end ">
                                                   {formatCurrency(
                                                     pricingTotals.customerGst/2,
                                                   )}
                                                 </td>
                                               </tr>
-                                              <tr style={{borderBottom: "1px dashed #e2e8f0"}}>
+                                              {/* <tr style={{borderBottom: "1px dashed #e2e8f0"}}>
                                                 <td className="text-muted">
-                                                  Customer Total (without discount)
+                                                  Customer Total 
                                                 </td>
-                                                <td className="text-end fw-semibold">
+                                                <td className="text-end ">
                                                   {formatCurrency(
                                                     pricingTotals.customerTotal,
                                                   )}
                                                 </td>
-                                              </tr>
-                                              <tr style={{borderBottom: "1px dashed #e2e8f0"}}>
+                                              </tr> */}
+                                              <tr style={{borderBottom: "1px Solid #1f2937"}}>
                                                 <td className="text-muted">
                                                   Discount Amount
                                                 </td>
-                                                <td className="text-end fw-semibold text-danger">
+                                                <td className="text-end">
                                                   -{formatCurrency(couponAmount)}
                                                 </td>
                                               </tr>
                                               <tr style={{borderBottom: "1px dashed #e2e8f0"}}>
-                                                <td className="text-muted">
-                                                  Customer Total (with discount)
+                                                <td className="text-black fw-semibold">
+                                                  Customer Total (after discount)
                                                 </td>
                                                 <td className="text-end fw-semibold">
                                                   {formatCurrency(
@@ -8361,16 +8361,16 @@ const BookingViewLayer = () => {
                                                 </td>
                                               </tr>
                                               <tr style={{borderBottom: "1px dashed #e2e8f0"}}>
-                                                <td className="text-muted">
-                                                  Customer Total Paid
+                                                <td className="text-black fw-semibold">
+                                                  Already Paid
                                                 </td>
                                                 <td className="text-end fw-semibold text-success">
                                                   {formatCurrency(alreadyPaid)}
                                                 </td>
                                               </tr>
                                               <tr>
-                                                <td className="text-muted">
-                                                  Customer Total Remaining
+                                                <td className="text-black fw-semibold">
+                                                  Balance Amount to be paid
                                                 </td>
                                                 <td className="text-end fw-semibold text-danger">
                                                   {formatCurrency(remainingAmount)}
