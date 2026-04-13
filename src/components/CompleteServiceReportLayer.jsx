@@ -1145,8 +1145,9 @@ const CompleteServiceReportLayer = () => {
     // },
     {
       name: "Amount",
-      selector: (row) =>
-        `₹${((row.TotalPrice || 0) + (row.GSTAmount || 0) + (row.LabourCharges || 0) - (row.CouponAmount || 0)).toFixed(2)}`,
+      selector: (row) => row.TotalPrice || "-",
+      // selector: (row) =>
+      //   `₹${((row.TotalPrice || 0) + (row.GSTAmount || 0) + (row.LabourCharges || 0) - (row.CouponAmount || 0)).toFixed(2)}`,
       width: "120px",
       sortable: true,
     },
