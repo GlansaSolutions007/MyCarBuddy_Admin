@@ -1501,7 +1501,7 @@ const alertLeads = useMemo(() => {
             <div className="col-auto ">
               <div className="d-flex flex-wrap align-items-center gap-3">
                 {/* ThemeToggleButton */}
-                <ThemeToggleButton className="topbar-icon-button" />
+                {/* <ThemeToggleButton className="topbar-icon-button" /> */}
 
                 {/* Follow-up Alert Dropdown */}
                 {alertLeads.length > 0 && (

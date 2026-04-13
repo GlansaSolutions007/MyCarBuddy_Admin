@@ -228,6 +228,41 @@ const ForwardLeadsLayer = () => {
     { name: "Phone", selector: (row) => row.PhoneNumber || "-", width: "150px" },
     { name: "Platform", selector: (row) => row.Platform || "-", width: "120px" },
     {
+      name: "Payment Status",
+      cell: (row) => {
+        let status = row?.PaymentStatus ?? "-";
+        if (!status || status === "-") status = "Pending";
+
+        // const displayStatus = formatBookingStatusLabel(status);
+        const displayStatus = status;
+
+        // Updated color mapping
+        const colorMap = {
+          Success: "#28A745", // Green
+          Pending: "#E34242", // Red
+        };
+
+        const color = colorMap[status] || "#6c757d";
+
+        return (
+          <span className="fw-semibold d-flex align-items-center">
+            <span
+              className="rounded-circle d-inline-block me-1"
+              style={{
+                width: "8px",
+                height: "8px",
+                backgroundColor: color,
+              }}
+            ></span>
+            <span style={{ color }}>{displayStatus}</span>
+          </span>
+        );
+      },
+      wrap: true,
+      width: "160px",
+      sortable: true,
+    },
+    {
       name: "Created Date",
       selector: (row) => {
         const rawDate = row.CreatedDate;

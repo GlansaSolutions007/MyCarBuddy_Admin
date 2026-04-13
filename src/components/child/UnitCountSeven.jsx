@@ -14,6 +14,15 @@ const UnitCountSeven = () => {
   const department = userDetails?.DepartmentName;
   const role = localStorage.getItem("role");
 
+  const subCountStyle = {
+    display: "block",
+    fontSize: "11px",
+    lineHeight: 1.3,
+    color: "#6b7280",
+    marginTop: "4px",
+    whiteSpace: "nowrap",
+  };
+
   useEffect(() => {
     fetchDashboard();
     fetchRefunds();
@@ -144,27 +153,41 @@ const UnitCountSeven = () => {
                 </p>
               </div>
             </div> */}
-              <div className='col-xxl-4 col-xl-4 col-sm-6'>
+             <div className='col-xxl-4 col-xl-4 col-sm-6'>
                 <div className='px-20 py-16 shadow-none radius-8 h-100 gradient-deep-2 left-line line-bg-lilac position-relative overflow-hidden'>
                   <div className='d-flex flex-wrap align-items-center justify-content-between gap-1 mb-8'>
                     <div>
                       <span className='mb-2 fw-medium text-secondary-light text-md'>
-                        {department === "Support Department" && role !== "Admin" ? "Total Tickets" : "Total Bookings"}
+                        {department === "Support Department" && role !== "Admin"
+                          ? "Total Tickets"
+                          : "Total Bookings"}
                       </span>
                       <h6 className='fw-semibold mb-1'>
-                        {department === "Support Department" && role !== "Admin" ? ticketTotal : (data.TotalBookings || 0)}
+                        {department === "Support Department" && role !== "Admin"
+                          ? ticketTotal
+                          : (data.TotalBookings || 0)}
                       </h6>
                     </div>
                     <span className='w-44-px h-44-px radius-8 d-inline-flex justify-content-center align-items-center text-2xl mb-12 bg-lilac-200 text-lilac-600'>
                       <i className="ri-file-list-3-fill"/>
                     </span>
                   </div>
-                  {/* <p className='text-sm mb-0'>
-                  <span className='bg-success-focus px-1 rounded-2 fw-medium text-success-main text-sm'>
-                    <i className='ri-arrow-right-up-line' /> 95%
-                  </span>{" "}
-                  From last month{" "}
-                </p> */}
+                  {/* 👇 FIXED POSITION - no height increase */}
+                  {department !== "Support Department" || role === "Admin" ? (
+                    <span
+                      style={{
+                        position: "absolute",
+                        bottom: "8px",
+                        left: "20px",
+                        fontSize: "11px",
+                        color: "#6b7280",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Total Leads = {data.TotalLeads || 0}
+                    </span>
+                  ) : null}
+
                 </div>
               </div>
               <div className='col-xxl-4 col-xl-4 col-sm-6'>

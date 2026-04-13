@@ -363,6 +363,31 @@ const BookingViewLayer = () => {
     bookingData?.Payments?.[bookingData.Payments.length - 1]?.PaymentStatus ===
       "Success";
 
+  const customerConfirmationImages =
+    bookingData?.ServiceImages?.filter(
+      (img) =>
+        img.ImageUploadType !== "Pickup" && img.ImageUploadType !== "Delivery",
+    ) ?? [];
+
+  const customerConfirmationSourceRows = [
+    ...(bookingData?.BookingAddOns ?? []),
+    ...(bookingData?.SupervisorBookings ?? []),
+  ].filter((item) => item?.ConfirmDescription || item?.ConfirmRole);
+
+  const customerConfirmationRole =
+    [...new Set(
+      customerConfirmationSourceRows
+        .map((item) => item?.ConfirmRole)
+        .filter(Boolean),
+    )].join(", ") || "—";
+
+  const customerConfirmationDescription =
+    [...new Set(
+      customerConfirmationSourceRows
+        .map((item) => item?.ConfirmDescription)
+        .filter(Boolean),
+    )].join(" | ") || "—";
+
   // State for dynamically adding services
   const [servicesToAdd, setServicesToAdd] = useState([
     {
@@ -10388,67 +10413,134 @@ const BookingViewLayer = () => {
                   <Accordion.Header>
                     <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
                       <Icon icon="mdi:image-multiple" width={20} height={20} />
-                      Customer Confirmation Images
+                      Customer Confirmation Details
                     </h6>
                   </Accordion.Header>
 
                   <Accordion.Body>
-                    {(
-                      bookingData?.ServiceImages?.filter(
-                        (img) =>
-                          img.ImageUploadType !== "Pickup" &&
-                          img.ImageUploadType !== "Delivery",
-                      ) ?? []
-                    ).length > 0 ? (
-                      <div className="row g-3">
-                        {bookingData?.ServiceImages?.filter(
-                          (img) =>
-                            img.ImageUploadType !== "Pickup" &&
-                            img.ImageUploadType !== "Delivery",
-                        ).map((img, idx) => (
-                          <div
-                            className="col-lg-2 col-md-3 col-4"
-                            key={img.ImageID ?? idx}
+                    {customerConfirmationImages.length > 0 ? (
+                      <div className="table-responsive">
+                        <table
+                          className="table table-bordered table-hover align-middle mb-0"
+                          style={{ fontSize: "0.875rem", textAlign: "center" }}
+                        >
+                          <thead
+                            style={{
+                              backgroundColor: "#f8fafc",
+                              borderBottom: "1px solid #e2e8f0",
+                            }}
                           >
-                            <img
-                              src={`${API_IMAGE}${img.ImageURL}`}
-                              alt="Service Completion"
-                              className="img-fluid rounded border"
-                              style={{
-                                height: "100px",
-                                width: "100%",
-                                objectFit: "cover",
-                                cursor: "pointer",
-                              }}
-                              onClick={() =>
-                                window.open(
-                                  `${API_IMAGE}${img.ImageURL}`,
-                                  "_blank",
-                                )
-                              }
-                            />
-
-                            <div
-                              className="text-muted text-center mt-1"
-                              style={{ fontSize: "0.7rem" }}
-                            >
-                              {img.UploadedAt
-                                ? new Date(img.UploadedAt).toLocaleDateString(
-                                    "en-IN",
-                                    {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                    },
-                                  )
-                                : ""}
-                            </div>
-                          </div>
-                        ))}
+                            <tr>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                  textAlign: "center",
+                                }}
+                              >
+                                S.No
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                  textAlign: "center",
+                                }}
+                              >
+                                Confirm At
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                  textAlign: "center",
+                                }}
+                              >
+                                Confirm Role
+                              </th>
+                              <th
+                                className="py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                  textAlign: "center",
+                                  minWidth: "260px",
+                                }}
+                              >
+                                Confirm Description
+                              </th>
+                              <th
+                                className="text-nowrap py-2 px-3 fw-bold"
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#64748b",
+                                  textAlign: "center",
+                                }}
+                              >
+                                Image
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {customerConfirmationImages.map((img, idx) => (
+                              <tr key={img.ImageID ?? idx}>
+                                <td className="py-2 px-3">{idx + 1}</td>
+                                <td className="py-2 px-3 text-nowrap">
+                                  {img.UploadedAt
+                                    ? new Date(img.UploadedAt).toLocaleString(
+                                        "en-IN",
+                                        {
+                                          day: "2-digit",
+                                          month: "short",
+                                          year: "numeric",
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        },
+                                      )
+                                    : "—"}
+                                </td>
+                                <td className="py-2 px-3">
+                                  {customerConfirmationRole}
+                                </td>
+                                <td
+                                  className="py-2 px-3 text-start"
+                                  style={{
+                                    whiteSpace: "pre-wrap",
+                                    minWidth: "260px",
+                                  }}
+                                >
+                                  {customerConfirmationDescription}
+                                </td>
+                                <td className="py-2 px-3">
+                                  <img
+                                    src={`${API_IMAGE}${img.ImageURL}`}
+                                    alt="Customer Confirmation"
+                                    className="rounded border"
+                                    style={{
+                                      height: "45px",
+                                      width: "45px",
+                                      objectFit: "cover",
+                                      cursor: "pointer",
+                                    }}
+                                    onClick={() =>
+                                      window.open(
+                                        `${API_IMAGE}${img.ImageURL}`,
+                                        "_blank",
+                                      )
+                                    }
+                                  />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
                     ) : (
                       <p className="text-muted mb-0 text-center py-4">
-                        No service completion images uploaded.
+                        No customer confirmation images uploaded.
                       </p>
                     )}
                   </Accordion.Body>
