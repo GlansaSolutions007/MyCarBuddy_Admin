@@ -2668,12 +2668,13 @@ const BookServicesLayer = () => {
           name: "MCB %",
           cell: (row, index) => {
             if (row.isInclude) return null;
-            // const canModify =
-            //   row.status !== "Confirmed" ||
-            //   isSupervisorHead ||
-            //   isAdmin;
+           const dlrTotal =
+              Number(row.dealerSparePrice || 0) +
+              Number(row.dealerServicePrice || 0) +
+              Number(row.dealerGstAmount || 0);
+
             const canModify =
-          row.status !== "Confirmed" && !isSupportDept;
+              row.status !== "Confirmed" && !isSupportDept && dlrTotal > 0;
             return (
               <input
                 type="number"
@@ -2727,12 +2728,8 @@ const BookServicesLayer = () => {
           name: "MCB Amt.",
           cell: (row, index) => {
             if (row.isInclude) return null;
-            // const canModify =
-            //   row.status !== "Confirmed" ||
-            //   isSupervisorHead ||
-            //   isAdmin;
-            const canModify =
-          row.status !== "Confirmed" && !isSupportDept;
+          //   const canModify =
+          // row.status !== "Confirmed" && !isSupportDept;
             return (
               <input
                 type="number"
@@ -2776,7 +2773,7 @@ const BookServicesLayer = () => {
                     });
                   }
                 }}
-                disabled={!canModify}
+                disabled
               />
             );
           },
