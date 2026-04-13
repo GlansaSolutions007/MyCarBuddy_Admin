@@ -491,30 +491,51 @@ const handleGenerateInvoiceForView = async () => {
       return;
     }
     try {
-      if (unconfirmedServices.length > 0) {
-        const names = unconfirmedServices
-          .map(
-            (s) =>
-              s.ServiceName || s.Name || `Service #${s.Id ?? s.AddOnID ?? "—"}`,
-          )
-          .join("<br/>");
-        Swal.fire({
-          icon: "warning",
-          title: "Services not confirmed",
-          html: `These services are not confirmed by supervisor:<br/><br/>${names}`,
-        });
-        return;
-      }
+      // if (unconfirmedServices.length > 0) {
+      //   const names = unconfirmedServices
+      //     .map(
+      //       (s) =>
+      //         s.ServiceName || s.Name || `Service #${s.Id ?? s.AddOnID ?? "—"}`,
+      //     )
+      //     .join("<br/>");
+      //   Swal.fire({
+      //     icon: "warning",
+      //     title: "Services not confirmed",
+      //     html: `These services are not confirmed by supervisor:<br/><br/>${names}`,
+      //   });
+      //   return;
+      // }
+      // const supervisorId = Number(localStorage.getItem("userId") || 0);
+      // const confirmRes = await Swal.fire({
+      //   icon: "warning",
+      //   title: "Confirm & send Estimation?",
+      //   text: "Please confirm that you have reviewed all service details and want to send the estimation invoice to the customer.",
+      //   showCancelButton: true,
+      //   confirmButtonText: "Yes, confirm & send",
+      //   cancelButtonText: "Cancel",
+      // });
+      // if (!confirmRes.isConfirmed) return;
       const supervisorId = Number(localStorage.getItem("userId") || 0);
-      const confirmRes = await Swal.fire({
-        icon: "warning",
-        title: "Confirm & send Estimation?",
-        text: "Please confirm that you have reviewed all service details and want to send the estimation invoice to the customer.",
+
+      const priceConfirm = await Swal.fire({
+        icon: "question",
+        title: "Confirm Service Pricing",
+        text: "Please confirm that you have reviewed all service prices.",
         showCancelButton: true,
-        confirmButtonText: "Yes, confirm & send",
+        confirmButtonText: "Yes, I confirm",
         cancelButtonText: "Cancel",
       });
-      if (!confirmRes.isConfirmed) return;
+      if (!priceConfirm.isConfirmed) return;
+
+      const sendConfirm = await Swal.fire({
+        icon: "warning",
+        title: "Send Estimation Invoice",
+        text: "Do you want to send estimation invoice to the customer?",
+        showCancelButton: true,
+        confirmButtonText: "Yes, Send",
+        cancelButtonText: "Cancel",
+      });
+      if (!sendConfirm.isConfirmed) return;
 
       await axios.post(
         `${API_BASE}Supervisor/confirm-by-bookingid?bookingId=${encodeURIComponent(
