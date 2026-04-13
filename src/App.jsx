@@ -122,6 +122,7 @@ import NoInternetModal from "./components/NoInternetModal";
 import CompleteServiceReportPage from "./pages/CompleteServiceReportPage";
 import DealerVehicleReportPage from "./pages/DealerVehicleReportPage";
 import ForwardLeadsPage from "./pages/ForwardLeadsPage";
+import AssignTechnicianPage from "./pages/AssignTechnicianpage";
 
 function App() {
   return (
@@ -272,6 +273,7 @@ function App() {
           <Route exact path='/complete-service-reports' element={<CompleteServiceReportPage />} />
           <Route exact path='/vehicle-reports' element={<DealerVehicleReportPage />} />
           <Route exact path='/forward-leads' element={<ForwardLeadsPage />} />
+          <Route exact path='/assign-technician/:bookingId' element={<AssignTechnicianPage />} />
           
         </Route>
 

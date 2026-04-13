@@ -484,21 +484,46 @@ const BookingViewLayer = () => {
     }
   };
 
-  const fetchTechnicians = async () => {
-    try {
-      const res = await axios.get(`${API_BASE}TechniciansDetails`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setTechnicians(
-        res.data.jsonResult.map((t) => ({
-          value: t.TechID,
-          label: `${t.TechnicianName} (${t.PhoneNumber})`,
-        })),
-      );
-    } catch (error) {
-      console.error("Failed to load technicians", error);
-    }
-  };
+const fetchTechnicians = async (date) => {
+  const dateToFetch = date || today;
+  try {
+    const res = await axios.get(
+      `${API_BASE}ServiceImages/GetTechnicianRecordsByAssignDate?assignDate=${dateToFetch}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    const techData = Array.isArray(res.data) ? res.data : [];
+
+    // 1. Map the new data from API
+    const updatedList = techData.map((t) => ({
+      value: t.TechID,
+      label: `${t.FullName || t.TechnicianName || "Unknown"} (${t.PhoneNumber || "N/A"}) (Assigned Services: ${t.TotalCount ?? 0})`,
+    }));
+
+    // Update the master list
+    setTechnicians(updatedList);
+
+    // 2. SYNC LOGIC: If a technician is already selected, update its label to match the new count
+    const syncSelection = (currentSelection, setFunction) => {
+      if (currentSelection && currentSelection.value) {
+        const match = updatedList.find((t) => t.value === currentSelection.value);
+        if (match) {
+          setFunction(match); // This forces the UI to show the new count (e.g., 0 instead of 3)
+        }
+      }
+    };
+
+    // Sync across all modals
+    syncSelection(garageDriver, setGarageDriver);
+    syncSelection(pickupDropReassignTech, setPickupDropReassignTech);
+    syncSelection(selectedInitialTechnician, setSelectedInitialTechnician);
+    syncSelection(selectedTechnician, setSelectedTechnician);
+
+  } catch (error) {
+    console.error("Failed to load technicians", error);
+    setTechnicians([]);
+  }
+};
 
   const toTimeDisplay = (t) =>
     t && String(t).length >= 5 ? String(t).substring(0, 5) : t || "";
@@ -534,7 +559,7 @@ const BookingViewLayer = () => {
   };
 
   useEffect(() => {
-    fetchTechnicians();
+    // fetchTechnicians();
     fetchBookingData();
     fetchTimeSlots();
     fetchSupervisors();
@@ -542,6 +567,22 @@ const BookingViewLayer = () => {
     fetchServiceTypes();
     fetchTempServices();
   }, [bookingId, token, roleId, duserId]);
+
+ // Triggered by Garage Flow or Initial Assignment date changes
+useEffect(() => {
+  if (garagePickupDate) {
+    fetchTechnicians(garagePickupDate);
+  } else {
+    fetchTechnicians(today);
+  }
+}, [garagePickupDate]);
+
+// Triggered by the "Reassign Pickup / Drop" modal date change
+useEffect(() => {
+  if (showPickupDropReassignModal && pickupDropReassignDate) {
+    fetchTechnicians(pickupDropReassignDate);
+  }
+}, [pickupDropReassignDate, showPickupDropReassignModal]);
 
   // Poll booking data so confirmations/updates reflect immediately on screen
   // useEffect(() => {
@@ -8150,8 +8191,8 @@ const BookingViewLayer = () => {
                                         Margin definition
                                       </h6>
                                       <span className="pricing-chip">
-                                        Total Profit = Customer Total - Dealer
-                                        Total + MCB Margin
+                                        Total Profit = Customer Total + MCB Margin - Dealer
+                                        Total - Discount Amount
                                       </span>
                                     </div>
 
@@ -11436,15 +11477,101 @@ const BookingViewLayer = () => {
                   )} */}
 
                   {/* Employee Selection based on assignType */}
-                  {initialAssignType === "technician" ? (
-                    <>
-                      <Select
-                        options={technicians}
-                        value={selectedInitialTechnician}
-                        onChange={(val) => setSelectedInitialTechnician(val)}
-                        placeholder="Select Technician"
+                  
+                  <div className="col-12">
+                    <span className="text-muted mt-20 small text-center fw-semibold mb-3 mt-1 d-block">
+                      Customer Scheduled:{" "}
+                      {new Date(bookingData.BookingDate).toLocaleDateString()}{" "}
+                      {bookingData.TimeSlot?.includes(",") ? (
+                        <div className="dropdown d-inline">
+                          <span
+                            className="dropdown-toggle"
+                            style={{ cursor: "pointer" }}
+                            data-bs-toggle="dropdown"
+                          >
+                            ({bookingData.TimeSlot.split(",")[0].trim()})
+                          </span>
+
+                          <ul
+                            className="dropdown-menu p-2"
+                            style={{
+                              minWidth: "max-content",
+                              left: "auto",
+                              right: 0,
+                            }}
+                          >
+                            {bookingData.TimeSlot.split(",").map(
+                              (slot, index) => (
+                                <li key={index}>
+                                  <span className="dropdown-item-text">
+                                    {slot.trim()}
+                                  </span>
+                                </li>
+                              ),
+                            )}
+                          </ul>
+                        </div>
+                      ) : (
+                        <>({bookingData.TimeSlot})</>
+                      )}
+                    </span>
+
+                      <label className="form-label small mb-1">
+                        {" "}
+                        Select Date
+                      </label>
+                      <input
+                        type="date"
+                        className="form-control form-control-sm"
+                        min={today}
+                        value={garagePickupDate}
+                        onChange={(e) => {
+                          const selectedDate = e.target.value;
+                          setGaragePickupDate(selectedDate);
+                          // Re-validate time if date changes to today
+                          if (
+                            selectedDate === today &&
+                            isPastTimeForDate(selectedDate, garagePickupTime)
+                          ) {
+                            setGaragePickupTime("");
+                          }
+                        }}
                       />
+                    </div>
+                    <div className="col-12">
+                    <label className="form-label small fw-semibold">
+                      Select Time
+                    </label>
+                    <input
+                      type="time"
+                      className="form-control form-control-sm py-2"
+                      value={garagePickupTime} // This connects the state to the UI
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (isPastTimeForDate(garagePickupDate, val)) {
+                          e.currentTarget?.blur?.();
+                          Swal.fire({
+                            icon: "warning",
+                            title: "Invalid Time",
+                            text: "You cannot select a past time for today.",
+                          });
+                          setGaragePickupTime("");
+                          return;
+                        }
+                        setGaragePickupTime(val);
+                      }}
+                    />
+                  </div>
+
+                  <div className="row g-2 mb-2">
+                    {initialAssignType === "technician" ? (
+                    <>
+                     
                       <div className="mt-3">
+                        <label className="form-label small mb-1">
+                        {" "}
+                        Select Service
+                      </label>
                         <Select
                           // options={
                           //   bookingData?.BookingAddOns
@@ -11517,6 +11644,18 @@ const BookingViewLayer = () => {
                           placeholder="Select Service"
                         />
                       </div>
+                      <div className="mt-3">
+                        <label className="form-label small mb-1">
+                        {" "}
+                        Select Technician
+                      </label>
+                       <Select
+                        options={technicians}
+                        value={selectedInitialTechnician}
+                        onChange={(val) => setSelectedInitialTechnician(val)}
+                        placeholder="Select Technician"
+                      />
+                      </div>
                     </>
                   ) : initialAssignType === "supervisor" ? (
                     <Select
@@ -11533,67 +11672,7 @@ const BookingViewLayer = () => {
                       placeholder="Select Field Advisor"
                     />
                   )}
-
-                  <div className="row g-2 mb-2">
-                    <span className="text-muted mt-20 small text-center fw-semibold">
-                      Customer Scheduled:{" "}
-                      {new Date(bookingData.BookingDate).toLocaleDateString()}{" "}
-                      {bookingData.TimeSlot?.includes(",") ? (
-                        <div className="dropdown d-inline">
-                          <span
-                            className="dropdown-toggle"
-                            style={{ cursor: "pointer" }}
-                            data-bs-toggle="dropdown"
-                          >
-                            ({bookingData.TimeSlot.split(",")[0].trim()})
-                          </span>
-
-                          <ul
-                            className="dropdown-menu p-2"
-                            style={{
-                              minWidth: "max-content",
-                              left: "auto",
-                              right: 0,
-                            }}
-                          >
-                            {bookingData.TimeSlot.split(",").map(
-                              (slot, index) => (
-                                <li key={index}>
-                                  <span className="dropdown-item-text">
-                                    {slot.trim()}
-                                  </span>
-                                </li>
-                              ),
-                            )}
-                          </ul>
-                        </div>
-                      ) : (
-                        <>({bookingData.TimeSlot})</>
-                      )}
-                    </span>
-                    <div className="col-12">
-                      <label className="form-label small mb-1">
-                        {" "}
-                        Select Date
-                      </label>
-                      <input
-                        type="date"
-                        className="form-control form-control-sm"
-                        min={today}
-                        value={garagePickupDate}
-                        onChange={(e) => {
-                          const selectedDate = e.target.value;
-                          setGaragePickupDate(selectedDate);
-                          // Re-validate time if date changes to today
-                          if (
-                            selectedDate === today &&
-                            isPastTimeForDate(selectedDate, garagePickupTime)
-                          ) {
-                            setGaragePickupTime("");
-                          }
-                        }}
-                      />
-                    </div>
+                    
                     {/* <div class="col-6">
                       <label class="form-label small mb-1">Time</label>
                       <input
@@ -11604,30 +11683,7 @@ const BookingViewLayer = () => {
                       />
                     </div> */}
                   </div>
-                  <div className="col-12">
-                    <label className="form-label small fw-semibold">
-                      Select Time
-                    </label>
-                    <input
-                      type="time"
-                      className="form-control form-control-sm py-2"
-                      value={garagePickupTime} // This connects the state to the UI
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (isPastTimeForDate(garagePickupDate, val)) {
-                          e.currentTarget?.blur?.();
-                          Swal.fire({
-                            icon: "warning",
-                            title: "Invalid Time",
-                            text: "You cannot select a past time for today.",
-                          });
-                          setGaragePickupTime("");
-                          return;
-                        }
-                        setGaragePickupTime(val);
-                      }}
-                    />
-                  </div>
+                  
                 </div>
                 <div className="modal-footer d-inline-flex align-items-center justify-content-center">
                   <button
@@ -12111,18 +12167,7 @@ const BookingViewLayer = () => {
                           </div>
                         </div>
                       )}
-                      <div className="mb-3">
-                        <label className="form-label small mb-1">
-                          Assign driver
-                        </label>
-                        <Select
-                          options={technicians}
-                          value={garageDriver}
-                          onChange={setGarageDriver}
-                          placeholder="Select driver"
-                        />
-                      </div>
-                      <div className="row g-2">
+                        <div className="row g-2">
                         <span className="text-muted small fw-semibold text-center ">
                           Customer Scheduled:{" "}
                           {new Date(
@@ -12199,6 +12244,18 @@ const BookingViewLayer = () => {
                           />
                         </div>
                       </div>
+                      <div className="mb-3">
+                        <label className="form-label small mb-1">
+                          Assign driver
+                        </label>
+                        <Select
+                          options={technicians}
+                          value={garageDriver}
+                          onChange={setGarageDriver}
+                          placeholder="Select driver"
+                        />
+                      </div>
+                    
                     </>
                   )}
                 </div>
@@ -12573,50 +12630,7 @@ const BookingViewLayer = () => {
                 </div>
                 <div className="modal-body">
                   <div className="row g-3">
-                    <div className="col-12">
-                      <label className="form-label small fw-semibold">
-                        Select Technician / Driver{" "}
-                        <span className="text-danger">*</span>
-                      </label>
-                      <Select
-                        options={(() => {
-                          const row = pickupDropReassignRow;
-                          const rowTechId =
-                            row?.TechnicianID ??
-                            row?.TechID ??
-                            row?.EmployeeID ??
-                            row?.EmployeeId;
-                          const rowTechName = (
-                            row?.TechnicinaName ??
-                            row?.TechnicianName ??
-                            ""
-                          )
-                            .toString()
-                            .trim();
-                          return technicians.filter((t) => {
-                            if (rowTechId != null && t.value == rowTechId)
-                              return false;
-                            if (
-                              rowTechName &&
-                              t.label &&
-                              String(t.label)
-                                .toLowerCase()
-                                .includes(rowTechName.toLowerCase())
-                            )
-                              return false;
-                            return true;
-                          });
-                        })()}
-                        value={pickupDropReassignTech}
-                        onChange={setPickupDropReassignTech}
-                        placeholder="Select technician"
-                        menuPortalTarget={document.body}
-                        menuPosition="fixed"
-                        styles={{
-                          menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                        }}
-                      />
-                    </div>
+                    
                     <div className="col-12">
                       <label className="form-label small fw-semibold">
                         Assign Date
@@ -12703,6 +12717,50 @@ const BookingViewLayer = () => {
                           />
                         </>
                       )}
+                    </div>
+                    <div className="col-12">
+                      <label className="form-label small fw-semibold">
+                        Select Technician / Driver{" "}
+                        <span className="text-danger">*</span>
+                      </label>
+                      <Select
+                        options={(() => {
+                          const row = pickupDropReassignRow;
+                          const rowTechId =
+                            row?.TechnicianID ??
+                            row?.TechID ??
+                            row?.EmployeeID ??
+                            row?.EmployeeId;
+                          const rowTechName = (
+                            row?.TechnicinaName ??
+                            row?.TechnicianName ??
+                            ""
+                          )
+                            .toString()
+                            .trim();
+                          return technicians.filter((t) => {
+                            if (rowTechId != null && t.value == rowTechId)
+                              return false;
+                            if (
+                              rowTechName &&
+                              t.label &&
+                              String(t.label)
+                                .toLowerCase()
+                                .includes(rowTechName.toLowerCase())
+                            )
+                              return false;
+                            return true;
+                          });
+                        })()}
+                        value={pickupDropReassignTech}
+                        onChange={setPickupDropReassignTech}
+                        placeholder="Select technician"
+                        menuPortalTarget={document.body}
+                        menuPosition="fixed"
+                        styles={{
+                          menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
