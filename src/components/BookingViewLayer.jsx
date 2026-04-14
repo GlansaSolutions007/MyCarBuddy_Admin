@@ -4,6 +4,7 @@ import Accordion from "react-bootstrap/Accordion";
 import { Modal, Button } from "react-bootstrap";
 import axios from "axios";
 import { Link, useParams, useNavigate } from "react-router-dom";
+import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
 import Select from "react-select";
 import TimeLineView from "./TimeLineView";
@@ -497,7 +498,7 @@ const fetchTechnicians = async (date) => {
     // 1. Map the new data from API
     const updatedList = techData.map((t) => ({
       value: t.TechID,
-      label: `${t.FullName || t.TechnicianName || "Unknown"} (${t.PhoneNumber || "N/A"}) (Assigned Services: ${t.TotalCount ?? 0})`,
+      label: `${t.FullName || t.TechnicianName || "-"} (${t.PhoneNumber || "-"}) (Assigned Services: ${t.TotalCount ?? 0})`,
     }));
 
     // Update the master list
@@ -1145,7 +1146,7 @@ useEffect(() => {
       // 🚨 NEW CONDITION (Garage check)
       if (
         bookingData?.ServiceType === "ServiceAtGarage" &&
-        routeType === "CustomerToDealer" &&
+        (routeType === "CustomerToDealer"  || routeType === "DealerToDealer" || routeType === "DealerToCustomer" ) &&
         lastStatus === "completed"
       ) {
         const dealerId = Number(lastRoute?.PickTo); // 👈 DealerID from route
@@ -1178,7 +1179,7 @@ useEffect(() => {
       console.log(lastRoute, "lastRoute");
       if (
         bookingData?.ServiceType === "ServiceAtGarage" &&
-        lastRoute?.RouteType === "CustomerToDealer" &&
+        (lastRoute?.RouteType === "CustomerToDealer"  || lastRoute?.RouteType === "DealerToDealer" || lastRoute?.RouteType === "DealerToCustomer" ) &&
         lastRoute?.Status === "completed"
       ) {
         const dealerId = Number(lastRoute?.PickTo); // 👈 DealerID from route
@@ -4745,6 +4746,60 @@ useEffect(() => {
       });
     }
   };
+
+  const inspectionColumns = [
+  {
+    name: "Category",
+    selector: (row) => row.Category,
+    sortable: true,
+    width: "180px",
+  },
+  {
+    name: "Inspection Name",
+    selector: (row) => row.Includes,
+    sortable: true,
+    width: "300px",
+  },
+  {
+    name: "Checked",
+    cell: (row) => (
+      <span className={`badge ${row.Is_checked ? "bg-success" : "bg-danger"}`}>
+        {row.Is_checked ? "Yes" : "No"}
+      </span>
+    ),
+    sortable: true,
+    width: "120px",
+  },
+  {
+    name: "Remarks",
+    selector: (row) => row.Remarks || "—",
+    width: "250px",
+  },
+  {
+    name: "Tech Name",
+    selector: (row) => row.TechnicianName,
+    sortable: true,
+    width: "160px",
+  },
+  {
+    name: "Date & Time",
+    selector: (row) => row.Created_at,
+     cell: (row) => (
+      <span style={{ fontSize: "12px" }}>
+        {new Date(row.Created_at).toLocaleString("en-IN", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true
+        })}
+      </span>
+    ),
+    sortable: true,
+    width: "160px",
+  },
+];
 
   return (
     <>
@@ -10092,6 +10147,57 @@ useEffect(() => {
                   </Accordion.Body>
                 </Accordion.Item>
               </Accordion>
+
+              {/* ================= Detailed Inspection Results ================= */}
+              <Accordion className="mb-3" defaultActiveKey="">
+                <Accordion.Item eventKey="detailedInspection">
+                  <Accordion.Header>
+                    <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
+                      <Icon
+                        icon="mdi:clipboard-list-outline"
+                        width={20}
+                        height={20}
+                      />
+                      Inspection Result Checklist 
+                    </h6>
+                  </Accordion.Header>
+                  <Accordion.Body>
+                    {bookingData?.Inspection_Results && bookingData.Inspection_Results.length > 0 ? (
+                      <div className="border rounded">
+                        <DataTable
+                          columns={inspectionColumns}
+                          data={bookingData.Inspection_Results}
+                          pagination
+                          paginationPerPage={10}
+                          highlightOnHover
+                          responsive
+                          customStyles={{
+                            headCells: {
+                              style: {
+                                backgroundColor: "#f8fafc",
+                                color: "#64748b",
+                                fontWeight: "bold",
+                                textTransform: "uppercase",
+                                fontSize: "0.75rem",
+                              },
+                            },
+                            cells: {
+                              style: {
+                                fontSize: "0.875rem",
+                              },
+                            },
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-muted mb-0 text-center py-4">
+                        No inspection results checklist found for this booking.
+                      </p>
+                    )}
+                  </Accordion.Body>
+                </Accordion.Item>
+              </Accordion>
+
               <Accordion className="mb-3" defaultActiveKey="">
                 <Accordion.Item eventKey="invoices">
                   <Accordion.Header>

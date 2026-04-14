@@ -107,7 +107,7 @@ const DealerBookingsView = () => {
     fetchIncludes();
   }, []);
 
-  const handleServiceCompleted = async (index) => {
+  const handleServiceCompleted = async (index , status) => {
     const item = addedItems[index];
     const serviceLocationType = getServiceLocationType(item);
 
@@ -122,15 +122,24 @@ const DealerBookingsView = () => {
     if (!item?._apiId) {
       return Swal.fire("Error", "AddOn ID not found", "error");
     }
+    let swalTitle ="Complete Service?";
+    let SwalText = "Are you sure you want to mark this service as completed?";
+    let SwalConfirmButtonText = "Yes, Complete";
+    if(status == 'InProgress')
+    {
+      swalTitle = "Mark as In Progress?";
+      SwalText = "Are you sure you want to mark this service as in progress?";
+      SwalConfirmButtonText = "Yes, In Progress";
+    }
 
     const confirmResult = await Swal.fire({
-      title: "Complete Service?",
-      text: "Are you sure you want to mark this service as completed?",
+      title: swalTitle,
+      text: SwalText,
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#28a745",
       cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, Complete",
+      confirmButtonText: SwalConfirmButtonText,
       cancelButtonText: "Cancel",
     });
 
@@ -145,7 +154,7 @@ const DealerBookingsView = () => {
         is_Completed: true,
         completedBy: parseInt(localStorage.getItem("userId")) || 0,
         completedRole: dealer,
-        statusName: "ServiceCompleted",
+        statusName: status,
       };
 
       const response = await axios.put(
@@ -161,7 +170,7 @@ const DealerBookingsView = () => {
 
       if (response.status === 200 || response.status === 201) {
         if (response.data.success) {
-          Swal.fire("Success!", "Status updated successfully.", "success");
+          Swal.fire("Success!", "Service status updated successfully.", "success");
         }
         else {
           Swal.fire("Error", response.data.message || "Failed to update service completion", "error");
@@ -1199,7 +1208,7 @@ const DealerBookingsView = () => {
         const isDoorstepService = isDoorstepServiceType(getServiceLocationType(row));
         const addOnStatus = row.addOnStatus?.toString().trim().toLowerCase();
         const isInProgressOrRework = addOnStatus === "inprogress" || addOnStatus === "rework";
-
+        const isInPeding = addOnStatus === "" || addOnStatus === null || addOnStatus === undefined || addOnStatus === 'NULL';
         return !row.isInclude ? (
           <div className="d-flex gap-2 align-items-center">
 
@@ -1236,7 +1245,7 @@ const DealerBookingsView = () => {
             {/* Show Complete Button */}
             {isApproved && !isCompleted && !isDoorstepService && isInProgressOrRework && (
               <button
-                onClick={() => handleServiceCompleted(row.addedItemsIndex)}
+                onClick={() => handleServiceCompleted(row.addedItemsIndex,'ServiceCompleted')}
                 title="Mark as Completed"
                 disabled={loadingIndex === row.addedItemsIndex}
                 onMouseEnter={(e) => {
@@ -1287,6 +1296,65 @@ const DealerBookingsView = () => {
                   <>
                     {/* <Icon icon="mingcute:check-circle-fill" /> */}
                     Mark as Completed
+                  </>
+                )}
+              </button>
+            )}
+
+
+            {isApproved && !isCompleted && !isDoorstepService && isInPeding && (
+              <button
+                onClick={() => handleServiceCompleted(row.addedItemsIndex,'InProgress')}
+                title="Mark as In Progress"
+                disabled={loadingIndex === row.addedItemsIndex}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#ffc107";
+                  e.currentTarget.style.transform = "scale(1.05)";
+                  e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "#ffc107";
+                  e.currentTarget.style.transform = "scale(1)";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+                style={{
+                  height: "32px",
+                  backgroundColor: "#ffc107",
+                  color: "#000000",
+                  border: "none",
+                  borderRadius: "6px",
+                  padding: "0 10px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                  fontSize: "12px",
+                  fontWeight: "500",
+                  opacity: loadingIndex === row.addedItemsIndex ? 0.7 : 1
+                }}
+              >
+                {loadingIndex === row.addedItemsIndex ? (
+                  <>
+                    <span
+                      style={{
+                        width: "14px",
+                        height: "14px",
+                        border: "2px solid #000",
+                        borderBottomColor: "transparent",
+                        borderRadius: "50%",
+                        display: "inline-block",
+                        marginRight: "6px",
+                        animation: "spin 0.8s linear infinite"
+                      }}
+                    ></span>
+                    Completing...
+                  </>
+                ) : (
+                  <>
+                    {/* <Icon icon="mingcute:check-circle-fill" /> */}
+                   Is in progress
                   </>
                 )}
               </button>
