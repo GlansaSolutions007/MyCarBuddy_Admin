@@ -11585,42 +11585,44 @@ useEffect(() => {
                   {/* Employee Selection based on assignType */}
                   
                   <div className="col-12">
-                    <span className="text-muted mt-20 small text-center fw-semibold mb-3 mt-1 d-block">
-                      Customer Scheduled:{" "}
-                      {new Date(bookingData.BookingDate).toLocaleDateString()}{" "}
-                      {bookingData.TimeSlot?.includes(",") ? (
-                        <div className="dropdown d-inline">
-                          <span
-                            className="dropdown-toggle"
-                            style={{ cursor: "pointer" }}
-                            data-bs-toggle="dropdown"
-                          >
-                            ({bookingData.TimeSlot.split(",")[0].trim()})
-                          </span>
+                    <span className="text-muted small fw-semibold text-center d-block mb 2">
+                          Customer Scheduled:{" "}
+                          {new Date(
+                            bookingData.BookingDate,
+                          ).toLocaleDateString()}{" "}
+                          {bookingData.TimeSlot?.includes(",") ? (
+                            <div className="dropdown d-inline">
+                              <span
+                                className="dropdown-toggle"
+                                style={{ cursor: "pointer" }}
+                                data-bs-toggle="dropdown"
+                              >
+                                ({bookingData.TimeSlot.split(",")[0].trim()})
+                              </span>
 
-                          <ul
-                            className="dropdown-menu p-2"
-                            style={{
-                              minWidth: "max-content",
-                              left: "auto",
-                              right: 0,
-                            }}
-                          >
-                            {bookingData.TimeSlot.split(",").map(
-                              (slot, index) => (
-                                <li key={index}>
-                                  <span className="dropdown-item-text">
-                                    {slot.trim()}
-                                  </span>
-                                </li>
-                              ),
-                            )}
-                          </ul>
-                        </div>
-                      ) : (
-                        <>({bookingData.TimeSlot})</>
-                      )}
-                    </span>
+                              <ul
+                                className="dropdown-menu p-2"
+                                style={{
+                                  minWidth: "max-content",
+                                  left: "auto",
+                                  right: 0,
+                                }}
+                              >
+                                {bookingData.TimeSlot.split(",").map(
+                                  (slot, index) => (
+                                    <li key={index}>
+                                      <span className="dropdown-item-text">
+                                        {slot.trim()}
+                                      </span>
+                                    </li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : (
+                            <>({bookingData.TimeSlot})</>
+                          )}
+                        </span>
 
                       <label className="form-label small mb-1">
                         {" "}
@@ -12274,7 +12276,8 @@ useEffect(() => {
                         </div>
                       )}
                         <div className="row g-2">
-                        <span className="text-muted small fw-semibold text-center ">
+                          
+                        <span className="text-muted small fw-semibold text-center d-block mb-2">
                           Customer Scheduled:{" "}
                           {new Date(
                             bookingData.BookingDate,
@@ -12313,7 +12316,7 @@ useEffect(() => {
                           )}
                         </span>
                         <div className="col-6">
-                          <label className="form-label small mb-1">Date</label>
+                          <label className="form-label small mb-1">Select Date</label>
                           <input
                             type="date"
                             className="form-control form-control-sm"
@@ -12325,7 +12328,7 @@ useEffect(() => {
                           />
                         </div>
                         <div className="col-6">
-                          <label className="form-label small mb-1">Time</label>
+                          <label className="form-label small mb-1">Select Time</label>
                           <input
                             type="time"
                             className="form-control form-control-sm"

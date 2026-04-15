@@ -232,13 +232,18 @@ const BookServicesLayer = () => {
     fetchDealers();
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
     const fetchIncludes = async () => {
       try {
         const res = await axios.get(`${API_BASE}Includes`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setIncludesList(res.data.data || []);
+        
+        // Filter out items where IsActive is false or 0
+        const allData = res.data.data || [];
+        const activeIncludes = allData.filter(item => item.IsActive === true || item.IsActive === 1);
+        
+        setIncludesList(activeIncludes);
       } catch (error) {
         console.error("Failed to load includes", error);
       }
@@ -3159,10 +3164,12 @@ const BookServicesLayer = () => {
                         className="react-select-container text-sm"
                         classNamePrefix="react-select"
                         placeholder="Search Services..."
-                        options={includesList.map((inc) => ({
+                        options={includesList
+                        .filter(inc => inc.IsActive) 
+                        .map((inc) => ({
                           value: inc.IncludeID,
                           label: inc.IncludeName,
-                        }))}
+                      }))}
                         value={selectedIncludes}
                         onChange={(selected) => {
                           if (!selected) {
@@ -3343,10 +3350,12 @@ const BookServicesLayer = () => {
                         hideSelectedOptions={false}
                         className="react-select-container text-sm"
                         classNamePrefix="react-select"
-                        options={includesList.map((inc) => ({
+                        options={includesList
+                        .filter(inc => inc.IsActive) 
+                        .map((inc) => ({
                           value: inc.IncludeID,
                           label: inc.IncludeName,
-                        }))}
+                      }))}
                         value={includesList
                           .filter((inc) =>
                             selectedIncludes.includes(Number(inc.IncludeID)),
@@ -3380,9 +3389,11 @@ const BookServicesLayer = () => {
                         classNamePrefix="react-select"
                         defaultSortField="CreatedDate"
                         defaultSortAsc={false}
-                        options={includesList.map((inc) => ({
-                          value: inc.IncludeID,
-                          label: inc.IncludeName,
+                        options={includesList
+                          .filter(inc => inc.IsActive)
+                          .map((inc) => ({
+                            value: inc.IncludeID,
+                            label: inc.IncludeName,
                         }))}
                         value={selectedServices}
                         onChange={(selected) => {
