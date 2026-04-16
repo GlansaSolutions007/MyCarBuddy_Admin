@@ -60,6 +60,7 @@ const LeadsAssignLayer = () => {
         IsAssigned_Emp: lead.IsAssigned_Emp,
         Head_Assign: lead.Head_Assign,
         Emp_Assign: lead.Emp_Assign,
+        PaymentStatus: lead.PaymentStatus, 
       }));
 
       // Filter based on role
@@ -414,20 +415,20 @@ const LeadsAssignLayer = () => {
       name: "Phone",
       selector: (row) => row.PhoneNumber || "-",
       sortable: true,
-      width: "150px"
+      width: "130px"
     },
     {
       name: "Email",
       selector: (row) => row.Email || "-",
       sortable: true,
-      width: "150px",
+      width: "180px",
       wrap:true
     },
     {
       name: "Address",
       selector: (row) => row.City || "",
       sortable: true,
-      width: "150px",
+      width: "220px",
       wrap: true
     },
     {
@@ -437,7 +438,7 @@ const LeadsAssignLayer = () => {
         if (!status || status === "-") status = "Pending";
 
         // const displayStatus = formatBookingStatusLabel(status);
-        const displayStatus = status;
+        const displayStatus = status === "Success" ? "Paid" : status;
 
         // Updated color mapping
         const colorMap = {

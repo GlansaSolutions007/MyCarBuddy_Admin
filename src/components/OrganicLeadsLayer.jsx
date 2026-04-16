@@ -412,7 +412,7 @@ const OrganicLeadsLayer = () => {
         if (!status || status === "-") status = "Pending";
 
         // const displayStatus = formatBookingStatusLabel(status);
-        const displayStatus = status;
+        const displayStatus = status === "Success" ? "Paid" : status;
 
         // Updated color mapping
         const colorMap = {
