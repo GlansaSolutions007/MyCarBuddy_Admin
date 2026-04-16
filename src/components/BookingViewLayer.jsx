@@ -5633,37 +5633,86 @@ useEffect(() => {
                   ) && ( */}
                   {!hideAllActions && (
                     <>
-                      {/* Confirm Services Button */}
                       {((bookingData?.Isinspection === 1 &&
                         bookingData?.Isservice_converted === 1) ||
                          bookingData?.InspectionTracking != null ||
-                        (bookingData?.Isinspection === 0 &&
-                          bookingData?.Isservice_converted === 0)) &&
-                        bookingData?.BookingStatus !== "Cancelled" && (
-                          <Link
-                            to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
-                            onClick={(e) => {
-                              if (!ensureBasicDetails()) {
-                                e.preventDefault(); // Stop navigation if details are missing
-                              }
-                            }}
-                            className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
-                            title={
-                              roleName === "Field Advisor"
-                                ? "Assign Dealers"
-                                : roleName === "Supervisor Head"
-                                  ? "Confirm Services"
-                                  : "Confirm Services"
-                            }
-                          >
-                            <Icon icon="mdi:pencil-outline" />
-                            {roleName === "Field Advisor"
-                              ? "Assign Dealers"
-                              : roleName === "Supervisor Head"
-                                ? "Confirm Services"
-                                : "Confirm Services"}
-                          </Link>
-                        )}
+                          (bookingData?.Isinspection === 0 &&
+                            bookingData?.Isservice_converted === 0)) &&
+                          bookingData?.BookingStatus !== "Cancelled" && (
+                          // <Link
+                          //   to={`/book-service/${bookingData?.LeadId}/${bookingData?.BookingID}/${bookingData?.BookingTrackID}`}
+                          //   onClick={(e) => {
+                          //     if (!ensureBasicDetails()) {
+                          //       e.preventDefault(); 
+                          //     }
+                          //   }}
+                          //   className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
+                          //   title={
+                          //     roleName === "Field Advisor"
+                          //       ? "Assign Dealers"
+                          //       : roleName === "Supervisor Head"
+                          //         ? "Confirm Services"
+                          //         : "Confirm Services"
+                          //   }
+                          // >
+                          //   <Icon icon="mdi:pencil-outline" />
+                          //   {roleName === "Field Advisor"
+                          //     ? "Assign Dealers"
+                          //     : roleName === "Supervisor Head"
+                          //       ? "Confirm Services"
+                          //       : "Confirm Services"}
+                          // </Link>
+                           <div className="dropdown">
+                              <button
+                                className="btn btn-primary-600 btn-sm dropdown-toggle d-inline-flex align-items-center"
+                                type="button"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                                style={{ color: "#fff" }}
+                              >
+                                Service Actions
+                              </button>
+                              <ul className="dropdown-menu dropdown-menu-end shadow border-0 p-3" style={{ minWidth: "200px", borderRadius: "12px" }}>
+                                
+                                {/* 1. Add Services - Solid Green (Success) */}
+                                <li className="mb-2">
+                                  <Link
+                                    to={`/book-service/${bookingData.LeadId}/${bookingData.BookingID}/${bookingData.BookingTrackID}?mode=add`}
+                                    className="btn btn-success btn-sm w-100 text-start d-flex align-items-center gap-2 text-white"
+                                    onClick={(e) => !ensureBasicDetails() && e.preventDefault()}
+                                  >
+                                    <Icon icon="mdi:plus-circle-outline" width={18} /> 
+                                    <span className="fw-semibold">Add Services</span>
+                                  </Link>
+                                </li>
+
+                                {/* 2. Assign Dealer - Solid Blue (Info) */}
+                                <li className="mb-2">
+                                  <Link
+                                    to={`/book-service/${bookingData.LeadId}/${bookingData.BookingID}/${bookingData.BookingTrackID}?mode=assign`}
+                                    className="btn btn-info btn-sm w-100 text-start d-flex align-items-center gap-2 text-white"
+                                    onClick={(e) => !ensureBasicDetails() && e.preventDefault()}
+                                  >
+                                    <Icon icon="mdi:account-arrow-right" width={18} /> 
+                                    <span className="fw-semibold">Assign Dealer</span>
+                                  </Link>
+                                </li>
+
+                                {/* 3. Update Prices - Solid Orange (Warning) */}
+                                <li>
+                                  <Link
+                                    to={`/book-service/${bookingData.LeadId}/${bookingData.BookingID}/${bookingData.BookingTrackID}?mode=update`}
+                                    className="btn btn-warning btn-sm w-100 text-start d-flex align-items-center gap-2 text-white"
+                                    onClick={(e) => !ensureBasicDetails() && e.preventDefault()}
+                                  >
+                                    <Icon icon="mdi:currency-inr" width={18} /> 
+                                    <span className="fw-semibold">Update Prices</span>
+                                  </Link>
+                                </li>
+
+                              </ul>
+                            </div>
+                      )}
 
                       {/* Confirm Service Button - Admin & Supervisor only, when Convert To Service is enabled and there are unconfirmed services */}
                       {(() => {

@@ -86,6 +86,16 @@ const BookServicesLayer = () => {
   return mode === "service";
   }, [location.search]); 
 
+  // 1. Detect the mode from the URL query string (?mode=...)
+  const viewMode = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("mode") || "add"; // Default to 'add' if no mode is provided
+  }, [location.search]);
+
+  const isAddMode = viewMode === "add";
+  const isAssignMode = viewMode === "assign";
+  const isUpdateMode = viewMode === "update";
+
   useEffect(() => {
     if (!inspectionOnly) return;
     setShowBookingChoiceModal(false);
@@ -2097,8 +2107,7 @@ useEffect(() => {
               row.status !== "Confirmed" ||
               isSupervisorHead || isFieldAdvisor ||
               isAdmin;
-            const canModify =
-              isRejected ? true : isApproved ? false : canModifyBase;
+            const canModify = isUpdateMode ? false : (isAssignMode ? true : (isRejected ? true : isApproved ? false : canModifyBase));
             return (
               <div className="position-relative overflow-visible w-100">
                 <Select
@@ -2169,12 +2178,8 @@ useEffect(() => {
       name: "Part Price",
       cell: (row) => {
         if (row.isInclude) return null;
-        // const canModify =
-        //   row.status !== "Confirmed" ||
-        //   isSupervisorHead ||
-        //   isAdmin;
         const canModify =
-          row.status !== "Confirmed" && !isSupportDept;
+          !isAssignMode && row.status !== "Confirmed" && !isSupportDept;
         return (
           <input
             type="number"
@@ -2266,7 +2271,7 @@ useEffect(() => {
         //   isSupervisorHead ||
         //   isAdmin;
         const canModify =
-          row.status !== "Confirmed" && !isSupportDept;
+           !isAssignMode && row.status !== "Confirmed" && !isSupportDept;
         return (
           <input
             type="number"
@@ -2376,7 +2381,7 @@ useEffect(() => {
         //   isSupervisorHead ||
         //   isAdmin;
         const canModify =
-          row.status !== "Confirmed" && !isSupportDept;
+           !isAssignMode && row.status !== "Confirmed" && !isSupportDept;
         return (
           <input
             type="number"
@@ -2469,7 +2474,7 @@ useEffect(() => {
         //   isSupervisorHead ||
         //   isAdmin;
         const canModify =
-          row.status !== "Confirmed" && !isSupportDept;
+           !isAssignMode && row.status !== "Confirmed" && !isSupportDept;
         return (
           <input
             type="number"
@@ -2876,6 +2881,7 @@ useEffect(() => {
     //   ignoreRowClick: true,
     //   allowOverflow: true,
     // },
+  ...(!isAssignMode ? [
    {
       name: "Actions",
       cell: (row) => {
@@ -2923,7 +2929,7 @@ useEffect(() => {
       },
       ignoreRowClick: true,
       allowOverflow: true,
-    }
+    }] : [])
 
   ];
 
@@ -3103,8 +3109,10 @@ useEffect(() => {
             <div className="card overflow-hidden p-3">
               <div className="card-body">
                 {/* SINGLE FORM */}
+                {isAddMode && (
                 <h6 className="mb-3">Add Services</h6>
-
+                )}
+              {isAddMode && (
                 <div className="row g-3 align-items-end">
                   <div className="col-md-2">
                     <label className="form-label">Select Services Type</label>
@@ -3328,16 +3336,16 @@ useEffect(() => {
                     />
                   </div>
 
-                  {/* <div className="col-md-2">
-                <label className="form-label">GST Price</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={gstPrice}
-                  min={0}
-                  onChange={(e) => handleGstAmountChange(e.target.value)}
-                />
-              </div> */}
+                          {/* <div className="col-md-2">
+                        <label className="form-label">GST Price</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={gstPrice}
+                          min={0}
+                          onChange={(e) => handleGstAmountChange(e.target.value)}
+                        />
+                      </div> */}
                   {itemType === "Package" && selectedPackage && (
                     <div className="col-md-12">
                       <label className="form-label">Select Includes</label>
@@ -3453,9 +3461,12 @@ useEffect(() => {
                     </button>
                   </div>
                 </div>
+              )}
                 {/* SINGLE TABLE FOR BOTH */}
                 <div className="editable-table">
-                  <h6>Added Services</h6>
+                 <h6 className="mb-3">
+                    {isAssignMode ? "Assign Dealers to Services" : isUpdateMode ? "Update Service Pricing" : "Added Services"}
+                  </h6>
                   <DataTable
                     columns={columns}
                     data={flattenedRows}
