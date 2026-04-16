@@ -824,7 +824,7 @@ const BasicInformationLayer = () => {
                         title: bookingData.SupervisorHeadName
                           ? "Reassigned"
                           : "Assigned",
-                        text: "Booking has been successfully assigned to the supervisor head.",
+                        text: "Booking has been successfully assigned to the supervisor.",
                       });
                     } catch (err) {
                       console.error("Assign supervisor failed", err);

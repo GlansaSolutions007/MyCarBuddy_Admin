@@ -5051,6 +5051,19 @@ useEffect(() => {
             grid-template-columns: 1fr;
           }
         }
+        /* Add this inside your existing <style> tag */
+          @keyframes pulse-approval {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7); }
+            50% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(25, 135, 84, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(25, 135, 84, 0); }
+          }
+
+          .blink-approval {
+            animation: pulse-approval 2s infinite;
+            border: 2px solid #16a34a !important; /* Makes the border blue */
+            background-color: #ffc107 !important; /* Light blue background */
+            font-weight: bold !important;
+          }
       `}</style>
       <TimeLineView bookingData={bookingData} displayDate={displayDate} />
 
@@ -7982,11 +7995,14 @@ useEffect(() => {
                                                   {service.completionApprovedBy ||
                                                     "reviewer"}
                                                 </span>
-                                              ) : service.serviceStatus ===
-                                                "ServiceCompleted" ? (
-                                                canReviewDealerCompletedService ? (
+                                             ) : service.serviceStatus === "ServiceCompleted" ? (
+                                                  service.serviceType === "Inspection" ? (
+                                                    <span className="badge bg-success-subtle  text-success px-3 py-2 rounded-pill">
+                                                      Inspection Completed
+                                                    </span>
+                                                  ) : canReviewDealerCompletedService ? (
                                                   <select
-                                                    className="form-select form-select-sm"
+                                                    className="form-select form-select-sm blink-approval"
                                                     defaultValue=""
                                                     onChange={(e) => {
                                                       const selectedAction =
@@ -8018,10 +8034,10 @@ useEffect(() => {
                                                     <option value="" disabled>
                                                       Approve or Rework
                                                     </option>
-                                                    <option value="Approve">
+                                                    <option className="bg-success text-white rounded-pill" value="Approve" >
                                                       Approve
                                                     </option>
-                                                    <option value="Rework">
+                                                    <option className="bg-danger text-white rounded-pill" value="Rework">
                                                       Rework
                                                     </option>
                                                   </select>
