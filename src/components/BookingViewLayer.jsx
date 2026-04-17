@@ -166,6 +166,9 @@ const BookingViewLayer = () => {
   const [garagePickupTime, setGaragePickupTime] = useState("");
   const [garageDeliveryDate, setGarageDeliveryDate] = useState("");
   const [garageDeliveryTime, setGarageDeliveryTime] = useState("");
+  const [pickupDropRescheduleEndTime, setPickupDropRescheduleEndTime] = useState("");
+  const [pickupDropReassignEndTime, setPickupDropReassignEndTime] = useState("");
+  const [garagePickupEndTime, setGaragePickupEndTime] = useState("");
   const [
     hasExistingCustomerToDealerRoute,
     setHasExistingCustomerToDealerRoute,
@@ -485,36 +488,37 @@ const BookingViewLayer = () => {
     }
   };
 
-const fetchTechnicians = async (date) => {
+const fetchTechnicians = async (date, startTime, endTime) => {
   const dateToFetch = date || today;
+  // Format times for API (ensure they are HH:mm)
+  const start = startTime ? startTime.substring(0, 5) : "";
+  const end = endTime ? endTime.substring(0, 5) : "";
+
   try {
+    // Only call the full API if we have the date. Times can be empty but are preferred.
     const res = await axios.get(
-      `${API_BASE}ServiceImages/GetTechnicianRecordsByAssignDate?assignDate=${dateToFetch}`,
+      `${API_BASE}ServiceImages/GetTechnicianRecordsByAssignDate?assignDate=${dateToFetch}&assignTimeSlot=${encodeURIComponent(start)}&endTimeslot=${encodeURIComponent(end)}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
     const techData = Array.isArray(res.data) ? res.data : [];
 
-    // 1. Map the new data from API
     const updatedList = techData.map((t) => ({
       value: t.TechID,
-      label: `${t.FullName || t.TechnicianName || "-"} (${t.PhoneNumber || "-"}) (Assigned Services: ${t.TotalCount ?? 0})`,
+      label: `${t.FullName || t.TechnicianName || "-"} (${t.PhoneNumber || "-"}) (Tasks: ${t.TotalCount ?? 0}) - ${t.AvailabilityStatus || "Unknown"}`,
+      availability: t.AvailabilityStatus // storing for logic if needed
     }));
 
-    // Update the master list
     setTechnicians(updatedList);
 
-    // 2. SYNC LOGIC: If a technician is already selected, update its label to match the new count
+    // Sync current selections to show updated status labels
     const syncSelection = (currentSelection, setFunction) => {
       if (currentSelection && currentSelection.value) {
         const match = updatedList.find((t) => t.value === currentSelection.value);
-        if (match) {
-          setFunction(match); // This forces the UI to show the new count (e.g., 0 instead of 3)
-        }
+        if (match) setFunction(match);
       }
     };
 
-    // Sync across all modals
     syncSelection(garageDriver, setGarageDriver);
     syncSelection(pickupDropReassignTech, setPickupDropReassignTech);
     syncSelection(selectedInitialTechnician, setSelectedInitialTechnician);
@@ -525,6 +529,20 @@ const fetchTechnicians = async (date) => {
     setTechnicians([]);
   }
 };
+
+useEffect(() => {
+  // Trigger whenever date or either time changes
+  if (garagePickupDate) {
+    fetchTechnicians(garagePickupDate, garagePickupTime, garagePickupEndTime);
+  }
+}, [garagePickupDate, garagePickupTime, garagePickupEndTime]);
+
+useEffect(() => {
+  if (showPickupDropReassignModal && pickupDropReassignDate) {
+    const startTime = pickupDropReassignTimeSlot[0] || "";
+    fetchTechnicians(pickupDropReassignDate, startTime, pickupDropReassignEndTime);
+  }
+}, [showPickupDropReassignModal, pickupDropReassignDate, pickupDropReassignTimeSlot, pickupDropReassignEndTime]);
 
   const toTimeDisplay = (t) =>
     t && String(t).length >= 5 ? String(t).substring(0, 5) : t || "";
@@ -796,6 +814,7 @@ useEffect(() => {
     setPickupDropRescheduleRow(null);
     setPickupDropRescheduleDate("");
     setPickupDropRescheduleTimeSlot([]);
+    setPickupDropRescheduleEndTime(""); 
   };
 
   const handlePickupDropCancel = async (row) => {
@@ -862,6 +881,16 @@ useEffect(() => {
       });
       return;
     }
+    // NEW: End Time Validation
+      if (!pickupDropRescheduleEndTime) {
+        Swal.fire({ icon: "warning", title: "End Time Required", text: "Please select an end time." });
+        return;
+      }
+
+      if (pickupDropRescheduleEndTime <= startTime) {
+        Swal.fire({ icon: "error", title: "Invalid Time Range", text: "End time must be later than the start time." });
+        return;
+      }
     const id = pickupDropRescheduleRow?.Id ?? pickupDropRescheduleRow?.id;
     if (!id) {
       Swal.fire({
@@ -880,7 +909,7 @@ useEffect(() => {
     try {
       await axios.post(
         `${API_BASE}ServiceImages/RescheduleCarPickupDelivery`,
-        { id, newAssignDate, assignTimeSlot },
+        { id, newAssignDate, assignTimeSlot,  endTimeslot: pickupDropRescheduleEndTime},
         {
           headers: {
             "Content-Type": "application/json",
@@ -926,6 +955,7 @@ useEffect(() => {
     setPickupDropReassignTech(null);
     setPickupDropReassignDate("");
     setPickupDropReassignTimeSlot([]);
+    setPickupDropReassignEndTime("");
   };
 
   const handlePickupDropReassignSubmit = async () => {
@@ -952,10 +982,20 @@ useEffect(() => {
       Swal.fire({
         icon: "warning",
         title: "Error",
-        text: "Please select time.",
+        text: "Please select Start time.",
       });
       return;
     }
+    // NEW: End Time Validation
+      if (!pickupDropReassignEndTime) {
+        Swal.fire({ icon: "warning", title: "End Time Required", text: "Please select an end time." });
+        return;
+      }
+      const startTime = pickupDropReassignTimeSlot[0] || "00:00"; // Directly use the string "HH:MM"
+      if (pickupDropReassignEndTime <= startTime) {
+        Swal.fire({ icon: "error", title: "Invalid Time Range", text: "End time must be later than the start time." });
+        return;
+      }
     const id = pickupDropReassignRow?.Id ?? pickupDropReassignRow?.id;
     if (!id) {
       Swal.fire({
@@ -967,7 +1007,6 @@ useEffect(() => {
     }
 
     const newTechID = pickupDropReassignTech?.value ?? pickupDropReassignTech;
-    const startTime = pickupDropReassignTimeSlot[0] || "00:00"; // Directly use the string "HH:MM"
     const newAssignDate = `${pickupDropReassignDate}T${startTime}:00`;
     const assignTimeSlot = startTime;
 
@@ -975,7 +1014,7 @@ useEffect(() => {
     try {
       await axios.post(
         `${API_BASE}ServiceImages/ReassignCarPickupDelivery`,
-        { id, newTechID, newAssignDate, assignTimeSlot },
+        { id, newTechID, newAssignDate, assignTimeSlot,  endTimeslot: pickupDropReassignEndTime},
         {
           headers: {
             "Content-Type": "application/json",
@@ -1024,6 +1063,17 @@ useEffect(() => {
       });
       return;
     }
+    // NEW: End Time Validation
+      if (!garagePickupEndTime) {
+        Swal.fire({ icon: "warning", title: "End Time Required", text: "Please select an end time." });
+        return;
+      }
+
+      // Logic Validation if garagePickupTime is used in this modal
+      if (garagePickupTime && garagePickupEndTime <= garagePickupTime) {
+        Swal.fire({ icon: "error", title: "Invalid Time Range", text: "End time must be later than the start time." });
+        return;
+      }
 
     let payload = {};
     const apiUrl = `${API_BASE}Bookings/assign-technician`;
@@ -1882,6 +1932,7 @@ useEffect(() => {
         garagePickupDate && garagePickupTime
           ? `${garagePickupDate}T${garagePickupTime}:00`
           : getLocalISODateTime(),
+      endTimeslot: garagePickupEndTime,
     };
   };
 
@@ -1903,6 +1954,17 @@ useEffect(() => {
       });
       return;
     }
+     // NEW: End Time Validation
+  if (!garagePickupEndTime) {
+    Swal.fire({ icon: "warning", title: "End Time Required", text: "Please select an end time." });
+    return;
+  }
+
+  // NEW: Logic Validation (End Time > Start Time)
+  if (garagePickupEndTime <= garagePickupTime) {
+    Swal.fire({ icon: "error", title: "Invalid Time Range", text: "End time must be later than the start time." });
+    return;
+  }
 
     let payload;
     let apiUrl;
@@ -1925,7 +1987,8 @@ useEffect(() => {
         bookingIds: [bookingId],
         supervisorHeadId: Number(userId),
         fieldAdvisorId: selectedInitialFieldAdvisor.value,
-        assignTimeSlot: garagePickupTime, // Now sending the string from time picker
+        assignTimeSlot: garagePickupTime, 
+        endTimeslot: garagePickupEndTime ,
       };
       apiUrl = `${API_BASE}Supervisor/AssignToFieldAdvisor`;
     } else if (initialAssignType === "technician") {
@@ -1963,7 +2026,8 @@ useEffect(() => {
         addOnId: addOnIds,
         leadId: bookingData.LeadId,
         ServiceType: "ServiceAtHome",
-        assignTimeSlot: garagePickupTime, // Now sending the string from time picker
+        assignTimeSlot: garagePickupTime, 
+        endTimeslot: garagePickupEndTime,
       };
       apiUrl = `${API_BASE}Supervisor/SavePickupDeliveryTime`;
     } else {
@@ -1983,7 +2047,8 @@ useEffect(() => {
         techID: selectedInitialSupervisor?.value,
         leadId: bookingData.LeadId,
         ServiceType: "ServiceAtHome",
-        timeSlot: garagePickupTime, // Now sending the string from time picker
+        timeSlot: garagePickupTime, 
+        endTimeslot: garagePickupEndTime,
       };
       apiUrl = `${API_BASE}Supervisor/SavePickupDeliveryTime`;
     }
@@ -10878,6 +10943,24 @@ useEffect(() => {
                           }}
                         />
                       </div>
+                          <div className="col-6">
+                            <label className="form-label small fw-semibold">Select End Time</label>
+                            <input
+                              type="time"
+                              className="form-control form-control-sm py-2"
+                              value={garagePickupEndTime}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (isPastTimeForDate(garagePickupDate, val)) {
+                                  e.currentTarget?.blur?.();
+                                  Swal.fire({ icon: "warning", title: "Invalid Time", text: "You cannot select a past time for today." });
+                                  setGaragePickupEndTime("");
+                                  return;
+                                }
+                                setGaragePickupEndTime(val);
+                              }}
+                            />
+                          </div>
                     </div>
                   </div>
 
@@ -11713,7 +11796,7 @@ useEffect(() => {
                     </div>
                     <div className="col-12">
                     <label className="form-label small fw-semibold">
-                      Select Time
+                      Select Start Time
                     </label>
                     <input
                       type="time"
@@ -11732,6 +11815,24 @@ useEffect(() => {
                           return;
                         }
                         setGaragePickupTime(val);
+                      }}
+                    />
+                  </div>
+                   <div className="col-12">
+                    <label className="form-label small mb-1">Select End Time</label>
+                    <input
+                      type="time"
+                      className="form-control form-control-sm"
+                      value={garagePickupEndTime}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (isPastTimeForDate(garagePickupDate, val)) {
+                          e.currentTarget?.blur?.();
+                          Swal.fire({ icon: "warning", title: "Invalid Time", text: "You cannot select a past time for today." });
+                          setGaragePickupEndTime("");
+                          return;
+                        }
+                        setGaragePickupEndTime(val);
                       }}
                     />
                   </div>
@@ -12380,7 +12481,7 @@ useEffect(() => {
                             <>({bookingData.TimeSlot})</>
                           )}
                         </span>
-                        <div className="col-6">
+                        <div className="col-12">
                           <label className="form-label small mb-1">Select Date</label>
                           <input
                             type="date"
@@ -12392,8 +12493,8 @@ useEffect(() => {
                             }
                           />
                         </div>
-                        <div className="col-6">
-                          <label className="form-label small mb-1">Select Time</label>
+                        <div className="col-12">
+                          <label className="form-label small mb-1">Select Start Time</label>
                           <input
                             type="time"
                             className="form-control form-control-sm"
@@ -12417,6 +12518,24 @@ useEffect(() => {
                             }}
                           />
                         </div>
+                        <div className="col-12">
+                        <label className="form-label small mb-1">Select End Time</label>
+                        <input
+                          type="time"
+                          className="form-control form-control-sm"
+                          value={garagePickupEndTime}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (isPastTimeForDate(garagePickupDate, val)) {
+                              e.currentTarget?.blur?.();
+                              Swal.fire({ icon: "warning", title: "Invalid Time", text: "End time cannot be in the past." });
+                              setGaragePickupEndTime("");
+                              return;
+                            }
+                            setGaragePickupEndTime(val);
+                          }}
+                        />
+                      </div>
                       </div>
                       <div className="mb-3">
                         <label className="form-label small mb-1">
@@ -12495,6 +12614,16 @@ useEffect(() => {
                                 });
                                 return;
                               }
+                            }
+                             // NEW: End Time Validation
+                            if (!garagePickupEndTime) {
+                              Swal.fire({ icon: "warning", title: "End Time Required", text: "Please select an end time." });
+                              return;
+                            }
+
+                            if (garagePickupEndTime <= garagePickupTime) {
+                              Swal.fire({ icon: "error", title: "Invalid Time Range", text: "End time must be later than the start time." });
+                              return;
                             }
 
                             const payload = buildGaragePayload();
@@ -12683,8 +12812,9 @@ useEffect(() => {
                         </>
                       ) : (
                         <>
+                        <div className="col-12">
                           <label className="form-label small fw-semibold">
-                            Select Time{" "}
+                            Select Start Time{" "}
                           </label>
                           <input
                             type="time"
@@ -12710,6 +12840,26 @@ useEffect(() => {
                             }}
                             disabled={!pickupDropRescheduleDate}
                           />
+                          </div>
+                              <div className="col-12">
+                                <label className="form-label small fw-semibold">Select End Time</label>
+                                <input
+                                  type="time"
+                                  className="form-control form-control-sm py-2"
+                                  value={pickupDropRescheduleEndTime}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (isPastTimeForDate(pickupDropRescheduleDate, val)) {
+                                      e.currentTarget?.blur?.();
+                                      Swal.fire({ icon: "warning", title: "Invalid Time", text: "End time cannot be in the past." });
+                                      setPickupDropRescheduleEndTime("");
+                                      return;
+                                    }
+                                    setPickupDropRescheduleEndTime(val);
+                                  }}
+                                  disabled={!pickupDropRescheduleDate}
+                                />
+                              </div>
                           {/* <Select
             isMulti
             menuPortalTarget={document.body}
@@ -12861,8 +13011,9 @@ useEffect(() => {
                       ) : (
                         // SHOW MULTI-SELECT FOR HOME SERVICE (Existing Logic)
                         <>
+                         <div className="col-12">
                           <label className="form-label small fw-semibold">
-                            Time Slot
+                            Select start Time
                           </label>
 
                           <input
@@ -12889,6 +13040,31 @@ useEffect(() => {
                             }}
                             disabled={!pickupDropReassignDate}
                           />
+                          </div>
+                          <div className="col-12">
+                        <label className="form-label small mb-1">Select End Time</label>
+                        <input
+                          type="time"
+                          className="form-control form-control-sm"
+                          value={pickupDropReassignEndTime} // FIX: Use the Reassign specific state
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            
+                            // 1. Check if the time is in the past (using the Reassign Date)
+                            if (isPastTimeForDate(pickupDropReassignDate, val)) {
+                              e.currentTarget?.blur?.();
+                              Swal.fire({ 
+                                icon: "warning", 
+                                title: "Invalid Time", 
+                                text: "End time cannot be in the past for today's date." 
+                              });
+                              setPickupDropReassignEndTime("");
+                              return;
+                            }
+                            setPickupDropReassignEndTime(val);
+                          }}
+                        />
+                      </div>
                         </>
                       )}
                     </div>
