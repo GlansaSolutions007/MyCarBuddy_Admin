@@ -503,10 +503,34 @@ const fetchTechnicians = async (date, startTime, endTime) => {
 
     const techData = Array.isArray(res.data) ? res.data : [];
 
-    const updatedList = techData.map((t) => ({
+   const updatedList = techData.map((t) => ({
       value: t.TechID,
-      label: `${t.FullName || t.TechnicianName || "-"} (${t.PhoneNumber || "-"}) (Tasks: ${t.TotalCount ?? 0}) - ${t.AvailabilityStatus || "Unknown"}`,
-      availability: t.AvailabilityStatus // storing for logic if needed
+      // We pass JSX to the label to allow individual styling
+      label: (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <span style={{ fontWeight: '500' }}>
+            {t.FullName || t.TechnicianName || "-"} ({t.PhoneNumber || "-"})
+          </span>
+          
+          {/* Tasks in Orange */}
+          <span style={{ color: "#f59e0b", fontWeight: "600", marginLeft: "5px" }}>
+            Tasks: {t.TotalCount ?? 0}
+          </span>
+          
+          <span> - </span>
+
+          {/* Availability Status: Green for Available, Red for Busy/Others */}
+          <span style={{
+            color: t.AvailabilityStatus === "Available" ? "#10b981" : "#ef4444",
+            fontWeight: "bold"
+          }}>
+            {t.AvailabilityStatus || "Unknown"}
+          </span>
+        </div>
+      ),
+      // Optional: keep a plain text version for searching/filtering logic
+      searchText: `${t.FullName} ${t.PhoneNumber} ${t.AvailabilityStatus}`,
+      availability: t.AvailabilityStatus
     }));
 
     setTechnicians(updatedList);
@@ -4866,6 +4890,21 @@ useEffect(() => {
     width: "160px",
   },
 ];
+
+const isAtLeast30MinsGap = (startTime, endTime) => {
+  if (!startTime || !endTime) return true;
+  const [startH, startM] = startTime.split(":").map(Number);
+  const [endH, endM] = endTime.split(":").map(Number);
+
+  const startDate = new Date();
+  startDate.setHours(startH, startM, 0, 0);
+
+  const endDate = new Date();
+  endDate.setHours(endH, endM, 0, 0);
+
+  // Difference in milliseconds. 30 mins = 1800000 ms
+  return (endDate - startDate) >= 1800000;
+};
 
   return (
     <>
@@ -10958,11 +10997,27 @@ useEffect(() => {
                               type="time"
                               className="form-control form-control-sm py-2"
                               value={garagePickupEndTime}
-                              onChange={(e) => {
+                               onChange={(e) => {
                                 const val = e.target.value;
+                                // 1. Past time check
                                 if (isPastTimeForDate(garagePickupDate, val)) {
                                   e.currentTarget?.blur?.();
-                                  Swal.fire({ icon: "warning", title: "Invalid Time", text: "You cannot select a past time for today." });
+                                  Swal.fire({ 
+                                    icon: "warning", 
+                                    title: "Invalid Time", 
+                                    text: "End time cannot be in the past for today's date." 
+                                  });
+                                  setGaragePickupEndTime("");
+                                  return;
+                                }
+                                // 2. 30-minute gap check
+                                if (garagePickupTime && !isAtLeast30MinsGap(garagePickupTime, val)) {
+                                  e.currentTarget?.blur?.();
+                                  Swal.fire({
+                                    icon: "warning",
+                                    title: "Invalid Duration",
+                                    text: "End time must be at least 30 minutes after the start time.",
+                                  });
                                   setGaragePickupEndTime("");
                                   return;
                                 }
@@ -11835,9 +11890,25 @@ useEffect(() => {
                       value={garagePickupEndTime}
                       onChange={(e) => {
                         const val = e.target.value;
+                        // 1. Past time check
                         if (isPastTimeForDate(garagePickupDate, val)) {
                           e.currentTarget?.blur?.();
-                          Swal.fire({ icon: "warning", title: "Invalid Time", text: "You cannot select a past time for today." });
+                          Swal.fire({ 
+                            icon: "warning", 
+                            title: "Invalid Time", 
+                            text: "End time cannot be in the past for today's date." 
+                          });
+                          setGaragePickupEndTime("");
+                          return;
+                        }
+                        // 2. 30-minute gap check
+                        if (garagePickupTime && !isAtLeast30MinsGap(garagePickupTime, val)) {
+                          e.currentTarget?.blur?.();
+                          Swal.fire({
+                            icon: "warning",
+                            title: "Invalid Duration",
+                            text: "End time must be at least 30 minutes after the start time.",
+                          });
                           setGaragePickupEndTime("");
                           return;
                         }
@@ -12535,9 +12606,21 @@ useEffect(() => {
                           value={garagePickupEndTime}
                           onChange={(e) => {
                             const val = e.target.value;
+                            // 1. Past time check
                             if (isPastTimeForDate(garagePickupDate, val)) {
                               e.currentTarget?.blur?.();
                               Swal.fire({ icon: "warning", title: "Invalid Time", text: "End time cannot be in the past." });
+                              setGaragePickupEndTime("");
+                              return;
+                            }
+                            // 2. 30-minute gap check
+                            if (garagePickupTime && !isAtLeast30MinsGap(garagePickupTime, val)) {
+                              e.currentTarget?.blur?.();
+                              Swal.fire({ 
+                                icon: "warning", 
+                                title: "Invalid Duration", 
+                                text: "End time must be at least 30 minutes after the start time." 
+                              });
                               setGaragePickupEndTime("");
                               return;
                             }
@@ -12792,8 +12875,9 @@ useEffect(() => {
                       {pickupDropRescheduleRow?.ServiceType ===
                       "ServiceAtGarage" ? (
                         <>
+                        <div className="col-12">
                           <label className="form-label small fw-semibold">
-                            Time
+                            Select Start Time
                           </label>
                           <input
                             type="time"
@@ -12818,6 +12902,33 @@ useEffect(() => {
                             }}
                             disabled={!pickupDropRescheduleDate}
                           />
+                          </div>
+                          <div className="col-12">
+                                <label className="form-label small fw-semibold">Select End Time</label>
+                                <input
+                                  type="time"
+                                  className="form-control form-control-sm py-2"
+                                  value={pickupDropRescheduleEndTime}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    const startTime = pickupDropRescheduleTimeSlot[0];
+                                    if (isPastTimeForDate(pickupDropRescheduleDate, val)) {
+                                      e.currentTarget?.blur?.();
+                                      Swal.fire({ icon: "warning", title: "Invalid Time", text: "End time cannot be in the past." });
+                                      setPickupDropRescheduleEndTime("");
+                                      return;
+                                    }
+                                    if (startTime && !isAtLeast30MinsGap(startTime, val)) {
+                                      e.currentTarget?.blur?.();
+                                      Swal.fire({ icon: "warning", title: "Invalid Duration", text: "End time must be at least 30 minutes after the start time." });
+                                      setPickupDropRescheduleEndTime("");
+                                      return;
+                                    }
+                                    setPickupDropRescheduleEndTime(val);
+                                  }}
+                                  disabled={!pickupDropRescheduleDate}
+                                />
+                              </div>
                         </>
                       ) : (
                         <>
@@ -12858,9 +12969,16 @@ useEffect(() => {
                                   value={pickupDropRescheduleEndTime}
                                   onChange={(e) => {
                                     const val = e.target.value;
+                                    const startTime = pickupDropRescheduleTimeSlot[0];
                                     if (isPastTimeForDate(pickupDropRescheduleDate, val)) {
                                       e.currentTarget?.blur?.();
                                       Swal.fire({ icon: "warning", title: "Invalid Time", text: "End time cannot be in the past." });
+                                      setPickupDropRescheduleEndTime("");
+                                      return;
+                                    }
+                                    if (startTime && !isAtLeast30MinsGap(startTime, val)) {
+                                      e.currentTarget?.blur?.();
+                                      Swal.fire({ icon: "warning", title: "Invalid Duration", text: "End time must be at least 30 minutes after the start time." });
                                       setPickupDropRescheduleEndTime("");
                                       return;
                                     }
@@ -12983,8 +13101,9 @@ useEffect(() => {
                       "ServiceAtGarage" ? (
                         // SHOW TIME PICKER FOR GARAGE WITH VALIDATION
                         <>
+                        <div className="col-12">
                           <label className="form-label small fw-semibold">
-                            Time
+                            Select Start Time
                           </label>
                           <input
                             type="time"
@@ -13016,6 +13135,32 @@ useEffect(() => {
                             }}
                             disabled={!pickupDropReassignDate}
                           />
+                           </div>
+                          <div className="col-12">
+                        <label className="form-label small mb-1">Select End Time</label>
+                        <input
+                          type="time"
+                          className="form-control form-control-sm"
+                          value={pickupDropReassignEndTime} // FIX: Use the Reassign specific state
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const startTime = pickupDropReassignTimeSlot[0];
+                            if (isPastTimeForDate(pickupDropReassignDate, val)) {
+                              e.currentTarget?.blur?.();
+                              Swal.fire({ icon: "warning", title: "Invalid Time", text: "End time cannot be in the past." });
+                              setPickupDropReassignEndTime("");
+                              return;
+                            }
+                            if (startTime && !isAtLeast30MinsGap(startTime, val)) {
+                              e.currentTarget?.blur?.();
+                              Swal.fire({ icon: "warning", title: "Invalid Duration", text: "End time must be at least 30 minutes after the start time." });
+                              setPickupDropReassignEndTime("");
+                              return;
+                            }
+                            setPickupDropReassignEndTime(val);
+                          }}
+                        />
+                      </div>
                         </>
                       ) : (
                         // SHOW MULTI-SELECT FOR HOME SERVICE (Existing Logic)
@@ -13058,15 +13203,16 @@ useEffect(() => {
                           value={pickupDropReassignEndTime} // FIX: Use the Reassign specific state
                           onChange={(e) => {
                             const val = e.target.value;
-                            
-                            // 1. Check if the time is in the past (using the Reassign Date)
+                            const startTime = pickupDropReassignTimeSlot[0];
                             if (isPastTimeForDate(pickupDropReassignDate, val)) {
                               e.currentTarget?.blur?.();
-                              Swal.fire({ 
-                                icon: "warning", 
-                                title: "Invalid Time", 
-                                text: "End time cannot be in the past for today's date." 
-                              });
+                              Swal.fire({ icon: "warning", title: "Invalid Time", text: "End time cannot be in the past." });
+                              setPickupDropReassignEndTime("");
+                              return;
+                            }
+                            if (startTime && !isAtLeast30MinsGap(startTime, val)) {
+                              e.currentTarget?.blur?.();
+                              Swal.fire({ icon: "warning", title: "Invalid Duration", text: "End time must be at least 30 minutes after the start time." });
                               setPickupDropReassignEndTime("");
                               return;
                             }
