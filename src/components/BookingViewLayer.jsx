@@ -3531,9 +3531,8 @@ useEffect(() => {
   const couponAmount = Number(bookingData?.CouponAmount ?? 0) || 0;
   const alreadyPaidDisplay = alreadyPaid + couponAmount;
   const remainingAmount = Math.max(
-    Number((bookingData?.TotalPrice - alreadyPaid - couponAmount).toFixed(2)),
-    0,
-  );
+  Number(
+    ((bookingData?.TotalPrice || 0) + bookingData?.InspectionTracking?.[0]?.TotalPrice - alreadyPaid -  couponAmount ).toFixed(2) ),0);
 
   const hasAtLeastOneService =
     bookingData?.BookingAddOns?.length > 0 ||
