@@ -4692,8 +4692,9 @@ useEffect(() => {
   };
 
   const pricingTotals = buildPricingTotals(liveComparisonServices);
+  const inspectionAmt = Number(bookingData?.InspectionTracking?.[0]?.TotalPrice || 0);
   const pricingCustomerNetTotal = Math.max(
-    Number(pricingTotals.customerTotal || 0) - Number(couponAmount || 0),
+    Number(pricingTotals.customerTotal || 0) + inspectionAmt  - Number(couponAmount || 0),
     0,
   );
   const pricingCustomerNetTotalNew = Math.max(
@@ -8622,6 +8623,14 @@ useEffect(() => {
                                                   )}
                                                 </td>
                                               </tr> */}
+                                              {inspectionAmt > 0 && (
+                                                <tr style={{ borderBottom: "1px dashed #e2e8f0" }}>
+                                                  <td className="text-muted">Inspection Amount</td>
+                                                  <td className="text-end">
+                                                    {formatCurrency(inspectionAmt)}
+                                                  </td>
+                                                </tr>
+                                              )}
                                               <tr style={{borderBottom: "1px Solid #1f2937"}}>
                                                 <td className="text-muted">
                                                   Discount Amount
