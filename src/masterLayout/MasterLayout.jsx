@@ -730,6 +730,13 @@ const alertLeads = useMemo(() => {
           permission: "payments_view",
           page: "Payments",
         },
+        {
+          title: "Ratings",
+          to: "/ratings",
+          color: "text-primary-600",
+          permission: "ratings_view",
+          page: "Ratings",
+        },
       ],
     },
   

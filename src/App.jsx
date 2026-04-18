@@ -123,6 +123,7 @@ import CompleteServiceReportPage from "./pages/CompleteServiceReportPage";
 import DealerVehicleReportPage from "./pages/DealerVehicleReportPage";
 import ForwardLeadsPage from "./pages/ForwardLeadsPage";
 import AssignTechnicianPage from "./pages/AssignTechnicianpage";
+import ServicesRatingPage from "./pages/ServicesRatingPage";
 
 function App() {
   return (
@@ -274,7 +275,7 @@ function App() {
           <Route exact path='/vehicle-reports' element={<DealerVehicleReportPage />} />
           <Route exact path='/forward-leads' element={<ForwardLeadsPage />} />
           <Route exact path='/assign-technician/:bookingId' element={<AssignTechnicianPage />} />
-          
+          <Route exact path='/ratings' element={<ServicesRatingPage />} />
         </Route>
 
         {/* //extra  pages */}

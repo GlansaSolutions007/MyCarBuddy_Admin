@@ -3532,7 +3532,7 @@ useEffect(() => {
   const alreadyPaidDisplay = alreadyPaid + couponAmount;
   const remainingAmount = Math.max(
   Number(
-    ((bookingData?.TotalPrice || 0) + bookingData?.InspectionTracking?.[0]?.TotalPrice - alreadyPaid -  couponAmount ).toFixed(2) ),0);
+    ((bookingData?.TotalPrice || 0)  - alreadyPaid -  couponAmount ).toFixed(2) ),0);
 
   const hasAtLeastOneService =
     bookingData?.BookingAddOns?.length > 0 ||
@@ -4717,7 +4717,7 @@ useEffect(() => {
   const pricingTotals = buildPricingTotals(liveComparisonServices);
   const inspectionAmt = Number(bookingData?.InspectionTracking?.[0]?.TotalPrice || 0);
   const pricingCustomerNetTotal = Math.max(
-    Number(pricingTotals.customerTotal || 0) + inspectionAmt  - Number(couponAmount || 0),
+    Number(pricingTotals.customerTotal || 0)  - Number(couponAmount || 0),
     0,
   );
   const pricingCustomerNetTotalNew = Math.max(
