@@ -7996,7 +7996,7 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                     <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                                       <div>
                                         <h6 className="mb-1 fw-bold">
-                                          Service-wise comparison
+                                          Service-Wise Comparison
                                         </h6>
                                         <div className="small text-muted">
                                           Combined view of confirmed-service
@@ -8086,22 +8086,22 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                                   Dealer{" "}
                                                   {service.dealerConfirmStatus}
                                                 </span>
-                                                <span
+                                               <span
                                                   className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(
-                                                    service.serviceStatus,
+                                                    service.serviceStatus
                                                   )}`}
                                                 >
-                                                  {" "}
-                                                  {service.serviceStatus ===
-                                                  "InProgress"
+                                                  {service.serviceStatus === "InProgress"
                                                     ? "Service In Progress"
-                                                    : service.serviceStatus ===
-                                                        "ServiceCompleted"
-                                                      ? "Service Completed"
-                                                      : service.serviceStatus ===
-                                                          "Pending"
-                                                        ? "Service Pending"
-                                                        : service.serviceStatus}
+                                                    : service.serviceStatus === "ServiceCompleted"
+                                                    ? service.serviceType === "Inspection"
+                                                      ? "Inspection Completed"
+                                                      : "Service Completed"
+                                                    : service.serviceStatus === "Pending"
+                                                    ? service.serviceType === "Inspection"
+                                                      ? "Inspection Pending"
+                                                      : "Service Pending"
+                                                    : service.serviceStatus}
                                                 </span>
                                               </div>
                                               {/* {service.includeNames.length >
@@ -8166,9 +8166,8 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                                 </span>
                                              ) : service.serviceStatus === "ServiceCompleted" ? (
                                                   service.serviceType === "Inspection" ? (
-                                                    <span className="badge bg-success-subtle  text-success px-3 py-2 rounded-pill">
-                                                      Inspection Completed
-                                                    </span>
+                                                    <>
+                                                    </>
                                                   ) : canReviewDealerCompletedService ? (
                                                   <select
                                                     className="form-select form-select-sm blink-approval"
