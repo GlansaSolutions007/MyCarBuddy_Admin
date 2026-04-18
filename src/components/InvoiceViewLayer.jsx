@@ -597,8 +597,26 @@ const handleGenerateInvoiceForView = async () => {
     return <div className="alert alert-danger">Booking data not found.</div>;
   }
 
+  const hasUnconfirmed = bookingData?.SupervisorBookings && bookingData.SupervisorBookings.length > 0;
+
   return (
     <div className="container-fluid p-4">
+          <style>
+        {`
+          @keyframes pulse-approval {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7); }
+            70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(22, 163, 74, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+          }
+          .blink-approval {
+            animation: pulse-approval 1.5s infinite !important;
+            border: 2px solid #16a34a !important;
+            background-color: #ffc107 !important;
+            color: #000 !important;
+            font-weight: 700 !important;
+          }
+        `}
+      </style>
       {/* Print Button */}
       <div className="d-flex justify-content-between align-items-center mb-3 no-print">
         <button
@@ -610,7 +628,9 @@ const handleGenerateInvoiceForView = async () => {
         </button>
         {(urlInvoiceType === "Estimation" || urlInvoiceType === "Final"  || urlInvoiceType === "Dealer" ) && (
           <button
-            className="btn btn-primary-600 d-inline-flex align-items-center gap-2"
+            className={`btn btn-primary-600 d-inline-flex align-items-center gap-2 ${
+              hasUnconfirmed ? "blink-approval" : ""
+            }`}
             onClick={handleGenerateInvoiceForView}
             disabled={sendingInvoice === "generate"}
             title="Generate latest invoice"
@@ -665,6 +685,12 @@ const handleGenerateInvoiceForView = async () => {
             </select>
         )}
       </div>
+
+       {hasUnconfirmed && (
+            <div className="alert alert-warning border small mb-2">
+              There are unconfirmed services in this booking. Please click <strong>"Generate Invoice"</strong> to get the updated invoice before sending it to the customer.
+            </div>
+            )}
 
       {/* Invoice Container */}
       {/* Invoices list (latest first) */}
@@ -813,7 +839,7 @@ const handleGenerateInvoiceForView = async () => {
             </table>
           </div>
         ) : (
-          <div className="alert alert-light border small mb-0">
+                    <div className="alert alert-light border small mb-0">
             No invoices found.
           </div>
         )}

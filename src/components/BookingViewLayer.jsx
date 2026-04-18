@@ -513,9 +513,9 @@ const fetchTechnicians = async (date, startTime, endTime) => {
           </span>
           
           {/* Tasks in Orange */}
-          <span style={{ color: "#f59e0b", fontWeight: "600", marginLeft: "5px" }}>
+          {/* <span style={{ color: "#f59e0b", fontWeight: "600", marginLeft: "5px" }}>
             Tasks: {t.TotalCount ?? 0}
-          </span>
+          </span> */}
           
           <span> - </span>
 
@@ -5155,19 +5155,35 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
             grid-template-columns: 1fr;
           }
         }
-        /* Add this inside your existing <style> tag */
+        
           @keyframes pulse-approval {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7); }
-            50% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(25, 135, 84, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(25, 135, 84, 0); }
-          }
+              0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7);
+              }
+              50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 12px 4px rgba(22, 163, 74, 0.4);
+              }
+              100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+              }
+            }
 
-          .blink-approval {
-            animation: pulse-approval 2s infinite;
-            border: 2px solid #16a34a !important; /* Makes the border blue */
-            background-color: #ffc107 !important; /* Light blue background */
-            font-weight: bold !important;
-          }
+            .blink-approval {
+              animation: pulse-approval 0.7s infinite;
+              border: 2px solid #16a34a !important;
+              background-color: #ffc107 !important; /* soft green */
+              color: #000 !important;
+              font-weight: 600;
+              margin-right: 10px;
+            }
+              .blink-approval:hover {
+              animation-play-state: paused;
+              transform: scale(1.02); /* keep slight zoom */
+              box-shadow: 0 4px 10px rgba(0,0,0,0.15); /* steady shadow */
+            }
       `}</style>
       <TimeLineView bookingData={bookingData} displayDate={displayDate} />
 
@@ -8669,7 +8685,8 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                                   </td>
                                                 </tr>
                                               )}
-                                              <tr style={{borderBottom: "1px Solid #1f2937"}}>
+                                              {couponAmount > 0 && (
+                                              <tr >
                                                 <td className="text-muted">
                                                   Discount Amount
                                                 </td>
@@ -8677,9 +8694,10 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                                   -{formatCurrency(couponAmount)}
                                                 </td>
                                               </tr>
-                                              <tr style={{borderBottom: "1px dashed #e2e8f0"}}>
+                                              )}
+                                              <tr style={{borderBottom: "1px dashed #e2e8f0", borderTop: "1px Solid #1f2937"}}>
                                                 <td className="text-black fw-semibold">
-                                                  Customer Total (after discount)
+                                                  Customer Total
                                                 </td>
                                                 <td className="text-end fw-semibold">
                                                   {formatCurrency(
@@ -8687,7 +8705,7 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                                   )}
                                                 </td>
                                               </tr>
-                                              <tr style={{borderBottom: "1px dashed #e2e8f0"}}>
+                                              <tr style={{borderBottom: "1px dashed #e2e8f0",}}>
                                                 <td className="text-black fw-semibold">
                                                   Already Paid
                                                 </td>
