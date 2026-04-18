@@ -42,7 +42,7 @@ function ServicesRatingLayer() {
   // 🔁 Update approval status
   const handleApproval = async (row, status) => {
     try {
-      await axios.put(`${API_BASE}/Feedback/update-feedback-approval`, {
+      await axios.put(`${API_BASE}Feedback/update-feedback-approval`, {
         feedbackId: row.FeedbackID,
         is_Approve: status,
       });

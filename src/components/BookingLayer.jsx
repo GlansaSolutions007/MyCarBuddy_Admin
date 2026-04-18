@@ -1075,14 +1075,14 @@ const BookingLayer = () => {
                   <option value="completed">Completed</option>
                 </select>
                 
-                  <a
+                  {/* <a
                     href="/service-timeline-board"
                     className="btn btn-primary-600 d-inline-flex align-items-center flex-shrink-0"
                     style={{ height: "34px" }}
                   >
                     <Icon icon="mdi:view-kanban" width={18} height={18} />
                     <span className="ms-1">Timeline Board</span>
-                  </a>
+                  </a> */}
                 </>
               )}
 
