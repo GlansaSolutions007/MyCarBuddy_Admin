@@ -8677,14 +8677,14 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                                   )}
                                                 </td>
                                               </tr> */}
-                                              {inspectionAmt > 0 && (
+                                              {/* {inspectionAmt > 0 && (
                                                 <tr style={{ borderBottom: "1px dashed #e2e8f0" }}>
                                                   <td className="text-muted">Inspection Amount</td>
                                                   <td className="text-end">
                                                     {formatCurrency(inspectionAmt)}
                                                   </td>
                                                 </tr>
-                                              )}
+                                              )} */}
                                               {couponAmount > 0 && (
                                               <tr >
                                                 <td className="text-muted">
