@@ -2,17 +2,17 @@ import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
-import DataTable from 'react-data-table-component';
+import DataTable from "react-data-table-component";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
 const SupervisorHeadDashboardLayer = () => {
-  const storedEmployeeData = localStorage.getItem("employeeData");
-  const employeeData = storedEmployeeData ? JSON.parse(storedEmployeeData) : null;
   const navigate = useNavigate();
   const [notConfirmedServices, setNotConfirmedServices] = useState([]);
   const [servicesLoading, setServicesLoading] = useState(false);
   const token = localStorage.getItem("token");
+  const employeeData = JSON.parse(localStorage.getItem("employeeData"));
+  const roleId = employeeData?.RoleId;
   const employeeId = employeeData?.Id;
   const supervisorHeadId = employeeData?.Id;
 
@@ -25,12 +25,15 @@ const SupervisorHeadDashboardLayer = () => {
 
   const [notConfirmedBookings, setNotConfirmedBookings] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [pendingApprovalData, setPendingApprovalData] = useState([]);
+  const [pendingLoading, setPendingLoading] = useState(false);
 
   useEffect(() => {
     if (employeeData && employeeData.Id) {
       fetchDashboardData();
       fetchNotConfirmedBookings();
       fetchNotConfirmedServices();
+      fetchPendingApprovalBookings();
     }
   }, []);
 
@@ -38,7 +41,7 @@ const SupervisorHeadDashboardLayer = () => {
     try {
       setLoading(true);
       const res = await axios.get(
-        `${API_BASE}Supervisor/supervisor-booking-summary?supervisorHeadId=${supervisorHeadId}`
+        `${API_BASE}Supervisor/GetPendingApprovalBookings?RoleId=${roleId}&EmployeeId=${employeeId}`
       );
 
       if (res.data && res.data.length > 0) {
@@ -63,6 +66,23 @@ const SupervisorHeadDashboardLayer = () => {
       setNotConfirmedBookings(res.data.Bookings || []);
     } catch (error) {
       console.error("Error fetching not confirmed bookings:", error);
+    }
+  };
+
+  const fetchPendingApprovalBookings = async () => {
+    try {
+      setPendingLoading(true);
+
+      const res = await axios.get(
+        `${API_BASE}Supervisor/GetPendingApprovalBookings?RoleId=${roleId}&EmployeeId=${employeeId}`
+      );
+
+      setPendingApprovalData(res.data || []);
+    } catch (error) {
+      console.error("Pending approval API error:", error);
+      setPendingApprovalData([]);
+    } finally {
+      setPendingLoading(false);
     }
   };
 
@@ -93,7 +113,7 @@ const SupervisorHeadDashboardLayer = () => {
       acc[booking.BookingId].services.push(booking.ServiceName);
 
       return acc;
-    }, {})
+    }, {}),
   );
 
   const fetchNotConfirmedServices = async () => {
@@ -106,7 +126,7 @@ const SupervisorHeadDashboardLayer = () => {
         `${API_BASE}Bookings/GetBookingServicesByRole?role=Supervisor&employeeId=${employeeId}&type=notconfirm`,
         {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }
+        },
       );
 
       if (res.data?.success) {
@@ -122,92 +142,145 @@ const SupervisorHeadDashboardLayer = () => {
     }
   };
 
-//   const pendingColumns = [
-//   {
-//     name: "Booking ID",
-//     selector: (row) => row.BookingTrackID,
-//     sortable: true,
-//     cell: (row) => (
-//       <span className="fw-semibold text-secondary">
-//         {row.BookingTrackID}
-//       </span>
-//     ),
-//   },
-//   {
-//     name: "Type",
-//     selector: (row) => row.ServiceType,
-//     sortable: true,
-//     cell: (row) => row.ServiceType,
-//   },
-//   {
-//     name: "Lead ID",
-//     selector: (row) => row.LeadId,
-//     sortable: true,
-//   },
-//   {
-//     name: "Date",
-//     selector: (row) => row.CreatedDate,
-//     sortable: true,
-//     cell: (row) =>
-//       new Date(row.CreatedDate).toLocaleDateString(),
-//   },
-//   {
-//     name: 'Action',
-//     button: true,
-//     cell: (row) => (
-//       <Link
-//         to={`/booking-view/${row.BookingID}`}
-//         className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-//         title="View"
-//       >
-//         <Icon icon="lucide:eye" />
-//       </Link>
-//     ),
-//   }
-// ];
+  const pendingApprovalColumns = [
+    {
+      name: "Booking ID",
+      selector: (row) => (
+        <Link to={`/booking-view/${row.BookingID}`} className="text-primary">
+          {row.BookingTrackID}
+        </Link>
+      ),
+      sortable: true,
+      width: "200px",
+    },
+    {
+      name: "Dealer",
+      selector: (row) => row.DealerName,
+      width: "200px",
+    },
+    {
+      name: "Service Name",
+      selector: (row) => row.ServiceName,
+      wrap: true,
+      width: "300px",
+    },
+    {
+      name: "Booking Date",
+      selector: (row) => row.CreatedDate,
+      sortable: true,
+      width: "200px",
+      cell: (row) => new Date(row.CreatedDate).toLocaleString(),
+    },
+    {
+      name: "Status",
+      selector: (row) => row.StatusName,
+      cell: (row) => (
+        <span className="badge bg-success">{row.StatusName || "Pending"}</span>
+      ),
+      width: "200px",
+    },
+    {
+      name: "Actions",
+      cell: (row) => {
+        return (
+          <div className="d-flex gap-2 align-items-center">
+            <Link
+              to={`/booking-view/${row.BookingID}`}
+              className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+              title="View"
+            >
+              <Icon icon="lucide:eye" />
+            </Link>
+          </div>
+        );
+      },
+      width: "100px",
+    },
+  ];
+
+  //   const pendingColumns = [
+  //   {
+  //     name: "Booking ID",
+  //     selector: (row) => row.BookingTrackID,
+  //     sortable: true,
+  //     cell: (row) => (
+  //       <span className="fw-semibold text-secondary">
+  //         {row.BookingTrackID}
+  //       </span>
+  //     ),
+  //   },
+  //   {
+  //     name: "Type",
+  //     selector: (row) => row.ServiceType,
+  //     sortable: true,
+  //     cell: (row) => row.ServiceType,
+  //   },
+  //   {
+  //     name: "Lead ID",
+  //     selector: (row) => row.LeadId,
+  //     sortable: true,
+  //   },
+  //   {
+  //     name: "Date",
+  //     selector: (row) => row.CreatedDate,
+  //     sortable: true,
+  //     cell: (row) =>
+  //       new Date(row.CreatedDate).toLocaleDateString(),
+  //   },
+  //   {
+  //     name: 'Action',
+  //     button: true,
+  //     cell: (row) => (
+  //       <Link
+  //         to={`/booking-view/${row.BookingID}`}
+  //         className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+  //         title="View"
+  //       >
+  //         <Icon icon="lucide:eye" />
+  //       </Link>
+  //     ),
+  //   }
+  // ];
 
   const columns = [
-  {
-    name: 'Booking ID',
-    selector: row => row.BookingTrackID,
-    sortable: true,
-    cell: row => (
-      <span className="fw-semibold text-secondary">
-        {row.BookingTrackID}
-      </span>
-    )
-  },
-  {
-    name: 'Customer',
-    selector: row => row.CustFullName,
-    sortable: true,
-  },
-  {
-    name: 'Phone',
-    selector: row => row.CustPhoneNumber,
-    sortable: false,
-  },
-   {
-    name: "Date",
-    selector: (row) => row.BookingDate,
-    sortable: true,
-    cell: (row) =>
-      new Date(row.BookingDate).toLocaleDateString(),
-  },
-  {
-    name: 'Action',
-    button: true,
-    cell: (row) => (
-      <Link
-        to={`/booking-view/${row.BookingID}`}
-        className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
-        title="View"
-      >
-        <Icon icon="lucide:eye" />
-      </Link>
-    ),
-  }
-];
+    {
+      name: "Booking ID",
+      selector: (row) => row.BookingTrackID,
+      sortable: true,
+      cell: (row) => (
+        <span className="fw-semibold text-secondary">{row.BookingTrackID}</span>
+      ),
+    },
+    {
+      name: "Customer",
+      selector: (row) => row.CustFullName,
+      sortable: true,
+    },
+    {
+      name: "Phone",
+      selector: (row) => row.CustPhoneNumber,
+      sortable: false,
+    },
+    {
+      name: "Date",
+      selector: (row) => row.BookingDate,
+      sortable: true,
+      cell: (row) => new Date(row.BookingDate).toLocaleDateString(),
+    },
+    {
+      name: "Action",
+      button: true,
+      cell: (row) => (
+        <Link
+          to={`/booking-view/${row.BookingID}`}
+          className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+          title="View"
+        >
+          <Icon icon="lucide:eye" />
+        </Link>
+      ),
+    },
+  ];
   return (
     <div className="row gy-3">
       <div className="col-12">
@@ -274,7 +347,9 @@ const SupervisorHeadDashboardLayer = () => {
                         <p className="fw-medium text-primary-light mb-1">
                           Today’s Assigned Bookings
                         </p>
-                        <h6 className="mb-0">{dashboardData.todaysAssignedBookings}</h6>
+                        <h6 className="mb-0">
+                          {dashboardData.todaysAssignedBookings}
+                        </h6>
                       </div>
                       <div className="w-50-px h-50-px bg-warning rounded-circle d-flex justify-content-center align-items-center">
                         <Icon
@@ -300,7 +375,9 @@ const SupervisorHeadDashboardLayer = () => {
                         <p className="fw-medium text-primary-light mb-1">
                           Ongoing Bookings
                         </p>
-                        <h6 className="mb-0">{dashboardData.ongoingBookings}</h6>
+                        <h6 className="mb-0">
+                          {dashboardData.ongoingBookings}
+                        </h6>
                       </div>
                       <div className="w-50-px h-50-px bg-success-main rounded-circle d-flex justify-content-center align-items-center">
                         <Icon
@@ -325,7 +402,9 @@ const SupervisorHeadDashboardLayer = () => {
                         <p className="fw-medium text-primary-light mb-1">
                           Completed Bookings
                         </p>
-                        <h6 className="mb-0">{dashboardData.completedBookings}</h6>
+                        <h6 className="mb-0">
+                          {dashboardData.completedBookings}
+                        </h6>
                       </div>
                       <div className="w-50-px h-50-px bg-warning rounded-circle d-flex justify-content-center align-items-center">
                         <Icon
@@ -533,31 +612,67 @@ const SupervisorHeadDashboardLayer = () => {
 
                 </div>
             </div> */}
+            <div className="col-12">
+              <div className="card mt-5">
+                <div className="card-body">
+                  <div className="d-flex align-items-center justify-content-between mb-3">
+                    <h6 className="mb-0 fw-bold text-primary-light">
+                      Completed Bookings Awaiting Approval
+                    </h6>
 
-            <div className="card mt-5">
-              <div className="card-body">
-              <div className="d-flex align-items-center justify-content-between mb-3">
-                  <h6 className="mb-0 fw-bold text-primary-light">
-                    Awaiting Customer Confirmation
-                  </h6>
+                    <span className="badge bg-danger text-white px-3 py-2">
+                      {pendingApprovalData.length} Pending
+                    </span>
+                  </div>
 
-                  <span className="badge bg-warning text-dark px-3 py-2">
-                    {notConfirmedServices.length} Pending Customer Confirmation
-                  </span>
+                  <DataTable
+                    columns={pendingApprovalColumns}
+                    data={pendingApprovalData}
+                    progressPending={pendingLoading}
+                    pagination
+                    striped
+                    highlightOnHover
+                    responsive
+                    noDataComponent={
+                      <div className="text-center py-4 text-muted">
+                        No Completed Bookings Awaiting Approval
+                      </div>
+                    }
+                  />
                 </div>
-              <DataTable
-                columns={columns}
-                data={notConfirmedServices}
-                progressPending={servicesLoading}
-                noDataComponent={<div className="text-center py-4 text-muted">No Pending Customer Confirmation</div>}
-                pagination
-                striped
-                highlightOnHover
-                pointerOnHover
-                onRowClicked={(row) => navigate(`/booking-view/${row.BookingID}`)}
-              />
+              </div>
+              <div className="card mt-3">
+                <div className="card-body">
+                  <div className="d-flex align-items-center justify-content-between mb-3">
+                    <h6 className="mb-0 fw-bold text-primary-light">
+                      Awaiting Customer Confirmation
+                    </h6>
+
+                    <span className="badge bg-warning text-dark px-3 py-2">
+                      {notConfirmedServices.length} Pending Customer
+                      Confirmation
+                    </span>
+                  </div>
+                  <DataTable
+                    columns={columns}
+                    data={notConfirmedServices}
+                    progressPending={servicesLoading}
+                    noDataComponent={
+                      <div className="text-center py-4 text-muted">
+                        No Pending Customer Confirmation
+                      </div>
+                    }
+                    pagination
+                    striped
+                    highlightOnHover
+                    pointerOnHover
+                    onRowClicked={(row) =>
+                      navigate(`/booking-view/${row.BookingID}`)
+                    }
+                  />
+                </div>
+              </div>
             </div>
-             </div>
           </div>
         </div>
       </div>

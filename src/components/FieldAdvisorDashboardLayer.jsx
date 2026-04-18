@@ -3,10 +3,16 @@ import { Icon } from "@iconify/react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import DataTable from 'react-data-table-component';
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
 const FieldAdvisorDashboardLayer = () => {
+
+  const employeeData = JSON.parse(localStorage.getItem("employeeData"));
+   const roleId = employeeData?.RoleId;
+    const employeeId = employeeData?.Id;
+  const supervisorHeadId = employeeData?.Id;
   const [approvingBookingId, setApprovingBookingId] = useState(null);
   const [dashboardData, setDashboardData] = useState({
     totalBookings: 0,
@@ -23,6 +29,8 @@ const FieldAdvisorDashboardLayer = () => {
   const token = localStorage.getItem("token");
   const [notConfirmedServices, setNotConfirmedServices] = useState([]);
   const [servicesLoading, setServicesLoading] = useState(false);
+  const [pendingApprovalData, setPendingApprovalData] = useState([]);
+  const [pendingLoading, setPendingLoading] = useState(false);
   const navigate = useNavigate();
 
   const formatCurrency = (amount = 0) =>
@@ -32,10 +40,28 @@ const FieldAdvisorDashboardLayer = () => {
       maximumFractionDigits: 0,
     }).format(amount || 0);
 
+    const fetchPendingApprovalBookings = async () => {
+      try {
+        setPendingLoading(true);
+    
+        const res = await axios.get(
+          `${API_BASE}Supervisor/GetPendingApprovalBookings?RoleId=${roleId}&EmployeeId=${employeeId}`
+        );
+    
+        setPendingApprovalData(res.data || []);
+      } catch (error) {
+        console.error("Pending approval API error:", error);
+        setPendingApprovalData([]);
+      } finally {
+        setPendingLoading(false);
+      }
+    };
+
   useEffect(() => {
     if (userId) {
       fetchFieldAdvisorData();
       fetchNotConfirmedServices();
+      fetchPendingApprovalBookings();
     }
   }, [userId]);
 
@@ -206,6 +232,66 @@ const FieldAdvisorDashboardLayer = () => {
     const encodedView = encodeURIComponent(viewKey || "");
     navigate(`/bookings${encodedView ? `?view=${encodedView}` : ""}`);
   };
+
+  const pendingApprovalColumns = [
+    {
+      name: "Booking ID",
+       selector: (row) => (
+              <Link
+                to={`/booking-view/${row.BookingID}`} className="text-primary" >
+                {row.BookingTrackID}
+              </Link>
+            ),
+      sortable: true,
+      width: "200px",
+    },
+    {
+      name: "Dealer",
+      selector: (row) => row.DealerName,
+      width: "200px",
+    },
+      {
+      name: "Service Name",
+      selector: (row) => row.ServiceName,
+      wrap: true,
+      width: "300px",
+    },
+    {
+      name: "Booking Date",
+      selector: (row) => row.CreatedDate,
+      sortable: true,
+      width: "200px",
+      cell: (row) =>
+        new Date(row.CreatedDate).toLocaleString(),
+    },
+    {
+      name: "Status",
+      selector: (row) => row.StatusName,
+      cell: (row) => (
+        <span className="badge bg-success">
+          {row.StatusName || "Pending"}
+        </span>
+      ),
+      width: "200px",
+    },
+     {
+          name: "Actions",
+          cell: (row) => {
+            return (
+              <div className="d-flex gap-2 align-items-center">
+                <Link
+                  to={`/booking-view/${row.BookingID}`}
+                  className="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                  title="View"
+                >
+                  <Icon icon="lucide:eye" />
+                </Link>
+              </div>
+            );
+          },
+          width: "100px",
+        },
+  ];
 
   return (
     <div className="row gy-4">
@@ -461,9 +547,37 @@ const FieldAdvisorDashboardLayer = () => {
             </div>
           </div>
         </div>
-      </div>
-      {/* Customer Not Confirmed Services */}
-      <div className="col-12 mt-4">
+         <div className="card mt-3 p-0">
+              <div className="card-body">
+
+                <div className="d-flex align-items-center justify-content-between mb-3">
+                  <h6 className="mb-0 fw-bold text-primary-light">
+                    Completed Bookings Awaiting Approval
+                  </h6>
+
+                  <span className="badge bg-danger text-white px-3 py-2">
+                    {pendingApprovalData.length} Pending
+                  </span>
+                </div>
+
+                <DataTable
+                  columns={pendingApprovalColumns}
+                  data={pendingApprovalData}
+                  progressPending={pendingLoading}
+                  pagination
+                  striped
+                  highlightOnHover
+                  responsive
+                  noDataComponent={
+                    <div className="text-center py-4 text-muted">
+                      No Completed Bookings Awaiting Approval
+                    </div>
+                  }
+                />
+              </div>
+            </div>
+             {/* Customer Not Confirmed Services */}
+      <div className="col-12 mt-3 p-0">
         <div className="card border radius-8">
           <div className="card-header d-flex align-items-center justify-content-between">
             <h6 className="mb-0 fw-bold">Awaiting Customer Confirmation</h6>
@@ -619,6 +733,7 @@ const FieldAdvisorDashboardLayer = () => {
 
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
