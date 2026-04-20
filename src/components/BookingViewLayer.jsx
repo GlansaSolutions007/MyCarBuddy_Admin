@@ -1506,6 +1506,8 @@ useEffect(() => {
       cancelButtonText: "Cancel",
     });
 
+    const confirmStatus = bookingData?.SupervisorBookings?.[0]?.confirmStatus || "Confirm";
+
     if (!result.isConfirmed) return;
 
     setIsConverting(true);
@@ -1516,6 +1518,7 @@ useEffect(() => {
         `${API_BASE}Bookings/convert-inspection-to-service`,
         {
           bookingId: bookingData?.BookingID,
+          confirmStatus: confirmStatus,
         },
         {
           headers: {
@@ -10276,13 +10279,13 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                             <tr>
                               {/* <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>S.No</th> */}
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Service Name</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Type</th>
+                              {/* <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Type</th> */}
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Lead ID</th>
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Inspection Amount</th>
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>GST Amount</th>
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>GST %</th>
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Total Price</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Confirmed</th>
+                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Payment Status</th>
                               <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Created Date</th>
                             </tr>
                           </thead>
@@ -10293,7 +10296,7 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                               .map((inspection, idx) => (
                                 <tr key={inspection.Id ?? idx}>
                                   <td className="py-2 px-3 fw-semibold">{inspection.ServiceName ?? "-"}</td>
-                                  <td className="py-2 px-3">
+                                  {/* <td className="py-2 px-3">
                                     <span
                                       className="badge rounded-pill px-2 py-1"
                                       style={{
@@ -10304,13 +10307,32 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                     >
                                       {inspection.Type ?? "-"}
                                     </span>
-                                  </td>
+                                  </td> */}
                                   <td className="py-2 px-3">{inspection.LeadId ?? "-"}</td>
                                   <td className="py-2 px-3">{formatCurrency(inspection.LabourCharges ?? 0)}</td>
                                   <td className="py-2 px-3">{formatCurrency(inspection.GSTAmount ?? 0)}</td>
                                   <td className="py-2 px-3">{(inspection.GSTPercent)}%</td>
                                   <td className="py-2 px-3 fw-bold">{formatCurrency(inspection.TotalPrice)}</td>
                                   <td className="py-2 px-3">
+                                    <span
+                                      className="badge rounded-pill px-2 py-1"
+                                      style={{
+                                        fontSize: "0.7rem",
+                                        backgroundColor:
+                                          inspection.InspctionPaymentStatus === "Success"
+                                            ? "rgba(34,197,94,0.15)"
+                                            : "rgba(148,163,184,0.2)",
+                                        color:
+                                          inspection.InspctionPaymentStatus === "Success"
+                                            ? "#16a34a"
+                                            : "#64748b",
+                                      }}
+                                    >
+                                      {inspection.InspctionPaymentStatus === "Success" ? "Paid" : "Pending"}
+                                    </span>
+                                  </td>
+
+                                  {/* <td className="py-2 px-3">
                                     <span
                                       className="badge rounded-pill px-2 py-1"
                                       style={{
@@ -10327,7 +10349,7 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                     >
                                       {inspection.IsConfirm === 1 ? "Yes" : "No"}
                                     </span>
-                                  </td>
+                                  </td> */}
                                   <td className="py-2 px-3">{formatDateTime(inspection.CreatedDate)}</td>
                                 </tr>
                               ))}
