@@ -65,7 +65,7 @@ const RefundLayer = () => {
     {
       name: "Booking Price",
       selector: (row) =>
-        `₹${(row.TotalPrice + row.GSTAmount - row.CouponAmount).toFixed(2)}`,
+        `₹${(row.TotalPrice - row.CouponAmount).toFixed(2)}`,
       sortable: true,
       width: "150px"
     },
@@ -76,7 +76,7 @@ const RefundLayer = () => {
       width: "150px"
     },
     {
-      name: "Customer Name",
+      name: "Cust. Name",
       selector: (row) => (
         <>
           <span className="fw-bold">{row.CustFullName}</span> <br />
@@ -95,7 +95,7 @@ const RefundLayer = () => {
       width: "150px"
     },
     {
-      name: "Payment Status",
+      name: "Pay. Status",
       cell: (row) => {
         const paymentStatus = row.PaymentStatus || "Pending";
 
@@ -107,10 +107,10 @@ const RefundLayer = () => {
 
         // Color mapping like sample
         const colorMap = {
-          Paid: "#28A745",      // Green
-          Pending: "#F57C00",   // Orange
-          Failed: "#E34242",    // Red
-          Cancelled: "#E34242", // Red
+          Paid: "#28A745",     
+          Pending: "#F57C00",   
+          Failed: "#E34242",    
+          Cancelled: "#E34242", 
         };
 
         const color = colorMap[status] || "#6c757d"; // default grey
