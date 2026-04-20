@@ -5702,6 +5702,7 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                     )}
                   {/* Convert To Service / Service Converted - Add Services Button */}
                   { bookingData?.InspectionTracking == null &&
+                    bookingData?.Isservice_converted === 0 &&
                     bookingData?.Isinspection === 1 &&
                     bookingData?.BookingStatus !== "Cancelled" && (
                       <button
