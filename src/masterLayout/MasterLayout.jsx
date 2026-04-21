@@ -814,16 +814,16 @@ const alertLeads = useMemo(() => {
         permission: "ticketreports_view",
         page: "Ticket Reports",
       },
-      ...(role === "Dealer"
-        ? [
-            {
-              title: "Vehicle Reports",
-              to: "/vehicle-reports",
-              permission: "vehiclereports_view",
-              page: "Vehicle Reports",
-            },
-          ]
-        : []),
+      // ...(role === "Dealer"
+      //   ? [
+      //       {
+      //         title: "Vehicle Reports",
+      //         to: "/vehicle-reports",
+      //         permission: "vehiclereports_view",
+      //         page: "Vehicle Reports",
+      //       },
+      //     ]
+      //   : []),
       {
         title: "Complete Ser. Rep",
         to: "/complete-service-reports",

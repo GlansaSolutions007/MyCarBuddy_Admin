@@ -140,37 +140,41 @@ function ServicesRatingLayer() {
       sortable: true,
       width: "180px",
     },
-    {
-      name: "Status",
-      cell: (row) => (
-        <span
-          className={`badge ${row.Is_Approve ? "bg-success" : "bg-secondary"}`}
-        >
-          {row.Is_Approve ? "Approved" : "Unapproved"}
-        </span>
-      ),
-      width: "140px",
-    },
-    {
-      name: "Actions",
-      cell: (row) =>
-        row.Is_Approve ? (
-          <button
-            className="btn btn-sm btn-warning-600"
-            onClick={() => handleApproval(row, false)}
-          >
-            Unapprove
-          </button>
-        ) : (
-          <button
-            className="btn btn-sm btn-primary-600"
-            onClick={() => handleApproval(row, true)}
-          >
-            Approve
-          </button>
-        ),
-      width: "150px",
-    },
+    ...(roleName === "Admin"
+      ? [
+          {
+            name: "Status",
+            cell: (row) => (
+              <span
+                className={`badge ${row.Is_Approve ? "bg-success" : "bg-secondary"}`}
+              >
+                {row.Is_Approve ? "Approved" : "Unapproved"}
+              </span>
+            ),
+            width: "140px",
+          },
+          {
+            name: "Actions",
+            cell: (row) =>
+              row.Is_Approve ? (
+                <button
+                  className="btn btn-sm btn-warning-600"
+                  onClick={() => handleApproval(row, false)}
+                >
+                  Unapprove
+                </button>
+              ) : (
+                <button
+                  className="btn btn-sm btn-primary-600"
+                  onClick={() => handleApproval(row, true)}
+                >
+                  Approve
+                </button>
+              ),
+            width: "150px",
+          },
+        ]
+      : []),
   ];
 
   return (

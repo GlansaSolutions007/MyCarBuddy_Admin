@@ -10331,25 +10331,6 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                       {inspection.InspctionPaymentStatus === "Success" ? "Paid" : "Pending"}
                                     </span>
                                   </td>
-
-                                  {/* <td className="py-2 px-3">
-                                    <span
-                                      className="badge rounded-pill px-2 py-1"
-                                      style={{
-                                        fontSize: "0.7rem",
-                                        backgroundColor:
-                                          inspection.IsConfirm === 1
-                                            ? "rgba(34,197,94,0.15)"
-                                            : "rgba(148,163,184,0.2)",
-                                        color:
-                                          inspection.IsConfirm === 1
-                                            ? "#16a34a"
-                                            : "#64748b",
-                                      }}
-                                    >
-                                      {inspection.IsConfirm === 1 ? "Yes" : "No"}
-                                    </span>
-                                  </td> */}
                                   <td className="py-2 px-3">{formatDateTime(inspection.CreatedDate)}</td>
                                 </tr>
                               ))}
