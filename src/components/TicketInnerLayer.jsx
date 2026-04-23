@@ -651,7 +651,17 @@ const handleAssignSupervisor = async () => {
                       <div className="row mb-3 text-md">
                         <div className="col-sm-6 mb-10">
                           <strong>Booking ID:</strong>{" "}
-                          {ticket.BookingTrackID || "-"}
+                          {/* {ticket.BookingTrackID || "-"} */}
+                           {ticket.BookingID ? (
+                          <Link
+                            to={`/complete-service-reports?bookingId=${ticket.BookingID}`}
+                            className="text-primary text-decoration-underline"
+                            >
+                             {ticket.BookingTrackID}
+                            </Link>
+                            ) : (
+                            "-"
+                          )}
                         </div>
                         <div className="col-sm-6 mb-10">
                           <strong>Lead ID:</strong>{" "}
@@ -676,7 +686,7 @@ const handleAssignSupervisor = async () => {
                         </div>
                         <div className="col-sm-6 mb-10">
                           <strong>Status:</strong>{" "}
-                          {ticket.BookingDetails?.BookingStatus || "-"}
+                          {ticket.StatusName || "-"}
                         </div>
                         <div className="col-sm-6 mb-10">
                           <strong>Supervisor:</strong>{" "}
@@ -688,7 +698,7 @@ const handleAssignSupervisor = async () => {
                         </div>
                         <div className="col-sm-6 mb-10">
                           <strong>Vehicle Number:</strong>{" "}
-                          {ticket.BookingDetails?.VehicleNumber || "-"}
+                          {ticket.VehicleDetails?.RegistrationNumber || "-"}
                         </div>
                       </div>
                     </Accordion.Body>

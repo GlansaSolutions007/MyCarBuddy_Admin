@@ -335,7 +335,7 @@ const TicketsViewLayer = () => {
                 style={{ minWidth: "180px", flex: "1 1 180px" }}
               >
                 <option value="All">All</option>
-                <option value="Pending, Reopened">Pending + Reopened</option>
+                {/* <option value="Pending, Reopened">Pending + Reopened</option> */}
                 <option value="Pending">Pending</option>
                 <option value="UnderReview">Under Review</option>
                 <option value="Awaiting">Awaiting</option>
@@ -343,6 +343,8 @@ const TicketsViewLayer = () => {
                 <option value="Closed">Closed</option>
                 <option value="Cancelled">Cancelled</option>
                 <option value="Reopened">Reopened</option>
+                <option value="Rework Approved">Rework Approved</option>
+                <option value="Rework Rejected">Rework Rejected</option>
               </select>
 
               {/* ➕ Add Ticket Button */}
