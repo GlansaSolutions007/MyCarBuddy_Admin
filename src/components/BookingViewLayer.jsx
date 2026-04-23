@@ -169,6 +169,10 @@ const BookingViewLayer = () => {
   const [pickupDropRescheduleEndTime, setPickupDropRescheduleEndTime] = useState("");
   const [pickupDropReassignEndTime, setPickupDropReassignEndTime] = useState("");
   const [garagePickupEndTime, setGaragePickupEndTime] = useState("");
+  const [showReworkModal, setShowReworkModal] = useState(false);
+  const [reworkDescription, setReworkDescription] = useState("");
+  const [selectedReworkIds, setSelectedReworkIds] = useState([]); // Standardized name
+  const [isReworkLoading, setIsReworkLoading] = useState(false);  // Missing state
   const [
     hasExistingCustomerToDealerRoute,
     setHasExistingCustomerToDealerRoute,
@@ -3455,6 +3459,78 @@ useEffect(() => {
     setShowCustomerRejectionModal(true);
   };
 
+const handleReworkSubmit = async () => {
+  // Basic Validations
+  if (selectedReworkIds.length === 0) {
+    Swal.fire("Warning", "Please select at least one service for rework.", "warning");
+    return;
+  }
+  if (!reworkDescription.trim()) {
+    Swal.fire("Warning", "Please provide a reason for the rework.", "warning");
+    return;
+  }
+
+  setIsReworkLoading(true);
+
+  try {
+    // 1. Get the First Ticket ID from the bookingData Tickets array
+    const firstTicketId = bookingData?.Tickets?.[0]?.Id || 0;
+
+    // 2. Get the logged-in User ID
+    // Note: your file already uses duserId or userId from localStorage
+    const currentUserId = duserId || localStorage.getItem("userId") || 0;
+
+    // 3. Prepare the JSON Payload based on your schema
+    const payload = {
+      ticketId: Number(firstTicketId),
+      bookingId: Number(bookingData?.BookingID || bookingId),
+      addOnId: selectedReworkIds.join(","),              // Comma separated string "1,2"
+      addOnIds: selectedReworkIds.map(id => Number(id)), // Array of integers [1, 2]
+      reason: reworkDescription,                         // From textarea
+      createdBy: Number(currentUserId),                  // Logged in user
+      scheduledDate: "",           // Required date format
+      timeslot: "",                // Required date format
+      status: "Rework Initiated",                                  // Default status string
+      lastReworkID: 0
+    };
+
+    // 4. API POST Call
+    const response = await axios.post(`${API_BASE}Rework/insert`, payload, {
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      }
+    });
+
+    if (response.status === 200 || response.status === 201) {
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: "Rework submitted successfully!",
+        timer: 2000,
+        showConfirmButton: false
+      });
+      
+      // Reset and Close
+      setShowReworkModal(false);
+      setReworkDescription("");
+      setSelectedReworkIds([]);
+      
+      // Refresh the page data
+      fetchBookingData();
+    }
+  } catch (error) {
+    console.error("Rework API Error:", error);
+    Swal.fire(
+      "Error", 
+      error?.response?.data?.message || "Failed to insert rework record.", 
+      "error"
+    );
+  } finally {
+    setIsReworkLoading(false);
+  }
+};
+
   const handleCustomerRejectionSubmit = async () => {
     if (!rejectionDescription || rejectionDescription.trim() === "") {
       Swal.fire({
@@ -5669,6 +5745,21 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                         )}
                       </div>
                     )}
+
+                      {bookingData?.IsRework && bookingData.BookingStatus === "Completed" && (
+                        <button
+                          type="button"
+                          className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
+                          onClick={() => {
+                              setReworkDescription("");
+                              setSelectedReworkIds([]); // Use correct name
+                              setShowReworkModal(true);
+                          }}
+                        >
+                          <Icon icon="mdi:refresh" width={16} height={16} />
+                          Rework
+                        </button>
+                      )}
                   <Link
                     to={`/lead-view/${bookingData?.LeadId}`}
                     className="btn btn-primary-600 btn-sm text-success-main d-inline-flex align-items-center justify-content-center gap-2"
@@ -13605,6 +13696,89 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
             </div>
           </div>
         )}
+
+        {/* Rework Modal */}
+          {showReworkModal && (
+            <div className="modal fade show d-block" style={{ background: "rgba(0, 0, 0, 0.5)", backdropFilter: "blur(5px)" }}>
+              <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: "600px", width: "90%" }}>
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h6 className="modal-title fw-bold">Service Rework Request</h6>
+                    <button type="button" className="btn-close btn-close-press" onClick={() => setShowReworkModal(false)} />
+                  </div>
+
+                  <div className="modal-body">
+                    <div className="alert alert-warning mb-3">
+                      <h6 className="fw-bold mb-2">Why is rework required?</h6>
+                      <p className="mb-0 small">
+                         Rework is used when the customer is not satisfied with the completed services. 
+                        The selected services will be marked for rework and assigned back to the dealer 
+                        and supervisor for correction based on the customer’s feedback. These services 
+                        will remain under review until the issues are resolved and updated accordingly.
+                      </p>
+                    </div>
+
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Select Services for Rework</label>
+                        <div className="border rounded p-2" style={{ maxHeight: "200px", overflowY: "auto" }}>
+                          {[...(bookingData?.BookingAddOns || []), ...(bookingData?.SupervisorBookings || [])].map((service, idx) => (
+                            <div key={service.AddOnID || idx} className="d-flex align-items-center gap-3 mb-1 px-3 py-1">
+                              <input
+                                className="form-check-input mt-0"
+                                type="checkbox"
+                                // Ensure names match state defined above
+                                checked={selectedReworkIds.includes(service.AddOnID)}
+                                onChange={() => {
+                                  const id = service.AddOnID;
+                                  setSelectedReworkIds(prev =>
+                                    prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+                                  );
+                                }}
+                                style={{ border: "1px solid #000" }}
+                              />
+                              <label className="form-check-label mb-0 small">
+                                {service.ServiceName}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">Description / Reason <span className="text-danger">*</span></label>
+                        <textarea
+                          className="form-control"
+                          rows="4"
+                          placeholder="Explain what needs to be fixed..."
+                          value={reworkDescription}
+                          onChange={(e) => setReworkDescription(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="modal-footer justify-content-center">
+                      <button className="btn btn-secondary btn-sm" onClick={() => setShowReworkModal(false)}>
+                        Back
+                      </button>
+                      <button
+                        className="btn btn-primary-600 btn-sm"
+                        onClick={handleReworkSubmit}
+                        disabled={isReworkLoading || !reworkDescription.trim() || selectedReworkIds.length === 0}
+                      >
+                        {isReworkLoading ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            Submitting...
+                          </>
+                        ) : (
+                          "Submit Rework"
+                        )}
+                      </button>
+                    </div>
+                </div>
+              </div>
+            </div>
+          )}
 
         {/* {showConfirmModal && (
           <div
