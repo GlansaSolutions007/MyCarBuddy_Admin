@@ -14,12 +14,13 @@ const TicketsViewLayer = () => {
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [selectedStatus, setSelectedStatus] = useState("Pending, Reopened");
+  const [selectedStatus, setSelectedStatus] = useState("All");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
+  const roleId = localStorage.getItem("roleId");
   const userId = localStorage.getItem("userId");
   const userDetails = JSON.parse(localStorage.getItem("employeeData"));
 
@@ -32,7 +33,7 @@ const TicketsViewLayer = () => {
     const url =
       role === "Admin"
         ? `${API_BASE}Tickets`
-        : `${API_BASE}Tickets?role=${role}&UserID=${userId}`;
+        : `${API_BASE}Ticket_Assignments?RoleId=${roleId}&assigned_to_emp=${userId}`;
 
     try {
       setLoading(true);
@@ -46,6 +47,7 @@ const TicketsViewLayer = () => {
           },
         });
         if (res.data && Array.isArray(res.data)) {
+          console.log("Fetched Tickets:", res.data);
           setTickets(res.data);
         } else {
           setTickets([]);
@@ -53,18 +55,18 @@ const TicketsViewLayer = () => {
       } else {
         // ✅ Head / Employee: fetch from Ticket_Assignments
         const [resAssignments, resTickets] = await Promise.all([
-          axios.get(`${API_BASE}Ticket_Assignments`, {
+          axios.get(url, {
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
           }),
-          axios.get(`${API_BASE}Tickets`, {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }),
+          // axios.get(`${API_BASE}Tickets`, {
+          //   headers: {
+          //     "Content-Type": "application/json",
+          //     Authorization: `Bearer ${token}`,
+          //   },
+          // }),
         ]);
 
         const assignments = Array.isArray(resAssignments.data?.data)
@@ -73,33 +75,33 @@ const TicketsViewLayer = () => {
             ? resAssignments.data
             : [];
 
-        const allTickets = Array.isArray(resTickets.data)
-          ? resTickets.data
-          : [];
+        // const allTickets = Array.isArray(resTickets.data)
+        //   ? resTickets.data
+        //   : [];
 
-        let filteredAssignments = [];
+        // let filteredAssignments = [];
 
-        // ✅ Head: show tickets assigned to this head
-        // ✅ Employee: show tickets assigned to this employee
-        if (userDetails?.Is_Head === 1) {
-          filteredAssignments = assignments.filter(
-            (a) => Number(a.assigned_to_head) === Number(userDetails.Id)
-          );
-        } else {
-          filteredAssignments = assignments.filter(
-            (a) => Number(a.assigned_to_emp) === Number(userDetails.Id)
-          );
-        }
+        // // ✅ Head: show tickets assigned to this head
+        // // ✅ Employee: show tickets assigned to this employee
+        // if (userDetails?.Is_Head === 1) {
+        //   filteredAssignments = assignments.filter(
+        //     (a) => Number(a.assigned_to_head) === Number(userDetails.Id)
+        //   );
+        // } else {
+        //   filteredAssignments = assignments.filter(
+        //     (a) => Number(a.assigned_to_emp) === Number(userDetails.Id)
+        //   );
+        // }
 
-        // ✅ Merge ticket info
-        const mergedTickets = filteredAssignments.map((assign) => {
-          const ticketInfo = allTickets.find(
-            (t) => t.TicketTrackId === assign.ticket_id
-          );
-          return { ...ticketInfo, ...assign };
-        });
-
-        setTickets(mergedTickets);
+        // // ✅ Merge ticket info
+        // const mergedTickets = filteredAssignments.map((assign) => {
+        //   const ticketInfo = allTickets.find(
+        //     (t) => t.TicketTrackId === assign.ticket_id
+        //   );
+        //   return { ...ticketInfo, ...assign };
+        // });
+        console.log("Fetched Assignments:", assignments);
+        setTickets(assignments);
       }
     } catch (error) {
       console.error("Failed to load tickets", error);
@@ -118,7 +120,7 @@ const TicketsViewLayer = () => {
           to={`/tickets/${row.TicketID ?? row.TicketId ?? row.Id}`}
           className="text-primary"
         >
-          {row.TicketTrackId || "-"}
+          {row.TicketTrackId || row.ticket_id || "-"}
         </Link>
       ),
       sortable: true,
@@ -204,7 +206,7 @@ const TicketsViewLayer = () => {
     },
     {
       name: "Description",
-      selector: (row) => row.Description || "-",
+      selector: (row) => row.Description || row.TicketDescription || "-",
       wrap: true,
       sortable: true,
     },

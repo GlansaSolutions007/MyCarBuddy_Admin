@@ -76,14 +76,19 @@ const TelecalerAssignTicketLayer = () => {
       const res = await axios.get(`${API_BASE}Departments`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.data?.status && Array.isArray(res.data.data)) {
-        setDepartments(
-          res.data.data.map((dept) => ({
-            value: dept.DeptId,
-            label: dept.DepartmentName,
-          }))
-        );
-      }
+       if (res.data?.status && Array.isArray(res.data.data)) {
+      const supportDepartments = res.data.data
+        .filter(
+          (dept) =>
+            dept.DeptId === 2
+        )
+        .map((dept) => ({
+          value: dept.DeptId,
+          label: dept.DepartmentName,
+        }));
+
+      setDepartments(supportDepartments);
+    }
     } catch {
       Swal.fire("Error", "Unable to load departments", "error");
     }
@@ -161,29 +166,29 @@ const TelecalerAssignTicketLayer = () => {
         }
       }
       // 🔹 Department Head: Fetch tickets assigned to this head dynamically
-      else if (userDetails?.Is_Head === 1) {
-        res = await axios.get(`${API_BASE}Ticket_Assignments`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+      // else if (userDetails?.Is_Head === 1) {
+      //   res = await axios.get(`${API_BASE}Ticket_Assignments`, {
+      //     headers: { Authorization: `Bearer ${token}` },
+      //   });
 
-        const data = res.data?.data || res.data || [];
+      //   const data = res.data?.data || res.data || [];
 
-        const assigned_to_head = Array.isArray(data)
-        ? data.filter(
-            (item) =>
-              Number(item.assigned_to_head) === Number(userDetails.Id) &&
-              (item.assigned_to_emp == null ||
-                item.assigned_to_emp === "" ||
-                item.assigned_to_emp === 0) &&
-              !["Closed", "Resolved", "Cancelled"].includes(item.StatusName)
-          )
-        : [];
+      //   const assigned_to_head = Array.isArray(data)
+      //   ? data.filter(
+      //       (item) =>
+      //         Number(item.assigned_to_head) === Number(userDetails.Id) &&
+      //         (item.assigned_to_emp == null ||
+      //           item.assigned_to_emp === "" ||
+      //           item.assigned_to_emp === 0) &&
+      //         !["Closed", "Resolved", "Cancelled"].includes(item.StatusName)
+      //     )
+      //   : [];
 
-        setTickets(assigned_to_head);
-      }
+      //   setTickets(assigned_to_head);
+      // }
       // 🔹 Employee: Fetch tickets assigned to this employee
       else {
-        res = await axios.get(`${API_BASE}Ticket_Assignments`, {
+        res = await axios.get(`${API_BASE}Ticket_Assignments?assigned_to_emp=${userDetails.Id}&RoleId=${userDetails.RoleId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -191,7 +196,7 @@ const TelecalerAssignTicketLayer = () => {
 
         const assigned_to_emp = Array.isArray(data)
           ? data.filter(
-              (item) => Number(item.assigned_to_emp) === Number(userDetails.Id)
+              (item) => item.IsAssigned_emp === false || item.IsAssigned_emp === null
             )
           : [];
 
@@ -278,8 +283,9 @@ const TelecalerAssignTicketLayer = () => {
       payload = [
         {
           assignedBy: Number(userId),
-          assignedToHead: formData.selectedHead.value,
-          assignedToEmp: null,
+          // assignedToHead: formData.selectedHead.value,
+          assignedToEmp: formData.selectedHead.value, 
+          roleId: 5, // explicitly set roleId for head assignment
           ticketIds: selectedTicketIds,
         },
       ];
@@ -309,7 +315,8 @@ const TelecalerAssignTicketLayer = () => {
 
         return {
           AssignedBy: Number(userId),
-          AssignedToHead: Number(userDetails.Id),
+          // AssignedToHead: Number(userDetails.Id),
+          roleId: 6, // explicitly set roleId for employee assignment
           AssignedToEmp: empId,
           ticketIds: assignedTickets,
         };

@@ -140,6 +140,45 @@ const TicketInnerLayer = () => {
     }
   };
 
+const handleAssignSupervisor = async () => {
+  if (!ticket) return;
+
+  const result = await Swal.fire({
+    title: "Assign Supervisor?",
+    text: "Are you sure you want to assign this ticket to the supervisor?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, Assign",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#28a745",
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    const payload = [
+      {
+        assignedBy: Number(localStorage.getItem("userId")),
+        roleId: ticket.SupervisorHeadRoleId,
+        assignedToEmp: ticket.SupervisorHeadId,
+        ticketIds: [String(ticket.TicketTrackId)],
+      },
+    ];
+
+    const headers = token
+      ? { headers: { Authorization: `Bearer ${token}` } }
+      : {};
+
+    await axios.post(`${API_BASE}Ticket_Assignments`, payload, headers);
+
+    Swal.fire("Success", "Supervisor assigned successfully", "success");
+    fetchTicket();
+  } catch (error) {
+    console.error("Assign supervisor failed:", error);
+    Swal.fire("Error", "Failed to assign supervisor", "error");
+  }
+};
+
   // const handleAccept = async () => {
   //   try {
   //     await axios.put(
@@ -373,11 +412,20 @@ const TicketInnerLayer = () => {
                   <Icon icon="mdi:arrow-left" className="fs-5" />
                   Back
                 </Link>
-                {(userDetails?.Is_Head === 1 ||
+                {( userDetails?.DeptId !== 5 &&
+                  userDetails?.Is_Head === 1 ||
                   (userDetails?.RoleName === "Employee" &&
                     !["resolved", "closed", "cancelled"].includes(
                       currentStatus?.toLowerCase()
                     ))) && (
+                      <>
+                      <button
+                        className="btn btn-success btn-sm d-flex align-items-center gap-1"
+                        onClick={handleAssignSupervisor}
+                      >
+                        <Icon icon="mdi:account-check" className="fs-5" />
+                        Assign Supervisor
+                    </button>
                   <button
                     className="btn btn-primary-600 btn-sm d-flex align-items-center justify-content-center gap-1"
                     onClick={handleForward}
@@ -385,8 +433,10 @@ const TicketInnerLayer = () => {
                     <Icon icon="mdi:arrow-right" className="fs-5" />
                     Forward
                   </button>
+                   
+                  </>
                 )}
-
+                
                 {/* <button className="btn btn-success btn-sm" onClick={handleAccept}>
                   <Icon icon="mdi:check" className="me-1" /> Accept
                 </button>
@@ -430,26 +480,44 @@ const TicketInnerLayer = () => {
                         disabled={isDisabled}
                       >
                         <option value="">Select status</option>
-                        {(currentStatus === "resolved"
-                          ? role === "Admin" || userDetails?.Is_Head === 1
+                        {(
+                          role === "Admin"
                             ? [
+                                { value: 1, label: "UnderReview" },
+                                { value: 2, label: "Awaiting" },
+                                { value: 3, label: "Resolved" },
                                 { value: 4, label: "Closed" },
-                                { value: 6, label: "Reopened" },
                                 { value: 5, label: "Cancelled" },
+                                { value: 6, label: "Reopened" },
+                                { value: 9, label: "Rework Approved" },
+                                { value: 10, label: "Rework Rejected" },
                               ]
-                            : []
-                          : [
-                              { value: 1, label: "UnderReview" },
-                              { value: 2, label: "Awaiting" },
-                              { value: 3, label: "Resolved" },
-                              ...(role === "Admin" || userDetails?.Is_Head === 1
-                                ? [
-                                    { value: 4, label: "Closed" },
-                                    { value: 5, label: "Cancelled" },
-                                    { value: 6, label: "Reopened" },
-                                  ]
-                                : []),
-                            ]
+                            : userDetails?.DeptId === 5
+                            ? [
+                                { value: 9, label: "Rework Approved" },
+                                { value: 10, label: "Rework Rejected" },
+                              ]
+                            : currentStatus === "resolved"
+                            ? userDetails?.Is_Head === 1
+                              ? [
+                                  { value: 4, label: "Closed" },
+                                  { value: 6, label: "Reopened" },
+                                  { value: 5, label: "Cancelled" },
+                                ]
+                              : []
+                            : [
+                                { value: 1, label: "UnderReview" },
+                                { value: 2, label: "Awaiting" },
+                                { value: 3, label: "Resolved" },
+
+                                ...(userDetails?.Is_Head === 1
+                                  ? [
+                                      { value: 4, label: "Closed" },
+                                      { value: 5, label: "Cancelled" },
+                                      { value: 6, label: "Reopened" },
+                                    ]
+                                  : []),
+                              ]
                         ).map((opt) => (
                           <option key={opt.value} value={opt.value}>
                             {opt.label}
@@ -583,7 +651,7 @@ const TicketInnerLayer = () => {
                       <div className="row mb-3 text-md">
                         <div className="col-sm-6 mb-10">
                           <strong>Booking ID:</strong>{" "}
-                          {ticket.BookingDetails?.BookingTrackID || "-"}
+                          {ticket.BookingTrackID || "-"}
                         </div>
                         <div className="col-sm-6 mb-10">
                           <strong>Lead ID:</strong>{" "}
@@ -611,12 +679,12 @@ const TicketInnerLayer = () => {
                           {ticket.BookingDetails?.BookingStatus || "-"}
                         </div>
                         <div className="col-sm-6 mb-10">
-                          <strong>Technician:</strong>{" "}
-                          {ticket.BookingDetails?.TechFullName || "-"}
+                          <strong>Supervisor:</strong>{" "}
+                          {ticket.SupervisorHeadName || "-"}
                         </div>
                         <div className="col-sm-6 mb-10">
-                          <strong>Tech Phone:</strong>{" "}
-                          {ticket.BookingDetails?.TechPhoneNumber || "-"}
+                          <strong>Supervisor Phone:</strong>{" "}
+                          {ticket.SupervisorHeadPhone || "-"}
                         </div>
                         <div className="col-sm-6 mb-10">
                           <strong>Vehicle Number:</strong>{" "}
@@ -627,7 +695,7 @@ const TicketInnerLayer = () => {
                   </Accordion.Item>
 
                   {/* Technician Tracking */}
-                  <Accordion.Item eventKey="1">
+                  {/* <Accordion.Item eventKey="1">
                     <Accordion.Header>Technician Tracking</Accordion.Header>
                     <Accordion.Body>
                       {ticket.BookingDetails?.TechnicianTracking?.length > 0 ? (
@@ -688,10 +756,10 @@ const TicketInnerLayer = () => {
                         </p>
                       )}
                     </Accordion.Body>
-                  </Accordion.Item>
+                  </Accordion.Item> */}
 
                   {/* Payments */}
-                  <Accordion.Item eventKey="2">
+                  {/* <Accordion.Item eventKey="2">
                     <Accordion.Header>Payments</Accordion.Header>
                     <Accordion.Body>
                       {ticket.BookingDetails?.Payments?.length > 0 ? (
@@ -727,10 +795,10 @@ const TicketInnerLayer = () => {
                         </p>
                       )}
                     </Accordion.Body>
-                  </Accordion.Item>
+                  </Accordion.Item> */}
 
                   {/* Packages */}
-                  <Accordion.Item eventKey="3">
+                  {/* <Accordion.Item eventKey="3">
                     <Accordion.Header>Packages</Accordion.Header>
                     <Accordion.Body>
                       {ticket.BookingDetails?.Packages?.length > 0 ? (
@@ -765,7 +833,7 @@ const TicketInnerLayer = () => {
                         </p>
                       )}
                     </Accordion.Body>
-                  </Accordion.Item>
+                  </Accordion.Item> */}
                 </Accordion>
 
                 {/* Ticket Description */}
