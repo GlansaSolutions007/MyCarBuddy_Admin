@@ -322,6 +322,43 @@ const handleSubmitAccountDetails = async () => {
   setIsSubmitting(false);
 };
 
+const handleRequestRefund = async () => {
+  try {
+    const confirm = await Swal.fire({
+      title: "Request Refund?",
+      text: "Are you sure you want to request a refund for this booking?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Request",
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    const response = await axios.put(
+      `${API_BASE}Payments`,
+      {
+        bookingID: ticket.BookingID,
+        isRefunded: true,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (response.status === 200 || response.status === 201) {
+      Swal.fire("Success", "Refund requested successfully", "success");
+    } else {
+      throw new Error("Unexpected response");
+    }
+  } catch (error) {
+    console.error("Refund request failed:", error);
+    Swal.fire("Error", "Failed to request refund", "error");
+  }
+};
+
   // const handleAccept = async () => {
   //   try {
   //     await axios.put(
@@ -548,13 +585,7 @@ const handleSubmitAccountDetails = async () => {
                 </div>
               )}
               <div className="d-flex gap-2 mt-3">
-                <Link
-                  to="/tickets"
-                  className="btn btn-secondary btn-sm d-flex align-items-center justify-content-center gap-1"
-                >
-                  <Icon icon="mdi:arrow-left" className="fs-5" />
-                  Back
-                </Link>
+                
                 {( userDetails?.DeptId !== 5 &&
                   userDetails?.Is_Head === 1 ||
                   (userDetails?.RoleName === "Employee" &&
@@ -568,6 +599,13 @@ const handleSubmitAccountDetails = async () => {
                       >
                         <Icon icon="mdi:account-check" className="fs-5" />
                         Assign Supervisor
+                    </button>
+                     <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      onClick={handleRequestRefund}
+                    >
+                      Request Refund
                     </button>
                   <button
                     className="btn btn-primary-600 btn-sm d-flex align-items-center justify-content-center gap-1"
