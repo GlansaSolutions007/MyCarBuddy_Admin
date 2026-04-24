@@ -49,6 +49,17 @@ const BasicInformationLayer = () => {
   const [fieldAdvisors, setFieldAdvisors] = useState([]);
   const [selectedFieldAdvisor, setSelectedFieldAdvisor] = useState(null);
   const [timeSlots, setTimeSlots] = useState([]);
+  const [accountDetails, setAccountDetails] = useState({
+    id: 0,
+    accountHolderName: "",
+    accountNumber: "",
+    confirmAccountNumber: "",
+    ifscCode: "",
+    bankName: "",
+    branch: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const today = new Date().toISOString().split("T")[0];
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 25 }, (_, i) => {
@@ -65,6 +76,7 @@ const BasicInformationLayer = () => {
     { id: "car", label: "Car Details" },
     { id: "assign-supervisor", label: "Assign Supervisor" },
     { id: "assign-fa", label: "Field Advisor" },
+    { id: "account", label: "Account Details" },
   ];
 
   const visibleStages = useMemo(() => {
@@ -76,6 +88,7 @@ const BasicInformationLayer = () => {
     }
     return allStages;
   }, [roleName]);
+  
 
   useEffect(() => {
     const loadBooking = async () => {
@@ -154,6 +167,45 @@ const BasicInformationLayer = () => {
     };
     fetchLead();
   }, [bookingData?.LeadId]);
+
+   const fetchBankDetails = async (customerId) => {
+  try {
+    const headers = token
+      ? { headers: { Authorization: `Bearer ${token}` } }
+      : {};
+
+    const res = await axios.get(
+      `${API_BASE}Customer/get-customer-bank-details?customerId=${customerId}`,
+      headers
+    );
+
+    const data = Array.isArray(res.data) ? res.data[0] : res.data;
+
+    if (data) {
+      setAccountDetails({
+        id: data.Id || 0, 
+        accountHolderName: data.AccountHolderName || "",
+        accountNumber: data.AccountNumber || "",
+        confirmAccountNumber: data.AccountNumber || "",
+        ifscCode: data.IFSCCode || "",
+        bankName: data.BankName || "",
+        branch: data.Branch || "",
+      });
+    } else {
+      setAccountDetails((prev) => ({
+        ...prev,
+        id: 0,
+      }));
+    }
+  } catch (err) {
+    console.error("Failed to fetch bank details", err);
+  }
+};
+ useEffect(() => {
+  if (bookingData?.CustID) {
+    fetchBankDetails(bookingData.CustID);
+  }
+}, [bookingData?.CustID]);
 
   useEffect(() => {
     const fetchLookups = async () => {
@@ -302,6 +354,103 @@ const BasicInformationLayer = () => {
       text: "Failed to assign Field Advisor. Please try again.",
     });
   }
+};
+
+const handleAccountChange = (e) => {
+  const { name, value } = e.target;
+
+  setAccountDetails((prev) => ({
+    ...prev,
+    [name]:
+      name === "ifscCode"
+        ? value.replace(/\s/g, "").toUpperCase()
+        : value,
+  }));
+};
+
+const validateAccountDetails = () => {
+  const {
+    accountHolderName,
+    accountNumber,
+    confirmAccountNumber,
+    ifscCode,
+    bankName,
+    branch,
+  } = accountDetails;
+
+  if (!accountHolderName.trim()) return "Account holder name is required";
+  if (!bankName.trim()) return "Bank name is required";
+  if (!accountNumber) return "Account number is required";
+  if (!branch.trim()) return "Branch name is required";
+  if (accountNumber.length < 8) return "Invalid account number";
+  if (accountNumber !== confirmAccountNumber)
+    return "Account numbers do not match";
+  const ifsc = ifscCode?.replace(/\s/g, "").toUpperCase();
+  console.log("IFSC:", accountDetails.ifscCode, accountDetails.ifscCode.length);
+  if (!ifsc) return "IFSC code is required";
+  if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc))
+    return "Invalid IFSC code";
+
+  return null;
+};
+
+const handleSubmitAccountDetails = async () => {
+  const errorMsg = validateAccountDetails();
+
+  if (errorMsg) {
+    Swal.fire({
+      icon: "warning",
+      title: "Validation Error",
+      text: errorMsg,
+    });
+    return;
+  }
+  setIsSubmitting(true);
+  try {
+    const payload = {
+      id: accountDetails.id || 0,
+      customerId: bookingData?.CustID || 0,
+      accountHolderName: accountDetails.accountHolderName,
+      bankName: accountDetails.bankName,
+      accountNumber: accountDetails.accountNumber,
+      ifscCode: accountDetails.ifscCode,
+      branch: accountDetails.branch,
+      upiId: "",
+      userId: parseInt(localStorage.getItem("userId") || "0"),
+    };
+
+    console.log("Account Payload:", payload);
+
+    const response = await axios.post(
+      `${API_BASE}Customer/upsert-customer-bank-details`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (response.status === 200 || response.status === 201) {
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: "Account details submitted successfully",
+      });
+    } else {
+      throw new Error("Unexpected response");
+    }
+
+  } catch (err) {
+    console.error(err);
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Failed to submit account details",
+    });
+  }
+  setIsSubmitting(false);
 };
 
   return (
@@ -890,6 +1039,110 @@ const BasicInformationLayer = () => {
             </div>
           </div>
         )}
+
+        {activeStage === "account" &&
+          visibleStages.some((s) => s.id === "account") && (
+            <div className="card mb-3">
+              <div className="card-header">
+                <h6 className="mb-0">Account Details</h6>
+              </div>
+
+              <div className="card-body">
+                <div className="row g-3">
+
+                  <div className="col-md-6">
+                    <label className="form-label">Account Holder Name</label>
+                    <input
+                      type="text"
+                      name="accountHolderName"
+                      className="form-control"
+                      value={accountDetails.accountHolderName}
+                      onChange={handleAccountChange}
+                    />
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label">Bank Name</label>
+                    <input
+                      type="text"
+                      name="bankName"
+                      className="form-control"
+                      value={accountDetails.bankName}
+                      onChange={handleAccountChange}
+                    />
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label">Account Number</label>
+                    <input
+                      type="text"
+                      name="accountNumber"
+                      inputMode="numeric"
+                      className="form-control"
+                      value={accountDetails.accountNumber}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "");
+                        setAccountDetails((prev) => ({
+                          ...prev,
+                          accountNumber: value,
+                        }));
+                      }}
+                    />
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label">Confirm Account Number</label>
+                    <input
+                      type="text"
+                      name="confirmAccountNumber"
+                      inputMode="numeric"
+                      className="form-control"
+                      value={accountDetails.confirmAccountNumber}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "");
+                        setAccountDetails((prev) => ({
+                          ...prev,
+                          confirmAccountNumber: value,
+                        }));
+                      }}
+                    />
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label">IFSC Code</label>
+                    <input
+                      type="text"
+                      name="ifscCode"
+                      className="form-control text-uppercase"
+                      maxLength={11}
+                      value={accountDetails.ifscCode}
+                      onChange={handleAccountChange}
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Branch Name</label>
+                    <input
+                      type="text"
+                      name="branch"
+                      className="form-control"
+                      value={accountDetails.branch}
+                      onChange={handleAccountChange}
+                    />
+                  </div>
+                </div>
+
+                <div className="d-flex justify-content-center mt-5">
+                  <button
+                    className="btn btn-primary-600 btn-sm"
+                    onClick={handleSubmitAccountDetails}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Submitting..." : "Submit Details"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
     </div>
   );
 };

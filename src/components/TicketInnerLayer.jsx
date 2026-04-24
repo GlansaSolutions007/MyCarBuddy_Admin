@@ -20,7 +20,16 @@ const TicketInnerLayer = () => {
   const [statusDescription, setStatusDescription] = useState("");
   const [assignedToEmp, setAssignedToEmp] = useState(null);
   const [selectedFiles, setSelectedFiles] = useState([]);
-
+  const [accountDetails, setAccountDetails] = useState({
+    id: 0,
+    accountHolderName: "",
+    accountNumber: "",
+    confirmAccountNumber: "",
+    ifscCode: "",
+    bankName: "",
+    branch: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const history = ticket?.TrackingHistory;
   const currentStatus = history?.[0]?.StatusName?.toLowerCase() || "";
   const role = localStorage.getItem("role");
@@ -61,6 +70,9 @@ const TicketInnerLayer = () => {
         setError("Ticket not found.");
       } else {
         setTicket(data);
+        if (data?.CustID) {
+          fetchBankDetails(data.CustID);
+        }
         if (typeof data.Status === "number")
           setSelectedStatus(String(data.Status));
 
@@ -85,6 +97,40 @@ const TicketInnerLayer = () => {
   useEffect(() => {
     fetchTicket();
   }, [ticketId]);
+
+  const fetchBankDetails = async (customerId) => {
+  try {
+    const headers = token
+      ? { headers: { Authorization: `Bearer ${token}` } }
+      : {};
+
+    const res = await axios.get(
+      `${API_BASE}Customer/get-customer-bank-details?customerId=${customerId}`,
+      headers
+    );
+
+    const data = Array.isArray(res.data) ? res.data[0] : res.data;
+
+    if (data) {
+      setAccountDetails({
+        id: data.Id || 0, 
+        accountHolderName: data.AccountHolderName || "",
+        accountNumber: data.AccountNumber || "",
+        confirmAccountNumber: data.AccountNumber || "",
+        ifscCode: data.IFSCCode || "",
+        bankName: data.BankName || "",
+        branch: data.Branch || "",
+      });
+    } else {
+      setAccountDetails((prev) => ({
+        ...prev,
+        id: 0,
+      }));
+    }
+  } catch (err) {
+    console.error("Failed to fetch bank details", err);
+  }
+};
 
   // 🔹 Handle Submit Status (with Description & Files)
   const handleSubmitStatus = async () => {
@@ -177,6 +223,103 @@ const handleAssignSupervisor = async () => {
     console.error("Assign supervisor failed:", error);
     Swal.fire("Error", "Failed to assign supervisor", "error");
   }
+};
+
+const handleAccountChange = (e) => {
+  const { name, value } = e.target;
+
+  setAccountDetails((prev) => ({
+    ...prev,
+    [name]:
+      name === "ifscCode"
+        ? value.replace(/\s/g, "").toUpperCase()
+        : value,
+  }));
+};
+
+const validateAccountDetails = () => {
+  const {
+    accountHolderName,
+    accountNumber,
+    confirmAccountNumber,
+    ifscCode,
+    bankName,
+    branch,
+  } = accountDetails;
+
+  if (!accountHolderName.trim()) return "Account holder name is required";
+  if (!bankName.trim()) return "Bank name is required";
+  if (!accountNumber) return "Account number is required";
+  if (!branch.trim()) return "Branch name is required"; 
+  if (accountNumber.length < 8) return "Invalid account number";
+  if (accountNumber !== confirmAccountNumber)
+    return "Account numbers do not match";
+  const ifsc = ifscCode?.replace(/\s/g, "").toUpperCase();
+  console.log("IFSC:", accountDetails.ifscCode, accountDetails.ifscCode.length);
+  if (!ifsc) return "IFSC code is required";
+  if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc))
+    return "Invalid IFSC code";
+
+  return null;
+};
+
+const handleSubmitAccountDetails = async () => {
+  const errorMsg = validateAccountDetails();
+
+  if (errorMsg) {
+    Swal.fire({
+      icon: "warning",
+      title: "Validation Error",
+      text: errorMsg,
+    });
+    return;
+  }
+  setIsSubmitting(true);
+  try {
+    const payload = {
+      id: accountDetails.id || 0,
+      customerId: ticket?.CustID || 0,
+      accountHolderName: accountDetails.accountHolderName,
+      bankName: accountDetails.bankName,
+      accountNumber: accountDetails.accountNumber,
+      ifscCode: accountDetails.ifscCode,
+      branch: accountDetails.branch,
+      upiId: "",
+      userId: parseInt(localStorage.getItem("userId") || "0"),
+    };
+
+    console.log("Account Payload:", payload);
+
+    const response = await axios.post(
+      `${API_BASE}Customer/upsert-customer-bank-details`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (response.status === 200 || response.status === 201) {
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: "Account details submitted successfully",
+      });
+    } else {
+      throw new Error("Unexpected response");
+    }
+
+  } catch (err) {
+    console.error(err);
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Failed to submit account details",
+    });
+  }
+  setIsSubmitting(false);
 };
 
   // const handleAccept = async () => {
@@ -641,7 +784,7 @@ const handleAssignSupervisor = async () => {
                     </div>
                   )}
                 </div>
-
+                
                 {/* --- Accordion Sections --- */}
                 <Accordion defaultActiveKey="0" className="mt-3">
                   {/* Booking Details */}
@@ -700,6 +843,92 @@ const handleAssignSupervisor = async () => {
                           <strong>Vehicle Number:</strong>{" "}
                           {ticket.VehicleDetails?.RegistrationNumber || "-"}
                         </div>
+                      </div>
+                    </Accordion.Body>
+                  </Accordion.Item>
+
+                  <Accordion.Item eventKey="2">
+                    <Accordion.Header>Account Details</Accordion.Header>
+                    <Accordion.Body>
+                      <div className="row g-3">
+
+                        <div className="col-md-12">
+                          <label className="form-label">Account Holder Name</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="accountHolderName"
+                            value={accountDetails.accountHolderName}
+                            onChange={handleAccountChange}
+                          />
+                        </div>
+
+                        <div className="col-md-6">
+                          <label className="form-label">Account Number</label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            name="accountNumber"
+                            value={accountDetails.accountNumber}
+                            onChange={handleAccountChange}
+                            onWheel={(e) => e.target.blur()}
+                          />
+                        </div>
+
+                        <div className="col-md-6">
+                          <label className="form-label">Confirm Account Number</label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            name="confirmAccountNumber"
+                            value={accountDetails.confirmAccountNumber}
+                            onChange={handleAccountChange}
+                            onWheel={(e) => e.target.blur()}
+                          />
+                        </div>
+                        <div className="col-md-6">
+                          <label className="form-label">Bank Name</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="bankName"
+                            value={accountDetails.bankName}
+                            onChange={handleAccountChange}
+                          />
+                        </div>
+
+                        <div className="col-md-6">
+                          <label className="form-label">IFSC Code</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="ifscCode"
+                            value={accountDetails.ifscCode}
+                            onChange={handleAccountChange}
+                            style={{ textTransform: "uppercase" }}
+                          />
+                        </div>
+                        <div className="col-md-12">
+                          <label className="form-label">Branch Name</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="branch"
+                            value={accountDetails.branch}
+                            onChange={handleAccountChange}
+                          />
+                        </div>
+
+                      </div>
+
+                      <div className="d-flex justify-content-end mt-3">
+                        <button
+                          className="btn btn-primary-600 btn-sm"
+                          onClick={handleSubmitAccountDetails}
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting ? "Submitting..." : "Submit Details"}
+                        </button>
                       </div>
                     </Accordion.Body>
                   </Accordion.Item>

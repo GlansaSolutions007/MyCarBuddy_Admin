@@ -8254,12 +8254,25 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                             </div>
                                             <div>
                                               {service.isCompletionApproved ? (
-                                                <span className="badge bg-success-subtle text-success px-3 py-2 rounded-pill">
-                                                  Service completion approved by{" "}
-                                                  {service.completionApprovedBy ||
-                                                    "reviewer"}
-                                                </span>
-                                             ) : service.serviceStatus === "ServiceCompleted" ? (
+                                              bookingData?.BookingStatus !== "Completed" && (
+                                                <div className="d-flex flex-column align-items-end gap-2">
+                                                  {/* Rework Button */}
+                                                  <button
+                                                    className="btn btn-sm btn-warning"
+                                                    onClick={() =>
+                                                      handleAddOnStatusChange(service.sourceItem, "Rework")
+                                                    }
+                                                  >
+                                                    Rework
+                                                  </button>
+                                                  {/* Approved Text */}
+                                                  <span className="badge bg-success-subtle text-success px-3 py-2 rounded-pill">
+                                                    Service completion approved by{" "}
+                                                    {service.completionApprovedBy || "reviewer"}
+                                                  </span>
+                                                </div>
+                                              )
+                                            ) : service.serviceStatus === "ServiceCompleted" ? (
                                                   service.serviceType === "Inspection" ? (
                                                     <>
                                                     </>
