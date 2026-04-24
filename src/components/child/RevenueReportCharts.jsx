@@ -298,7 +298,7 @@ function RevenueReportCharts() {
                     ))}
                   </Pie>
                   <Tooltip />
-                  <Legend />
+                  {/* <Legend /> */}
                 </PieChart>
               </ResponsiveContainer>
             )}
