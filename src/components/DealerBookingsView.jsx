@@ -1354,7 +1354,7 @@ const DealerBookingsView = () => {
                 ) : (
                   <>
                     {/* <Icon icon="mingcute:check-circle-fill" /> */}
-                   Is in progress
+                    Is In Progress
                   </>
                 )}
               </button>

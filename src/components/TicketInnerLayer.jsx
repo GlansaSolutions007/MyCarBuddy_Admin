@@ -586,9 +586,8 @@ const handleRequestRefund = async () => {
               )}
               <div className="d-flex gap-2 mt-3">
                 
-                {( userDetails?.DeptId !== 5 &&
-                  userDetails?.Is_Head === 1 ||
-                  (userDetails?.RoleName === "Employee" &&
+                {( userDetails?.DeptId === 2 && 
+                  (
                     !["resolved", "closed", "cancelled"].includes(
                       currentStatus?.toLowerCase()
                     ))) && (
@@ -600,13 +599,6 @@ const handleRequestRefund = async () => {
                         <Icon icon="mdi:account-check" className="fs-5" />
                         Assign Supervisor
                     </button>
-                     <button
-                      type="button"
-                      className="btn btn-danger btn-sm"
-                      onClick={handleRequestRefund}
-                    >
-                      Request Refund
-                    </button>
                   <button
                     className="btn btn-primary-600 btn-sm d-flex align-items-center justify-content-center gap-1"
                     onClick={handleForward}
@@ -614,8 +606,18 @@ const handleRequestRefund = async () => {
                     <Icon icon="mdi:arrow-right" className="fs-5" />
                     Forward
                   </button>
+                  
                    
                   </>
+                )}
+                {( userDetails?.DeptId === 5 &&  userDetails?.Is_Head === 1 &&
+                 <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      onClick={handleRequestRefund}
+                    >
+                      Request Refund
+                    </button>
                 )}
                 
                 {/* <button className="btn btn-success btn-sm" onClick={handleAccept}>

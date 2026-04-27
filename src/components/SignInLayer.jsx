@@ -109,10 +109,10 @@ const SignInLayer = () => {
               <img src='/assets/images/MyCarBuddy-Logo1.webp' />
             </Link> */}
             <h5 className="mb-2 mt-3 text-center text-lg">
-              Log In to your Account{" "}
+              Login Your Account{" "}
             </h5>
             <p className="mb-32 text-center text-secondary-light text-sm">
-              Welcome back! please enter details
+              Welcome! below enter your login credentials.
             </p>
           </div>
           <form onSubmit={handleSubmit} className="form" noValidate>
