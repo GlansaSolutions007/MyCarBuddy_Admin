@@ -514,27 +514,31 @@ const RefundLayer = () => {
     {
       name: "Booking Date",
       selector: (row) => {
-        if (!row.BookingDate) return "";
-        const date = new Date(row.BookingDate);
-        return `${String(date.getDate()).padStart(2, "0")}/${String(
-          date.getMonth() + 1
-        ).padStart(2, "0")}/${date.getFullYear()}`;
+        const rawDate = row.CreatedDate;
+        if (!rawDate) return "-";
+        const dateObj = new Date(rawDate);
+        const formattedDate = dateObj.toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+        const time = dateObj.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
+        return (
+          <>
+          <div className="d-flex justify-content-center"> 
+            <span className="fw-bold">{formattedDate}</span>
+            </div>
+             <span className="d-flex justify-content-center">{time}</span>
+          </>
+        );
       },
+      sortField: "CreatedDate",
+      width: "140px",
       sortable: true,
-      width: "150px"
-    },
-    {
-      name: "Booking Price",
-      selector: (row) =>
-        `₹${(row.TotalPrice - row.CouponAmount).toFixed(2)}`,
-      sortable: true,
-      width: "150px"
-    },
-    {
-      name: "Refund Amount",
-      selector: (row) => `₹${(row.RefundAmount ?? 0).toFixed(2)}`,
-      sortable: true,
-      width: "150px"
     },
     {
       name: "Cust. Name",
@@ -576,10 +580,44 @@ const RefundLayer = () => {
       sortable: false,
     },
     {
-      name: "Refund Status",
-      selector: (row) => (
-        <span className="fw-bold">{row.RefundStatus ?? "N/A"}</span>
-      ),
+      name: "Booking Price",
+      selector: (row) =>
+        `₹${(row.TotalPrice - row.CouponAmount).toFixed(2)}`,
+      sortable: true,
+      width: "150px"
+    },
+    {
+      name: "Refund Date",
+      selector: (row) => {
+        const rawDate = row.RefundedAt;
+        if (!rawDate) return "-";
+        const dateObj = new Date(rawDate);
+        const formattedDate = dateObj.toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+        const time = dateObj.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
+        return (
+          <>
+          <div className="d-flex justify-content-center"> 
+            <span className="fw-bold">{formattedDate}</span>
+            </div>
+             <span className="d-flex justify-content-center">{time}</span>
+          </>
+        );
+      },
+      sortField: "RefundedAt",
+      width: "140px",
+      sortable: true,
+    },
+    {
+      name: "Refund Amount",
+      selector: (row) => `₹${(row.RefundAmount ?? 0).toFixed(2)}`,
       sortable: true,
       width: "150px"
     },
@@ -618,6 +656,14 @@ const RefundLayer = () => {
       },
       width: "150px",
       sortable: true,
+    },
+    {
+      name: "Refund Status",
+      selector: (row) => (
+        <span className="fw-bold">{row.RefundStatus ?? "N/A"}</span>
+      ),
+      sortable: true,
+      width: "150px"
     },
     ...(hasPermission("refunds_edit")
       ? [

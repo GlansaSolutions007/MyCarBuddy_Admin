@@ -119,26 +119,31 @@ const PaymentsListLayer = () => {
         <Link to={`/booking-view/${row.BookingID}`} className="text-primary">
           {row.BookingTrackID}
         </Link>
-      ), width: "150px", sortable: true,
+      ), width: "200px", sortable: true,
     },
-    { name: "Invoice No", selector: (row) => (row.InvoiceNumber), width: "160px", sortable: true, wrap: true},
+    { name: "Invoice No", selector: (row) => (row.InvoiceNumber), width: "200px", sortable: true, wrap: true},
     { name: "Total Amount", selector: (row) => `₹${row.AmountPaid}`, sortable: true, width: "150px" },
     {
       name: "Payment Status",
       cell: (row) => {
-        // Convert success → Paid, otherwise Pending
-        const status =
-          row.PaymentStatus?.toLowerCase() === "success"
-            ? "Paid"
-            : "Pending";
+        let paymentStatus = row?.PaymentStatus ?? "Pending";
+        let displayText = paymentStatus;
 
-        // Color mapping
+        // Convert 'Success' to 'Paid'
+        if (paymentStatus.toLowerCase() === "success") {
+          displayText = "Paid";
+        }
+
+        // Color mapping (consistent with your badge logic)
         const colorMap = {
-          Paid: "#28A745",     // Green
-          Pending: "#F57C00",  // Orange
+          Paid: "#28A745", // Green
+          Pending: "#F7AE21", // Yellow/Orange
+          Failed: "#E34242", // Red
+          Refunded: "#25878F", // Teal-blue
+          "Not Paid": "#BFBFBF", // Grey
         };
 
-        const color = colorMap[status] || "#6c757d";
+        const color = colorMap[displayText] || "#6c757d"; // Default muted grey
 
         return (
           <span className="fw-semibold d-flex align-items-center">
@@ -150,60 +155,77 @@ const PaymentsListLayer = () => {
                 backgroundColor: color,
               }}
             ></span>
-
-            <span style={{ color }}>{status}</span>
+            <span style={{ color }}>{displayText}</span>
           </span>
         );
       },
-      sortable: true,
+      wrap: true,
       width: "160px",
+      sortable: true,
     },
     { name: "Payment Mode", selector: (row) => row.PaymentMode , sortable: true, width: "150px"},
-    { name: "Transaction ID", selector: (row) => (row.TransactionID), width: "180px", sortable: true, },
+    { name: "Transaction ID", selector: (row) => (row.TransactionID), width: "220px", sortable: true, },
     {
       name: "Payment Date",
       selector: (row) => {
-        if (!row.PaymentDate) return "";
-        const date = new Date(row.PaymentDate);
-        return `${String(date.getDate()).padStart(2, "0")}/${String(
-          date.getMonth() + 1
-        ).padStart(2, "0")}/${date.getFullYear()}`;
-      },
-      sortable: true,
-      width: "150px"
-    },
-    { name: "Refund Amount", selector: (row) => row.RefundAmount ? `₹${row.RefundAmount}` : 0, sortable: true, width: "150px"},
-    {
-      name: "Refund Status",
-      cell: (row) => {
-        const status = row.IsRefunded ? "Raised" : "Not Raised";
-
-        // Color mapping
-        const colorMap = {
-          Raised: "#E34242",       // Red
-          "Not Raised": "#28A745", // Green
-        };
-
-        const color = colorMap[status] || "#6c757d";
-
+        const rawDate = row.PaymentDate;
+        if (!rawDate) return "-";
+        const dateObj = new Date(rawDate);
+        const formattedDate = dateObj.toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+        const time = dateObj.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
         return (
-          <span className="fw-semibold d-flex align-items-center">
-            <span
-              className="rounded-circle d-inline-block me-1"
-              style={{
-                width: "8px",
-                height: "8px",
-                backgroundColor: color,
-              }}
-            ></span>
-
-            <span style={{ color }}>{status}</span>
-          </span>
+          <>
+          <div className="d-flex justify-content-center"> 
+            <span className="fw-bold">{formattedDate}</span>
+            </div>
+             <span className="d-flex justify-content-center">{time}</span>
+          </>
         );
       },
+      sortField: "PaymentDate",
+      width: "140px",
       sortable: true,
-      width: "150px"
     },
+    // { name: "Refund Amount", selector: (row) => row.RefundAmount ? `₹${row.RefundAmount}` : 0, sortable: true, width: "150px"},
+    // {
+    //   name: "Refund Status",
+    //   cell: (row) => {
+    //     const status = row.IsRefunded ? "Raised" : "Not Raised";
+
+    //     // Color mapping
+    //     const colorMap = {
+    //       Raised: "#E34242",       // Red
+    //       "Not Raised": "#28A745", // Green
+    //     };
+
+    //     const color = colorMap[status] || "#6c757d";
+
+    //     return (
+    //       <span className="fw-semibold d-flex align-items-center">
+    //         <span
+    //           className="rounded-circle d-inline-block me-1"
+    //           style={{
+    //             width: "8px",
+    //             height: "8px",
+    //             backgroundColor: color,
+    //           }}
+    //         ></span>
+
+    //         <span style={{ color }}>{status}</span>
+    //       </span>
+    //     );
+    //   },
+    //   sortable: true,
+    //   width: "150px"
+    // },
     // {
     //   name: "Refunded",
     //   selector: (row) =>
