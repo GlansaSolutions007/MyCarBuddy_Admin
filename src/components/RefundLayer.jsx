@@ -32,6 +32,7 @@ const RefundLayer = () => {
   const [loadingPayments, setLoadingPayments] = useState(false);
   const [highestRazorpayAmount, setHighestRazorpayAmount] = useState(0);
   const [hasRazorpayPayments, setHasRazorpayPayments] = useState(false);
+  const [selectedPaymentId, setSelectedPaymentId] = useState(null);
   const fileInputRef = useRef(null);
 
   const API_BASE = import.meta.env.VITE_APIURL;
@@ -127,44 +128,72 @@ const RefundLayer = () => {
   };
 
   const fetchPaymentHistory = async (bookingId) => {
-    if (!bookingId) return;
-    setLoadingPayments(true);
-    try {
-      const res = await axios.get(
-        `${API_BASE}Bookings/GetPayments?bookingId=${bookingId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+  if (!bookingId) return;
+
+  setLoadingPayments(true);
+
+  try {
+    const res = await axios.get(
+      `${API_BASE}Bookings/BookingId?Id=${bookingId}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    if (res.data && Array.isArray(res.data)) {
+      setPaymentHistory(res.data);
+
+      // ✅ Extract all payments from bookings
+      const allPayments = res.data.flatMap((b) => b.Payments || []);
+
+      // ✅ Filter Razorpay + not refunded
+      const razorpayPayments = allPayments.filter(
+        (p) => p.PaymentMode === "Razorpay" || p.PaymentMode === "RazorpayQR"
       );
-      if (res.data && Array.isArray(res.data)) {
-        setPaymentHistory(res.data);
-        
-        // Find Razorpay payments
-        const razorpayPayments = res.data.filter(
-          (payment) => payment.PaymentMode === "Razorpay" && !payment.IsRefunded
+
+      if (razorpayPayments.length > 0) {
+        setHasRazorpayPayments(true);
+
+          // ✅ Get highest payment OBJECT (not just amount)
+        const highestPayment = razorpayPayments.reduce((prev, current) =>
+          (current.AmountPaid || 0) > (prev.AmountPaid || 0)
+            ? current
+            : prev
         );
-        
-        if (razorpayPayments.length > 0) {
-          setHasRazorpayPayments(true);
-          // Get the highest Razorpay payment amount
-          const maxAmount = Math.max(...razorpayPayments.map((p) => p.AmountPaid || 0));
-          setHighestRazorpayAmount(maxAmount);
+
+
+        console.log("Highest Razorpay payment:", highestPayment);
+        setSelectedPaymentId(highestPayment.TransactionID); // Store PaymentID for refund reference
+
+
+        // ✅ Get highest Razorpay payment
+        const maxAmount = Math.max(
+          ...razorpayPayments.map((p) => p.AmountPaid || 0)
+        );
+
+        setHighestRazorpayAmount(maxAmount);
+
+        // 👉 business rule (you told earlier)
+        if (maxAmount>0) {
           setRefundType("online");
         } else {
-          setHasRazorpayPayments(false);
-          setHighestRazorpayAmount(0);
-          setRefundType("cash");
+          setRefundType("bank"); // need bank details
         }
+      } else {
+        setHasRazorpayPayments(false);
+        setHighestRazorpayAmount(0);
+        setRefundType("cash");
       }
-    } catch (err) {
-      console.error("Failed to fetch payment history", err);
-      setPaymentHistory([]);
-      setHasRazorpayPayments(false);
-      setRefundType("cash");
-    } finally {
-      setLoadingPayments(false);
     }
-  };
+  } catch (err) {
+    console.error("Failed to fetch payment history", err);
+    setPaymentHistory([]);
+    setHasRazorpayPayments(false);
+    setRefundType("cash");
+  } finally {
+    setLoadingPayments(false);
+  }
+};
 
   const handlePayNow = async (row) => {
     // const refundAmt = parseFloat(row.RefundAmount) || 0;
@@ -268,7 +297,7 @@ const RefundLayer = () => {
 
   const isPaymentFormValid = () => {
     // Check if payment mode is selected
-    if (!paymentMode) return false;
+    // if (!refundType) return false;
 
     // Check if expense date is selected
     if (!expenseDate) return false;
@@ -285,18 +314,26 @@ const RefundLayer = () => {
     if (refundType === "online") {
       if (amount > highestRazorpayAmount) return false;
     } else {
-      const refundAmt = parseFloat(selectedRefund?.RefundAmount) || 0;
+      const refundAmt = parseFloat(selectedRefund?.TotalPrice) || 0;
       if (amount > refundAmt) return false;
+    }
+
+    if(refundType === "Bank Transfer"){
+      console.log("bankDetails", bankDetails);
+      const bankDetail = bankDetails[0];
+      if(!bankDetail.AccountNumber || !bankDetail.AccountHolderName || !bankDetail.BankName || !bankDetail.IFSC || !bankDetail.Branch) return false;
+      if(!bankDetail.AccountNumber.trim() || !bankDetail.AccountHolderName.trim() || !bankDetail.BankName.trim() || !bankDetail.IFSC.trim() || !bankDetail.Branch.trim()) return false;
+      if(!bankDetail.AccountNumber.trim() || !bankDetail.AccountHolderName.trim() || !bankDetail.BankName.trim() || !bankDetail.IFSC.trim() || !bankDetail.Branch.trim()) return false;
     }
 
     return true;
   };
 
   const handlePaymentSubmit = async () => {
-    if (!paymentMode) {
-      Swal.fire("Error", "Please select payment mode", "error");
-      return;
-    }
+    // if (!paymentMode) {
+    //   Swal.fire("Error", "Please select payment mode", "error");
+    //   return;
+    // }
 
     if (!expenseDate) {
       Swal.fire("Error", "Please select expense date", "error");
@@ -349,7 +386,7 @@ const RefundLayer = () => {
       formData.append("expenseDate", new Date(expenseDate).toISOString());
       formData.append("expenseCategoryID", 1);
       formData.append("amount", amount);
-      formData.append("paymentMode", paymentMode.value || paymentMode);
+      formData.append("paymentMode", refundType);
       formData.append("dealerID", 0);
       formData.append("technicianID", 0);
       formData.append("bookingID", Number(selectedRefund.BookingID));
@@ -385,6 +422,7 @@ const RefundLayer = () => {
               {
                 amount: amount,
                 bookingId: selectedRefund.BookingID,
+                paymentId: selectedPaymentId, // Assuming you have PaymentID from payment history
               },
               {
                 headers: { Authorization: `Bearer ${token}` },
@@ -453,14 +491,11 @@ const RefundLayer = () => {
     if (refundType === "online") {
       return [
         { value: "Razorpay", label: "Razorpay (Online)" },
-        { value: "Bank Transfer", label: "Bank Transfer" },
-        { value: "UPI", label: "UPI" },
       ];
     } else {
       return [
         { value: "Cash", label: "Cash" },
         { value: "Bank Transfer", label: "Bank Transfer" },
-        { value: "Cheque", label: "Cheque" },
       ];
     }
   };
@@ -597,13 +632,16 @@ const RefundLayer = () => {
                 >
                   <Icon icon="lucide:eye" />
                 </Link>
-                <button
-                  className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
-                  onClick={() => handlePayNow(row)}
-                  title="Pay Refund"
-                >
-                  <Icon icon="mdi:cash-check" />
-                </button>
+                {row.IsRefunded == 0 && (
+                  <button
+                    className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                    onClick={() => handlePayNow(row)}
+                    title="Pay Refund"
+                  >
+                    <Icon icon="mdi:cash-check" />
+                  </button>
+                )}
+             
               </div>
             ),
             ignoreRowClick: true,
@@ -798,8 +836,8 @@ const RefundLayer = () => {
                             <th>Account Number</th>
                             <th>IFSC Code</th>
                             <th>Branch</th>
-                            <th>UPI ID</th>
-                            <th>Status</th>
+                            {/* <th>UPI ID</th> */}
+                            {/* <th>Status</th> */}
                           </tr>
                         </thead>
                         <tbody>
@@ -810,16 +848,22 @@ const RefundLayer = () => {
                               <td>{detail.AccountNumber || "—"}</td>
                               <td>{detail.IFSCCode || "—"}</td>
                               <td>{detail.Branch || "—"}</td>
-                              <td>{detail.UPIId || "—"}</td>
-                              <td>
+                              {/* <td>{detail.UPIId || "—"}</td> */}
+                              {/* <td>
                                 <span className={`badge ${detail.IsActive ? 'bg-success' : 'bg-danger'}`}>
                                   {detail.IsActive ? 'Active' : 'Inactive'}
                                 </span>
-                              </td>
+                              </td> */}
                             </tr>
                           ))}
                         </tbody>
                       </table>
+
+                      {(Array.isArray(bankDetails) ? bankDetails : [bankDetails]).map((detail, index) => (
+                        <div key={index}>
+                          <p className="text-muted mb-0">For bank transfer, please add bank details in the customer profile.</p>
+                        </div>
+                      ))}
                     </div>
                   ) : (
                     <div className="text-center py-3">
@@ -832,7 +876,7 @@ const RefundLayer = () => {
                 {hasRazorpayPayments && (
                   <div className="mb-3 p-3 border rounded bg-light">
                     <label className="form-label fw-semibold mb-2">
-                      Refund Type <span className="text-danger">*</span>
+                      Payment Type <span className="text-danger">*</span>
                     </label>
                     <div className="d-flex gap-3">
                       <div className="form-check">
@@ -849,7 +893,7 @@ const RefundLayer = () => {
                           }}
                         />
                         <label className="form-check-label" htmlFor="refundTypeOnline">
-                          Through Online (Razorpay)
+                          Through Razorpay
                           <br />
                           <small className="text-muted">
                             Max: {formatCurrency(highestRazorpayAmount)}
@@ -861,8 +905,8 @@ const RefundLayer = () => {
                           className="form-check-input"
                           type="radio"
                           id="refundTypeCash"
-                          value="cash"
-                          checked={refundType === "cash"}
+                          value="Bank Transfer"
+                          checked={refundType === "Bank Transfer"}
                           onChange={(e) => {
                             setRefundType(e.target.value);
                             setPaymentMode(null);
@@ -870,10 +914,10 @@ const RefundLayer = () => {
                           }}
                         />
                         <label className="form-check-label" htmlFor="refundTypeCash">
-                          Cash / Bank Transfer
+                        Through Bank Transfer
                           <br />
                           <small className="text-muted">
-                            Max: {formatCurrency(parseFloat(selectedRefund.RefundAmount) || 0)}
+                            Max: {formatCurrency(parseFloat(selectedRefund.TotalPrice) || 0)}
                           </small>
                         </label>
                       </div>
@@ -884,7 +928,7 @@ const RefundLayer = () => {
                 <div className="row g-3 mb-3">
                   <div className="col-md-6">
                     <label className="form-label fw-semibold">
-                      Expense Date <span className="text-danger">*</span>
+                      Refund Date <span className="text-danger">*</span>
                     </label>
                     <input
                       type="date"
@@ -895,8 +939,8 @@ const RefundLayer = () => {
                     />
                   </div>
                   <div className="col-md-6">
-                    <label className="form-label fw-semibold">
-                      Payment Mode <span className="text-danger">*</span>
+                    {/* <label className="form-label fw-semibold">
+                    Refund Mode <span className="text-danger">*</span>
                     </label>
                     <Select
                       options={getPaymentModeOptions()}
@@ -905,14 +949,9 @@ const RefundLayer = () => {
                       placeholder="Select Payment Mode"
                       className="react-select-container"
                       classNamePrefix="react-select"
-                    />
-                  </div>
-                </div>
-
-                {/* Payment Amount */}
-                <div className="mb-3">
-                  <label className="form-label fw-semibold">
-                    Payment Amount <span className="text-danger">*</span>
+                    /> */}
+                      <label className="form-label fw-semibold">
+                  Refund Amount <span className="text-danger">*</span>
                   </label>
                   <input
                     type="number"
@@ -923,23 +962,31 @@ const RefundLayer = () => {
                     min="0"
                     max={Math.min(
                       selectedRefund.TotalPrice || 0,
-                      refundType === "online" ? highestRazorpayAmount : selectedRefund.RefundAmount
+                      refundType === "online" ? highestRazorpayAmount : selectedRefund.TotalPrice
                     )}
                   />
-                  <small className="text-muted d-block mt-1">
-                    <strong>Booking Total Amount:</strong> {formatCurrency(selectedRefund.TotalPrice || 0)}
-                  </small>
-                  {/* <small className="text-muted d-block">
+                  <small className="text-muted d-block">
                     {refundType === "online" 
                       ? `Max online refund: ${formatCurrency(highestRazorpayAmount)}`
-                      : `Max cash/bank refund: ${formatCurrency(selectedRefund.RefundAmount)}`
+                      : `Max cash/bank refund: ${formatCurrency(selectedRefund.TotalPrice)}`
                     }
-                  </small> */}
+                  </small> 
                   {parseFloat(paymentAmount) > (selectedRefund.TotalPrice || 0) && (
                     <small className="text-danger d-block mt-1">
-                      ⚠ Payment amount cannot exceed booking total: {formatCurrency(selectedRefund.TotalPrice || 0)}
+                      ⚠ Payment amount cannot exceed booking total: {refundType === "online" ? formatCurrency(highestRazorpayAmount) : formatCurrency(selectedRefund.TotalPrice)}
                     </small>
                   )}
+                  </div>
+                  
+                </div>
+
+                {/* Payment Amount */}
+                <div className="mb-3">
+                
+                  {/* <small className="text-muted d-block mt-1">
+                    <strong>Booking Total Amount:</strong> {formatCurrency(selectedRefund.TotalPrice || 0)}
+                  </small> */}
+                 
                 </div>
 
                 {/* Document Upload */}
@@ -1112,7 +1159,7 @@ const RefundLayer = () => {
                   disabled={!isPaymentFormValid()}
                   title={!isPaymentFormValid() ? "Please fill all required fields correctly" : "Process refund"}
                 >
-                  Pay Now
+                 Submit
                 </button>
               </div>
             </div>
@@ -1124,4 +1171,3 @@ const RefundLayer = () => {
 };
 
 export default RefundLayer;
-

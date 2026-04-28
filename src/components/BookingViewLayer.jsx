@@ -177,9 +177,33 @@ const BookingViewLayer = () => {
     hasExistingCustomerToDealerRoute,
     setHasExistingCustomerToDealerRoute,
   ] = useState(false);
-  // Dealers from this booking's add-ons (unique by DealerID) for garage flow dropdowns
+  const getNormalizedServiceStatus = (item) =>
+    (
+      item?.StatusName ??
+      item?.statusName ??
+      item?.AddOnStatus ??
+      item?.addOnStatus
+    )
+      ?.toString()
+      .trim();
+
+  const isReworkStatus = (item) =>
+    getNormalizedServiceStatus(item)?.toLowerCase().includes("rework");
+
+  const allBookingServicesForFlow = [
+    ...(bookingData?.BookingAddOns || []),
+    ...(bookingData?.SupervisorBookings || []),
+  ];
+  const reworkServicesForFlow = allBookingServicesForFlow.filter(isReworkStatus);
+  const isReworkFlowActive =
+    Boolean(bookingData?.IsRework) && reworkServicesForFlow.length > 0;
+  const garageFlowServices = isReworkFlowActive
+    ? reworkServicesForFlow
+    : allBookingServicesForFlow;
+
+  // Dealers from this booking's scoped services (unique by DealerID) for garage flow dropdowns
   const garageDealerOptions = (() => {
-    const addOns = bookingData?.BookingAddOns || [];
+    const addOns = garageFlowServices;
     const seen = new Set();
     return addOns
       .filter(
@@ -198,19 +222,11 @@ const BookingViewLayer = () => {
   );
   const singleGarageDealerOption =
     garageDealerOptions.length === 1 ? garageDealerOptions[0] : null;
-  const garageProgressServices = [
-    ...(bookingData?.BookingAddOns || []),
-    ...(bookingData?.SupervisorBookings || []),
-  ].filter((item) => item?.DealerID != null && item?.DealerName);
+  const garageProgressServices = garageFlowServices.filter(
+    (item) => item?.DealerID != null && item?.DealerName,
+  );
   const isGarageServiceCompletedApproved = (item) => {
-    const status = (
-      item?.StatusName ??
-      item?.statusName ??
-      item?.AddOnStatus ??
-      item?.addOnStatus
-    )
-      ?.toString()
-      .trim();
+    const status = getNormalizedServiceStatus(item);
     const isApproved =
       item?.IsCompleted_Confirmation === 1 ||
       item?.isCompleted_Confirmation === 1;
@@ -270,15 +286,33 @@ const BookingViewLayer = () => {
       !currentGarageDealerOption ||
       dealer.value !== currentGarageDealerOption.value,
   );
-  const garageServiceItems = [
-    ...(bookingData?.BookingAddOns || []),
-    ...(bookingData?.SupervisorBookings || []),
-  ].filter((item) => item?.ServiceName);
+  const garageServiceItems = garageFlowServices.filter((item) => item?.ServiceName);
+  const effectiveHasExistingCustomerToDealerRoute = (() => {
+    const routes = (bookingData?.CarPickUpDelivery || []).filter(
+      (route) => route?.Status !== "Cancelled",
+    );
+    const lastRoute = routes[routes.length - 1];
+    if (!lastRoute) return hasExistingCustomerToDealerRoute;
+    const lastType = (lastRoute?.RouteType || "").toString().trim();
+    const lastStatus = (lastRoute?.Status || "").toString().toLowerCase().trim();
+
+    // Rework should start from CustomerToDealer after previous cycle ends with DealerToCustomer.
+    if (isReworkFlowActive && lastType === "DealerToCustomer" && lastStatus === "completed") {
+      return false;
+    }
+    if (lastType === "CustomerToDealer" || lastType === "DealerToDealer") {
+      return true;
+    }
+    if (lastType === "DealerToCustomer" && lastStatus === "completed") {
+      return false;
+    }
+    return hasExistingCustomerToDealerRoute;
+  })();
   const shouldSkipGaragePickupIntro =
     bookingData?.ServiceType === "ServiceAtGarage" &&
     garageServiceItems.length === 1 &&
     !!singleGarageDealerOption &&
-    !hasExistingCustomerToDealerRoute;
+    !effectiveHasExistingCustomerToDealerRoute;
   const [pickupDate, setPickupDate] = useState("");
   const [pickupTime, setPickupTime] = useState("");
   const [dropDate, setDropDate] = useState("");
@@ -1201,7 +1235,7 @@ useEffect(() => {
       (route) => route.Status !== "Cancelled",
     );
     console.log(filteredRoutes, "asdasdd");
-    const addOns = bookingData?.BookingAddOns || [];
+    const addOns = garageFlowServices;
 
     const lastRoute = filteredRoutes[filteredRoutes.length - 1];
 
@@ -1234,9 +1268,10 @@ useEffect(() => {
         );
 
         // Check if any service NOT completed
-        const hasPending = dealerAddOns.some(
-          (a) => (a.StatusName || "").toLowerCase() !== "servicecompleted",
-        );
+        const hasPending = dealerAddOns.some((a) => {
+          const status = getNormalizedServiceStatus(a)?.toLowerCase() || "";
+          return status !== "servicecompleted";
+        });
 
         if (hasPending) {
           const dealerName =
@@ -1324,12 +1359,12 @@ useEffect(() => {
   // After user selects "Service at garage" → open garage flow modal
   const openGarageFlowModal = () => {
     const shouldOpenDealerToDealer =
-      hasExistingCustomerToDealerRoute &&
+      effectiveHasExistingCustomerToDealerRoute &&
       !allGarageServicesCompletedApproved &&
       completedGarageDealerOptions.length > 0 &&
       pendingNextGarageDealerOptions.length > 0;
     const defaultGarageTask =
-      hasExistingCustomerToDealerRoute && allGarageServicesCompletedApproved
+      effectiveHasExistingCustomerToDealerRoute && allGarageServicesCompletedApproved
         ? "carDrop"
         : "carPickup";
     const defaultGarageRoute = shouldOpenDealerToDealer
@@ -1342,7 +1377,7 @@ useEffect(() => {
     setGarageTask(defaultGarageTask);
     setGarageRoute(defaultGarageRoute);
     setGaragePickupDealer(
-      hasExistingCustomerToDealerRoute ? currentGarageDealerOption : null,
+      effectiveHasExistingCustomerToDealerRoute ? currentGarageDealerOption : null,
     );
     setGarageDeliverDealer(
       defaultGarageRoute === "dealerToDealer"
@@ -2042,10 +2077,17 @@ useEffect(() => {
 
       // Get comma-separated IDs of selected services
       const selectedServiceNames = selectedServiceType.map((st) => st.value);
-      const selectedAddOns = (bookingData?.BookingAddOns || []).filter(
-        (addon) =>
-          addon.ServiceName && selectedServiceNames.includes(addon.ServiceName),
-      );
+      const selectedAddOns = (bookingData?.BookingAddOns || []).filter((addon) => {
+        const status = getNormalizedServiceStatus(addon);
+        const isEligibleForHomeAssign = isReworkFlowActive
+          ? isReworkStatus(addon)
+          : status !== "ServiceCompleted";
+        return (
+          isEligibleForHomeAssign &&
+          addon.ServiceName &&
+          selectedServiceNames.includes(addon.ServiceName)
+        );
+      });
       const addOnIds =
         selectedAddOns.map((addon) => String(addon.AddOnID)).join(",") || "0";
 
@@ -8187,7 +8229,9 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                                   )}`}
                                                 >
                                                   {service.serviceStatus === "InProgress"
-                                                    ? "Service In Progress"
+                                                     ? service.serviceType === "Inspection"
+                                                      ? "Inspection In Progress"
+                                                      : "Service In Progress"
                                                     : service.serviceStatus === "ServiceCompleted"
                                                     ? service.serviceType === "Inspection"
                                                       ? "Inspection Completed"
@@ -11367,7 +11411,7 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                           placeholder="Amount"
                         />
                       </div>
-                      {alreadyPaid === 0 && (
+                      {bookingData.discountAmount === 0 && (
                         <>
                           <div className="mb-0">
                             <label className="form-label fw-semibold">
@@ -11500,7 +11544,7 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                           placeholder="Amount"
                         />
                       </div>
-                      {alreadyPaid === 0 && (
+                      {bookingData.discountAmount === 0 && (
                         <>
                           <div className="mb-0">
                             <label className="form-label fw-semibold">
@@ -12068,53 +12112,16 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                           options={
                             bookingData?.BookingAddOns
                               ? bookingData.BookingAddOns.filter((addon) => {
-                                  // Filter out completed services and items without a name
-                                  const status = (
-                                    addon.StatusName ??
-                                    addon.statusName ??
-                                    addon.AddOnStatus ??
-                                    addon.addOnStatus
-                                  )
-                                    ?.toString()
-                                    .trim();
-                                  return (
-                                    status !== "ServiceCompleted" &&
-                                    addon.ServiceName
-                                  );
+                                  const status = getNormalizedServiceStatus(addon);
+                                  const isEligibleForHomeAssign = isReworkFlowActive
+                                    ? isReworkStatus(addon)
+                                    : status !== "ServiceCompleted";
+                                  return isEligibleForHomeAssign && addon.ServiceName;
                                 }).map((addon) => ({
                                   value: addon.ServiceName,
-
                                   label: `${addon.ServiceName} (${addon.DealerName || "No Dealer"})`,
                                 }))
-                              : // .filter((v, i, a) => a.findIndex(t => t.label === v.label) === i)
-                                []
-                                ? bookingData.BookingAddOns.filter((addon) => {
-                                    // Filter out completed services and items without a name
-                                    const status = (
-                                      addon.StatusName ??
-                                      addon.statusName ??
-                                      addon.AddOnStatus ??
-                                      addon.addOnStatus
-                                    )
-                                      ?.toString()
-                                      .trim();
-                                    return (
-                                      status !== "ServiceCompleted" &&
-                                      addon.ServiceName
-                                    );
-                                  }).map((addon) => ({
-                                    // The 'value' stays as the ServiceName (what the API expects)
-                                    value: addon.ServiceName,
-                                    // The 'label' is what the user sees in the dropdown
-                                    label: (
-                                      <>
-                                        {addon.ServiceName} (
-                                        <b>{addon.DealerName || "No Dealer"}</b>
-                                        )
-                                      </>
-                                    ),
-                                  }))
-                                : []
+                              : []
                           }
                           isMulti
                           value={selectedServiceType}
@@ -12280,7 +12287,7 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                         {/* Logic: Hide Car Pickup if only 1 dealer is assigned AND the car is already at a dealer */}
                         {!(
                           garageDealerOptions.length === 1 &&
-                          hasExistingCustomerToDealerRoute
+                          effectiveHasExistingCustomerToDealerRoute
                         ) && (
                           <button
                             type="button"
@@ -12334,7 +12341,7 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                           </button>
                         )}
                         {/* Hide Car drop when CustomerToDealer route does NOT exist */}
-                        {hasExistingCustomerToDealerRoute &&
+                        {effectiveHasExistingCustomerToDealerRoute &&
                           allGarageServicesCompletedApproved && (
                             <button
                               type="button"
@@ -12399,7 +12406,7 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                       </p>
                       <div className="d-flex flex-column gap-3">
                         {/* Hide Customer to Dealer button if already exists (only when carPickup) */}
-                        {(!hasExistingCustomerToDealerRoute ||
+                        {(!effectiveHasExistingCustomerToDealerRoute ||
                           garageTask === "carDrop") && (
                           <button
                             type="button"
@@ -12457,7 +12464,7 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                           </button>
                         )}
                         {garageTask === "carPickup" &&
-                          hasExistingCustomerToDealerRoute &&
+                          effectiveHasExistingCustomerToDealerRoute &&
                           completedGarageDealerOptions.length > 0 &&
                           pendingNextGarageDealerOptions.length > 0 && (
                             <button
