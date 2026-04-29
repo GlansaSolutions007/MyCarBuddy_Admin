@@ -4,10 +4,18 @@ import Accordion from "react-bootstrap/Accordion";
 import { Modal, Button } from "react-bootstrap";
 import axios from "axios";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
 import Select from "react-select";
 import TimeLineView from "./TimeLineView";
+import CustomerConfirmationDetailsAccordion from "./CustomerConfirmationDetailsAccordion";
+import DeliveryImagesAccordion from "./DeliveryImagesAccordion";
+import PickupImagesAccordion from "./PickupImagesAccordion";
+import PaymentsAccordion from "./PaymentsAccordion";
+import DealerStatusAccordion from "./DealerStatusAccordion";
+import InspectionDetailsAccordion from "./InspectionDetailsAccordion";
+import InspectionChecklistAccordion from "./InspectionChecklistAccordion";
+import InvoicesAccordion from "./InvoicesAccordion";
+import ServiceTrackingAccordion from "./ServiceTrackingAccordion";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 const API_IMAGE = import.meta.env.VITE_APIURL_IMAGE;
@@ -194,7 +202,33 @@ const BookingViewLayer = () => {
     ...(bookingData?.BookingAddOns || []),
     ...(bookingData?.SupervisorBookings || []),
   ];
-  const reworkServicesForFlow = allBookingServicesForFlow.filter(isReworkStatus);
+  const activeReworkAddOnIds = (() => {
+    const reworks = bookingData?.Reworks || [];
+    if (reworks.length === 0) return new Set();
+    const latestRework = reworks[reworks.length - 1];
+    const rawAddOnIds = (
+      latestRework?.NewAddOnId ||
+      latestRework?.AddOnId ||
+      ""
+    ).toString();
+    const ids = rawAddOnIds
+      .split(",")
+      .map((id) => Number(id.trim()))
+      .filter((id) => Number.isFinite(id) && id > 0);
+    return new Set(ids);
+  })();
+  const hasReworkAddOnIds = activeReworkAddOnIds.size > 0;
+  const bookingAddOnIdSet = new Set(
+    (bookingData?.BookingAddOns || [])
+      .map((item) => Number(item?.AddOnID ?? item?.addOnId))
+      .filter((id) => Number.isFinite(id) && id > 0),
+  );
+  const reworkServicesForFlow =
+    activeReworkAddOnIds.size > 0
+      ? allBookingServicesForFlow.filter((item) =>
+          activeReworkAddOnIds.has(Number(item?.AddOnID ?? item?.addOnId)),
+        )
+      : allBookingServicesForFlow.filter(isReworkStatus);
   const isReworkFlowActive =
     Boolean(bookingData?.IsRework) && reworkServicesForFlow.length > 0;
   const garageFlowServices = isReworkFlowActive
@@ -203,7 +237,10 @@ const BookingViewLayer = () => {
 
   // Dealers from this booking's scoped services (unique by DealerID) for garage flow dropdowns
   const garageDealerOptions = (() => {
-    const addOns = garageFlowServices;
+    const addOns = [
+      ...(bookingData?.BookingAddOns || []),
+      ...(bookingData?.SupervisorBookings || []),
+    ];
     const seen = new Set();
     return addOns
       .filter(
@@ -287,6 +324,13 @@ const BookingViewLayer = () => {
       dealer.value !== currentGarageDealerOption.value,
   );
   const garageServiceItems = garageFlowServices.filter((item) => item?.ServiceName);
+  const reworkGarageServices = reworkServicesForFlow;
+  const hasPendingReworkServices =
+    reworkGarageServices.length > 0 &&
+    reworkGarageServices.some((item) => !isGarageServiceCompletedApproved(item));
+  const allReworkServicesCompletedApproved =
+    reworkGarageServices.length > 0 &&
+    reworkGarageServices.every(isGarageServiceCompletedApproved);
   const effectiveHasExistingCustomerToDealerRoute = (() => {
     const routes = (bookingData?.CarPickUpDelivery || []).filter(
       (route) => route?.Status !== "Cancelled",
@@ -307,6 +351,61 @@ const BookingViewLayer = () => {
       return false;
     }
     return hasExistingCustomerToDealerRoute;
+  })();
+  const lastNonCancelledGarageRoute = (() => {
+    const routes = (bookingData?.CarPickUpDelivery || []).filter(
+      (route) => route?.Status !== "Cancelled",
+    );
+    return routes.length > 0 ? routes[routes.length - 1] : null;
+  })();
+  const isLastRouteDealerToCustomerCompleted =
+    (lastNonCancelledGarageRoute?.RouteType || "").toString().trim() ===
+      "DealerToCustomer" &&
+    (lastNonCancelledGarageRoute?.Status || "")
+      .toString()
+      .toLowerCase()
+      .trim() === "completed";
+  const canAssignOnCompletedReworkBooking =
+    isReworkFlowActive && isLastRouteDealerToCustomerCompleted;
+  const normalizedLastGarageRouteType = (
+    lastNonCancelledGarageRoute?.RouteType || ""
+  )
+    .toString()
+    .trim();
+  const currentGarageCarTrackingText = (() => {
+    if (bookingData?.ServiceType !== "ServiceAtGarage") return "";
+    const route = lastNonCancelledGarageRoute;
+    if (!route) return "Not Started";
+    const routeStatus = (route?.Status || "").toString().toLowerCase().trim();
+    if (
+      normalizedLastGarageRouteType === "CustomerToDealer" ||
+      normalizedLastGarageRouteType === "DealerToDealer"
+    ) {
+      return `At ${route?.PickToName || "Dealer"}`;
+    }
+    if (normalizedLastGarageRouteType === "DealerToCustomer") {
+      return routeStatus === "completed"
+        ? `At ${"Customer Location"}`
+        : `Out for delivery to ${route?.PickToName || "Customer"}`;
+    }
+    return "Not Started";
+  })();
+  const reworkLastDealerOption = (() => {
+    if (!isReworkFlowActive) return null;
+    if (
+      normalizedLastGarageRouteType !== "CustomerToDealer" &&
+      normalizedLastGarageRouteType !== "DealerToDealer"
+    ) {
+      return null;
+    }
+    const dealerId = Number(lastNonCancelledGarageRoute?.PickTo) || null;
+    if (!dealerId) return null;
+    return (
+      garageDealerOptions.find((opt) => opt.value === dealerId) || {
+        value: dealerId,
+        label: lastNonCancelledGarageRoute?.PickToName || "Dealer",
+      }
+    );
   })();
   const shouldSkipGaragePickupIntro =
     bookingData?.ServiceType === "ServiceAtGarage" &&
@@ -1236,6 +1335,15 @@ useEffect(() => {
     );
     console.log(filteredRoutes, "asdasdd");
     const addOns = garageFlowServices;
+    const getCurrentRouteDealerAddOns = (route) => {
+      const routeTypeValue = (route?.RouteType || "").toString().trim();
+      const currentDealerId =
+        routeTypeValue === "CustomerToDealer" || routeTypeValue === "DealerToDealer"
+          ? Number(route?.PickTo)
+          : Number(route?.PickFrom);
+      if (!Number.isFinite(currentDealerId) || currentDealerId <= 0) return [];
+      return addOns.filter((a) => Number(a.DealerID) === currentDealerId);
+    };
 
     const lastRoute = filteredRoutes[filteredRoutes.length - 1];
 
@@ -1258,14 +1366,10 @@ useEffect(() => {
       // 🚨 NEW CONDITION (Garage check)
       if (
         bookingData?.ServiceType === "ServiceAtGarage" &&
-        (routeType === "CustomerToDealer"  || routeType === "DealerToDealer" || routeType === "DealerToCustomer" ) &&
+        (routeType === "CustomerToDealer" || routeType === "DealerToDealer") &&
         lastStatus === "completed"
       ) {
-        const dealerId = Number(lastRoute?.PickTo); // 👈 DealerID from route
-        // Filter only that dealer add-ons
-        const dealerAddOns = addOns.filter(
-          (a) => Number(a.DealerID) === dealerId,
-        );
+        const dealerAddOns = getCurrentRouteDealerAddOns(lastRoute);
 
         // Check if any service NOT completed
         const hasPending = dealerAddOns.some((a) => {
@@ -1275,7 +1379,7 @@ useEffect(() => {
 
         if (hasPending) {
           const dealerName =
-            dealerAddOns[0]?.DealerName || lastRoute?.PickToName || "Dealer";
+            lastRoute?.PickToName || dealerAddOns[0]?.DealerName || "Dealer";
 
           Swal.fire({
             icon: "warning",
@@ -1292,23 +1396,24 @@ useEffect(() => {
       console.log(lastRoute, "lastRoute");
       if (
         bookingData?.ServiceType === "ServiceAtGarage" &&
-        (lastRoute?.RouteType === "CustomerToDealer"  || lastRoute?.RouteType === "DealerToDealer" || lastRoute?.RouteType === "DealerToCustomer" ) &&
+        (lastRoute?.RouteType === "CustomerToDealer" ||
+          lastRoute?.RouteType === "DealerToDealer") &&
         lastRoute?.Status === "completed"
       ) {
-        const dealerId = Number(lastRoute?.PickTo); // 👈 DealerID from route
-        // Filter only that dealer add-ons
-        const dealerAddOns = addOns.filter(
-          (a) => Number(a.DealerID) === dealerId,
-        );
+        const dealerAddOns = getCurrentRouteDealerAddOns(lastRoute);
         console.log(dealerAddOns, "dealerAddOns");
-        // Check if any service NOT completed
+        // Check if completed service still needs final approval
         const hasApproved = dealerAddOns.some(
-          (a) => a.IsCompleted_Confirmation === 0,
+          (a) =>
+            (getNormalizedServiceStatus(a)?.toLowerCase() || "") ===
+              "servicecompleted" &&
+            Number(a.IsCompleted_Confirmation ?? a.isCompleted_Confirmation) ===
+              0,
         );
         console.log(hasApproved, "hasApproved");
         if (hasApproved) {
           const dealerName =
-            dealerAddOns[0]?.DealerName || lastRoute?.PickToName || "Dealer";
+            lastRoute?.PickToName || dealerAddOns[0]?.DealerName || "Dealer";
 
           Swal.fire({
             icon: "warning",
@@ -1358,27 +1463,48 @@ useEffect(() => {
 
   // After user selects "Service at garage" → open garage flow modal
   const openGarageFlowModal = () => {
-    const shouldOpenDealerToDealer =
+    const shouldOpenDealerToDealerDefault =
       effectiveHasExistingCustomerToDealerRoute &&
       !allGarageServicesCompletedApproved &&
       completedGarageDealerOptions.length > 0 &&
       pendingNextGarageDealerOptions.length > 0;
-    const defaultGarageTask =
-      effectiveHasExistingCustomerToDealerRoute && allGarageServicesCompletedApproved
+    const shouldOpenDealerToDealerForRework =
+      isReworkFlowActive &&
+      bookingData?.ServiceType === "ServiceAtGarage" &&
+      (normalizedLastGarageRouteType === "CustomerToDealer" ||
+        normalizedLastGarageRouteType === "DealerToDealer") &&
+      hasPendingReworkServices &&
+      pendingNextGarageDealerOptions.length > 0;
+    const shouldOpenDealerToDealer =
+      shouldOpenDealerToDealerForRework || shouldOpenDealerToDealerDefault;
+    const shouldOpenFinalDealerToCustomerForRework =
+      isReworkFlowActive &&
+      bookingData?.ServiceType === "ServiceAtGarage" &&
+      (normalizedLastGarageRouteType === "CustomerToDealer" ||
+        normalizedLastGarageRouteType === "DealerToDealer") &&
+      allReworkServicesCompletedApproved;
+    const defaultGarageTask = shouldOpenDealerToDealer
+      ? "carPickup"
+      : shouldOpenFinalDealerToCustomerForRework
         ? "carDrop"
-        : "carPickup";
+        : effectiveHasExistingCustomerToDealerRoute && allGarageServicesCompletedApproved
+          ? "carDrop"
+          : "carPickup";
     const defaultGarageRoute = shouldOpenDealerToDealer
       ? "dealerToDealer"
       : "customerToDealer";
+    const defaultPickupDealer = shouldOpenDealerToDealerForRework
+      ? reworkLastDealerOption
+      : effectiveHasExistingCustomerToDealerRoute
+        ? currentGarageDealerOption
+        : null;
 
     setShowAssignStep1Modal(false);
     setGarageOpenedDirectToDetails(true);
     setGarageStep("details");
     setGarageTask(defaultGarageTask);
     setGarageRoute(defaultGarageRoute);
-    setGaragePickupDealer(
-      effectiveHasExistingCustomerToDealerRoute ? currentGarageDealerOption : null,
-    );
+    setGaragePickupDealer(defaultPickupDealer);
     setGarageDeliverDealer(
       defaultGarageRoute === "dealerToDealer"
         ? pendingNextGarageDealerOptions.length === 1
@@ -3685,11 +3811,20 @@ const handleReworkSubmit = async () => {
       return customerTotal === 0 && dealerTotal === 0;
     });
   const showEstimationButton = allSupervisorConfirmed;
+  const hasNewServicesAfterRework = [
+    ...(bookingData?.BookingAddOns || []),
+    ...(bookingData?.SupervisorBookings || []),
+  ].some(
+    (item) => item?.AfterRework === true || item?.afterRework === true,
+  );
+  const canShowEstimationInvoice =
+    !bookingData?.IsRework || hasNewServicesAfterRework;
   const showFinalButton =
     remainingAmount === 0 &&
     hasAtLeastOneService &&
     allSupervisorConfirmed &&
-    totalAmount > 0;
+    totalAmount > 0 &&
+    canShowEstimationInvoice;
   const showEnterPaymentButton =
     remainingAmount > 0 &&
     hasAtLeastOneService &&
@@ -6249,7 +6384,7 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                   </small>
                                 </div>
                               </div>
-                              <div className="d-flex align-items-center gap-2 flex-wrap">
+                              <div className="d-flex align-items-center gap-2 flex-wrap justify-content-end">
                                 <span className="ms-2 small">
                                   Payment Status:
                                 </span>
@@ -6295,7 +6430,6 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                     </span>
                                   );
                                 })()}
-
                                 <span className="ms-2 small">
                                   Booking Status:
                                 </span>
@@ -6313,6 +6447,19 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                     bookingData.BookingStatus,
                                   )}
                                 </span>
+                                {/* {hasReworkAddOnIds && (
+                                  <span className="badge px-3 py-1 rounded-pill bg-danger-subtle text-danger">
+                                    Rework
+                                  </span>
+                                )} */}
+                                {bookingData?.ServiceType === "ServiceAtGarage" && (
+                                  <div className="w-100 ms-2 d-flex align-items-center gap-2 mt-1 justify-content-end">
+                                    <span className="small">Car Tracking:</span>
+                                    <span className="badge px-3 py-1 rounded-pill bg-info-subtle text-info-emphasis">
+                                      {currentGarageCarTrackingText}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -8184,6 +8331,15 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                               <div className="service-compare-title">
                                                 <b>{service.serviceType} Name: </b>
                                                 {service.serviceName}
+                                                {activeReworkAddOnIds.has(
+                                                  Number(
+                                                    service?.sourceItem?.AddOnID,
+                                                  ),
+                                                ) && (
+                                                  <span className="ms-2 badge bg-danger-subtle text-danger">
+                                                    Rework
+                                                  </span>
+                                                )}
                                                 <span className="ms-2 pricing-chip">
                                                   {service.serviceType}
                                                 </span>
@@ -8229,9 +8385,7 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                                   )}`}
                                                 >
                                                   {service.serviceStatus === "InProgress"
-                                                     ? service.serviceType === "Inspection"
-                                                      ? "Inspection In Progress"
-                                                      : "Service In Progress"
+                                                    ? "Service In Progress"
                                                     : service.serviceStatus === "ServiceCompleted"
                                                     ? service.serviceType === "Inspection"
                                                       ? "Inspection Completed"
@@ -8297,8 +8451,8 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                               advisor, or supervisor.
                                             </div>
                                             <div>
-                                              {service.isCompletionApproved ? (
-                                              bookingData?.BookingStatus !== "Completed" && (
+                                            {service.isCompletionApproved ? (
+                                              bookingData?.BookingStatus !== "Completed" && bookingData?.IsRework ===  false  && (
                                                 <div className="d-flex flex-column align-items-end gap-2">
                                                   {/* Rework Button */}
                                                   <button
@@ -8309,6 +8463,17 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                                   >
                                                     Rework
                                                   </button>
+                                                  </div>
+                                                )
+                                                ) : (
+                                                  <span >
+                                                   
+                                                  </span>
+                                                )}
+                                              {service.isCompletionApproved ? (
+                                              bookingData?.BookingStatus !== "Completed"   && (
+                                                <div className="d-flex flex-column align-items-end gap-2">
+                                                
                                                   {/* Approved Text */}
                                                   <span className="badge bg-success-subtle text-success px-3 py-2 rounded-pill">
                                                     Service completion approved by{" "}
@@ -9234,8 +9399,9 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                   {(role === "Admin" ||
                                     roleName === "Supervisor Head" ||
                                     roleName === "Field Advisor") &&
-                                    bookingData?.BookingStatus !==
-                                      "Completed" &&
+                                    (bookingData?.BookingStatus !==
+                                      "Completed" ||
+                                      canAssignOnCompletedReworkBooking) &&
                                     bookingData?.BookingAddOns != null &&
                                     Array.isArray(bookingData.BookingAddOns) &&
                                     bookingData.BookingAddOns.length > 0 &&
@@ -9259,6 +9425,7 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                   {!hideAllActions &&
                                     roleName !== "Field Advisor" &&
                                     !hasOnlyZeroValueRejectedServices &&
+                                    canShowEstimationInvoice &&
                                     bookingData?.BookingStatus !==
                                       "Cancelled" && (
                                       <Link
@@ -9444,1601 +9611,62 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
               </div>
 
               {/* ================= CAR PICKUP / DROP ACCORDION ================= */}
-              <div
-                className="accordion mb-3"
-                id="carPickupDropAccordion"
-                style={{ scrollMarginTop: "4.5rem" }}
-              >
-                <div className="accordion-item border radius-16">
-                  <h2 className="accordion-header" id="headingPickupDrop">
-                    <button
-                      className="accordion-button collapsed fw-semibold gap-2"
-                      type="button"
-                      data-bs-toggle="collapse"
-                      data-bs-target="#collapsePickupDrop"
-                      aria-expanded="false"
-                      aria-controls="collapsePickupDrop"
-                    >
-                      <Icon
-                        icon="mdi:car-side"
-                        width={20}
-                        height={20}
-                        className="text-primary"
-                      />
-                      <span className="fw-semibold text-primary">
-                        Service Tracking
-                      </span>
-                    </button>
-                  </h2>
-
-                  <div
-                    id="collapsePickupDrop"
-                    className="accordion-collapse collapse"
-                    aria-labelledby="headingPickupDrop"
-                    data-bs-parent="#carPickupDropAccordion"
-                  >
-                    <div className="mt-3">
-                      <div
-                        className="rounded-3 overflow-hidden border-0 shadow-sm position-relative"
-                        style={{
-                          backgroundColor: "#fff",
-                          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-                          zIndex: 1,
-                          isolation: "isolate",
-                        }}
-                      >
-                        {/* Header – dark teal with BID, OTP, Payment, action */}
-                        <div
-                          className="px-3 py-2 d-flex align-items-center justify-content-between flex-wrap gap-2"
-                          style={{
-                            backgroundColor: "#0d9488",
-                            color: "#fff",
-                            minHeight: "48px",
-                          }}
-                        >
-                          <span className="d-flex align-items-center gap-2 small fw-semibold text-white">
-                            <Icon
-                              icon="mdi:clipboard-check-outline"
-                              width={20}
-                              height={20}
-                            />
-                            BID : #{bookingData?.BookingTrackID || "—"}
-                          </span>
-                          <span className="opacity-90 fw-normal text-white ms-auto">
-                            Date : {displayDate(bookingData?.BookingDate)}
-                          </span>
-                        </div>
-                        {/* Timeline – dynamic from CarPickUpDelivery API */}
-                        <div
-                          className="p-4 position-relative"
-                          style={{ backgroundColor: "#fff" }}
-                        >
-                          {(() => {
-                            const list = bookingData?.CarPickUpDelivery ?? [];
-
-                            const formatTimeOnly = (t) => {
-                              if (!t) return "";
-                              const m = String(t)
-                                .trim()
-                                .match(/^(\d{1,2}):(\d{2})/);
-                              return m
-                                ? `${m[1].padStart(2, "0")}:${m[2]}`
-                                : "";
-                            };
-                            const steps = list.map((record, idx) => {
-                              const formattedPickType = formatPickType(
-                                record.PickType,
-                              );
-
-                              const routeType =
-                                record.RouteType === "CustomerToDealer"
-                                  ? "Customer To Dealer"
-                                  : record.RouteType === "DealerToCustomer"
-                                    ? "Dealer To Customer"
-                                    : record.RouteType === "DealerToDealer"
-                                      ? "Dealer To Dealer"
-                                      : "—";
-
-                              const isPick = (record.PickType || "")
-                                .toLowerCase()
-                                .includes("pick");
-
-                              const assignStr = record.AssignDate
-                                ? new Date(record.AssignDate).toLocaleString(
-                                    "en-IN",
-                                    {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    },
-                                  )
-                                : "—";
-
-                              const sub =
-                                record.PickupDate && record.PickupTime
-                                  ? `${displayDate(record.PickupDate)} ${formatTimeOnly(record.PickupTime)}`
-                                  : record.DeliveryDate && record.DeliveryTime
-                                    ? `${displayDate(record.DeliveryDate)} ${formatTimeOnly(record.DeliveryTime)}`
-                                    : assignStr;
-
-                              const label =
-                                [formattedPickType, routeType]
-                                  .filter(Boolean)
-                                  .join(" – ") || "Service at Doorstep";
-
-                              const done = !!(
-                                record.PickupDate || record.DeliveryDate
-                              );
-
-                              return {
-                                key: record.Id ?? idx,
-                                label,
-                                sub,
-                                icon: isPick
-                                  ? "mdi:car-pickup"
-                                  : "mdi:car-side",
-                                done,
-                              };
-                            });
-                            if (steps.length === 0) {
-                              return (
-                                <p className="text-muted small mb-0 text-center py-3">
-                                  No pickup/drop records for this booking.
-                                </p>
-                              );
-                            }
-                            return (
-                              <div className="d-flex align-items-flex-start py-20 justify-content-between position-relative">
-                                {steps.map((step, idx) => (
-                                  <div
-                                    key={step.key}
-                                    className="d-flex flex-column align-items-center position-relative"
-                                    style={{
-                                      flex: "1 1 0",
-                                      minWidth: 0,
-                                      zIndex: 1,
-                                    }}
-                                  >
-                                    {idx < steps.length - 1 && (
-                                      <div
-                                        className="position-absolute d-none d-md-block"
-                                        style={{
-                                          top: 20,
-                                          left: "calc(50% + 24px)",
-                                          width: "calc(100% - 28px)",
-                                          height: 3,
-                                          borderRadius: 2,
-                                          backgroundColor: step.done
-                                            ? "#0d9488"
-                                            : "#0d9488",
-                                          zIndex: 0,
-                                        }}
-                                      />
-                                    )}
-                                    <div
-                                      className="d-flex align-items-center justify-content-center rounded-circle mb-2"
-                                      style={{
-                                        width: 44,
-                                        height: 44,
-                                        backgroundColor: step.done
-                                          ? "#0d9488"
-                                          : "#0d9488",
-                                        color: step.done ? "#fff" : "#fff",
-                                        boxShadow: step.done
-                                          ? "0 2px 6px rgba(13,148,136,0.35)"
-                                          : "0 1px 3px rgba(0,0,0,0.08)",
-                                      }}
-                                    >
-                                      <Icon
-                                        icon={step.icon}
-                                        width={20}
-                                        height={20}
-                                      />
-                                    </div>
-                                    <span
-                                      className="small fw-bold text-center text-dark"
-                                      style={{
-                                        fontSize: "12px",
-                                        lineHeight: 1.25,
-                                      }}
-                                    >
-                                      {step.label}
-                                    </span>
-                                    <span
-                                      className="small text-muted text-center mt-1"
-                                      style={{ fontSize: "11px" }}
-                                    >
-                                      {step.sub}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            );
-                          })()}
-                        </div>
-
-                        {/* Technician Pickup / Drop Records – modern table */}
-                        {(bookingData?.CarPickUpDelivery ?? []).length > 0 && (
-                          <div className="border-top mt-4 pt-4">
-                            <div className="d-flex align-items-center gap-2 mb-3">
-                              <span
-                                className="rounded-3 d-flex align-items-center justify-content-center"
-                                style={{
-                                  width: 36,
-                                  height: 36,
-                                  backgroundColor: "rgba(13,148,136,0.12)",
-                                }}
-                              >
-                                <Icon
-                                  icon="mdi:format-list-bulleted"
-                                  width={20}
-                                  height={20}
-                                  className="text-primary"
-                                />
-                              </span>
-                              <h6 className="mb-0 fw-bold text-dark">
-                                Technician Details
-                              </h6>
-                            </div>
-                            <div
-                              className="rounded-3 overflow-hidden border"
-                              style={{
-                                boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-                                backgroundColor: "#fff",
-                              }}
-                            >
-                              <div className="table-responsive">
-                                <table
-                                  className="table align-middle mb-0 table-center-all"
-                                  style={{
-                                    fontSize: "0.875rem",
-                                  }}
-                                >
-                                  <thead>
-                                    <tr
-                                      style={{
-                                        backgroundColor: "#f8fafc",
-                                        borderBottom: "1px solid #e2e8f0",
-                                      }}
-                                    >
-                                      <th
-                                        className="text-nowrap text-center ps-4 py-3 fw-bold"
-                                        style={{
-                                          fontSize: "0.75rem",
-                                          color: "#64748b",
-                                          textTransform: "uppercase",
-                                          letterSpacing: "0.04em",
-                                        }}
-                                      >
-                                        Tech ID
-                                      </th>
-                                      <th
-                                        className="text-nowrap text-center py-3 fw-bold"
-                                        style={{
-                                          fontSize: "0.75rem",
-                                          color: "#64748b",
-                                          textTransform: "uppercase",
-                                          letterSpacing: "0.04em",
-                                        }}
-                                      >
-                                        Assign Date
-                                      </th>
-                                      <th
-                                        className="text-nowrap text-center py-3 fw-bold"
-                                        style={{
-                                          fontSize: "0.75rem",
-                                          color: "#64748b",
-                                          textTransform: "uppercase",
-                                          letterSpacing: "0.04em",
-                                        }}
-                                      >
-                                        Route Type
-                                      </th>
-                                      <th
-                                        className="text-nowrap text-center py-3 fw-bold"
-                                        style={{
-                                          fontSize: "0.75rem",
-                                          color: "#64748b",
-                                          textTransform: "uppercase",
-                                          letterSpacing: "0.04em",
-                                        }}
-                                      >
-                                        Service Type
-                                      </th>
-                                      <th
-                                        className="text-nowrap text-center py-3 fw-bold"
-                                        style={{
-                                          fontSize: "0.75rem",
-                                          color: "#64748b",
-                                          textTransform: "uppercase",
-                                          letterSpacing: "0.04em",
-                                        }}
-                                      >
-                                        Status
-                                      </th>
-                                      <th
-                                        className="text-nowrap text-center pe-4 py-3 fw-bold"
-                                        style={{
-                                          fontSize: "0.75rem",
-                                          color: "#64748b",
-                                          textTransform: "uppercase",
-                                          letterSpacing: "0.04em",
-                                        }}
-                                      >
-                                        Action
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {(bookingData?.CarPickUpDelivery ?? []).map(
-                                      (row, idx) => {
-                                        const pickupImages = (
-                                          bookingData?.BookingImages ?? []
-                                        ).filter(
-                                          (img) => img.PickId === row.Id,
-                                        );
-
-                                        return (
-                                          <>
-                                            <tr
-                                              key={
-                                                row.Id ?? row.BookingID ?? idx
-                                              }
-                                              style={{
-                                                backgroundColor:
-                                                  idx % 2 === 0
-                                                    ? "#fff"
-                                                    : "#fafafa",
-                                                transition:
-                                                  "background 0.15s ease",
-                                                borderBottom:
-                                                  "1px solid #f1f5f9",
-                                              }}
-                                              className="pickup-drop-row"
-                                            >
-                                              <td
-                                                className="text-center ps-4 py-3 fw-semibold"
-                                                style={{ color: "#334155" }}
-                                              >
-                                                {row.TechnicinaName ?? "—"}
-                                              </td>
-                                              <td
-                                                className="text-center py-3"
-                                                style={{ color: "#475569" }}
-                                              >
-                                                {row.AssignDate
-                                                  ? new Date(
-                                                      row.AssignDate,
-                                                    ).toLocaleString("en-IN", {
-                                                      day: "2-digit",
-                                                      month: "short",
-                                                      year: "numeric",
-                                                      hour: "2-digit",
-                                                      minute: "2-digit",
-                                                    })
-                                                  : "—"}
-                                              </td>
-                                              <td
-                                                className="text-center py-3"
-                                                style={{ color: "#475569" }}
-                                              >
-                                                {row.RouteType ==
-                                                "CustomerToDealer"
-                                                  ? "Customer To Dealer"
-                                                  : row.RouteType ==
-                                                      "DealerToCustomer"
-                                                    ? "Dealer To Customer"
-                                                    : row.RouteType ==
-                                                        "DealerToDealer"
-                                                      ? "Dealer To Dealer"
-                                                      : "—"}
-                                              </td>
-                                              <td
-                                                className="text-center py-3"
-                                                style={{ color: "#475569" }}
-                                              >
-                                                {row.ServiceType ==
-                                                "ServiceAtGarage"
-                                                  ? "Service At Garage"
-                                                  : "Service At Home"}
-                                              </td>
-                                              <td className="text-center py-3">
-                                                <span
-                                                  className="badge rounded-pill px-2 py-1"
-                                                  style={{
-                                                    fontSize: "0.7rem",
-                                                    fontWeight: 600,
-                                                    backgroundColor:
-                                                      (
-                                                        row.Status || ""
-                                                      ).toLowerCase() ===
-                                                      "assigned"
-                                                        ? "rgba(13,148,136,0.15)"
-                                                        : "rgba(100,116,139,0.15)",
-                                                    color:
-                                                      (
-                                                        row.Status || ""
-                                                      ).toLowerCase() ===
-                                                      "assigned"
-                                                        ? "#0d9488"
-                                                        : "#64748b",
-                                                  }}
-                                                >
-                                                  {row.Status ?? "—"}
-                                                </span>
-                                              </td>
-                                              <td className="text-center pe-4 py-3">
-                                                <div className="d-flex flex-column align-items-center gap-2">
-                                                  {/* {row.BookingImages?.length > 0 && (
-                                                  <div className="d-flex gap-3 flex-wrap justify-content-center">
-                                                    {row.BookingImages.map((img) => (
-                                                      <img
-                                                        key={img.ImageID}
-                                                        src={`${API_IMAGE}/${img.ImageURL}`}
-                                                        alt="pickup"
-                                                        role="button"
-                                                        tabIndex={0}
-                                                        onClick={() => setFullScreenImageUrl(`${API_IMAGE}/${img.ImageURL}`)}
-                                                        onKeyDown={(e) => e.key === "Enter" && setFullScreenImageUrl(`${API_IMAGE}/${img.ImageURL}`)}
-                                                        style={{
-                                                          width: "70px",
-                                                          height: "70px",
-                                                          objectFit: "cover",
-                                                          borderRadius: "8px",
-                                                          cursor: "pointer",
-                                                        }}
-                                                      />
-                                                    ))}
-                                                  </div>
-                                                )} */}
-                                                  {row.IsCancelled === 0 &&
-                                                    row.Status !==
-                                                      "completed" && (
-                                                      <div className="d-flex gap-2 justify-content-center flex-wrap">
-                                                        <button
-                                                          type="button"
-                                                          className="btn btn-press-effect btn-danger btn-sm d-inline-flex align-items-center gap-1"
-                                                          onClick={() =>
-                                                            handlePickupDropCancel(
-                                                              row,
-                                                            )
-                                                          }
-                                                          disabled={
-                                                            pickupDropActionLoading
-                                                          }
-                                                        >
-                                                          <Icon
-                                                            icon="mdi:close-circle-outline"
-                                                            width={18}
-                                                            height={18}
-                                                          />
-                                                          Cancel
-                                                        </button>
-                                                        <button
-                                                          type="button"
-                                                          className="btn btn-press-effect btn-warning btn-sm d-inline-flex align-items-center gap-1 text-dark"
-                                                          onClick={() =>
-                                                            openPickupDropReassignModal(
-                                                              row,
-                                                            )
-                                                          }
-                                                          disabled={
-                                                            pickupDropActionLoading
-                                                          }
-                                                        >
-                                                          <Icon
-                                                            icon="mdi:account-switch-outline"
-                                                            width={18}
-                                                            height={18}
-                                                          />
-                                                          Reassign
-                                                        </button>
-                                                        <button
-                                                          type="button"
-                                                          className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center gap-1"
-                                                          onClick={() =>
-                                                            openPickupDropRescheduleModal(
-                                                              row,
-                                                            )
-                                                          }
-                                                          disabled={
-                                                            pickupDropActionLoading
-                                                          }
-                                                        >
-                                                          <Icon
-                                                            icon="mdi:calendar-edit-outline"
-                                                            width={18}
-                                                            height={18}
-                                                          />
-                                                          Reschedule
-                                                        </button>
-                                                      </div>
-                                                    )}
-                                                </div>
-                                              </td>
-                                            </tr>
-                                          </>
-                                        );
-                                      },
-                                    )}
-                                    {/* {(bookingData?.CarPickUpDelivery ?? []).map((row, idx) => (
-                                      
-                                      <tr
-                                        key={row.Id ?? row.BookingID ?? idx}
-                                        style={{
-                                          backgroundColor: idx % 2 === 0 ? "#fff" : "#fafafa",
-                                          transition: "background 0.15s ease",
-                                          borderBottom: "1px solid #f1f5f9",
-                                        }}
-                                        className="pickup-drop-row"
-                                      >
-                                        <td className="text-center ps-4 py-3 fw-semibold" style={{ color: "#334155" }}>{row.TechnicinaName ?? "—"}</td>
-                                        <td className="text-center py-3" style={{ color: "#475569" }}>
-                                          {row.AssignDate
-                                            ? new Date(row.AssignDate).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
-                                            : "—"}
-                                        </td>
-                                        <td className="text-center py-3" style={{ color: "#475569" }}>{row.RouteType == 'CustomerToDealer' ? "Customer To Dealer" : row.RouteType == 'DealerToCustomer' ? "Dealer To Customer" :row.RouteType == 'DealerToDealer' ? "Dealer To Dealer" : "—"}</td>
-                                        <td className="text-center py-3" style={{ color: "#475569" }}>{row.ServiceType == "ServiceAtGarage" ? "Service At Garage" : "Service At Home"}</td>
-                                        <td className="text-center py-3">
-                                          <span
-                                            className="badge rounded-pill px-2 py-1"
-                                            style={{
-                                              fontSize: "0.7rem",
-                                              fontWeight: 600,
-                                              backgroundColor: (row.Status || "").toLowerCase() === "assigned" ? "rgba(13,148,136,0.15)" : "rgba(100,116,139,0.15)",
-                                              color: (row.Status || "").toLowerCase() === "assigned" ? "#0d9488" : "#64748b",
-                                            }}
-                                          >
-                                            {row.Status ?? "—"}
-                                          </span>
-                                        </td>
-                                        {row.IsCancelled === 0 && row.Status !== "completed" && (
-                                          <td className="text-center pe-4 py-3">
-                                            <div className="d-flex gap-2 justify-content-center flex-wrap">
-                                              <button
-                                                type="button"
-                                                className="btn btn-press-effect btn-danger btn-sm d-inline-flex align-items-center gap-1"
-                                                onClick={() => handlePickupDropCancel(row)}
-                                                disabled={pickupDropActionLoading}
-                                              >
-                                                <Icon icon="mdi:close-circle-outline" width={18} height={18} />
-                                                Cancel
-                                              </button>
-                                              <button
-                                                type="button"
-                                                className="btn btn-press-effect btn-warning btn-sm d-inline-flex align-items-center gap-1 text-dark"
-                                                onClick={() => openPickupDropReassignModal(row)}
-                                                disabled={pickupDropActionLoading}
-                                              >
-                                                <Icon icon="mdi:account-switch-outline" width={18} height={18} />
-                                                Reassign
-                                              </button>
-                                              <button
-                                                type="button"
-                                                className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center gap-1"
-                                                onClick={() => openPickupDropRescheduleModal(row)}
-                                                disabled={pickupDropActionLoading}
-                                              >
-                                                <Icon icon="mdi:calendar-edit-outline" width={18} height={18} />
-                                                Reschedule
-                                              </button>
-                                            </div>
-                                          </td>
-                                        )}
-                                      </tr>
-                                    ))} */}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <ServiceTrackingAccordion
+                bookingData={bookingData}
+                displayDate={displayDate}
+                formatPickType={formatPickType}
+                handlePickupDropCancel={handlePickupDropCancel}
+                openPickupDropReassignModal={openPickupDropReassignModal}
+                openPickupDropRescheduleModal={openPickupDropRescheduleModal}
+                pickupDropActionLoading={pickupDropActionLoading}
+              />
 
               {/* ================= PAYMENTS ACCORDION ================= */}
-              <Accordion className="mb-3" defaultActiveKey="">
-                <Accordion.Item eventKey="payments">
-                  <Accordion.Header>
-                    <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
-                      <Icon
-                        icon="mdi:credit-card-multiple"
-                        width={20}
-                        height={20}
-                      />
-                      Payments
-                    </h6>
-                  </Accordion.Header>
-                  <Accordion.Body>
-                    {(bookingData?.Payments ?? []).length > 0 ? (
-                      <div className="table-responsive">
-                        <table
-                          className="table table-bordered table-hover align-middle mb-0"
-                          style={{ fontSize: "0.875rem", textAlign: "center" }}
-                        >
-                          <thead
-                            style={{
-                              backgroundColor: "#f8fafc",
-                              borderBottom: "1px solid #e2e8f0",
-                            }}
-                          >
-                            <tr>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                  textAlign: "center",
-                                }}
-                              >
-                                S.No
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                  textAlign: "center",
-                                }}
-                              >
-                                Amount Paid
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                  textAlign: "center",
-                                }}
-                              >
-                                Payment Mode
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                  textAlign: "center",
-                                }}
-                              >
-                                Transaction ID
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                  textAlign: "center",
-                                }}
-                              >
-                                Payment Date
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                  textAlign: "center",
-                                }}
-                              >
-                                Status
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                }}
-                              >
-                                Proof Img.
-                              </th>
-                              {/* <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Refunded</th> */}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(bookingData?.Payments ?? [])
-                              .slice()
-                              .reverse()
-                              .map((pay, idx) => (
-                                <tr key={pay.PaymentID ?? idx}>
-                                  {/* <td className="py-2 px-3">{pay.PaymentID ?? "—"}</td> */}
-                                  <td className="py-2 px-3">{idx + 1}</td>
-                                  <td className="py-2 px-3 fw-semibold">
-                                    ₹
-                                    {(pay.AmountPaid ?? 0).toLocaleString(
-                                      "en-IN",
-                                    )}
-                                  </td>
-                                  <td className="py-2 px-3">
-                                    {pay.PaymentMode ?? "—"}
-                                  </td>
-                                  <td
-                                    className="py-2 px-3 text-nowrap"
-                                    style={{ maxWidth: "180px" }}
-                                    title={pay.TransactionID}
-                                  >
-                                    {pay.TransactionID ?? "—"}
-                                  </td>
-                                  <td className="py-2 px-3">
-                                    {pay.PaymentDate
-                                      ? new Date(
-                                          pay.PaymentDate,
-                                        ).toLocaleString("en-IN", {
-                                          day: "2-digit",
-                                          month: "short",
-                                          year: "numeric",
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })
-                                      : "—"}
-                                  </td>
-                                  <td className="py-2 px-3">
-                                    <span
-                                      className="badge rounded-pill px-2 py-1"
-                                      style={{
-                                        fontSize: "0.7rem",
-                                        backgroundColor:
-                                          (
-                                            pay.PaymentStatus || ""
-                                          ).toLowerCase() === "success"
-                                            ? "rgba(34,197,94,0.15)"
-                                            : "rgba(234,179,8,0.15)",
-                                        color:
-                                          (
-                                            pay.PaymentStatus || ""
-                                          ).toLowerCase() === "success"
-                                            ? "#16a34a"
-                                            : "#ca8a04",
-                                      }}
-                                    >
-                                      {pay.PaymentStatus ?? "—"}
-                                    </span>
-                                  </td>
-                                  <td className="py-2 px-3">
-                                    {pay.ProofAttachment ? (
-                                      <img
-                                        src={`${API_IMAGE}${pay.ProofAttachment}`}
-                                        alt="Payment Proof"
-                                        style={{
-                                          width: "40px",
-                                          height: "40px",
-                                          objectFit: "cover",
-                                          cursor: "pointer",
-                                          borderRadius: "4px",
-                                        }}
-                                        onClick={() =>
-                                          window.open(
-                                            `${API_IMAGE}${pay.ProofAttachment}`,
-                                            "_blank",
-                                          )
-                                        }
-                                      />
-                                    ) : (
-                                      "—"
-                                    )}
-                                  </td>
-                                  {/* <td className="py-2 px-3">{pay.IsRefunded ? "Yes" : "No"}</td> */}
-                                </tr>
-                              ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <p className="text-muted mb-0 text-center py-4">
-                        No payments recorded for this booking.
-                      </p>
-                    )}
-                  </Accordion.Body>
-                </Accordion.Item>
-              </Accordion>
+              <PaymentsAccordion
+                payments={bookingData?.Payments}
+                apiImageBase={API_IMAGE}
+              />
 
               {/* ================= DEALER STATUS (DEALER ADD-ON APPROVAL) ACCORDION ================= */}
-              <Accordion className="mb-3" defaultActiveKey="">
-                <Accordion.Item eventKey="dealerStatus">
-                  <Accordion.Header>
-                    <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
-                      <Icon icon="mdi:store-check" width={20} height={20} />
-                      Dealer Status
-                    </h6>
-                  </Accordion.Header>
-                  <Accordion.Body>
-                    {(bookingData?.DealerAddOnApproval ?? []).length > 0 ? (
-                      <div className="table-responsive">
-                        <table
-                          className="table table-bordered table-hover align-middle mb-0"
-                          style={{ fontSize: "0.875rem" }}
-                        >
-                          <thead
-                            style={{
-                              backgroundColor: "#f8fafc",
-                              borderBottom: "1px solid #e2e8f0",
-                            }}
-                          >
-                            <tr>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                }}
-                              >
-                                S.No
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                }}
-                              >
-                                Dealer Name
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                }}
-                              >
-                                Service Name
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                }}
-                              >
-                                Status
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                }}
-                              >
-                                Reason
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                }}
-                              >
-                                Status Date
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(bookingData?.DealerAddOnApproval ?? [])
-                              .slice()
-                              .reverse()
-                              .map((item, idx) => (
-                                <tr key={item.Id ?? idx}>
-                                  {/* <td className="py-2 px-3">{item.Id ?? "—"}</td> */}
-                                  <td className="py-2 px-3">{idx + 1}</td>
-                                  <td className="py-2 px-3">
-                                    {item.DealerName ?? "—"}
-                                  </td>
-                                  <td className="py-2 px-3 fw-semibold">
-                                    {item.ServiceName ?? "—"}
-                                  </td>
-                                  <td className="py-2 px-3">
-                                    {(() => {
-                                      const status = (
-                                        item.IsDealer_Confirm || ""
-                                      ).toLowerCase();
-
-                                      const backgroundColor =
-                                        status === "approved"
-                                          ? "rgba(34,197,94,0.15)" // light green
-                                          : status === "rejected"
-                                            ? "rgba(239,68,68,0.15)" // light red
-                                            : status === "assigned"
-                                              ? "rgba(250,204,21,0.20)" // light yellow
-                                              : "rgba(107,114,128,0.15)"; // default grey
-
-                                      const color =
-                                        status === "approved"
-                                          ? "#16a34a"
-                                          : status === "rejected"
-                                            ? "#dc2626"
-                                            : status === "assigned"
-                                              ? "#ca8a04" // yellow text
-                                              : "#6b7280";
-
-                                      return (
-                                        <span
-                                          className="badge rounded-pill px-2 py-1"
-                                          style={{
-                                            fontSize: "0.7rem",
-                                            backgroundColor,
-                                            color,
-                                          }}
-                                        >
-                                          {item.IsDealer_Confirm ?? "—"}
-                                        </span>
-                                      );
-                                    })()}
-                                  </td>
-                                  <td className="py-2 px-3">
-                                    {item.Reason ?? "—"}
-                                  </td>
-                                  <td className="py-2 px-3">
-                                    {item.CreatedDate
-                                      ? new Date(
-                                          item.CreatedDate,
-                                        ).toLocaleString("en-IN", {
-                                          day: "2-digit",
-                                          month: "short",
-                                          year: "numeric",
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })
-                                      : "—"}
-                                  </td>
-                                </tr>
-                              ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <p className="text-muted mb-0 text-center py-4">
-                        No dealer add-on approvals for this booking.
-                      </p>
-                    )}
-                  </Accordion.Body>
-                </Accordion.Item>
-              </Accordion>
+              <DealerStatusAccordion
+                dealerAddOnApproval={bookingData?.DealerAddOnApproval}
+              />
               {/* ================= Inspection Details ================= */}
-              <Accordion className="mb-3" defaultActiveKey="">
-                <Accordion.Item eventKey="inspectionDetails">
-                  <Accordion.Header>
-                    <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
-                      <Icon
-                        icon="mdi:file-document-multiple"
-                        width={20}
-                        height={20}
-                      />
-                      Inspection Details
-                    </h6>
-                  </Accordion.Header>
-                  <Accordion.Body>
-                    {(bookingData?.InspectionTracking ?? []).length > 0 ? (
-                      <div className="table-responsive">
-                        <table
-                          className="table table-bordered table-hover align-middle mb-0"
-                          style={{ fontSize: "0.875rem" }}
-                        >
-                          <thead
-                            style={{
-                              backgroundColor: "#f8fafc",
-                              borderBottom: "1px solid #e2e8f0",
-                            }}
-                          >
-                            <tr>
-                              {/* <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>S.No</th> */}
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Service Name</th>
-                              {/* <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Type</th> */}
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Lead ID</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Inspection Amount</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>GST Amount</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>GST %</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Total Price</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Payment Status</th>
-                              <th className="text-nowrap py-2 px-3 fw-bold" style={{ fontSize: "0.75rem", color: "#64748b" }}>Created Date</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(bookingData?.InspectionTracking ?? [])
-                              .slice()
-                              .reverse()
-                              .map((inspection, idx) => (
-                                <tr key={inspection.Id ?? idx}>
-                                  <td className="py-2 px-3 fw-semibold">{inspection.ServiceName ?? "-"}</td>
-                                  {/* <td className="py-2 px-3">
-                                    <span
-                                      className="badge rounded-pill px-2 py-1"
-                                      style={{
-                                        fontSize: "0.7rem",
-                                        backgroundColor: "rgba(59,130,246,0.15)",
-                                        color: "#2563eb",
-                                      }}
-                                    >
-                                      {inspection.Type ?? "-"}
-                                    </span>
-                                  </td> */}
-                                  <td className="py-2 px-3">{inspection.LeadId ?? "-"}</td>
-                                  <td className="py-2 px-3">{formatCurrency(inspection.LabourCharges ?? 0)}</td>
-                                  <td className="py-2 px-3">{formatCurrency(inspection.GSTAmount ?? 0)}</td>
-                                  <td className="py-2 px-3">{(inspection.GSTPercent)}%</td>
-                                  <td className="py-2 px-3 fw-bold">{formatCurrency(inspection.TotalPrice)}</td>
-                                  <td className="py-2 px-3">
-                                    <span
-                                      className="badge rounded-pill px-2 py-1"
-                                      style={{
-                                        fontSize: "0.7rem",
-                                        backgroundColor:
-                                          inspection.InspctionPaymentStatus === "Success"
-                                            ? "rgba(34,197,94,0.15)"
-                                            : "rgba(148,163,184,0.2)",
-                                        color:
-                                          inspection.InspctionPaymentStatus === "Success"
-                                            ? "#16a34a"
-                                            : "#64748b",
-                                      }}
-                                    >
-                                      {inspection.InspctionPaymentStatus === "Success" ? "Paid" : "Pending"}
-                                    </span>
-                                  </td>
-                                  <td className="py-2 px-3">{formatDateTime(inspection.CreatedDate)}</td>
-                                </tr>
-                              ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <p className="text-muted mb-0 text-center py-4">
-                        No inspection details recorded for this booking.
-                      </p>
-                    )}
-                  </Accordion.Body>
-                </Accordion.Item>
-              </Accordion>
+              <InspectionDetailsAccordion
+                inspectionTracking={bookingData?.InspectionTracking}
+                formatCurrency={formatCurrency}
+                formatDateTime={formatDateTime}
+              />
 
               {/* ================= Detailed Inspection Results ================= */}
-              <Accordion className="mb-3" defaultActiveKey="">
-                <Accordion.Item eventKey="detailedInspection">
-                  <Accordion.Header>
-                    <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
-                      <Icon
-                        icon="mdi:clipboard-list-outline"
-                        width={20}
-                        height={20}
-                      />
-                      Inspection Result Checklist 
-                    </h6>
-                  </Accordion.Header>
-                  <Accordion.Body>
-                    {bookingData?.Inspection_Results && bookingData.Inspection_Results.length > 0 ? (
-                      <div className="border rounded">
-                        <DataTable
-                          columns={inspectionColumns}
-                          data={bookingData.Inspection_Results}
-                          pagination
-                          paginationPerPage={10}
-                          highlightOnHover
-                          responsive
-                          customStyles={{
-                            headCells: {
-                              style: {
-                                backgroundColor: "#f8fafc",
-                                color: "#64748b",
-                                fontWeight: "bold",
-                                textTransform: "uppercase",
-                                fontSize: "0.75rem",
-                              },
-                            },
-                            cells: {
-                              style: {
-                                fontSize: "0.875rem",
-                              },
-                            },
-                          }}
-                        />
-                      </div>
-                    ) : (
-                      <p className="text-muted mb-0 text-center py-4">
-                        No inspection results checklist found for this booking.
-                      </p>
-                    )}
-                  </Accordion.Body>
-                </Accordion.Item>
-              </Accordion>
+              <InspectionChecklistAccordion
+                inspectionResults={bookingData?.Inspection_Results}
+                inspectionColumns={inspectionColumns}
+              />
 
-              <Accordion className="mb-3" defaultActiveKey="">
-                <Accordion.Item eventKey="invoices">
-                  <Accordion.Header>
-                    <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
-                      <Icon
-                        icon="mdi:file-document-multiple"
-                        width={20}
-                        height={20}
-                      />
-                      Invoices (Estimation & Final)
-                    </h6>
-                  </Accordion.Header>
-                  <Accordion.Body>
-                    {(bookingData?.Invoices ?? []).length > 0 ? (
-                      <div className="table-responsive">
-                        <table
-                          className="table table-bordered table-hover align-middle mb-0"
-                          style={{ fontSize: "0.875rem" }}
-                        >
-                          <thead
-                            style={{
-                              backgroundColor: "#f8fafc",
-                              borderBottom: "1px solid #e2e8f0",
-                            }}
-                          >
-                            <tr>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                }}
-                              >
-                                S.No
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                }}
-                              >
-                                Invoice No
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                }}
-                              >
-                                Type
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                }}
-                              >
-                                Total
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                }}
-                              >
-                                Tax
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                }}
-                              >
-                                Discount
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                }}
-                              >
-                                Net Amount
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                }}
-                              >
-                                Status
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                }}
-                              >
-                                View
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(bookingData?.Invoices ?? [])
-                              .slice()
-                              .reverse()
-                              .map((inv, idx) => (
-                                <tr key={inv.InvoiceID ?? idx}>
-                                  <td className="py-2 px-3">{idx + 1}</td>
-                                  <td className="py-2 px-3 fw-semibold">
-                                    {inv.InvoiceNumber ?? "—"}
-                                  </td>
-                                  <td className="py-2 px-3">
-                                    <span
-                                      className="badge rounded-pill px-2 py-1"
-                                      style={{
-                                        fontSize: "0.7rem",
-                                        backgroundColor:
-                                          (
-                                            inv.InvoiceType || ""
-                                          ).toLowerCase() === "final"
-                                            ? "rgba(13,148,136,0.15)"
-                                            : "rgba(59,130,246,0.15)",
-                                        color:
-                                          (
-                                            inv.InvoiceType || ""
-                                          ).toLowerCase() === "final"
-                                            ? "#0d9488"
-                                            : "#2563eb",
-                                      }}
-                                    >
-                                      {inv.InvoiceType ?? "—"}
-                                    </span>
-                                  </td>
-                                  <td className="py-2 px-3">
-                                    ₹
-                                    {(inv.TotalAmount ?? 0).toLocaleString(
-                                      "en-IN",
-                                    )}
-                                  </td>
-                                  <td className="py-2 px-3">
-                                    ₹
-                                    {(inv.TaxAmount ?? 0).toLocaleString(
-                                      "en-IN",
-                                    )}
-                                  </td>
-                                  <td className="py-2 px-3">
-                                    ₹
-                                    {(inv.DiscountAmount ?? 0).toLocaleString(
-                                      "en-IN",
-                                    )}
-                                  </td>
-                                  <td className="py-2 px-3 fw-bold">
-                                    ₹
-                                    {(inv.NetAmount ?? 0).toLocaleString(
-                                      "en-IN",
-                                    )}
-                                  </td>
-                                  <td className="py-2 px-3">
-                                    <span
-                                      className="badge rounded-pill px-2 py-1"
-                                      style={{
-                                        fontSize: "0.7rem",
-                                        backgroundColor:
-                                          (
-                                            inv.InvoiceStatus || ""
-                                          ).toLowerCase() === "generated"
-                                            ? "rgba(34,197,94,0.15)"
-                                            : "rgba(148,163,184,0.2)",
-                                        color:
-                                          (
-                                            inv.InvoiceStatus || ""
-                                          ).toLowerCase() === "generated"
-                                            ? "#16a34a"
-                                            : "#64748b",
-                                      }}
-                                    >
-                                      {inv.InvoiceStatus ?? "—"}
-                                    </span>
-                                  </td>
-                                  <td className="py-2 px-3">
-                                    {inv.FolderPath ? (
-                                      <a
-                                        href={`${API_BASE.replace(/api\/?$/, "")}${inv.FolderPath}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="btn btn-sm btn-outline-primary py-1 px-2"
-                                      >
-                                        <Icon
-                                          icon="mdi:file-pdf-box"
-                                          width={20}
-                                          height={20}
-                                        />
-                                      </a>
-                                    ) : (
-                                      "—"
-                                    )}
-                                  </td>
-                                </tr>
-                              ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <p className="text-muted mb-0 text-center py-4">
-                        No invoices recorded for this booking.
-                      </p>
-                    )}
-                  </Accordion.Body>
-                </Accordion.Item>
-              </Accordion>
+              <InvoicesAccordion
+                invoices={bookingData?.Invoices}
+                apiBase={API_BASE}
+              />
               {/* ================= PICKUP IMAGES ACCORDION ================= */}
-              <Accordion className="mb-3">
-                <Accordion.Item eventKey="pickupImages">
-                  <Accordion.Header>
-                    <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
-                      <Icon icon="mdi:car-arrow-right" width={20} height={20} />
-                      Pickup Images
-                    </h6>
-                  </Accordion.Header>
-
-                  <Accordion.Body>
-                    {(
-                      bookingData?.ServiceImages?.filter(
-                        (i) => i.ImageUploadType === "Pickup",
-                      ) ?? []
-                    ).length > 0 ? (
-                      <div className="row g-3">
-                        {bookingData?.ServiceImages?.filter(
-                          (i) => i.ImageUploadType === "Pickup",
-                        ).map((img, idx) => (
-                          <div
-                            className="col-lg-2 col-md-3 col-4"
-                            key={img.ImageID ?? idx}
-                          >
-                            <img
-                              src={`${API_IMAGE}${img.ImageURL}`}
-                              alt="Pickup"
-                              className="img-fluid rounded border"
-                              style={{
-                                height: "100px",
-                                width: "100%",
-                                objectFit: "cover",
-                                cursor: "pointer",
-                              }}
-                              onClick={() =>
-                                window.open(
-                                  `${API_IMAGE}${img.ImageURL}`,
-                                  "_blank",
-                                )
-                              }
-                            />
-
-                            <div
-                              className="text-muted text-center mt-1"
-                              style={{ fontSize: "0.7rem" }}
-                            >
-                              {img.UploadedAt
-                                ? new Date(img.UploadedAt).toLocaleDateString(
-                                    "en-IN",
-                                    {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                    },
-                                  )
-                                : ""}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted mb-0 text-center py-4">
-                        No pickup images uploaded.
-                      </p>
-                    )}
-                  </Accordion.Body>
-                </Accordion.Item>
-              </Accordion>
+              <PickupImagesAccordion
+                serviceImages={bookingData?.ServiceImages}
+                apiImageBase={API_IMAGE}
+              />
 
               {/* ================= DELIVERY IMAGES ACCORDION ================= */}
-              <Accordion className="mb-3">
-                <Accordion.Item eventKey="deliveryImages">
-                  <Accordion.Header>
-                    <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
-                      <Icon icon="mdi:car-arrow-left" width={20} height={20} />
-                      Delivery Images
-                    </h6>
-                  </Accordion.Header>
-
-                  <Accordion.Body>
-                    {(
-                      bookingData?.ServiceImages?.filter(
-                        (i) => i.ImageUploadType === "Delivery",
-                      ) ?? []
-                    ).length > 0 ? (
-                      <div className="row g-3">
-                        {bookingData?.ServiceImages?.filter(
-                          (i) => i.ImageUploadType === "Delivery",
-                        ).map((img, idx) => (
-                          <div
-                            className="col-lg-2 col-md-3 col-4"
-                            key={img.ImageID ?? idx}
-                          >
-                            <img
-                              src={`${API_IMAGE}${img.ImageURL}`}
-                              alt="Delivery"
-                              className="img-fluid rounded border"
-                              style={{
-                                height: "100px",
-                                width: "100%",
-                                objectFit: "cover",
-                                cursor: "pointer",
-                              }}
-                              onClick={() =>
-                                window.open(
-                                  `${API_IMAGE}${img.ImageURL}`,
-                                  "_blank",
-                                )
-                              }
-                            />
-
-                            <div
-                              className="text-muted text-center mt-1"
-                              style={{ fontSize: "0.7rem" }}
-                            >
-                              {img.UploadedAt
-                                ? new Date(img.UploadedAt).toLocaleDateString(
-                                    "en-IN",
-                                    {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                    },
-                                  )
-                                : ""}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted mb-0 text-center py-4">
-                        No delivery images uploaded.
-                      </p>
-                    )}
-                  </Accordion.Body>
-                </Accordion.Item>
-              </Accordion>
+              <DeliveryImagesAccordion
+                serviceImages={bookingData?.ServiceImages}
+                apiImageBase={API_IMAGE}
+              />
 
               {/* ================= SERVICE COMPLETION IMAGES ACCORDION ================= */}
-              <Accordion className="mb-3" defaultActiveKey="">
-                <Accordion.Item eventKey="serviceImages">
-                  <Accordion.Header>
-                    <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
-                      <Icon icon="mdi:image-multiple" width={20} height={20} />
-                      Customer Confirmation Details
-                    </h6>
-                  </Accordion.Header>
-
-                  <Accordion.Body>
-                    {customerConfirmationImages.length > 0 ? (
-                      <div className="table-responsive">
-                        <table
-                          className="table table-bordered table-hover align-middle mb-0"
-                          style={{ fontSize: "0.875rem", textAlign: "center" }}
-                        >
-                          <thead
-                            style={{
-                              backgroundColor: "#f8fafc",
-                              borderBottom: "1px solid #e2e8f0",
-                            }}
-                          >
-                            <tr>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                  textAlign: "center",
-                                }}
-                              >
-                                S.No
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                  textAlign: "center",
-                                }}
-                              >
-                                Confirm At
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                  textAlign: "center",
-                                }}
-                              >
-                                Confirm Role
-                              </th>
-                              <th
-                                className="py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                  textAlign: "center",
-                                  minWidth: "260px",
-                                }}
-                              >
-                                Confirm Description
-                              </th>
-                              <th
-                                className="text-nowrap py-2 px-3 fw-bold"
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "#64748b",
-                                  textAlign: "center",
-                                }}
-                              >
-                                Image
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {customerConfirmationImages.map((img, idx) => (
-                              <tr key={img.ImageID ?? idx}>
-                                <td className="py-2 px-3">{idx + 1}</td>
-                                <td className="py-2 px-3 text-nowrap">
-                                  {img.UploadedAt
-                                    ? new Date(img.UploadedAt).toLocaleString(
-                                        "en-IN",
-                                        {
-                                          day: "2-digit",
-                                          month: "short",
-                                          year: "numeric",
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        },
-                                      )
-                                    : "—"}
-                                </td>
-                                <td className="py-2 px-3">
-                                  {customerConfirmationRole}
-                                </td>
-                                <td
-                                  className="py-2 px-3 text-start"
-                                  style={{
-                                    whiteSpace: "pre-wrap",
-                                    minWidth: "260px",
-                                  }}
-                                >
-                                  {customerConfirmationDescription}
-                                </td>
-                                <td className="py-2 px-3">
-                                  <img
-                                    src={`${API_IMAGE}${img.ImageURL}`}
-                                    alt="Customer Confirmation"
-                                    className="rounded border"
-                                    style={{
-                                      height: "45px",
-                                      width: "45px",
-                                      objectFit: "cover",
-                                      cursor: "pointer",
-                                    }}
-                                    onClick={() =>
-                                      window.open(
-                                        `${API_IMAGE}${img.ImageURL}`,
-                                        "_blank",
-                                      )
-                                    }
-                                  />
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <p className="text-muted mb-0 text-center py-4">
-                        No customer confirmation images uploaded.
-                      </p>
-                    )}
-                  </Accordion.Body>
-                </Accordion.Item>
-              </Accordion>
+              <CustomerConfirmationDetailsAccordion
+                customerConfirmationImages={customerConfirmationImages}
+                customerConfirmationRole={customerConfirmationRole}
+                customerConfirmationDescription={customerConfirmationDescription}
+                apiImageBase={API_IMAGE}
+              />
             </div>
           </div>
         </div>
@@ -11411,7 +10039,7 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                           placeholder="Amount"
                         />
                       </div>
-                      {bookingData.discountAmount === 0 && (
+                      {alreadyPaid === 0 && (
                         <>
                           <div className="mb-0">
                             <label className="form-label fw-semibold">
@@ -11544,7 +10172,7 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                           placeholder="Amount"
                         />
                       </div>
-                      {bookingData.discountAmount === 0 && (
+                      {alreadyPaid === 0 && (
                         <>
                           <div className="mb-0">
                             <label className="form-label fw-semibold">

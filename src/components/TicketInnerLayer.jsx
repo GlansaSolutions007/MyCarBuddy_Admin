@@ -546,6 +546,14 @@ const handleRequestRefund = async () => {
                     : {ticket?.TicketDescription || "-"}
                   </span>
                 </li>
+                <li className="d-flex align-items-center gap-1 mb-12">
+                  <span className="w-30 text-md fw-semibold text-primary-light">
+                    Assigned Supervisor
+                  </span>
+                  <span className="w-70 text-secondary-light fw-medium">
+                    : {ticket?.AssignedEmployeeName  ? `${ticket.AssignedEmployeeName} (${ticket.AssignedEmployeePhone})` : "Not Assigned"}
+                  </span>
+                </li>
               </ul>
               {/* Customer Uploaded Images */}
               {ticket?.FilePath && ticket.FilePath.trim() !== "" && (
@@ -587,11 +595,12 @@ const handleRequestRefund = async () => {
               <div className="d-flex gap-2 mt-3">
                 
                 {( userDetails?.DeptId === 2 && 
-                  (
+                  ( 
                     !["resolved", "closed", "cancelled"].includes(
                       currentStatus?.toLowerCase()
                     ))) && (
                       <>
+                    {!ticket?.AssignedEmployeeId && (
                       <button
                         className="btn btn-success btn-sm d-flex align-items-center gap-1"
                         onClick={handleAssignSupervisor}
@@ -599,6 +608,7 @@ const handleRequestRefund = async () => {
                         <Icon icon="mdi:account-check" className="fs-5" />
                         Assign Supervisor
                     </button>
+                    )}
                   <button
                     className="btn btn-primary-600 btn-sm d-flex align-items-center justify-content-center gap-1"
                     onClick={handleForward}
@@ -679,6 +689,7 @@ const handleRequestRefund = async () => {
                             ? [
                                 { value: 9, label: "Rework Approved" },
                                 { value: 10, label: "Rework Rejected" },
+                                { value: 3, label: "Resolved" },
                               ]
                             : currentStatus === "resolved"
                             ? userDetails?.Is_Head === 1
