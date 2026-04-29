@@ -89,7 +89,7 @@ const BookServicesLayer = () => {
   // 1. Detect the mode from the URL query string (?mode=...)
   const viewMode = useMemo(() => {
     const params = new URLSearchParams(location.search);
-    return params.get("mode") || "add"; // Default to 'add' if no mode is provided
+    return (params.get("mode") || "add").toString().trim().toLowerCase(); // Default to 'add' if no mode is provided
   }, [location.search]);
 
   const isAddMode = viewMode === "add";
@@ -2103,13 +2103,23 @@ useEffect(() => {
             const dealerConfirm = row.isDealer_Confirm?.toString().trim().toLowerCase();
             const isApproved = dealerConfirm === "approved";
             const isRejected = dealerConfirm === "rejected";
+            const isInspection = row.type?.toLowerCase() === "inspection";
+            const isConfirmed = row.status === "Confirmed";
+            const isServiceCompleted = row.addOnStatus === "ServiceCompleted";
+
             const canModifyBase =
               row.status !== "Confirmed" ||
               isSupervisorHead || isFieldAdvisor ||
               isAdmin;
-            const canModify = isUpdateMode ? false : (isAssignMode ? true : (isRejected ? true : isApproved ? false : canModifyBase));
+            const canModify = isUpdateMode
+              ? false
+              : isRejected
+                ? true
+                : isApproved
+                  ? false
+                  : canModifyBase;
             return (
-              <div className="position-relative overflow-visible w-100">
+              <div className="position-relative overflow-visible w-100 d-flex align-items-center gap-2">
                 <Select
                   isDisabled={!canModify}
                   className="react-select-container text-sm"
@@ -2166,6 +2176,17 @@ useEffect(() => {
                     }),
                   }}
                 />
+                {!isAddMode && !isInspection &&
+              (row.isDealer_Confirm === "Approved" || isConfirmed)  && !isServiceCompleted && (
+                  
+                  <button
+                  className="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                  onClick={() => handleDiscardItem(row.addedItemsIndex)}
+                  title="Discard"
+                >
+                  <Icon icon="mdi:close-circle-outline" />
+                </button>
+                )}
               </div>
             );
           },
@@ -2881,7 +2902,7 @@ useEffect(() => {
     //   ignoreRowClick: true,
     //   allowOverflow: true,
     // },
-  ...(!isAssignMode ? [
+  ...(!isAssignMode && !isUpdateMode ? [
    {
       name: "Actions",
       cell: (row) => {

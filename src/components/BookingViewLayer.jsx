@@ -205,15 +205,13 @@ const BookingViewLayer = () => {
   const activeReworkAddOnIds = (() => {
     const reworks = bookingData?.Reworks || [];
     if (reworks.length === 0) return new Set();
-    const latestRework = reworks[reworks.length - 1];
-    const rawAddOnIds = (
-      latestRework?.NewAddOnId ||
-      latestRework?.AddOnId ||
-      ""
-    ).toString();
-    const ids = rawAddOnIds
-      .split(",")
-      .map((id) => Number(id.trim()))
+    const ids = reworks
+      .flatMap((rework) =>
+        (rework?.AddOnId || "")
+          .toString()
+          .split(",")
+          .map((id) => Number(id.trim())),
+      )
       .filter((id) => Number.isFinite(id) && id > 0);
     return new Set(ids);
   })();
@@ -12732,4 +12730,3 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
 };
 
 export default BookingViewLayer;
-
