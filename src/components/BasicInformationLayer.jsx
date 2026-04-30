@@ -356,17 +356,38 @@ const BasicInformationLayer = () => {
   }
 };
 
-const handleAccountChange = (e) => {
-  const { name, value } = e.target;
+  const capitalizeWords = (text) => {
+    if (!text) return "";
+    return text
+      .toLowerCase()
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
 
-  setAccountDetails((prev) => ({
-    ...prev,
-    [name]:
-      name === "ifscCode"
-        ? value.replace(/\s/g, "").toUpperCase()
-        : value,
-  }));
-};
+  const handleAccountChange = (e) => {
+    const { name, value } = e.target;
+
+    let updatedValue = value;
+
+    if (name === "ifscCode") {
+      updatedValue = value.replace(/\s/g, "").toUpperCase();
+    }
+
+    // ✅ Capitalize for specific fields
+    if (
+      name === "accountHolderName" ||
+      name === "bankName" ||
+      name === "branch"
+    ) {
+      updatedValue = capitalizeWords(value);
+    }
+
+    setAccountDetails((prev) => ({
+      ...prev,
+      [name]: updatedValue,
+    }));
+  };
 
 const validateAccountDetails = () => {
   const {

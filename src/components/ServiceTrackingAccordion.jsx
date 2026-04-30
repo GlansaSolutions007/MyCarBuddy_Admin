@@ -143,7 +143,7 @@ const ServiceTrackingAccordion = ({
                         <div
                           key={row.Id ?? `${row.BookingID}-${idx}`}
                           className="accordion-item border rounded-3 overflow-hidden"
-                          style={{ background: "#fcfcfd" }}
+                          style={{ background: "#fcfcfd", marginBottom: "2px" }}
                         >
                           <h2 className="accordion-header" id={`heading-${accordionId}`}>
                             <button
@@ -179,12 +179,12 @@ const ServiceTrackingAccordion = ({
                             className="accordion-collapse collapse"
                             aria-labelledby={`heading-${accordionId}`}
                           >
-                            <div className="accordion-body p-3">
+                          <div className="accordion-body p-1">
 
                           {!isDoorstepService && (
                             <div className="row g-3 mt-1">
                               <div className="col-lg-6">
-                                <div className="border rounded-3 p-2 h-100 bg-white">
+                                <div className="border rounded-3 p-3 h-100 bg-white">
                                   <div className="small fw-semibold text-muted">Pick From</div>
                                   <div className="fw-semibold">{row.PickFromName || "Customer"}</div>
                                   <div className="small text-muted">{row.PickFromPhone || "—"}</div>
@@ -216,7 +216,7 @@ const ServiceTrackingAccordion = ({
                                 </div>
                               </div>
                               <div className="col-lg-6">
-                                <div className="border rounded-3 p-2 h-100 bg-white">
+                                <div className="border rounded-3 p-3 h-100 bg-white">
                                   <div className="small fw-semibold text-muted">Drop At</div>
                                   <div className="fw-semibold">{row.PickToName || "Customer"}</div>
                                   <div className="small text-muted">{row.PickToPhone || "—"}</div>
@@ -252,7 +252,7 @@ const ServiceTrackingAccordion = ({
 
                           <div className="row g-3 mt-1">
                             <div className="col-lg-6">
-                              <div className="border rounded-3 p-2 h-100 bg-white">
+                              <div className="border rounded-3 p-3 h-100 bg-white">
                                 <div className="small fw-semibold text-muted mb-2">Technician / Driver</div>
                                 <div className="fw-semibold">{row.TechnicinaName || "—"}</div>
                                 <div className="small text-muted">{row.TechnicianPhoneNumber || "—"}</div>
@@ -265,7 +265,7 @@ const ServiceTrackingAccordion = ({
                               </div>
                             </div>
                             <div className="col-lg-6">
-                              <div className="border rounded-3 p-2 h-100 bg-white">
+                              <div className="border rounded-3 p-3 h-100 bg-white">
                                 <div className="small fw-semibold text-muted mb-2">Driver Tracking</div>
                                 {tracking.length > 0 ? (
                                   <div className="d-flex flex-column">

@@ -110,11 +110,24 @@ const AddLeadLayer = () => {
     }
   }, [carBrand, carModel, models]);
 
+  const capitalizeFirstLetter = (text) => {
+    if (!text) return "";
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    let updatedValue = value;
+
+    // Apply only for specific fields
+    if (name === "customerName" || name === "customerAddress") {
+      updatedValue = capitalizeFirstLetter(value);
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: updatedValue,
     }));
   };
 

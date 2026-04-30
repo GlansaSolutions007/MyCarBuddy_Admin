@@ -930,7 +930,7 @@ const RefundLayer = () => {
                         <label className="form-check-label mb-0" htmlFor="refundTypeOnline">
                           Through Razorpay
                           <small className="text-muted d-block">
-                            Max: {formatCurrency(highestRazorpayAmount)}
+                            Max Refund: {formatCurrency(highestRazorpayAmount)}
                           </small>
                         </label>
                       </div>
@@ -952,7 +952,7 @@ const RefundLayer = () => {
                         <label className="form-check-label mb-0" htmlFor="refundTypeCash">
                           Through Bank Transfer
                           <small className="text-muted d-block">
-                            Max: {formatCurrency(parseFloat(selectedRefund.TotalPrice) || 0)}
+                            Max Refund: {formatCurrency(parseFloat(selectedRefund.TotalPrice) || 0)}
                           </small>
                         </label>
                       </div>
