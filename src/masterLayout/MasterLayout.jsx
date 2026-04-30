@@ -739,6 +739,27 @@ const alertLeads = useMemo(() => {
         },
       ],
     },
+    // 🔷 SUPPORT
+    {
+      title: "Support",
+      icon: "hugeicons:user-check-02",
+      children: [
+        {
+          title: "Tickets",
+          to: "/tickets",
+          color: "text-info-danger",
+          permission: "tickets_view",
+          page: "Tickets",
+        },
+        {
+          title: "Assign Tickets",
+          to: "/assign-tickets",
+          color: "text-success-main",
+          permission: "assigntickets_view",
+          page: "Assign Tickets",
+        },
+      ],
+    },
   
     {
       title: "Customer Details",
@@ -998,28 +1019,6 @@ const alertLeads = useMemo(() => {
           color: "text-primary-600",
           permission: "leavelist_view",
           page: "Leave List",
-        },
-      ],
-    },
-  
-    // 🔷 SUPPORT
-    {
-      title: "Support",
-      icon: "hugeicons:user-check-02",
-      children: [
-        {
-          title: "Tickets",
-          to: "/tickets",
-          color: "text-info-danger",
-          permission: "tickets_view",
-          page: "Tickets",
-        },
-        {
-          title: "Assign Tickets",
-          to: "/assign-tickets",
-          color: "text-success-main",
-          permission: "assigntickets_view",
-          page: "Assign Tickets",
         },
       ],
     },
