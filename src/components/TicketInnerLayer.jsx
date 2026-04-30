@@ -32,6 +32,11 @@ const TicketInnerLayer = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const history = ticket?.TrackingHistory;
   const currentStatus = history?.[0]?.StatusName?.toLowerCase() || "";
+  const normalizedIsRefund = ticket?.IsRefund;
+  const isRefundRequested =
+    normalizedIsRefund === true ||
+    normalizedIsRefund === 1 ||
+    String(normalizedIsRefund).toLowerCase() === "true";
   const role = localStorage.getItem("role");
   const isEmployee = role === "Employee";
   const userDetails = JSON.parse(localStorage.getItem("employeeData"));
@@ -551,7 +556,7 @@ const handleRequestRefund = async () => {
                     Assigned Supervisor
                   </span>
                   <span className="w-70 text-secondary-light fw-medium">
-                    : {ticket?.AssignedEmployeeName  ? `${ticket.AssignedEmployeeName} (${ticket.AssignedEmployeePhone})` : "Not Assigned"}
+                    : {ticket?.SupervisorHeadAssignments[0]?.EmployeeName  ? `${ticket.SupervisorHeadAssignments[0].EmployeeName} (${ticket.SupervisorHeadAssignments[0].EmployeePhone})` : "Not Assigned"}
                   </span>
                 </li>
               </ul>
@@ -592,7 +597,7 @@ const handleRequestRefund = async () => {
                   </div>
                 </div>
               )}
-              <div className="d-flex gap-2 mt-3">
+             <div className="d-flex gap-2 mt-3">
                 
                 {( userDetails?.DeptId === 2 && 
                   ( 
@@ -600,7 +605,7 @@ const handleRequestRefund = async () => {
                       currentStatus?.toLowerCase()
                     ))) && (
                       <>
-                    {!ticket?.AssignedEmployeeId && (
+                    {ticket?.SupervisorHeadAssignments.length  == 0 && (
                       <button
                         className="btn btn-success btn-sm d-flex align-items-center gap-1"
                         onClick={handleAssignSupervisor}
@@ -620,14 +625,20 @@ const handleRequestRefund = async () => {
                    
                   </>
                 )}
-                {( userDetails?.DeptId === 5 &&  userDetails?.Is_Head === 1 &&
-                 <button
+                {userDetails?.DeptId === 5 && userDetails?.Is_Head === 1 && (
+                  isRefundRequested ? (
+                    <span className="badge bg-warning text-dark d-inline-flex align-items-center px-3 py-2">
+                      Already requested
+                    </span>
+                  ) : (
+                    <button
                       type="button"
                       className="btn btn-danger btn-sm"
                       onClick={handleRequestRefund}
                     >
                       Request Refund
                     </button>
+                  )
                 )}
                 
                 {/* <button className="btn btn-success btn-sm" onClick={handleAccept}>
@@ -682,14 +693,13 @@ const handleRequestRefund = async () => {
                                 { value: 4, label: "Closed" },
                                 { value: 5, label: "Cancelled" },
                                 { value: 6, label: "Reopened" },
-                                { value: 9, label: "Rework Approved" },
-                                { value: 10, label: "Rework Rejected" },
+                                { value: 9, label: "Approve Rework" },
+                                { value: 10, label: "Reject Rework" },
                               ]
                             : userDetails?.DeptId === 5
                             ? [
-                                { value: 9, label: "Rework Approved" },
-                                { value: 10, label: "Rework Rejected" },
-                                { value: 3, label: "Resolved" },
+                                 { value: 9, label: "Approve Rework" },
+                                { value: 10, label: "Reject Rework" },
                               ]
                             : currentStatus === "resolved"
                             ? userDetails?.Is_Head === 1
@@ -880,7 +890,7 @@ const handleRequestRefund = async () => {
                         </div>
                         <div className="col-sm-6 mb-10">
                           <strong>Status:</strong>{" "}
-                          {ticket.StatusName || "-"}
+                          {ticket.BookingStatus || "-"}
                         </div>
                         <div className="col-sm-6 mb-10">
                           <strong>Supervisor:</strong>{" "}

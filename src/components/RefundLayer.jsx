@@ -32,6 +32,8 @@ const RefundLayer = () => {
   const [loadingPayments, setLoadingPayments] = useState(false);
   const [highestRazorpayAmount, setHighestRazorpayAmount] = useState(0);
   const [hasRazorpayPayments, setHasRazorpayPayments] = useState(false);
+  const [hasOnlyRazorpayPaymentModes, setHasOnlyRazorpayPaymentModes] =
+    useState(false);
   const [selectedPaymentId, setSelectedPaymentId] = useState(null);
   const fileInputRef = useRef(null);
 
@@ -145,6 +147,13 @@ const RefundLayer = () => {
 
       // ✅ Extract all payments from bookings
       const allPayments = res.data.flatMap((b) => b.Payments || []);
+      const hasOnlyRazorpayModes =
+        allPayments.length > 0 &&
+        allPayments.every((p) => {
+          const mode = (p.PaymentMode || "").toString().toLowerCase().trim();
+          return mode === "razorpay" || mode === "razorpayqr";
+        });
+      setHasOnlyRazorpayPaymentModes(hasOnlyRazorpayModes);
 
       // ✅ Filter Razorpay + not refunded
       const razorpayPayments = allPayments.filter(
@@ -181,14 +190,16 @@ const RefundLayer = () => {
         }
       } else {
         setHasRazorpayPayments(false);
+        setHasOnlyRazorpayPaymentModes(false);
         setHighestRazorpayAmount(0);
-        setRefundType("cash");
+        setRefundType("Bank Transfer");
       }
     }
   } catch (err) {
     console.error("Failed to fetch payment history", err);
     setPaymentHistory([]);
     setHasRazorpayPayments(false);
+    setHasOnlyRazorpayPaymentModes(false);
     setRefundType("cash");
   } finally {
     setLoadingPayments(false);
@@ -305,7 +316,7 @@ const RefundLayer = () => {
     // Check if payment amount is valid
     const amount = parseFloat(paymentAmount);
     if (!amount || amount <= 0) return false;
-
+    
     // Check if amount exceeds booking total
     const bookingTotalAmount = parseFloat(selectedRefund?.TotalPrice) || 0;
     if (amount > bookingTotalAmount) return false;
@@ -317,13 +328,33 @@ const RefundLayer = () => {
       const refundAmt = parseFloat(selectedRefund?.TotalPrice) || 0;
       if (amount > refundAmt) return false;
     }
+    console.log(refundType);
 
-    if(refundType === "Bank Transfer"){
-      console.log("bankDetails", bankDetails);
-      const bankDetail = bankDetails[0];
-      if(!bankDetail.AccountNumber || !bankDetail.AccountHolderName || !bankDetail.BankName || !bankDetail.IFSC || !bankDetail.Branch) return false;
-      if(!bankDetail.AccountNumber.trim() || !bankDetail.AccountHolderName.trim() || !bankDetail.BankName.trim() || !bankDetail.IFSC.trim() || !bankDetail.Branch.trim()) return false;
-      if(!bankDetail.AccountNumber.trim() || !bankDetail.AccountHolderName.trim() || !bankDetail.BankName.trim() || !bankDetail.IFSC.trim() || !bankDetail.Branch.trim()) return false;
+    if (refundType === "Bank Transfer") {
+      const bankDetail = Array.isArray(bankDetails)
+        ? bankDetails[0]
+        : bankDetails;
+      if (!bankDetail) return false;
+
+      const accountNumber = String(bankDetail.AccountNumber || "").trim();
+      const accountHolderName = String(
+        bankDetail.AccountHolderName || ""
+      ).trim();
+      const bankName = String(bankDetail.BankName || "").trim();
+      const ifscCode = String(
+        bankDetail.IFSCCode || bankDetail.IFSC || ""
+      ).trim();
+      const branch = String(bankDetail.Branch || "").trim();
+
+      if (
+        !accountNumber ||
+        !accountHolderName ||
+        !bankName ||
+        !ifscCode ||
+        !branch
+      ) {
+        return false;
+      }
     }
 
     return true;
@@ -370,10 +401,10 @@ const RefundLayer = () => {
         return;
       }
     } else {
-      if (amount > refundAmt) {
+      if (amount > bookingTotalAmount) {
         Swal.fire(
           "Error",
-          `Payment amount cannot exceed refund amount ${formatCurrency(refundAmt)}`,
+          `Payment amount cannot exceed refund amount ${formatCurrency(bookingTotalAmount)}`,
           "error"
         );
         return;
@@ -384,7 +415,7 @@ const RefundLayer = () => {
       const formData = new FormData();
 
       formData.append("expenseDate", new Date(expenseDate).toISOString());
-      formData.append("expenseCategoryID", 1);
+      formData.append("expenseCategoryID", 3);
       formData.append("amount", amount);
       formData.append("paymentMode", refundType);
       formData.append("dealerID", 0);
@@ -472,6 +503,7 @@ const RefundLayer = () => {
         setPaymentHistory([]);
         setHighestRazorpayAmount(0);
         setHasRazorpayPayments(false);
+        setHasOnlyRazorpayPaymentModes(false);
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
@@ -514,31 +546,27 @@ const RefundLayer = () => {
     {
       name: "Booking Date",
       selector: (row) => {
-        const rawDate = row.CreatedDate;
-        if (!rawDate) return "-";
-        const dateObj = new Date(rawDate);
-        const formattedDate = dateObj.toLocaleDateString("en-IN", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        });
-        const time = dateObj.toLocaleTimeString("en-IN", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        });
-        return (
-          <>
-          <div className="d-flex justify-content-center"> 
-            <span className="fw-bold">{formattedDate}</span>
-            </div>
-             <span className="d-flex justify-content-center">{time}</span>
-          </>
-        );
+        if (!row.BookingDate) return "";
+        const date = new Date(row.BookingDate);
+        return `${String(date.getDate()).padStart(2, "0")}/${String(
+          date.getMonth() + 1
+        ).padStart(2, "0")}/${date.getFullYear()}`;
       },
-      sortField: "CreatedDate",
-      width: "140px",
       sortable: true,
+      width: "150px"
+    },
+    {
+      name: "Booking Price",
+      selector: (row) =>
+        `₹${(row.TotalPrice - row.CouponAmount).toFixed(2)}`,
+      sortable: true,
+      width: "150px"
+    },
+    {
+      name: "Refund Amount",
+      selector: (row) => `₹${(row.RefundAmount ?? 0).toFixed(2)}`,
+      sortable: true,
+      width: "150px"
     },
     {
       name: "Cust. Name",
@@ -580,44 +608,10 @@ const RefundLayer = () => {
       sortable: false,
     },
     {
-      name: "Booking Price",
-      selector: (row) =>
-        `₹${(row.TotalPrice - row.CouponAmount).toFixed(2)}`,
-      sortable: true,
-      width: "150px"
-    },
-    {
-      name: "Refund Date",
-      selector: (row) => {
-        const rawDate = row.RefundedAt;
-        if (!rawDate) return "-";
-        const dateObj = new Date(rawDate);
-        const formattedDate = dateObj.toLocaleDateString("en-IN", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        });
-        const time = dateObj.toLocaleTimeString("en-IN", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        });
-        return (
-          <>
-          <div className="d-flex justify-content-center"> 
-            <span className="fw-bold">{formattedDate}</span>
-            </div>
-             <span className="d-flex justify-content-center">{time}</span>
-          </>
-        );
-      },
-      sortField: "RefundedAt",
-      width: "140px",
-      sortable: true,
-    },
-    {
-      name: "Refund Amount",
-      selector: (row) => `₹${(row.RefundAmount ?? 0).toFixed(2)}`,
+      name: "Refund Status",
+      selector: (row) => (
+        <span className="fw-bold">{row.RefundStatus ?? "N/A"}</span>
+      ),
       sortable: true,
       width: "150px"
     },
@@ -657,14 +651,6 @@ const RefundLayer = () => {
       width: "150px",
       sortable: true,
     },
-    {
-      name: "Refund Status",
-      selector: (row) => (
-        <span className="fw-bold">{row.RefundStatus ?? "N/A"}</span>
-      ),
-      sortable: true,
-      width: "150px"
-    },
     ...(hasPermission("refunds_edit")
       ? [
           {
@@ -678,7 +664,7 @@ const RefundLayer = () => {
                 >
                   <Icon icon="lucide:eye" />
                 </Link>
-                {row.IsRefunded == 0 && (
+                {(row.RefundAmount == null || row.RefundAmount == 0) && (
                   <button
                     className="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center"
                     onClick={() => handlePayNow(row)}
@@ -860,6 +846,7 @@ const RefundLayer = () => {
 
 
                 {/* Bank Details */}
+                {!hasOnlyRazorpayPaymentModes && (
                 <div className="mb-3 p-3 border rounded">
                   <h6 className="fw-bold mb-3 d-flex align-items-center gap-2">
                     <Icon icon="mdi:bank" />
@@ -877,7 +864,7 @@ const RefundLayer = () => {
                       <table className="table table-bordered table-sm mb-0">
                         <thead className="table-light">
                           <tr>
-                            <th>Account Holder</th>
+                            <th>Acc. Holder Name</th>
                             <th>Bank Name</th>
                             <th>Account Number</th>
                             <th>IFSC Code</th>
@@ -917,17 +904,19 @@ const RefundLayer = () => {
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* Refund Type Selection */}
-                {hasRazorpayPayments && (
+                {(hasRazorpayPayments || !hasOnlyRazorpayPaymentModes) && (
                   <div className="mb-3 p-3 border rounded bg-light">
                     <label className="form-label fw-semibold mb-2">
                       Payment Type <span className="text-danger">*</span>
                     </label>
-                    <div className="d-flex gap-3">
-                      <div className="form-check">
+                    <div className="d-flex flex-wrap gap-3 align-items-stretch">
+                      {hasRazorpayPayments && (
+                      <div className="form-check border rounded px-3 py-2 mb-0 d-flex align-items-center gap-2">
                         <input
-                          className="form-check-input"
+                          className="form-check-input mt-0"
                           type="radio"
                           id="refundTypeOnline"
                           value="online"
@@ -938,17 +927,18 @@ const RefundLayer = () => {
                             setPaymentAmount(Math.min(parseFloat(selectedRefund.RefundAmount) || 0, highestRazorpayAmount).toString());
                           }}
                         />
-                        <label className="form-check-label" htmlFor="refundTypeOnline">
+                        <label className="form-check-label mb-0" htmlFor="refundTypeOnline">
                           Through Razorpay
-                          <br />
-                          <small className="text-muted">
+                          <small className="text-muted d-block">
                             Max: {formatCurrency(highestRazorpayAmount)}
                           </small>
                         </label>
                       </div>
-                      <div className="form-check">
+                      )}
+                      {!hasOnlyRazorpayPaymentModes && (
+                      <div className="form-check border rounded px-3 py-2 mb-0 d-flex align-items-center gap-2">
                         <input
-                          className="form-check-input"
+                          className="form-check-input mt-0"
                           type="radio"
                           id="refundTypeCash"
                           value="Bank Transfer"
@@ -959,14 +949,14 @@ const RefundLayer = () => {
                             setPaymentAmount((parseFloat(selectedRefund.RefundAmount) || 0).toString());
                           }}
                         />
-                        <label className="form-check-label" htmlFor="refundTypeCash">
-                        Through Bank Transfer
-                          <br />
-                          <small className="text-muted">
+                        <label className="form-check-label mb-0" htmlFor="refundTypeCash">
+                          Through Bank Transfer
+                          <small className="text-muted d-block">
                             Max: {formatCurrency(parseFloat(selectedRefund.TotalPrice) || 0)}
                           </small>
                         </label>
                       </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1004,7 +994,15 @@ const RefundLayer = () => {
                     className="form-control"
                     placeholder="Enter payment amount"
                     value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(e.target.value)}
+                    onChange={(e) => {
+                        let val = e.target.value;
+
+                        if (val.startsWith("0") && val.length > 1) {
+                          val = val.replace(/^0+/, "");
+                        }
+
+                        setPaymentAmount(val);
+                      }}
                     min="0"
                     max={Math.min(
                       selectedRefund.TotalPrice || 0,
@@ -1044,6 +1042,7 @@ const RefundLayer = () => {
                     ref={fileInputRef}
                     type="file"
                     className="form-control"
+                    style={{ minHeight: "44px", lineHeight: "1.5" }}
                     accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
                     multiple
                     onChange={handleFileChange}
@@ -1192,6 +1191,7 @@ const RefundLayer = () => {
                     setPaymentHistory([]);
                     setHighestRazorpayAmount(0);
                     setHasRazorpayPayments(false);
+                    setHasOnlyRazorpayPaymentModes(false);
                     if (fileInputRef.current) {
                       fileInputRef.current.value = "";
                     }

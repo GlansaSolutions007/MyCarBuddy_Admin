@@ -224,7 +224,9 @@ const BookingViewLayer = () => {
   const reworkServicesForFlow =
     activeReworkAddOnIds.size > 0
       ? allBookingServicesForFlow.filter((item) =>
-          activeReworkAddOnIds.has(Number(item?.AddOnID ?? item?.addOnId)),
+          activeReworkAddOnIds.has(Number(item?.AddOnID ?? item?.addOnId)) ||
+          item?.AfterRework === true ||
+          item?.afterRework === true,
         )
       : allBookingServicesForFlow.filter(isReworkStatus);
   const isReworkFlowActive =
@@ -329,6 +331,14 @@ const BookingViewLayer = () => {
   const allReworkServicesCompletedApproved =
     reworkGarageServices.length > 0 &&
     reworkGarageServices.every(isGarageServiceCompletedApproved);
+  const postReworkServicesForFlow = allBookingServicesForFlow.filter(
+    (item) => item?.AfterRework === true || item?.afterRework === true,
+  );
+  const hasPendingPostReworkServices =
+    postReworkServicesForFlow.length > 0 &&
+    postReworkServicesForFlow.some(
+      (item) => !isGarageServiceCompletedApproved(item),
+    );
   const effectiveHasExistingCustomerToDealerRoute = (() => {
     const routes = (bookingData?.CarPickUpDelivery || []).filter(
       (route) => route?.Status !== "Cancelled",
@@ -370,23 +380,74 @@ const BookingViewLayer = () => {
   )
     .toString()
     .trim();
-  const currentGarageCarTrackingText = (() => {
+  const currentGarageCarTracking = (() => {
     if (bookingData?.ServiceType !== "ServiceAtGarage") return "";
     const route = lastNonCancelledGarageRoute;
-    if (!route) return "Not Started";
+    if (!route) {
+      return {
+        text: "Not Started",
+        from: "Customer",
+        to: "Dealer",
+        isPickupVerified: false,
+        isDeliveryVerified: false,
+        isInTransit: false,
+      };
+    }
     const routeStatus = (route?.Status || "").toString().toLowerCase().trim();
+    const trackingEvents = route?.DriverTracking || [];
+    const lastTrackingStatus = (trackingEvents[trackingEvents.length - 1]?.Status || "")
+      .toString()
+      .toLowerCase()
+      .trim();
+    const isPickupVerified =
+      route?.PickupOTPVerified === true || route?.PickupOTPVerified === 1;
+    const isDeliveryVerified =
+      route?.DeliveryOTPVerified === true || route?.DeliveryOTPVerified === 1;
+
+    const fromLabel = route?.PickFromName || "Customer";
+    const toLabel =
+      route?.PickToName ||
+      (normalizedLastGarageRouteType === "DealerToCustomer"
+        ? "Customer"
+        : "Dealer");
+    const isInTransit =
+      lastTrackingStatus === "in_transit" ||
+      (isPickupVerified && !isDeliveryVerified && routeStatus !== "completed");
+
     if (
       normalizedLastGarageRouteType === "CustomerToDealer" ||
       normalizedLastGarageRouteType === "DealerToDealer"
     ) {
-      return `At ${route?.PickToName || "Dealer"}`;
+      return {
+        text: `At ${route?.PickToName || "Dealer"}`,
+        from: fromLabel,
+        to: toLabel,
+        isPickupVerified,
+        isDeliveryVerified,
+        isInTransit,
+      };
     }
     if (normalizedLastGarageRouteType === "DealerToCustomer") {
-      return routeStatus === "completed"
-        ? `At ${"Customer Location"}`
-        : `Out for delivery to ${route?.PickToName || "Customer"}`;
+      return {
+        text:
+          routeStatus === "completed"
+            ? `At ${"Customer Location"}`
+            : `Out for delivery to ${route?.PickToName || "Customer"}`,
+        from: fromLabel,
+        to: toLabel,
+        isPickupVerified,
+        isDeliveryVerified,
+        isInTransit,
+      };
     }
-    return "Not Started";
+    return {
+      text: "Not Started",
+      from: fromLabel,
+      to: toLabel,
+      isPickupVerified,
+      isDeliveryVerified,
+      isInTransit,
+    };
   })();
   const reworkLastDealerOption = (() => {
     if (!isReworkFlowActive) return null;
@@ -1471,7 +1532,7 @@ useEffect(() => {
       bookingData?.ServiceType === "ServiceAtGarage" &&
       (normalizedLastGarageRouteType === "CustomerToDealer" ||
         normalizedLastGarageRouteType === "DealerToDealer") &&
-      hasPendingReworkServices &&
+      (hasPendingReworkServices || hasPendingPostReworkServices) &&
       pendingNextGarageDealerOptions.length > 0;
     const shouldOpenDealerToDealer =
       shouldOpenDealerToDealerForRework || shouldOpenDealerToDealerDefault;
@@ -1480,7 +1541,8 @@ useEffect(() => {
       bookingData?.ServiceType === "ServiceAtGarage" &&
       (normalizedLastGarageRouteType === "CustomerToDealer" ||
         normalizedLastGarageRouteType === "DealerToDealer") &&
-      allReworkServicesCompletedApproved;
+      allReworkServicesCompletedApproved &&
+      !hasPendingPostReworkServices;
     const defaultGarageTask = shouldOpenDealerToDealer
       ? "carPickup"
       : shouldOpenFinalDealerToCustomerForRework
@@ -4725,6 +4787,21 @@ const handleReworkSubmit = async () => {
     return "bg-secondary-subtle text-secondary";
   };
 
+  const shouldKeepServiceAccordionOpen = (service) => {
+    const normalizedStatus = (service?.serviceStatus || "")
+      .toString()
+      .toLowerCase()
+      .replace(/\s+/g, "")
+      .replace(/_/g, "")
+      .trim();
+    const isCompletedAndApproved =
+      normalizedStatus === "servicecompleted" &&
+      Boolean(service?.isCompletionApproved);
+
+      console.log(normalizedStatus, service?.isCompletionApproved);
+    return !isCompletedAndApproved;
+  };
+
   // When both Supervisor and Field Advisor are missing, auto-scroll to Personal Information
   useEffect(() => {
     if (
@@ -5324,11 +5401,11 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
           gap: 1rem;
         }
         .service-compare-card {
-          border: 1px solid #dbeafe;
+          // border: 1px solid #dbeafe;
           border-radius: 22px;
-          background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+          // background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
           box-shadow: 0 18px 38px rgba(15, 23, 42, 0.06);
-          padding: 1rem 1.1rem;
+          // padding: 1rem 1.1rem;
         }
         .service-compare-top {
           display: flex;
@@ -6324,7 +6401,10 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                   <h6 className="mb-0 text-dark fw-bold">
                                     Booking #{bookingData.BookingTrackID}
                                   </h6>
-                                  <small className="text-muted">
+                                  <small
+                                    className="text-muted d-inline-flex align-items-center gap-1"
+                                    style={{ whiteSpace: "nowrap" }}
+                                  >
                                     Scheduled:{" "}
                                     {bookingData?.BookingDate
                                       ? new Date(bookingData.BookingDate).toLocaleString("en-IN", {
@@ -6339,6 +6419,26 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                         .hover-dropdown:hover .dropdown-menu {
                                           display: block;
                                           margin-top: 10px;
+                                        }
+                                        .car-flow-line {
+                                          display: inline-flex;
+                                          align-items: center;
+                                          justify-content: center;
+                                          min-width: 56px;
+                                          height: 18px;
+                                          text-align: center;
+                                          line-height: 1;
+                                          color: #0d6efd;
+                                          font-weight: 600;
+                                          font-size: 13px;
+                                        }
+                                        .car-flow-line.is-moving {
+                                          animation: carFlowPulse 1s linear infinite;
+                                        }
+                                        @keyframes carFlowPulse {
+                                          0% { opacity: 0.35; transform: translateX(0); }
+                                          50% { opacity: 1; transform: translateX(2px); }
+                                          100% { opacity: 0.35; transform: translateX(0); }
                                         }
                                       `}
                                       </style>
@@ -6382,7 +6482,7 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                   </small>
                                 </div>
                               </div>
-                              <div className="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+                              <div className="d-flex align-items-center gap-1 flex-wrap justify-content-end">
                                 <span className="ms-2 small">
                                   Payment Status:
                                 </span>
@@ -6451,11 +6551,41 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                   </span>
                                 )} */}
                                 {bookingData?.ServiceType === "ServiceAtGarage" && (
-                                  <div className="w-100 ms-2 d-flex align-items-center gap-2 mt-1 justify-content-end">
-                                    <span className="small">Car Tracking:</span>
-                                    <span className="badge px-3 py-1 rounded-pill bg-info-subtle text-info-emphasis">
-                                      {currentGarageCarTrackingText}
-                                    </span>
+                                  <div className="w-100 ms-2 d-flex flex-column align-items-end gap-1 mt-1">
+                                    <div className="d-flex align-items-center gap-2">
+                                      <span className="small">Car Tracking:</span>
+                                      <span className="badge px-3 py-1 rounded-pill bg-info-subtle text-info-emphasis">
+                                      <div className="d-flex align-items-center gap-2 flex-wrap justify-content-end ">
+                                      <span className="text-muted">
+                                        {currentGarageCarTracking?.from || "Customer"}
+                                      </span>
+                                      {currentGarageCarTracking?.isPickupVerified && (
+                                        <span className="badge bg-primary-subtle text-primary">
+                                          Car Picked
+                                        </span>
+                                      )}
+                                      <span
+                                        className={`car-flow-line ${
+                                          currentGarageCarTracking?.isInTransit
+                                            ? "is-moving"
+                                            : ""
+                                        }`}
+                                      >
+                                        &rarr;
+                                      </span>
+                                      <span className="text-muted">
+                                        {currentGarageCarTracking?.to || "Dealer"}
+                                      </span>
+                                      
+                                      {currentGarageCarTracking?.isDeliveryVerified && (
+                                        <span className="badge bg-success-subtle text-success">
+                                          Delivered
+                                        </span>
+                                      )}
+                                    </div>
+                                      </span>
+                                    </div>
+                                    
                                   </div>
                                 )}
                               </div>
@@ -7951,11 +8081,22 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                     <div className="service-compare-list">
                                       {customerRejectedComparisonServices.map(
                                         (service) => (
-                                          <div
+                                          <Accordion
                                             key={service.id}
                                             className="service-compare-card"
+                                            defaultActiveKey={
+                                              shouldKeepServiceAccordionOpen(
+                                                service,
+                                              )
+                                                ? `rejected-${service.id}`
+                                                : undefined
+                                            }
                                           >
-                                            <div className="service-compare-top">
+                                            <Accordion.Item
+                                              eventKey={`rejected-${service.id}`}
+                                            >
+                                              <Accordion.Header>
+                                                <div className="service-compare-top w-100">
                                               <div>
                                                 <div className="service-compare-title">
                                                   <b>Service Name: </b>
@@ -8042,7 +8183,9 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                                   %)
                                                 </div>
                                               </div>
-                                            </div>
+                                                </div>
+                                              </Accordion.Header>
+                                              <Accordion.Body>
 
                                             <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3 mb-3">
                                               <div className="small text-muted">
@@ -8262,7 +8405,9 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                                 </div>
                                               </div>
                                             </div>
-                                          </div>
+                                              </Accordion.Body>
+                                            </Accordion.Item>
+                                          </Accordion>
                                         ),
                                       )}
                                     </div>
@@ -8320,11 +8465,22 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
 
                                     <div className="service-compare-list">
                                       {liveComparisonServices.map((service) => (
-                                        <div
+                                        <Accordion
                                           key={service.id}
                                           className="service-compare-card"
+                                          defaultActiveKey={
+                                            shouldKeepServiceAccordionOpen(
+                                              service,
+                                            )
+                                              ? `service-${service.id}`
+                                              : undefined
+                                          }
                                         >
-                                          <div className="service-compare-top">
+                                          <Accordion.Item
+                                            eventKey={`service-${service.id}`}
+                                          >
+                                            <Accordion.Header>
+                                              <div className="service-compare-top w-100">
                                             <div>
                                               <div className="service-compare-title">
                                                 <b>{service.serviceType} Name: </b>
@@ -8440,7 +8596,9 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                                 %)
                                               </div>
                                             </div>
-                                          </div>
+                                              </div>
+                                            </Accordion.Header>
+                                            <Accordion.Body>
 
                                           <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3 mb-3">
                                             <div className="small text-muted">
@@ -8734,7 +8892,9 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                               </div>
                                             </div>
                                           </div>
-                                        </div>
+                                            </Accordion.Body>
+                                          </Accordion.Item>
+                                        </Accordion>
                                       ))}
                                     </div>
                                   </div>
