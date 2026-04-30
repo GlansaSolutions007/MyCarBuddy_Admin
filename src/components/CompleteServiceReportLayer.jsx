@@ -107,6 +107,19 @@ function CompleteServiceReportView({ data, onBack }) {
   const dealerApprovals = data.DealerAddOnApproval || [];
   const bookingStatusTracking = data.BookingStatusTracking || [];
   const bookingImages = data.ServiceImages || [];
+  const activeReworkAddOnIds = (() => {
+    const reworks = data?.Reworks || [];
+    if (!Array.isArray(reworks) || reworks.length === 0) return new Set();
+    const ids = reworks
+      .flatMap((rework) =>
+        (rework?.AddOnId || "")
+          .toString()
+          .split(",")
+          .map((id) => Number(id.trim()))
+          .filter((n) => Number.isFinite(n) && n > 0),
+      );
+    return new Set(ids);
+  })();
 
   const totalBookingAmount =
     (data.TotalPrice || 0) + (data.GSTAmount || 0) + (data.LabourCharges || 0) - (data.CouponAmount || 0);
@@ -428,7 +441,16 @@ function CompleteServiceReportView({ data, onBack }) {
               {addOns.map((svc, idx) => (
                 <div key={svc.AddOnID ?? idx} className="col-12">
                   <ReportCard
-                    title={svc.ServiceName ?? `Service #${idx + 1}`}
+                    title={
+                      <>
+                        {svc.ServiceName ?? `Service #${idx + 1}`}
+                        {activeReworkAddOnIds.has(Number(svc?.AddOnID)) && (
+                          <span className="ms-2 badge bg-danger-subtle text-danger">
+                            Rework
+                          </span>
+                        )}
+                      </>
+                    }
                     icon="mdi:package-variant-closed"
                     borderVariant={svc.Is_Completed ? "success" : undefined}
                   >
@@ -613,6 +635,21 @@ function CompleteServiceReportView({ data, onBack }) {
                 <div className="row g-4">
                   {carPickUpDelivery.map((pick, idx) => (
                     <div key={pick.Id ?? idx} className="col-12">
+                      {(() => {
+                        const bookingImages = Array.isArray(pick.BookingImages)
+                          ? pick.BookingImages
+                          : [];
+                        const pickupImages = bookingImages.filter(
+                          (img) =>
+                            (img?.ImageUploadType || "").toString().toLowerCase() ===
+                            "pickup",
+                        );
+                        const deliveryImages = bookingImages.filter(
+                          (img) =>
+                            (img?.ImageUploadType || "").toString().toLowerCase() ===
+                            "delivery",
+                        );
+                        return (
                       <div className="card border border-light rounded-3 overflow-hidden">
                         <div className="card-header bg-light d-flex flex-wrap align-items-center gap-2 py-2 px-3">
                           <span className={`badge rounded-pill px-3 py-2 ${pick.PickType === "CarDrop" ? "bg-info bg-opacity-25 text-info" : "bg-primary bg-opacity-25 text-primary"}`}>
@@ -636,15 +673,90 @@ function CompleteServiceReportView({ data, onBack }) {
                                   <DetailRow label="Name" value={pick.PickFromName ?? "—"} />
                                   <DetailRow label="Phone" value={pick.PickFromPhone ?? "—"} />
                                   <DetailRow label="Address" value={(pick.PickFromAddress ?? "—").replace(/\n/g, ", ")} />
+                                  <div className="fw-semibold text-muted mt-3 mb-2">Pickup Images</div>
+                                  {pickupImages.length > 0 ? (
+                                    <div className="d-flex flex-wrap gap-2">
+                                      {pickupImages.map((img) => (
+                                        <a
+                                          key={img.ImageID}
+                                          href={`${API_IMAGE}${img.ImageURL}`}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="d-inline-block border rounded-3 overflow-hidden"
+                                          style={{ width: 90, height: 70 }}
+                                          title={`Pickup - ${formatDateTime(img.UploadedAt)}`}
+                                        >
+                                          <img
+                                            src={`${API_IMAGE}${img.ImageURL}`}
+                                            alt="Pickup"
+                                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                          />
+                                        </a>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="small text-muted">No pickup images</div>
+                                  )}
                                 </div>
                                 <div className="col-md-6">
                                   <div className="fw-semibold text-muted mb-2">To</div>
                                   <DetailRow label="Name" value={pick.PickToName ?? "—"} />
                                   <DetailRow label="Phone" value={pick.PickToPhone ?? "—"} />
                                   <DetailRow label="Address" value={(pick.PickToAddress ?? "—").replace(/\n/g, ", ")} />
+                                  <div className="fw-semibold text-muted mt-3 mb-2">Delivery Images</div>
+                                  {deliveryImages.length > 0 ? (
+                                    <div className="d-flex flex-wrap gap-2">
+                                      {deliveryImages.map((img) => (
+                                        <a
+                                          key={img.ImageID}
+                                          href={`${API_IMAGE}${img.ImageURL}`}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="d-inline-block border rounded-3 overflow-hidden"
+                                          style={{ width: 90, height: 70 }}
+                                          title={`Delivery - ${formatDateTime(img.UploadedAt)}`}
+                                        >
+                                          <img
+                                            src={`${API_IMAGE}${img.ImageURL}`}
+                                            alt="Delivery"
+                                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                          />
+                                        </a>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="small text-muted">No delivery images</div>
+                                  )}
                                 </div>
                               </>
-                            ) : (<></>)}
+                            ) : (
+                              <div className="col-12">
+                                <div className="fw-semibold text-muted mb-2">Booking Images</div>
+                                {bookingImages.length > 0 ? (
+                                  <div className="d-flex flex-wrap gap-2">
+                                    {bookingImages.map((img) => (
+                                      <a
+                                        key={img.ImageID}
+                                        href={`${API_IMAGE}${img.ImageURL}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="d-inline-block border rounded-3 overflow-hidden"
+                                        style={{ width: 90, height: 70 }}
+                                        title={`${img.ImageUploadType || "Image"} - ${formatDateTime(img.UploadedAt)}`}
+                                      >
+                                        <img
+                                          src={`${API_IMAGE}${img.ImageURL}`}
+                                          alt={img.ImageUploadType || "Booking"}
+                                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                        />
+                                      </a>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="small text-muted">No booking images</div>
+                                )}
+                              </div>
+                            )}
 
 
                             <div className="col-12">
@@ -664,98 +776,44 @@ function CompleteServiceReportView({ data, onBack }) {
                             {Array.isArray(pick.DriverTracking) && pick.DriverTracking.length > 0 && (
                               <div className="col-12 mt-3">
                                 <div className="fw-semibold text-muted mb-3">Technician / Driver Timeline</div>
-                                <div className="position-relative">
-                                  <style jsx>{`
-                                  .driver-timeline {
-                                    display: flex;
-                                    align-items: center;
-                                    gap: 1rem;
-                                    overflow-x: auto;
-                                    padding: 1rem 0;
-                                  }
-                                  .driver-step {
-                                    position: relative;
-                                    flex-shrink: 0;
-                                    text-align: center;
-                                    min-width: 100px;
-                                  }
-                                  .driver-step:not(:first-child)::before {
-                                    content: '';
-                                    position: absolute;
-                                    left: -0.75rem;
-                                    top: 50%;
-                                    transform: translateY(-50%);
-                                    width: 1.5rem;
-                                    height: 3px;
-                                    background: #e5e7eb;
-                                    z-index: 1;
-                                  }
-                                  .driver-circle {
-                                    width: 40px;
-                                    height: 40px;
-                                    border-radius: 50%;
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                    margin: 0 auto 0.5rem;
-                                    font-weight: 600;
-                                    font-size: 12px;
-                                    color: white;
-                                    position: relative;
-                                    z-index: 2;
-                                    border: 3px solid white;
-                                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                                  }
-                                  .driver-status {
-                                    font-size: 11px;
-                                    font-weight: 600;
-                                    margin-bottom: 0.25rem;
-                                    line-height: 1.2;
-                                  }
-                                  .driver-date {
-                                    font-size: 10px;
-                                    opacity: 0.7;
-                                  }
-                                  .car-icon {
-                                    position: absolute;
-                                    top: -25px;
-                                    left: 50%;
-                                    transform: translateX(-50%);
-                                    font-size: 24px;
-                                    z-index: 3;
-                                    transition: left 0.3s ease;
-                                  }
-                                `}</style>
-                                  <div className="driver-timeline">
-                                    {pick.DriverTracking.map((t, i) => {
-                                      let displayStatus = t.Status;
-                                      // Enhanced status-based colors from STATUS_BADGE_CLASS
-                                      const status = t.Status?.toLowerCase() || 'pending';
-                                      const isCompleted = status === 'completed';
-                                      const getDriverColor = (s) => {
-                                        if (s === 'completed') return '#116d6e'; // green
-                                        if (s === 'pickup_started' || s === 'serviceinprogress') return '#116d6e'; // blue
-                                        if (s === 'pickup_reached' || s === 'car_picked' || s === 'drop_reached') return '#116d6e'; // cyan
-                                        if (s === 'in_transit' || s === 'outfordelivery') return '#116d6e'; // yellow
-                                        return '#116d6e'; // gray
-                                      };
-                                      const color = getDriverColor(status);
-                                      return (
-                                        <div key={t.Id ?? i} className="driver-step">
-                                          <div
-                                            className="driver-circle"
+                                <div className="d-flex flex-column">
+                                  {pick.DriverTracking.map((t, i) => (
+                                    <div
+                                      key={t.Id ?? i}
+                                      className="d-flex align-items-start gap-2 position-relative pb-2"
+                                    >
+                                      <div className="d-flex flex-column align-items-center" style={{ width: 16 }}>
+                                        <span
+                                          className="rounded-circle"
+                                          style={{
+                                            width: 10,
+                                            height: 10,
+                                            marginTop: 4,
+                                            backgroundColor: "#0d9488",
+                                          }}
+                                        />
+                                        {i < pick.DriverTracking.length - 1 && (
+                                          <span
                                             style={{
-                                              backgroundColor: color
+                                              width: 2,
+                                              flex: 1,
+                                              minHeight: 20,
+                                              marginTop: 2,
+                                              backgroundColor: "#d1d5db",
                                             }}
-                                          >
-                                            {i + 1}
-                                          </div>
-                                          <div className="driver-status">{formatStatus(displayStatus)}</div>
-                                          <div className="driver-date">{formatDateTime(t.CreatedDate)}</div>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
+                                          />
+                                        )}
+                                      </div>
+                                      <div className="d-flex flex-column">
+                                        <span className="fw-semibold text-dark" style={{ fontSize: "0.82rem" }}>
+                                          {formatStatus(t.Status)}
+                                        </span>
+                                        <span className="text-muted" style={{ fontSize: "0.75rem" }}>
+                                          {formatDateTime(t.CreatedDate)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
                             )}
@@ -763,6 +821,8 @@ function CompleteServiceReportView({ data, onBack }) {
 
                         </div>
                       </div>
+                        );
+                      })()}
                     </div>
                   ))}
                 </div>
@@ -888,56 +948,6 @@ function CompleteServiceReportView({ data, onBack }) {
           )}
         </div>
       </div>
-      {/* Booking images */}
-      {bookingImages.length > 0 && (
-        <div className="col-12">
-          <ReportCard title="Booking images" icon="mdi:image-multiple-outline">
-            <div className="row g-2">
-              {bookingImages.map((img) => {
-                const imgSrc = img.ImageURL ? `${API_IMAGE}/${img.ImageURL}` : null;
-                return (
-                  <div key={img.ImageID} className="col-12 col-md-6 col-lg-3">
-                    <div className="card border rounded-3 overflow-hidden h-100">
-                      <div className="card-body p-1 d-flex align-items-center gap-2">
-                        <div className="flex-grow-1 small">
-                          <div className="fw-semibold text-dark">{img.ImageUploadType ?? "—"} {img.ImagesType && <span className="text-muted">({img.ImagesType})</span>}</div>
-                          <div className="text-muted mt-1">{formatDateTime(img.UploadedAt)}</div>
-                          {/* {imgSrc && (
-                              <button
-                                type="button"
-                                className="btn btn-link btn-sm p-0 mt-1 text-primary text-decoration-none"
-                                onClick={() => setFullscreenImageUrl(imgSrc)}
-                              >
-                                View full screen
-                              </button>
-                            )} */}
-                        </div>
-                        {imgSrc && (
-                          <button
-                            type="button"
-                            className="flex-shrink-0 border-0 bg-light rounded-2 p-1 d-block overflow-hidden"
-                            style={{ width: 60, height: 60 }}
-                            onClick={() => setFullscreenImageUrl(imgSrc)}
-                            aria-label="View image"
-                          >
-                            <img
-                              src={imgSrc}
-                              alt={img.ImageUploadType || "Booking"}
-                              className="w-100 h-100 object-fit-cover rounded-1"
-                              style={{ objectFit: "cover" }}
-                            />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </ReportCard>
-        </div>
-      )}
-
       {/* Fullscreen image overlay */}
       {fullscreenImageUrl ? (
         <div
@@ -1437,4 +1447,3 @@ const CompleteServiceReportLayer = () => {
 };
 
 export default CompleteServiceReportLayer;
-

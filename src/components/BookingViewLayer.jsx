@@ -4875,6 +4875,25 @@ const handleReworkSubmit = async () => {
   const showDlrComparison = hasDlrConfirmed && hasDlrUnconfirmed;
   // -------------------------------------
 
+  const latestDealerStatusByTrack = (bookingData?.DealerAddOnApproval || []).reduce(
+    (acc, row) => {
+      const trackId = (row?.TrackId ?? row?.TrackID ?? "").toString().trim();
+      if (!trackId) return acc;
+
+      const prev = acc[trackId];
+      const rowTime = new Date(row?.CreatedDate || 0).getTime();
+      const prevTime = new Date(prev?.CreatedDate || 0).getTime();
+      const isLatest =
+        !prev ||
+        rowTime > prevTime ||
+        (rowTime === prevTime && Number(row?.Id || 0) > Number(prev?.Id || 0));
+
+      if (isLatest) acc[trackId] = row;
+      return acc;
+    },
+    {},
+  );
+
   const liveComparisonServices = [
     ...(bookingData?.BookingAddOns || []).map((item, index) => ({
       ...item,
@@ -4892,6 +4911,29 @@ const handleReworkSubmit = async () => {
     const marginAmount = getMarginAmountValue(item);
     const marginPercent = getMarginPercentValue(item);
     const priceSpread = Number((customerTotal - dealerTotal).toFixed(2));
+
+    const itemTrackId = (
+      item.TrackId ??
+      item.TrackID ??
+      item.BookingTrackID ??
+      bookingData?.BookingTrackID ??
+      bookingData?.BookingTrackId ??
+      ""
+    )
+      .toString()
+      .trim();
+    const latestTrackDealerStatus = itemTrackId
+      ? latestDealerStatusByTrack[itemTrackId]
+      : null;
+    const dealerConfirmStatusKey =
+      latestTrackDealerStatus?.IsDealer_Confirm ||
+      item.IsDealer_Confirm ||
+      item.isDealer_Confirm ||
+      "Pending";
+    const dealerConfirmStatusLabel =
+      dealerConfirmStatusKey === "Rejected" && latestTrackDealerStatus?.DealerName
+        ? `Rejected by ${latestTrackDealerStatus.DealerName}`
+        : dealerConfirmStatusKey;
 
     return {
       id:
@@ -4918,8 +4960,8 @@ const handleReworkSubmit = async () => {
       dealerGst: getDealerGstTotal(item),
       dealerGstPercent: Number(item.DealerGSTPercent || 0),
       dealerTotal,
-      dealerConfirmStatus:
-        item.IsDealer_Confirm || item.isDealer_Confirm || "Pending",
+      dealerConfirmStatus: dealerConfirmStatusLabel,
+      dealerConfirmStatusKey,
       serviceStatus:
         item.StatusName ||
         item.statusName ||
@@ -8134,14 +8176,17 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                                   </span>
                                                   <span
                                                     className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(
-                                                      service.dealerConfirmStatus,
+                                                      service.dealerConfirmStatusKey ||
+                                                        service.dealerConfirmStatus,
                                                     )}`}
                                                   >
-                                                    Dealer{" "}
-                                                    {
-                                                      service.dealerConfirmStatus
-                                                    }
-                                                  </span>
+                                                    {service.dealerConfirmStatus
+                                                      ?.toString()
+                                                      .toLowerCase()
+                                                      .startsWith("rejected by")
+                                                      ? `Service ${service.dealerConfirmStatus}`
+                                                      : `Dealer ${service.dealerConfirmStatus}`}
+                                                  </span> 
                                                   <span
                                                     className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(
                                                       service.serviceStatus,
@@ -8527,11 +8572,16 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                                 </span>
                                                 <span
                                                   className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(
-                                                    service.dealerConfirmStatus,
+                                                    service.dealerConfirmStatusKey ||
+                                                      service.dealerConfirmStatus,
                                                   )}`}
                                                 >
-                                                  Dealer{" "}
-                                                  {service.dealerConfirmStatus}
+                                                  {service.dealerConfirmStatus
+                                                    ?.toString()
+                                                    .toLowerCase()
+                                                    .startsWith("rejected by")
+                                                    ? `Service ${service.dealerConfirmStatus}`
+                                                    : `Dealer ${service.dealerConfirmStatus}`}
                                                 </span>
                                                <span
                                                   className={`badge rounded-pill px-3 py-2 ${getStatusBadgeClass(
@@ -9771,6 +9821,7 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
               {/* ================= CAR PICKUP / DROP ACCORDION ================= */}
               <ServiceTrackingAccordion
                 bookingData={bookingData}
+                apiImageBase={API_IMAGE}
                 displayDate={displayDate}
                 formatPickType={formatPickType}
                 handlePickupDropCancel={handlePickupDropCancel}
@@ -9782,6 +9833,7 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
               {/* ================= PAYMENTS ACCORDION ================= */}
               <PaymentsAccordion
                 payments={bookingData?.Payments}
+                refunds={bookingData?.Refunds}
                 apiImageBase={API_IMAGE}
               />
 
@@ -9807,16 +9859,16 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                 apiBase={API_BASE}
               />
               {/* ================= PICKUP IMAGES ACCORDION ================= */}
-              <PickupImagesAccordion
+              {/* <PickupImagesAccordion
                 serviceImages={bookingData?.ServiceImages}
                 apiImageBase={API_IMAGE}
-              />
+              /> */}
 
               {/* ================= DELIVERY IMAGES ACCORDION ================= */}
-              <DeliveryImagesAccordion
+              {/* <DeliveryImagesAccordion
                 serviceImages={bookingData?.ServiceImages}
                 apiImageBase={API_IMAGE}
-              />
+              /> */}
 
               {/* ================= SERVICE COMPLETION IMAGES ACCORDION ================= */}
               <CustomerConfirmationDetailsAccordion
