@@ -715,12 +715,11 @@ const handleRequestRefund = async () => {
                                 { value: 5, label: "Cancelled" },
                                 { value: 6, label: "Reopened" },
                                 { value: 9, label: "Approve Rework" },
-                                { value: 10, label: "Reject Rework" },
                               ]
                             : userDetails?.DeptId === 5
                             ? [
                                  { value: 9, label: "Approve Rework" },
-                                { value: 10, label: "Reject Rework" },
+                                 { value: 4, label: "Closed" }
                               ]
                             : currentStatus === "resolved"
                             ? userDetails?.Is_Head === 1
