@@ -8662,7 +8662,7 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                                 <div className="d-flex flex-column align-items-end gap-2">
                                                   {/* Rework Button */}
                                                   <button
-                                                    className="btn btn-sm btn-warning"
+                                                    className="btn btn-sm btn-warning fs-7" style={{marginBottom: "5px"}}
                                                     onClick={() =>
                                                       handleAddOnStatusChange(service.sourceItem, "Rework")
                                                     }
@@ -8678,7 +8678,7 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                                 )}
                                               {service.isCompletionApproved ? (
                                               bookingData?.BookingStatus !== "Completed"   && (
-                                                <div className="d-flex flex-column align-items-end gap-2">
+                                                <div className="d-flex flex-column align-items-end gap-2 mt-2">
                                                 
                                                   {/* Approved Text */}
                                                   <span className="badge bg-success-subtle text-success px-3 py-2 rounded-pill">
