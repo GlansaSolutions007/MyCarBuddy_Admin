@@ -5278,6 +5278,19 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
   return (endDate - startDate) >= 1800000;
 };
 
+const scheduledDateOnly = bookingData?.BookingDate 
+  ? new Date(bookingData.BookingDate).toLocaleDateString('en-CA') 
+  : null;
+
+// 2. Get Scheduled Start Time in HH:mm format (extracting from "18:00:00 - 19:00:00")
+const getScheduledStartTime = () => {
+  if (!bookingData?.TimeSlot) return null;
+  const firstPart = bookingData.TimeSlot.split("-")[0].trim(); 
+  const match = firstPart.match(/(\d{1,2}:\d{2})/); 
+  return match ? match[1] : null;
+};
+const scheduledStartTime = getScheduledStartTime();
+
   return (
     <>
       <style>{`
@@ -10863,6 +10876,11 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                           }
                         }}
                       />
+                     {garagePickupDate && scheduledDateOnly && garagePickupDate !== scheduledDateOnly && (
+                      <div className="badge rounded-pill bg-warning-subtle text-dark mt-1 shadow-sm" style={{ fontSize: '13px', whiteSpace: 'normal', textAlign: 'left' }}>
+                       The selected date differs from the customer’s requested service date.
+                      </div>
+                      )}
                     </div>
                     <div className="col-12">
                     <label className="form-label small fw-semibold">
@@ -10887,6 +10905,11 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                         setGaragePickupTime(val);
                       }}
                     />
+                    {garagePickupTime && scheduledStartTime && garagePickupTime > scheduledStartTime && (
+                      <div className="badge rounded-pill bg-warning-subtle text-dark mt-1 shadow-sm" style={{ fontSize: '13px', whiteSpace: 'normal', textAlign: 'left' }}>
+                        The selected time differs from the customer’s requested service time
+                      </div>
+                    )}
                   </div>
                    <div className="col-12">
                     <label className="form-label small mb-1">Select End Time</label>
@@ -11541,6 +11564,11 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                               setGaragePickupDate(e.target.value)
                             }
                           />
+                          {garagePickupDate && scheduledDateOnly && garagePickupDate !== scheduledDateOnly && (
+                          <div className="badge rounded-pill bg-warning-subtle text-dark mt-1 shadow-sm" style={{ fontSize: '13px', whiteSpace: 'normal', textAlign: 'left' }}>
+                          The selected date differs from the customer’s requested service date.
+                          </div>
+                          )}
                         </div>
                         <div className="col-12">
                           <label className="form-label small mb-1">Select Start Time</label>
@@ -11566,6 +11594,11 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                               setGaragePickupTime(val);
                             }}
                           />
+                          {garagePickupTime && scheduledStartTime && garagePickupTime > scheduledStartTime && (
+                            <div className="badge rounded-pill bg-warning-subtle text-dark mt-1 shadow-sm" style={{ fontSize: '13px', whiteSpace: 'normal', textAlign: 'left' }}>
+                              The selected time differs from the customer’s requested service time
+                            </div>
+                          )}
                         </div>
                         <div className="col-12">
                         <label className="form-label small mb-1">Select End Time</label>
@@ -11826,6 +11859,44 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                 </div>
                 <div className="modal-body">
                   <div className="row g-3">
+                     <span className="text-muted small fw-semibold text-center d-block mb 2">
+                          Customer Scheduled:{" "}
+                          {new Date(
+                            bookingData.BookingDate,
+                          ).toLocaleDateString()}{" "}
+                          {bookingData.TimeSlot?.includes(",") ? (
+                            <div className="dropdown d-inline">
+                              <span
+                                className="dropdown-toggle"
+                                style={{ cursor: "pointer" }}
+                                data-bs-toggle="dropdown"
+                              >
+                                ({bookingData.TimeSlot.split(",")[0].trim()})
+                              </span>
+
+                              <ul
+                                className="dropdown-menu p-2"
+                                style={{
+                                  minWidth: "max-content",
+                                  left: "auto",
+                                  right: 0,
+                                }}
+                              >
+                                {bookingData.TimeSlot.split(",").map(
+                                  (slot, index) => (
+                                    <li key={index}>
+                                      <span className="dropdown-item-text">
+                                        {slot.trim()}
+                                      </span>
+                                    </li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : (
+                            <>({bookingData.TimeSlot})</>
+                          )}
+                        </span>
                     <div className="col-12">
                       <label className="form-label small fw-semibold">
                         Reschedule Date
@@ -11839,6 +11910,11 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                           setPickupDropRescheduleDate(e.target.value)
                         }
                       />
+                     {pickupDropRescheduleDate && scheduledDateOnly && pickupDropRescheduleDate !== scheduledDateOnly && (
+                          <div className="badge rounded-pill bg-warning-subtle text-dark mt-1 shadow-sm" style={{ fontSize: '13px', whiteSpace: 'normal', textAlign: 'left' }}>
+                          The selected date differs from the customer’s requested service date.
+                          </div>
+                      )}
                     </div>
                     <div className="col-12">
                       {pickupDropRescheduleRow?.ServiceType ===
@@ -11871,6 +11947,11 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                             }}
                             disabled={!pickupDropRescheduleDate}
                           />
+                          {pickupDropRescheduleTimeSlot?.[0] && scheduledStartTime && pickupDropRescheduleTimeSlot[0] > scheduledStartTime && (
+                            <div className="badge rounded-pill bg-warning-subtle text-dark mt-1 shadow-sm" style={{ fontSize: '13px', whiteSpace: 'normal', textAlign: 'left' }}>
+                              The selected time differs from the customer’s requested service time
+                            </div>
+                          )}
                           </div>
                           <div className="col-12">
                                 <label className="form-label small fw-semibold">Select End Time</label>
@@ -11929,6 +12010,11 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                             }}
                             disabled={!pickupDropRescheduleDate}
                           />
+                          {pickupDropRescheduleTimeSlot?.[0] && scheduledStartTime && pickupDropRescheduleTimeSlot[0] > scheduledStartTime && (
+                            <div className="badge rounded-pill bg-warning-subtle text-dark mt-1 shadow-sm" style={{ fontSize: '13px', whiteSpace: 'normal', textAlign: 'left' }}>
+                              The selected time differs from the customer’s requested service time
+                            </div>
+                          )}
                           </div>
                               <div className="col-12">
                                 <label className="form-label small fw-semibold">Select End Time</label>
@@ -12050,7 +12136,44 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                 </div>
                 <div className="modal-body">
                   <div className="row g-3">
-                    
+                     <span className="text-muted small fw-semibold text-center d-block mb 2">
+                          Customer Scheduled:{" "}
+                          {new Date(
+                            bookingData.BookingDate,
+                          ).toLocaleDateString()}{" "}
+                          {bookingData.TimeSlot?.includes(",") ? (
+                            <div className="dropdown d-inline">
+                              <span
+                                className="dropdown-toggle"
+                                style={{ cursor: "pointer" }}
+                                data-bs-toggle="dropdown"
+                              >
+                                ({bookingData.TimeSlot.split(",")[0].trim()})
+                              </span>
+
+                              <ul
+                                className="dropdown-menu p-2"
+                                style={{
+                                  minWidth: "max-content",
+                                  left: "auto",
+                                  right: 0,
+                                }}
+                              >
+                                {bookingData.TimeSlot.split(",").map(
+                                  (slot, index) => (
+                                    <li key={index}>
+                                      <span className="dropdown-item-text">
+                                        {slot.trim()}
+                                      </span>
+                                    </li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          ) : (
+                            <>({bookingData.TimeSlot})</>
+                          )}
+                        </span>
                     <div className="col-12">
                       <label className="form-label small fw-semibold">
                         Assign Date
@@ -12064,6 +12187,11 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                           setPickupDropReassignDate(e.target.value)
                         }
                       />
+                       {pickupDropReassignDate && scheduledDateOnly && pickupDropReassignDate !== scheduledDateOnly && (
+                          <div className="badge rounded-pill bg-warning-subtle text-dark mt-1 shadow-sm" style={{ fontSize: '13px', whiteSpace: 'normal', textAlign: 'left' }}>
+                          The selected date differs from the customer’s requested service date.
+                          </div>
+                      )}
                     </div>
                     <div className="col-12">
                       {pickupDropReassignRow?.ServiceType ===
@@ -12104,6 +12232,11 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                             }}
                             disabled={!pickupDropReassignDate}
                           />
+                              {pickupDropReassignTimeSlot?.[0] && scheduledStartTime && pickupDropReassignTimeSlot[0] > scheduledStartTime && (
+                            <div className="badge rounded-pill bg-warning-subtle text-dark mt-1 shadow-sm" style={{ fontSize: '13px', whiteSpace: 'normal', textAlign: 'left' }}>
+                              The selected time differs from the customer’s requested service time
+                            </div>
+                          )}
                            </div>
                           <div className="col-12">
                         <label className="form-label small mb-1">Select End Time</label>
@@ -12158,11 +12291,15 @@ const isAtLeast30MinsGap = (startTime, endTime) => {
                                 setPickupDropReassignTimeSlot([]);
                                 return;
                               }
-
                               setPickupDropReassignTimeSlot(val ? [val] : []);
                             }}
                             disabled={!pickupDropReassignDate}
                           />
+                            {pickupDropReassignTimeSlot?.[0] && scheduledStartTime && pickupDropReassignTimeSlot[0] > scheduledStartTime && (
+                            <div className="badge rounded-pill bg-warning-subtle text-dark mt-1 shadow-sm" style={{ fontSize: '13px', whiteSpace: 'normal', textAlign: 'left' }}>
+                              The selected time differs from the customer’s requested service time
+                            </div>
+                          )}
                           </div>
                           <div className="col-12">
                         <label className="form-label small mb-1">Select End Time</label>
