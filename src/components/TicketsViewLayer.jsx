@@ -47,8 +47,11 @@ const TicketsViewLayer = () => {
           },
         });
         if (res.data && Array.isArray(res.data)) {
-          console.log("Fetched Tickets:", res.data);
-          setTickets(res.data);
+          const sortedData = res.data.sort(
+            (a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate),
+          );
+          // console.log("Fetched Tickets sort:",sortedData);
+          setTickets(sortedData);
         } else {
           setTickets([]);
         }
@@ -167,15 +170,15 @@ const TicketsViewLayer = () => {
 
         // Hex color map from your badge reference
         const colorMap = {
-          Pending: "#F57C00",        // Orange
-          UnderReview: "#F7AE21",    // Yellow
-          Awaiting: "#F7AE21",       // Yellow
-          Resolved: "#28A745",       // Green
-          Closed: "#28A745",         // Green
-          Cancelled: "#E34242",      // Red
-          Reopened: "#25878F",       // Teal-blue
-          Forward: "#BFBFBF",        // Grey
-          UserResponse: "#BFBFBF",   // Grey
+          Pending: "#F57C00", // Orange
+          UnderReview: "#F7AE21", // Yellow
+          Awaiting: "#F7AE21", // Yellow
+          Resolved: "#28A745", // Green
+          Closed: "#28A745", // Green
+          Cancelled: "#E34242", // Red
+          Reopened: "#25878F", // Teal-blue
+          Forward: "#BFBFBF", // Grey
+          UserResponse: "#BFBFBF", // Grey
           "Not Assigned": "#BFBFBF", // Grey
         };
 
@@ -233,7 +236,9 @@ const TicketsViewLayer = () => {
   const filteredTickets = tickets.filter((ticket) => {
     const text = searchText.toLowerCase();
     const statusName = (
-      ticket?.TrackingHistory?.[0]?.StatusName || ticket?.StatusName || ""
+      ticket?.TrackingHistory?.[0]?.StatusName ||
+      ticket?.StatusName ||
+      ""
     ).toLowerCase();
     // const statusMatch =
     //   selectedStatus === "All" || statusName === selectedStatus.toLowerCase();
@@ -363,23 +368,23 @@ const TicketsViewLayer = () => {
               </Link> */}
             </div>
           </div>
-            <DataTable
-              columns={columns}
-              data={filteredTickets}
-              progressPending={loading}
-              pagination
-              highlightOnHover
-              responsive
-              striped
-              persistTableHead
-              noDataComponent={
-                loading ? "Loading tickets..." : "No tickets available"
-              }
-              onChangePage={handlePageChange}
-              onChangeRowsPerPage={handleRowsPerPageChange}
-              defaultSortField="CreatedDate"
-              defaultSortAsc={false}
-            />
+          <DataTable
+            columns={columns}
+            data={filteredTickets}
+            progressPending={loading}
+            pagination
+            highlightOnHover
+            responsive
+            striped
+            persistTableHead
+            noDataComponent={
+              loading ? "Loading tickets..." : "No tickets available"
+            }
+            onChangePage={handlePageChange}
+            onChangeRowsPerPage={handleRowsPerPageChange}
+            defaultSortField="CreatedDate"
+            defaultSortAsc={false}
+          />
         </div>
       </div>
     </div>

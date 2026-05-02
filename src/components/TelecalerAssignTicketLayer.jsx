@@ -162,7 +162,8 @@ const TelecalerAssignTicketLayer = () => {
               t.StatusName !== "UserResponse"
           );
           console.log("Unassigned tickets for Admin:", unassignedTickets);
-          setTickets(unassignedTickets);
+          const sortedUnassigned = unassignedTickets.sort((a, b) => new Date(b.CreatedDate) - new Date(a.CreatedDate));
+          setTickets(sortedUnassigned);
         }
       }
       // 🔹 Department Head: Fetch tickets assigned to this head dynamically
