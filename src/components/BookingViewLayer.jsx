@@ -5214,7 +5214,7 @@ const handleReworkSubmit = async () => {
     name: "Category",
     selector: (row) => row.Category,
     sortable: true,
-    width: "180px",
+    width: "250px",
   },
   {
     name: "Inspection Name",
@@ -5225,17 +5225,29 @@ const handleReworkSubmit = async () => {
   {
     name: "Checked",
     cell: (row) => (
-      <span className={`badge ${row.Is_checked ? "bg-success" : "bg-danger"}`}>
-        {row.Is_checked ? "Yes" : "No"}
+      <span style={{ fontSize: "18px", fontWeight: "bold" }}>
+        {row.Is_checked ? "✓" : "✕"}
       </span>
     ),
     sortable: true,
-    width: "120px",
+    width: "150px",
+    center: true,
   },
+  // {
+  //   name: "Checked",
+  //   cell: (row) => (
+  //     <span className={`badge ${row.Is_checked ? "bg-success" : "bg-danger"}`}>
+  //       {row.Is_checked ? "Yes" : "No"}
+  //     </span>
+  //   ),
+  //   sortable: true,
+  //   width: "120px",
+  // },
   {
     name: "Remarks",
     selector: (row) => row.Remarks || "—",
     width: "250px",
+    center: true,
   },
   {
     name: "Tech Name",
@@ -9865,6 +9877,7 @@ const scheduledStartTime = getScheduledStartTime();
               <InspectionChecklistAccordion
                 inspectionResults={bookingData?.Inspection_Results}
                 inspectionColumns={inspectionColumns}
+                bookingId={bookingId}
               />
 
               <InvoicesAccordion

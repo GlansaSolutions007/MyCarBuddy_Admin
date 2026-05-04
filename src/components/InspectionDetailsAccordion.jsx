@@ -1,17 +1,23 @@
 import { Icon } from "@iconify/react";
 import Accordion from "react-bootstrap/Accordion";
 
-const InspectionDetailsAccordion = ({ inspectionTracking, formatCurrency, formatDateTime }) => (
-  <Accordion className="mb-3" defaultActiveKey="">
-    <Accordion.Item eventKey="inspectionDetails">
-      <Accordion.Header>
-        <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
-          <Icon icon="mdi:file-document-multiple" width={20} height={20} />
-          Inspection Details
-        </h6>
-      </Accordion.Header>
-      <Accordion.Body>
-        {(inspectionTracking ?? []).length > 0 ? (
+const InspectionDetailsAccordion = ({ inspectionTracking, formatCurrency, formatDateTime }) => {
+  
+  // NEW: Hide entirely if no data
+  if (!inspectionTracking || inspectionTracking.length === 0) {
+    return null;
+  }
+
+  return (
+    <Accordion className="mb-3" defaultActiveKey="">
+      <Accordion.Item eventKey="inspectionDetails">
+        <Accordion.Header>
+          <h6 className="mb-0 fw-bold text-primary d-flex align-items-center gap-2">
+            <Icon icon="mdi:file-document-multiple" width={20} height={20} />
+            Inspection Details
+          </h6>
+        </Accordion.Header>
+        <Accordion.Body>
           <div className="table-responsive">
             <table className="table table-bordered table-hover align-middle mb-0" style={{ fontSize: "0.875rem" }}>
               <thead style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
@@ -27,7 +33,7 @@ const InspectionDetailsAccordion = ({ inspectionTracking, formatCurrency, format
                 </tr>
               </thead>
               <tbody>
-                {(inspectionTracking ?? [])
+                {inspectionTracking
                   .slice()
                   .reverse()
                   .map((inspection, idx) => (
@@ -62,14 +68,10 @@ const InspectionDetailsAccordion = ({ inspectionTracking, formatCurrency, format
               </tbody>
             </table>
           </div>
-        ) : (
-          <p className="text-muted mb-0 text-center py-4">
-            No inspection details recorded for this booking.
-          </p>
-        )}
-      </Accordion.Body>
-    </Accordion.Item>
-  </Accordion>
-);
+        </Accordion.Body>
+      </Accordion.Item>
+    </Accordion>
+  );
+};
 
 export default InspectionDetailsAccordion;
