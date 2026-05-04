@@ -503,30 +503,30 @@ const RevenueReports = () => {
       sortable: true,
       width: "150px",
     },
-    {
-      name: "Total Revenue",
-      selector: (r) => r.TotalRevenue,
-      sortable: true,
-      width: "150px",
-    },
-    {
+     {
       name: "Amount Paid",
       selector: (r) => r.AmountPaid,
       sortable: true,
       width: "150px",
     },
     {
-      name: "GST",
-      selector: (r) => r.TotalGST,
-      sortable: true,
-    },
-    {
-      name: "MCB Earnings",
-      selector: (r) => r.OurEarnings,
-      // selector: (r) => (r.AmountPaid === 0 ? 0 : r.OurEarnings),
+      name: "Total Revenue",
+      selector: (r) => r.TotalRevenue,
       sortable: true,
       width: "150px",
     },
+    // {
+    //   name: "GST",
+    //   selector: (r) => r.TotalGST,
+    //   sortable: true,
+    // },
+    // {
+    //   name: "MCB Earnings",
+    //   selector: (r) => r.OurEarnings,
+    //   // selector: (r) => (r.AmountPaid === 0 ? 0 : r.OurEarnings),
+    //   sortable: true,
+    //   width: "150px",
+    // },
   ];
 
   const columns =
