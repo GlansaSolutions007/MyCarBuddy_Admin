@@ -1,75 +1,193 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import DataTable from "react-data-table-component";
+import axios from "axios";
 
-const MOCK_ROWS = [
-  {
-    id: 1,
-    intakeId: "SIF-1001",
-    customerName: "Rahul Kumar",
-    phone: "9876543210",
-    car: "Hyundai i20",
-    status: "Pending",
-    createdDate: "2026-05-01",
-  },
-  {
-    id: 2,
-    intakeId: "SIF-1002",
-    customerName: "Anita Singh",
-    phone: "9123456780",
-    car: "Maruti Baleno",
-    status: "Completed",
-    createdDate: "2026-05-03",
-  },
-  {
-    id: 3,
-    intakeId: "SIF-1003",
-    customerName: "Arjun Das",
-    phone: "9988776655",
-    car: "Tata Nexon",
-    status: "In Progress",
-    createdDate: "2026-05-05",
-  },
-];
+const API_BASE = import.meta.env.VITE_APIURL;
 
 const ServiceIntakeListLayer = () => {
+  const token = localStorage.getItem("token");
+  const [inspectionRows, setInspectionRows] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [status, setStatus] = useState("All");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [downloadingId, setDownloadingId] = useState(null);
+
+  const headers = useMemo(
+    () => (token ? { Authorization: `Bearer ${token}` } : {}),
+    [token]
+  );
+
+  useEffect(() => {
+    const fetchInspections = async () => {
+      setIsLoading(true);
+      try {
+        const res = await axios.get(`${API_BASE}Inspection`, { headers });
+        const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
+        setInspectionRows(data);
+      } catch (error) {
+        console.error("Failed to load inspection list", error);
+        setInspectionRows([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInspections();
+  }, [headers]);
+
+  const formatDate = (dateValue) => {
+    if (!dateValue) return "-";
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleDateString("en-GB");
+  };
+
+  const formatDateTime = (dateValue) => {
+    if (!dateValue) return "-";
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const handleDownloadPdf = async (inspectionId, trackId) => {
+    if (!inspectionId) return;
+
+    setDownloadingId(inspectionId);
+    try {
+      const response = await axios.get(
+        `${API_BASE}Inspection/checklist-pdf/${inspectionId}`,
+        {
+          headers,
+          responseType: "blob",
+        }
+      );
+      const blob = new Blob([response.data], {
+        type: response.data?.type || "application/pdf",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `inspection_checklist_${trackId || inspectionId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download inspection checklist PDF", error);
+      alert("Unable to download inspection checklist PDF. Please try again.");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const filteredRows = useMemo(() => {
-    const q = searchText.toLowerCase();
+    const q = searchText.trim().toLowerCase();
     const from = fromDate ? new Date(fromDate) : null;
     const to = toDate ? new Date(toDate) : null;
+    if (to) to.setHours(23, 59, 59, 999);
 
-    return MOCK_ROWS.filter((row) => {
-      const rowDate = new Date(row.createdDate);
+    return inspectionRows.filter((row) => {
+      const rowDate = row.CreatedDate ? new Date(row.CreatedDate) : null;
+      const car = [row.Brand, row.Model, row.Fuel].filter(Boolean).join(" ");
       const textMatch =
-        row.intakeId.toLowerCase().includes(q) ||
-        row.customerName.toLowerCase().includes(q) ||
-        row.phone.toLowerCase().includes(q) ||
-        row.car.toLowerCase().includes(q) ||
-        row.status.toLowerCase().includes(q);
-      const statusMatch = status === "All" || row.status === status;
+        !q ||
+        [
+          row.TrackId,
+          row.CustName,
+          row.PhoneNumber,
+          row.Email,
+          row.VehicleNumber,
+          car,
+          row.AmountStatus,
+          row.Location,
+          row.Area,
+          row.TechnicianName,
+        ]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(q));
+      const statusMatch = status === "All" || row.AmountStatus === status;
       const dateMatch =
-        (!from || rowDate >= from) && (!to || rowDate <= to);
+        (!from || (rowDate && rowDate >= from)) &&
+        (!to || (rowDate && rowDate <= to));
 
       return textMatch && statusMatch && dateMatch;
     });
-  }, [searchText, status, fromDate, toDate]);
+  }, [inspectionRows, searchText, status, fromDate, toDate]);
 
   const columns = [
-    { name: "Intake ID", selector: (row) => row.intakeId, sortable: true },
-    { name: "Customer", selector: (row) => row.customerName, sortable: true },
-    { name: "Phone", selector: (row) => row.phone },
-    { name: "Car", selector: (row) => row.car, sortable: true },
-    { name: "Status", selector: (row) => row.status, sortable: true },
+    { name: "Track ID", selector: (row) => row.TrackId || "-", sortable: true },
+    { name: "Customer", selector: (row) => row.CustName || "-", sortable: true },
+    { name: "Phone", selector: (row) => row.PhoneNumber || "-" },
     {
-      name: "Created Date",
-      selector: (row) => new Date(row.createdDate).toLocaleDateString("en-GB"),
+      name: "Car",
+      selector: (row) =>
+        [row.Brand, row.Model].filter(Boolean).join(" ") || "-",
       sortable: true,
+    },
+    {
+      name: "Vehicle No.",
+      selector: (row) => row.VehicleNumber || "-",
+      sortable: true,
+    },
+    {
+      name: "Inspection Date",
+      selector: (row) => formatDateTime(row.InspectionDate),
+      sortable: true,
+    },
+    {
+      name: "Amount",
+      selector: (row) =>
+        row.InspectionAmount !== null && row.InspectionAmount !== undefined
+          ? row.InspectionAmount
+          : "-",
+      sortable: true,
+    },
+    {
+      name: "Status",
+      selector: (row) => row.AmountStatus || "-",
+      sortable: true,
+      cell: (row) => (
+        <span
+          className={
+            row.AmountStatus === "Success" || row.AmountStatus === "Completed"
+              ? "badge bg-success-100 text-success-600"
+              : "badge bg-warning-100 text-warning-600"
+          }
+        >
+          {row.AmountStatus || "-"}
+        </span>
+      ),
+    },
+    // {
+    //   name: "Created Date",
+    //   selector: (row) => formatDate(row.CreatedDate),
+    //   sortable: true,
+    // },
+    {
+      name: "PDF",
+      button: true,
+      cell: (row) => (
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1"
+          onClick={() => handleDownloadPdf(row.Id, row.TrackId)}
+          disabled={downloadingId === row.Id}
+          title="Download checklist PDF"
+        >
+          <Icon icon="mdi:download" width="16" height="16" />
+          {downloadingId === row.Id ? "..." : "PDF"}
+        </button>
+      ),
     },
   ];
 
@@ -129,7 +247,6 @@ const ServiceIntakeListLayer = () => {
               >
                 <option value="All">All Status</option>
                 <option value="Pending">Pending</option>
-                <option value="In Progress">In Progress</option>
                 <option value="Completed">Completed</option>
               </select>
 
@@ -147,6 +264,7 @@ const ServiceIntakeListLayer = () => {
           <DataTable
             columns={columns}
             data={filteredRows}
+            progressPending={isLoading}
             pagination
             highlightOnHover
             responsive
