@@ -124,7 +124,8 @@ import DealerVehicleReportPage from "./pages/DealerVehicleReportPage";
 import ForwardLeadsPage from "./pages/ForwardLeadsPage";
 import AssignTechnicianPage from "./pages/AssignTechnicianpage";
 import ServicesRatingPage from "./pages/ServicesRatingPage";
-import DealerProfilePage from "./pages/DealerProfilePage";
+import ServiceInspectionRequestPage from "./pages/ServiceInspectionRequestPage";
+import ServiceIntakeListPage from "./pages/ServiceIntakeListPage";
 
 function App() {
   return (
@@ -277,7 +278,8 @@ function App() {
           <Route exact path='/forward-leads' element={<ForwardLeadsPage />} />
           <Route exact path='/assign-technician/:bookingId' element={<AssignTechnicianPage />} />
           <Route exact path='/ratings' element={<ServicesRatingPage />} />
-          <Route exact path='/dealer-profile' element={<DealerProfilePage />} />
+          <Route exact path='/service-intake-form' element={<ServiceInspectionRequestPage />} />
+          <Route exact path='/service-intake-list' element={<ServiceIntakeListPage />} />
         </Route>
 
         {/* //extra  pages */}
