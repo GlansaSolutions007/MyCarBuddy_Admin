@@ -737,6 +737,20 @@ const alertLeads = useMemo(() => {
           permission: "ratings_view",
           page: "Ratings",
         },
+        {
+          title: "Service Intake Form",
+          to: "/service-intake-form",
+          color: "text-info-danger",
+          permission: "serviceintakeform_view",
+          page: "Service Intake Form",
+        },
+         {
+          title: "Service Intake List",
+          to: "/service-intake-list",
+          color: "text-purple",
+          permission: "serviceintakelist_view",
+          page: "Service Intake List",
+        },
       ],
     },
     // 🔷 SUPPORT
