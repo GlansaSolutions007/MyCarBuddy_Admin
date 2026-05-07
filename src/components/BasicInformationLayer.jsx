@@ -614,14 +614,17 @@ const handleSubmitAccountDetails = async () => {
                           FullName: fullName,
                           PhoneNumber: phone,
                           Email: email,
-                          GSTNumber: "",
-                          GSTName: "",
+                          // GSTNumber: "",
+                          // GSTName: "",
                           City: address,
                           Latitude: bookingData.Latitude ?? null,
                           Longitude: bookingData.Longitude ?? null,
+                           AddressId: lead?.AddressId || 0,
+                          custID: lead.CustID || null,
                         },
                       );
                     }
+
                     // Save booking date & timeslot (BookServicesLayer 1650–1664)
                     if (!address || !bookingData.BookingDate || !bookingData.TimeSlot) {
                       Swal.fire(
@@ -849,6 +852,8 @@ const handleSubmitAccountDetails = async () => {
                     YearOfPurchase: carYearOfPurchase
                       ? String(carYearOfPurchase)
                       : null,
+                       VehicleId: lead?.VehiclesDetails?.[0]?.VehicleID || 0,
+                              custID: lead.CustID || null,
                   };
                   try {
                     const response = await fetch(
