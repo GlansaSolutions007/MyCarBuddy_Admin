@@ -3198,6 +3198,7 @@ useEffect(() => {
                         .map((inc) => ({
                           value: inc.IncludeID,
                           label: inc.IncludeName,
+                          price: inc.IncludePrice || 0,
                       }))}
                         value={selectedIncludes}
                         onChange={(selected) => {
@@ -3213,9 +3214,11 @@ useEffect(() => {
                               label: selected.label,
                             });
                             setName(selected.label);
+       
                           } else {
                             setSelectedIncludes(selected);
                             setName(selected.label);
+                            setPrice(selected.price || 0);
                           }
                         }}
                         styles={{
