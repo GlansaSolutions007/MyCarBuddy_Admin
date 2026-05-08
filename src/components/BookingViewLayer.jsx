@@ -16,6 +16,8 @@ import InspectionDetailsAccordion from "./InspectionDetailsAccordion";
 import InspectionChecklistAccordion from "./InspectionChecklistAccordion";
 import InvoicesAccordion from "./InvoicesAccordion";
 import ServiceTrackingAccordion from "./ServiceTrackingAccordion";
+import TicketsAccordion from "./TicketsAccordion";
+import ReworkTrackingAccordion from "./ReworkTrackingAccordion";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 const API_IMAGE = import.meta.env.VITE_APIURL_IMAGE;
@@ -8064,7 +8066,11 @@ const scheduledStartTime = getScheduledStartTime();
                                                   <td className="text-end fw-bold text-primary">
                                                     {totalPrice.toFixed(2)}
                                                   </td>
+                                                
                                                   <td className="text-center">
+                                                     {
+                                                        !hideAllActions &&
+                                                        bookingData?.BookingStatus !== "Cancelled" && (
                                                     <button
                                                       className="btn btn-sm btn-primary-600"
                                                       onClick={() =>
@@ -8094,6 +8100,7 @@ const scheduledStartTime = getScheduledStartTime();
                                                         </>
                                                       )}
                                                     </button>
+                                                        )}
                                                   </td>
                                                 </tr>
                                               );
@@ -8264,6 +8271,9 @@ const scheduledStartTime = getScheduledStartTime();
                                                 it back into the active flow.
                                               </div>
                                               <div>
+                                                 {
+                                                    !hideAllActions &&
+                                                    bookingData?.BookingStatus !== "Cancelled" && (
                                                 <button
                                                   className="btn btn-sm btn-primary-600"
                                                   onClick={() =>
@@ -8293,6 +8303,7 @@ const scheduledStartTime = getScheduledStartTime();
                                                     </>
                                                   )}
                                                 </button>
+                                                    )}
                                               </div>
                                             </div>
 
@@ -9866,6 +9877,12 @@ const scheduledStartTime = getScheduledStartTime();
               <DealerStatusAccordion
                 dealerAddOnApproval={bookingData?.DealerAddOnApproval}
               />
+              {/* ================= TICKETS DATA ACCORDION ================= */}
+               <TicketsAccordion tickets={bookingData?.Tickets} />
+
+              {/* ================= ADDONS/REWORK TRACKING ACCORDION ================= */}
+                <ReworkTrackingAccordion addonsTracking={bookingData?.AddonsTracking} />
+
               {/* ================= Inspection Details ================= */}
               <InspectionDetailsAccordion
                 inspectionTracking={bookingData?.InspectionTracking}
