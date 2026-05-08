@@ -17,9 +17,16 @@ const ServiceIntakeListLayer = () => {
   const [downloadingId, setDownloadingId] = useState(null);
   const [showChecklistModal, setShowChecklistModal] = useState(false);
   const [selectedChecklist, setSelectedChecklist] = useState([]);
+
+  // Payment modal state
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedQrImage, setSelectedQrImage] = useState("");
   const [selectedTrackId, setSelectedTrackId] = useState("");
+  const [selectedQrId, setSelectedQrId] = useState("");
+  const [selectedInspectionId, setSelectedInspectionId] = useState(null);
+  const [selectedAmount, setSelectedAmount] = useState(null);
+  const [selectedCustName, setSelectedCustName] = useState("");
+  const [paymentDone, setPaymentDone] = useState(false);
 
   const headers = useMemo(
     () => (token ? { Authorization: `Bearer ${token}` } : {}),
@@ -43,6 +50,65 @@ const ServiceIntakeListLayer = () => {
 
     fetchInspections();
   }, [headers]);
+
+  // Poll payment status every 3 s while the payment modal is open
+  useEffect(() => {
+    if (!showPaymentModal || !selectedQrId || paymentDone) return;
+    let isActive = true;
+
+    const intervalId = setInterval(async () => {
+      try {
+        const res = await axios.post(
+          `${API_BASE}Inspection/payment-complete`,
+          { qrId: selectedQrId, inspectionId: selectedInspectionId },
+          { headers }
+        );
+        const status = res?.data?.qrStatus;
+        if (!isActive) return;
+
+        const normalized =
+          typeof status === "string" ? status.toLowerCase() : status;
+
+        if (normalized === "captured" || normalized === "closed") {
+          clearInterval(intervalId);
+          if (isActive) {
+            setPaymentDone(true);
+            // Update the row's status in local state so the Pay button disappears
+            setInspectionRows((prev) =>
+              prev.map((row) =>
+                row.Id === selectedInspectionId
+                  ? { ...row, AmountStatus: "Completed" }
+                  : row
+              )
+            );
+          }
+        }
+      } catch {
+        // silently ignore poll errors
+      }
+    }, 3000);
+
+    return () => {
+      isActive = false;
+      clearInterval(intervalId);
+    };
+  }, [showPaymentModal, selectedQrId, selectedInspectionId, paymentDone, headers]);
+
+  const openPaymentModal = (row) => {
+    setSelectedQrImage(row.QrImage);
+    setSelectedTrackId(row.TrackId);
+    setSelectedQrId(row.QrId || "");
+    setSelectedInspectionId(row.Id);
+    setSelectedAmount(row.InspectionAmount ?? null);
+    setSelectedCustName(row.CustName || "");
+    setPaymentDone(false);
+    setShowPaymentModal(true);
+  };
+
+  const closePaymentModal = () => {
+    setShowPaymentModal(false);
+    setPaymentDone(false);
+  };
 
   const formatDate = (dateValue) => {
     if (!dateValue) return "-";
@@ -222,11 +288,7 @@ const ServiceIntakeListLayer = () => {
           <button
             type="button"
             className="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1"
-            onClick={() => {
-              setSelectedQrImage(row.QrImage);
-              setSelectedTrackId(row.TrackId);
-              setShowPaymentModal(true);
-            }}
+            onClick={() => openPaymentModal(row)}
             title="View Payment QR"
           >
             <Icon icon="mdi:credit-card" width="15" height="15" />
@@ -235,6 +297,22 @@ const ServiceIntakeListLayer = () => {
         ) : null,
     },
   ];
+
+  // Shared modal container style
+  const modalStyle = {
+    position: "fixed",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    zIndex: 1050,
+    background: "#fff",
+    borderRadius: 16,
+    padding: "36px 28px 28px",
+    width: "100%",
+    maxWidth: 440,
+    boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
+    textAlign: "center",
+  };
 
   return (
     <div className="row gy-4">
@@ -320,7 +398,7 @@ const ServiceIntakeListLayer = () => {
         </div>
       </div>
 
-      {/* Checklist Modal */}
+      {/* ── Checklist Modal ── */}
       {showChecklistModal && (
         <div
           style={{
@@ -458,121 +536,188 @@ const ServiceIntakeListLayer = () => {
         </div>
       )}
 
-      {/* Payment Modal — unchanged */}
+      {/* ── Payment Modal ── */}
       {showPaymentModal && (
         <>
+          {/* Backdrop */}
           <div
+            onClick={closePaymentModal}
             style={{
               position: "fixed",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
+              inset: 0,
               background: "rgba(0,0,0,0.5)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
               zIndex: 1040,
             }}
-            onClick={() => setShowPaymentModal(false)}
           />
-          <div
-            style={{
-              position: "fixed",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              zIndex: 1050,
-              background: "#fff",
-              borderRadius: 16,
-              padding: "36px 28px 28px",
-              width: "100%",
-              maxWidth: 440,
-              boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
-              textAlign: "center",
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setShowPaymentModal(false)}
-              style={{
-                position: "absolute",
-                top: 14,
-                right: 18,
-                background: "none",
-                border: "none",
-                fontSize: 24,
-                cursor: "pointer",
-                color: "#9ca3af",
-                lineHeight: 1,
-              }}
-              aria-label="Close"
-            >
-              ×
-            </button>
 
-            <h5 style={{ fontWeight: 700, marginBottom: 6 }}>
-              Payment QR Code
-            </h5>
-            <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 20 }}>
-              Track ID: <strong>{selectedTrackId}</strong>
-            </p>
-
-            <div
-              style={{
-                background: "#f9fafb",
-                border: "1px solid #e5e7eb",
-                borderRadius: 12,
-                padding: "20px 16px 16px",
-                marginBottom: 18,
-              }}
-            >
+          {/* ── Payment Success Screen ── */}
+          {paymentDone ? (
+            <div style={modalStyle}>
               <div
                 style={{
-                  width: 220,
-                  height: 220,
-                  margin: "0 auto 14px",
-                  borderRadius: 10,
-                  border: "1px solid #e5e7eb",
-                  overflow: "hidden",
-                  background: "#fff",
+                  width: 72,
+                  height: 72,
+                  borderRadius: "50%",
+                  background: "#d1fae5",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto 20px",
                 }}
               >
-                <img
-                  src={selectedQrImage}
-                  alt="Payment QR Code"
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M5 13l4 4L19 7"
+                    stroke="#059669"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <h5 style={{ fontWeight: 700, marginBottom: 8 }}>
+                Payment Received!
+              </h5>
+              <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 4 }}>
+                {selectedAmount !== null && (
+                  <>
+                    ₹{Number(selectedAmount).toLocaleString("en-IN")} collected from{" "}
+                    <strong style={{ color: "#111827" }}>{selectedCustName}</strong>
+                  </>
+                )}
+              </p>
+              <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 28 }}>
+                Track ID:{" "}
+                <span style={{ fontWeight: 600, color: "#374151" }}>
+                  {selectedTrackId}
+                </span>
+              </p>
+              <button
+                type="button"
+                className="btn btn-primary-600 w-100"
+                onClick={closePaymentModal}
+              >
+                Done
+              </button>
+            </div>
+          ) : (
+            /* ── QR Waiting Screen ── */
+            <div style={modalStyle}>
+              <button
+                type="button"
+                onClick={closePaymentModal}
+                style={{
+                  position: "absolute",
+                  top: 14,
+                  right: 18,
+                  background: "none",
+                  border: "none",
+                  fontSize: 24,
+                  cursor: "pointer",
+                  color: "#9ca3af",
+                  lineHeight: 1,
+                }}
+                aria-label="Close"
+              >
+                ×
+              </button>
+
+              <h5 style={{ fontWeight: 700, marginBottom: 6 }}>
+                Payment QR Code
+              </h5>
+              <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 20 }}>
+                Track ID: <strong>{selectedTrackId}</strong>
+              </p>
+
+              <div
+                style={{
+                  background: "#f9fafb",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 12,
+                  padding: "20px 16px 16px",
+                  marginBottom: 18,
+                }}
+              >
+                {/* Polling indicator */}
+                {selectedQrId && (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        background: "#f59e0b",
+                        display: "inline-block",
+                        animation: "qrPulse 1.4s ease-in-out infinite",
+                      }}
+                    />
+                    <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>
+                      Waiting for payment…
+                    </p>
+                    <style>{`
+                      @keyframes qrPulse {
+                        0%, 100% { opacity: 1; transform: scale(1); }
+                        50% { opacity: 0.3; transform: scale(0.75); }
+                      }
+                    `}</style>
+                  </div>
+                )}
+
+                <div
                   style={{
-                    width: "170%",
-                    height: "160%",
-                    marginTop: "-28%",
-                    objectFit: "cover",
-                    display: "block",
+                    width: 220,
+                    height: 220,
+                    margin: "0 auto 14px",
+                    borderRadius: 10,
+                    border: "1px solid #e5e7eb",
+                    overflow: "hidden",
+                    background: "#fff",
                   }}
-                />
+                >
+                  <img
+                    src={selectedQrImage}
+                    alt="Payment QR Code"
+                    style={{
+                      width: "170%",
+                      height: "160%",
+                      marginTop: "-28%",
+                      objectFit: "cover",
+                      display: "block",
+                    }}
+                  />
+                </div>
+
+                <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 10 }}>
+                  Scan or share the payment link
+                </p>
+                <a
+                  href={selectedQrImage}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn btn-outline-primary btn-sm w-100"
+                  style={{ fontSize: 13 }}
+                >
+                  Open Payment Link ↗
+                </a>
               </div>
 
-              <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 10 }}>
-                Scan or share the payment link
-              </p>
-              <a
-                href={selectedQrImage}
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-outline-primary btn-sm w-100"
-                style={{ fontSize: 13 }}
+              <button
+                type="button"
+                className="btn btn-primary-600 w-100"
+                onClick={closePaymentModal}
               >
-                Download QR ↗
-              </a>
+                Close
+              </button>
             </div>
-
-            <button
-              type="button"
-              className="btn btn-primary-600 w-100"
-              onClick={() => setShowPaymentModal(false)}
-            >
-              Close
-            </button>
-          </div>
+          )}
         </>
       )}
     </div>
