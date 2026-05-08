@@ -10,38 +10,13 @@ const STEPS = [
 ];
 const API_BASE = import.meta.env.VITE_APIURL;
 
-const CHECKLIST_CATEGORIES = [
-  {
-    id: "engine",
-    name: "Engine",
-    items: [
-      { id: "engineOil", name: "Engine Oil Level" },
-      { id: "coolant", name: "Coolant Level" },
-    ],
-  },
-  {
-    id: "brakes",
-    name: "Brakes",
-    items: [
-      { id: "brakePads", name: "Brake Pads" },
-      { id: "brakeFluid", name: "Brake Fluid" },
-    ],
-  },
-  {
-    id: "electrical",
-    name: "Electrical",
-    items: [
-      { id: "battery", name: "Battery Health" },
-      { id: "headLights", name: "Head Lights" },
-    ],
-  },
-];
-
-const buildChecklistState = () =>
-  CHECKLIST_CATEGORIES.reduce((acc, category) => {
-    category.items.forEach((item) => {
-      acc[item.id] = { checked: true, reason: "" };
-    });
+const getInitialChecklistState = (items) =>
+  items.reduce((acc, item) => {
+    const itemId = String(item.Id ?? item.id ?? item.Includes ?? item.Category ?? "");
+    acc[itemId] = {
+      checked: item.Is_Checked === false || item.Is_Checked === 0 ? false : true,
+      reason: String(item.Remarks || item.remarks || ""),
+    };
     return acc;
   }, {});
 
@@ -70,7 +45,7 @@ const initialFormData = {
   city: "",
   state: "",
   pincode: "",
-  checklist: buildChecklistState(),
+  checklist: {},
   inspectionSummary: "",
   requestedRepairs: "",
   lastPaymentAmount: "",
@@ -102,6 +77,10 @@ const ServiceInspectionRequestLayer = () => {
   const [brands, setBrands] = useState([]);
   const [models, setModels] = useState([]);
   const [fuelTypes, setFuelTypes] = useState([]);
+  const [checklistItems, setChecklistItems] = useState([]);
+  const [checklistState, setChecklistState] = useState({});
+  const [checklistLoading, setChecklistLoading] = useState(false);
+  const [checklistError, setChecklistError] = useState("");
   const [carImages, setCarImages] = useState([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -115,27 +94,78 @@ const ServiceInspectionRequestLayer = () => {
     [currentStep]
   );
 
+  const checklistCategories = useMemo(() => {
+    return checklistItems.reduce((acc, item) => {
+      const category = String(item.Category || "General").trim();
+      if (!acc[category]) acc[category] = [];
+      acc[category].push(item);
+      return acc;
+    }, {});
+  }, [checklistItems]);
+
+  useEffect(() => {
+    const fetchChecklist = async () => {
+      if (!token) return;
+      setChecklistLoading(true);
+      setChecklistError("");
+
+      try {
+        const res = await axios.get(
+          `${API_BASE}ServiceImages/GetChecklistForTechnician?planId=184`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+
+        const items = Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res.data?.data)
+            ? res.data.data
+            : [];
+
+        setChecklistItems(items);
+        setChecklistState(getInitialChecklistState(items));
+      } catch (error) {
+        console.error("Failed to load checklist", error);
+        setChecklistError(
+          "Could not load inspection checklist. Please refresh or try again.",
+        );
+      } finally {
+        setChecklistLoading(false);
+      }
+    };
+
+    fetchChecklist();
+  }, [token]);
+
   // ── Field update with auto-capitalise ──────────────────────────────────────
   const updateField = (event) => {
     const { name, value, type, checked } = event.target;
+
     let processed = type === "checkbox" ? checked : value;
 
     if (type !== "checkbox") {
-      if (CAPITALIZE_WORDS_FIELDS.has(name)) processed = capitalizeWords(value);
-      else if (CAPITALIZE_FIRST_FIELDS.has(name)) processed = capitalizeFirst(value);
+      if (name === "kmDriven" || name === "phoneNumber") {
+        processed = value.replace(/\D/g, ""); // ✅ only digits
+      } else if (CAPITALIZE_WORDS_FIELDS.has(name)) {
+        processed = capitalizeWords(value);
+      } else if (CAPITALIZE_FIRST_FIELDS.has(name)) {
+        processed = capitalizeFirst(value);
+      }
     }
 
-    setFormData((prev) => ({ ...prev, [name]: processed }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: processed,
+    }));
+
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const updateChecklistField = (itemId, field, value) => {
-    setFormData((prev) => ({
+    setChecklistState((prev) => ({
       ...prev,
-      checklist: {
-        ...prev.checklist,
-        [itemId]: { ...prev.checklist[itemId], [field]: value },
-      },
+      [itemId]: { ...prev[itemId], [field]: value },
     }));
   };
 
@@ -206,6 +236,15 @@ const ServiceInspectionRequestLayer = () => {
   const selectedFuelOption =
     fuelOptions.find((f) => Number(f.value) === Number(formData.fuelType)) || null;
 
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let y = currentYear; y >= 1990; y -= 1) {
+      years.push({ value: String(y), label: String(y) });
+    }
+    return years;
+  }, []);
+
   const selectDropdownValue = (field, option) => {
     setFormData((prev) => ({
       ...prev,
@@ -237,6 +276,24 @@ const ServiceInspectionRequestLayer = () => {
     if (currentStep === 2) {
       if (!formData.registrationNumber.trim())
         stepErrors.registrationNumber = "Registration Number is required";
+
+      const yearValue = String(formData.year).trim();
+      if (yearValue) {
+        const yearNum = Number(yearValue);
+        const currentYear = new Date().getFullYear();
+        if (
+          Number.isNaN(yearNum) ||
+          yearNum < 1990 ||
+          yearNum > currentYear
+        ) {
+          stepErrors.year = "Select a valid manufacture year";
+        }
+      }
+
+      const kmValue = String(formData.kmDriven).trim();
+      if (kmValue && !/^[0-9]+$/.test(kmValue)) {
+        stepErrors.kmDriven = "Enter a valid numeric KM value";
+      }
     }
 
     if (currentStep === 4) {
@@ -261,6 +318,7 @@ const ServiceInspectionRequestLayer = () => {
 
   const resetForm = () => {
     setFormData(initialFormData);
+    setChecklistState(getInitialChecklistState(checklistItems));
     setErrors({});
     setCurrentStep(1);
     imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url));
@@ -272,17 +330,16 @@ const ServiceInspectionRequestLayer = () => {
 
   // ── Checklist → JSON string ─────────────────────────────────────────────────
   const buildChecklistItems = () => {
-    const rows = CHECKLIST_CATEGORIES.flatMap((category) =>
-      category.items.map((item) => {
-        const state = formData.checklist[item.id] || {};
-        return {
-          checkListName: String(item.name),
-          category: String(category.name),
-          status: state.checked === false ? 0 : 1,
-          remarks: String(state.reason || ""),
-        };
-      })
-    );
+    const rows = checklistItems.map((item) => {
+      const itemId = String(item.Id ?? item.id ?? item.Includes ?? "");
+      const state = checklistState[itemId] || {};
+      return {
+        checkListName: String(item.Includes || item.Name || ""),
+        category: String(item.Category || ""),
+        status: state.checked === false ? 0 : 1,
+        remarks: String(state.reason || ""),
+      };
+    });
     return JSON.stringify(rows);
   };
 
@@ -320,12 +377,8 @@ const ServiceInspectionRequestLayer = () => {
       payload.append("YearOfPurchase", String(formData.year));
       payload.append("KmDriven", String(formData.kmDriven));
       payload.append("TechnicianName", formData.technicianName);
-      payload.append(
-        "Remarks",
-        [formData.inspectionSummary, formData.requestedRepairs]
-          .filter(Boolean)
-          .join("\n\n")
-      );
+      payload.append("Remarks", formData.inspectionSummary);
+      payload.append("RecommendedServices", formData.requestedRepairs || "");
       payload.append("InspectionAmount", String(parseFloat(formData.lastPaymentAmount) || 0));
       payload.append("AmountStatus", "Pending");
       carImages.forEach((file) => payload.append("Images", file));
@@ -349,6 +402,7 @@ const ServiceInspectionRequestLayer = () => {
 
       // Reset form (keep qrData so modal stays visible)
       setFormData(initialFormData);
+      setChecklistState(getInitialChecklistState(checklistItems));
       setErrors({});
       setCurrentStep(1);
       imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url));
@@ -380,11 +434,11 @@ const ServiceInspectionRequestLayer = () => {
 
       const intervalId = setInterval(async () => {
         try {
-          const res =await axios.post(
-                `${API_BASE}Inspection/payment-complete`,
-                { qrId: qrData.qrId, inspectionId: qrData.inspectionId },
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
+          const res = await axios.post(
+            `${API_BASE}Inspection/payment-complete`,
+            { qrId: qrData.qrId, inspectionId: qrData.inspectionId },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
           const status = res?.data?.qrStatus;
           if (!isActive) return;
 
@@ -394,7 +448,7 @@ const ServiceInspectionRequestLayer = () => {
           if (normalized === "captured" || normalized === "closed") {
             clearInterval(intervalId);
             // Notify backend that payment is complete
-            
+
             if (isActive) setPaymentDone(true);
           }
         } catch (e) {
@@ -585,7 +639,7 @@ const ServiceInspectionRequestLayer = () => {
                   }}
                 />
                 <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>
-                  Waiting for payment… scanning every 3s
+                  Waiting for payment…
                 </p>
               </div>
               <style>{`
@@ -630,7 +684,7 @@ const ServiceInspectionRequestLayer = () => {
                 className="btn btn-outline-primary btn-sm w-100"
                 style={{ fontSize: 13 }}
               >
-                Open Payment Link ↗
+                Download QR ↗
               </a>
             </div>
 
@@ -875,29 +929,44 @@ const ServiceInspectionRequestLayer = () => {
                 </div>
 
                 <div className="col-md-4">
-                  <label className="form-label">Manufacture Year</label>
-                  <input
+                  <label className="form-label">
+                    Manufacture Year
+                  </label>
+                  <select
                     name="year"
-                    type="number"
-                    className="form-control"
-                    placeholder="e.g. 2022"
+                    className="form-select"
                     value={formData.year}
                     onChange={updateField}
-                    min={1990}
-                    max={new Date().getFullYear()}
-                  />
+                  >
+                    <option value="">Select year</option>
+                    {yearOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.year && (
+                    <small className="text-danger">{errors.year}</small>
+                  )}
                 </div>
 
                 <div className="col-md-4">
-                  <label className="form-label">KM Driven</label>
+                  <label className="form-label">
+                    KM Driven
+                  </label>
                   <input
                     name="kmDriven"
                     type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     className="form-control"
                     placeholder="e.g. 45000"
                     value={formData.kmDriven}
                     onChange={updateField}
                   />
+                  {errors.kmDriven && (
+                    <small className="text-danger">{errors.kmDriven}</small>
+                  )}
                 </div>
 
                 <div className="col-md-4">
@@ -1012,63 +1081,75 @@ const ServiceInspectionRequestLayer = () => {
                     Inspection Checklist
                   </label>
                   <div className="d-flex flex-column gap-16">
-                    {CHECKLIST_CATEGORIES.map((category) => (
-                      <div key={category.id} className="border rounded-2 p-12">
-                        <h6 className="mb-12">{category.name}</h6>
-                        <div className="d-flex flex-column gap-10">
-                          {category.items.map((item) => (
-                            <div
-                              key={item.id}
-                              className="row g-2 align-items-center"
-                            >
-                              <div className="col-md-5">
-                                <div className="form-check d-flex align-items-center gap-2 m-0">
-                                  <input
-                                    className="form-check-input"
-                                    type="checkbox"
-                                    id={item.id}
-                                    checked={
-                                      formData.checklist[item.id]?.checked ?? true
-                                    }
-                                    onChange={(e) =>
-                                      updateChecklistField(
-                                        item.id,
-                                        "checked",
-                                        e.target.checked
-                                      )
-                                    }
-                                    style={{ marginTop: 0 }}
-                                  />
-                                  <label
-                                    className="form-check-label m-0"
-                                    htmlFor={item.id}
-                                  >
-                                    {item.name}
-                                  </label>
-                                </div>
-                              </div>
-                              <div className="col-md-7">
-                                <input
-                                  type="text"
-                                  className="form-control"
-                                  placeholder="Reason / observation"
-                                  value={
-                                    formData.checklist[item.id]?.reason || ""
-                                  }
-                                  onChange={(e) =>
-                                    updateChecklistField(
-                                      item.id,
-                                      "reason",
-                                      capitalizeFirst(e.target.value)
-                                    )
-                                  }
-                                />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                    {checklistLoading ? (
+                      <div className="text-secondary">Loading checklist…</div>
+                    ) : checklistError ? (
+                      <div className="alert alert-warning">{checklistError}</div>
+                    ) : checklistItems.length === 0 ? (
+                      <div className="text-secondary">
+                        No checklist items found for the selected plan.
                       </div>
-                    ))}
+                    ) : (
+                      Object.entries(checklistCategories).map(
+                        ([categoryName, items]) => (
+                          <div key={categoryName} className="border rounded-2 p-12">
+                            <h6 className="mb-12">{categoryName}</h6>
+                            <div className="d-flex flex-column gap-10">
+                              {items.map((item) => {
+                                const itemId = String(item.Id ?? item.id ?? item.Includes ?? "");
+                                const state = checklistState[itemId] || {};
+                                return (
+                                  <div
+                                    key={itemId}
+                                    className="row g-2 align-items-center"
+                                  >
+                                    <div className="col-md-5">
+                                      <div className="form-check d-flex align-items-center gap-2 m-0">
+                                        <input
+                                          className="form-check-input"
+                                          type="checkbox"
+                                          id={itemId}
+                                          checked={state.checked ?? true}
+                                          onChange={(e) =>
+                                            updateChecklistField(
+                                              itemId,
+                                              "checked",
+                                              e.target.checked,
+                                            )
+                                          }
+                                          style={{ marginTop: 0 }}
+                                        />
+                                        <label
+                                          className="form-check-label m-0"
+                                          htmlFor={itemId}
+                                        >
+                                          {item.Includes || item.Name || "Untitled item"}
+                                        </label>
+                                      </div>
+                                    </div>
+                                    <div className="col-md-7">
+                                      <input
+                                        type="text"
+                                        className="form-control"
+                                        placeholder="Reason / observation"
+                                        value={state.reason || ""}
+                                        onChange={(e) =>
+                                          updateChecklistField(
+                                            itemId,
+                                            "reason",
+                                            capitalizeFirst(e.target.value),
+                                          )
+                                        }
+                                      />
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ),
+                      )
+                    )}
                   </div>
                 </div>
 
