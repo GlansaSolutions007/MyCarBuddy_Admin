@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -13,6 +13,14 @@ const SignInLayer = () => {
   const [apiError, setApiError] = useState("");
   const [loading, setLoading] = useState(false);
   const API_BASE = `${import.meta.env.VITE_APIURL}Auth/Admin-login`; // API endpoint for login
+
+  useEffect(() => {
+    // Check if user is already logged in
+    const token = localStorage.getItem("token");
+    if (token) {
+      navigate("/dashboard");
+    }
+  }, [navigate]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

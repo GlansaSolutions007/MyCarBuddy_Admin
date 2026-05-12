@@ -585,19 +585,19 @@ const MasterLayout = ({ children }) => {
     return () => clearInterval(reminderPoll);
   }, [API_BASE, role, token]);
 
-const alertLeads = useMemo(() => {
-  if (!followUpLeads.length) return [];
-  const now = followUpNow;
-  
-  return followUpLeads
-    .map((lead) => ({
-      lead,
-      meta: getReminderMeta(lead, now),
-    }))
-    // .filter((item) => item.meta?.leadId)
-    .filter((item) => item.meta?.leadId && (item.meta.isOverdue || item.meta.isWithinUrgentWindow))
-    .sort((a, b) => a.meta.diffMs - b.meta.diffMs); 
-}, [followUpLeads, followUpNow]);
+  const alertLeads = useMemo(() => {
+    if (!followUpLeads.length) return [];
+    const now = followUpNow;
+
+    return followUpLeads
+      .map((lead) => ({
+        lead,
+        meta: getReminderMeta(lead, now),
+      }))
+      // .filter((item) => item.meta?.leadId)
+      .filter((item) => item.meta?.leadId && (item.meta.isOverdue || item.meta.isWithinUrgentWindow))
+      .sort((a, b) => a.meta.diffMs - b.meta.diffMs);
+  }, [followUpLeads, followUpNow]);
 
   const overdueLeads = alertLeads.filter((item) => item.meta.isOverdue);
   const dueWithinHourLeads = alertLeads.filter(
@@ -650,7 +650,7 @@ const alertLeads = useMemo(() => {
       icon: "solar:home-smile-angle-outline",
       to: "/dashboard",
     },
-  
+
     // 🔷 CORE OPERATIONS
     {
       title: "Leads",
@@ -686,14 +686,14 @@ const alertLeads = useMemo(() => {
         },
         ...(role !== "Admin"
           ? [
-              {
-                title: "Today Pending Leads",
-                to: "/todays-lead",
-                color: "text-black",
-                permission: "todayslead_view",
-                page: "Today Pending Leads",
-              },
-            ]
+            {
+              title: "Today Pending Leads",
+              to: "/todays-lead",
+              color: "text-black",
+              permission: "todayslead_view",
+              page: "Today Pending Leads",
+            },
+          ]
           : []),
         {
           title: "Closed Leads",
@@ -704,7 +704,7 @@ const alertLeads = useMemo(() => {
         },
       ],
     },
-  
+
     {
       title: "Booking Details",
       icon: "mdi:clipboard-list-outline",
@@ -737,15 +737,35 @@ const alertLeads = useMemo(() => {
           permission: "ratings_view",
           page: "Ratings",
         },
+        // {
+        //   title: "Service Intake Form",
+        //   to: "/service-intake-form",
+        //   color: "text-info-danger",
+        //   permission: "serviceintakeform_view",
+        //   page: "Service Intake Form",
+        // },
+        //  {
+        //   title: "Service Intake List",
+        //   to: "/service-intake-list",
+        //   color: "text-purple",
+        //   permission: "serviceintakelist_view",
+        //   page: "Service Intake List",
+        // },
+      ],
+    },
+    {
+      title: "Inspections",
+      icon: "mdi:clipboard-list-outline",
+      children: [
         {
-          title: "Service Intake Form",
+          title: "Inspection Form",
           to: "/service-intake-form",
           color: "text-info-danger",
           permission: "serviceintakeform_view",
           page: "Service Intake Form",
         },
-         {
-          title: "Service Intake List",
+        {
+          title: "Inspection List",
           to: "/service-intake-list",
           color: "text-purple",
           permission: "serviceintakelist_view",
@@ -774,7 +794,7 @@ const alertLeads = useMemo(() => {
         },
       ],
     },
-  
+
     {
       title: "Customer Details",
       icon: "flowbite:users-group-outline",
@@ -788,7 +808,7 @@ const alertLeads = useMemo(() => {
         },
       ],
     },
-  
+
     // 🔷 SERVICE CONFIGURATION
     {
       title: "Services",
@@ -838,47 +858,47 @@ const alertLeads = useMemo(() => {
         },
       ],
     },
-   // 🔷 FINANCE & REPORTS
-   {
-    title: "Reports",
-    icon: "ion:document-text-outline",
-    children: [
-      {
-        title: "Ticket Reports",
-        to: "/ticket-reports",
-        permission: "ticketreports_view",
-        page: "Ticket Reports",
-      },
-      // ...(role === "Dealer"
-      //   ? [
-      //       {
-      //         title: "Vehicle Reports",
-      //         to: "/vehicle-reports",
-      //         permission: "vehiclereports_view",
-      //         page: "Vehicle Reports",
-      //       },
-      //     ]
-      //   : []),
-      {
-        title: "Complete Ser. Rep",
-        to: "/complete-service-reports",
-        permission: "completeservicereports_view",
-        page: "Complete Service Reports",
-      },
-      {
-        title: "Lead Reports",
-        to: "/lead-reports",
-        permission: "leadreports_view",
-        page: "Lead Reports",
-      },
-      {
-        title: "Revenue Reports",
-        to: "/revenue-reports",
-        permission: "revenuereports_view",
-        page: "Revenue Reports",
-      },
-      ...(role === "Dealer"
-        ? [
+    // 🔷 FINANCE & REPORTS
+    {
+      title: "Reports",
+      icon: "ion:document-text-outline",
+      children: [
+        {
+          title: "Ticket Reports",
+          to: "/ticket-reports",
+          permission: "ticketreports_view",
+          page: "Ticket Reports",
+        },
+        // ...(role === "Dealer"
+        //   ? [
+        //       {
+        //         title: "Vehicle Reports",
+        //         to: "/vehicle-reports",
+        //         permission: "vehiclereports_view",
+        //         page: "Vehicle Reports",
+        //       },
+        //     ]
+        //   : []),
+        {
+          title: "Complete Ser. Rep",
+          to: "/complete-service-reports",
+          permission: "completeservicereports_view",
+          page: "Complete Service Reports",
+        },
+        {
+          title: "Lead Reports",
+          to: "/lead-reports",
+          permission: "leadreports_view",
+          page: "Lead Reports",
+        },
+        {
+          title: "Revenue Reports",
+          to: "/revenue-reports",
+          permission: "revenuereports_view",
+          page: "Revenue Reports",
+        },
+        ...(role === "Dealer"
+          ? [
             {
               title: "Dealer Report",
               to: "/dealer-report",
@@ -886,9 +906,9 @@ const alertLeads = useMemo(() => {
               page: "Dealer Report",
             },
           ]
-        : []),
-    ],
-  },  
+          : []),
+      ],
+    },
     {
       title: "Time Slots",
       icon: "ion:time-outline",
@@ -902,7 +922,7 @@ const alertLeads = useMemo(() => {
         },
       ],
     },
-  
+
     {
       title: "Vehicle",
       icon: "hugeicons:car-03",
@@ -930,7 +950,7 @@ const alertLeads = useMemo(() => {
         },
       ],
     },
-  
+
     // 🔷 TEAM MANAGEMENT
     {
       title: "Performers",
@@ -966,7 +986,7 @@ const alertLeads = useMemo(() => {
         },
       ],
     },
-  
+
     {
       title: "Departments",
       icon: "mdi:office-building",
@@ -987,7 +1007,7 @@ const alertLeads = useMemo(() => {
         },
       ],
     },
-  
+
     {
       title: "Regions",
       icon: "material-symbols:map-outline",
@@ -1022,7 +1042,7 @@ const alertLeads = useMemo(() => {
         },
       ],
     },
-  
+
     {
       title: "Leave Management",
       icon: "mdi:account-clock-outline",
@@ -1036,7 +1056,7 @@ const alertLeads = useMemo(() => {
         },
       ],
     },
-  
+
     {
       title: "Contacts",
       icon: "flowbite:address-book-outline",
@@ -1050,9 +1070,9 @@ const alertLeads = useMemo(() => {
         },
       ],
     },
-  
-   
-  
+
+
+
     {
       title: "Expenses",
       icon: "mdi:cash-multiple",
@@ -1077,7 +1097,7 @@ const alertLeads = useMemo(() => {
         },
       ],
     },
-  
+
     {
       title: "Coupons",
       icon: "ion:card-outline",
@@ -1090,7 +1110,7 @@ const alertLeads = useMemo(() => {
         },
       ],
     },
-  
+
     // 🔷 MARKETING
     {
       title: "Digital Marketing",
@@ -1122,7 +1142,7 @@ const alertLeads = useMemo(() => {
         },
       ],
     },
-  
+
     // 🔷 SETTINGS
     {
       title: "Settings",
@@ -1154,7 +1174,7 @@ const alertLeads = useMemo(() => {
         },
       ],
     },
-  
+
     // 🔷 EXTERNAL
     {
       title: "Go To Website",
@@ -1367,26 +1387,26 @@ const alertLeads = useMemo(() => {
                 const hasChildren = Array.isArray(item.children);
                 const visibleChildren = hasChildren
                   ? item.children.filter((child) => {
-                      // Check role-based access first
-                      if (child.roles && child.roles.includes(role))
-                        return true;
+                    // Check role-based access first
+                    if (child.roles && child.roles.includes(role))
+                      return true;
 
-                      // For Admin users, show all children
-                      if (role === "Admin") return true;
+                    // For Admin users, show all children
+                    if (role === "Admin") return true;
 
-                      // Check permissions for non-admin users
-                      if (child.permission && child.page) {
-                        return hasPermission(child.permission, child.page);
-                      }
+                    // Check permissions for non-admin users
+                    if (child.permission && child.page) {
+                      return hasPermission(child.permission, child.page);
+                    }
 
-                      // Hide if no permission defined
-                      return false;
-                    })
+                    // Hide if no permission defined
+                    return false;
+                  })
                   : [];
 
                 if (hasChildren && visibleChildren.length === 0) return null;
 
-  return (
+                return (
                   <li key={idx} className={hasChildren ? "dropdown" : ""}>
                     {hasChildren ? (
                       <>
@@ -1525,96 +1545,92 @@ const alertLeads = useMemo(() => {
 
                 {/* Follow-up Alert Dropdown */}
                 {alertLeads.length > 0 && (
-                <div className="dropdown" data-bs-auto-close="outside">
-                  <button
-                    className={`topbar-icon-button ${
-                      hasOverdueFollowUps
-                        ? "is-urgent"
-                        : hasWarningFollowUps
-                          ? "is-alert"
-                          : ""
-                    }`}
-                    type="button"
-                    data-bs-toggle="dropdown"
-                    title="Follow-up Reminders"
-                    style={{
-                      animation: hasOverdueFollowUps || hasWarningFollowUps
-                        ? "followUpPulse 2s infinite"
-                        : "none"
-                    }}
-                  >
-                    <Icon
-                      icon="solar:alarm-bold-duotone"
-                      className="topbar-icon"
-                      width="25"
-                    />
-                    {alertLeads.length > 0 && (
-                      <span className="topbar-count-badge">
-                        {alertLeads.length}
-                      </span>
-                    )}
-                  </button>
-
-                  <div
-                    className="dropdown-menu to-top p-0 followup-dropdown-menu"
-                    style={{ width: "450px" }}
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    <div
-                      className={`m-16 py-12 px-16 radius-8 d-flex align-items-center justify-content-between ${
-                        hasOverdueFollowUps
-                          ? "bg-danger-50"
+                  <div className="dropdown" data-bs-auto-close="outside">
+                    <button
+                      className={`topbar-icon-button ${hasOverdueFollowUps
+                          ? "is-urgent"
                           : hasWarningFollowUps
-                            ? "bg-warning-50"
-                            : "bg-success-50"
-                      }`}
+                            ? "is-alert"
+                            : ""
+                        }`}
+                      type="button"
+                      data-bs-toggle="dropdown"
+                      title="Follow-up Reminders"
+                      style={{
+                        animation: hasOverdueFollowUps || hasWarningFollowUps
+                          ? "followUpPulse 2s infinite"
+                          : "none"
+                      }}
                     >
-                      <h6
-                        className={`text-md fw-semibold mb-0 ${
-                          hasOverdueFollowUps
-                            ? "text-danger-main"
-                            : hasWarningFollowUps
-                              ? "text-warning-main"
-                              : "text-success-main"
-                        }`}
-                      >
-                        Follow-up Reminders
-                      </h6>
-                      <span
-                        className={`badge ${
-                          hasOverdueFollowUps
-                            ? "bg-danger-main"
-                            : hasWarningFollowUps
-                              ? "bg-warning-main"
-                              : "bg-success-main"
-                        }`}
-                      >
-                        {alertLeads.length} Leads
-                      </span>
-                    </div>
+                      <Icon
+                        icon="solar:alarm-bold-duotone"
+                        className="topbar-icon"
+                        width="25"
+                      />
+                      {alertLeads.length > 0 && (
+                        <span className="topbar-count-badge">
+                          {alertLeads.length}
+                        </span>
+                      )}
+                    </button>
 
-                    <div className="px-16 pb-12 d-flex flex-wrap gap-8">
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          scrollToReminderSection(overdueSectionRef);
-                        }}
-                        className="border-0 bg-danger-100 text-danger-600 fw-semibold text-xs px-10 py-6 radius-8"
+                    <div
+                      className="dropdown-menu to-top p-0 followup-dropdown-menu"
+                      style={{ width: "450px" }}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <div
+                        className={`m-16 py-12 px-16 radius-8 d-flex align-items-center justify-content-between ${hasOverdueFollowUps
+                            ? "bg-danger-50"
+                            : hasWarningFollowUps
+                              ? "bg-warning-50"
+                              : "bg-success-50"
+                          }`}
                       >
-                        Overdue: {overdueCount}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          scrollToReminderSection(warningSectionRef);
-                        }}
-                        className="border-0 bg-warning-100 text-warning-600 fw-semibold text-xs px-10 py-6 radius-8"
-                      >
-                        Due Within 1 Hour: {dueWithinHourCount}
-                      </button>
-                      {/* <button
+                        <h6
+                          className={`text-md fw-semibold mb-0 ${hasOverdueFollowUps
+                              ? "text-danger-main"
+                              : hasWarningFollowUps
+                                ? "text-warning-main"
+                                : "text-success-main"
+                            }`}
+                        >
+                          Follow-up Reminders
+                        </h6>
+                        <span
+                          className={`badge ${hasOverdueFollowUps
+                              ? "bg-danger-main"
+                              : hasWarningFollowUps
+                                ? "bg-warning-main"
+                                : "bg-success-main"
+                            }`}
+                        >
+                          {alertLeads.length} Leads
+                        </span>
+                      </div>
+
+                      <div className="px-16 pb-12 d-flex flex-wrap gap-8">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            scrollToReminderSection(overdueSectionRef);
+                          }}
+                          className="border-0 bg-danger-100 text-danger-600 fw-semibold text-xs px-10 py-6 radius-8"
+                        >
+                          Overdue: {overdueCount}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            scrollToReminderSection(warningSectionRef);
+                          }}
+                          className="border-0 bg-warning-100 text-warning-600 fw-semibold text-xs px-10 py-6 radius-8"
+                        >
+                          Due Within 1 Hour: {dueWithinHourCount}
+                        </button>
+                        {/* <button
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
@@ -1624,110 +1640,110 @@ const alertLeads = useMemo(() => {
                       >
                         Upcoming: {upcomingCount}
                       </button> */}
-                    </div>
+                      </div>
 
-                    <div
-                      ref={dropdownScrollRef}
-                      className="max-h-400-px overflow-y-auto scroll-sm"
-                    >
-                      {alertLeads.length === 0 ? (
-                        <div className="p-20 text-center">
-                          <Icon icon="solar:check-read-linear" width="40" className="text-success-main mb-8" />
-                          <p className="text-secondary-light text-sm mb-0">No next follow-up reminders right now.</p>
-                        </div>
-                      ) : (
-                        <>
-                          <div ref={overdueSectionRef} className="px-16 pt-4 pb-8">
-                            <span className="text-xs fw-bold px-8 py-2 radius-4 bg-danger-100 text-danger-600">
-                              Follow-up Overdue
-                            </span>
+                      <div
+                        ref={dropdownScrollRef}
+                        className="max-h-400-px overflow-y-auto scroll-sm"
+                      >
+                        {alertLeads.length === 0 ? (
+                          <div className="p-20 text-center">
+                            <Icon icon="solar:check-read-linear" width="40" className="text-success-main mb-8" />
+                            <p className="text-secondary-light text-sm mb-0">No next follow-up reminders right now.</p>
                           </div>
-                          {overdueLeads.length > 0 ? (
-                            overdueLeads.map((item) => (
-                              <div
-                                key={item.meta.leadId}
-                                onClick={() => navigate(`/lead-view/${item.meta.leadId}`)}
-                                className="px-16 py-12 border-bottom border-neutral-200 hover-bg-neutral-50 cursor-pointer transition-all"
-                                style={{ backgroundColor: "rgba(254, 242, 242, 0.85)" }}
-                              >
-                                <div className="d-flex align-items-start justify-content-between gap-12 mb-6">
-                                  <h6 className="text-sm fw-bold mb-0">{item.lead.FullName} (Lead Id: {item.lead.Id})</h6>
-                                  <span className="text-xs text-secondary-light">{item.meta.helperText}</span>
-                                </div>
-                                <div className="d-flex align-items-center gap-2 text-xs text-secondary-light">
-                                  <Icon icon="solar:phone-calling-linear" />
-                                  <span>{item.lead.PhoneNumber}</span>
-                                </div>
-                                <div className="d-flex align-items-center gap-2 text-xs text-secondary-light mt-4">
-                                  <Icon icon="solar:map-point-wave-linear" />
-                                  <span>{item.lead.Platform || "Platform"}</span>
-                                </div>
-                                <div className="d-flex align-items-end justify-content-between gap-12 mt-4">
-                                  <div className="text-xs text-primary-600 fw-medium">
-                                    Due: {formatFollowUpDateTime(item.meta.followUpDate)}
-                                  </div>
-                                  <div className="text-xs text-secondary-light text-end">
-                                    <span className="fw-medium">Emp:</span>{" "}
-                                    {item.lead.EmployeeAssignName || "Admin"}
-                                    {" | "}
-                                    <span className="fw-medium">Head:</span>{" "}
-                                    {item.lead.HeadAssignName || "Admin"}
-                                  </div>
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="px-16 pb-12 text-xs text-secondary-light">
-                              No overdue follow-ups.
+                        ) : (
+                          <>
+                            <div ref={overdueSectionRef} className="px-16 pt-4 pb-8">
+                              <span className="text-xs fw-bold px-8 py-2 radius-4 bg-danger-100 text-danger-600">
+                                Follow-up Overdue
+                              </span>
                             </div>
-                          )}
-
-                          <div ref={warningSectionRef} className="px-16 pt-12 pb-8">
-                            <span className="text-xs fw-bold px-8 py-2 radius-4 bg-warning-100 text-warning-600">
-                              Due Within 1 Hour
-                            </span>
-                          </div>
-                          {dueWithinHourLeads.length > 0 ? (
-                            dueWithinHourLeads.map((item) => (
-                              <div
-                                key={item.meta.leadId}
-                                onClick={() => navigate(`/lead-view/${item.meta.leadId}`)}
-                                className="px-16 py-12 border-bottom border-neutral-100 hover-bg-neutral-50 cursor-pointer transition-all"
-                                style={{ backgroundColor: "rgba(255, 251, 235, 0.92)" }}
-                              >
-                                <div className="d-flex align-items-start justify-content-between gap-12 mb-6">
-                                  <h6 className="text-sm fw-bold mb-0">{item.lead.FullName} (Lead Id: {item.lead.Id})</h6>
-                                  <span className="text-xs text-secondary-light">{item.meta.helperText}</span>
-                                </div>
-                                <div className="d-flex align-items-center gap-2 text-xs text-secondary-light">
-                                  <Icon icon="solar:phone-calling-linear" />
-                                  <span>{item.lead.PhoneNumber}</span>
-                                </div>
-                                <div className="d-flex align-items-center gap-2 text-xs text-secondary-light mt-4">
-                                  <Icon icon="solar:map-point-wave-linear" />
-                                  <span>{item.lead.Platform || "Platform"}</span>
-                                </div>
-                                <div className="d-flex align-items-end justify-content-between gap-12 mt-4">
-                                  <div className="text-xs text-primary-600 fw-medium">
-                                    Due: {formatFollowUpDateTime(item.meta.followUpDate)}
+                            {overdueLeads.length > 0 ? (
+                              overdueLeads.map((item) => (
+                                <div
+                                  key={item.meta.leadId}
+                                  onClick={() => navigate(`/lead-view/${item.meta.leadId}`)}
+                                  className="px-16 py-12 border-bottom border-neutral-200 hover-bg-neutral-50 cursor-pointer transition-all"
+                                  style={{ backgroundColor: "rgba(254, 242, 242, 0.85)" }}
+                                >
+                                  <div className="d-flex align-items-start justify-content-between gap-12 mb-6">
+                                    <h6 className="text-sm fw-bold mb-0">{item.lead.FullName} (Lead Id: {item.lead.Id})</h6>
+                                    <span className="text-xs text-secondary-light">{item.meta.helperText}</span>
                                   </div>
-                                  <div className="text-xs text-secondary-light text-end">
-                                    <span className="fw-medium">Emp:</span>{" "}
-                                    {item.lead.EmployeeAssignName || "Admin"}
-                                    {" | "}
-                                    <span className="fw-medium">Head:</span>{" "}
-                                    {item.lead.HeadAssignName || "Admin"}
+                                  <div className="d-flex align-items-center gap-2 text-xs text-secondary-light">
+                                    <Icon icon="solar:phone-calling-linear" />
+                                    <span>{item.lead.PhoneNumber}</span>
+                                  </div>
+                                  <div className="d-flex align-items-center gap-2 text-xs text-secondary-light mt-4">
+                                    <Icon icon="solar:map-point-wave-linear" />
+                                    <span>{item.lead.Platform || "Platform"}</span>
+                                  </div>
+                                  <div className="d-flex align-items-end justify-content-between gap-12 mt-4">
+                                    <div className="text-xs text-primary-600 fw-medium">
+                                      Due: {formatFollowUpDateTime(item.meta.followUpDate)}
+                                    </div>
+                                    <div className="text-xs text-secondary-light text-end">
+                                      <span className="fw-medium">Emp:</span>{" "}
+                                      {item.lead.EmployeeAssignName || "Admin"}
+                                      {" | "}
+                                      <span className="fw-medium">Head:</span>{" "}
+                                      {item.lead.HeadAssignName || "Admin"}
+                                    </div>
                                   </div>
                                 </div>
+                              ))
+                            ) : (
+                              <div className="px-16 pb-12 text-xs text-secondary-light">
+                                No overdue follow-ups.
                               </div>
-                            ))
-                          ) : (
-                            <div className="px-16 pb-12 text-xs text-secondary-light">
-                              No follow-ups due within 1 hour.
-                            </div>
-                          )}
+                            )}
 
-                          {/* <div ref={upcomingSectionRef} className="px-16 pt-12 pb-8">
+                            <div ref={warningSectionRef} className="px-16 pt-12 pb-8">
+                              <span className="text-xs fw-bold px-8 py-2 radius-4 bg-warning-100 text-warning-600">
+                                Due Within 1 Hour
+                              </span>
+                            </div>
+                            {dueWithinHourLeads.length > 0 ? (
+                              dueWithinHourLeads.map((item) => (
+                                <div
+                                  key={item.meta.leadId}
+                                  onClick={() => navigate(`/lead-view/${item.meta.leadId}`)}
+                                  className="px-16 py-12 border-bottom border-neutral-100 hover-bg-neutral-50 cursor-pointer transition-all"
+                                  style={{ backgroundColor: "rgba(255, 251, 235, 0.92)" }}
+                                >
+                                  <div className="d-flex align-items-start justify-content-between gap-12 mb-6">
+                                    <h6 className="text-sm fw-bold mb-0">{item.lead.FullName} (Lead Id: {item.lead.Id})</h6>
+                                    <span className="text-xs text-secondary-light">{item.meta.helperText}</span>
+                                  </div>
+                                  <div className="d-flex align-items-center gap-2 text-xs text-secondary-light">
+                                    <Icon icon="solar:phone-calling-linear" />
+                                    <span>{item.lead.PhoneNumber}</span>
+                                  </div>
+                                  <div className="d-flex align-items-center gap-2 text-xs text-secondary-light mt-4">
+                                    <Icon icon="solar:map-point-wave-linear" />
+                                    <span>{item.lead.Platform || "Platform"}</span>
+                                  </div>
+                                  <div className="d-flex align-items-end justify-content-between gap-12 mt-4">
+                                    <div className="text-xs text-primary-600 fw-medium">
+                                      Due: {formatFollowUpDateTime(item.meta.followUpDate)}
+                                    </div>
+                                    <div className="text-xs text-secondary-light text-end">
+                                      <span className="fw-medium">Emp:</span>{" "}
+                                      {item.lead.EmployeeAssignName || "Admin"}
+                                      {" | "}
+                                      <span className="fw-medium">Head:</span>{" "}
+                                      {item.lead.HeadAssignName || "Admin"}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="px-16 pb-12 text-xs text-secondary-light">
+                                No follow-ups due within 1 hour.
+                              </div>
+                            )}
+
+                            {/* <div ref={upcomingSectionRef} className="px-16 pt-12 pb-8">
                             <span className="text-xs fw-bold px-8 py-2 radius-4 bg-success-100 text-success-600">
                               Upcoming Follow-up
                             </span>
@@ -1771,14 +1787,14 @@ const alertLeads = useMemo(() => {
                               No upcoming follow-ups.
                             </div>
                           )} */}
-                        </>
-                      )}
-                    </div>
-                    <div className="p-12 text-center border-top">
+                          </>
+                        )}
+                      </div>
+                      <div className="p-12 text-center border-top">
                         <Link to="/organic-leads/Next%20Follow%20Up" className="text-primary-600 fw-semibold text-xs">View All Pending Leads</Link>
+                      </div>
                     </div>
                   </div>
-                </div>
                 )}
                 {/* Message dropdown end */}
                 <div className="dropdown">
@@ -1828,11 +1844,10 @@ const alertLeads = useMemo(() => {
                       ) : (
                         notifications.map((notification) => (
                           <Link
-                             key={notification.id}
-                             to={notification.link || "#"}
-                            className={`px-24 py-12 d-flex align-items-start gap-3 mb-2 ${
-                              !notification.read ? "bg-neutral-50" : ""
-                            }`}
+                            key={notification.id}
+                            to={notification.link || "#"}
+                            className={`px-24 py-12 d-flex align-items-start gap-3 mb-2 ${!notification.read ? "bg-neutral-50" : ""
+                              }`}
                             onClick={() => {
                               // Mark as read
                               setNotifications((prev) =>
@@ -1848,7 +1863,7 @@ const alertLeads = useMemo(() => {
                                   notification.id,
                                   userId,
                                 );
-                              } catch (_) {}
+                              } catch (_) { }
                             }}
                           >
                             <div className="text-black hover-bg-transparent hover-text-primary d-flex align-items-start gap-3">

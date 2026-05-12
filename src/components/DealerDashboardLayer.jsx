@@ -6,9 +6,13 @@ import Swal from "sweetalert2";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 
-// Pending status check for addon
+// Pending status check for dealer confirmation
 const isPendingDealerConfirm = (val) =>
   (val?.IsDealer_Confirm ?? val?.isDealer_Confirm)?.toString()?.trim() === "Pending";
+
+// In-progress addon status check
+const isAddonInProgress = (val) =>
+  (val?.addOnStatus ?? val?.AddOnStatus ?? val?.AddonStatus)?.toString()?.trim() === "InProgress" || (val?.addOnStatus ?? val?.AddOnStatus ?? val?.AddonStatus)?.toString()?.trim() === "Rework";
 
 // Match addon to current dealer (DealerID can be number or string)
 const addonMatchesDealer = (addon, dealerId) => {
@@ -17,7 +21,8 @@ const addonMatchesDealer = (addon, dealerId) => {
   return String(d) === String(dealerId) || Number(d) === Number(dealerId);
 };
 
-// Build flat list of pending addon rows: only BookingAddOns (and BookingsTempAddons) where DealerID matches and IsDealer_Confirm is Pending
+// Build flat list of actionable addon rows for dealer:
+// include DealerID-matched add-ons where IsDealer_Confirm is Pending OR addOnStatus is InProgress.
 const getPendingAddonRows = (bookings, dealerId) => {
   const bookingMap = new Map();
   (Array.isArray(bookings) ? bookings : []).forEach((booking) => {
@@ -28,7 +33,7 @@ const getPendingAddonRows = (bookings, dealerId) => {
     const pendingAddons = [];
     addonSources.forEach(({ addon, source }, idx) => {
       if (!addonMatchesDealer(addon, dealerId)) return;
-      if (!isPendingDealerConfirm(addon)) return;
+      if (!isPendingDealerConfirm(addon) && !isAddonInProgress(addon)) return;
       const addonId = addon?.AddOnID ?? addon?.AddOnId ?? addon?.Id ?? addon?.id ?? idx;
       pendingAddons.push({
         addonId,
@@ -51,6 +56,12 @@ const getPendingAddonRows = (bookings, dealerId) => {
 // Single service name from addon
 const getAddonServiceName = (addon) =>
   addon?.AddOnName ?? addon?.ServiceName ?? addon?.Name ?? "Service";
+
+const getAddonDisplayStatus = (addon) => {
+  if (isAddonInProgress(addon)) return "In Progress";
+  if (isPendingDealerConfirm(addon)) return "Pending Acceptance";
+  return "Pending";
+};
 
 // Normalize includes for UpdateSupervisorBooking: comma-separated string of IDs
 const getAddonIncludes = (addon) => {
@@ -96,6 +107,7 @@ const DealerDashboardLayer = () => {
     receivedPayment: 0,
     balancePayment: 0,
     comletedBookings: 0,
+    CustomerApprovalPending: 0,
   });
   const [loading, setLoading] = useState(false);
   const [pendingRows, setPendingRows] = useState([]);
@@ -179,6 +191,9 @@ const DealerDashboardLayer = () => {
         receivedPayment: data.PaidAmount, // Received Payment
         balancePayment: data.BalanceAmount, // Balance Payment
         comletedBookings: data.CompletedBookings,
+        CustomerApprovalPending: data.CustomerApprovalPending,
+        DiscardServices: data.DiscardServices,
+        CustomerRejectedServices: data.CustomerRejectedServices,
       });
 
     }
@@ -377,7 +392,7 @@ const DealerDashboardLayer = () => {
                 <div className="card-header card-header-trend d-flex align-items-center justify-content-between flex-wrap gap-2 py-3 px-4">
                   <div className="d-flex align-items-center gap-2">
                     <span className="dealer-dot-pending flex-shrink-0" />
-                    <h6 className="mb-0 fw-bold">Bookings with pending services</h6>
+                    <h6 className="mb-0 fw-bold">Bookings Requiring Action</h6>
                     {pendingRows.length > 0 && (
                       <span className="badge bg-success bg-opacity-25 text-success ms-2">{pendingRows.length}</span>
                     )}
@@ -401,7 +416,7 @@ const DealerDashboardLayer = () => {
                   ) : pendingRows.length === 0 ? (
                     <div className="text-center py-5 text-secondary">
                       <Icon icon="solar:check-circle-bold" className="fs-1 text-success" />
-                      <p className="mb-0 mt-2">No pending confirmations</p>
+                      <p className="mb-0 mt-2">No bookings requiring action</p>
                     </div>
                   ) : (
                     <div
@@ -412,16 +427,21 @@ const DealerDashboardLayer = () => {
                       <table className="table dealer-table-trend align-middle mb-0">
                         <thead className="sticky-top" style={{ zIndex: 1, background: "#f8fafc" }}>
                           <tr>
+                            <th className="text-nowrap ps-4">S.No</th>
                             <th className="text-nowrap ps-4">Booking ID</th>
                             <th className="text-nowrap">Date</th>
                             <th className="text-nowrap">Pending Services</th>
+                            <th className="text-nowrap">Status</th>
                             <th className="text-nowrap">Car details</th>
                             <th className="text-nowrap text-end pe-4">Action</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {visibleRows.map((row) => (
+                          {visibleRows.map((row, index) => (
                             <tr key={row.rowId}>
+                              <td className="ps-4">
+                                {index + 1}
+                              </td>
                               <td className="ps-4">
                                 <Link
                                   to={`/dealer-booking-view/${row.booking.LeadId}`}
@@ -442,13 +462,38 @@ const DealerDashboardLayer = () => {
                                   )}
                                 </div>
                               </td>
+                              <td>
+                                <div className="d-flex flex-wrap gap-1">
+                                  {Array.from(
+                                    new Set(
+                                      row.pendingAddons.map((p) =>
+                                        getAddonDisplayStatus(p.addon),
+                                      ),
+                                    ),
+                                  ).map((status) => {
+                                    const isInProgress = status === "In Progress";
+                                    return (
+                                      <span
+                                        key={`${row.rowId}-${status}`}
+                                        className={`badge ${
+                                          isInProgress
+                                            ? "bg-warning-subtle text-warning-emphasis border border-warning-subtle"
+                                            : "bg-success-subtle text-success-emphasis border border-success-subtle"
+                                        }`}
+                                      >
+                                        {status}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              </td>
                               <td>{getCarDetails(row.booking)}</td>
                               <td className="text-end pe-4">
                                 <Link
                                   to={`/dealer-booking-view/${row.booking.LeadId}`}
                                   className="btn btn-sm btn-outline-primary"
                                 >
-                                  <Icon icon="solar:eye-bold" className="me-1" />
+                                  {/* <Icon icon="solar:eye-bold" className="me-1" /> */}
                                   View
                                 </Link>
                               </td>
@@ -469,7 +514,7 @@ const DealerDashboardLayer = () => {
               </div>
             </div>
 
-            <div className="row row-cols-xxxl-4 row-cols-lg-3 row-cols-md-2 row-cols-1 gy-4 mt-2">
+            <div className="row row-cols-xxxl-4 row-cols-lg-4 row-cols-md-2 row-cols-1 gy-4 mt-2">
 
               {/* Total Bookings */}
               <div className="col">
@@ -483,7 +528,7 @@ const DealerDashboardLayer = () => {
                         <p className="fw-medium text-primary-light mb-1">
                           Total Services
                         </p>
-                        <h6 className="mb-0">{dashboardData.totalServices}</h6>
+                        <h6 className="mb-0">{dashboardData.totalServices }</h6>
                       </div>
                       <div className="w-50-px h-50-px bg-primary-600 rounded-circle d-flex justify-content-center align-items-center">
                         <Icon
@@ -544,6 +589,34 @@ const DealerDashboardLayer = () => {
                 </div>
               </div>
 
+              {/* Discarded Bookings */}
+              <div className="col">
+                <div className="card shadow-none border bg-gradient-start-3 h-100">
+                  <div className="card-body p-20">
+                    <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                      <div>
+                        <p className="fw-medium text-primary-light mb-1">
+                          MCB Discard/Reject
+                        </p>
+                        <h6 className="mb-0">
+                          Discard - {dashboardData.DiscardServices} 
+                        </h6>
+                        <h6 className="mb-0">
+                          Reject - {dashboardData.CustomerRejectedServices} 
+                        </h6>
+                      </div>
+                      <div className="w-50-px h-50-px bg-danger-main rounded-circle d-flex justify-content-center align-items-center">
+                        <Icon
+                          icon="solar:close-circle-bold"
+                          className="text-white text-2xl mb-0"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+
               {/* Completed Bookings */}
               <div className="col">
                 <div className="card shadow-none border bg-gradient-start-4 h-100">
@@ -557,7 +630,7 @@ const DealerDashboardLayer = () => {
                           {dashboardData.comletedBookings}
                         </h6>
                       </div>
-                      <div className="w-50-px h-50-px bg-warning rounded-circle d-flex justify-content-center align-items-center">
+                      <div className="w-50-px h-50-px bg-success-main rounded-circle d-flex justify-content-center align-items-center">
                         <Icon
                           icon="solar:check-circle-bold"
                           className="text-white text-2xl mb-0"
@@ -593,28 +666,28 @@ const DealerDashboardLayer = () => {
               </div>
 
               {/* Today's Vehicles to be Handed Over */}
-              {/* <div className="col">
+              <div className="col">
                 <div className="card shadow-none border bg-gradient-start-5 h-100">
                   <div className="card-body p-20">
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
                       <div>
                         <p className="fw-medium text-primary-light mb-1">
-                          Vehicles to be Handed Over Today
+                          MCB Pending
                         </p>
                         <h6 className="mb-0">
-                          {dashboardData.todaysVehiclesHandover}
+                          {dashboardData.CustomerApprovalPending}
                         </h6>
                       </div>
                       <div className="w-50-px h-50-px bg-info rounded-circle d-flex justify-content-center align-items-center">
                         <Icon
-                           icon="solar:car-bold"
-                          className="text-dark text-2xl mb-0"
+                           icon="solar:clock-circle-bold"
+                           className="text-white text-2xl mb-0"
                         />
                       </div>
                     </div>
                   </div>
                 </div>
-              </div> */}
+              </div>
 
               {/* Total Amount */}
               <div className="col">

@@ -26,6 +26,7 @@ const TicketsViewLayer = () => {
 
   useEffect(() => {
     fetchTickets();
+    console.log(roleId !== 5, roleId !== 6 , roleId);
   }, []);
 
   // Fetch Tickets
@@ -127,6 +128,7 @@ const TicketsViewLayer = () => {
         </Link>
       ),
       sortable: true,
+      width: "150px",
     },
     {
       name: "Customer",
@@ -134,33 +136,47 @@ const TicketsViewLayer = () => {
         <>
           <span className="fw-bold">{row.CustomerName || "N/A"}</span>
           <br />
-          {/* {row.PhoneNumber || ""} */}
+          {row.PhoneNumber || ""}
         </>
       ),
       sortable: true,
+      width: "150px",
     },
     {
       name: "Booking id",
       selector: (row) => row.BookingTrackID || "-",
       sortable: true,
+      width: "150px",
     },
     {
       name: "Created Date",
       selector: (row) => {
-        if (!row.CreatedDate) return "-";
-        const date = new Date(row.CreatedDate);
-        return date.toLocaleString("en-GB", {
+        const rawDate = row.CreatedDate;
+        if (!rawDate) return "-";
+        const dateObj = new Date(rawDate);
+        const formattedDate = dateObj.toLocaleDateString("en-IN", {
           day: "2-digit",
           month: "short",
           year: "numeric",
-          // hour: "2-digit",
-          // minute: "2-digit",
-          // hour12: true,
         });
+        const time = dateObj.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
+        return (
+          <>
+          <div className="d-flex justify-content-center"> 
+            <span className="fw-bold">{formattedDate}</span>
+            </div>
+             <span className="d-flex justify-content-center">{time}</span>
+          </>
+        );
       },
       sortField: "CreatedDate",
       wrap: true,
       sortable: true,
+      width: "150px",
     },
     {
       name: "Ticket Status",
@@ -200,18 +216,62 @@ const TicketsViewLayer = () => {
       },
       wrap: true,
       sortable: true,
+      width: "200px",
     },
-    {
-      name: "Assigned Emp",
-      selector: (row) => row.EmployeeName || "-",
+    ...(roleId !== '5'
+      ? [
+          {
+            // EmployeeName and EmployeePhone add
+            name: " Telecaller Head Details",
+            selector: (row) => (
+              <>
+                <span className="fw-bold">{row.TelecallerHeadAssignments?.[0]?.EmployeeName || "N/A"}</span>
+                <br />
+                {row.TelecallerHeadAssignments?.[0]?.EmployeePhone || ""}
+              </>
+            ),
+            wrap: true,
+            sortable: true,
+            width: "200px",
+          },
+        ]
+      : []),
+      ...(roleId !== '6'
+        ? [
+          {
+      name: " Telecaller Emp Details",
+      selector: (row) => (
+        <>
+          <span className="fw-bold">{row.TelecallerAssignments?.[0]?.EmployeeName || "N/A"}</span>
+          <br />
+          {row.TelecallerAssignments?.[0]?.EmployeePhone || ""}
+        </>
+      ),
       wrap: true,
       sortable: true,
+      width: "200px",
+    }
+    ]
+    : []),
+    {
+      name: " Supervisor Details",
+      selector: (row) => (
+        <>
+          <span className="fw-bold">{row.SupervisorHeadAssignments?.[0]?.EmployeeName || "N/A"}</span>
+          <br />
+          {row.SupervisorHeadAssignments?.[0]?.EmployeePhone || ""}
+        </>
+      ),
+      wrap: true,
+      sortable: true,
+      width: "200px",
     },
     {
       name: "Description",
       selector: (row) => row.Description || row.TicketDescription || "-",
       wrap: true,
       sortable: true,
+      width: "150px",
     },
     {
       name: "Actions",

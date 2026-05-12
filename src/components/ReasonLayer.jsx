@@ -85,6 +85,7 @@ export default function ReasonLayer() {
 
   const columns = [
     { name: "Reason", selector: (row) => row.Reason, sortable: true, width: "220px", wrap:true },
+    {name: "Reason Type", selector: (row) => row.ReasonType, sortable: true, width: "220px", wrap:true },
     {
       name: "Created Date",
       selector: (row) =>

@@ -16,6 +16,8 @@ import InspectionDetailsAccordion from "./InspectionDetailsAccordion";
 import InspectionChecklistAccordion from "./InspectionChecklistAccordion";
 import InvoicesAccordion from "./InvoicesAccordion";
 import ServiceTrackingAccordion from "./ServiceTrackingAccordion";
+import TicketsAccordion from "./TicketsAccordion";
+import ReworkTrackingAccordion from "./ReworkTrackingAccordion";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 const API_IMAGE = import.meta.env.VITE_APIURL_IMAGE;
@@ -237,10 +239,7 @@ const BookingViewLayer = () => {
 
   // Dealers from this booking's scoped services (unique by DealerID) for garage flow dropdowns
   const garageDealerOptions = (() => {
-    const addOns = [
-      ...(bookingData?.BookingAddOns || []),
-      ...(bookingData?.SupervisorBookings || []),
-    ];
+    const addOns = garageFlowServices;
     const seen = new Set();
     return addOns
       .filter(
@@ -7691,421 +7690,7 @@ const scheduledStartTime = getScheduledStartTime();
                                 </div>
                               )}
 
-                            {false &&
-                              bookingData?.CustomerRejectedBookings?.length >
-                                0 && (
-                                <div className="card mb-4 mt-4">
-                                  <div className="card-header bg-danger text-light">
-                                    <h6 className="mb-0 fw-bold text-white">
-                                      Customer Rejected Services
-                                    </h6>
-                                  </div>
-                                  <div className="card-body p-0">
-                                    <div
-                                      className="table-responsive"
-                                      style={{
-                                        maxHeight: "800px",
-                                        overflowX: "auto",
-                                      }}
-                                    >
-                                      <table
-                                        className="table table-sm table-striped table-hover align-middle mb-0 table-center-all"
-                                        style={{
-                                          tableLayout: "fixed",
-                                          minWidth: "1200px",
-                                        }}
-                                      >
-                                        <thead
-                                          className="table-light sticky-top position-relative"
-                                          style={{ zIndex: 1 }}
-                                        >
-                                          <tr>
-                                            <th
-                                              style={{ width: "60px" }}
-                                              className="text-center"
-                                            >
-                                              S.No
-                                            </th>
-                                            <th style={{ width: "100px" }}>
-                                              Type
-                                            </th>
-                                            <th style={{ width: "180px" }}>
-                                              Service Name
-                                            </th>
-                                            <th style={{ width: "100px" }}>
-                                              Date
-                                            </th>
-                                            <th
-                                              style={{ width: "100px" }}
-                                              className="text-end"
-                                            >
-                                              Part Price
-                                            </th>
-                                            <th
-                                              style={{ width: "125px" }}
-                                              className="text-end dlr-column"
-                                            >
-                                              DLR Part Price
-                                            </th>
-                                            <th
-                                              style={{ width: "70px" }}
-                                              className="text-end"
-                                            >
-                                              Qty
-                                            </th>
-                                            <th
-                                              style={{ width: "100px" }}
-                                              className="text-end"
-                                            >
-                                              Part Total
-                                            </th>
-                                            <th
-                                              style={{ width: "120px" }}
-                                              className="text-end dlr-column"
-                                            >
-                                              DLR Part Total
-                                            </th>
-                                            <th
-                                              style={{ width: "120px" }}
-                                              className="text-end"
-                                            >
-                                              Service Chg.
-                                            </th>
-                                            <th
-                                              style={{ width: "145px" }}
-                                              className="text-end dlr-column"
-                                            >
-                                              DLR Service Chg.
-                                            </th>
-                                            <th
-                                              style={{ width: "90px" }}
-                                              className="text-end"
-                                            >
-                                              GST %
-                                            </th>
-                                            <th
-                                              style={{ width: "120px" }}
-                                              className="text-end dlr-column"
-                                            >
-                                              DLR GST %
-                                            </th>
-                                            <th
-                                              style={{ width: "100px" }}
-                                              className="text-end"
-                                            >
-                                              GST Amt.
-                                            </th>
-                                            <th
-                                              style={{ width: "120px" }}
-                                              className="text-end dlr-column"
-                                            >
-                                              DLR GST Amt.
-                                            </th>
-                                            <th
-                                              style={{ width: "100px" }}
-                                              className="text-end"
-                                            >
-                                              MCB Margin Amount
-                                            </th>
-                                            <th
-                                              style={{ width: "100px" }}
-                                              className="text-end"
-                                            >
-                                              MCB Amt.
-                                            </th>
-                                            <th
-                                              style={{ width: "170px" }}
-                                              className="text-center"
-                                            >
-                                              Dealer Name
-                                            </th>
-                                            <th
-                                              style={{ width: "140px" }}
-                                              className="text-end"
-                                            >
-                                              DLR Total Amt.
-                                            </th>
-                                            <th
-                                              style={{ width: "150px" }}
-                                              className="text-end"
-                                            >
-                                              Cust. Total Amt.
-                                            </th>
-                                            <th
-                                              style={{ width: "100px" }}
-                                              className="text-end"
-                                            >
-                                              Action
-                                            </th>
-                                          </tr>
-                                        </thead>
-
-                                        <tbody>
-                                          {bookingData?.CustomerRejectedBookings?.map(
-                                            (
-                                              CustomerRejectedBookings,
-                                              index,
-                                            ) => {
-                                              const totalPrice =
-                                                Number(
-                                                  CustomerRejectedBookings.Price ||
-                                                    0,
-                                                ) +
-                                                Number(
-                                                  CustomerRejectedBookings.GSTAmount ||
-                                                    0,
-                                                ) +
-                                                Number(
-                                                  CustomerRejectedBookings.LabourCharges ||
-                                                    0,
-                                                );
-
-                                              return (
-                                                <tr
-                                                  key={
-                                                    CustomerRejectedBookings.Id ||
-                                                    index
-                                                  }
-                                                >
-                                                  <td className="text-center">
-                                                    {index + 1}.
-                                                  </td>
-                                                  <td className="normal">
-                                                    {CustomerRejectedBookings.ServiceType ||
-                                                      "—"}
-                                                  </td>
-                                                  <td className="normal">
-                                                    <div className="normal">
-                                                      {CustomerRejectedBookings.ServiceName ||
-                                                        "—"}
-                                                      {CustomerRejectedBookings.Includes &&
-                                                        (Array.isArray(
-                                                          CustomerRejectedBookings.Includes,
-                                                        )
-                                                          ? CustomerRejectedBookings
-                                                              .Includes.length >
-                                                              0 && (
-                                                              <ul
-                                                                className="text-muted small ps-3 mb-0 mt-2"
-                                                                style={{
-                                                                  textAlign:
-                                                                    "left",
-                                                                }}
-                                                              >
-                                                                {CustomerRejectedBookings.Includes.map(
-                                                                  (inc) => (
-                                                                    <li
-                                                                      key={
-                                                                        inc.IncludeID ||
-                                                                        inc.id ||
-                                                                        inc
-                                                                      }
-                                                                    >
-                                                                      {inc.IncludeName ||
-                                                                        inc.name ||
-                                                                        inc}
-                                                                    </li>
-                                                                  ),
-                                                                )}
-                                                              </ul>
-                                                            )
-                                                          : typeof CustomerRejectedBookings.Includes ===
-                                                              "string" &&
-                                                            CustomerRejectedBookings.Includes.trim() !==
-                                                              "" && (
-                                                              <div className="text-muted small mt-2">
-                                                                {
-                                                                  CustomerRejectedBookings.Includes
-                                                                }
-                                                              </div>
-                                                            ))}
-                                                    </div>
-                                                  </td>
-
-                                                  <td className="normal">
-                                                    {CustomerRejectedBookings.CreatedDate
-                                                      ? new Date(
-                                                          CustomerRejectedBookings.CreatedDate,
-                                                        ).toLocaleDateString(
-                                                          "en-IN",
-                                                        )
-                                                      : "—"}
-                                                  </td>
-                                                  <td className="text-end">
-                                                    {Number(
-                                                      CustomerRejectedBookings.BasePrice ||
-                                                        0,
-                                                    ).toFixed(2)}
-                                                  </td>
-                                                  <td className="text-end dlr-column">
-                                                    {Number(
-                                                      CustomerRejectedBookings.DealerBasePrice ||
-                                                        0,
-                                                    ).toFixed(2)}
-                                                  </td>
-                                                  <td className="text-end">
-                                                    {CustomerRejectedBookings.Quantity ??
-                                                      "1"}
-                                                  </td>
-                                                  <td className="text-end">
-                                                    {Number(
-                                                      CustomerRejectedBookings.Price ||
-                                                        0,
-                                                    ).toFixed(2)}
-                                                  </td>
-                                                  <td className="text-end dlr-column">
-                                                    {Number(
-                                                      CustomerRejectedBookings.DealerSparePrice ||
-                                                        0,
-                                                    ).toFixed(2)}
-                                                  </td>
-                                                  <td className="text-end">
-                                                    {Number(
-                                                      CustomerRejectedBookings.LabourCharges ||
-                                                        0,
-                                                    ).toFixed(2)}
-                                                  </td>
-                                                  <td className="text-end dlr-column">
-                                                    {Number(
-                                                      CustomerRejectedBookings.DealerPrice ||
-                                                        0,
-                                                    ).toFixed(2)}
-                                                  </td>
-                                                  <td className="text-end">
-                                                    {CustomerRejectedBookings.GSTPercent ??
-                                                      0}
-                                                    %
-                                                  </td>
-                                                  <td className="text-end dlr-column">
-                                                    {CustomerRejectedBookings.DealerGSTPercent ??
-                                                      0}
-                                                    %
-                                                  </td>
-                                                  <td className="text-end">
-                                                    {Number(
-                                                      CustomerRejectedBookings.GSTAmount ||
-                                                        0,
-                                                    ).toFixed(2)}
-                                                  </td>
-                                                  <td className="text-end dlr-column">
-                                                    {Number(
-                                                      CustomerRejectedBookings.DealerGSTAmount ||
-                                                        0,
-                                                    ).toFixed(2)}
-                                                  </td>
-                                                  <td className="text-end">
-                                                    {CustomerRejectedBookings.Percentage ??
-                                                      "0"}
-                                                    %
-                                                  </td>
-                                                  <td className="text-end">
-                                                    {Number(
-                                                      CustomerRejectedBookings.Our_Earnings ||
-                                                        0,
-                                                    ).toFixed(2)}
-                                                  </td>
-                                                  {/* <td
-                                                  className="normal text-center"
-                                                  style={{
-                                                    whiteSpace: "normal",
-                                                    wordBreak: "break-word",
-                                                  }}
-                                                >
-                                                  {CustomerRejectedBookings.DealerName || "Not Assigned"}
-                                                </td> */}
-                                                  <td
-                                                    className=" normal text-center"
-                                                    style={{
-                                                      whiteSpace: "normal",
-                                                      wordBreak: "break-word",
-                                                    }}
-                                                  >
-                                                    {CustomerRejectedBookings.DealerName ||
-                                                      "—"}
-
-                                                    {CustomerRejectedBookings.IsDealer_Confirm &&
-                                                      CustomerRejectedBookings.DealerName && (
-                                                        <span
-                                                          className={`badge px-3 py-2 rounded-pill ${
-                                                            CustomerRejectedBookings.IsDealer_Confirm ===
-                                                            "Approved"
-                                                              ? "bg-success text-white"
-                                                              : CustomerRejectedBookings.IsDealer_Confirm ===
-                                                                  "Rejected"
-                                                                ? "bg-danger text-white"
-                                                                : CustomerRejectedBookings.IsDealer_Confirm ===
-                                                                    "Pending"
-                                                                  ? "bg-warning text-dark"
-                                                                  : "bg-secondary text-white"
-                                                          }`}
-                                                        >
-                                                          {
-                                                            CustomerRejectedBookings.IsDealer_Confirm
-                                                          }
-                                                        </span>
-                                                      )}
-                                                  </td>
-                                                  <td className="text-end fw-bold dlr-column">
-                                                    {(
-                                                      Number(
-                                                        CustomerRejectedBookings.DealerSparePrice ||
-                                                          0,
-                                                      ) +
-                                                      Number(
-                                                        CustomerRejectedBookings.DealerPrice ||
-                                                          0,
-                                                      ) +
-                                                      Number(
-                                                        CustomerRejectedBookings.DealerGSTAmount ||
-                                                          0,
-                                                      )
-                                                    ).toFixed(2)}
-                                                  </td>
-                                                  <td className="text-end fw-bold text-primary">
-                                                    {totalPrice.toFixed(2)}
-                                                  </td>
-                                                  <td className="text-center">
-                                                    <button
-                                                      className="btn btn-sm btn-primary-600"
-                                                      onClick={() =>
-                                                        handleRevertService(
-                                                          CustomerRejectedBookings,
-                                                        )
-                                                      }
-                                                      disabled={
-                                                        revertingServiceId ===
-                                                        CustomerRejectedBookings.Id
-                                                      }
-                                                    >
-                                                      {revertingServiceId ===
-                                                      CustomerRejectedBookings.Id ? ( // <--- SHOW SPINNER
-                                                        <>
-                                                          <span
-                                                            className="spinner-border spinner-border-sm"
-                                                            role="status"
-                                                            aria-hidden="true"
-                                                          ></span>
-                                                          Reverting...
-                                                        </>
-                                                      ) : (
-                                                        <>
-                                                          <i className="bi bi-arrow-counterclockwise me-1"></i>
-                                                          Revert
-                                                        </>
-                                                      )}
-                                                    </button>
-                                                  </td>
-                                                </tr>
-                                              );
-                                            },
-                                          )}
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
+                        
                             {customerRejectedComparisonServices.length > 0 && (
                               <div className="card mb-4 mt-4 shadow-sm pricing-intelligence-card">
                                 <div className="">
@@ -8151,13 +7736,7 @@ const scheduledStartTime = getScheduledStartTime();
                                           <Accordion
                                             key={service.id}
                                             className="service-compare-card"
-                                            defaultActiveKey={
-                                              shouldKeepServiceAccordionOpen(
-                                                service,
-                                              )
-                                                ? `rejected-${service.id}`
-                                                : undefined
-                                            }
+                                            defaultActiveKey={null}
                                           >
                                             <Accordion.Item
                                               eventKey={`rejected-${service.id}`}
@@ -8264,6 +7843,9 @@ const scheduledStartTime = getScheduledStartTime();
                                                 it back into the active flow.
                                               </div>
                                               <div>
+                                                 {
+                                                    !hideAllActions &&
+                                                    bookingData?.BookingStatus !== "Cancelled" && (
                                                 <button
                                                   className="btn btn-sm btn-primary-600"
                                                   onClick={() =>
@@ -8293,6 +7875,7 @@ const scheduledStartTime = getScheduledStartTime();
                                                     </>
                                                   )}
                                                 </button>
+                                                    )}
                                               </div>
                                             </div>
 
@@ -9866,6 +9449,12 @@ const scheduledStartTime = getScheduledStartTime();
               <DealerStatusAccordion
                 dealerAddOnApproval={bookingData?.DealerAddOnApproval}
               />
+              {/* ================= TICKETS DATA ACCORDION ================= */}
+               <TicketsAccordion tickets={bookingData?.Tickets} />
+
+              {/* ================= ADDONS/REWORK TRACKING ACCORDION ================= */}
+                <ReworkTrackingAccordion addonsTracking={bookingData?.AddonsTracking} />
+
               {/* ================= Inspection Details ================= */}
               <InspectionDetailsAccordion
                 inspectionTracking={bookingData?.InspectionTracking}

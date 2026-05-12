@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import DataTable from "react-data-table-component";
 import { Icon } from "@iconify/react";
 import Swal from "sweetalert2";
 import axios from "axios";
@@ -1158,13 +1157,13 @@ const DealerBookingsView = () => {
       sortable: true,
     },
 
-    {
-      name: "Cust. Status",
-      selector: (row) => (row.isInclude ? "" : row.status),
-      right: true,
-      width: "130px",
-      sortable: true,
-    },
+    // {
+    //   name: "Cust. Status",
+    //   selector: (row) => (row.isInclude ? "" : row.status),
+    //   right: true,
+    //   width: "130px",
+    //   sortable: true,
+    // },
     {
       name: "Actions",
       cell: (row, index) =>
@@ -1503,32 +1502,250 @@ const DealerBookingsView = () => {
                   Doorstep service booking: dealer can review and approve pricing here, but service completion must be updated by the assigned technician from the mobile application.
                 </div>
               )}
-              <DataTable
-                columns={columns}
-                data={flattenedRows}
-                fixedHeader
-                fixedHeaderScrollHeight="420px"
-                // pagination
-                highlightOnHover
-                responsive
-                striped
-                persistTableHead
-                noDataComponent="No items added yet"
-                defaultSortField="CreatedDate"
-                defaultSortAsc={false}
-                conditionalRowStyles={[
-                  {
-                    when: (row) =>
-                      row._apiId &&
-                      !row.isInclude &&
-                      initialItemsSnapshot[row._apiId] !== undefined &&
-                      getItemFingerprint(row) !== initialItemsSnapshot[row._apiId],
-                    style: {
-                      backgroundColor: "rgba(13, 148, 136, 0.12)",
-                    },
-                  },
-                ]}
-              />
+              {flattenedRows.length === 0 ? (
+                <div className="text-muted">No items added yet</div>
+              ) : (
+                <div className="d-flex flex-column gap-3">
+                  {flattenedRows.map((row) => {
+                    const isApproved = row.isDealer_Confirm?.toString().trim().toLowerCase() === "approved";
+                    const isCompleted = row.addOnStatus?.toString().trim().toLowerCase() === "servicecompleted";
+                    const isDoorstepService = isDoorstepServiceType(getServiceLocationType(row));
+                    const addOnStatus = row.addOnStatus?.toString().trim().toLowerCase();
+                    const isInProgressOrRework = addOnStatus === "inprogress" || addOnStatus === "rework";
+                    const isInPending = addOnStatus === "" || addOnStatus === null || addOnStatus === undefined || addOnStatus === "null";
+                    const isLocked = isCompleted || isApproved;
+
+                    const partTotal =
+                      row.dealerSparePrice !== null &&
+                      row.dealerSparePrice !== undefined &&
+                      row.dealerSparePrice !== ""
+                        ? Number(row.dealerSparePrice)
+                        : 0;
+                    const serviceCharge =
+                      row.dealerServicePrice !== null &&
+                      row.dealerServicePrice !== undefined &&
+                      row.dealerServicePrice !== ""
+                        ? Number(row.dealerServicePrice)
+                        : 0;
+                    const gstAmount =
+                      row.gstPrice !== null &&
+                      row.gstPrice !== undefined &&
+                      row.gstPrice !== ""
+                        ? Number(row.gstPrice)
+                        : ((partTotal + serviceCharge) * (Number(row.gstPercent) || 18)) / 100;
+                    const totalAmount = partTotal + serviceCharge + gstAmount;
+
+                    return (
+                      <div
+                        key={row.__id}
+                        className="border rounded-4 bg-white px-3 px-md-4 py-3 shadow-sm"
+                        style={{ borderColor: "#e9ecef" }}
+                      >
+                        <div className="d-flex justify-content-between align-items-start gap-3 pb-3 border-bottom flex-wrap">
+                          <div className="d-flex align-items-start gap-3">
+                            <div className="d-flex flex-column">
+                              <h6 className="mb-1 fw-bold">{row.name}  <span className="badge bg-primary-subtle text-primary">{row.type || "Service"}</span>
+                             <span className="text-muted fs-6 ms-3"> <small>Status: </small></span>
+                              <span className={`badge ms-2 ${row.addOnStatus === "ServiceCompleted" ? "bg-success" : row.addOnStatus === "InProgress" ? "bg-warning" : row.addOnStatus === "Rework" ? "bg-danger" : "bg-primary"}`}>
+                                {
+                                 row.addOnStatus === "ServiceCompleted" ? "Completed" : row.addOnStatus === "InProgress" ? "In Progress" : row.addOnStatus === "Rework" ? "Rework" : "Pending"
+                                }
+                                </span>
+                              </h6>
+                              {/* <small className="text-muted">
+                                Booking ID: {row.BookingTrackID || row.bookingTrackID || row.BookingID || row.bookingID || row.LeadID || row.LeadId || "-"}
+                              </small> */}
+                            </div>
+                          </div>
+                          <div className="text-end ms-auto">
+                            <p className="mb-0 fw-bold text-success fs-5"><small className="text-muted fs-6">Total Amount: </small>₹{totalAmount.toFixed(0)}</p>
+                           
+                          </div>
+                        </div>
+
+                        <div className="row g-3 align-items-end">
+                          <div className="col-6 col-md-2">
+                            <small className="text-muted d-block mb-1">Part Price</small>
+                            <input
+                              type="number"
+                              className="form-control form-control-sm"
+                              min={0}
+                              placeholder="0"
+                              value={row.dealerBasePrice === "" || row.dealerBasePrice === 0 ? "" : row.dealerBasePrice}
+                              disabled={isLocked}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                markRowAmountEntered(row.addedItemsIndex);
+                                if (val === "") {
+                                  updateTableRow(row.addedItemsIndex, { dealerBasePrice: "" });
+                                  return;
+                                }
+                                const dealerBasePrice = Number(val);
+                                if (isNaN(dealerBasePrice) || dealerBasePrice < 0) return;
+                                const quantity = Number(row.quantity) || 1;
+                                const newPartTotal = dealerBasePrice * quantity;
+                                const baseAmount = newPartTotal + (Number(row.dealerServicePrice) || 0);
+                                const gstPrice = ((baseAmount * (Number(row.gstPercent) || 18)) / 100);
+                                const percentAmount = Number(
+                                  (((newPartTotal + (Number(row.dealerServicePrice) || 0) + gstPrice) * Number(row.percentage || 0)) / 100).toFixed(2),
+                                );
+                                updateTableRow(row.addedItemsIndex, {
+                                  dealerBasePrice,
+                                  dealerSparePrice: newPartTotal,
+                                  gstPrice: Number(gstPrice.toFixed(2)),
+                                  percentAmount,
+                                });
+                              }}
+                            />
+                          </div>
+                          <div className="col-6 col-md-2">
+                            <small className="text-muted d-block mb-1">Quantity</small>
+                            <input
+                              type="number"
+                              className="form-control form-control-sm"
+                              value={row.quantity || 1}
+                              disabled
+                            />
+                          </div>
+                          <div className="col-6 col-md-2">
+                            <small className="text-muted d-block mb-1">Service Charge</small>
+                            <input
+                              type="number"
+                              className="form-control form-control-sm"
+                              min={0}
+                              placeholder="0"
+                              value={row.dealerServicePrice === "" || row.dealerServicePrice === 0 ? "" : row.dealerServicePrice}
+                              disabled={isLocked}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                markRowAmountEntered(row.addedItemsIndex);
+                                if (val === "") {
+                                  updateTableRow(row.addedItemsIndex, { dealerServicePrice: "" });
+                                  return;
+                                }
+                                const dealerServicePrice = Number(val);
+                                if (isNaN(dealerServicePrice) || dealerServicePrice < 0) return;
+                                const updatedPartTotal = Number(row.dealerSparePrice) || 0;
+                                const baseAmount = updatedPartTotal + dealerServicePrice;
+                                const gstPrice = ((baseAmount * (Number(row.gstPercent) || 18)) / 100);
+                                const percentAmount = Number(
+                                  (((updatedPartTotal + dealerServicePrice + gstPrice) * Number(row.percentage || 0)) / 100).toFixed(2),
+                                );
+                                updateTableRow(row.addedItemsIndex, {
+                                  dealerServicePrice,
+                                  gstPrice: Number(gstPrice.toFixed(2)),
+                                  percentAmount,
+                                });
+                              }}
+                            />
+                          </div>
+                          <div className="col-6 col-md-2">
+                            <small className="text-muted d-block mb-1">GST ({Number(row.gstPercent) || 18}%)</small>
+                            <input
+                              type="number"
+                              className="form-control form-control-sm"
+                              value={`${row.gstPercent === "" || row.gstPercent === 0 ? "" : row.gstPercent}` || 18}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                updateTableRow(row.addedItemsIndex, { gstPercent: val });
+                                markRowAmountEntered(row.addedItemsIndex);
+                                if (val === "") {
+                                  updateTableRow(row.addedItemsIndex, { gstPercent: "" });
+                                  return;
+                                }
+                                const gstPercent = Number(val);
+                                if (isNaN(gstPercent) || gstPercent < 0) return;
+                                const partTotal = Number(row.dealerSparePrice) || 0;
+                                const serviceCharge = Number(row.dealerServicePrice) || 0;
+                                const baseAmount = partTotal + serviceCharge;
+                                const gstPrice = (baseAmount * gstPercent) / 100;
+                                const percentAmount = Number(
+                                  (((partTotal + serviceCharge + gstPrice) * Number(row.percentage || 0)) / 100).toFixed(2),
+                                );
+                                updateTableRow(row.addedItemsIndex, {
+                                  gstPercent,
+                                  gstPrice: Number(gstPrice.toFixed(2)),
+                                  percentAmount,
+                                });
+                              }}
+                              disabled={isLocked}
+                            />
+                          </div>
+                          <div className="col-6 col-md-2">
+                            <small className="text-muted d-block mb-1">GST Amount</small>
+                            <input
+                              type="number"
+                              className="form-control form-control-sm"
+                              value={`${gstAmount.toFixed(2)}`}
+                              disabled
+                            />
+                          </div>
+                          <div className="col-12 col-md-2 d-flex flex-column">
+                            <small className="text-muted d-block mb-1 opacity-0">Action</small>
+                            <div className="d-flex align-items-center gap-2 flex-wrap">
+                              {row.isDealer_Confirm === "Pending" && !row.isEditing && (
+                                <>
+                                  <button
+                                    className="btn btn-success btn-sm px-4"
+                                    style={{ minHeight: "31px" }}
+                                    onClick={() => handleDealerApproveReject(row.addedItemsIndex, "approve")}
+                                    disabled={!hasAmountEnteredForRow(row)}
+                                    title={hasAmountEnteredForRow(row) ? "Accept Service" : "Enter amount to enable"}
+                                  >
+                                    Accept
+                                  </button>
+                                  <button
+                                    className="btn btn-outline-danger btn-sm px-4"
+                                    style={{ minHeight: "31px" }}
+                                    onClick={() => handleDealerApproveReject(row.addedItemsIndex, "reject")}
+                                    title="Reject Service"
+                                  >
+                                    Reject
+                                  </button>
+                                </>
+                              )}
+
+                              {isApproved && isCompleted && (
+                                <span className="badge bg-success d-inline-flex align-items-center px-3" style={{ minHeight: "31px" }}>
+                                  Completed
+                                </span>
+                              )}
+
+                              {isApproved && !isCompleted && isDoorstepService && (
+                                <span className="badge bg-info text-dark d-inline-flex align-items-center px-3" style={{ minHeight: "31px" }}>
+                                  Technician updates completion
+                                </span>
+                              )}
+
+                              {isApproved && !isCompleted && !isDoorstepService && isInProgressOrRework && (
+                                <button
+                                  onClick={() => handleServiceCompleted(row.addedItemsIndex, "ServiceCompleted")}
+                                  className="btn btn-warning btn-sm"
+                                  style={{ minHeight: "31px" }}
+                                  disabled={loadingIndex === row.addedItemsIndex}
+                                >
+                                  {loadingIndex === row.addedItemsIndex ? "Completing..." : "Mark as Completed"}
+                                </button>
+                              )}
+
+                              {isApproved && !isCompleted && !isDoorstepService && isInPending && (
+                                <button
+                                  onClick={() => handleServiceCompleted(row.addedItemsIndex, "InProgress")}
+                                  className="btn btn-warning btn-sm"
+                                  style={{ minHeight: "31px" }}
+                                  disabled={loadingIndex === row.addedItemsIndex}
+                                >
+                                  {loadingIndex === row.addedItemsIndex ? "Completing..." : "Is In Progress"}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
             {/* Totals */}
             {addedItems.length > 0 && (

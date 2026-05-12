@@ -722,7 +722,7 @@ const ServiceInspectionRequestLayer = () => {
           {/* Header */}
           <div className="d-flex flex-wrap justify-content-between align-items-center gap-12 mb-20">
             <div>
-              <h6 className="mb-4">Service Intake Form</h6>
+              <h6 className="mb-4">Inspection Form</h6>
               <span className="text-secondary-light text-sm">
                 Step {currentStep} of {STEPS.length}: {STEPS[currentStep - 1]}
               </span>

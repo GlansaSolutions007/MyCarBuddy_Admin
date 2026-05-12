@@ -5,7 +5,7 @@ import ServiceInspectionRequestLayer from "../components/ServiceInspectionReques
 const ServiceInspectionRequestPage = () => {
   return (
     <MasterLayout>
-      <Breadcrumb title="Service Intake Form" />
+      <Breadcrumb title="Inspection Form" />
       <ServiceInspectionRequestLayer />
     </MasterLayout>
   );

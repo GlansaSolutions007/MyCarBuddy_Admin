@@ -56,7 +56,7 @@ const DealerVehicleReportLayer = () => {
       <div className="d-flex justify-content-between align-items-center mb-3"></div>
 
       {/* --- MINI STATUS BAR (Compact Stats) --- */}
-      <div className="d-flex gap-3 mb-3 overflow-auto pb-1">
+      {/* <div className="d-flex gap-3 mb-3 overflow-auto pb-1">
         <div className="bg-white border rounded px-3 py-2 d-flex align-items-center shadow-sm">
           <span className="small text-muted me-2">Total:</span>
           <span className="fw-bold">{stats.total}</span>
@@ -71,7 +71,7 @@ const DealerVehicleReportLayer = () => {
           <span className="small text-muted me-2">Deliveries:</span>
           <span className="fw-bold text-success">{stats.deliveries}</span>
         </div>
-      </div>
+      </div> */}
 
       {/* --- SEARCH & TABLE CARD --- */}
       <div className="card shadow-sm border-0 rounded-3">
