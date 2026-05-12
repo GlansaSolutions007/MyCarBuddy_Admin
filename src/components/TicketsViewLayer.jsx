@@ -129,7 +129,6 @@ const TicketsViewLayer = () => {
       ),
       sortable: true,
       width: "150px",
-      width: "150px",
     },
     {
       name: "Customer",
@@ -143,13 +142,11 @@ const TicketsViewLayer = () => {
       ),
       sortable: true,
       width: "150px",
-      width: "150px",
     },
     {
       name: "Booking id",
       selector: (row) => row.BookingTrackID || "-",
       sortable: true,
-      width: "150px",
       width: "150px",
     },
     {
@@ -188,7 +185,6 @@ const TicketsViewLayer = () => {
       sortField: "CreatedDate",
       wrap: true,
       sortable: true,
-      width: "150px",
       width: "150px",
     },
     {
@@ -278,14 +274,12 @@ const TicketsViewLayer = () => {
       wrap: true,
       sortable: true,
       width: "200px",
-      width: "200px",
     },
     {
       name: "Description",
       selector: (row) => row.Description || row.TicketDescription || "-",
       wrap: true,
       sortable: true,
-      width: "150px",
       width: "150px",
     },
     {
