@@ -40,10 +40,11 @@ const TicketInnerLayer = () => {
   const role = localStorage.getItem("role");
   const isEmployee = role === "Employee";
   const userDetails = JSON.parse(localStorage.getItem("employeeData"));
-  const isDisabled =
-    !(role === "Admin" || userDetails?.Is_Head === 1) &&
-    ["cancelled", "closed"].includes(currentStatus);
-
+  // const isDisabled =
+  //   !(role === "Admin" || userDetails?.Is_Head === 1) &&
+  //   ["cancelled", "Closed"].includes(currentStatus);
+   const isClosed = ["closed", "cancelled"].includes(currentStatus);
+   const isDisabled = isClosed;
   // 🔹 Fetch ticket details
   const fetchTicket = async () => {
     setLoading(true);
@@ -646,7 +647,7 @@ const handleRequestRefund = async () => {
                    
                   </>
                 )}
-                {userDetails?.DeptId === 5 && userDetails?.Is_Head === 1 && (
+                {userDetails?.DeptId === 5 && userDetails?.Is_Head === 1 && !isClosed && (
                   isRefundRequested ? (
                     <span className="badge bg-warning text-dark d-inline-flex align-items-center px-3 py-2">
                       Already requested
@@ -877,8 +878,8 @@ const handleRequestRefund = async () => {
                           <strong>Booking ID:</strong>{" "}
                           {/* {ticket.BookingTrackID || "-"} */}
                            {ticket.BookingID ? (
-                          <Link
-                            to={`/complete-service-reports?bookingId=${ticket.BookingID}`}
+                          <Link 
+                            to={`/booking-view/${ticket.BookingID}`}
                             className="text-primary text-decoration-underline"
                             >
                              {ticket.BookingTrackID}
@@ -900,14 +901,14 @@ const handleRequestRefund = async () => {
                             "-"
                           )}
                         </div>
-                        <div className="col-sm-6 mb-10">
+                        {/* <div className="col-sm-6 mb-10">
                           <strong>Date:</strong>{" "}
                           {ticket.BookingDetails?.BookingDate || "-"}
                         </div>
                         <div className="col-sm-6 mb-10">
                           <strong>Time Slot:</strong>{" "}
                           {ticket.BookingDetails?.TimeSlot || "-"}
-                        </div>
+                        </div> */}
                         <div className="col-sm-6 mb-10">
                           <strong>Status:</strong>{" "}
                           {ticket.BookingStatus || "-"}
@@ -941,6 +942,7 @@ const handleRequestRefund = async () => {
                             name="accountHolderName"
                             value={accountDetails.accountHolderName}
                             onChange={handleAccountChange}
+                            disabled={isDisabled}
                           />
                         </div>
 
@@ -953,6 +955,7 @@ const handleRequestRefund = async () => {
                             value={accountDetails.accountNumber}
                             onChange={handleAccountChange}
                             onWheel={(e) => e.target.blur()}
+                            disabled={isDisabled}
                           />
                         </div>
 
@@ -965,6 +968,7 @@ const handleRequestRefund = async () => {
                             value={accountDetails.confirmAccountNumber}
                             onChange={handleAccountChange}
                             onWheel={(e) => e.target.blur()}
+                            disabled={isDisabled}
                           />
                         </div>
                         <div className="col-md-6">
@@ -975,6 +979,7 @@ const handleRequestRefund = async () => {
                             name="bankName"
                             value={accountDetails.bankName}
                             onChange={handleAccountChange}
+                            disabled={isDisabled}
                           />
                         </div>
 
@@ -987,6 +992,7 @@ const handleRequestRefund = async () => {
                             value={accountDetails.ifscCode}
                             onChange={handleAccountChange}
                             style={{ textTransform: "uppercase" }}
+                            disabled={isDisabled}
                           />
                         </div>
                         <div className="col-md-12">
@@ -997,6 +1003,7 @@ const handleRequestRefund = async () => {
                             name="branch"
                             value={accountDetails.branch}
                             onChange={handleAccountChange}
+                            disabled={isDisabled}
                           />
                         </div>
 
@@ -1006,7 +1013,7 @@ const handleRequestRefund = async () => {
                         <button
                           className="btn btn-primary-600 btn-sm"
                           onClick={handleSubmitAccountDetails}
-                          disabled={isSubmitting}
+                          disabled={isSubmitting || isDisabled}
                         >
                           {isSubmitting ? "Submitting..." : "Submit Details"}
                         </button>

@@ -129,6 +129,7 @@ const TicketsViewLayer = () => {
       ),
       sortable: true,
       width: "150px",
+      width: "150px",
     },
     {
       name: "Customer",
@@ -137,15 +138,18 @@ const TicketsViewLayer = () => {
           <span className="fw-bold">{row.CustomerName || "N/A"}</span>
           <br />
           {row.PhoneNumber || ""}
+          {row.PhoneNumber || ""}
         </>
       ),
       sortable: true,
+      width: "150px",
       width: "150px",
     },
     {
       name: "Booking id",
       selector: (row) => row.BookingTrackID || "-",
       sortable: true,
+      width: "150px",
       width: "150px",
     },
     {
@@ -172,10 +176,19 @@ const TicketsViewLayer = () => {
              <span className="d-flex justify-content-center">{time}</span>
           </>
         );
+        return (
+          <>
+          <div className="d-flex justify-content-center"> 
+            <span className="fw-bold">{formattedDate}</span>
+            </div>
+             <span className="d-flex justify-content-center">{time}</span>
+          </>
+        );
       },
       sortField: "CreatedDate",
       wrap: true,
       sortable: true,
+      width: "150px",
       width: "150px",
     },
     {
@@ -265,12 +278,14 @@ const TicketsViewLayer = () => {
       wrap: true,
       sortable: true,
       width: "200px",
+      width: "200px",
     },
     {
       name: "Description",
       selector: (row) => row.Description || row.TicketDescription || "-",
       wrap: true,
       sortable: true,
+      width: "150px",
       width: "150px",
     },
     {
