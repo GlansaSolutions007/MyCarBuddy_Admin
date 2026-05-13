@@ -126,6 +126,7 @@ import AssignTechnicianPage from "./pages/AssignTechnicianpage";
 import ServicesRatingPage from "./pages/ServicesRatingPage";
 import ServiceInspectionRequestPage from "./pages/ServiceInspectionRequestPage";
 import ServiceIntakeListPage from "./pages/ServiceIntakeListPage";
+import DealerServicesPage from "./pages/DealerServicesPage";
 
 function App() {
   return (
@@ -280,6 +281,7 @@ function App() {
           <Route exact path='/ratings' element={<ServicesRatingPage />} />
           <Route exact path='/service-intake-form' element={<ServiceInspectionRequestPage />} />
           <Route exact path='/service-intake-list' element={<ServiceIntakeListPage />} />
+          <Route exact path='/dealer-services' element={<DealerServicesPage />} />
         </Route>
 
         {/* //extra  pages */}

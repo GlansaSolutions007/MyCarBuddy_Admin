@@ -462,6 +462,24 @@ const RevenueReports = () => {
       width: "150px",
     },
     {
+      name: "Cust. Name",
+      selector: (r) => r.CustFullName,
+      sortable: true,
+      width: "150px",
+    },
+    {
+      name: "Phone",
+      selector: (r) => r.CustPhoneNumber,
+      width: "150px",
+    },
+    {
+      name: "Email",
+      selector: (r) => r.CustEmail,
+      width: "150px",
+      sortable: true,
+      wrap: true,
+    },
+    {
       name: "Booking Date",
       selector: (r) =>
         r.BookingDate
@@ -480,22 +498,15 @@ const RevenueReports = () => {
       wrap: true,
     },
     {
-      name: "Cust. Name",
-      selector: (r) => r.CustFullName,
+      name: "Type",
+      selector: (r) => r.ServiceType || "-",
+      cell: (r) => (
+        <span className="badge bg-primary-subtle text-dark px-3 py-2 fw-medium rounded-pill">
+          {r.ServiceType || "-"}
+        </span>
+      ),
       sortable: true,
-      width: "150px",
-    },
-    {
-      name: "Phone",
-      selector: (r) => r.CustPhoneNumber,
-      width: "150px",
-    },
-    {
-      name: "Email",
-      selector: (r) => r.CustEmail,
-      width: "150px",
-      sortable: true,
-      wrap: true,
+      width: "170px",
     },
     {
       name: "Total Services",

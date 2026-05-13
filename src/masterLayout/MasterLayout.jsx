@@ -737,6 +737,17 @@ const MasterLayout = ({ children }) => {
           permission: "ratings_view",
           page: "Ratings",
         },
+        ...(role === "Dealer"
+          ? [
+            {
+              title: "All Services",
+              to: "/dealer-services",
+              color: "text-info-danger",
+              permission: "dealerservices_view",
+              page: "All Services",
+            },
+          ]
+        : []),
         // {
         //   title: "Service Intake Form",
         //   to: "/service-intake-form",
@@ -877,6 +888,12 @@ const MasterLayout = ({ children }) => {
                 permission: "vehiclereports_view",
                 page: "Vehicle Reports",
               },
+              {
+                title: "Dealer Report",
+                to: "/dealer-report",
+                permission: "dealerreport_view",
+                page: "Dealer Report",
+              },
             ]
           : []),
         {
@@ -897,16 +914,6 @@ const MasterLayout = ({ children }) => {
           permission: "revenuereports_view",
           page: "Revenue Reports",
         },
-        ...(role === "Dealer"
-          ? [
-            {
-              title: "Dealer Report",
-              to: "/dealer-report",
-              permission: "dealerreport_view",
-              page: "Dealer Report",
-            },
-          ]
-          : []),
       ],
     },
     {
