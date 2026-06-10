@@ -1,0 +1,502 @@
+Module,File,Line,Method,Endpoint,RequestFields,Client
+components,src/components/TicketInnerLayer.jsx,69,GET,{{window.URL.createObjectURL}},,axios
+components,src/components/TicketInnerLayer.jsx,71,GET,{{window.URL.createObjectURL}},,axios
+components,src/components/ExpenditureLayer.jsx,197,GET,{path} OR {{replace}}/{{path.replace}},,fetch
+components,src/components/CaseStudiesAddLayer.jsx,94,GET,{url},,fetch
+components,src/components/ServicePlanAddLayer.jsx,148,GET,{url},,fetch
+components,src/components/TicketInnerLayer.jsx,488,GET,{VITE_APIURL_IMAGE}TicketDocuments/{{rawName.trim}},,fetch
+services,src/services/notificationService.js,23,POST,{VITE_APIURL}/api/Notifications/SendNotification,,fetch
+components,src/components/ReasonLayer.jsx,28,GET,{VITE_APIURL}AfterServiceLeads,,axios
+components,src/components/TicketsAddLayer.jsx,38,GET,{VITE_APIURL}AfterServiceLeads,,axios
+components,src/components/ReasonLayer.jsx,57,POST,{VITE_APIURL}AfterServiceLeads,,axios
+components,src/components/ReasonLayer.jsx,53,PUT,{VITE_APIURL}AfterServiceLeads,,axios
+components,src/components/ReasonLayer.jsx,81,DELETE,{VITE_APIURL}AfterServiceLeads/{id},,axios
+components,src/components/TelecalerAssignBookingLayer.jsx,185,POST,{VITE_APIURL}Agents,,axios
+components,src/components/AssignSupervisorArea.jsx,118,POST,{VITE_APIURL}Area/AssignAreasToSupervisor,"areaIds, supervisorId, assignedBy",axios
+components,src/components/AreaLayer.jsx,197,DELETE,{VITE_APIURL}Area/DeleteArea,areaId,axios
+components,src/components/AreaLayer.jsx,53,GET,{VITE_APIURL}Area/GetArea,,axios
+components,src/components/AssignSupervisorArea.jsx,36,GET,{VITE_APIURL}Area/GetArea,,axios
+components,src/components/BasicInformationLayer.jsx,219,GET,{VITE_APIURL}Area/GetArea,,axios
+components,src/components/LeadViewLayer.jsx,587,GET,{VITE_APIURL}Area/GetArea,,axios
+components,src/components/AssignSupervisorArea.jsx,90,GET,{VITE_APIURL}Area/GetAreaWiseSupervisor,,axios
+components,src/components/AreaLayer.jsx,125,POST,{VITE_APIURL}Area/InsertArea,"areaName, stateId, cityId, pincode, createdBy, isActive",axios
+components,src/components/AreaLayer.jsx,105,PUT,{VITE_APIURL}Area/UpdateArea,"areaId, areaName, stateId, cityId, pincode, isActive, modifiedBy",axios
+components,src/components/SupervisorAssignBookingLayer.jsx,635,POST,{VITE_APIURL}AssignSupervisor,"TechID, BookingID, AssingedTimeSlot, SupervisorID, TimeSlot, AssignedBy",axios
+components,src/components/SupervisorAssignBookingLayer.jsx,608,PUT,{VITE_APIURL}AssignSupervisor,"TechID, BookingID, AssingedTimeSlot, SupervisorID, TimeSlot, AssignedBy",axios
+components,src/components/SignInLayer.jsx,40,POST,{VITE_APIURL}Auth/Admin-login,,axios
+components,src/components/ViewProfileLayer.jsx,82,GET,{VITE_APIURL}Auth/adminid?adminid={{localStorage.getItem}},,axios
+masterLayout,src/masterLayout/MasterLayout.jsx,206,GET,{VITE_APIURL}Auth/adminid?adminid=2,,axios
+utils,src/utils/axiosInterceptor.js,83,POST,{VITE_APIURL}Auth/refresh,refreshToken,axios
+components,src/components/ResetPasswordLayer.jsx,35,POST,{VITE_APIURL}Auth/technician-login,,axios
+components,src/components/AddBlogLayer.jsx,74,POST,{VITE_APIURL}Blogs/InsertBlog,"PostTitle, PostCategory, PostDescription, Thumbnai1",axios
+components,src/components/SupervisorAssignBookingLayer.jsx,404,POST,{VITE_APIURL}Booking_Assignments,"TechID, BookingID, AssingedTimeSlot, SupervisorID, TimeSlot, AssignedBy",axios
+components,src/components/LeaveEditLayer.jsx,46,GET,{VITE_APIURL}Booking/ByTechnician/{techId}?from={fromDate}&to={toDate},,axios
+components,src/components/TicketsAddLayer.jsx,109,GET,{VITE_APIURL}bookings,,axios
+components,src/components/BookingLayer.jsx,143,GET,{VITE_APIURL}Bookings,,axios
+components,src/components/BookingReportSortingLayer.jsx,79,GET,{VITE_APIURL}Bookings,,axios
+components,src/components/CompleteServiceReportLayer.jsx,1029,GET,{VITE_APIURL}Bookings,,axios
+components,src/components/ExpenditureLayer.jsx,134,GET,{VITE_APIURL}Bookings,,axios
+components,src/components/ServiceTimelineBoard.jsx,36,GET,{VITE_APIURL}Bookings,,axios
+components,src/components/SupervisorAssignBookingLayer.jsx,110,GET,{VITE_APIURL}Bookings,,axios
+components,src/components/TelecalerAssignBookingLayer.jsx,51,GET,{VITE_APIURL}Bookings,,axios
+components,src/components/FieldAdvisorDashboardLayer.jsx,73,GET,{VITE_APIURL}Bookings?employeeId={{localStorage.getItem}},,axios
+components/child,src/components/child/UnitCountSeven.jsx,51,GET,{VITE_APIURL}Bookings?IsRefunded=true,,axios
+components,src/components/RefundLayer.jsx,63,GET,{VITE_APIURL}Bookings?IsRefunded=true,,axios
+components,src/components/DealerDashboardLayer.jsx,211,GET,{VITE_APIURL}Bookings?type=Dealer&dealerid={{localStorage.getItem}},,axios
+components,src/components/CustomerViewLayer.jsx,55,GET,{VITE_APIURL}Bookings/{CustomerID},,axios
+components,src/components/BookingLayer.jsx,328,PUT,{VITE_APIURL}Bookings/assign-technician,"bookingIds, supervisorHeadId, fieldAdvisorId, bookingID, techID, assingedTimeSlot, role",axios
+components,src/components/BookingReportSortingLayer.jsx,204,PUT,{VITE_APIURL}Bookings/assign-technician,"bookingID, techID, assingedTimeSlot, role",axios
+components,src/components/TelecalerAssignBookingLayer.jsx,100,PUT,{VITE_APIURL}Bookings/assign-technician,"TechID, BookingID, AssingedTimeSlot",axios
+components,src/components/BookingViewLayer.jsx,1755,PUT,{VITE_APIURL}Bookings/booking-status,"bookingID, bookingStatus",axios
+components,src/components/CompleteServiceReportLayer.jsx,1053,GET,{VITE_APIURL}Bookings/BookingId?Id={{searchParams.get}},,axios
+components,src/components/AssignTechnicianLayer.jsx,174,GET,{VITE_APIURL}Bookings/BookingId?Id={bookingId},,axios
+components,src/components/BasicInformationLayer.jsx,96,GET,{VITE_APIURL}Bookings/BookingId?Id={bookingId},,axios
+components,src/components/InvoiceViewLayer.jsx,39,GET,{VITE_APIURL}Bookings/BookingId?Id={bookingId},,axios
+components,src/components/RefundLayer.jsx,138,GET,{VITE_APIURL}Bookings/BookingId?Id={bookingId},,axios
+components,src/components/CompleteServiceReportLayer.jsx,1079,GET,{VITE_APIURL}Bookings/BookingId?Id={OptionalMemberExpression} OR {OptionalMemberExpression},,axios
+components,src/components/DealerDashboardLayer.jsx,156,GET,{VITE_APIURL}Bookings/BookingId?Id={priceModalRow.booking.BookingID}&dealerId={{localStorage.getItem}},,axios
+components,src/components/BookingViewLayer.jsx,2572,POST,{VITE_APIURL}Bookings/Cancel,BookingID,axios
+components,src/components/BookingViewLayer.jsx,1741,POST,{VITE_APIURL}Bookings/convert-inspection-to-service,"bookingId, confirmStatus",axios
+components,src/components/TechnicianViewLayer.jsx,51,GET,{VITE_APIURL}Bookings/GetAssignedBookings?Id={TechnicianID},,axios
+components,src/components/FieldAdvisorDashboardLayer.jsx,211,GET,{VITE_APIURL}Bookings/GetBookingServicesByRole?role=FieldAdvisor&employeeId={{localStorage.getItem}}&type=notconfirm,,axios
+components,src/components/SupervisorHeadDashboardLayer.jsx,125,GET,{VITE_APIURL}Bookings/GetBookingServicesByRole?role=Supervisor&employeeId={{localStorage.getItem}}&type=notconfirm,,axios
+services,src/services/notificationService.js,52,GET,{VITE_APIURL}Bookings/notifications?userId={userId}&userRole={{roleFromStorage.toLowerCase}} OR customer,,axios
+services,src/services/notificationService.js,72,PUT,{VITE_APIURL}Bookings/notifications/{notificationId}/read,,axios
+components,src/components/BookingViewLayer.jsx,5185,POST,{VITE_APIURL}cancellations,"BookingID, TechID, AssingedTimeSlot, Role, AssignedBy, bookingIds, supervisorHeadId, fieldAdvisorId, assignTimeSlot, endTimeslot, bookingID, assignDate, role, techID, addOnId, leadId, ServiceType, timeSlot, ids, supervisorID, addOns, addOnID, is_Completed, completedBy, completedRole, statusName, ticketId, bookingId, addOnIds, reason, createdBy, scheduledDate, timeslot, status, lastReworkID, cancelledBy, refundStatus",axios
+components,src/components/CaseStudiesAddLayer.jsx,63,GET,{VITE_APIURL}Category,,axios
+components,src/components/CaseStudiesLayer.jsx,42,GET,{VITE_APIURL}Category,,axios
+components,src/components/DealerAddLayer.jsx,243,GET,{VITE_APIURL}Category,,axios
+components,src/components/ExplanationsAddLayer.jsx,75,GET,{VITE_APIURL}Category,,axios
+components,src/components/FaqsAddLayer.jsx,74,GET,{VITE_APIURL}Category,,axios
+components,src/components/IncludesLayer.jsx,79,GET,{VITE_APIURL}Category,,axios
+components,src/components/SeoAddLayer.jsx,76,GET,{VITE_APIURL}Category,,axios
+components,src/components/ServiceCategoriesLayer.jsx,83,GET,{VITE_APIURL}Category,,axios
+components,src/components/ServicePlanAddLayer.jsx,117,GET,{VITE_APIURL}Category,,axios
+components,src/components/ServicePlanListLayer.jsx,40,GET,{VITE_APIURL}Category,,axios
+components,src/components/ServiceSubCategories1Layer.jsx,72,GET,{VITE_APIURL}Category,,axios
+components,src/components/ServiceSubCategories2Layer.jsx,67,GET,{VITE_APIURL}Category,,axios
+components,src/components/ServiceCategoryViewLayer.jsx,20,GET,{VITE_APIURL}Category/{CategoryID},,axios
+components,src/components/ServiceCategoriesLayer.jsx,120,POST,{VITE_APIURL}Category/AddCategory,"{key}, IconImage1, ThumbnailImage1, ModifiedBy, CreatedBy",axios
+components,src/components/ServiceCategoriesLayer.jsx,117,PUT,{VITE_APIURL}Category/UpdateCategory,"{key}, IconImage1, ThumbnailImage1, ModifiedBy, CreatedBy",axios
+components,src/components/AreaLayer.jsx,73,GET,{VITE_APIURL}City,,axios
+components,src/components/CityLayer.jsx,49,GET,{VITE_APIURL}City,,axios
+components,src/components/CustomerAddLayer.jsx,75,GET,{VITE_APIURL}City,,axios
+components,src/components/DealerAddLayer.jsx,235,GET,{VITE_APIURL}City,,axios
+components,src/components/DealerProfileLayer.jsx,158,GET,{VITE_APIURL}City,,axios
+components,src/components/DistributorLayer.jsx,104,GET,{VITE_APIURL}City,,axios
+components,src/components/EmployeeAddLayer.jsx,191,GET,{VITE_APIURL}City,,axios
+components,src/components/TechniciansAddLayer.jsx,137,GET,{VITE_APIURL}City,,axios
+components,src/components/CityLayer.jsx,90,POST,{VITE_APIURL}City,"CityName, StateID, Pincode, IsActive",axios
+components,src/components/CityLayer.jsx,76,PUT,{VITE_APIURL}City,"CityName, IsActive, Pincode, StateID, CityID",axios
+components,src/components/CompanyInformationLayer.jsx,31,GET,{VITE_APIURL}CompanyInfo,,axios
+components,src/components/CompanyInformationLayer.jsx,126,DELETE,{VITE_APIURL}CompanyInfo/{id},,axios
+components,src/components/CompanyInformationLayer.jsx,77,POST,{VITE_APIURL}CompanyInfo/InsertCompanyInfo,"...{formData}, ModifiedBy, ...{rest}, CreatedBy",axios
+components,src/components/CompanyInformationLayer.jsx,64,PUT,{VITE_APIURL}CompanyInfo/UpdateCompanyInfo,"...{formData}, ModifiedBy, ...{rest}, CreatedBy",axios
+components,src/components/ContactsLayer.jsx,16,GET,{VITE_APIURL}Contact,,axios
+components,src/components/DealerServicePriceLayer.jsx,16,GET,{VITE_APIURL}Contact,,axios
+components,src/components/CouponLayer.jsx,31,GET,{VITE_APIURL}Coupons,,axios
+components,src/components/CouponLayer.jsx,80,POST,{VITE_APIURL}Coupons,"code, description, discountType, discountValue, validFrom, validTill, maxUsagePerUser, isActive, MaxDisAmount, MinBookingAmount, ...{ObjectExpression} OR {ObjectExpression}",axios
+components,src/components/CouponLayer.jsx,77,PUT,{VITE_APIURL}Coupons,"code, description, discountType, discountValue, validFrom, validTill, maxUsagePerUser, isActive, MaxDisAmount, MinBookingAmount, ...{ObjectExpression} OR {ObjectExpression}",axios
+components,src/components/TicketsAddLayer.jsx,85,GET,{VITE_APIURL}customer,,axios
+components,src/components/CustomerLayer.jsx,23,GET,{VITE_APIURL}Customer,,axios
+components,src/components/BasicInformationLayer.jsx,177,GET,{VITE_APIURL}Customer/get-customer-bank-details?customerId={customerId},,axios
+components,src/components/RefundLayer.jsx,88,GET,{VITE_APIURL}Customer/get-customer-bank-details?customerId={customerId},,axios
+components,src/components/RefundLayer.jsx,113,GET,{VITE_APIURL}Customer/get-customer-bank-details?customerId={customerId},,axios
+components,src/components/TicketInnerLayer.jsx,113,GET,{VITE_APIURL}Customer/get-customer-bank-details?customerId={customerId},,axios
+components,src/components/CustomerViewLayer.jsx,30,GET,{VITE_APIURL}Customer/Id?Id={CustomerID},,axios
+components,src/components/BasicInformationLayer.jsx,445,POST,{VITE_APIURL}Customer/upsert-customer-bank-details,"id, customerId, accountHolderName, bankName, accountNumber, ifscCode, branch, upiId, userId, Id, RegistrationNumber, BrandID, ModelID, FuelTypeID, KmDriven, YearOfPurchase, VehicleId, custID",axios
+components,src/components/TicketInnerLayer.jsx,320,POST,{VITE_APIURL}Customer/upsert-customer-bank-details,"id, customerId, accountHolderName, bankName, accountNumber, ifscCode, branch, upiId, userId",axios
+components/child,src/components/child/UnitCountSeven.jsx,37,GET,{VITE_APIURL}Dashboard,,axios
+components/child,src/components/child/IncomeVsExpense.jsx,14,GET,{VITE_APIURL}Dashboard/MothlyIncome,,axios
+components,src/components/BookServicesLayer.jsx,226,GET,{VITE_APIURL}Dealer,,axios
+components,src/components/EmployeeAddLayer.jsx,172,GET,{VITE_APIURL}Dealer,,axios
+components,src/components/ExpenditureLayer.jsx,118,GET,{VITE_APIURL}Dealer,,axios
+components,src/components/TechniciansAddLayer.jsx,144,GET,{VITE_APIURL}Dealer,,axios
+components,src/components/DealerAddLayer.jsx,385,POST,{VITE_APIURL}Dealer,"dealerID, distributorID, fullName, phoneNumber, email, passwordHash, stateID, cityID, address, gstNumber, createdDate, isActive, longitude, latitude, bankAccountNumber, branchName, ifscCode, bankName, categoryIds, modifiedDate, rating, commissionType, amount, dealerType, DistributorID, FullName, PhoneNumber, Email, PasswordHash, Address, StateID, CityID, IsActive, GSTNumber, CreatedDate, Longitude, Latitude, BankAccountNumber, BranchName, IFSCCode, BankName, CategoryIDs, Rating, CategoryNames",axios
+components,src/components/DealerAddLayer.jsx,344,PUT,{VITE_APIURL}Dealer,"dealerID, distributorID, fullName, phoneNumber, email, passwordHash, stateID, cityID, address, gstNumber, createdDate, isActive, longitude, latitude, bankAccountNumber, branchName, ifscCode, bankName, categoryIds, modifiedDate, rating, commissionType, amount, dealerType, DistributorID, FullName, PhoneNumber, Email, PasswordHash, Address, StateID, CityID, IsActive, GSTNumber, CreatedDate, Longitude, Latitude, BankAccountNumber, BranchName, IFSCCode, BankName, CategoryIDs, Rating, CategoryNames",axios
+components,src/components/DealerProfileLayer.jsx,228,PUT,{VITE_APIURL}Dealer,"dealerID, distributorID, fullName, phoneNumber, email, passwordHash, stateID, cityID, address, gstNumber, createdDate, modifiedDate, isActive, longitude, latitude, bankAccountNumber, branchName, ifscCode, bankName, categoryIds, rating, commissionType, amount, dealerType",axios
+components,src/components/DealerLayer.jsx,29,GET,{VITE_APIURL}Dealer OR {VITE_APIURL}Dealer?role={{localStorage.getItem}}&DistributorID={{localStorage.getItem}},,axios
+components,src/components/DealerViewLayer.jsx,21,GET,{VITE_APIURL}Dealer/{DealerID},,axios
+components,src/components/BookServicesLayer.jsx,1407,POST,{VITE_APIURL}Dealer/DealerApproveBookingBulk,"ids, type, status, dealerId, createdBy, reason",axios
+components,src/components/DealerBookingsView.jsx,541,POST,{VITE_APIURL}Dealer/DealerApproveBookingBulk,"ids, type, status, dealerId, createdBy",axios
+components,src/components/DealerProfileLayer.jsx,104,GET,{VITE_APIURL}Dealer/dealerid?dealerid={{localStorage.getItem}},,axios
+components,src/components/DealerAddLayer.jsx,157,GET,{VITE_APIURL}Dealer/dealerid?dealerid={DealerID},,axios
+components,src/components/BookingViewLayer.jsx,3370,POST,{VITE_APIURL}Dealer/GenerateDealerInvoice,"bookingID, dealerID",axios
+components,src/components/InvoiceViewLayer.jsx,87,POST,{VITE_APIURL}Dealer/GenerateDealerInvoice,"bookingID, dealerID",axios
+components,src/components/InvoiceViewLayer.jsx,280,POST,{VITE_APIURL}Dealer/GenerateDealerInvoice,"bookingID, dealerID",axios
+components,src/components/DealerDashboardLayer.jsx,180,GET,{VITE_APIURL}Dealer/GetDealerDashboardSummary?DealerID={{localStorage.getItem}},,axios
+components,src/components/DealerPaymentsLayer.jsx,59,GET,{VITE_APIURL}Dealer/GetDealerExpenditures,,axios
+components,src/components/DealerServicesLayer.jsx,36,GET,{VITE_APIURL}Dealer/GetDealerServicesByStatus?DealerID={{localStorage.getItem}},,axios
+components,src/components/InvoiceViewLayer.jsx,137,POST,{VITE_APIURL}Dealer/SendDealerInvoice,"bookingID, dealerID",axios
+components,src/components/DepartmentsLayer.jsx,37,GET,{VITE_APIURL}Departments,,axios
+components,src/components/DesignationsLayer.jsx,47,GET,{VITE_APIURL}Departments,,axios
+components,src/components/EmployeeAddLayer.jsx,376,GET,{VITE_APIURL}Departments,,axios
+components,src/components/EmployeeLayer.jsx,55,GET,{VITE_APIURL}Departments,,axios
+components,src/components/LeadsAssignLayer.jsx,148,GET,{VITE_APIURL}Departments,,axios
+components,src/components/SupervisorAssignBookingLayer.jsx,186,GET,{VITE_APIURL}Departments,,axios
+components,src/components/TelecalerAssignTicketLayer.jsx,76,GET,{VITE_APIURL}Departments,,axios
+components,src/components/DepartmentsLayer.jsx,78,POST,{VITE_APIURL}Departments,"departmentName, createdBy, isActive",axios
+components,src/components/DepartmentsLayer.jsx,66,PUT,{VITE_APIURL}Departments,"deptId, departmentName, modifiedBy, isActive",axios
+components,src/components/DesignationsLayer.jsx,66,GET,{VITE_APIURL}Designations,,axios
+components,src/components/EmployeeAddLayer.jsx,442,GET,{VITE_APIURL}Designations,,axios
+components,src/components/DesignationsLayer.jsx,119,POST,{VITE_APIURL}Designations,"deptId, designation_name, level, is_Head",axios
+components,src/components/DesignationsLayer.jsx,112,PUT,{VITE_APIURL}Designations,"...{payload}, id",axios
+components,src/components/DealerAddLayer.jsx,217,GET,{VITE_APIURL}Distributors,,axios
+components,src/components/DistributorLayer.jsx,62,GET,{VITE_APIURL}Distributors,,axios
+components,src/components/TechniciansAddLayer.jsx,163,GET,{VITE_APIURL}Distributors,,axios
+components,src/components/DistributorLayer.jsx,165,POST,{VITE_APIURL}Distributors,,axios
+components,src/components/DistributorLayer.jsx,157,PUT,{VITE_APIURL}Distributors,,axios
+components,src/components/AssignSupervisorArea.jsx,59,GET,{VITE_APIURL}Employee,,axios
+components,src/components/AssignTechnicianLayer.jsx,193,GET,{VITE_APIURL}Employee,,axios
+components,src/components/AssignTechnicianLayer.jsx,201,GET,{VITE_APIURL}Employee,,axios
+components,src/components/BasicInformationLayer.jsx,221,GET,{VITE_APIURL}Employee,,axios
+components,src/components/BookingLayer.jsx,175,GET,{VITE_APIURL}Employee,,axios
+components,src/components/BookingLayer.jsx,206,GET,{VITE_APIURL}Employee,,axios
+components,src/components/BookingReportSortingLayer.jsx,111,GET,{VITE_APIURL}Employee,,axios
+components,src/components/BookingViewLayer.jsx,910,GET,{VITE_APIURL}Employee,,axios
+components,src/components/BookingViewLayer.jsx,939,GET,{VITE_APIURL}Employee,,axios
+components,src/components/EmployeeAddLayer.jsx,397,GET,{VITE_APIURL}Employee,,axios
+components,src/components/EmployeeLayer.jsx,45,GET,{VITE_APIURL}Employee,,axios
+components,src/components/ForwardLeadsLayer.jsx,86,GET,{VITE_APIURL}Employee,,axios
+components,src/components/LeadsAssignLayer.jsx,170,GET,{VITE_APIURL}Employee,,axios
+components,src/components/LeadsAssignLayer.jsx,193,GET,{VITE_APIURL}Employee,,axios
+components,src/components/LeadViewLayer.jsx,552,GET,{VITE_APIURL}Employee,,axios
+components,src/components/OrganicLeadsLayer.jsx,139,GET,{VITE_APIURL}Employee,,axios
+components,src/components/SupervisorAssignBookingLayer.jsx,141,GET,{VITE_APIURL}Employee,,axios
+components,src/components/SupervisorAssignBookingLayer.jsx,208,GET,{VITE_APIURL}Employee,,axios
+components,src/components/SupervisorAssignBookingLayer.jsx,234,GET,{VITE_APIURL}Employee,,axios
+components,src/components/TelecalerAssignBookingLayer.jsx,42,GET,{VITE_APIURL}Employee,,axios
+components,src/components/TelecalerAssignTicketLayer.jsx,99,GET,{VITE_APIURL}Employee,,axios
+components,src/components/TelecalerAssignTicketLayer.jsx,121,GET,{VITE_APIURL}Employee,,axios
+components,src/components/EmployeeAddLayer.jsx,330,POST,{VITE_APIURL}Employee,"{key}, DealerIds",axios
+components,src/components/EmployeeAddLayer.jsx,323,PUT,{VITE_APIURL}Employee,"{key}, DealerIds",axios
+components,src/components/ViewProfileLayer.jsx,219,PUT,{VITE_APIURL}Employee,"Id, Name, Email, PhoneNumber, Address, RoleName, RoleId, DeptId, Designation_Id, Reporting_To, Status, Password, ProfileImage1",axios
+components,src/components/EmployeeLayer.jsx,115,POST,{VITE_APIURL}Employee/BulkAssign,"employeeIds, deptId",axios
+components,src/components/ForgotPasswordLayer.jsx,157,POST,{VITE_APIURL}Employee/forgot-password/reset,"employeeId, newPassword",axios
+components,src/components/ForgotPasswordLayer.jsx,42,POST,{VITE_APIURL}Employee/forgot-password/send-otp,,axios
+components,src/components/ForgotPasswordLayer.jsx,125,POST,{VITE_APIURL}Employee/forgot-password/send-otp,email,axios
+components,src/components/ForgotPasswordLayer.jsx,65,POST,{VITE_APIURL}Employee/forgot-password/verify-otp,"email, otp",axios
+components,src/components/ViewProfileLayer.jsx,46,GET,{VITE_APIURL}Employee/Id?Id={{localStorage.getItem}},,axios
+components,src/components/SignInLayer.jsx,62,GET,{VITE_APIURL}Employee/Id?Id={data.id},,axios
+components,src/components/EmployeeAddLayer.jsx,87,GET,{VITE_APIURL}Employee/Id?Id={EmployeeID},,axios
+components,src/components/EmployeeViewLayer.jsx,21,GET,{VITE_APIURL}Employee/Id?Id={EmployeeID},,axios
+components,src/components/ExpenditureCategoryLayer.jsx,33,GET,{VITE_APIURL}Expenditure,,axios
+components,src/components/ExpenditureLayer.jsx,111,GET,{VITE_APIURL}Expenditure,,axios
+components,src/components/ExpenditureCategoryLayer.jsx,79,POST,{VITE_APIURL}Expenditure,"expenseCategoryID, categoryName, isActive, modifiedBy, createdBy",axios
+components,src/components/ExpenditureCategoryLayer.jsx,66,PUT,{VITE_APIURL}Expenditure,"expenseCategoryID, categoryName, isActive, modifiedBy, createdBy",axios
+components,src/components/ExpenditureCategoryLayer.jsx,130,DELETE,{VITE_APIURL}Expenditure/{row.ExpenseCategoryID},,axios
+components,src/components/DealerPaymentsLayer.jsx,384,POST,{VITE_APIURL}Expenditure/Expenditure,"expenseDate, expenseCategoryID, amount, paymentMode, dealerID, technicianID, bookingID, referenceNo, notes, status, createdBy, isActive, addOnId, billPath",axios
+components,src/components/ExpenditureLayer.jsx,262,POST,{VITE_APIURL}Expenditure/Expenditure,"expenseDate, expenseCategoryID, amount, paymentMode, dealerID, technicianID, bookingID, referenceNo, notes, status, isActive, billPath, expenseID, modifiedBy, createdBy",axios
+components,src/components/ExpenditureLayer.jsx,299,POST,{VITE_APIURL}Expenditure/Expenditure,"...{basePayload}, createdBy",axios
+components,src/components/RefundLayer.jsx,437,POST,{VITE_APIURL}Expenditure/Expenditure,"expenseDate, expenseCategoryID, amount, paymentMode, dealerID, technicianID, bookingID, referenceNo, notes, status, createdBy, isActive, addOnId, billPath",axios
+components,src/components/ExpenditureLayer.jsx,256,PUT,{VITE_APIURL}Expenditure/Expenditure,"expenseDate, expenseCategoryID, amount, paymentMode, dealerID, technicianID, bookingID, referenceNo, notes, status, isActive, billPath, expenseID, modifiedBy, createdBy",axios
+components,src/components/ExpenditureLayer.jsx,290,PUT,{VITE_APIURL}Expenditure/Expenditure,"...{basePayload}, expenseID, modifiedBy",axios
+components,src/components/ExpenditureLayer.jsx,369,DELETE,{VITE_APIURL}Expenditure/expenditure/{expenseID},,axios
+components,src/components/ExpenditureLayer.jsx,101,GET,{VITE_APIURL}Expenditure/Expenditures,,axios
+components,src/components/ExplanationsAddLayer.jsx,208,POST,{VITE_APIURL}Explanations,"type, packageID, explanation, id, question, answer",axios
+components,src/components/ExplanationsAddLayer.jsx,249,PUT,{VITE_APIURL}Explanations,"type, packageID, explanation, id, question, answer",axios
+components,src/components/ExplanationsAddLayer.jsx,94,GET,{VITE_APIURL}Explanations?Id={id},,axios
+components,src/components/ExplanationsLayer.jsx,48,DELETE,{VITE_APIURL}Explanations/DeleteExplanation/{faqId},,axios
+components,src/components/ExplanationsLayer.jsx,24,GET,{VITE_APIURL}Explanations/Packages,,axios
+components,src/components/FaqsAddLayer.jsx,207,POST,{VITE_APIURL}FAQS,"type, packageID, faQs, id, question, answer",axios
+components,src/components/FaqsAddLayer.jsx,248,PUT,{VITE_APIURL}FAQS,"type, packageID, faQs, id, question, answer",axios
+components,src/components/FaqsAddLayer.jsx,93,GET,{VITE_APIURL}FAQS?Id={id},,axios
+components,src/components/FaqsLayer.jsx,48,DELETE,{VITE_APIURL}FAQS/DeleteFAQ/{faqId},,axios
+components,src/components/FaqsLayer.jsx,24,GET,{VITE_APIURL}FAQS/Packages,,axios
+components,src/components/ServicesRatingLayer.jsx,23,GET,{VITE_APIURL}Feedback,,axios
+components,src/components/LeadViewLayer.jsx,213,POST,{VITE_APIURL}Feedback,"bookingID, custID, serviceRating, serviceReview, techID, techRating, techReview, Id, RegistrationNumber, BrandID, ModelID, FuelTypeID, KmDriven, YearOfPurchase, VehicleId, FullName, PhoneNumber, Email, GSTNumber, GSTName, City, Latitude, Longitude, AddressId, leadId, status, notes, nextAction, nextFollowUp_Date, created_By, type",axios
+components,src/components/ServicesRatingLayer.jsx,26,GET,{VITE_APIURL}Feedback?EmployeeId={employeeId}&RoleName={roleName},,axios
+components,src/components/LeadViewLayer.jsx,242,GET,{VITE_APIURL}Feedback/feedback?bookingId={bookingId},,axios
+components,src/components/ServicesRatingLayer.jsx,45,PUT,{VITE_APIURL}Feedback/update-feedback-approval,"feedbackId, is_Approve",axios
+components,src/components/VehicleFuelLayer.jsx,176,DELETE,{VITE_APIURL}FuelTypes/,StateID,axios
+components,src/components/AddLeadLayer.jsx,79,GET,{VITE_APIURL}FuelTypes/GetFuelTypes,,axios
+components,src/components/BasicInformationLayer.jsx,217,GET,{VITE_APIURL}FuelTypes/GetFuelTypes,,axios
+components,src/components/LeadViewLayer.jsx,494,GET,{VITE_APIURL}FuelTypes/GetFuelTypes,,axios
+components,src/components/ServiceInspectionRequestLayer.jsx,198,GET,{VITE_APIURL}FuelTypes/GetFuelTypes,,axios
+components,src/components/ServicePlanPriceAddLayer.jsx,60,GET,{VITE_APIURL}FuelTypes/GetFuelTypes,,axios
+components,src/components/ServicePlanPriceAddLayer11.jsx,110,GET,{VITE_APIURL}FuelTypes/GetFuelTypes,,axios
+components,src/components/ServicePlanPriceEditLayer.jsx,60,GET,{VITE_APIURL}FuelTypes/GetFuelTypes,,axios
+components,src/components/VehicleFuelLayer.jsx,64,GET,{VITE_APIURL}FuelTypes/GetFuelTypes,,axios
+components,src/components/VehicleModelLayer.jsx,84,GET,{VITE_APIURL}FuelTypes/GetFuelTypes,,axios
+components,src/components/VehicleFuelLayer.jsx,134,POST,{VITE_APIURL}FuelTypes/InsertFuelType,"{key}, Status, ModifiedBy, CreatedBy",axios
+components,src/components/VehicleFuelLayer.jsx,131,PUT,{VITE_APIURL}FuelTypes/UpdateFuelType,"{key}, Status, ModifiedBy, CreatedBy",axios
+components,src/components/ServicePlanAddLayer.jsx,57,GET,{VITE_APIURL}GST/GstMaster,,axios
+components,src/components/BookServicesLayer.jsx,248,GET,{VITE_APIURL}Includes,,axios
+components,src/components/CaseStudiesAddLayer.jsx,85,GET,{VITE_APIURL}Includes,,axios
+components,src/components/DealerBookingsView.jsx,97,GET,{VITE_APIURL}Includes,,axios
+components,src/components/IncludesLayer.jsx,64,GET,{VITE_APIURL}Includes,,axios
+components,src/components/ServicePlanAddLayer.jsx,139,GET,{VITE_APIURL}Includes,,axios
+components,src/components/BookServicesLayer.jsx,830,POST,{VITE_APIURL}Includes,"addOnID, is_Completed, completedBy, completedRole, statusName, IncludeName, Description, IncludePrice, CategoryID, SubCategoryID, SkillID, CreatedBy, IsActive, id, bookingId, bookingTrackID, leadId, serviceType, serviceName, basePrice, quantity, price, gstPercent, supervisorRole, gstAmount, description, dealerID, percentage, our_Earnings, labourCharges, modifiedBy, isActive, type, includes, serviceId, createdBy, services, inspectionType, inspectionDate, inspectionTimeSlot, ids, supervisorId, PackageName, Default_Price, TotalPrice, IncludeID, EstimatedDurationMinutes",axios
+components,src/components/BookServicesLayer.jsx,886,POST,{VITE_APIURL}Includes,"addOnID, is_Completed, completedBy, completedRole, statusName, IncludeName, Description, IncludePrice, CategoryID, SubCategoryID, SkillID, CreatedBy, IsActive, id, bookingId, bookingTrackID, leadId, serviceType, serviceName, basePrice, quantity, price, gstPercent, supervisorRole, gstAmount, description, dealerID, percentage, our_Earnings, labourCharges, modifiedBy, isActive, type, includes, serviceId, createdBy, services, inspectionType, inspectionDate, inspectionTimeSlot, ids, supervisorId, PackageName, Default_Price, TotalPrice, IncludeID, EstimatedDurationMinutes",axios
+components,src/components/IncludesLayer.jsx,140,POST,{VITE_APIURL}Includes,,axios
+components,src/components/IncludesLayer.jsx,135,PUT,{VITE_APIURL}Includes,,axios
+components,src/components/ServiceIntakeListLayer.jsx,40,GET,{VITE_APIURL}Inspection,,axios
+components,src/components/ServiceIntakeListLayer.jsx,138,GET,{VITE_APIURL}Inspection/checklist-pdf/{inspectionId},,axios
+components,src/components/ServiceInspectionRequestLayer.jsx,387,POST,{VITE_APIURL}Inspection/insert,"TrackId, CustName, PhoneNumber, Email, InspectionDate, Location, Area, VehicleNumber, Brand, Model, Fuel, YearOfPurchase, KmDriven, TechnicianName, Remarks, RecommendedServices, InspectionAmount, AmountStatus, Images, ChecklistItems",axios
+components,src/components/ServiceInspectionRequestLayer.jsx,437,POST,{VITE_APIURL}Inspection/payment-complete,"qrId, inspectionId",axios
+components,src/components/ServiceIntakeListLayer.jsx,61,POST,{VITE_APIURL}Inspection/payment-complete,"qrId, inspectionId",axios
+components,src/components/ForwardLeadsLayer.jsx,56,GET,{VITE_APIURL}Leads,,fetch
+components,src/components/LeadsAssignLayer.jsx,42,GET,{VITE_APIURL}Leads,,fetch
+components,src/components/EmployeeLeadsReportLayer.jsx,71,GET,{VITE_APIURL}Leads/AssignedLeads?Emp_Assign={employeeId}&DateType=UpdatedDate OR CreatedDate&FromDate={fromDate}&ToDate={toDate},,axios
+components,src/components/LeadsAssignLayer.jsx,332,POST,{VITE_APIURL}Leads/AssignLeadsToEmployee,"leadIds, head_Assign, emp_Assign",axios
+components,src/components/LeadsAssignLayer.jsx,285,POST,{VITE_APIURL}Leads/AssignLeadsToHead,"leadIds, head_Assign, emp_Assign",axios
+components,src/components/BookServicesLayer.jsx,1910,POST,{VITE_APIURL}Leads/confirm-booking-addons-by-supervisor,"addOnID, is_Completed, completedBy, completedRole, statusName, IncludeName, Description, IncludePrice, CategoryID, SubCategoryID, SkillID, CreatedBy, IsActive, id, bookingId, bookingTrackID, leadId, serviceType, serviceName, basePrice, quantity, price, gstPercent, supervisorRole, gstAmount, description, dealerID, percentage, our_Earnings, labourCharges, modifiedBy, isActive, type, includes, serviceId, createdBy, services, inspectionType, inspectionDate, inspectionTimeSlot, ids, supervisorId, PackageName, Default_Price, TotalPrice, IncludeID, EstimatedDurationMinutes",axios
+components,src/components/BookServicesLayer.jsx,1987,POST,{VITE_APIURL}Leads/confirm-booking-addons-by-supervisor,"addOnID, is_Completed, completedBy, completedRole, statusName, IncludeName, Description, IncludePrice, CategoryID, SubCategoryID, SkillID, CreatedBy, IsActive, id, bookingId, bookingTrackID, leadId, serviceType, serviceName, basePrice, quantity, price, gstPercent, supervisorRole, gstAmount, description, dealerID, percentage, our_Earnings, labourCharges, modifiedBy, isActive, type, includes, serviceId, createdBy, services, inspectionType, inspectionDate, inspectionTimeSlot, ids, supervisorId, PackageName, Default_Price, TotalPrice, IncludeID, EstimatedDurationMinutes",axios
+components,src/components/LeadViewLayer.jsx,1242,POST,{VITE_APIURL}Leads/ConvertLead,,axios
+components,src/components/RevenueReports.jsx,95,GET,{VITE_APIURL}Leads/dealer-summary,,axios
+components,src/components/LeadReportsLayer.jsx,82,GET,{VITE_APIURL}Leads/EmployeeFollowupStatus?{params.join},,axios
+components,src/components/BookingViewLayer.jsx,3323,POST,{VITE_APIURL}Leads/GenerateEstimationInvoice,bookingID,axios
+components,src/components/InvoiceViewLayer.jsx,257,POST,{VITE_APIURL}Leads/GenerateEstimationInvoice,bookingID,axios
+components,src/components/BookingViewLayer.jsx,3205,POST,{VITE_APIURL}Leads/GenerateFinalInvoice,bookingID,axios
+components,src/components/InvoiceViewLayer.jsx,266,POST,{VITE_APIURL}Leads/GenerateFinalInvoice,bookingID,axios
+components,src/components/BasicInformationLayer.jsx,117,GET,{VITE_APIURL}Leads/GetLeadsByIds?LeadIds={bookingData.LeadId},,fetch
+components,src/components/LeadViewLayer.jsx,388,GET,{VITE_APIURL}Leads/GetLeadsByIds?LeadIds={leadId},,fetch
+components,src/components/LeadViewOnlyLayer.jsx,40,GET,{VITE_APIURL}Leads/GetLeadsByIds?LeadIds={leadId},,fetch
+components,src/components/LeadViewLayer.jsx,1124,POST,{VITE_APIURL}Leads/InsertLeadFollowUp,"bookingID, custID, serviceRating, serviceReview, techID, techRating, techReview, Id, RegistrationNumber, BrandID, ModelID, FuelTypeID, KmDriven, YearOfPurchase, VehicleId, FullName, PhoneNumber, Email, GSTNumber, GSTName, City, Latitude, Longitude, AddressId, leadId, status, notes, nextAction, nextFollowUp_Date, created_By, type",fetch
+components,src/components/AddLeadLayer.jsx,161,POST,{VITE_APIURL}Leads/InsertOrUpdateFacebookLead,"FullName, PhoneNumber, Email, City, CreatedDate, Platform, RegistrationNumber, BrandID, ModelID, FuelTypeID, ...{ObjectExpression} OR {ObjectExpression}",fetch
+components,src/components/BasicInformationLayer.jsx,609,POST,{VITE_APIURL}Leads/InsertOrUpdateFacebookLead,"Id, bookingID, FullName, PhoneNumber, Email, City, Latitude, Longitude, AddressId, custID",axios
+components,src/components/BasicInformationLayer.jsx,859,POST,{VITE_APIURL}Leads/InsertOrUpdateFacebookLead,"id, customerId, accountHolderName, bankName, accountNumber, ifscCode, branch, upiId, userId, Id, RegistrationNumber, BrandID, ModelID, FuelTypeID, KmDriven, YearOfPurchase, VehicleId, custID",fetch
+components,src/components/LeadViewLayer.jsx,829,POST,{VITE_APIURL}Leads/InsertOrUpdateFacebookLead,"bookingID, custID, serviceRating, serviceReview, techID, techRating, techReview, Id, RegistrationNumber, BrandID, ModelID, FuelTypeID, KmDriven, YearOfPurchase, VehicleId, FullName, PhoneNumber, Email, GSTNumber, GSTName, City, Latitude, Longitude, AddressId, leadId, status, notes, nextAction, nextFollowUp_Date, created_By, type",fetch
+components,src/components/LeadViewLayer.jsx,906,POST,{VITE_APIURL}Leads/InsertOrUpdateFacebookLead,"bookingID, custID, serviceRating, serviceReview, techID, techRating, techReview, Id, RegistrationNumber, BrandID, ModelID, FuelTypeID, KmDriven, YearOfPurchase, VehicleId, FullName, PhoneNumber, Email, GSTNumber, GSTName, City, Latitude, Longitude, AddressId, leadId, status, notes, nextAction, nextFollowUp_Date, created_By, type",fetch
+components,src/components/InvoiceViewLayer.jsx,559,POST,{VITE_APIURL}Leads/SendEstimationInvoiceEmail,"bookingID, invoiceNumber",axios
+components,src/components/InvoiceViewLayer.jsx,367,POST,{VITE_APIURL}Leads/SendEstimationInvoiceWhatsApp,"bookingID, invoiceNumber",axios
+components,src/components/InvoiceViewLayer.jsx,461,POST,{VITE_APIURL}Leads/SendFinalInvoiceEmail,"bookingID, invoiceNumber",axios
+components,src/components/InvoiceViewLayer.jsx,412,POST,{VITE_APIURL}Leads/SendFinalInvoiceWhatsApp,"bookingID, invoiceNumber",axios
+components,src/components/SupportDashboardLayer.jsx,46,GET,{VITE_APIURL}Leads/telecaller-headcount?headAssignId={employeeData.Id} OR {VITE_APIURL}Leads/telecaller-headcount?empId={employeeData.Id},,axios
+components,src/components/TodayLeadsLayer.jsx,37,GET,{VITE_APIURL}Leads/TodayAssignedFollowUpLeads?EmpId={{localStorage.getItem}}&PageNumber={pageNumber}&PageSize=100&SearchText={{search.trim}}&Status={callOutcome},,axios
+components,src/components/ForwardLeadsLayer.jsx,188,POST,{VITE_APIURL}Leads/TransferLead,"leadIds, fromEmployeeId, toEmployeeId, roleName, createdBy, reason",axios
+components,src/components/OrganicLeadsLayer.jsx,299,POST,{VITE_APIURL}Leads/TransferLead,"leadIds, fromEmployeeId, toEmployeeId, roleName, createdBy, reason",axios
+components,src/components/OrganicLeadsLayer.jsx,784,POST,{VITE_APIURL}Leads/UploadExcel,file,axios
+components,src/components/LeaveListLayer.jsx,25,GET,{VITE_APIURL}LeaveRequest,,axios
+components,src/components/LeaveEditLayer.jsx,62,PUT,{VITE_APIURL}LeaveRequest?leaveId={LeaveID}&status={status},,axios
+components,src/components/LeaveEditLayer.jsx,37,GET,{VITE_APIURL}LeaveRequest/leaveid?leaveid={LeaveID},,axios
+components,src/components/NotificationTemplatesLayer.jsx,29,GET,{VITE_APIURL}NotificationTemplate,,axios
+components,src/components/NotificationTemplatesLayer.jsx,50,POST,{VITE_APIURL}NotificationTemplate,,axios
+components,src/components/NotificationTemplatesLayer.jsx,48,PUT,{VITE_APIURL}NotificationTemplate,,axios
+components,src/components/NotificationTemplatesLayer.jsx,77,DELETE,{VITE_APIURL}NotificationTemplate/{id},,axios
+components/child,src/components/child/RecentTransactions.jsx,17,GET,{VITE_APIURL}Payments,,axios
+components,src/components/PaymentListLayer.jsx,46,GET,{VITE_APIURL}Payments,,axios
+components,src/components/TicketInnerLayer.jsx,364,PUT,{VITE_APIURL}Payments,"bookingID, isRefunded",axios
+components,src/components/BookingViewLayer.jsx,4009,POST,{VITE_APIURL}Payments/final-payment-link,"bookingId, paymentAmount, phoneNumber, email, couponCode, couponAmount, customerId",axios
+components,src/components/BookingViewLayer.jsx,4063,POST,{VITE_APIURL}Payments/InsertBookingAddOnsPayment,"bookingID, amountPaid, paymentMode, paymentStatus, paymentType, couponAmount, couponCode, createdBy, ProofAttachment",axios
+components/child,src/components/child/RevenueReportCharts.jsx,121,GET,{VITE_APIURL}Payments/Revenue?groupBy={daily|weekly|monthly|yearly}&fromDate={fromDate}&toDate={toDate},,axios
+components,src/components/PermissionLayer.jsx,45,GET,{VITE_APIURL}Permission,,axios
+components,src/components/RolePermissionLayer.jsx,26,GET,{VITE_APIURL}Permission,,axios
+components,src/components/PermissionLayer.jsx,92,POST,{VITE_APIURL}Permission,"page, name, IsActive",axios
+components,src/components/PermissionLayer.jsx,84,PUT,{VITE_APIURL}Permission,"page, name, IsActive, id",axios
+components,src/components/PermissionLayer.jsx,166,DELETE,{VITE_APIURL}Permission/{id},,axios
+components,src/components/ServicePlanListLayer.jsx,77,DELETE,{VITE_APIURL}PlanPackage/,PlanID,axios
+components,src/components/CaseStudiesAddLayer.jsx,102,GET,{VITE_APIURL}PlanPackage/GetPlanPackageDetailsByID/{PackageID},,axios
+components,src/components/ServicePlanAddLayer.jsx,156,GET,{VITE_APIURL}PlanPackage/GetPlanPackageDetailsByID/{PackageID},,axios
+components,src/components/BookServicesLayer.jsx,163,GET,{VITE_APIURL}PlanPackage/GetPlanPackagesDetails,,axios
+components,src/components/BookServicesLayer.jsx,570,GET,{VITE_APIURL}PlanPackage/GetPlanPackagesDetails,,axios
+components,src/components/CaseStudiesLayer.jsx,29,GET,{VITE_APIURL}PlanPackage/GetPlanPackagesDetails,,axios
+components,src/components/ExplanationsAddLayer.jsx,52,GET,{VITE_APIURL}PlanPackage/GetPlanPackagesDetails,,axios
+components,src/components/FaqsAddLayer.jsx,52,GET,{VITE_APIURL}PlanPackage/GetPlanPackagesDetails,,axios
+components,src/components/SeoAddLayer.jsx,60,GET,{VITE_APIURL}PlanPackage/GetPlanPackagesDetails,,axios
+components,src/components/ServicePlanListLayer.jsx,27,GET,{VITE_APIURL}PlanPackage/GetPlanPackagesDetails,,axios
+components,src/components/ServicePlanPriceAddLayer.jsx,61,GET,{VITE_APIURL}PlanPackage/GetPlanPackagesDetails,,axios
+components,src/components/ServicePlanPriceAddLayer11.jsx,111,GET,{VITE_APIURL}PlanPackage/GetPlanPackagesDetails,,axios
+components,src/components/ServicePlanPriceEditLayer.jsx,61,GET,{VITE_APIURL}PlanPackage/GetPlanPackagesDetails,,axios
+components,src/components/BookServicesLayer.jsx,744,POST,{VITE_APIURL}PlanPackage/InsertPlanPackage,"addOnID, is_Completed, completedBy, completedRole, statusName, IncludeName, Description, IncludePrice, CategoryID, SubCategoryID, SkillID, CreatedBy, IsActive, id, bookingId, bookingTrackID, leadId, serviceType, serviceName, basePrice, quantity, price, gstPercent, supervisorRole, gstAmount, description, dealerID, percentage, our_Earnings, labourCharges, modifiedBy, isActive, type, includes, serviceId, createdBy, services, inspectionType, inspectionDate, inspectionTimeSlot, ids, supervisorId, PackageName, Default_Price, TotalPrice, IncludeID, EstimatedDurationMinutes",axios
+components,src/components/CaseStudiesAddLayer.jsx,242,POST,{VITE_APIURL}PlanPackage/UpdatePlanPackage OR {VITE_APIURL}PlanPackage/InsertPlanPackage,"PackageName, CategoryID, SubCategoryID, Default_Price, TotalPrice, IsActive, PackageImage, IncludeID, BannerImages, EstimatedDurationMinutes, PackageID, ModifiedBy, CreatedBy",axios
+components,src/components/ServicePlanAddLayer.jsx,314,POST,{VITE_APIURL}PlanPackage/UpdatePlanPackage OR {VITE_APIURL}PlanPackage/InsertPlanPackage,"PackageName, CategoryID, SubCategoryID, Default_Price, TotalPrice, gst_p, inc_gstamt, gst_amt, IsActive, PackageImage, IncludeID, BannerImages, EstimatedDurationMinutes, PackageID, ModifiedBy, CreatedBy",axios
+components,src/components/ServicePlanPriceListLayer.jsx,23,GET,{VITE_APIURL}PlanPackagePrice,,axios
+components,src/components/ServicePlanPriceAddLayer.jsx,178,POST,{VITE_APIURL}PlanPackagePrice/AddPlanPackagePrice,"{key}, ModifiedBy",axios
+components,src/components/ServicePlanPriceAddLayer11.jsx,327,POST,{VITE_APIURL}PlanPackagePrice/AddPlanPackagePrice,"BrandID, ModelID, PackageID, FuelTypeID, Serv_Reg_Price, Serv_Off_Price, IsActive, ModifiedBy",axios
+components,src/components/ServicePlanPriceEditLayer.jsx,178,POST,{VITE_APIURL}PlanPackagePrice/AddPlanPackagePrice,"{key}, ModifiedBy",axios
+components,src/components/ServicePlanPriceListLayer.jsx,47,DELETE,{VITE_APIURL}PlanPackagePrice/Delete,PlanPriceID,axios
+components,src/components/ServicePlanPriceAddLayer11.jsx,142,GET,{VITE_APIURL}PlanPackagePrice/GetPricesByBrandAndPackage?brandId={data.BrandID}&packageId={data.PackageID},,axios
+components,src/components/ServicePlanPriceAddLayer.jsx,76,GET,{VITE_APIURL}PlanPackagePrice/planpackagepriceid?planpackagepriceid={PlanPackagePriceID},,axios
+components,src/components/ServicePlanPriceAddLayer11.jsx,127,GET,{VITE_APIURL}PlanPackagePrice/planpackagepriceid?planpackagepriceid={PlanPackagePriceID},,axios
+components,src/components/ServicePlanPriceAddLayer11.jsx,182,GET,{VITE_APIURL}PlanPackagePrice/planpackagepriceid?planpackagepriceid={PlanPackagePriceID},,axios
+components,src/components/ServicePlanPriceEditLayer.jsx,76,GET,{VITE_APIURL}PlanPackagePrice/planpackagepriceid?planpackagepriceid={PlanPackagePriceID},,axios
+components,src/components/ServicePlanPriceAddLayer.jsx,175,PUT,{VITE_APIURL}PlanPackagePrice/UpdatePlanPackagePrice,"{key}, ModifiedBy",axios
+components,src/components/ServicePlanPriceAddLayer11.jsx,325,PUT,{VITE_APIURL}PlanPackagePrice/UpdatePlanPackagePrice,"BrandID, ModelID, PackageID, FuelTypeID, Serv_Reg_Price, Serv_Off_Price, IsActive, ModifiedBy",axios
+components,src/components/ServicePlanPriceEditLayer.jsx,175,PUT,{VITE_APIURL}PlanPackagePrice/UpdatePlanPackagePrice,"{key}, ModifiedBy",axios
+masterLayout,src/masterLayout/MasterLayout.jsx,378,POST,{VITE_APIURL}Push/register,"userId, userRole, fcmToken, platform",fetch
+components,src/components/NotificationSendLayer.jsx,38,POST,{VITE_APIURL}Push/send-notification,"role, title, body, link",axios
+components,src/components/BookingViewLayer.jsx,2693,POST,{VITE_APIURL}Refund/Refund,"amount, bookingId",axios
+components,src/components/PaymentListLayer.jsx,90,POST,{VITE_APIURL}Refund/Refund,"bookingId, paymentId, amount",axios
+components,src/components/RefundLayer.jsx,451,POST,{VITE_APIURL}Refund/Refund,"amount, bookingId, paymentId",axios
+components/child,src/components/child/TodaysBookings.jsx,18,GET,{VITE_APIURL}Reports?fromDate={0}&toDate={0},,axios
+components,src/components/TodayBookingsLayer.jsx,31,GET,{VITE_APIURL}Reports?fromDate={fromDate}&toDate={toDate},,axios
+components/child,src/components/child/TopCustomer.jsx,57,GET,{VITE_APIURL}Reports/GetCollectionAmount,,axios
+components/child,src/components/child/TopCustomer.jsx,38,GET,{VITE_APIURL}Reports/GetCollectionAmount?fromDate={{formatDate}}&toDate={{formatDate}},,axios
+components/child,src/components/child/TopCustomer.jsx,44,GET,{VITE_APIURL}Reports/GetCollectionAmount?fromDate={{formatDate}}&toDate={{formatDate}},,axios
+components/child,src/components/child/TopCustomer.jsx,50,GET,{VITE_APIURL}Reports/GetCollectionAmount?fromDate={{formatDate}}&toDate={{formatDate}},,axios
+components,src/components/BookingViewLayer.jsx,990,POST,{VITE_APIURL}Reschedules,"bookingID, reason, oldSchedule, newSchedule, timeSlot, requestedBy, Status",axios
+components,src/components/BookingViewLayer.jsx,3725,POST,{VITE_APIURL}Rework/insert,"BookingID, TechID, AssingedTimeSlot, Role, AssignedBy, bookingIds, supervisorHeadId, fieldAdvisorId, assignTimeSlot, endTimeslot, bookingID, assignDate, role, techID, addOnId, leadId, ServiceType, timeSlot, ids, supervisorID, addOns, addOnID, is_Completed, completedBy, completedRole, statusName, ticketId, bookingId, addOnIds, reason, createdBy, scheduledDate, timeslot, status, lastReworkID, cancelledBy, refundStatus",axios
+components,src/components/RolePermissionLayer.jsx,111,POST,{VITE_APIURL}rolehaspermissions,"permission_ids, role_id, isActive",axios
+masterLayout,src/masterLayout/MasterLayout.jsx,144,GET,{VITE_APIURL}rolehaspermissions/id?roleId={{localStorage.getItem}},,axios
+components,src/components/RolePermissionLayer.jsx,52,GET,{VITE_APIURL}rolehaspermissions/id?roleId={roleId},,axios
+context,src/context/PermissionContext.jsx,88,GET,{VITE_APIURL}rolehaspermissions/id?roleId={roleId},,axios
+components,src/components/EmployeeAddLayer.jsx,139,GET,{VITE_APIURL}Roles,,axios
+components,src/components/NotificationSendLayer.jsx,17,GET,{VITE_APIURL}Roles,,axios
+components,src/components/RoleLayer.jsx,45,GET,{VITE_APIURL}Roles,,axios
+components,src/components/RoleLayer.jsx,91,POST,{VITE_APIURL}Roles,"name, IsActive",axios
+components,src/components/RoleLayer.jsx,84,PUT,{VITE_APIURL}Roles,"name, IsActive, id",axios
+components,src/components/RoleLayer.jsx,165,DELETE,{VITE_APIURL}Roles/,RoleID,axios
+components,src/components/SeoListLayer.jsx,18,GET,{VITE_APIURL}Seometa,,axios
+components,src/components/SeoAddLayer.jsx,286,POST,{VITE_APIURL}Seometa,"page_slug, seo_title, seo_description, seo_keywords, content, seo_score",axios
+components,src/components/SeoAddLayer.jsx,295,PUT,{VITE_APIURL}Seometa,"seo_id, page_slug, seo_title, seo_description, seo_keywords, content, seo_score",axios
+components,src/components/SeoAddLayer.jsx,92,GET,{VITE_APIURL}Seometa/seo_id?seoid={seoid},,axios
+components,src/components/BookingViewLayer.jsx,1061,POST,{VITE_APIURL}ServiceImages/CancelCarPickupDelivery?id={service.AddOnID},,axios
+components,src/components/DealerVehicleReportLayer.jsx,36,GET,{VITE_APIURL}ServiceImages/DealerPickupDeliveryReport?dealerId={{localStorage.getItem}},,axios
+components,src/components/ServiceInspectionRequestLayer.jsx,113,GET,{VITE_APIURL}ServiceImages/GetChecklistForTechnician?planId=184,,axios
+components,src/components/BookingViewLayer.jsx,694,GET,{VITE_APIURL}ServiceImages/GetTechnicianRecordsByAssignDate?assignDate={date} OR {0}&assignTimeSlot={{startTime.substring}} OR }&endTimeslot={{endTime.substring}} OR },,axios
+components,src/components/InspectionChecklistAccordion.jsx,18,GET,{VITE_APIURL}ServiceImages/InspectionChecklistPdf/{bookingId},,fetch
+components,src/components/BookingViewLayer.jsx,1234,POST,{VITE_APIURL}ServiceImages/ReassignCarPickupDelivery,"id, newTechID, newAssignDate, assignTimeSlot, endTimeslot",axios
+components,src/components/BookingViewLayer.jsx,1129,POST,{VITE_APIURL}ServiceImages/RescheduleCarPickupDelivery,"id, newAssignDate, assignTimeSlot, endTimeslot",axios
+components,src/components/ClosedLeadsLayer.jsx,34,GET,{VITE_APIURL}ServiceLeads/FacebookLeads?EmployeeId={OptionalMemberExpression}&RoleName={OptionalMemberExpression},,fetch
+components,src/components/LeadsLayer.jsx,37,GET,{VITE_APIURL}ServiceLeads/FacebookLeads?EmployeeId={OptionalMemberExpression}&RoleName={OptionalMemberExpression},,fetch
+components,src/components/OrganicLeadsLayer.jsx,66,GET,{VITE_APIURL}ServiceLeads/FacebookLeads?pageNumber={page}&pageSize=100&searchText={text}&platform={platformFilter}&Status={callOutcome}&fromDate={fromDate}&toDate={toDate}&DateType=CreatedDate OR ModifiedDate&EmployeeId={OptionalMemberExpression}&RoleName={OptionalMemberExpression},,fetch
+components,src/components/OrganicLeadsLayer.jsx,751,GET,{VITE_APIURL}ServiceLeads/FacebookLeads?pageNumber={page}&pageSize=100&searchText={text}&platform={platformFilter}&Status={callOutcome}&fromDate={fromDate}&toDate={toDate}&DateType=CreatedDate OR ModifiedDate&EmployeeId={OptionalMemberExpression}&RoleName={OptionalMemberExpression},,axios
+components,src/components/OrganicLeadsLayer.jsx,842,GET,{VITE_APIURL}ServiceLeads/FacebookLeads?pageNumber={page}&pageSize=100&searchText={text}&platform={platformFilter}&Status={callOutcome}&fromDate={fromDate}&toDate={toDate}&DateType=CreatedDate OR ModifiedDate&EmployeeId={OptionalMemberExpression}&RoleName={OptionalMemberExpression},,fetch
+masterLayout,src/masterLayout/MasterLayout.jsx,550,GET,{VITE_APIURL}ServiceLeads/FacebookLeads?pageNumber=1&pageSize=500&Status=Next+Follow+Up&EmployeeId={employeeData.Id}&RoleName={employeeData.RoleName},,axios
+components,src/components/IncludesLayer.jsx,105,GET,{VITE_APIURL}Skills,,axios
+components,src/components/SkillLayer.jsx,29,GET,{VITE_APIURL}Skills,,axios
+components,src/components/TechniciansAddLayer.jsx,170,GET,{VITE_APIURL}Skills,,axios
+components,src/components/SkillLayer.jsx,69,POST,{VITE_APIURL}Skills,"...{formData}, ModifiedBy, ...{rest}, CreatedBy",axios
+components,src/components/SkillLayer.jsx,57,PUT,{VITE_APIURL}Skills,,axios
+components,src/components/AreaLayer.jsx,83,GET,{VITE_APIURL}State,,axios
+components,src/components/CityLayer.jsx,59,GET,{VITE_APIURL}State,,axios
+components,src/components/CustomerAddLayer.jsx,68,GET,{VITE_APIURL}State,,axios
+components,src/components/DealerAddLayer.jsx,210,GET,{VITE_APIURL}State,,axios
+components,src/components/DealerProfileLayer.jsx,151,GET,{VITE_APIURL}State,,axios
+components,src/components/DistributorLayer.jsx,83,GET,{VITE_APIURL}State,,axios
+components,src/components/StateLayer.jsx,46,GET,{VITE_APIURL}State,,axios
+components,src/components/TechniciansAddLayer.jsx,130,GET,{VITE_APIURL}State,,axios
+components,src/components/StateLayer.jsx,92,POST,{VITE_APIURL}State,"StateName, IsActive",axios
+components,src/components/StateLayer.jsx,85,PUT,{VITE_APIURL}State,"StateName, IsActive, StateID",axios
+components,src/components/CityLayer.jsx,133,DELETE,{VITE_APIURL}State/,StateID,axios
+components,src/components/StateLayer.jsx,166,DELETE,{VITE_APIURL}State/,StateID,axios
+components,src/components/CaseStudiesAddLayer.jsx,74,GET,{VITE_APIURL}SubCategory1,,axios
+components,src/components/IncludesLayer.jsx,92,GET,{VITE_APIURL}SubCategory1,,axios
+components,src/components/ServicePlanAddLayer.jsx,128,GET,{VITE_APIURL}SubCategory1,,axios
+components,src/components/ServiceSubCategories1Layer.jsx,59,GET,{VITE_APIURL}SubCategory1,,axios
+components,src/components/ServiceSubCategories1Layer.jsx,139,POST,{VITE_APIURL}SubCategory1/AddSubCategory1,"{key}, IconImage1, ThumbnailImage1, ModifiedBy, CreatedBy",axios
+components,src/components/ServiceSubCategories1Layer.jsx,136,PUT,{VITE_APIURL}SubCategory1/UpdateSubCategory1,"{key}, IconImage1, ThumbnailImage1, ModifiedBy, CreatedBy",axios
+components,src/components/ServiceSubCategories2Layer.jsx,54,GET,{VITE_APIURL}SubCategory2,,axios
+components,src/components/ServiceSubCategories2Layer.jsx,134,POST,{VITE_APIURL}SubCategory2/AddSubCategory2,"{key}, IconImage1, ThumbnailImage1, ModifiedBy, CreatedBy",axios
+components,src/components/ServiceSubCategories2Layer.jsx,131,PUT,{VITE_APIURL}SubCategory2/UpdateSubCategory2,"{key}, IconImage1, ThumbnailImage1, ModifiedBy, CreatedBy",axios
+components,src/components/BookingViewLayer.jsx,2800,POST,{VITE_APIURL}Supervisor/add-temp-addons,"BookingID, TechID, AssingedTimeSlot, Role, AssignedBy, bookingIds, supervisorHeadId, fieldAdvisorId, assignTimeSlot, endTimeslot, bookingID, assignDate, role, techID, addOnId, leadId, ServiceType, timeSlot, ids, supervisorID, addOns, addOnID, is_Completed, completedBy, completedRole, statusName, ticketId, bookingId, addOnIds, reason, createdBy, scheduledDate, timeslot, status, lastReworkID, cancelledBy, refundStatus",axios
+components,src/components/BookingViewLayer.jsx,2863,POST,{VITE_APIURL}Supervisor/add-temp-addons,"BookingID, TechID, AssingedTimeSlot, Role, AssignedBy, bookingIds, supervisorHeadId, fieldAdvisorId, assignTimeSlot, endTimeslot, bookingID, assignDate, role, techID, addOnId, leadId, ServiceType, timeSlot, ids, supervisorID, addOns, addOnID, is_Completed, completedBy, completedRole, statusName, ticketId, bookingId, addOnIds, reason, createdBy, scheduledDate, timeslot, status, lastReworkID, cancelledBy, refundStatus",axios
+components,src/components/BasicInformationLayer.jsx,323,POST,{VITE_APIURL}Supervisor/AssignToFieldAdvisor,"bookingIds, supervisorHeadId, fieldAdvisorId",fetch
+components,src/components/BasicInformationLayer.jsx,973,POST,{VITE_APIURL}Supervisor/AssignToSupervisorHead,"bookingIds, supervisorHeadId, areaId, assignedDate, assignStatus, createdBy",fetch
+components,src/components/LeadViewLayer.jsx,758,POST,{VITE_APIURL}Supervisor/AssignToSupervisorHead,"bookingIds, supervisorHeadId, areaId, assignedDate, assignStatus, createdBy",fetch
+components,src/components/BasicInformationLayer.jsx,638,PUT,{VITE_APIURL}Supervisor/Booking,"bookingID, bookingDate, TimeSlot",axios
+components,src/components/BookServicesLayer.jsx,1698,PUT,{VITE_APIURL}Supervisor/Booking,"bookingID, bookingDate, TimeSlot",axios
+components,src/components/BookServicesLayer.jsx,1831,PUT,{VITE_APIURL}Supervisor/Booking,"bookingID, bookingDate, TimeSlot",axios
+components,src/components/LeadViewLayer.jsx,977,PUT,{VITE_APIURL}Supervisor/Booking,"bookingID, bookingDate, TimeSlot",axios
+components,src/components/BookingReportsLayer.jsx,32,GET,{VITE_APIURL}Supervisor/BookingMetrics?FromDate={startDate}&ToDate={endDate},,axios
+components,src/components/BookingViewLayer.jsx,2085,POST,{VITE_APIURL}Supervisor/confirm,"bookingID, amountPaid, paymentMode, paymentStatus, paymentType, couponAmount, couponCode, createdBy, ProofAttachment",axios
+components,src/components/FieldAdvisorDashboardLayer.jsx,182,POST,{VITE_APIURL}Supervisor/confirm,"addOnId, employeeId",axios
+components,src/components/InvoiceViewLayer.jsx,352,POST,{VITE_APIURL}Supervisor/confirm-by-bookingid?bookingId={bookingData.BookingID}&supervisorId={{Number}},,axios
+components,src/components/InvoiceViewLayer.jsx,546,POST,{VITE_APIURL}Supervisor/confirm-by-bookingid?bookingId={bookingData.BookingID}&supervisorId={{Number}},,axios
+components,src/components/BookingViewLayer.jsx,1938,POST,{VITE_APIURL}Supervisor/confirm-by-bookingid?bookingId={bookingId}&supervisorId={OptionalMemberExpression} OR 0},,axios
+components,src/components/BookingViewLayer.jsx,3565,POST,{VITE_APIURL}Supervisor/CustomerConfirmationImages,"bookingID, amountPaid, paymentMode, paymentStatus, paymentType, couponAmount, couponCode, createdBy, ProofAttachment",axios
+components,src/components/LeadViewLayer.jsx,512,GET,{VITE_APIURL}Supervisor/ExistingBookings?PhoneNumber={lead.PhoneNumber},,axios
+components,src/components/LeadViewOnlyLayer.jsx,67,GET,{VITE_APIURL}Supervisor/ExistingBookings?PhoneNumber={lead.PhoneNumber},,axios
+components,src/components/SupervisorHeadDashboardLayer.jsx,65,GET,{VITE_APIURL}Supervisor/GetNotConfirmedBookings?supervisorHeadId={supervisorHeadId},,axios
+components,src/components/FieldAdvisorDashboardLayer.jsx,47,GET,{VITE_APIURL}Supervisor/GetPendingApprovalBookings?RoleId={roleId}&EmployeeId={{localStorage.getItem}},,axios
+components,src/components/SupervisorHeadDashboardLayer.jsx,43,GET,{VITE_APIURL}Supervisor/GetPendingApprovalBookings?RoleId={roleId}&EmployeeId={{localStorage.getItem}},,axios
+components,src/components/SupervisorHeadDashboardLayer.jsx,76,GET,{VITE_APIURL}Supervisor/GetPendingApprovalBookings?RoleId={roleId}&EmployeeId={{localStorage.getItem}},,axios
+components,src/components/BookServicesLayer.jsx,1457,DELETE,{VITE_APIURL}Supervisor/Id?id={item._apiId},,axios
+components,src/components/DealerBookingsView.jsx,417,DELETE,{VITE_APIURL}Supervisor/Id?id={item._apiId},,axios
+components,src/components/BookServicesLayer.jsx,1679,POST,{VITE_APIURL}Supervisor/InsertSupervisorBooking,"addOnID, is_Completed, completedBy, completedRole, statusName, IncludeName, Description, IncludePrice, CategoryID, SubCategoryID, SkillID, CreatedBy, IsActive, id, bookingId, bookingTrackID, leadId, serviceType, serviceName, basePrice, quantity, price, gstPercent, supervisorRole, gstAmount, description, dealerID, percentage, our_Earnings, labourCharges, modifiedBy, isActive, type, includes, serviceId, createdBy, services, inspectionType, inspectionDate, inspectionTimeSlot, ids, supervisorId, PackageName, Default_Price, TotalPrice, IncludeID, EstimatedDurationMinutes",axios
+components,src/components/BookServicesLayer.jsx,1816,POST,{VITE_APIURL}Supervisor/InsertSupervisorBooking,"addOnID, is_Completed, completedBy, completedRole, statusName, IncludeName, Description, IncludePrice, CategoryID, SubCategoryID, SkillID, CreatedBy, IsActive, id, bookingId, bookingTrackID, leadId, serviceType, serviceName, basePrice, quantity, price, gstPercent, supervisorRole, gstAmount, description, dealerID, percentage, our_Earnings, labourCharges, modifiedBy, isActive, type, includes, serviceId, createdBy, services, inspectionType, inspectionDate, inspectionTimeSlot, ids, supervisorId, PackageName, Default_Price, TotalPrice, IncludeID, EstimatedDurationMinutes",axios
+components,src/components/BookingViewLayer.jsx,3578,POST,{VITE_APIURL}Supervisor/MoveSupervisorBookings?addOnIds={{rejectedServiceIds.join}}&custId={bookingData.CustID},"confirmDescription, confirmedBy, confirmRole, status",axios
+components,src/components/BookingViewLayer.jsx,3783,POST,{VITE_APIURL}Supervisor/MoveSupervisorBookings?addOnIds={{rejectedServiceIds.join}}&custId={bookingData.CustID},"confirmDescription, confirmedBy, confirmRole, status",axios
+components,src/components/BookingViewLayer.jsx,3074,POST,{VITE_APIURL}Supervisor/MoveTempAddOns?bookingId={bookingId},,axios
+components,src/components/AssignTechnicianLayer.jsx,228,POST,{VITE_APIURL}Supervisor/SavePickupDeliveryTime,"bookingIds, supervisorHeadId, fieldAdvisorId, assignTimeSlot, bookingID, assignDate, role, techID, addOnId, leadId, ServiceType, timeSlot, serviceType, pickType, routeType, pickFrom, pickTo",axios
+components,src/components/AssignTechnicianLayer.jsx,255,POST,{VITE_APIURL}Supervisor/SavePickupDeliveryTime,"bookingIds, supervisorHeadId, fieldAdvisorId, assignTimeSlot, bookingID, assignDate, role, techID, addOnId, leadId, ServiceType, timeSlot, serviceType, pickType, routeType, pickFrom, pickTo",axios
+components,src/components/BookingViewLayer.jsx,1652,POST,{VITE_APIURL}Supervisor/SavePickupDeliveryTime,"BookingID, TechID, AssingedTimeSlot, Role, AssignedBy, bookingIds, supervisorHeadId, fieldAdvisorId, assignTimeSlot, endTimeslot, bookingID, assignDate, role, techID, addOnId, leadId, ServiceType, timeSlot, ids, supervisorID, addOns, addOnID, is_Completed, completedBy, completedRole, statusName, ticketId, bookingId, addOnIds, reason, createdBy, scheduledDate, timeslot, status, lastReworkID, cancelledBy, refundStatus",axios
+components,src/components/BookingViewLayer.jsx,2317,POST,{VITE_APIURL}Supervisor/SavePickupDeliveryTime,"BookingID, TechID, AssingedTimeSlot, Role, AssignedBy, bookingIds, supervisorHeadId, fieldAdvisorId, assignTimeSlot, endTimeslot, bookingID, assignDate, role, techID, addOnId, leadId, ServiceType, timeSlot, ids, supervisorID, addOns, addOnID, is_Completed, completedBy, completedRole, statusName, ticketId, bookingId, addOnIds, reason, createdBy, scheduledDate, timeslot, status, lastReworkID, cancelledBy, refundStatus",axios
+components,src/components/BookingViewLayer.jsx,2486,POST,{VITE_APIURL}Supervisor/SavePickupDeliveryTime,"BookingID, TechID, AssingedTimeSlot, Role, AssignedBy, bookingIds, supervisorHeadId, fieldAdvisorId, assignTimeSlot, endTimeslot, bookingID, assignDate, role, techID, addOnId, leadId, ServiceType, timeSlot, ids, supervisorID, addOns, addOnID, is_Completed, completedBy, completedRole, statusName, ticketId, bookingId, addOnIds, reason, createdBy, scheduledDate, timeslot, status, lastReworkID, cancelledBy, refundStatus",axios
+components,src/components/BookingViewLayer.jsx,1337,PUT,{VITE_APIURL}Supervisor/SavePickupDeliveryTime,"BookingID, TechID, AssingedTimeSlot, Role, AssignedBy, bookingIds, supervisorHeadId, fieldAdvisorId, assignTimeSlot, endTimeslot, bookingID, assignDate, role, techID, addOnId, leadId, ServiceType, timeSlot, ids, supervisorID, addOns, addOnID, is_Completed, completedBy, completedRole, statusName, ticketId, bookingId, addOnIds, reason, createdBy, scheduledDate, timeslot, status, lastReworkID, cancelledBy, refundStatus",axios
+components,src/components/BookingViewLayer.jsx,2895,GET,{VITE_APIURL}Supervisor/ServiceTypes,,axios
+components,src/components/ServicesEarningReport.jsx,21,GET,{VITE_APIURL}Supervisor/ServiceWiseReport,,axios
+components,src/components/DealerReportLayer.jsx,48,GET,{VITE_APIURL}Supervisor/ServiceWiseReport?dealerId={{localStorage.getItem}},,axios
+components,src/components/BookServicesLayer.jsx,331,GET,{VITE_APIURL}Supervisor/SupervisorLeadId?LeadId={leadId},,axios
+components,src/components/DealerBookingsView.jsx,211,GET,{VITE_APIURL}Supervisor/SupervisorLeadId?LeadId={leadId},,axios
+components,src/components/BookingViewLayer.jsx,2948,DELETE,{VITE_APIURL}Supervisor/TempAddOnService?addOnId={service.AddOnID},,axios
+components,src/components/BookingViewLayer.jsx,2907,GET,{VITE_APIURL}Supervisor/TempServices,,axios
+components,src/components/BookingViewLayer.jsx,2992,PUT,{VITE_APIURL}Supervisor/UpdateAddOnCompletion,"BookingID, TechID, AssingedTimeSlot, Role, AssignedBy, bookingIds, supervisorHeadId, fieldAdvisorId, assignTimeSlot, endTimeslot, bookingID, assignDate, role, techID, addOnId, leadId, ServiceType, timeSlot, ids, supervisorID, addOns, addOnID, is_Completed, completedBy, completedRole, statusName, ticketId, bookingId, addOnIds, reason, createdBy, scheduledDate, timeslot, status, lastReworkID, cancelledBy, refundStatus",axios
+components,src/components/BookingViewLayer.jsx,3030,PUT,{VITE_APIURL}Supervisor/UpdateAddOnCompletion,"BookingID, TechID, AssingedTimeSlot, Role, AssignedBy, bookingIds, supervisorHeadId, fieldAdvisorId, assignTimeSlot, endTimeslot, bookingID, assignDate, role, techID, addOnId, leadId, ServiceType, timeSlot, ids, supervisorID, addOns, addOnID, is_Completed, completedBy, completedRole, statusName, ticketId, bookingId, addOnIds, reason, createdBy, scheduledDate, timeslot, status, lastReworkID, cancelledBy, refundStatus",axios
+components,src/components/BookServicesLayer.jsx,491,PUT,{VITE_APIURL}Supervisor/UpdateAddOnCompletion,"addOnID, is_Completed, completedBy, completedRole, statusName, IncludeName, Description, IncludePrice, CategoryID, SubCategoryID, SkillID, CreatedBy, IsActive, id, bookingId, bookingTrackID, leadId, serviceType, serviceName, basePrice, quantity, price, gstPercent, supervisorRole, gstAmount, description, dealerID, percentage, our_Earnings, labourCharges, modifiedBy, isActive, type, includes, serviceId, createdBy, services, inspectionType, inspectionDate, inspectionTimeSlot, ids, supervisorId, PackageName, Default_Price, TotalPrice, IncludeID, EstimatedDurationMinutes",axios
+components,src/components/BookServicesLayer.jsx,542,PUT,{VITE_APIURL}Supervisor/UpdateAddOnCompletion,"addOnID, is_Completed, completedBy, completedRole, statusName, IncludeName, Description, IncludePrice, CategoryID, SubCategoryID, SkillID, CreatedBy, IsActive, id, bookingId, bookingTrackID, leadId, serviceType, serviceName, basePrice, quantity, price, gstPercent, supervisorRole, gstAmount, description, dealerID, percentage, our_Earnings, labourCharges, modifiedBy, isActive, type, includes, serviceId, createdBy, services, inspectionType, inspectionDate, inspectionTimeSlot, ids, supervisorId, PackageName, Default_Price, TotalPrice, IncludeID, EstimatedDurationMinutes",axios
+components,src/components/DealerBookingsView.jsx,159,PUT,{VITE_APIURL}Supervisor/UpdateAddOnCompletion,"addOnID, is_Completed, completedBy, completedRole, statusName",axios
+components,src/components/BookServicesLayer.jsx,1197,PUT,{VITE_APIURL}Supervisor/UpdateSupervisorBooking,"addOnID, is_Completed, completedBy, completedRole, statusName, IncludeName, Description, IncludePrice, CategoryID, SubCategoryID, SkillID, CreatedBy, IsActive, id, bookingId, bookingTrackID, leadId, serviceType, serviceName, basePrice, quantity, price, gstPercent, supervisorRole, gstAmount, description, dealerID, percentage, our_Earnings, labourCharges, modifiedBy, isActive, type, includes, serviceId, createdBy, services, inspectionType, inspectionDate, inspectionTimeSlot, ids, supervisorId, PackageName, Default_Price, TotalPrice, IncludeID, EstimatedDurationMinutes",axios
+components,src/components/BookServicesLayer.jsx,1287,PUT,{VITE_APIURL}Supervisor/UpdateSupervisorBooking,"addOnID, is_Completed, completedBy, completedRole, statusName, IncludeName, Description, IncludePrice, CategoryID, SubCategoryID, SkillID, CreatedBy, IsActive, id, bookingId, bookingTrackID, leadId, serviceType, serviceName, basePrice, quantity, price, gstPercent, supervisorRole, gstAmount, description, dealerID, percentage, our_Earnings, labourCharges, modifiedBy, isActive, type, includes, serviceId, createdBy, services, inspectionType, inspectionDate, inspectionTimeSlot, ids, supervisorId, PackageName, Default_Price, TotalPrice, IncludeID, EstimatedDurationMinutes",axios
+components,src/components/DealerDashboardLayer.jsx,288,PUT,{VITE_APIURL}Supervisor/UpdateSupervisorBooking,"id, bookingId, bookingTrackID, leadId, serviceType, serviceName, basePrice, quantity, price, gstPercent, gstAmount, description, dealerID, percentage, our_Earnings, labourCharges, modifiedBy, isActive, type, includes, serviceId, dealerType",axios
+components,src/components/BookingViewLayer.jsx,2614,POST,{VITE_APIURL}Supervisor/UpdateSupervisorBookingIsActive,"BookingID, TechID, AssingedTimeSlot, Role, AssignedBy, bookingIds, supervisorHeadId, fieldAdvisorId, assignTimeSlot, endTimeslot, bookingID, assignDate, role, techID, addOnId, leadId, ServiceType, timeSlot, ids, supervisorID, addOns, addOnID, is_Completed, completedBy, completedRole, statusName, ticketId, bookingId, addOnIds, reason, createdBy, scheduledDate, timeslot, status, lastReworkID, cancelledBy, refundStatus",axios
+components,src/components/LeaveListLayer.jsx,32,GET,{VITE_APIURL}Technician,,axios
+components,src/components/CustomerAddLayer.jsx,56,GET,{VITE_APIURL}Technicians/{TechnicianID},,axios
+components,src/components/AssignTechnicianLayer.jsx,186,GET,{VITE_APIURL}TechniciansDetails,,axios
+components,src/components/BookingLayer.jsx,159,GET,{VITE_APIURL}TechniciansDetails,,axios
+components,src/components/BookingReportSortingLayer.jsx,95,GET,{VITE_APIURL}TechniciansDetails,,axios
+components,src/components/SupervisorAssignBookingLayer.jsx,170,GET,{VITE_APIURL}TechniciansDetails,,axios
+components,src/components/TelecalerAssignBookingLayer.jsx,65,GET,{VITE_APIURL}TechniciansDetails,,axios
+components,src/components/TechnicianLayer.jsx,32,GET,{VITE_APIURL}TechniciansDetails?role={{localStorage.getItem}}&userId={{localStorage.getItem}},,axios
+components,src/components/ExpenditureLayer.jsx,125,GET,{VITE_APIURL}TechniciansDetails?role=Admin&userId={{localStorage.getItem}},,axios
+components,src/components/CustomerAddLayer.jsx,159,POST,{VITE_APIURL}TechniciansDetails/InsertTechnicians,,axios
+components,src/components/TechniciansAddLayer.jsx,301,POST,{VITE_APIURL}TechniciansDetails/InsertTechnicians,"{key}, ProfileImageFile, DocumentFiles, DocumentsJson, TechID",axios
+components,src/components/CustomerAddLayer.jsx,152,PUT,{VITE_APIURL}TechniciansDetails/InsertTechnicians,,axios
+components,src/components/TechniciansAddLayer.jsx,67,GET,{VITE_APIURL}TechniciansDetails/technicianid?technicianid={TechnicianID},,axios
+components,src/components/TechnicianViewLayer.jsx,40,GET,{VITE_APIURL}TechniciansDetails/technicianid?technicianid={TechnicianID},,axios
+components,src/components/TechniciansAddLayer.jsx,295,PUT,{VITE_APIURL}TechniciansDetails/UpdateTechnicians,"{key}, ProfileImageFile, DocumentFiles, DocumentsJson, TechID",axios
+components,src/components/TelecalerAssignTicketLayer.jsx,328,POST,{VITE_APIURL}Ticket_Assignments,,axios
+components,src/components/TicketInnerLayer.jsx,224,POST,{VITE_APIURL}Ticket_Assignments,"id, customerId, accountHolderName, bankName, accountNumber, ifscCode, branch, upiId, userId",axios
+components,src/components/TelecalerAssignTicketLayer.jsx,192,GET,{VITE_APIURL}Ticket_Assignments?assigned_to_emp={userDetails.Id}&RoleId={userDetails.RoleId},,axios
+components/child,src/components/child/UnitCountSeven.jsx,66,GET,{VITE_APIURL}Tickets,,axios
+components,src/components/TelecalerAssignTicketLayer.jsx,150,GET,{VITE_APIURL}Tickets,,axios
+components,src/components/TicketsAddLayer.jsx,154,POST,{VITE_APIURL}Tickets,"custID, bookingID, description, status, reasonId, reasonType",axios
+components,src/components/TicketInnerLayer.jsx,174,PUT,{VITE_APIURL}Tickets,"TicketTrackId, Status, Description",axios
+components,src/components/TicketInnerLayer.jsx,470,PUT,{VITE_APIURL}Tickets,"TicketTrackId, Status, Description",axios
+components,src/components/TicketsViewLayer.jsx,44,GET,{VITE_APIURL}Tickets OR {VITE_APIURL}Ticket_Assignments?RoleId={{localStorage.getItem}}&assigned_to_emp={{localStorage.getItem}},,axios
+components,src/components/TicketsViewLayer.jsx,62,GET,{VITE_APIURL}Tickets OR {VITE_APIURL}Ticket_Assignments?RoleId={{localStorage.getItem}}&assigned_to_emp={{localStorage.getItem}},,axios
+components,src/components/EmployeeTicketViewLayer.jsx,48,PUT,{VITE_APIURL}Tickets/{ticketId}/accept,,axios
+components,src/components/EmployeeTicketViewLayer.jsx,81,PUT,{VITE_APIURL}Tickets/{ticketId}/reject,reason,axios
+components,src/components/EmployeeTicketViewLayer.jsx,26,GET,{VITE_APIURL}Tickets/assigned/{{localStorage.getItem}},,axios
+components,src/components/DeptWiseTicketReport.jsx,36,GET,{VITE_APIURL}Tickets/DepartmentId,,axios
+components,src/components/EmployeeTicketReportLayer.jsx,41,GET,{VITE_APIURL}Tickets/EmpId?EmpId={empId},,axios
+components,src/components/DepartmentTicketsLayer.jsx,46,GET,{VITE_APIURL}Tickets/EmployeeId,,axios
+components,src/components/TicketsAddLayer.jsx,145,PUT,{VITE_APIURL}Tickets/UpdateTicket?TicketID={TicketID},"custID, bookingID, description, status, reasonId, reasonType",axios
+components,src/components/BasicInformationLayer.jsx,222,GET,{VITE_APIURL}TimeSlot,,axios
+components,src/components/BookingTimeSlotLayer.jsx,36,GET,{VITE_APIURL}TimeSlot,,axios
+components,src/components/BookingViewLayer.jsx,771,GET,{VITE_APIURL}TimeSlot,,axios
+components,src/components/BookServicesLayer.jsx,268,GET,{VITE_APIURL}TimeSlot,,axios
+components,src/components/LeadViewLayer.jsx,606,GET,{VITE_APIURL}TimeSlot,,axios
+components,src/components/BookingTimeSlotLayer.jsx,137,POST,{VITE_APIURL}TimeSlot,"startTime, endTime, status",axios
+components,src/components/BookingTimeSlotLayer.jsx,132,PUT,{VITE_APIURL}TimeSlot,"startTime, endTime, status",axios
+components,src/components/BookingTimeSlotLayer.jsx,177,DELETE,{VITE_APIURL}TimeSlot/{TsID},,axios
+components,src/components/VehicleBrandLayer.jsx,192,DELETE,{VITE_APIURL}VehicleBrands/,StateID,axios
+components,src/components/ServicePlanPriceAddLayer11.jsx,57,GET,{VITE_APIURL}VehicleBrands/GetFuelTypesByBrand?brandId={brandId},,axios
+components,src/components/AddLeadLayer.jsx,46,GET,{VITE_APIURL}VehicleBrands/GetVehicleBrands,,axios
+components,src/components/BasicInformationLayer.jsx,215,GET,{VITE_APIURL}VehicleBrands/GetVehicleBrands,,axios
+components,src/components/LeadViewLayer.jsx,459,GET,{VITE_APIURL}VehicleBrands/GetVehicleBrands,,axios
+components,src/components/ServiceInspectionRequestLayer.jsx,196,GET,{VITE_APIURL}VehicleBrands/GetVehicleBrands,,axios
+components,src/components/ServicePlanPriceAddLayer.jsx,58,GET,{VITE_APIURL}VehicleBrands/GetVehicleBrands,,axios
+components,src/components/ServicePlanPriceAddLayer11.jsx,108,GET,{VITE_APIURL}VehicleBrands/GetVehicleBrands,,axios
+components,src/components/ServicePlanPriceEditLayer.jsx,58,GET,{VITE_APIURL}VehicleBrands/GetVehicleBrands,,axios
+components,src/components/VehicleBrandLayer.jsx,65,GET,{VITE_APIURL}VehicleBrands/GetVehicleBrands,,axios
+components,src/components/VehicleModelLayer.jsx,71,GET,{VITE_APIURL}VehicleBrands/GetVehicleBrands,,axios
+components,src/components/VehicleBrandLayer.jsx,145,POST,{VITE_APIURL}VehicleBrands/InsertVehicleBrand,"{key}, Status, ModifiedBy, CreatedBy",axios
+components,src/components/VehicleBrandLayer.jsx,142,PUT,{VITE_APIURL}VehicleBrands/UpdateVehicleBrand,"{key}, Status, ModifiedBy, CreatedBy",axios
+components,src/components/AddLeadLayer.jsx,65,GET,{VITE_APIURL}VehicleModels/GetListVehicleModel,,axios
+components,src/components/BasicInformationLayer.jsx,216,GET,{VITE_APIURL}VehicleModels/GetListVehicleModel,,axios
+components,src/components/LeadViewLayer.jsx,477,GET,{VITE_APIURL}VehicleModels/GetListVehicleModel,,axios
+components,src/components/ServiceInspectionRequestLayer.jsx,197,GET,{VITE_APIURL}VehicleModels/GetListVehicleModel,,axios
+components,src/components/ServicePlanPriceAddLayer.jsx,59,GET,{VITE_APIURL}VehicleModels/GetListVehicleModel,,axios
+components,src/components/ServicePlanPriceAddLayer11.jsx,109,GET,{VITE_APIURL}VehicleModels/GetListVehicleModel,,axios
+components,src/components/ServicePlanPriceEditLayer.jsx,59,GET,{VITE_APIURL}VehicleModels/GetListVehicleModel,,axios
+components,src/components/VehicleModelLayer.jsx,60,GET,{VITE_APIURL}VehicleModels/GetListVehicleModel,,axios
+components,src/components/VehicleModelLayer.jsx,123,POST,{VITE_APIURL}VehicleModels/InsertVehicleModel,"{key}, Status, ModifiedBy OR CreatedBy",axios
+components,src/components/VehicleModelLayer.jsx,122,PUT,{VITE_APIURL}VehicleModels/UpdateVehicleModel,"{key}, Status, ModifiedBy OR CreatedBy",axios
+components,src/components/PolicyLayer.jsx,16,GET,/api/policies,,fetch
+components,src/components/PolicyLayer.jsx,34,POST,/api/policies,,fetch
+components,src/components/PolicyLayer.jsx,28,PUT,/api/policies/{editingPolicy.PolicyID},,fetch
+components,src/components/BookingViewLayer.jsx,641,GET,/invoice-view/{bookingData.BookingID}?type={invoiceType}&dealerId={dealerID},,axios
+components,src/components/BookingViewLayer.jsx,4122,GET,https://dev-api.mycarsbuddy.com/api/Coupons,,axios
+components,src/components/CompleteServiceReportLayer.jsx,144,GET,https://dev-api.mycarsbuddy.com/api/Feedback/feedback?bookingId={bookingId},,axios
