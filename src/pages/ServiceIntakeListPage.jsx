@@ -5,7 +5,7 @@ import ServiceIntakeListLayer from "../components/ServiceIntakeListLayer";
 const ServiceIntakeListPage = () => {
   return (
     <MasterLayout>
-      <Breadcrumb title="Inspection List" />
+      <Breadcrumb title="Service Intake List" />
       <ServiceIntakeListLayer />
     </MasterLayout>
   );
