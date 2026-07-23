@@ -881,6 +881,28 @@ const BookingLayer = () => {
       width: "160px",
       sortable: true,
     },
+   {
+      name: "Booking OTP",
+      selector: (row) => (
+        <span className="fw-bold">
+          {row.BookingOTP || "-"}
+        </span>
+      ),
+      wrap: true,
+      width: "140px",
+      sortable: true,
+    },
+    {
+      name: "Completion OTP",
+      selector: (row) => (
+        <span className="fw-bold">
+          {row.CompletedOTP || "-"}
+        </span>
+      ),
+      wrap: true,
+      width: "160px",
+      sortable: true,
+    },
     {
       name: "Actions",
       cell: (row) => {
