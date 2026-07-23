@@ -45,7 +45,11 @@ const OrganicLeadsLayer = () => {
   const [isForwarding, setIsForwarding] = useState(false);
   const { status } = useParams();
   const decodedStatus = status ? decodeURIComponent(status) : "";
-
+  const [leadCounts, setLeadCounts] = useState({
+    TotalLeads: 0,
+    TodayLeads: 0,
+    RepeatedLeads: 0,
+  });
   // 1. Core Fetch Logic (Handles Chunking)
   const fetchLeadsChunk = useCallback(async (targetPage) => {
     // Determine which chunk of 100 is needed based on the page clicked
@@ -348,6 +352,35 @@ const OrganicLeadsLayer = () => {
     () => getAvailableTransferRoles(selectedLead),
     [selectedLead, getAvailableTransferRoles]
   );
+
+  const fetchLeadCounts = useCallback(async () => {
+      try {
+        const res = await axios.get(
+          `${API_BASE}Leads/GetFacebookLeadCounts`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const countData = res.data?.data?.[0];
+
+        if (countData) {
+          setLeadCounts({
+            TotalLeads: countData.TotalLeads || 0,
+            TodayLeads: countData.TodayLeads || 0,
+            RepeatedLeads: countData.RepeatedLeads || 0,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch lead counts:", error);
+      }
+    }, [token]);
+
+    useEffect(() => {
+      fetchLeadCounts();
+    }, [fetchLeadCounts]);
 
 
   // Columns Configuration (Preserved your design)
@@ -872,6 +905,126 @@ const OrganicLeadsLayer = () => {
     <div className="row gy-4">
       <div className="col-12">
         <div className="card overflow-hidden py-3">
+
+
+     {/* Lead Summary Cards */}
+        <div className="row g-3 px-3 py-2">
+
+          {/* Total Leads */}
+          <div className="col-12 col-md-4">
+            <div
+              className="card border-0 shadow-sm"
+              style={{
+                borderRadius: "12px",
+                background: "#eef2ff",
+              }}
+            >
+              <div className="card-body d-flex align-items-center justify-content-between p-3">
+                <div>
+                  <p className="text-muted mb-1 fw-semibold small">
+                    Total Leads
+                  </p>
+
+                  <h5 className="mb-0 fw-bold text-primary">
+                    {leadCounts.TotalLeads}
+                  </h5>
+                </div>
+
+                <div
+                  className="rounded-circle d-flex align-items-center justify-content-center"
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    background: "#c7d2fe",
+                  }}
+                >
+                  <Icon
+                    icon="mdi:account-group"
+                    width="22"
+                    className="text-primary"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Today's Leads */}
+          <div className="col-12 col-md-4">
+            <div
+              className="card border-0 shadow-sm"
+              style={{
+                borderRadius: "12px",
+                background: "#ecfdf5",
+              }}
+            >
+              <div className="card-body d-flex align-items-center justify-content-between p-3">
+                <div>
+                  <p className="text-muted mb-1 fw-semibold small">
+                    Today's Leads
+                  </p>
+
+                  <h5 className="mb-0 fw-bold text-success">
+                    {leadCounts.TodayLeads}
+                  </h5>
+                </div>
+
+                <div
+                  className="rounded-circle d-flex align-items-center justify-content-center"
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    background: "#bbf7d0",
+                  }}
+                >
+                  <Icon
+                    icon="mdi:calendar-today"
+                    width="22"
+                    className="text-success"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Repeated Leads */}
+          <div className="col-12 col-md-4">
+            <div
+              className="card border-0 shadow-sm"
+              style={{
+                borderRadius: "12px",
+                background: "#fff7ed",
+              }}
+            >
+              <div className="card-body d-flex align-items-center justify-content-between p-3">
+                <div>
+                  <p className="text-muted mb-1 fw-semibold small">
+                    Repeated Leads
+                  </p>
+
+                  <h5 className="mb-0 fw-bold text-warning">
+                    {leadCounts.RepeatedLeads}
+                  </h5>
+                </div>
+
+                <div
+                  className="rounded-circle d-flex align-items-center justify-content-center"
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    background: "#fed7aa",
+                  }}
+                >
+                  <Icon
+                    icon="mdi:content-duplicate"
+                    width="22"
+                    className="text-warning"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
           <div className="card-header">
             <div className="d-flex flex-column gap-2">
 
