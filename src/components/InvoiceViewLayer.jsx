@@ -239,6 +239,12 @@ const InvoiceViewLayer = () => {
     (s) => (s.IsSupervisor_Confirm ?? s.isSupervisor_Confirm) !== 1,
   );
 
+  // Hide WhatsApp/Email action buttons unless ALL SupervisorBookings have IsInvoiceGenerated === 1
+  const supervisorBookings = bookingData?.SupervisorBookings || [];
+  const allServicesInvoiceGenerated =
+    supervisorBookings.length > 0 &&
+    supervisorBookings.every((s) => s.IsInvoiceGenerated === 1);
+
 const handleGenerateInvoiceForView = async () => {
     if (!bookingData?.BookingID) {
       Swal.fire("Error", "Booking data not available.", "error");
@@ -597,7 +603,7 @@ const handleGenerateInvoiceForView = async () => {
     return <div className="alert alert-danger">Booking data not found.</div>;
   }
 
-  const hasUnconfirmed = bookingData?.SupervisorBookings && bookingData.SupervisorBookings.length > 0;
+  const hasUnconfirmed = bookingData?.SupervisorBookings && bookingData.SupervisorBookings.length > 0 && allServicesInvoiceGenerated === false;
 
   return (
     <div className="container-fluid p-4">
@@ -686,7 +692,7 @@ const handleGenerateInvoiceForView = async () => {
         )}
       </div>
 
-       {hasUnconfirmed && (
+       {hasUnconfirmed && !allServicesInvoiceGenerated &&  (
             <div className="alert alert-warning border small mb-2">
               There are unconfirmed services in this booking. Please click <strong>"Generate Invoice"</strong> to get the updated invoice before sending it to the customer.
             </div>
@@ -751,7 +757,8 @@ const handleGenerateInvoiceForView = async () => {
                         <td className="text-end">
                           {isActiveRow &&
                             urlInvoiceType === "Estimation" &&
-                            activeInvoice && (
+                            activeInvoice &&
+                            allServicesInvoiceGenerated && (
                               <div className="d-inline-flex gap-2">
                                 <button
                                   className="btn btn-primary-600 btn-sm d-inline-flex align-items-center gap-2"
@@ -785,7 +792,7 @@ const handleGenerateInvoiceForView = async () => {
                               </div>
                             )}
 
-                          {isActiveRow && urlInvoiceType === "Final" && activeInvoice && (
+                          {isActiveRow && urlInvoiceType === "Final" && activeInvoice && allServicesInvoiceGenerated && (
                             <div className="d-inline-flex gap-2">
                               <button
                                 className="btn btn-primary-600 btn-sm d-inline-flex align-items-center gap-2"

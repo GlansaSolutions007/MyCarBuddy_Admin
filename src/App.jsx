@@ -113,6 +113,7 @@ import CompanyInformationPage from "./pages/CompanyInformationPage";
 import ExpenditurePage from "./pages/ExpenditurePage";
 import ExpenditureCategoryPage from "./pages/ExpenditureCategoryPage";
 import AreaPage from "./pages/AreaPage";
+import CorporateDetailsPage from "./pages/CorporateDetailsPage";
 import DealerBookingsViewPage from "./pages/DealerBookingsViewPage";
 import AssignSupervisorAreaPage from "./pages/AssignSupervisorAreaPage";
 import BasicInformationPage from "./pages/BasicInformationPage";
@@ -126,7 +127,13 @@ import AssignTechnicianPage from "./pages/AssignTechnicianpage";
 import ServicesRatingPage from "./pages/ServicesRatingPage";
 import ServiceInspectionRequestPage from "./pages/ServiceInspectionRequestPage";
 import ServiceIntakeListPage from "./pages/ServiceIntakeListPage";
-import DealerServicesPage from "./pages/DealerServicesPage";
+import UpdateInvoiceBookingDetailsPage from "./pages/UpdateInvoiceBookingDetailsPage";
+import UpdateLeadBookingDatesPage from "./pages/UpdateLeadBookingDatesPage";
+import LeadDropDatesUpdatePage from "./pages/LeadDropDatesUpdatePage2";
+
+
+
+
 
 function App() {
   return (
@@ -235,6 +242,7 @@ function App() {
           <Route path="/organic-leads/:status" element={<OrganicLeadsPage />} />
           <Route exact path='/departments' element={<DepartmentsPage />} />
           <Route exact path="/contacts" element={<Contacts />} />
+          <Route exact path="/corporate-details" element={<CorporateDetailsPage />} />
           <Route exact path="/dealer-service-price" element={<DealerServiceP />} />
           <Route exact path='/add-tickets' element={<TicketsAddPage />} />
           <Route exact path='/edit-tickets/:TicketID' element={<TicketsAddPage />} />
@@ -281,7 +289,10 @@ function App() {
           <Route exact path='/ratings' element={<ServicesRatingPage />} />
           <Route exact path='/service-intake-form' element={<ServiceInspectionRequestPage />} />
           <Route exact path='/service-intake-list' element={<ServiceIntakeListPage />} />
-          <Route exact path='/dealer-services' element={<DealerServicesPage />} />
+          <Route exact path='/update-invoice-booking-details' element={<UpdateInvoiceBookingDetailsPage />} />
+          <Route exact path='/update-lead-booking-dates' element={<UpdateLeadBookingDatesPage />} />
+
+
         </Route>
 
         {/* //extra  pages */}

@@ -200,7 +200,7 @@ const AddLeadLayer = () => {
               className="form-control"
               value={formData.date}
               onChange={handleChange}
-              disabled
+              // disabled
               required
             />{" "}
           </div>

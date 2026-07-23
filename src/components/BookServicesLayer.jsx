@@ -289,7 +289,7 @@ useEffect(() => {
       return timeSlots;
     }
     const today = new Date().toISOString().split("T")[0];
-    if (selectedDate > today) {
+    if (selectedDate > today || selectedDate < today) {
       return timeSlots; // Upcoming date: show all slots
     }
     if (selectedDate === today) {
@@ -3578,7 +3578,7 @@ useEffect(() => {
                               className="form-control"
                               value={serviceDate}
                               onChange={(e) => setServiceDate(e.target.value)}
-                              min={new Date().toISOString().split("T")[0]}
+                              // min={new Date().toISOString().split("T")[0]}
                             />
                           )}
                         </div>

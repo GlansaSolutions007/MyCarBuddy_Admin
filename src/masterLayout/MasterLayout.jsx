@@ -784,6 +784,20 @@ const MasterLayout = ({ children }) => {
         },
       ],
     },
+
+    {
+      title: "Corporate",
+      icon: "mdi:briefcase-outline",
+      children: [
+        {
+          title: "Corporate Details",
+          to: "/corporate-details",
+          color: "text-primary-600",
+          permission: "corporatedetails_view",
+          page: "Corporate Details",
+        },
+      ],
+    },
     // 🔷 SUPPORT
     {
       title: "Support",
@@ -819,6 +833,7 @@ const MasterLayout = ({ children }) => {
         },
       ],
     },
+
 
     // 🔷 SERVICE CONFIGURATION
     {
@@ -1064,6 +1079,7 @@ const MasterLayout = ({ children }) => {
       ],
     },
 
+
     {
       title: "Contacts",
       icon: "flowbite:address-book-outline",
@@ -1077,8 +1093,6 @@ const MasterLayout = ({ children }) => {
         },
       ],
     },
-
-
 
     {
       title: "Expenses",
