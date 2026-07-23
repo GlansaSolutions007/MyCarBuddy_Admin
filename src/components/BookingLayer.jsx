@@ -62,6 +62,12 @@ const BookingLayer = () => {
   const [maxPrice, setMaxPrice] = useState("");
   const [status, setStatus] = useState("all");
   const [timeSlots, setTimeSlots] = useState([]);
+  const [bookingCounts, setBookingCounts] = useState({
+    TotalBookings: 0,
+    TodayBookings: 0,
+    CompletedBookings: 0,
+    RepeatedBookings: 0,
+  });
 
   // New states for Supervisor Assignment
   const [supervisors, setSupervisors] = useState([]);
@@ -91,6 +97,7 @@ const BookingLayer = () => {
     fetchSupervisors(); // Fetch supervisors on component mount
     fetchFieldAdvisors(); // Fetch field advisors on component mount
     getTimeSlotOptions(); // Fetch time slots on component mount
+    fetchBookingCounts();
   }, []);
 
   // Apply initial filter presets based on view parameter (if provided)
@@ -473,6 +480,29 @@ const BookingLayer = () => {
   //     console.error("Error fetching time slots:", err);
   //   }
   // };
+
+  const fetchBookingCounts = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}Dashboard`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const dashboardData = res.data?.[0];
+
+        if (dashboardData) {
+          setBookingCounts({
+            TotalBookings: dashboardData.TotalBookings || 0,
+            TodayBookings: dashboardData.TodayBookings || 0,
+            CompletedBookings: dashboardData.CompletedBookings || 0,
+            RepeatedBookings: dashboardData.RepeatedBookings || 0,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch booking counts:", error);
+      }
+};
 
   const allColumns = [
     {
@@ -984,6 +1014,162 @@ const BookingLayer = () => {
     <div className="row gy-4">
       <div className="col-12">
         <div className="card overflow-hidden p-3">
+          {/* Booking Summary Cards */}
+        <div className="row g-3 px-3 py-2">
+
+          {/* Total Bookings */}
+          <div className="col-12 col-sm-6 col-xl-3">
+            <div
+              className="card border-0 shadow-sm"
+              style={{
+                borderRadius: "12px",
+                background: "#eef2ff",
+              }}
+            >
+              <div className="card-body d-flex align-items-center justify-content-between p-3">
+                <div>
+                  <p className="text-muted mb-1 fw-semibold small">
+                    Total Bookings
+                  </p>
+
+                  <h5 className="mb-0 fw-bold text-primary">
+                    {bookingCounts.TotalBookings}
+                  </h5>
+                </div>
+
+                <div
+                  className="rounded-circle d-flex align-items-center justify-content-center"
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    background: "#c7d2fe",
+                  }}
+                >
+                  <Icon
+                    icon="mdi:calendar-check"
+                    width="22"
+                    className="text-primary"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Today's Bookings */}
+          <div className="col-12 col-sm-6 col-xl-3">
+            <div
+              className="card border-0 shadow-sm"
+              style={{
+                borderRadius: "12px",
+                background: "#ecfdf5",
+              }}
+            >
+              <div className="card-body d-flex align-items-center justify-content-between p-3">
+                <div>
+                  <p className="text-muted mb-1 fw-semibold small">
+                    Today's Bookings
+                  </p>
+
+                  <h5 className="mb-0 fw-bold text-success">
+                    {bookingCounts.TodayBookings}
+                  </h5>
+                </div>
+
+                <div
+                  className="rounded-circle d-flex align-items-center justify-content-center"
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    background: "#bbf7d0",
+                  }}
+                >
+                  <Icon
+                    icon="mdi:calendar-today"
+                    width="22"
+                    className="text-success"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Completed Bookings */}
+          <div className="col-12 col-sm-6 col-xl-3">
+            <div
+              className="card border-0 shadow-sm"
+              style={{
+                borderRadius: "12px",
+                background: "#f0fdf4",
+              }}
+            >
+              <div className="card-body d-flex align-items-center justify-content-between p-3">
+                <div>
+                  <p className="text-muted mb-1 fw-semibold small">
+                    Completed Bookings
+                  </p>
+
+                  <h5 className="mb-0 fw-bold text-success">
+                    {bookingCounts.CompletedBookings}
+                  </h5>
+                </div>
+
+                <div
+                  className="rounded-circle d-flex align-items-center justify-content-center"
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    background: "#bbf7d0",
+                  }}
+                >
+                  <Icon
+                    icon="mdi:check-circle-outline"
+                    width="22"
+                    className="text-success"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Repeated Bookings */}
+          <div className="col-12 col-sm-6 col-xl-3">
+            <div
+              className="card border-0 shadow-sm"
+              style={{
+                borderRadius: "12px",
+                background: "#fff7ed",
+              }}
+            >
+              <div className="card-body d-flex align-items-center justify-content-between p-3">
+                <div>
+                  <p className="text-muted mb-1 fw-semibold small">
+                    Repeated Bookings
+                  </p>
+
+                  <h5 className="mb-0 fw-bold text-warning">
+                    {bookingCounts.RepeatedBookings}
+                  </h5>
+                </div>
+
+                <div
+                  className="rounded-circle d-flex align-items-center justify-content-center"
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    background: "#fed7aa",
+                  }}
+                >
+                  <Icon
+                    icon="mdi:content-duplicate"
+                    width="22"
+                    className="text-warning"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
           <div className="card-header">
             <div
               className="d-flex align-items-center flex-wrap gap-2"
