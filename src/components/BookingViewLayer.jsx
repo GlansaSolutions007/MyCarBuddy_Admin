@@ -18,6 +18,7 @@ import InvoicesAccordion from "./InvoicesAccordion";
 import ServiceTrackingAccordion from "./ServiceTrackingAccordion";
 import TicketsAccordion from "./TicketsAccordion";
 import ReworkTrackingAccordion from "./ReworkTrackingAccordion";
+import CustPickDropLayer from "./CustPickDropLayer";
 
 const API_BASE = import.meta.env.VITE_APIURL;
 const API_IMAGE = import.meta.env.VITE_APIURL_IMAGE;
@@ -171,6 +172,7 @@ const BookingViewLayer = () => {
   const [garageDeliverDealer, setGarageDeliverDealer] = useState(null);
   const [garageDriver, setGarageDriver] = useState(null);
   const [garageServiceDone, setGarageServiceDone] = useState(false);
+  const [showCustPickDropModal, setShowCustPickDropModal] = useState(false);
   // Pickup date & time for garage flow
   const [garagePickupDate, setGaragePickupDate] = useState("");
   const [garagePickupTime, setGaragePickupTime] = useState("");
@@ -3819,6 +3821,114 @@ const handleReworkSubmit = async () => {
     }
   };
 
+const handleCustPickDropSubmit = async ({ action, dealer, date, time
+}) => {
+  try {
+    // 1. Get IDs from bookingData
+    const currentBookingId = bookingData?.BookingID;
+    const currentLeadId = bookingData?.LeadId;
+    const custID = bookingData?.CustID;
+    const updatedBy = localStorage.getItem("userId");
+
+    // 3. Basic validation
+    if (!currentBookingId || !currentLeadId || !custID) {
+      Swal.fire({
+        icon: "error",
+        title: "Data Error",
+        text: "Could not find Booking ID, Lead ID, or Customer ID. Please refresh the page.",
+      });
+      return;
+    }
+
+    if (!action || !dealer || !date || !time) {
+      Swal.fire({
+        icon: "warning",
+        title: "Missing Information",
+        text: "Please ensure Action, Garage, Date, and Time are all selected.",
+      });
+      return;
+    }
+
+    // 4. Determine action type
+    const actionType = action === "pick" ? "Pickup" : "Drop";
+
+    // 5. Determine Pick From, Pick To, and Route Type
+    let pickFrom;
+    let pickTo;
+    let routeType;
+
+    if (actionType === "Pickup") {
+      // Dealer -> Customer
+      pickFrom = dealer;
+      pickTo = custID;
+      routeType = "DealerToCustomer";
+    } else {
+      // Customer -> Dealer
+      pickFrom = custID;
+      pickTo = dealer;
+      routeType = "CustomerToDealer";
+    }
+
+    // 6. Construct Payload
+    const payload = {
+      bookingId: currentBookingId,
+      leadId: currentLeadId,
+      actionType: actionType,
+
+      pickFrom: pickFrom,
+      pickTo: pickTo,
+
+      selectedDate: date,
+      selectedTime: time,
+
+      routeType: routeType,
+
+      updatedBy: updatedBy,
+    };
+
+    console.log("Sending Payload:", payload);
+
+    // 7. API Call
+    const response = await axios.post(
+      `${API_BASE}Leads/InsertBookingRouteSelection`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`, }, } );
+
+    if (response.data?.success || response.status === 200) {
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: `Customer ${actionType.toLowerCase()} request saved successfully.`,
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      // Refresh booking data
+      fetchBookingData();
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Submission Failed",
+        text:
+          response.data?.message ||
+          "The server rejected the request.",
+      });
+    }
+  } catch (error) {
+    console.error("Pick/Drop Error:", error);
+
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text:
+        error.response?.data?.message ||
+        "Something went wrong while processing the request.",
+    });
+  }
+};
+
   const totalAmount =
     (bookingData?.TotalPrice || 0) -
     // (bookingData?.GSTAmount || 0) +
@@ -6376,6 +6486,16 @@ const scheduledStartTime = getScheduledStartTime();
                                 >
                                   Customer Rejection
                                 </button>
+                              </li>
+                              )}
+                            {bookingData?.SupervisorBookings?.length > 0 && (
+                              <li className="mb-2">
+                              <button
+                                className="btn btn-primary btn-sm w-100 d-inline-flex align-items-center justify-content-center"
+                                onClick={() => setShowCustPickDropModal(true)}
+                              >
+                                Customer Pickup/Drop
+                              </button>
                               </li>
                             )}
 
@@ -12305,6 +12425,13 @@ const scheduledStartTime = getScheduledStartTime();
             </div>
           </div>
         )}
+
+        <CustPickDropLayer
+          show={showCustPickDropModal}
+          onHide={() => setShowCustPickDropModal(false)}
+          onSubmit={handleCustPickDropSubmit}
+          dealerOptions={garageDealerOptions} 
+        />
 
         {/* Rework Modal */}
           {showReworkModal && (
