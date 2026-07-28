@@ -1,4 +1,5 @@
 import { Icon } from "@iconify/react";
+import { useNavigate } from "react-router-dom";
 
 const ServiceTrackingAccordion = ({
   bookingData,
@@ -10,6 +11,7 @@ const ServiceTrackingAccordion = ({
   openPickupDropRescheduleModal,
   pickupDropActionLoading,
 }) => {
+  const navigate = useNavigate();
   const rows = bookingData?.CarPickUpDelivery ?? [];
 
   const toDateTime = (value) => {
@@ -179,201 +181,217 @@ const ServiceTrackingAccordion = ({
                             className="accordion-collapse collapse"
                             aria-labelledby={`heading-${accordionId}`}
                           >
-                          <div className="accordion-body p-1">
+                            <div className="accordion-body p-1">
 
-                          {!isDoorstepService && (
-                            <div className="row g-3 mt-1">
-                              <div className="col-lg-6">
-                                <div className="border rounded-3 p-3 h-100 bg-white">
-                                  <div className="small fw-semibold text-muted">Pick From</div>
-                                  <div className="fw-semibold">{row.PickFromName || "Customer"}</div>
-                                  <div className="small text-muted">{row.PickFromPhone || "—"}</div>
-                                  <div className="small text-muted">{row.PickFromAddress || "—"}</div>
-                                  <div className="small fw-semibold text-muted mt-2 mb-1">Pickup Images</div>
-                                  {pickupImages.length > 0 ? (
-                                    <div className="d-flex flex-wrap gap-2">
-                                      {pickupImages.map((img) => (
-                                        <a
-                                          key={img.ImageID}
-                                          href={resolveImageUrl(img.ImageURL)}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          className="d-inline-block border rounded-3 overflow-hidden"
-                                          style={{ width: 90, height: 70 }}
-                                          title={`Pickup - ${toDateTime(img.UploadedAt)}`}
-                                        >
-                                          <img
-                                            src={resolveImageUrl(img.ImageURL)}
-                                            alt="Pickup"
-                                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                          />
-                                        </a>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <div className="small text-muted">No pickup images</div>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="col-lg-6">
-                                <div className="border rounded-3 p-3 h-100 bg-white">
-                                  <div className="small fw-semibold text-muted">Drop At</div>
-                                  <div className="fw-semibold">{row.PickToName || "Customer"}</div>
-                                  <div className="small text-muted">{row.PickToPhone || "—"}</div>
-                                  <div className="small text-muted">{row.PickToAddress || "—"}</div>
-                                  <div className="small fw-semibold text-muted mt-2 mb-1">Delivery Images</div>
-                                  {deliveryImages.length > 0 ? (
-                                    <div className="d-flex flex-wrap gap-2">
-                                      {deliveryImages.map((img) => (
-                                        <a
-                                          key={img.ImageID}
-                                          href={resolveImageUrl(img.ImageURL)}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          className="d-inline-block border rounded-3 overflow-hidden"
-                                          style={{ width: 90, height: 70 }}
-                                          title={`Delivery - ${toDateTime(img.UploadedAt)}`}
-                                        >
-                                          <img
-                                            src={resolveImageUrl(img.ImageURL)}
-                                            alt="Delivery"
-                                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                          />
-                                        </a>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <div className="small text-muted">No delivery images</div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="row g-3 mt-1">
-                            <div className="col-lg-6">
-                              <div className="border rounded-3 p-3 h-100 bg-white">
-                                <div className="small fw-semibold text-muted mb-2">Technician / Driver</div>
-                                <div className="fw-semibold">{row.TechnicinaName || "—"}</div>
-                                <div className="small text-muted">{row.TechnicianPhoneNumber || "—"}</div>
-                                <div className="small text-muted">
-                                  Service Type:{" "}
-                                  {row.ServiceType === "ServiceAtGarage"
-                                    ? "Service At Garage"
-                                    : "Service At Home"}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="col-lg-6">
-                              <div className="border rounded-3 p-3 h-100 bg-white">
-                                <div className="small fw-semibold text-muted mb-2">Driver Tracking</div>
-                                {tracking.length > 0 ? (
-                                  <div className="d-flex flex-column">
-                                    {tracking.map((event, eventIdx) => (
-                                      <div
-                                        key={event.Id}
-                                        className="d-flex align-items-start gap-2 position-relative pb-2"
-                                      >
-                                        <div className="d-flex flex-column align-items-center" style={{ width: 16 }}>
-                                          <span
-                                            className="rounded-circle"
-                                            style={{
-                                              width: 10,
-                                              height: 10,
-                                              marginTop: 4,
-                                              backgroundColor: "#0d9488",
-                                            }}
-                                          />
-                                          {eventIdx < tracking.length - 1 && (
-                                            <span
-                                              style={{
-                                                width: 2,
-                                                flex: 1,
-                                                minHeight: 20,
-                                                marginTop: 2,
-                                                backgroundColor: "#d1d5db",
-                                              }}
-                                            />
-                                          )}
+                              {!isDoorstepService && (
+                                <div className="row g-3 mt-1">
+                                  <div className="col-lg-6">
+                                    <div className="border rounded-3 p-3 h-100 bg-white">
+                                      <div className="small fw-semibold text-muted">Pick From</div>
+                                      <div className="fw-semibold">{row.PickFromName || "Customer"}</div>
+                                      <div className="small text-muted">{row.PickFromPhone || "—"}</div>
+                                      <div className="small text-muted">{row.PickFromAddress || "—"}</div>
+                                      <div className="small fw-semibold text-muted mt-2 mb-1">Pickup Images</div>
+                                      {pickupImages.length > 0 ? (
+                                        <div className="d-flex flex-wrap gap-2">
+                                          {pickupImages.map((img) => (
+                                            <a
+                                              key={img.ImageID}
+                                              href={resolveImageUrl(img.ImageURL)}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              className="d-inline-block border rounded-3 overflow-hidden"
+                                              style={{ width: 90, height: 70 }}
+                                              title={`Pickup - ${toDateTime(img.UploadedAt)}`}
+                                            >
+                                              <img
+                                                src={resolveImageUrl(img.ImageURL)}
+                                                alt="Pickup"
+                                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                              />
+                                            </a>
+                                          ))}
                                         </div>
-                                        <div className="d-flex flex-column">
-                                          <span className="fw-semibold text-dark" style={{ fontSize: "0.82rem" }}>
-                                            {formatStatusLabel(event.Status)}
-                                          </span>
-                                          <span className="text-muted" style={{ fontSize: "0.75rem" }}>
-                                            {toDateTime(event.CreatedDate)}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    ))}
+                                      ) : (
+                                        <div className="small text-muted">No pickup images</div>
+                                      )}
+                                    </div>
                                   </div>
-                                ) : (
-                                  <div className="small text-muted">No tracking events</div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {isDoorstepService && (
-                            <div className="mt-3">
-                              <div className="small fw-semibold text-muted mb-2">Booking Images</div>
-                              {images.length > 0 ? (
-                                <div className="d-flex flex-wrap gap-2">
-                                  {images.map((img) => (
-                                    <a
-                                      key={img.ImageID}
-                                      href={resolveImageUrl(img.ImageURL)}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="d-inline-block border rounded-3 overflow-hidden"
-                                      style={{ width: 90, height: 70 }}
-                                      title={`${img.ImageUploadType || "Image"} - ${toDateTime(img.UploadedAt)}`}
-                                    >
-                                      <img
-                                        src={resolveImageUrl(img.ImageURL)}
-                                        alt={img.ImageUploadType || "Booking image"}
-                                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                      />
-                                    </a>
-                                  ))}
+                                  <div className="col-lg-6">
+                                    <div className="border rounded-3 p-3 h-100 bg-white">
+                                      <div className="small fw-semibold text-muted">Drop At</div>
+                                      <div className="fw-semibold">{row.PickToName || "Customer"}</div>
+                                      <div className="small text-muted">{row.PickToPhone || "—"}</div>
+                                      <div className="small text-muted">{row.PickToAddress || "—"}</div>
+                                      <div className="small fw-semibold text-muted mt-2 mb-1">Delivery Images</div>
+                                      {deliveryImages.length > 0 ? (
+                                        <div className="d-flex flex-wrap gap-2">
+                                          {deliveryImages.map((img) => (
+                                            <a
+                                              key={img.ImageID}
+                                              href={resolveImageUrl(img.ImageURL)}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              className="d-inline-block border rounded-3 overflow-hidden"
+                                              style={{ width: 90, height: 70 }}
+                                              title={`Delivery - ${toDateTime(img.UploadedAt)}`}
+                                            >
+                                              <img
+                                                src={resolveImageUrl(img.ImageURL)}
+                                                alt="Delivery"
+                                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                              />
+                                            </a>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <div className="small text-muted">No delivery images</div>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
-                              ) : (
-                                <div className="small text-muted">No images uploaded</div>
                               )}
-                            </div>
-                          )}
 
-                            {canAction && (
-                              <div className="d-flex gap-2 justify-content-end flex-wrap mt-3">
-                                <button
-                                  type="button"
-                                  className="btn btn-press-effect btn-danger btn-sm d-inline-flex align-items-center gap-1"
-                                  onClick={() => handlePickupDropCancel(row)}
-                                  disabled={pickupDropActionLoading}
-                                >
-                                  <Icon icon="mdi:close-circle-outline" width={18} height={18} />
-                                  Cancel
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn btn-press-effect btn-warning btn-sm d-inline-flex align-items-center gap-1 text-dark"
-                                  onClick={() => openPickupDropReassignModal(row)}
-                                  disabled={pickupDropActionLoading}
-                                >
-                                  <Icon icon="mdi:account-switch-outline" width={18} height={18} />
-                                  Reassign
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center gap-1"
-                                  onClick={() => openPickupDropRescheduleModal(row)}
-                                  disabled={pickupDropActionLoading}
-                                >
-                                  <Icon icon="mdi:calendar-edit-outline" width={18} height={18} />
-                                  Reschedule
-                                </button>
+                              <div className="row g-3 mt-1">
+                                <div className="col-lg-6">
+                                  <div className="border rounded-3 p-3 h-100 bg-white">
+                                    <div className="small fw-semibold text-muted mb-2">Technician / Driver</div>
+                                    <div className="fw-semibold">{row.TechnicinaName || "—"}</div>
+                                    <div className="small text-muted">{row.TechnicianPhoneNumber || "—"}</div>
+                                    <div className="small text-muted">
+                                      Service Type:{" "}
+                                      {row.ServiceType === "ServiceAtGarage"
+                                        ? "Service At Garage"
+                                        : "Service At Home"}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="col-lg-6">
+                                  <div className="border rounded-3 p-3 h-100 bg-white">
+                                    <div className="small fw-semibold text-muted mb-2">Driver Tracking</div>
+                                    {tracking.length > 0 ? (
+                                      <div className="d-flex flex-column">
+                                        {tracking.map((event, eventIdx) => (
+                                          <div
+                                            key={event.Id}
+                                            className="d-flex align-items-start gap-2 position-relative pb-2"
+                                          >
+                                            <div className="d-flex flex-column align-items-center" style={{ width: 16 }}>
+                                              <span
+                                                className="rounded-circle"
+                                                style={{
+                                                  width: 10,
+                                                  height: 10,
+                                                  marginTop: 4,
+                                                  backgroundColor: "#0d9488",
+                                                }}
+                                              />
+                                              {eventIdx < tracking.length - 1 && (
+                                                <span
+                                                  style={{
+                                                    width: 2,
+                                                    flex: 1,
+                                                    minHeight: 20,
+                                                    marginTop: 2,
+                                                    backgroundColor: "#d1d5db",
+                                                  }}
+                                                />
+                                              )}
+                                            </div>
+                                            <div className="d-flex flex-column">
+                                              <span className="fw-semibold text-dark" style={{ fontSize: "0.82rem" }}>
+                                                {formatStatusLabel(event.Status)}
+                                              </span>
+                                              <span className="text-muted" style={{ fontSize: "0.75rem" }}>
+                                                {toDateTime(event.CreatedDate)}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div className="small text-muted">No tracking events</div>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
-                            )}
+
+                              {isDoorstepService && (
+                                <div className="mt-3">
+                                  <div className="small fw-semibold text-muted mb-2">Booking Images</div>
+                                  {images.length > 0 ? (
+                                    <div className="d-flex flex-wrap gap-2">
+                                      {images.map((img) => (
+                                        <a
+                                          key={img.ImageID}
+                                          href={resolveImageUrl(img.ImageURL)}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="d-inline-block border rounded-3 overflow-hidden"
+                                          style={{ width: 90, height: 70 }}
+                                          title={`${img.ImageUploadType || "Image"} - ${toDateTime(img.UploadedAt)}`}
+                                        >
+                                          <img
+                                            src={resolveImageUrl(img.ImageURL)}
+                                            alt={img.ImageUploadType || "Booking image"}
+                                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                          />
+                                        </a>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="small text-muted">No images uploaded</div>
+                                  )}
+                                </div>
+                              )}
+
+                              {canAction && (
+                                <div className="d-flex gap-2 justify-content-end flex-wrap mt-3">
+                                  <button
+                                    type="button"
+                                    className="btn btn-press-effect btn-danger btn-sm d-inline-flex align-items-center gap-1"
+                                    onClick={() => handlePickupDropCancel(row)}
+                                    disabled={pickupDropActionLoading}
+                                  >
+                                    <Icon icon="mdi:close-circle-outline" width={18} height={18} />
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn btn-press-effect btn-warning btn-sm d-inline-flex align-items-center gap-1 text-dark"
+                                    onClick={() => openPickupDropReassignModal(row)}
+                                    disabled={pickupDropActionLoading}
+                                  >
+                                    <Icon icon="mdi:account-switch-outline" width={18} height={18} />
+                                    Reassign
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn btn-press-effect btn-primary-600 btn-sm d-inline-flex align-items-center gap-1"
+                                    onClick={() => openPickupDropRescheduleModal(row)}
+                                    disabled={pickupDropActionLoading}
+                                  >
+                                    <Icon icon="mdi:calendar-edit-outline" width={18} height={18} />
+                                    Reschedule
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn btn-press-effect btn-success btn-sm d-inline-flex align-items-center gap-1"
+                                    onClick={() => {
+                                      if (row.ServiceType === "ServiceAtGarage") {
+                                        navigate("/service-at-garage");
+                                      } else if (row.ServiceType === "ServiceAtHome") {
+                                        navigate("/service-at-home");
+                                      } else {
+                                        navigate("/inspection-at-home");
+                                      }
+                                    }}
+                                  >
+                                    <Icon icon="mdi:check-circle-outline" width={18} height={18} />
+                                    Complete Tech Flow
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
