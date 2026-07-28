@@ -130,6 +130,9 @@ import ServiceIntakeListPage from "./pages/ServiceIntakeListPage";
 import UpdateInvoiceBookingDetailsPage from "./pages/UpdateInvoiceBookingDetailsPage";
 import UpdateLeadBookingDatesPage from "./pages/UpdateLeadBookingDatesPage";
 import LeadDropDatesUpdatePage from "./pages/LeadDropDatesUpdatePage2";
+import ServiceAtHomePage from "./pages/ServiceAtHomePage";
+import ServiceAtGaragePage from "./pages/ServiceAtGaragePage";
+import InspectionPage from "./pages/InspectionPage";
 
 
 
@@ -291,7 +294,9 @@ function App() {
           <Route exact path='/service-intake-list' element={<ServiceIntakeListPage />} />
           <Route exact path='/update-invoice-booking-details' element={<UpdateInvoiceBookingDetailsPage />} />
           <Route exact path='/update-lead-booking-dates' element={<UpdateLeadBookingDatesPage />} />
-
+          <Route exact path='/service-at-home' element={<ServiceAtHomePage />} />
+          <Route exact path='/service-at-garage' element={<ServiceAtGaragePage />} />
+          <Route exact path='/inspection-at-home' element={<InspectionPage />} />
 
         </Route>
 
